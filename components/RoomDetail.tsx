@@ -128,13 +128,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     changeStep(nextIndex);
   };
   
-  const roundTimeUpToNext15Min = (date: Date): Date => {
+  const roundToNearest15Min = (date: Date): Date => {
     const newDate = new Date(date.getTime());
     const minutes = newDate.getMinutes();
     const remainder = minutes % 15;
-    if (remainder !== 0) {
+    
+    // Round to nearest 15-minute interval
+    if (remainder < 7.5) {
+      // Round down
+      newDate.setMinutes(minutes - remainder);
+    } else {
+      // Round up
       newDate.setMinutes(minutes + (15 - remainder));
     }
+    
     newDate.setSeconds(0);
     newDate.setMilliseconds(0);
     return newDate;
@@ -145,8 +152,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
     let newTime;
     if (estimatedEndTime === null) {
-      newTime = roundTimeUpToNext15Min(new Date());
+      newTime = roundToNearest15Min(new Date());
     } else {
+      // Add 15 minutes to current time
       newTime = new Date(estimatedEndTime.getTime() + 15 * 60 * 1000);
     }
     onEndTimeChange(newTime);
@@ -163,6 +171,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const handleDecreaseTime = () => {
     if (isInteractionBlocked || estimatedEndTime === null) return;
   
+    // Subtract 15 minutes from current time
     const potentialNewTime = new Date(estimatedEndTime.getTime() - 15 * 60 * 1000);
     if (potentialNewTime < new Date()) return;
   

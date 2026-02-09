@@ -138,7 +138,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
         </div>
 
         {/* Central Content Wrapper (takes up remaining space and centers its content) */}
-        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0 gap-2">
             {/* Central Area (Circle) */}
             <div className="relative flex items-center justify-center">
                 <svg className="w-28 h-28 -rotate-90 overflow-visible select-none flex-shrink-0">
@@ -178,10 +178,10 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                 </svg>
             </div>
             
-            {/* Estimated End Time (large, below circle) */}
+            {/* Estimated End Time (centered between circle and status) */}
             {room.estimatedEndTime && (
                 <motion.div
-                    className="mt-3 text-center"
+                    className="text-center"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
