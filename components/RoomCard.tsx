@@ -186,9 +186,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <p className="text-[9px] font-black tracking-[0.2em] uppercase opacity-50 mb-1">
-                    PŘEDPOKLÁDANÝ KONEC
-                    </p>
                     <motion.div
                     className="flex items-center gap-1.5 justify-center"
                     animate={{ opacity: [0.8, 1, 0.8] }}

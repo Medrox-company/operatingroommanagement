@@ -434,9 +434,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
-                    <p className="text-[12px] font-black tracking-[0.4em] text-white/40 mb-6 uppercase">
-                      PŘEDPOKLÁDANÝ KONEC
-                    </p>
                     <h2 className="text-8xl font-black tracking-tighter text-white font-mono">
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </h2>
