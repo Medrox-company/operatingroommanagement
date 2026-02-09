@@ -560,7 +560,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
       {/* Control Panel Indicators */}
       <div className="absolute right-16 bottom-16 flex flex-col items-end gap-12 z-50">
-        {!isInteractionBlocked && (
+        {!(room.isLocked && isFinalStep) && (
           <motion.button 
             onClick={() => setIsPaused(!isPaused)}
             className={`p-5 rounded-3xl border transition-all duration-300 ${isPaused ? 'bg-cyan-400/20 border-cyan-400/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
