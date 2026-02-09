@@ -4,6 +4,13 @@ import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
 import { Clock, CalendarDays } from 'lucide-react';
 
+const getTimePosition = (date: Date) => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const minutesFrom7 = hours >= 7 ? (hours - 7) * 60 + minutes : (hours + 17) * 60 + minutes;
+  return (minutesFrom7 / (24 * 60)) * TOTAL_WIDTH;
+};
+
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
@@ -76,7 +83,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             className="flex items-center gap-1 px-2 py-0.5 rounded-md border bg-black/20 shrink-0"
             style={{ borderColor: `${step.color}40`, backgroundColor: `${step.color}12` }}
           >
-            <step.Icon className="w-3 h-3" style={{ color: step.color }} />
             <span className="text-[8px] font-bold uppercase tracking-wider truncate max-w-[72px]" style={{ color: step.color }}>
               {step.title}
             </span>
@@ -125,6 +131,27 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             const step = WORKFLOW_STEPS[stepIndex];
             const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : step.color);
 
+            // Calculate box start from procedure startTime
+            const startTimeParts = room.currentProcedure?.startTime?.split(':');
+            const startDate = new Date();
+            if (startTimeParts && startTimeParts.length === 2) {
+              startDate.setHours(parseInt(startTimeParts[0], 10), parseInt(startTimeParts[1], 10), 0, 0);
+            }
+            const boxLeft = getTimePosition(startDate);
+
+            // Calculate box end from estimatedEndTime or fallback to startTime + estimatedDuration
+            let boxRight: number;
+            if (room.estimatedEndTime) {
+              boxRight = getTimePosition(new Date(room.estimatedEndTime));
+            } else if (room.currentProcedure?.estimatedDuration) {
+              const endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+              boxRight = getTimePosition(endDate);
+            } else {
+              boxRight = boxLeft + 120;
+            }
+
+            const boxWidth = Math.max(60, boxRight - boxLeft);
+
             return (
               <motion.div
                 key={room.id}
@@ -165,16 +192,15 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     initial={{ opacity: 0, scaleX: 0.95 }}
                     animate={{ opacity: 1, scaleX: 1 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute top-0.5 bottom-0.5 rounded-md border overflow-hidden backdrop-blur-md flex items-center gap-2 px-2 min-w-[120px]"
+                    className="absolute top-0.5 bottom-0.5 rounded-md border overflow-hidden backdrop-blur-md flex items-center px-2"
                     style={{
-                      left: Math.max(4, nowPosition - 50),
-                      width: 120,
+                      left: Math.max(0, boxLeft),
+                      width: boxWidth,
                       backgroundColor: `${themeColor}28`,
                       borderColor: `${themeColor}60`,
                       boxShadow: `0 0 12px ${themeColor}25`,
                     }}
                   >
-                    <step.Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: themeColor }} />
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="text-[8px] font-black uppercase tracking-wider truncate leading-tight" style={{ color: themeColor }}>
                         {room.isEmergency ? 'Nouzový' : (room.isLocked ? 'Uzamčeno' : step.title)}
