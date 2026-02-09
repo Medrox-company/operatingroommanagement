@@ -6,7 +6,7 @@ import { WORKFLOW_STEPS } from '../constants';
 import { 
   Plus, Minus, Menu, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
-  ChevronRight, Pause, AlertTriangle, Lock
+  ChevronRight, Pause, Play, AlertTriangle, Lock
 } from 'lucide-react';
 
 interface RoomDetailProps {
@@ -567,7 +567,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-              <Pause className={`w-10 h-10 transition-colors duration-300 ${isPaused ? 'text-cyan-300' : 'text-white/50'}`} />
+              {isPaused ? (
+                <Play className="w-10 h-10 transition-colors duration-300 text-cyan-300" />
+              ) : (
+                <Pause className="w-10 h-10 transition-colors duration-300 text-white/50" />
+              )}
           </motion.button>
         )}
       </div>
