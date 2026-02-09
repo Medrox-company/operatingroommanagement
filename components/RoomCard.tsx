@@ -138,7 +138,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
         </div>
 
         {/* Central Content Wrapper (takes up remaining space and centers its content) */}
-        <div className="flex-1 flex flex-col items-center justify-center min-h-0 gap-2">
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             {/* Central Area (Circle) */}
             <div className="relative flex items-center justify-center">
                 <svg className="w-28 h-28 -rotate-90 overflow-visible select-none flex-shrink-0">
@@ -181,7 +181,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
             {/* Estimated End Time (centered between circle and status) */}
             {room.estimatedEndTime && (
                 <motion.div
-                    className="text-center"
+                    className="-mt-1 text-center"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -191,8 +191,8 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                     animate={{ opacity: [0.8, 1, 0.8] }}
                     transition={{ duration: 2, repeat: Infinity }}
                     >
-                    <Clock className="w-4 h-4" style={{ color: themeColor }} />
-                    <span className="text-2xl font-mono font-bold tracking-tight" style={{ color: themeColor }}>
+                    <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
+                    <span className="text-lg font-mono font-bold tracking-tight" style={{ color: themeColor }}>
                         {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     </motion.div>
