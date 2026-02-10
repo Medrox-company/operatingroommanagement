@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "fuser -k 3000/tcp 2>/dev/null; vite --port 3000",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
