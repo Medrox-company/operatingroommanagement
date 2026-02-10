@@ -179,7 +179,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           <span className="text-[8px] font-mono font-black text-black tracking-wider">{currentTimeLabel}</span>
                         </div>
                       ) : (
-                        <span className="ml-1 text-[8px] font-mono font-medium text-white/25">
+                        <span className="ml-1 text-[8px] font-mono font-medium text-white/[0.25]">
                           {hourLabel(hour)}
                         </span>
                       )
@@ -346,7 +346,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         {isActive ? (
                           <Activity className="w-2.5 h-2.5" style={{ color: barColors.text }} />
                         ) : (
-                          <div className="w-1.5 h-1.5 rounded-full bg-white/15" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-white/[0.15]" />
                         )}
                       </div>
                       {isActive && (
@@ -367,7 +367,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       )}
                     </div>
                     {isActive && (
-                      <svg className="w-3.5 h-3.5 flex-shrink-0 text-white/15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-3.5 h-3.5 flex-shrink-0 text-white/[0.15]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="9 18 15 12 9 6" />
                       </svg>
                     )}
@@ -420,7 +420,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           {room.currentPatient && (
                             <>
                               <div className="w-px h-2.5 bg-white/10 flex-shrink-0" />
-                              <span className="text-[7px] text-white/35 truncate">{room.currentPatient.name}</span>
+                              <span className="text-[7px] text-white/[0.35] truncate">{room.currentPatient.name}</span>
                             </>
                           )}
                         </div>
@@ -451,7 +451,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       <div className="relative z-10 flex items-center justify-between px-4 md:pl-28 md:pr-4 py-2 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-white/12 border border-white/8" />
+            <div className="w-2.5 h-2.5 rounded-full bg-white/[0.12] border border-white/[0.08]" />
             <span className="text-[8px] font-medium text-white/30 uppercase tracking-wider">Dokoncene</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -467,7 +467,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             <span className="text-[8px] font-medium text-white/30 uppercase tracking-wider">Presah</span>
           </div>
         </div>
-        <span className="text-[8px] text-white/15 font-medium">Kliknete na sal pro zobrazeni detailu</span>
+        <span className="text-[8px] text-white/[0.15] font-medium">Kliknete na sal pro zobrazeni detailu</span>
       </div>
     </div>
   );

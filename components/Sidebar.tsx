@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
               className={`
                 relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-2xl
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
-                ${isActive ? 'bg-white/15 text-white shadow-xl' : 'text-white/40 hover:bg-white/5 hover:text-white'}
+                ${isActive ? 'bg-white/[0.15] text-white shadow-xl' : 'text-white/40 hover:bg-white/5 hover:text-white'}
               `}
             >
               <item.icon 
