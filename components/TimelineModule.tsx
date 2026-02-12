@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
-import { Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, User } from 'lucide-react';
+import { Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, User, SprayCan, Check, CheckCircle2 } from 'lucide-react';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
