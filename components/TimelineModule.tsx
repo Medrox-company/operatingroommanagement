@@ -783,7 +783,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               </span>
                               <div className="w-px h-3" style={{ backgroundColor: `${colors.text}40` }} />
                               <span className="text-[10px] font-mono font-bold tracking-wider" style={{ color: colors.text, textShadow: `0 0 8px ${colors.glow}` }}>
-                                {endTimeStr}
+                                {room.estimatedEndTime ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                               </span>
                             </div>
                           </div>
