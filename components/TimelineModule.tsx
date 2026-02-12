@@ -482,7 +482,7 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
 /* ============================== */
 const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
+  const [selectedRoom, setSelectedRoom | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
