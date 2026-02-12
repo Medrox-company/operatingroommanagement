@@ -87,11 +87,21 @@
       }
     </script>
     <style>
-      body {
+      html, body {
+        margin: 0;
+        padding: 0;
         -webkit-font-smoothing: antialiased;
         background-color: #000;
+        color: #fff;
       }
       
+      /* Skryje root dokud se React nenacte - zabrani blikani */
+      #root:empty {
+        display: block;
+        background: #000;
+        min-height: 100vh;
+      }
+
       .app-background {
         background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
         min-height: 100vh;
