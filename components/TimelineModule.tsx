@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
-import { Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, User, Syringe } from 'lucide-react';
+import { Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe } from 'lucide-react';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
@@ -46,7 +46,6 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
   const nextStep = stepIndex < WORKFLOW_STEPS.length - 1 ? WORKFLOW_STEPS[stepIndex + 1] : null;
   const nextColors = stepIndex < 6 ? (STEP_COLORS[stepIndex + 1] || STEP_COLORS[6]) : null;
 
-  // Operation elapsed time
   const startParts = room.currentProcedure?.startTime?.split(':');
   let elapsedStr = '--:--:--';
   if (startParts && startParts.length === 2 && isActive) {
@@ -59,7 +58,6 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
     elapsedStr = `${h < 10 ? '0' : ''}${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
   }
 
-  // Estimated end time
   let endTimeStr = '--:--';
   if (room.estimatedEndTime) {
     endTimeStr = new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
@@ -69,8 +67,8 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
     endTimeStr = new Date(sd.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Progress percentage
   const progress = room.currentProcedure?.progress || 0;
+  const themeColor = room.isEmergency ? '#FF3B30' : room.isLocked ? '#FBBF24' : colors.text;
 
   return (
     <motion.div
@@ -80,158 +78,120 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
 
-      {/* Popup */}
       <motion.div
-        className="relative w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-white/[0.08] bg-[#0c1220]/95 backdrop-blur-2xl shadow-2xl"
+        className="relative w-full max-w-[820px] mx-4 rounded-3xl border border-white/[0.08] overflow-hidden"
+        style={{ background: 'linear-gradient(180deg, rgba(12,18,32,0.98) 0%, rgba(8,12,24,0.99) 100%)' }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.92, y: 20 }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       >
+        {/* Top glow accent */}
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent 0%, ${themeColor}60 50%, transparent 100%)` }} />
+
         {/* ---- Header ---- */}
-        <div className="flex items-start justify-between p-6 pb-4 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-4">
-            {/* Progress circle */}
-            <div className="relative w-14 h-14 flex-shrink-0">
+            <div className="relative w-12 h-12 flex-shrink-0">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-                <circle
-                  cx="24" cy="24" r="20" fill="none"
-                  stroke={isActive ? colors.text : '#34C759'}
-                  strokeWidth="3" strokeLinecap="round"
+                <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
+                <circle cx="24" cy="24" r="20" fill="none" stroke={themeColor} strokeWidth="2.5" strokeLinecap="round"
                   strokeDasharray={`${2 * Math.PI * 20}`}
                   strokeDashoffset={`${2 * Math.PI * 20 * (1 - progress / 100)}`}
-                  style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                  style={{ transition: 'stroke-dashoffset 0.5s ease', filter: `drop-shadow(0 0 4px ${themeColor}40)` }}
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[11px] font-black text-white/70">{progress}%</span>
+                <span className="text-[10px] font-black text-white/60">{progress}%</span>
               </div>
             </div>
 
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-xl font-black tracking-tight text-white">{room.name}</h2>
+              <div className="flex items-center gap-2.5 mb-0.5">
+                <h2 className="text-lg font-black tracking-tight text-white">{room.name}</h2>
                 {isActive && (
-                  <span
-                    className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider border"
-                    style={{ color: colors.text, borderColor: `${colors.text}40`, backgroundColor: `${colors.text}15` }}
-                  >
+                  <span className="px-2 py-0.5 rounded-full text-[8px] font-bold tracking-wider border" style={{ color: themeColor, borderColor: `${themeColor}35`, backgroundColor: `${themeColor}12` }}>
                     {step.title}
                   </span>
                 )}
-                {room.isEmergency && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-red-500/15 text-red-400 border border-red-500/30">EMERGENCY</span>
-                )}
-                {room.isLocked && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">UZAMCENO</span>
-                )}
+                {room.isEmergency && <span className="px-2 py-0.5 rounded-full text-[8px] font-bold tracking-wider bg-red-500/15 text-red-400 border border-red-500/25">EMERGENCY</span>}
+                {room.isLocked && <span className="px-2 py-0.5 rounded-full text-[8px] font-bold tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25">UZAMCENO</span>}
               </div>
-              <p className="text-[11px] font-medium text-white/30 tracking-wider uppercase">
-                {room.department} &middot; Krok {stepIndex + 1} z {WORKFLOW_STEPS.length}
-              </p>
+              <p className="text-[10px] font-medium text-white/25 tracking-wider uppercase">{room.department} &middot; Krok {stepIndex + 1} z {WORKFLOW_STEPS.length}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
-            {/* Elapsed time */}
+          <div className="flex items-center gap-4">
             {isActive && (
               <div className="text-right">
-                <p className="text-[8px] font-bold text-white/25 tracking-[0.15em] uppercase mb-1">DOBA OPERACE</p>
-                <p className="text-2xl font-black font-mono tracking-widest" style={{ color: colors.text }}>{elapsedStr}</p>
+                <p className="text-[7px] font-bold text-white/20 tracking-[0.15em] uppercase mb-0.5">DOBA OPERACE</p>
+                <p className="text-xl font-black font-mono tracking-widest" style={{ color: themeColor }}>{elapsedStr}</p>
               </div>
             )}
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.1] transition-colors"
-            >
-              <X className="w-4 h-4 text-white/50" />
+            <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.08] transition-colors">
+              <X className="w-3.5 h-3.5 text-white/40" />
             </button>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        {/* ---- Body ---- */}
+        <div className="px-6 py-4 space-y-4">
 
-          {/* ---- Postup operace (Current + Next step) ---- */}
+          {/* Postup operace */}
           {isActive && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Activity className="w-4 h-4 text-white/25" />
-                <h3 className="text-[11px] font-black tracking-[0.15em] uppercase text-white/50">Postup operace</h3>
+              <div className="flex items-center gap-2 mb-2.5">
+                <Activity className="w-3.5 h-3.5 text-white/20" />
+                <h3 className="text-[9px] font-black tracking-[0.15em] uppercase text-white/40">Postup operace</h3>
               </div>
-
-              <div className="flex gap-3">
-                {/* Current step */}
-                <div
-                  className="flex-1 rounded-2xl p-4 border relative overflow-hidden"
-                  style={{ backgroundColor: `${colors.text}08`, borderColor: `${colors.text}25` }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.text }} />
-                      <span className="text-[9px] font-black tracking-[0.15em] uppercase" style={{ color: colors.text }}>PRAVE PROBIHA</span>
+              <div className="flex gap-2.5 items-stretch">
+                <div className="flex-1 rounded-xl p-3.5 border" style={{ backgroundColor: `${themeColor}08`, borderColor: `${themeColor}20` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <motion.div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: themeColor }} animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
+                      <span className="text-[8px] font-black tracking-[0.12em] uppercase" style={{ color: themeColor }}>PRAVE PROBIHA</span>
                     </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-md" style={{ color: colors.text, backgroundColor: `${colors.text}15` }}>
-                      Krok {stepIndex + 1}/{WORKFLOW_STEPS.length}
-                    </span>
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded" style={{ color: themeColor, backgroundColor: `${themeColor}12` }}>Krok {stepIndex + 1}/{WORKFLOW_STEPS.length}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center border"
-                      style={{ backgroundColor: `${colors.text}12`, borderColor: `${colors.text}25` }}
-                    >
-                      <step.Icon className="w-5 h-5" style={{ color: colors.text }} />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center border" style={{ backgroundColor: `${themeColor}10`, borderColor: `${themeColor}20` }}>
+                      <step.Icon className="w-4 h-4" style={{ color: themeColor }} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">{step.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Clock className="w-3 h-3 text-white/20" />
-                        <span className="text-[10px] text-white/30">{room.currentProcedure?.startTime || '--:--'}</span>
-                        <span className="text-[10px] font-bold" style={{ color: colors.text }}>{elapsedStr.slice(0, 5)}</span>
+                      <p className="text-[13px] font-bold text-white">{step.title}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Clock className="w-2.5 h-2.5 text-white/15" />
+                        <span className="text-[9px] text-white/25">{room.currentProcedure?.startTime || '--:--'}</span>
+                        <span className="text-[9px] font-bold" style={{ color: themeColor }}>{elapsedStr.slice(0, 5)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Next step */}
                 {nextStep && nextColors && (
                   <>
-                    {/* Arrow */}
                     <div className="flex items-center flex-shrink-0">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center border"
-                        style={{ backgroundColor: `${nextColors.text}10`, borderColor: `${nextColors.text}20` }}
-                      >
-                        <svg className="w-4 h-4" style={{ color: nextColors.text }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M9 18l6-6-6-6" />
-                        </svg>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center bg-white/[0.03] border border-white/[0.06]">
+                        <svg className="w-3 h-3 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
                       </div>
                     </div>
-
-                    <div
-                      className="flex-1 rounded-2xl p-4 border"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-white/15" />
-                          <span className="text-[9px] font-black tracking-[0.15em] uppercase text-white/30">NASLEDUJICI</span>
+                    <div className="flex-1 rounded-xl p-3.5 border bg-white/[0.015] border-white/[0.05]">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                          <span className="text-[8px] font-black tracking-[0.12em] uppercase text-white/25">NASLEDUJICI</span>
                         </div>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-md text-white/20 bg-white/[0.04]">
-                          Krok {stepIndex + 2}/{WORKFLOW_STEPS.length}
-                        </span>
+                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded text-white/15 bg-white/[0.03]">Krok {stepIndex + 2}/{WORKFLOW_STEPS.length}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center border bg-white/[0.03] border-white/[0.06]">
-                          <nextStep.Icon className="w-5 h-5 text-white/25" />
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/[0.025] border border-white/[0.05]">
+                          <nextStep.Icon className="w-4 h-4 text-white/20" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-white/50">{nextStep.title}</p>
-                          <p className="text-[10px] text-white/20 mt-0.5">Ceka na zahajeni</p>
+                          <p className="text-[13px] font-bold text-white/40">{nextStep.title}</p>
+                          <p className="text-[9px] text-white/15 mt-0.5">Ceka na zahajeni</p>
                         </div>
                       </div>
                     </div>
@@ -241,64 +201,35 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
             </div>
           )}
 
-          {/* ---- Prubeh vykonu (Workflow steps) ---- */}
+          {/* Prubeh vykonu */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Stethoscope className="w-4 h-4 text-white/25" />
-              <h3 className="text-[11px] font-black tracking-[0.15em] uppercase text-white/50">Prubeh vykonu</h3>
+            <div className="flex items-center gap-2 mb-2.5">
+              <Stethoscope className="w-3.5 h-3.5 text-white/20" />
+              <h3 className="text-[9px] font-black tracking-[0.15em] uppercase text-white/40">Prubeh vykonu</h3>
             </div>
-
-            <div className="flex items-center gap-1">
+            <div className="flex items-start gap-0.5">
               {WORKFLOW_STEPS.map((ws, i) => {
                 const isCompleted = i < stepIndex;
                 const isCurrent = i === stepIndex;
                 const sc = STEP_COLORS[i] || STEP_COLORS[6];
                 return (
                   <React.Fragment key={i}>
-                    {/* Step */}
                     <div className="flex flex-col items-center flex-1 min-w-0">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center border mb-1.5 transition-all ${
-                          isCurrent
-                            ? 'shadow-lg'
-                            : isCompleted
-                              ? ''
-                              : 'opacity-30'
-                        }`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center border mb-1 transition-all ${!isCurrent && !isCompleted ? 'opacity-25' : ''}`}
                         style={{
-                          backgroundColor: isCurrent ? `${sc.text}20` : isCompleted ? `${sc.text}10` : 'rgba(255,255,255,0.03)',
-                          borderColor: isCurrent ? `${sc.text}50` : isCompleted ? `${sc.text}20` : 'rgba(255,255,255,0.06)',
-                          boxShadow: isCurrent ? `0 0 16px ${sc.glow}` : 'none',
+                          backgroundColor: isCurrent ? `${sc.text}18` : isCompleted ? `${sc.text}0c` : 'rgba(255,255,255,0.02)',
+                          borderColor: isCurrent ? `${sc.text}40` : isCompleted ? `${sc.text}18` : 'rgba(255,255,255,0.05)',
+                          boxShadow: isCurrent ? `0 0 12px ${sc.glow}` : 'none',
                         }}
                       >
-                        <ws.Icon
-                          className="w-4 h-4"
-                          style={{ color: isCurrent ? sc.text : isCompleted ? `${sc.text}` : 'rgba(255,255,255,0.2)' }}
-                        />
+                        <ws.Icon className="w-3.5 h-3.5" style={{ color: isCurrent ? sc.text : isCompleted ? sc.text : 'rgba(255,255,255,0.15)' }} />
                       </div>
-                      <span
-                        className={`text-[7px] font-bold text-center leading-tight tracking-wider uppercase ${
-                          isCurrent ? 'text-white/80' : isCompleted ? 'text-white/40' : 'text-white/15'
-                        }`}
-                      >
-                        {ws.title}
-                      </span>
-                      {isCurrent && room.currentProcedure?.startTime && (
-                        <span className="text-[8px] font-mono mt-0.5" style={{ color: sc.text }}>{room.currentProcedure.startTime}</span>
-                      )}
-                      {isCurrent && (
-                        <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-md mt-1" style={{ color: sc.text, backgroundColor: `${sc.text}15` }}>LIVE</span>
-                      )}
+                      <span className={`text-[6px] font-bold text-center leading-tight tracking-wider uppercase ${isCurrent ? 'text-white/70' : isCompleted ? 'text-white/30' : 'text-white/10'}`}>{ws.title}</span>
+                      {isCurrent && <span className="text-[6px] font-bold px-1 py-0.5 rounded mt-0.5" style={{ color: sc.text, backgroundColor: `${sc.text}12` }}>LIVE</span>}
                     </div>
-                    {/* Connector line */}
                     {i < WORKFLOW_STEPS.length - 1 && (
-                      <div
-                        className="h-[2px] flex-shrink-0 rounded-full"
-                        style={{
-                          width: 16,
-                          backgroundColor: i < stepIndex ? `${sc.text}40` : 'rgba(255,255,255,0.06)',
-                        }}
-                      />
+                      <div className="h-[1.5px] flex-shrink-0 rounded-full mt-4" style={{ width: 10, backgroundColor: i < stepIndex ? `${sc.text}35` : 'rgba(255,255,255,0.04)' }} />
                     )}
                   </React.Fragment>
                 );
@@ -306,85 +237,48 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
             </div>
           </div>
 
-          {/* ---- Team + Times ---- */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Team */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="w-4 h-4 text-white/25" />
-                <h3 className="text-[11px] font-black tracking-[0.15em] uppercase text-white/50">Tym</h3>
+          {/* Tym + Casy -- horizontal layout */}
+          <div className="flex gap-3">
+            {/* Team - only anesteziolog + sestra */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-3.5 h-3.5 text-white/20" />
+                <h3 className="text-[9px] font-black tracking-[0.15em] uppercase text-white/40">Tym</h3>
               </div>
-              <div className="space-y-2">
+              <div className="flex gap-2">
                 {[
-                  { label: 'LEKAR', name: room.staff?.doctor?.name, color: '#67C2FF', icon: User },
                   { label: 'ANESTEZIOLOG', name: room.staff?.anesthesiologist?.name, color: '#A78BFA', icon: Syringe },
                   { label: 'SESTRA', name: room.staff?.nurse?.name, color: '#2DD4BF', icon: Users },
                 ].map((member) => (
-                  <div
-                    key={member.label}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl border bg-white/[0.02] border-white/[0.06]"
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center border"
-                      style={{ backgroundColor: `${member.color}10`, borderColor: `${member.color}25` }}
-                    >
+                  <div key={member.label} className="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl border bg-white/[0.02] border-white/[0.05]">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center border flex-shrink-0" style={{ backgroundColor: `${member.color}0c`, borderColor: `${member.color}20` }}>
                       <member.icon className="w-3.5 h-3.5" style={{ color: member.color }} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[8px] font-black tracking-[0.15em] uppercase text-white/30">{member.label}</p>
-                      <p className={`text-[11px] font-bold truncate ${member.name ? 'text-white/70' : 'text-white/20 italic'}`}>
-                        {member.name || 'Neprirazeno'}
-                      </p>
+                      <p className="text-[7px] font-black tracking-[0.12em] uppercase text-white/25">{member.label}</p>
+                      <p className={`text-[10px] font-bold truncate ${member.name ? 'text-white/60' : 'text-white/15 italic'}`}>{member.name || 'Neprirazeno'}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Times + Patient */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-4 h-4 text-white/25" />
-                <h3 className="text-[11px] font-black tracking-[0.15em] uppercase text-white/50">Casy</h3>
+            {/* Times */}
+            <div className="flex-shrink-0">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-3.5 h-3.5 text-white/20" />
+                <h3 className="text-[9px] font-black tracking-[0.15em] uppercase text-white/40">Casy</h3>
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div className="rounded-xl border bg-white/[0.02] border-white/[0.06] p-3 text-center">
-                  <p className="text-[8px] font-black tracking-[0.15em] uppercase text-white/25 mb-1">ZACATEK</p>
-                  <p className="text-xl font-black font-mono tracking-wider text-white/80">{room.currentProcedure?.startTime || '--:--'}</p>
+              <div className="flex gap-2">
+                <div className="rounded-xl border bg-white/[0.02] border-white/[0.05] px-4 py-2.5 text-center min-w-[80px]">
+                  <p className="text-[7px] font-black tracking-[0.12em] uppercase text-white/20 mb-0.5">ZACATEK</p>
+                  <p className="text-lg font-black font-mono tracking-wider text-white/70">{room.currentProcedure?.startTime || '--:--'}</p>
                 </div>
-                <div className="rounded-xl border bg-white/[0.02] border-white/[0.06] p-3 text-center">
-                  <p className="text-[8px] font-black tracking-[0.15em] uppercase text-white/25 mb-1">ODHAD</p>
-                  <p className="text-xl font-black font-mono tracking-wider" style={{ color: isActive ? colors.text : 'rgba(255,255,255,0.3)' }}>{endTimeStr}</p>
+                <div className="rounded-xl border bg-white/[0.02] border-white/[0.05] px-4 py-2.5 text-center min-w-[80px]">
+                  <p className="text-[7px] font-black tracking-[0.12em] uppercase text-white/20 mb-0.5">ODHAD</p>
+                  <p className="text-lg font-black font-mono tracking-wider" style={{ color: isActive ? themeColor : 'rgba(255,255,255,0.25)' }}>{endTimeStr}</p>
                 </div>
               </div>
-
-              {/* Patient */}
-              {room.currentPatient && (
-                <div className="rounded-xl border bg-white/[0.02] border-white/[0.06] p-3">
-                  <p className="text-[8px] font-black tracking-[0.15em] uppercase text-white/25 mb-2">PACIENT</p>
-                  <div className="space-y-1">
-                    <p className="text-[12px] font-bold text-white/70">{room.currentPatient.name}</p>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[9px] text-white/30">ID: {room.currentPatient.id}</span>
-                      <span className="text-[9px] text-white/30">Vek: {room.currentPatient.age}</span>
-                      {room.currentPatient.bloodType && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-                          {room.currentPatient.bloodType}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Procedure */}
-              {room.currentProcedure && (
-                <div className="rounded-xl border bg-white/[0.02] border-white/[0.06] p-3 mt-2">
-                  <p className="text-[8px] font-black tracking-[0.15em] uppercase text-white/25 mb-1">VYKON</p>
-                  <p className="text-[12px] font-bold text-white/70">{room.currentProcedure.name}</p>
-                  <p className="text-[9px] text-white/30 mt-0.5">Odh. delka: {room.currentProcedure.estimatedDuration} min</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
