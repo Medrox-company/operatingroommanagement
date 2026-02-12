@@ -557,18 +557,22 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           {[
             { label: 'OPERACE', value: stats.operations, color: '#34C759', dot: true },
             { label: 'UKLID', value: stats.cleaning, color: '#FBBF24', dot: true },
-            { label: 'VOLNE', value: stats.free, color: '#00D8C1', highlight: true },
-            { label: 'HOTOVO', value: stats.completed, color: '#818CF8', dot: true },
+            { label: 'VOLNE', value: stats.free, color: '#00D8C1', highlight: false, dot: true },
+            { label: 'DOKONCENO', value: stats.completed, color: '#818CF8', dot: true },
+            { label: 'LEKARI PRACUJI', value: stats.doctors, color: '#A78BFA', icon: Users, dot: false },
+            { label: 'SESTRY PRACUJI', value: stats.nurses, color: '#2DD4BF', icon: Users, dot: false },
+            { label: 'EMERGENCY', value: stats.emergency, color: '#FF3B30', highlight: stats.emergency > 0, dot: true },
           ].map((s) => (
             <div
               key={s.label}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider ${
-                s.highlight ? 'bg-[#00D8C1]/10 border border-[#00D8C1]/25 text-[#00D8C1]' : 'bg-white/[0.03] border border-white/[0.06] text-white/50'
+                s.highlight ? 'bg-red-500/15 border border-red-500/30 text-red-400 animate-pulse' : 'bg-white/[0.03] border border-white/[0.06] text-white/50'
               }`}
             >
               {s.dot && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />}
-              <span className="font-mono font-black">{s.value}</span>
-              <span className="text-[7px] uppercase tracking-widest opacity-60 hidden xl:inline">{s.label}</span>
+              {s.icon && <s.icon className="w-3 h-3 flex-shrink-0" style={{ color: s.color }} />}
+              <span className="uppercase">{s.label}</span>
+              <span className="font-black">{s.value}</span>
             </div>
           ))}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[9px] font-bold text-white/40">
@@ -764,13 +768,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   onClick={() => setSelectedRoom(room)}
                 >
                   <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/[0.06] bg-black/20 group-hover:bg-white/[0.02] transition-colors" style={{ width: ROOM_LABEL_WIDTH }}>
-                    <div className="relative flex-shrink-0">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center border" style={{ backgroundColor: isActive ? `${colors.text}12` : 'rgba(255,255,255,0.03)', borderColor: isActive ? `${colors.text}30` : 'rgba(255,255,255,0.06)' }}>
-                        {isActive ? <Activity className="w-3.5 h-3.5" style={{ color: colors.text }} /> : <div className="w-2 h-2 rounded-full bg-white/10" />}
-                      </div>
-                      {isActive && (
-                        <motion.div className="absolute inset-0 rounded-full border" style={{ borderColor: `${colors.text}50` }} animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0, 0.4] }} transition={{ duration: 2.5, repeat: Infinity }} />
-                      )}
+                    <div className="relative flex-shrink-0 flex gap-1.5">
+                      {/* Doktor indicator */}
+                      <div className={`w-3 h-3 rounded-full border ${room.staff?.doctor?.name && isActive ? 'bg-orange-500 border-orange-500' : 'bg-gray-600 border-gray-600'}`} />
+                      {/* Nurse indicator */}
+                      <div className={`w-3 h-3 rounded-full border ${room.staff?.nurse?.name && isActive ? 'bg-green-500 border-green-500' : 'bg-gray-600 border-gray-600'}`} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={`text-sm font-bold tracking-tight uppercase truncate leading-tight ${isActive ? 'text-white/85' : 'text-white/45'}`}>{room.name}</p>
@@ -798,7 +800,24 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       >
                         <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}`, boxShadow: `0 0 20px ${colors.glow}` }} />
                         <motion.div className="absolute top-0 bottom-0 left-0 rounded-l-lg" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }} style={{ background: `linear-gradient(90deg, ${colors.fill}, ${colors.bg})` }} />
-                        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `repeating-linear-gradient(135deg, transparent, transparent 6px, ${colors.text} 6px, ${colors.text} 7px)` }} />
+                        <div 
+                          className="absolute inset-0 opacity-[0.12]" 
+                          style={{ 
+                            backgroundImage: `repeating-linear-gradient(
+                              45deg, 
+                              transparent, 
+                              transparent 8px, 
+                              ${colors.text} 8px, 
+                              ${colors.text} 9px
+                            ), repeating-linear-gradient(
+                              -45deg, 
+                              transparent, 
+                              transparent 8px, 
+                              ${colors.text} 8px, 
+                              ${colors.text} 9px
+                            )` 
+                          }} 
+                        />
                         <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg" style={{ backgroundColor: colors.text }} />
                         <div className="relative flex items-center h-full px-3 gap-2 z-10">
                           <span className="text-[10px] font-bold uppercase tracking-wide truncate" style={{ color: colors.text }}>{step.title}</span>
