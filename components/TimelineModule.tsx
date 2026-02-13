@@ -26,13 +26,13 @@ const hourLabel = (h: number) => `${h < 10 ? '0' : ''}${h}:00`;
 
 /* --- Step colors --- */
 const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string }> = {
-  0: { bg: 'rgba(167,139,250,0.15)', fill: 'rgba(167,139,250,0.35)', border: 'rgba(167,139,250,0.40)', text: '#A78BFA', glow: 'rgba(167,139,250,0.15)' },
-  1: { bg: 'rgba(45,212,191,0.15)', fill: 'rgba(45,212,191,0.35)', border: 'rgba(45,212,191,0.40)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.15)' },
-  2: { bg: 'rgba(103,194,255,0.15)', fill: 'rgba(103,194,255,0.35)', border: 'rgba(103,194,255,0.40)', text: '#67C2FF', glow: 'rgba(103,194,255,0.15)' },
-  3: { bg: 'rgba(251,191,36,0.15)', fill: 'rgba(251,191,36,0.35)', border: 'rgba(251,191,36,0.40)', text: '#FBBF24', glow: 'rgba(251,191,36,0.15)' },
-  4: { bg: 'rgba(129,140,248,0.15)', fill: 'rgba(129,140,248,0.35)', border: 'rgba(129,140,248,0.40)', text: '#818CF8', glow: 'rgba(129,140,248,0.15)' },
-  5: { bg: 'rgba(91,101,220,0.15)', fill: 'rgba(91,101,220,0.35)', border: 'rgba(91,101,220,0.40)', text: '#5B65DC', glow: 'rgba(91,101,220,0.15)' },
-  6: { bg: 'rgba(52,199,89,0.06)', fill: 'rgba(52,199,89,0.12)', border: 'rgba(52,199,89,0.15)', text: '#34C759', glow: 'rgba(52,199,89,0.08)' },
+  0: { bg: 'rgba(167,139,250,0.25)', fill: 'rgba(167,139,250,0.55)', border: 'rgba(167,139,250,0.65)', text: '#A78BFA', glow: 'rgba(167,139,250,0.25)' },
+  1: { bg: 'rgba(45,212,191,0.25)', fill: 'rgba(45,212,191,0.55)', border: 'rgba(45,212,191,0.65)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.25)' },
+  2: { bg: 'rgba(103,194,255,0.25)', fill: 'rgba(103,194,255,0.55)', border: 'rgba(103,194,255,0.65)', text: '#67C2FF', glow: 'rgba(103,194,255,0.25)' },
+  3: { bg: 'rgba(251,191,36,0.25)', fill: 'rgba(251,191,36,0.55)', border: 'rgba(251,191,36,0.65)', text: '#FBBF24', glow: 'rgba(251,191,36,0.25)' },
+  4: { bg: 'rgba(129,140,248,0.25)', fill: 'rgba(129,140,248,0.55)', border: 'rgba(129,140,248,0.65)', text: '#818CF8', glow: 'rgba(129,140,248,0.25)' },
+  5: { bg: 'rgba(91,101,220,0.25)', fill: 'rgba(91,101,220,0.55)', border: 'rgba(91,101,220,0.65)', text: '#5B65DC', glow: 'rgba(91,101,220,0.25)' },
+  6: { bg: 'rgba(52,199,89,0.15)', fill: 'rgba(52,199,89,0.25)', border: 'rgba(52,199,89,0.35)', text: '#34C759', glow: 'rgba(52,199,89,0.18)' },
 };
 
 /* ============================== */
