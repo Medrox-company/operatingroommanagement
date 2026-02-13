@@ -24,15 +24,15 @@ const getTimePercent = (date: Date) => (getMinutesFrom7(date) / (HOURS_COUNT * 6
 
 const hourLabel = (h: number) => `${h < 10 ? '0' : ''}${h}:00`;
 
-/* --- Step colors --- */
-const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; leftBorder: string }> = {
-  0: { bg: 'rgba(167,139,250,0.18)', fill: 'rgba(167,139,250,0.35)', border: 'rgba(167,139,250,0.30)', text: '#A78BFA', glow: 'rgba(167,139,250,0.3)', leftBorder: '#A78BFA' },
-  1: { bg: 'rgba(45,212,191,0.18)', fill: 'rgba(45,212,191,0.35)', border: 'rgba(45,212,191,0.30)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.3)', leftBorder: '#2DD4BF' },
-  2: { bg: 'rgba(103,194,255,0.18)', fill: 'rgba(103,194,255,0.35)', border: 'rgba(103,194,255,0.30)', text: '#67C2FF', glow: 'rgba(103,194,255,0.3)', leftBorder: '#67C2FF' },
-  3: { bg: 'rgba(251,191,36,0.18)', fill: 'rgba(251,191,36,0.35)', border: 'rgba(251,191,36,0.30)', text: '#FBBF24', glow: 'rgba(251,191,36,0.3)', leftBorder: '#FBBF24' },
-  4: { bg: 'rgba(129,140,248,0.18)', fill: 'rgba(129,140,248,0.35)', border: 'rgba(129,140,248,0.30)', text: '#818CF8', glow: 'rgba(129,140,248,0.3)', leftBorder: '#818CF8' },
-  5: { bg: 'rgba(91,101,220,0.18)', fill: 'rgba(91,101,220,0.35)', border: 'rgba(91,101,220,0.30)', text: '#5B65DC', glow: 'rgba(91,101,220,0.3)', leftBorder: '#5B65DC' },
-  6: { bg: 'rgba(52,199,89,0.12)', fill: 'rgba(52,199,89,0.20)', border: 'rgba(52,199,89,0.25)', text: '#34C759', glow: 'rgba(52,199,89,0.2)', leftBorder: '#34C759' },
+/* --- Step colors (Soft lime/mint green palette inspired by modern schedulers) --- */
+const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
+  0: { bg: 'rgba(190,242,100,0.22)', fill: 'rgba(190,242,100,0.45)', border: 'rgba(190,242,100,0.15)', text: '#BEF264', glow: 'rgba(190,242,100,0.4)', solid: '#BEF264' },
+  1: { bg: 'rgba(134,239,172,0.22)', fill: 'rgba(134,239,172,0.45)', border: 'rgba(134,239,172,0.15)', text: '#86EFAC', glow: 'rgba(134,239,172,0.4)', solid: '#86EFAC' },
+  2: { bg: 'rgba(103,232,249,0.22)', fill: 'rgba(103,232,249,0.45)', border: 'rgba(103,232,249,0.15)', text: '#67E8F9', glow: 'rgba(103,232,249,0.4)', solid: '#67E8F9' },
+  3: { bg: 'rgba(253,224,71,0.22)', fill: 'rgba(253,224,71,0.45)', border: 'rgba(253,224,71,0.15)', text: '#FDE047', glow: 'rgba(253,224,71,0.4)', solid: '#FDE047' },
+  4: { bg: 'rgba(165,180,252,0.22)', fill: 'rgba(165,180,252,0.45)', border: 'rgba(165,180,252,0.15)', text: '#A5B4FC', glow: 'rgba(165,180,252,0.4)', solid: '#A5B4FC' },
+  5: { bg: 'rgba(196,181,253,0.22)', fill: 'rgba(196,181,253,0.45)', border: 'rgba(196,181,253,0.15)', text: '#C4B5FD', glow: 'rgba(196,181,253,0.4)', solid: '#C4B5FD' },
+  6: { bg: 'rgba(134,239,172,0.25)', fill: 'rgba(134,239,172,0.50)', border: 'rgba(134,239,172,0.18)', text: '#86EFAC', glow: 'rgba(134,239,172,0.5)', solid: '#86EFAC' },
 };
 
 /* ============================== */
@@ -790,48 +790,93 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
                     {isActive && (
                       <motion.div
-                        initial={{ opacity: 0, scaleX: 0.85 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.5, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-[3px] bottom-[3px] rounded-lg overflow-hidden"
-                        style={{ left: `${Math.max(0, boxLeftPct)}%`, width: `${boxWidthPct}%`, transformOrigin: 'left center' }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6, delay: roomIndex * 0.03, ease: [0.34, 1.56, 0.64, 1] }}
+                        className="absolute top-[4px] bottom-[4px] overflow-hidden"
+                        style={{ 
+                          left: `${Math.max(0, boxLeftPct)}%`, 
+                          width: `${boxWidthPct}%`, 
+                          transformOrigin: 'left center',
+                          borderRadius: '20px'
+                        }}
                       >
-                        {/* Solid background with darker base */}
-                        <div className="absolute inset-0 rounded-lg" style={{ 
-                          background: `linear-gradient(135deg, ${colors.bg} 0%, rgba(0,0,0,0.4) 100%)`,
-                          border: `1px solid ${colors.border}`, 
-                          boxShadow: `0 2px 12px ${colors.glow}, 0 0 0 1px rgba(0,0,0,0.3) inset` 
-                        }} />
-                        
-                        {/* Progress fill */}
-                        <motion.div 
-                          className="absolute top-0 bottom-0 left-0 rounded-l-lg" 
-                          initial={{ width: 0 }} 
-                          animate={{ width: `${progressPct}%` }} 
-                          transition={{ duration: 1.2, ease: 'easeOut' }} 
-                          style={{ background: `linear-gradient(90deg, ${colors.fill}, ${colors.bg})` }} 
+                        {/* Smooth pill-shaped background with glow */}
+                        <div 
+                          className="absolute inset-0" 
+                          style={{ 
+                            background: colors.bg,
+                            borderRadius: '20px',
+                            boxShadow: `0 4px 24px ${colors.glow}, 0 0 0 1px ${colors.border} inset`,
+                          }} 
                         />
                         
-                        {/* Prominent left border */}
-                        <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ 
-                          backgroundColor: colors.leftBorder,
-                          boxShadow: `0 0 8px ${colors.leftBorder}80`
-                        }} />
+                        {/* Animated progress fill */}
+                        <motion.div 
+                          className="absolute inset-0" 
+                          initial={{ clipPath: 'inset(0 100% 0 0 round 20px)' }} 
+                          animate={{ clipPath: `inset(0 ${100 - progressPct}% 0 0 round 20px)` }} 
+                          transition={{ duration: 1.5, ease: [0.45, 0, 0.15, 1] }} 
+                          style={{ 
+                            background: `linear-gradient(90deg, ${colors.solid}, ${colors.fill})`,
+                            borderRadius: '20px',
+                            boxShadow: `0 0 20px ${colors.glow}`
+                          }} 
+                        />
                         
-                        {/* Content */}
-                        <div className="relative flex items-center h-full px-3 gap-2 z-10">
-                          <span className="text-[10px] font-bold uppercase tracking-wide truncate text-white/90">{step.title}</span>
-                          {room.currentPatient && (
+                        {/* Content overlay */}
+                        <div className="relative flex items-center h-full px-4 gap-2.5 z-10">
+                          <span 
+                            className="text-[11px] font-bold tracking-tight truncate"
+                            style={{ 
+                              color: progressPct > 30 ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.95)',
+                              textShadow: progressPct > 30 ? 'none' : `0 1px 3px ${colors.glow}`
+                            }}
+                          >
+                            {step.title}
+                          </span>
+                          {room.currentPatient && boxWidthPct > 8 && (
                             <>
-                              <div className="w-px h-3 flex-shrink-0 bg-white/20" />
-                              <span className="text-[9px] text-white/50 truncate">{room.currentPatient.name}</span>
+                              <div 
+                                className="w-px h-3.5 flex-shrink-0" 
+                                style={{ 
+                                  backgroundColor: progressPct > 30 ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)'
+                                }} 
+                              />
+                              <span 
+                                className="text-[10px] font-medium truncate"
+                                style={{ 
+                                  color: progressPct > 30 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)'
+                                }}
+                              >
+                                {room.currentPatient.name}
+                              </span>
                             </>
                           )}
-                          {boxWidthPct > 6 && (
+                          {boxWidthPct > 12 && (
                             <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
-                              <span className="text-[9px] font-mono font-medium text-white/30">{room.currentProcedure?.startTime}</span>
-                              <span className="text-[7px] text-white/20">-</span>
-                              <span className="text-[9px] font-mono font-medium text-white/50">
+                              <span 
+                                className="text-[10px] font-mono font-medium"
+                                style={{ 
+                                  color: progressPct > 30 ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.5)'
+                                }}
+                              >
+                                {room.currentProcedure?.startTime}
+                              </span>
+                              <span 
+                                className="text-[8px]"
+                                style={{ 
+                                  color: progressPct > 30 ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'
+                                }}
+                              >
+                                -
+                              </span>
+                              <span 
+                                className="text-[10px] font-mono font-semibold"
+                                style={{ 
+                                  color: progressPct > 30 ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)'
+                                }}
+                              >
                                 {room.estimatedEndTime
                                   ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                                   : room.currentProcedure?.estimatedDuration
