@@ -24,15 +24,15 @@ const getTimePercent = (date: Date) => (getMinutesFrom7(date) / (HOURS_COUNT * 6
 
 const hourLabel = (h: number) => `${h < 10 ? '0' : ''}${h}:00`;
 
-/* --- Step colors (Soft lime/mint green palette inspired by modern schedulers) --- */
+/* --- Step colors matching WORKFLOW_STEPS status colors --- */
 const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
-  0: { bg: 'rgba(190,242,100,0.22)', fill: 'rgba(190,242,100,0.45)', border: 'rgba(190,242,100,0.15)', text: '#BEF264', glow: 'rgba(190,242,100,0.4)', solid: '#BEF264' },
-  1: { bg: 'rgba(134,239,172,0.22)', fill: 'rgba(134,239,172,0.45)', border: 'rgba(134,239,172,0.15)', text: '#86EFAC', glow: 'rgba(134,239,172,0.4)', solid: '#86EFAC' },
-  2: { bg: 'rgba(103,232,249,0.22)', fill: 'rgba(103,232,249,0.45)', border: 'rgba(103,232,249,0.15)', text: '#67E8F9', glow: 'rgba(103,232,249,0.4)', solid: '#67E8F9' },
-  3: { bg: 'rgba(253,224,71,0.22)', fill: 'rgba(253,224,71,0.45)', border: 'rgba(253,224,71,0.15)', text: '#FDE047', glow: 'rgba(253,224,71,0.4)', solid: '#FDE047' },
-  4: { bg: 'rgba(165,180,252,0.22)', fill: 'rgba(165,180,252,0.45)', border: 'rgba(165,180,252,0.15)', text: '#A5B4FC', glow: 'rgba(165,180,252,0.4)', solid: '#A5B4FC' },
-  5: { bg: 'rgba(196,181,253,0.22)', fill: 'rgba(196,181,253,0.45)', border: 'rgba(196,181,253,0.15)', text: '#C4B5FD', glow: 'rgba(196,181,253,0.4)', solid: '#C4B5FD' },
-  6: { bg: 'rgba(134,239,172,0.25)', fill: 'rgba(134,239,172,0.50)', border: 'rgba(134,239,172,0.18)', text: '#86EFAC', glow: 'rgba(134,239,172,0.5)', solid: '#86EFAC' },
+  0: { bg: 'rgba(167,139,250,0.20)', fill: 'rgba(167,139,250,0.45)', border: 'rgba(167,139,250,0.25)', text: '#A78BFA', glow: 'rgba(167,139,250,0.35)', solid: '#A78BFA' },
+  1: { bg: 'rgba(45,212,191,0.20)', fill: 'rgba(45,212,191,0.45)', border: 'rgba(45,212,191,0.25)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.35)', solid: '#2DD4BF' },
+  2: { bg: 'rgba(255,59,48,0.20)', fill: 'rgba(255,59,48,0.45)', border: 'rgba(255,59,48,0.25)', text: '#FF3B30', glow: 'rgba(255,59,48,0.35)', solid: '#FF3B30' },
+  3: { bg: 'rgba(251,191,36,0.20)', fill: 'rgba(251,191,36,0.45)', border: 'rgba(251,191,36,0.25)', text: '#FBBF24', glow: 'rgba(251,191,36,0.35)', solid: '#FBBF24' },
+  4: { bg: 'rgba(129,140,248,0.20)', fill: 'rgba(129,140,248,0.45)', border: 'rgba(129,140,248,0.25)', text: '#818CF8', glow: 'rgba(129,140,248,0.35)', solid: '#818CF8' },
+  5: { bg: 'rgba(91,101,220,0.20)', fill: 'rgba(91,101,220,0.45)', border: 'rgba(91,101,220,0.25)', text: '#5B65DC', glow: 'rgba(91,101,220,0.35)', solid: '#5B65DC' },
+  6: { bg: 'rgba(52,199,89,0.20)', fill: 'rgba(52,199,89,0.45)', border: 'rgba(52,199,89,0.25)', text: '#34C759', glow: 'rgba(52,199,89,0.35)', solid: '#34C759' },
 };
 
 /* ============================== */
@@ -790,37 +790,37 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
                     {isActive && (
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.6, delay: roomIndex * 0.03, ease: [0.34, 1.56, 0.64, 1] }}
-                        className="absolute top-[4px] bottom-[4px] overflow-hidden"
+                        transition={{ duration: 0.5, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute top-[3px] bottom-[3px] overflow-hidden"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`, 
                           transformOrigin: 'left center',
-                          borderRadius: '20px'
+                          borderRadius: '8px'
                         }}
                       >
-                        {/* Smooth pill-shaped background with glow */}
+                        {/* Background with subtle glow */}
                         <div 
                           className="absolute inset-0" 
                           style={{ 
                             background: colors.bg,
-                            borderRadius: '20px',
-                            boxShadow: `0 4px 24px ${colors.glow}, 0 0 0 1px ${colors.border} inset`,
+                            borderRadius: '8px',
+                            boxShadow: `0 2px 16px ${colors.glow}, 0 0 0 1px ${colors.border} inset`,
                           }} 
                         />
                         
                         {/* Animated progress fill */}
                         <motion.div 
                           className="absolute inset-0" 
-                          initial={{ clipPath: 'inset(0 100% 0 0 round 20px)' }} 
-                          animate={{ clipPath: `inset(0 ${100 - progressPct}% 0 0 round 20px)` }} 
-                          transition={{ duration: 1.5, ease: [0.45, 0, 0.15, 1] }} 
+                          initial={{ clipPath: 'inset(0 100% 0 0 round 8px)' }} 
+                          animate={{ clipPath: `inset(0 ${100 - progressPct}% 0 0 round 8px)` }} 
+                          transition={{ duration: 1.2, ease: [0.45, 0, 0.15, 1] }} 
                           style={{ 
                             background: `linear-gradient(90deg, ${colors.solid}, ${colors.fill})`,
-                            borderRadius: '20px',
-                            boxShadow: `0 0 20px ${colors.glow}`
+                            borderRadius: '8px',
+                            boxShadow: `0 0 16px ${colors.glow}`
                           }} 
                         />
                         
