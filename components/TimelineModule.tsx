@@ -545,77 +545,70 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       </AnimatePresence>
 
       {/* ======== Header ======== */}
-      <header className="relative z-10 flex items-center justify-between gap-4 px-6 md:pl-32 md:pr-8 pt-6 pb-4 flex-shrink-0 border-b border-white/[0.08]">
-        <div className="flex items-center gap-5 min-w-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D8C1]/20 to-[#00D8C1]/5 flex items-center justify-center border border-[#00D8C1]/25">
-              <Shield className="w-5 h-5 text-[#00D8C1]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-[#00D8C1]/60 tracking-[0.2em] uppercase leading-none">Operating Room</span>
-              <h1 className="text-2xl font-extrabold tracking-tight leading-none mt-0.5">SCHEDULER</h1>
-            </div>
+      <header className="relative z-10 flex items-center justify-between gap-4 px-4 md:pl-28 md:pr-6 pt-5 pb-3 flex-shrink-0">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center gap-2 opacity-50">
+            <Shield className="w-4 h-4 text-[#00D8C1]" />
+            <span className="text-[9px] font-black text-[#00D8C1] tracking-[0.3em] uppercase hidden lg:inline">OPERATINGROOM CONTROL</span>
           </div>
+          <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">TIMELINE</h1>
         </div>
-        <div className="flex items-center gap-2.5 flex-shrink-0 flex-wrap justify-end">
+        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
           {[
-            { label: 'Active', value: stats.operations, color: '#34C759', icon: Activity },
-            { label: 'Clean', value: stats.cleaning, color: '#FBBF24', icon: Clock },
-            { label: 'Available', value: stats.free, color: '#00D8C1', highlight: true, icon: null },
-            { label: 'Complete', value: stats.completed, color: '#818CF8', icon: null },
+            { label: 'OPERACE', value: stats.operations, color: '#34C759', dot: true },
+            { label: 'UKLID', value: stats.cleaning, color: '#FBBF24', dot: true },
+            { label: 'VOLNE', value: stats.free, color: '#00D8C1', highlight: true },
+            { label: 'HOTOVO', value: stats.completed, color: '#818CF8', dot: true },
           ].map((s) => (
             <div
               key={s.label}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-semibold transition-all ${
-                s.highlight 
-                  ? 'bg-[#00D8C1]/12 border border-[#00D8C1]/30 text-[#00D8C1] shadow-[0_0_20px_rgba(0,216,193,0.15)]' 
-                  : 'bg-white/[0.04] border border-white/[0.08] text-white/60 hover:bg-white/[0.06]'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider ${
+                s.highlight ? 'bg-[#00D8C1]/10 border border-[#00D8C1]/25 text-[#00D8C1]' : 'bg-white/[0.03] border border-white/[0.06] text-white/50'
               }`}
             >
-              {s.icon && <s.icon className="w-3 h-3 flex-shrink-0" style={{ color: s.color }} />}
-              <span className="font-mono font-bold text-base">{s.value}</span>
-              <span className="text-[9px] tracking-wide hidden xl:inline">{s.label}</span>
+              {s.dot && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />}
+              <span className="font-mono font-black">{s.value}</span>
+              <span className="text-[7px] uppercase tracking-widest opacity-60 hidden xl:inline">{s.label}</span>
             </div>
           ))}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[10px] font-semibold text-white/50">
-            <Users className="w-3 h-3 text-white/40" />
-            <span className="font-mono font-bold">{stats.doctors + stats.nurses}</span>
-            <span className="text-[9px] tracking-wide hidden md:inline">Staff</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[9px] font-bold text-white/40">
+            <Users className="w-3 h-3 text-white/30" />
+            <span className="font-mono">{stats.doctors}</span>
+            <span className="text-[7px] opacity-50">{'/'}</span>
+            <span className="font-mono">{stats.nurses}</span>
           </div>
           {stats.emergency > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/12 border border-red-500/30 text-red-400 text-[10px] font-semibold shadow-[0_0_20px_rgba(255,59,48,0.15)] animate-pulse">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span className="font-mono font-bold text-base">{stats.emergency}</span>
-              <span className="text-[9px] tracking-wide hidden xl:inline">Emergency</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/25 text-red-400 text-[9px] font-bold">
+              <AlertTriangle className="w-3 h-3" />
+              <span className="font-mono font-black">{stats.emergency}</span>
+              <span className="text-[7px] uppercase tracking-widest opacity-60 hidden xl:inline">EMERGENCY</span>
             </div>
           )}
-          <div className="w-px h-6 bg-white/[0.12] mx-1.5" />
-          <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg">
-            <CalendarDays className="w-3.5 h-3.5 text-white/30" />
-            <span className="text-[10px] font-semibold text-white/50 tracking-wide">
-              {currentTime.toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'short' })}
+          <div className="w-px h-5 bg-white/10 mx-1" />
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-full">
+            <CalendarDays className="w-3 h-3 text-white/25" />
+            <span className="text-[9px] font-bold text-white/35 tracking-wider">
+              {currentTime.toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric' })}
             </span>
           </div>
-          <div className="flex items-center gap-2.5 px-4 py-2 bg-[#00D8C1]/8 border border-[#00D8C1]/25 rounded-lg shadow-[0_0_16px_rgba(0,216,193,0.1)]">
-            <Clock className="w-4 h-4 text-[#00D8C1]" />
-            <span className="text-base font-mono font-bold tracking-wider text-[#00D8C1]">{timeStr}</span>
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-full">
+            <Clock className="w-3.5 h-3.5 text-[#00D8C1]" />
+            <span className="text-sm font-mono font-black tracking-widest text-white">{timeStr}</span>
           </div>
         </div>
       </header>
 
       {/* ======== Main Timeline ======== */}
-      <div className="flex-1 min-h-0 flex flex-col relative z-10 px-6 md:pl-32 md:pr-8 pb-4 overflow-hidden">
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-br from-white/[0.03] via-transparent to-white/[0.01] shadow-2xl">
+      <div className="flex-1 min-h-0 flex flex-col relative z-10 px-4 md:pl-28 md:pr-6 pb-2 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent">
 
           {/* Time Axis Header */}
-          <div className="flex flex-shrink-0 border-b border-white/[0.10] bg-black/40 backdrop-blur-md">
-            <div className="flex-shrink-0 flex items-center px-5 gap-2.5 border-r border-white/[0.10]" style={{ width: ROOM_LABEL_WIDTH }}>
-              <div className="w-8 h-8 rounded-lg bg-[#00D8C1]/10 border border-[#00D8C1]/20 flex items-center justify-center">
-                <Stethoscope className="w-4 h-4 text-[#00D8C1]" />
-              </div>
-              <span className="text-[10px] font-bold tracking-wide text-white/50">Operating Rooms</span>
+          <div className="flex flex-shrink-0 border-b border-white/[0.08] bg-black/30 backdrop-blur-sm">
+            <div className="flex-shrink-0 flex items-center px-4 gap-2 border-r border-white/[0.08]" style={{ width: ROOM_LABEL_WIDTH }}>
+              <Stethoscope className="w-3.5 h-3.5 text-[#00D8C1]/40" />
+              <span className="text-[9px] font-black tracking-[0.15em] uppercase text-white/30">OPERACNI SALY</span>
             </div>
-            <div className="flex-1 flex items-center h-12 relative">
+            <div className="flex-1 flex items-center h-10 relative">
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / HOURS_COUNT;
@@ -630,14 +623,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 })();
                 return (
                   <div key={`h-${hour}-${i}`} className="absolute top-0 h-full flex items-center" style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}>
-                    <div className={`w-px h-full ${isNight ? 'bg-white/[0.04]' : 'bg-white/[0.08]'}`} />
+                    <div className={`w-px h-full ${isNight ? 'bg-white/[0.03]' : 'bg-white/[0.06]'}`} />
                     {!isLast && (
                       isCurrentHour ? (
-                        <div className="ml-2.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#00D8C1] to-[#00D8C1]/90 shadow-[0_0_20px_rgba(0,216,193,0.4)] border border-[#00D8C1]/30">
-                          <span className="text-[11px] font-mono font-extrabold text-black tracking-wide">{shortTimeStr}</span>
+                        <div className="ml-2 px-2.5 py-1 rounded-lg bg-[#00D8C1] shadow-[0_0_16px_rgba(0,216,193,0.5)]">
+                          <span className="text-[10px] font-mono font-black text-black tracking-wider">{shortTimeStr}</span>
                         </div>
                       ) : (
-                        <span className={`ml-2.5 text-[10px] font-mono font-medium ${isNight ? 'text-white/[0.20]' : 'text-white/40'}`}>{hourLabel(hour)}</span>
+                        <span className={`ml-2 text-[10px] font-mono font-semibold ${isNight ? 'text-white/[0.15]' : 'text-white/35'}`}>{hourLabel(hour)}</span>
                       )
                     )}
                   </div>
@@ -654,19 +647,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             {/* Now indicator */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <motion.div 
-                  initial={{ opacity: 0, scaleY: 0.9 }} 
-                  animate={{ opacity: 1, scaleY: 1 }} 
-                  className="absolute top-0 bottom-0 z-30 pointer-events-none" 
-                  style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
-                >
-                  <div className="absolute -left-6 top-0 bottom-0 w-12 bg-[#00D8C1] opacity-[0.08] blur-2xl" />
-                  <div className="absolute -left-px top-0 bottom-0 w-[3px] rounded-full" style={{ background: 'linear-gradient(to bottom, #00D8C1 0%, #00D8C1E0 50%, #00D8C160 100%)' }} />
-                  <motion.div 
-                    className="absolute -left-[6px] -top-[2px] w-[15px] h-[15px] rounded-full bg-[#00D8C1] shadow-[0_0_16px_#00D8C1,0_0_32px_rgba(0,216,193,0.6)] border-2 border-black/20" 
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  />
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute top-0 bottom-0 z-30 pointer-events-none" style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}>
+                  <div className="absolute -left-5 top-0 bottom-0 w-10 bg-[#00D8C1] opacity-[0.06] blur-xl" />
+                  <div className="absolute -left-px top-0 bottom-0 w-[2px]" style={{ background: 'linear-gradient(to bottom, #00D8C1 0%, #00D8C180 50%, #00D8C140 100%)' }} />
+                  <div className="absolute -left-[5px] -top-[1px] w-[12px] h-[12px] rounded-full bg-[#00D8C1] shadow-[0_0_10px_#00D8C1,0_0_24px_rgba(0,216,193,0.5)]" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -779,33 +763,21 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   className="flex items-stretch flex-1 min-h-0 border-b border-white/[0.04] group hover:bg-white/[0.015] transition-colors duration-200 cursor-pointer"
                   onClick={() => setSelectedRoom(room)}
                 >
-                  <div className="flex-shrink-0 flex items-center gap-3.5 px-5 border-r border-white/[0.08] bg-black/30 group-hover:bg-white/[0.02] transition-all" style={{ width: ROOM_LABEL_WIDTH }}>
+                  <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/[0.06] bg-black/20 group-hover:bg-white/[0.02] transition-colors" style={{ width: ROOM_LABEL_WIDTH }}>
                     <div className="relative flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center border transition-all" style={{ 
-                        backgroundColor: isActive ? `${colors.text}15` : 'rgba(255,255,255,0.04)', 
-                        borderColor: isActive ? `${colors.text}35` : 'rgba(255,255,255,0.08)',
-                        boxShadow: isActive ? `0 0 16px ${colors.glow}` : 'none'
-                      }}>
-                        {isActive ? <Activity className="w-4 h-4" style={{ color: colors.text }} /> : <div className="w-2.5 h-2.5 rounded-full bg-white/15" />}
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center border" style={{ backgroundColor: isActive ? `${colors.text}12` : 'rgba(255,255,255,0.03)', borderColor: isActive ? `${colors.text}30` : 'rgba(255,255,255,0.06)' }}>
+                        {isActive ? <Activity className="w-3.5 h-3.5" style={{ color: colors.text }} /> : <div className="w-2 h-2 rounded-full bg-white/10" />}
                       </div>
                       {isActive && (
-                        <motion.div 
-                          className="absolute inset-0 rounded-lg border-2" 
-                          style={{ borderColor: `${colors.text}40` }} 
-                          animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0, 0.5] }} 
-                          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} 
-                        />
+                        <motion.div className="absolute inset-0 rounded-full border" style={{ borderColor: `${colors.text}50` }} animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0, 0.4] }} transition={{ duration: 2.5, repeat: Infinity }} />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className={`text-sm font-bold tracking-tight truncate leading-tight ${isActive ? 'text-white/90' : 'text-white/50'}`}>{room.name}</p>
+                      <p className={`text-sm font-bold tracking-tight uppercase truncate leading-tight ${isActive ? 'text-white/85' : 'text-white/45'}`}>{room.name}</p>
                       {isFree ? (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#00D8C1]" />
-                          <p className="text-[10px] font-medium text-[#00D8C1]/70 truncate">Available</p>
-                        </div>
+                        <p className="text-[9px] font-medium text-white/25 truncate">Volny</p>
                       ) : (
-                        <p className="text-[10px] font-medium truncate mt-0.5" style={{ color: `${colors.text}85` }}>{room.department}</p>
+                        <p className="text-[9px] font-medium truncate" style={{ color: `${colors.text}70` }}>{room.department}</p>
                       )}
                     </div>
                   </div>
@@ -818,46 +790,37 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
                     {isActive && (
                       <motion.div
-                        initial={{ opacity: 0, scaleX: 0.9 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.6, delay: roomIndex * 0.025, ease: [0.34, 1.2, 0.64, 1] }}
-                        className="absolute top-[4px] bottom-[4px] overflow-hidden group/bar"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute top-[3px] bottom-[3px] overflow-hidden"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`, 
                           transformOrigin: 'left center',
-                          borderRadius: '6px'
+                          borderRadius: '8px'
                         }}
                       >
-                        {/* Enhanced background with layered glow */}
+                        {/* Background with subtle glow */}
                         <div 
-                          className="absolute inset-0 transition-all duration-300" 
+                          className="absolute inset-0" 
                           style={{ 
-                            background: `linear-gradient(135deg, ${colors.bg} 0%, ${colors.bg}CC 100%)`,
-                            borderRadius: '6px',
-                            boxShadow: `0 3px 20px ${colors.glow}, 0 0 0 1px ${colors.border} inset, 0 1px 0 rgba(255,255,255,0.05) inset`,
+                            background: colors.bg,
+                            borderRadius: '8px',
+                            boxShadow: `0 2px 16px ${colors.glow}, 0 0 0 1px ${colors.border} inset`,
                           }} 
                         />
                         
-                        {/* Animated progress fill with enhanced gradient */}
+                        {/* Animated progress fill */}
                         <motion.div 
                           className="absolute inset-0" 
-                          initial={{ clipPath: 'inset(0 100% 0 0 round 6px)' }} 
-                          animate={{ clipPath: `inset(0 ${100 - progressPct}% 0 0 round 6px)` }} 
-                          transition={{ duration: 1.4, ease: [0.4, 0, 0.2, 1] }} 
+                          initial={{ clipPath: 'inset(0 100% 0 0 round 8px)' }} 
+                          animate={{ clipPath: `inset(0 ${100 - progressPct}% 0 0 round 8px)` }} 
+                          transition={{ duration: 1.2, ease: [0.45, 0, 0.15, 1] }} 
                           style={{ 
-                            background: `linear-gradient(90deg, ${colors.solid} 0%, ${colors.fill} 70%, ${colors.bg} 100%)`,
-                            borderRadius: '6px',
-                            boxShadow: `0 0 20px ${colors.glow}, 0 0 40px ${colors.glow}80`
-                          }} 
-                        />
-                        
-                        {/* Left accent border */}
-                        <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-md"
-                          style={{ 
-                            backgroundColor: colors.solid,
-                            boxShadow: `0 0 12px ${colors.solid}80`
+                            background: `linear-gradient(90deg, ${colors.solid}, ${colors.fill})`,
+                            borderRadius: '8px',
+                            boxShadow: `0 0 16px ${colors.glow}`
                           }} 
                         />
                         
