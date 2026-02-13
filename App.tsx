@@ -18,6 +18,8 @@ const App: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
 
+  console.log("[v0] App rendering with rooms:", MOCK_ROOMS.length, "currentView:", currentView);
+
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
   const updateRoomStep = (roomId: string, newStepIndex: number) => {
@@ -49,6 +51,9 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden" style={{ backgroundColor: '#000', color: '#fff' }}>
+      <div style={{ position: 'fixed', top: '10px', left: '10px', zIndex: 9999, padding: '10px', background: '#333', color: '#0f0', fontFamily: 'monospace', fontSize: '12px' }}>
+        APP LOADED ✓
+      </div>
       {/* Immersive Global Background Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <img
