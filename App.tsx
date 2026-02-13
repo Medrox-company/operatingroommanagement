@@ -18,8 +18,6 @@ const App: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
 
-  console.log("[v0] App rendering with rooms:", MOCK_ROOMS.length, "currentView:", currentView);
-
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
   const updateRoomStep = (roomId: string, newStepIndex: number) => {
@@ -50,10 +48,7 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-    <div className="flex h-screen w-full font-sans overflow-hidden" style={{ backgroundColor: '#000', color: '#fff' }}>
-      <div style={{ position: 'fixed', top: '10px', left: '10px', zIndex: 9999, padding: '10px', background: '#333', color: '#0f0', fontFamily: 'monospace', fontSize: '12px' }}>
-        APP LOADED ✓
-      </div>
+    <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
       {/* Immersive Global Background Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <img
@@ -61,17 +56,17 @@ const App: React.FC = () => {
           alt="Operating Environment"
           className="w-full h-full object-cover opacity-15 grayscale scale-105"
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, black, rgba(0,0,0,0.4), rgba(0,0,0,0.9))' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.95) 100%)' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/90" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.95)_100%)]" />
 
         {/* Subtle Texture Overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
+        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
       </div>
 
       {/* Atmospheric Edge Glows - Tuned Blue */}
       <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
-        <div className="absolute -left-40 top-0 bottom-0 w-[600px] blur-[180px] opacity-25" style={{ background: '#5B65DC' }} />
-        <div className="absolute -right-40 top-0 bottom-0 w-[600px] blur-[180px] opacity-25" style={{ background: '#5B65DC' }} />
+        <div className="absolute -left-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
+        <div className="absolute -right-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
       </div>
 
       <Sidebar currentView={currentView} onNavigate={(view) => {
