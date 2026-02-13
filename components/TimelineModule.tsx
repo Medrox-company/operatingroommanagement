@@ -213,3 +213,5 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     </div>
   );
 };
+
+export default TimelineModule;
