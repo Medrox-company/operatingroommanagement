@@ -25,14 +25,14 @@ const getTimePercent = (date: Date) => (getMinutesFrom7(date) / (HOURS_COUNT * 6
 const hourLabel = (h: number) => `${h < 10 ? '0' : ''}${h}:00`;
 
 /* --- Step colors --- */
-const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string }> = {
-  0: { bg: 'rgba(167,139,250,0.25)', fill: 'rgba(167,139,250,0.55)', border: 'rgba(167,139,250,0.65)', text: '#A78BFA', glow: 'rgba(167,139,250,0.25)' },
-  1: { bg: 'rgba(45,212,191,0.25)', fill: 'rgba(45,212,191,0.55)', border: 'rgba(45,212,191,0.65)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.25)' },
-  2: { bg: 'rgba(103,194,255,0.25)', fill: 'rgba(103,194,255,0.55)', border: 'rgba(103,194,255,0.65)', text: '#67C2FF', glow: 'rgba(103,194,255,0.25)' },
-  3: { bg: 'rgba(251,191,36,0.25)', fill: 'rgba(251,191,36,0.55)', border: 'rgba(251,191,36,0.65)', text: '#FBBF24', glow: 'rgba(251,191,36,0.25)' },
-  4: { bg: 'rgba(129,140,248,0.25)', fill: 'rgba(129,140,248,0.55)', border: 'rgba(129,140,248,0.65)', text: '#818CF8', glow: 'rgba(129,140,248,0.25)' },
-  5: { bg: 'rgba(91,101,220,0.25)', fill: 'rgba(91,101,220,0.55)', border: 'rgba(91,101,220,0.65)', text: '#5B65DC', glow: 'rgba(91,101,220,0.25)' },
-  6: { bg: 'rgba(52,199,89,0.15)', fill: 'rgba(52,199,89,0.25)', border: 'rgba(52,199,89,0.35)', text: '#34C759', glow: 'rgba(52,199,89,0.18)' },
+const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; leftBorder: string }> = {
+  0: { bg: 'rgba(167,139,250,0.18)', fill: 'rgba(167,139,250,0.35)', border: 'rgba(167,139,250,0.30)', text: '#A78BFA', glow: 'rgba(167,139,250,0.3)', leftBorder: '#A78BFA' },
+  1: { bg: 'rgba(45,212,191,0.18)', fill: 'rgba(45,212,191,0.35)', border: 'rgba(45,212,191,0.30)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.3)', leftBorder: '#2DD4BF' },
+  2: { bg: 'rgba(103,194,255,0.18)', fill: 'rgba(103,194,255,0.35)', border: 'rgba(103,194,255,0.30)', text: '#67C2FF', glow: 'rgba(103,194,255,0.3)', leftBorder: '#67C2FF' },
+  3: { bg: 'rgba(251,191,36,0.18)', fill: 'rgba(251,191,36,0.35)', border: 'rgba(251,191,36,0.30)', text: '#FBBF24', glow: 'rgba(251,191,36,0.3)', leftBorder: '#FBBF24' },
+  4: { bg: 'rgba(129,140,248,0.18)', fill: 'rgba(129,140,248,0.35)', border: 'rgba(129,140,248,0.30)', text: '#818CF8', glow: 'rgba(129,140,248,0.3)', leftBorder: '#818CF8' },
+  5: { bg: 'rgba(91,101,220,0.18)', fill: 'rgba(91,101,220,0.35)', border: 'rgba(91,101,220,0.30)', text: '#5B65DC', glow: 'rgba(91,101,220,0.3)', leftBorder: '#5B65DC' },
+  6: { bg: 'rgba(52,199,89,0.12)', fill: 'rgba(52,199,89,0.20)', border: 'rgba(52,199,89,0.25)', text: '#34C759', glow: 'rgba(52,199,89,0.2)', leftBorder: '#34C759' },
 };
 
 /* ============================== */
@@ -793,26 +793,45 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         initial={{ opacity: 0, scaleX: 0.85 }}
                         animate={{ opacity: 1, scaleX: 1 }}
                         transition={{ duration: 0.5, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-[2px] bottom-[2px] rounded-lg overflow-hidden"
+                        className="absolute top-[3px] bottom-[3px] rounded-lg overflow-hidden"
                         style={{ left: `${Math.max(0, boxLeftPct)}%`, width: `${boxWidthPct}%`, transformOrigin: 'left center' }}
                       >
-                        <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}`, boxShadow: `0 0 20px ${colors.glow}` }} />
-                        <motion.div className="absolute top-0 bottom-0 left-0 rounded-l-lg" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }} style={{ background: `linear-gradient(90deg, ${colors.fill}, ${colors.bg})` }} />
-                        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `repeating-linear-gradient(135deg, transparent, transparent 6px, ${colors.text} 6px, ${colors.text} 7px)` }} />
-                        <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg" style={{ backgroundColor: colors.text }} />
+                        {/* Solid background with darker base */}
+                        <div className="absolute inset-0 rounded-lg" style={{ 
+                          background: `linear-gradient(135deg, ${colors.bg} 0%, rgba(0,0,0,0.4) 100%)`,
+                          border: `1px solid ${colors.border}`, 
+                          boxShadow: `0 2px 12px ${colors.glow}, 0 0 0 1px rgba(0,0,0,0.3) inset` 
+                        }} />
+                        
+                        {/* Progress fill */}
+                        <motion.div 
+                          className="absolute top-0 bottom-0 left-0 rounded-l-lg" 
+                          initial={{ width: 0 }} 
+                          animate={{ width: `${progressPct}%` }} 
+                          transition={{ duration: 1.2, ease: 'easeOut' }} 
+                          style={{ background: `linear-gradient(90deg, ${colors.fill}, ${colors.bg})` }} 
+                        />
+                        
+                        {/* Prominent left border */}
+                        <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ 
+                          backgroundColor: colors.leftBorder,
+                          boxShadow: `0 0 8px ${colors.leftBorder}80`
+                        }} />
+                        
+                        {/* Content */}
                         <div className="relative flex items-center h-full px-3 gap-2 z-10">
-                          <span className="text-[10px] font-bold uppercase tracking-wide truncate" style={{ color: colors.text }}>{step.title}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wide truncate text-white/90">{step.title}</span>
                           {room.currentPatient && (
                             <>
-                              <div className="w-px h-3 flex-shrink-0" style={{ backgroundColor: `${colors.text}25` }} />
-                              <span className="text-[9px] text-white/35 truncate">{room.currentPatient.name}</span>
+                              <div className="w-px h-3 flex-shrink-0 bg-white/20" />
+                              <span className="text-[9px] text-white/50 truncate">{room.currentPatient.name}</span>
                             </>
                           )}
                           {boxWidthPct > 6 && (
                             <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
-                              <span className="text-[9px] font-mono font-medium text-white/25">{room.currentProcedure?.startTime}</span>
-                              <span className="text-[7px] text-white/15">-</span>
-                              <span className="text-[9px] font-mono font-medium" style={{ color: `${colors.text}80` }}>
+                              <span className="text-[9px] font-mono font-medium text-white/30">{room.currentProcedure?.startTime}</span>
+                              <span className="text-[7px] text-white/20">-</span>
+                              <span className="text-[9px] font-mono font-medium text-white/50">
                                 {room.estimatedEndTime
                                   ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                                   : room.currentProcedure?.estimatedDuration
