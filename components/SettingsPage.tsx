@@ -201,7 +201,7 @@ const SettingsPage: React.FC = () => {
                           transition={{ duration: 0.3 }}
                         >
                           <motion.div
-                            initial={{ color: '#94A3B8' }}
+                            initial={{ color: setting.accentColor }}
                             whileHover={{ color: setting.accentColor }}
                             transition={{ duration: 0.3 }}
                           >
