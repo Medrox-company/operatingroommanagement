@@ -94,7 +94,7 @@ const SettingsPage: React.FC = () => {
         {/* Settings Grid */}
         <div className="pb-20 px-2">
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ staggerChildren: 0.08, delayChildren: 0.15 }}
@@ -104,99 +104,153 @@ const SettingsPage: React.FC = () => {
               return (
                 <motion.div
                   key={setting.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: index * 0.08, duration: 0.4, ease: 'easeOut' }}
-                  whileHover={{ 
-                    scale: 1.02,
-                    transition: { duration: 0.3 }
-                  }}
-                  className="group relative cursor-pointer h-[340px]"
+                  whileHover={{ y: -12, transition: { duration: 0.3 } }}
+                  className="group relative cursor-pointer h-full"
                 >
-                  {/* Glow effect on hover */}
+                  {/* Multi-layer Glow Effect */}
                   <motion.div
-                    className="absolute -inset-1 z-0 rounded-[2.5rem] blur-xl pointer-events-none opacity-0 group-hover:opacity-60 transition-opacity duration-300"
+                    className="absolute -inset-0.5 z-0 rounded-[1.75rem] blur-2xl pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.4 }}
                     style={{
-                      background: `radial-gradient(ellipse at 50% 0%, ${setting.glowColor}, transparent 70%)`,
+                      background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${setting.glowColor}, transparent 80%)`,
                     }}
                   />
 
-                  {/* Main Card */}
-                  <div className="absolute inset-0 z-10 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] overflow-hidden group-hover:border-white/15 transition-all duration-300 p-6 flex flex-col"
+                  {/* Secondary Accent Glow */}
+                  <motion.div
+                    className="absolute -inset-1 z-0 rounded-[1.75rem] blur-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     style={{
-                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.2)`,
+                      background: `linear-gradient(135deg, ${setting.glowColor}, transparent)`,
+                    }}
+                  />
+
+                  {/* Main Card Container */}
+                  <div className="relative z-10 h-full rounded-[1.75rem] border border-white/8 bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl overflow-hidden group-hover:border-white/20 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center shadow-2xl"
+                    style={{
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 60px rgba(0,0,0,0.3)`,
                     }}
                   >
-                    {/* Gradient Background */}
+                    {/* Animated Gradient Underlay */}
                     <motion.div 
-                      className={`absolute inset-0 bg-gradient-to-br ${setting.color} rounded-[2.5rem] opacity-0 group-hover:opacity-[0.02] transition-opacity duration-300 pointer-events-none`}
+                      className={`absolute inset-0 bg-gradient-to-br ${setting.color} rounded-[1.75rem] opacity-0 group-hover:opacity-[0.04] transition-opacity duration-500 pointer-events-none`}
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 0.04 }}
                     />
 
                     {/* Top Accent Line */}
                     <motion.div
-                      className="absolute top-0 left-6 right-6 h-px z-20"
+                      className="absolute top-0 left-8 right-8 h-px z-20"
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.4 }}
                       style={{
-                        background: `linear-gradient(90deg, transparent, ${setting.accentColor}40, transparent)`,
+                        background: `linear-gradient(90deg, transparent, ${setting.accentColor}60, transparent)`,
                       }}
                     />
 
-                    {/* Content */}
-                    <div className="relative z-20 flex flex-col items-center h-full justify-center gap-5 w-full">
-                      {/* Icon Box */}
+                    {/* Content Container */}
+                    <div className="relative z-20 flex flex-col items-center h-full justify-center gap-6 w-full">
+                      {/* Icon Container - Enhanced Design */}
                       <motion.div
                         className="relative flex items-center justify-center"
                         initial={{ scale: 1 }}
-                        whileHover={{ scale: 1.08 }}
+                        whileHover={{ scale: 1.05 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                       >
+                        {/* Icon Background Rings */}
+                        <motion.div
+                          className="absolute w-32 h-32 rounded-full border border-white/10 group-hover:border-white/20 transition-colors"
+                          animate={{
+                            scale: [1, 1.05, 1],
+                            opacity: [0.3, 0.6, 0.3],
+                          }}
+                          transition={{ duration: 3, repeat: Infinity }}
+                        />
+                        <motion.div
+                          className="absolute w-24 h-24 rounded-full border border-white/5 group-hover:border-white/15 transition-colors"
+                          animate={{
+                            scale: [1.05, 1, 1.05],
+                            opacity: [0.5, 0.3, 0.5],
+                          }}
+                          transition={{ duration: 3, repeat: Infinity, delay: 0.2 }}
+                        />
+
                         {/* Main Icon Box */}
                         <motion.div
-                          className="w-20 h-20 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/20 transition-all duration-300"
+                          className="relative w-28 h-28 rounded-3xl border-2 border-white/15 flex items-center justify-center group-hover:border-white/30 transition-all duration-300"
                           style={{
-                            background: `linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))`,
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)`,
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 30px rgba(0,0,0,0.2)`,
                           }}
                           whileHover={{
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 24px ${setting.glowColor}`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 40px ${setting.glowColor}`,
                           }}
                           transition={{ duration: 0.3 }}
                         >
                           <motion.div
                             initial={{ color: '#94A3B8' }}
                             whileHover={{ color: setting.accentColor }}
-                            transition={{ duration: 0.3 }}
+                            transition={{ duration: 0.4 }}
                           >
-                            <Icon className="w-10 h-10" strokeWidth={1.5} />
+                            <Icon className="w-14 h-14 drop-shadow-lg" strokeWidth={1.5} />
                           </motion.div>
                         </motion.div>
                       </motion.div>
 
-                      {/* Text Content */}
-                      <div className="space-y-2 text-center flex-1 flex flex-col justify-center">
-                        <h3 className="text-lg font-bold tracking-tight text-white group-hover:text-white/95 transition-colors">
+                      {/* Text Content - Enhanced Typography */}
+                      <div className="space-y-3">
+                        <motion.h3 
+                          className="text-2xl font-black tracking-tight text-white group-hover:text-white transition-colors duration-300"
+                          initial={{ opacity: 0.9 }}
+                          whileHover={{ opacity: 1 }}
+                        >
                           {setting.title}
-                        </h3>
-                        <p className="text-xs text-white/40 group-hover:text-white/50 transition-colors leading-relaxed">
+                        </motion.h3>
+                        <motion.p 
+                          className="text-sm text-white/45 group-hover:text-white/55 transition-colors duration-300 leading-relaxed font-medium"
+                          initial={{ opacity: 0.7 }}
+                          whileHover={{ opacity: 0.85 }}
+                        >
                           {setting.description}
-                        </p>
+                        </motion.p>
                       </div>
 
-                      {/* Footer Arrow */}
+                      {/* Footer Divider & CTA */}
                       <motion.div 
-                        className="w-full pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors flex justify-center"
+                        className="w-full mt-6 pt-6 border-t border-white/5 group-hover:border-white/10 transition-colors duration-300"
+                        initial={{ opacity: 0.5 }}
+                        whileHover={{ opacity: 1 }}
                       >
                         <motion.div
-                          className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          animate={{ x: [0, 4, 0] }}
+                          className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          animate={{ x: [0, 6, 0] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
-                          <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
+                          <ArrowRight className="w-5 h-5" style={{ color: setting.accentColor }} />
                         </motion.div>
                       </motion.div>
                     </div>
+
+                    {/* Corner Accent Dots */}
+                    <motion.div
+                      className="absolute top-4 right-4 w-2 h-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: setting.accentColor }}
+                      initial={{ scale: 0 }}
+                      whileHover={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 600, damping: 10 }}
+                    />
+                    <motion.div
+                      className="absolute bottom-4 left-4 w-2 h-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: setting.accentColor }}
+                      initial={{ scale: 0 }}
+                      whileHover={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 600, damping: 10, delay: 0.1 }}
+                    />
                   </div>
                 </motion.div>
               );
