@@ -160,8 +160,8 @@ const SettingsPage: React.FC = () => {
                   <div className="relative h-full w-full z-10 p-6 flex flex-col">
                     
                     {/* Header */}
-                    <div className="w-full flex justify-between items-start min-w-0 gap-2 shrink-0 mb-4">
-                      <div className="flex flex-col min-w-0 flex-1">
+                    <div className="w-full flex justify-center items-center min-w-0 gap-2 shrink-0 mb-4">
+                      <div className="flex flex-col min-w-0 flex-1 text-center">
                         <motion.p 
                           className="text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors"
                           initial={{ color: '#64748B' }}
