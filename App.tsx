@@ -5,6 +5,7 @@ import TopBar from './components/TopBar';
 import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
 import PlaceholderView from './components/PlaceholderView';
+import SettingsPage from './components/SettingsPage';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
@@ -187,12 +188,15 @@ const App: React.FC = () => {
               />
             )}
             {currentView === 'settings' && (
-              <PlaceholderView
+              <motion.div
                 key="settings"
-                icon={Settings}
-                title="Nastavení"
-                description="Konfigurace systému a preferencí bude k dispozici v této sekci."
-              />
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50"
+              >
+                <SettingsPage />
+              </motion.div>
             )}
           </AnimatePresence>
         </main>
