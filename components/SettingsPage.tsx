@@ -120,16 +120,22 @@ const SettingsPage: React.FC = () => {
                     <div className="relative z-20 flex flex-col items-center h-full justify-center gap-4">
                       {/* Icon - Large and Centered */}
                       <motion.div
-                        className="w-24 h-24 rounded-3xl border-2 border-white/20 bg-white/[0.08] flex items-center justify-center group-hover:border-white/40 transition-all duration-300"
+                        className="w-24 h-24 rounded-3xl border-2 border-white/10 bg-white/[0.03] flex items-center justify-center group-hover:border-white/30 transition-all duration-300"
                         style={{
-                          boxShadow: `0 0 0 1px ${setting.accentColor}00`,
+                          boxShadow: `0 0 0 1px transparent`,
                         }}
                         whileHover={{
                           scale: 1.1,
-                          boxShadow: `0 0 30px ${setting.accentColor}50`,
+                          boxShadow: `0 0 30px ${setting.accentColor}40`,
                         }}
                       >
-                        <Icon className="w-12 h-12 transition-colors" style={{ color: setting.accentColor }} />
+                        <motion.div
+                          initial={{ color: '#94A3B8' }}
+                          whileHover={{ color: setting.accentColor }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Icon className="w-12 h-12" />
+                        </motion.div>
                       </motion.div>
 
                       {/* Text Content */}
