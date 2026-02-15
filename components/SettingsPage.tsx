@@ -112,21 +112,49 @@ const SettingsPage: React.FC = () => {
                   />
 
                   {/* Main Card */}
-                  <div className="relative z-10 h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-[60px] overflow-hidden group-hover:border-white/20 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center">
+                  <div 
+                    className="relative z-10 h-full rounded-[1.75rem] border-2 bg-white/[0.04] backdrop-blur-[60px] overflow-hidden group-hover:border-white/30 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center"
+                    style={{
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      boxShadow: `inset 0 0 20px rgba(255,255,255,0.05)`,
+                    }}
+                  >
+                    <motion.div
+                      className="absolute inset-0 z-0 rounded-[1.75rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      animate={{
+                        boxShadow: `inset 0 0 30px ${setting.accentColor}20, 0 0 40px ${setting.accentColor}30`,
+                        borderColor: setting.accentColor,
+                      }}
+                      transition={{ duration: 0.5 }}
+                      onMouseEnter={(e) => {
+                        const div = e.currentTarget as HTMLDivElement;
+                        div.style.borderColor = setting.accentColor;
+                      }}
+                    />
+
                     {/* Gradient Background */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${setting.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none`} />
+                    <motion.div 
+                      className={`absolute inset-0 bg-gradient-to-br ${setting.color} rounded-[1.75rem] opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 pointer-events-none`} 
+                    />
 
                     {/* Content */}
                     <div className="relative z-20 flex flex-col items-center h-full justify-center gap-4">
                       {/* Icon - Large and Centered */}
                       <motion.div
-                        className="w-24 h-24 rounded-3xl border-2 border-white/10 bg-white/[0.03] flex items-center justify-center group-hover:border-white/30 transition-all duration-300"
+                        className="w-24 h-24 rounded-3xl border-2 flex items-center justify-center group-hover:shadow-xl transition-all duration-300"
                         style={{
-                          boxShadow: `0 0 0 1px transparent`,
+                          borderColor: 'rgba(255,255,255,0.15)',
+                          backgroundColor: 'rgba(255,255,255,0.03)',
+                          boxShadow: `inset 0 0 15px rgba(255,255,255,0.05)`,
                         }}
                         whileHover={{
                           scale: 1.1,
-                          boxShadow: `0 0 30px ${setting.accentColor}40`,
+                        }}
+                        animate={{
+                          boxShadow: [`inset 0 0 15px rgba(255,255,255,0.05)`, `inset 0 0 20px ${setting.accentColor}20`],
+                        }}
+                        transition={{
+                          boxShadow: { duration: 0.4, yoyo: Infinity },
                         }}
                       >
                         <motion.div
