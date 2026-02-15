@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock } from 'lucide-react';
+import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, ChevronRight } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
   const settings = [
@@ -71,17 +71,32 @@ const SettingsPage: React.FC = () => {
     >
       <div className="max-w-[2400px] mx-auto w-full">
         {/* Header */}
-        <header className="flex flex-col gap-4 mb-16">
-          <div className="flex items-center justify-start gap-3 mb-2 opacity-60">
+        <header className="flex flex-col gap-4 mb-20">
+          <motion.div 
+            className="flex items-center justify-start gap-3 mb-2 opacity-60"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 0.6, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             <SettingsIcon className="w-4 h-4 text-[#00D8C1]" />
             <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">NASTAVENÍ SYSTÉMU</p>
-          </div>
-          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+          </motion.div>
+          <motion.h1 
+            className="text-7xl font-black tracking-tighter uppercase leading-none"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             NASTAVENÍ <span className="text-white/20">SPRÁVY</span>
-          </h1>
-          <p className="text-white/40 text-sm mt-4 max-w-xl">
+          </motion.h1>
+          <motion.p 
+            className="text-white/40 text-sm mt-4 max-w-xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             Nakonfigurujte a spravujte všechny aspekty operačních sálů, personálu a rozpisu.
-          </p>
+          </motion.p>
         </header>
 
         {/* Settings Grid */}
@@ -100,50 +115,56 @@ const SettingsPage: React.FC = () => {
                   layout
                   onClick={() => {}}
                   className="relative group cursor-pointer h-[340px] w-full"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
                   whileHover={{ 
                     scale: 1.02, 
                     zIndex: 50,
                     transition: { duration: 0.3 }
                   }}
                   style={{ zIndex: 1 }}
-                  transition={{ delay: index * 0.08 }}
+                  transition={{ delay: index * 0.08, type: 'spring', stiffness: 300, damping: 30 }}
                 >
-                  {/* Main Card Container - Exact RoomCard Design */}
+                  {/* Main Card Container */}
                   <motion.div 
                     className="absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06] group-hover:border-white/10"
                     whileHover={{
-                      boxShadow: `0 15px 35px -10px ${setting.accentColor}40, inset 0 0 30px ${setting.accentColor}10`,
+                      boxShadow: `0 20px 45px -15px ${setting.accentColor}50, inset 0 0 40px ${setting.accentColor}15`,
                     }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.4 }}
                   >
                     
-                    {/* Dynamic State Glow Layer - Gray inactive, Color on hover with multiple glows */}
+                    {/* Primary Glow Layer */}
                     <motion.div 
                       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] transition-all duration-500 pointer-events-none"
                       initial={{ backgroundColor: '#64748B' }}
                       whileHover={{ backgroundColor: setting.glowColor }}
                       animate={{ 
-                        opacity: [0.08, 0.12, 0.08]
+                        opacity: [0.08, 0.14, 0.08]
                       }}
                       transition={{ 
-                        opacity: { duration: 4, repeat: Infinity },
+                        opacity: { duration: 3.5, repeat: Infinity, ease: 'easeInOut' },
                         backgroundColor: { duration: 0.4 }
                       }}
                     />
 
-                    {/* Secondary Radiant Glow - Creates dual glow effect */}
+                    {/* Secondary Radiant Glow */}
                     <motion.div
-                      className="absolute left-1/2 top-1/4 -translate-x-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                      className="absolute left-1/2 top-1/3 -translate-x-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                       style={{
-                        background: `radial-gradient(circle, ${setting.glowColor}80, transparent)`,
+                        background: `radial-gradient(circle, ${setting.glowColor}90, transparent)`,
+                      }}
+                      animate={{
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
                       }}
                     />
 
-                    {/* Hover Gradient Wave Animation - Multiple Direction Waves */}
+                    {/* Wave Animation - Forward */}
                     <motion.div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
                       animate={{
                         backgroundPosition: ['0% 0%', '100% 100%'],
                       }}
@@ -151,14 +172,14 @@ const SettingsPage: React.FC = () => {
                         backgroundPosition: { duration: 2.5, repeat: Infinity, ease: 'linear' },
                       }}
                       style={{
-                        background: `linear-gradient(45deg, ${setting.glowColor}10, transparent 25%, transparent 50%, ${setting.glowColor}10 75%, ${setting.glowColor}05)`,
+                        background: `linear-gradient(45deg, ${setting.glowColor}12, transparent 25%, transparent 50%, ${setting.glowColor}12 75%, ${setting.glowColor}08)`,
                         backgroundSize: '200% 200%',
                       }}
                     />
 
-                    {/* Counter-Wave Animation for dynamic effect */}
+                    {/* Wave Animation - Reverse */}
                     <motion.div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
                       animate={{
                         backgroundPosition: ['100% 100%', '0% 0%'],
                       }}
@@ -166,19 +187,19 @@ const SettingsPage: React.FC = () => {
                         backgroundPosition: { duration: 3.5, repeat: Infinity, ease: 'linear' },
                       }}
                       style={{
-                        background: `linear-gradient(-45deg, transparent, ${setting.glowColor}08, transparent)`,
+                        background: `linear-gradient(-45deg, transparent, ${setting.glowColor}10, transparent)`,
                         backgroundSize: '300% 300%',
                       }}
                     />
 
-                    {/* Animated Border Glow with Pulse */}
+                    {/* Animated Border Glow */}
                     <motion.div
-                      className="absolute inset-0 rounded-[2.5rem] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+                      className="absolute inset-0 rounded-[2.5rem] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-400"
                       animate={{
                         boxShadow: [
-                          `inset 0 0 0 1px ${setting.glowColor}00, inset 0 0 10px ${setting.glowColor}10`,
-                          `inset 0 0 30px 2px ${setting.glowColor}40, inset 0 0 60px ${setting.glowColor}20`,
-                          `inset 0 0 0 1px ${setting.glowColor}00, inset 0 0 10px ${setting.glowColor}10`,
+                          `inset 0 0 0 1px ${setting.glowColor}00, inset 0 0 10px ${setting.glowColor}12`,
+                          `inset 0 0 35px 2px ${setting.glowColor}50, inset 0 0 70px ${setting.glowColor}25`,
+                          `inset 0 0 0 1px ${setting.glowColor}00, inset 0 0 10px ${setting.glowColor}12`,
                         ],
                       }}
                       transition={{
@@ -186,9 +207,9 @@ const SettingsPage: React.FC = () => {
                       }}
                     />
 
-                    {/* Shimmer Effect - Light streak */}
+                    {/* Shimmer Effect */}
                     <motion.div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-50 pointer-events-none"
+                      className="absolute inset-0 opacity-0 group-hover:opacity-60 pointer-events-none"
                       animate={{
                         backgroundPosition: ['-1000px 0', '1000px 0'],
                       }}
@@ -196,8 +217,30 @@ const SettingsPage: React.FC = () => {
                         backgroundPosition: { duration: 2, repeat: Infinity, ease: 'linear' },
                       }}
                       style={{
-                        background: `linear-gradient(90deg, transparent, ${setting.glowColor}40, transparent)`,
+                        background: `linear-gradient(90deg, transparent, ${setting.glowColor}50, transparent)`,
                         backgroundSize: '200% 100%',
+                      }}
+                    />
+
+                    {/* Particle Dots on Hover */}
+                    <motion.div
+                      className="absolute inset-0 rounded-[2.5rem] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{
+                        backgroundImage: `
+                          radial-gradient(circle at 5% 5%, ${setting.glowColor}, transparent 1px),
+                          radial-gradient(circle at 95% 5%, ${setting.glowColor}, transparent 1px),
+                          radial-gradient(circle at 5% 95%, ${setting.glowColor}, transparent 1px),
+                          radial-gradient(circle at 95% 95%, ${setting.glowColor}, transparent 1px)
+                        `,
+                        backgroundSize: '100% 100%',
+                        backgroundPosition: '0 0',
+                        backgroundRepeat: 'no-repeat',
+                      }}
+                      animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                      }}
+                      transition={{
+                        opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
                       }}
                     />
                   </motion.div>
@@ -205,85 +248,139 @@ const SettingsPage: React.FC = () => {
                   {/* Content Container */}
                   <div className="relative h-full w-full z-10 p-6 flex flex-col">
                     
-                    {/* Header */}
-                    <div className="w-full flex justify-between items-start min-w-0 gap-2 shrink-0 mb-4">
+                    {/* Header Section */}
+                    <motion.div 
+                      className="w-full flex justify-between items-start min-w-0 gap-2 shrink-0 mb-4"
+                      initial={{ opacity: 0, y: -10 }}
+                      whileHover={{ 
+                        opacity: 1, 
+                        y: 0,
+                        transition: { duration: 0.3 }
+                      }}
+                      transition={{ delay: index * 0.08 + 0.1 }}
+                    >
                       <div className="flex flex-col min-w-0 flex-1">
-                        <motion.p 
-                          className="text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors"
-                          initial={{ color: '#64748B' }}
-                          whileHover={{ color: setting.accentColor }}
+                        <motion.span 
+                          className="text-[8px] font-black tracking-[0.35em] uppercase leading-none mb-3 inline-block transition-all"
+                          initial={{ color: '#64748B', letterSpacing: '0.35em' }}
+                          whileHover={{ 
+                            color: setting.accentColor,
+                            letterSpacing: '0.4em',
+                          }}
+                          transition={{ duration: 0.3 }}
                         >
                           MODUL
-                        </motion.p>
+                        </motion.span>
                         <motion.h3 
-                          className="text-lg font-bold tracking-tight uppercase leading-none transition-colors truncate"
-                          initial={{ color: 'rgba(255, 255, 255, 0.60)' }}
-                          whileHover={{ color: '#FFFFFF' }}
+                          className="text-xl font-black tracking-tight uppercase leading-tight transition-all"
+                          initial={{ color: 'rgba(255, 255, 255, 0.55)' }}
+                          whileHover={{ 
+                            color: '#FFFFFF',
+                            textShadow: `0 0 20px ${setting.accentColor}40`,
+                          }}
+                          transition={{ duration: 0.3 }}
                         >
                           {setting.title}
                         </motion.h3>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Central Content Wrapper (takes up remaining space and centers its content) */}
-                    <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-                      {/* Icon Container */}
+                    {/* Central Icon & Description */}
+                    <div className="flex-1 flex flex-col items-center justify-center min-h-0 gap-5">
+                      {/* Icon Container with Background Circle */}
                       <motion.div
-                        className="relative flex items-center justify-center mb-4"
+                        className="relative flex items-center justify-center"
                         initial={{ scale: 1 }}
-                        whileHover={{ scale: 1.08 }}
+                        whileHover={{ scale: 1.1 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                       >
+                        {/* Background Circle - Animated on Hover */}
                         <motion.div
-                          className="w-16 h-16 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/20 transition-all duration-300"
+                          className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-400"
+                          animate={{
+                            scale: [1, 1.3, 1],
+                            opacity: [0.1, 0.3, 0.1],
+                          }}
+                          transition={{
+                            scale: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+                            opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+                          }}
                           style={{
-                            background: `linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))`,
+                            background: `radial-gradient(circle, ${setting.glowColor}60, transparent)`,
+                            width: '100px',
+                            height: '100px',
+                          }}
+                        />
+
+                        {/* Main Icon Box */}
+                        <motion.div
+                          className="relative w-16 h-16 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/25 transition-all duration-300"
+                          style={{
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)`,
                           }}
                           whileHover={{
-                            scale: 1.15,
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 30px ${setting.glowColor}60, inset 0 0 20px ${setting.glowColor}30`,
+                            scale: 1.18,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 40px ${setting.glowColor}70, inset 0 0 25px ${setting.glowColor}40`,
                           }}
                           transition={{ duration: 0.4, type: 'spring', stiffness: 300 }}
                         >
                           <motion.div
-                            initial={{ color: '#94A3B8' }}
-                            whileHover={{ color: setting.glowColor }}
-                            animate={{
-                              textShadow: [
-                                `0 0 0px ${setting.glowColor}00`,
-                                `0 0 0px ${setting.glowColor}00`,
-                              ],
+                            initial={{ color: '#94A3B8', rotate: 0 }}
+                            whileHover={{ 
+                              color: setting.glowColor,
+                              rotate: [0, 180, 360],
                             }}
-                            transition={{ duration: 0.3 }}
+                            transition={{ 
+                              color: { duration: 0.3 },
+                              rotate: { duration: 0.6, ease: 'easeOut' }
+                            }}
                           >
                             <Icon className="w-8 h-8" strokeWidth={1.5} />
                           </motion.div>
                         </motion.div>
                       </motion.div>
 
-                      {/* Description */}
+                      {/* Description with Gradient on Hover */}
                       <motion.p 
-                        className="text-xs leading-relaxed text-center transition-colors"
-                        initial={{ color: 'rgba(255, 255, 255, 0.30)' }}
-                        whileHover={{ color: 'rgba(255, 255, 255, 0.50)' }}
+                        className="text-xs leading-relaxed text-center transition-all font-medium"
+                        initial={{ color: 'rgba(255, 255, 255, 0.28)' }}
+                        whileHover={{ color: 'rgba(255, 255, 255, 0.65)' }}
+                        transition={{ duration: 0.3, delay: 0.05 }}
                       >
                         {setting.description}
                       </motion.p>
                     </div>
 
-                    {/* Bottom Info */}
-                    <div className="w-full space-y-3 shrink-0">
-                      <div className="flex items-center justify-center pt-3 border-t border-white/5">
-                        <motion.div
-                          className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    {/* Bottom CTA */}
+                    <motion.div 
+                      className="w-full space-y-3 shrink-0 pt-2"
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1, transition: { duration: 0.3 } }}
+                      transition={{ delay: index * 0.08 + 0.2 }}
+                    >
+                      <div className="flex items-center justify-center pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors">
+                        <motion.button
+                          className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg"
+                          style={{
+                            background: `${setting.glowColor}10`,
+                            border: `1px solid ${setting.glowColor}20`,
+                          }}
+                          whileHover={{
+                            background: `${setting.glowColor}20`,
+                            border: `1px solid ${setting.glowColor}40`,
+                            scale: 1.05,
+                          }}
                           animate={{ x: [0, 4, 0] }}
-                          transition={{ duration: 2, repeat: Infinity }}
+                          transition={{ x: { duration: 2, repeat: Infinity } }}
                         >
-                          <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
-                        </motion.div>
+                          <ChevronRight className="w-3.5 h-3.5" style={{ color: setting.glowColor }} />
+                          <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: setting.glowColor }}>
+                            Konfig
+                          </span>
+                        </motion.button>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
                 </motion.div>
               );
