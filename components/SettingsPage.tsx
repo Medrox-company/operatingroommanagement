@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight } from 'lucide-react';
+import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
   const settings = [
@@ -35,6 +35,30 @@ const SettingsPage: React.FC = () => {
       icon: Stethoscope,
       color: 'from-orange-500 to-red-500',
       accentColor: '#F97316',
+    },
+    {
+      id: 'contacts',
+      title: 'Kontakty',
+      description: 'Správa kontaktů a komunikace',
+      icon: Phone,
+      color: 'from-indigo-500 to-blue-500',
+      accentColor: '#6366F1',
+    },
+    {
+      id: 'calendar',
+      title: 'Kalendář',
+      description: 'Správa kalendáře a událostí',
+      icon: Clock,
+      color: 'from-yellow-500 to-amber-500',
+      accentColor: '#EAB308',
+    },
+    {
+      id: 'settings',
+      title: 'Nastavení',
+      description: 'Konfigurace systému a preferencí',
+      icon: SettingsIcon,
+      color: 'from-slate-500 to-gray-500',
+      accentColor: '#64748B',
     },
   ];
 
