@@ -11,6 +11,7 @@ const SettingsPage: React.FC = () => {
       icon: Building2,
       color: 'from-blue-500 to-cyan-500',
       accentColor: '#0EA5E9',
+      glowColor: 'rgba(14, 165, 233, 0.4)',
     },
     {
       id: 'schedule',
@@ -19,6 +20,7 @@ const SettingsPage: React.FC = () => {
       icon: Calendar,
       color: 'from-purple-500 to-pink-500',
       accentColor: '#A855F7',
+      glowColor: 'rgba(168, 85, 247, 0.4)',
     },
     {
       id: 'staff',
@@ -27,6 +29,7 @@ const SettingsPage: React.FC = () => {
       icon: Users,
       color: 'from-green-500 to-emerald-500',
       accentColor: '#10B981',
+      glowColor: 'rgba(16, 185, 129, 0.4)',
     },
     {
       id: 'departments',
@@ -35,6 +38,7 @@ const SettingsPage: React.FC = () => {
       icon: Stethoscope,
       color: 'from-orange-500 to-red-500',
       accentColor: '#F97316',
+      glowColor: 'rgba(249, 115, 22, 0.4)',
     },
     {
       id: 'contacts',
@@ -43,6 +47,7 @@ const SettingsPage: React.FC = () => {
       icon: Phone,
       color: 'from-indigo-500 to-blue-500',
       accentColor: '#6366F1',
+      glowColor: 'rgba(99, 102, 241, 0.4)',
     },
     {
       id: 'calendar',
@@ -51,6 +56,7 @@ const SettingsPage: React.FC = () => {
       icon: Clock,
       color: 'from-yellow-500 to-amber-500',
       accentColor: '#EAB308',
+      glowColor: 'rgba(234, 179, 8, 0.4)',
     },
     {
       id: 'settings',
@@ -59,6 +65,7 @@ const SettingsPage: React.FC = () => {
       icon: SettingsIcon,
       color: 'from-slate-500 to-gray-500',
       accentColor: '#64748B',
+      glowColor: 'rgba(100, 116, 139, 0.4)',
     },
   ];
 
@@ -90,103 +97,160 @@ const SettingsPage: React.FC = () => {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ staggerChildren: 0.1, delayChildren: 0.2 }}
+            transition={{ staggerChildren: 0.08, delayChildren: 0.15 }}
           >
             {settings.map((setting, index) => {
               const Icon = setting.icon;
               return (
                 <motion.div
                   key={setting.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                  className="group relative cursor-pointer"
+                  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: index * 0.08, duration: 0.4, ease: 'easeOut' }}
+                  whileHover={{ y: -12, transition: { duration: 0.3 } }}
+                  className="group relative cursor-pointer h-full"
                 >
-                  {/* Glow effect on hover */}
+                  {/* Multi-layer Glow Effect */}
                   <motion.div
-                    className="absolute -inset-1 z-0 rounded-[1.75rem] blur-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute -inset-0.5 z-0 rounded-[1.75rem] blur-2xl pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.4 }}
                     style={{
-                      background: `linear-gradient(135deg, ${setting.accentColor}40, ${setting.accentColor}20)`,
+                      background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${setting.glowColor}, transparent 80%)`,
                     }}
                   />
 
-                  {/* Main Card */}
-                  <div 
-                    className="relative z-10 h-full rounded-[1.75rem] border-2 bg-white/[0.04] backdrop-blur-[60px] overflow-hidden group-hover:border-white/30 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center"
+                  {/* Secondary Accent Glow */}
+                  <motion.div
+                    className="absolute -inset-1 z-0 rounded-[1.75rem] blur-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     style={{
-                      borderColor: 'rgba(255,255,255,0.1)',
-                      boxShadow: `inset 0 0 20px rgba(255,255,255,0.05)`,
+                      background: `linear-gradient(135deg, ${setting.glowColor}, transparent)`,
+                    }}
+                  />
+
+                  {/* Main Card Container */}
+                  <div className="relative z-10 h-full rounded-[1.75rem] border border-white/8 bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl overflow-hidden group-hover:border-white/20 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center shadow-2xl"
+                    style={{
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 60px rgba(0,0,0,0.3)`,
                     }}
                   >
-                    <motion.div
-                      className="absolute inset-0 z-0 rounded-[1.75rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                      animate={{
-                        boxShadow: `inset 0 0 30px ${setting.accentColor}20, 0 0 40px ${setting.accentColor}30`,
-                        borderColor: setting.accentColor,
-                      }}
-                      transition={{ duration: 0.5 }}
-                      onMouseEnter={(e) => {
-                        const div = e.currentTarget as HTMLDivElement;
-                        div.style.borderColor = setting.accentColor;
-                      }}
-                    />
-
-                    {/* Gradient Background */}
+                    {/* Animated Gradient Underlay */}
                     <motion.div 
-                      className={`absolute inset-0 bg-gradient-to-br ${setting.color} rounded-[1.75rem] opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 pointer-events-none`} 
+                      className={`absolute inset-0 bg-gradient-to-br ${setting.color} rounded-[1.75rem] opacity-0 group-hover:opacity-[0.04] transition-opacity duration-500 pointer-events-none`}
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 0.04 }}
                     />
 
-                    {/* Content */}
-                    <div className="relative z-20 flex flex-col items-center h-full justify-center gap-4">
-                      {/* Icon - Large and Centered */}
+                    {/* Top Accent Line */}
+                    <motion.div
+                      className="absolute top-0 left-8 right-8 h-px z-20"
+                      initial={{ scaleX: 0 }}
+                      whileHover={{ scaleX: 1 }}
+                      transition={{ duration: 0.4 }}
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${setting.accentColor}60, transparent)`,
+                      }}
+                    />
+
+                    {/* Content Container */}
+                    <div className="relative z-20 flex flex-col items-center h-full justify-center gap-6 w-full">
+                      {/* Icon Container - Enhanced Design */}
                       <motion.div
-                        className="w-24 h-24 rounded-3xl border-2 flex items-center justify-center group-hover:shadow-xl transition-all duration-300"
-                        style={{
-                          borderColor: 'rgba(255,255,255,0.15)',
-                          backgroundColor: 'rgba(255,255,255,0.03)',
-                          boxShadow: `inset 0 0 15px rgba(255,255,255,0.05)`,
-                        }}
-                        whileHover={{
-                          scale: 1.1,
-                        }}
-                        animate={{
-                          boxShadow: [`inset 0 0 15px rgba(255,255,255,0.05)`, `inset 0 0 20px ${setting.accentColor}20`],
-                        }}
-                        transition={{
-                          boxShadow: { duration: 0.4, yoyo: Infinity },
-                        }}
+                        className="relative flex items-center justify-center"
+                        initial={{ scale: 1 }}
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                       >
+                        {/* Icon Background Rings */}
                         <motion.div
-                          initial={{ color: '#94A3B8' }}
-                          whileHover={{ color: setting.accentColor }}
+                          className="absolute w-32 h-32 rounded-full border border-white/10 group-hover:border-white/20 transition-colors"
+                          animate={{
+                            scale: [1, 1.05, 1],
+                            opacity: [0.3, 0.6, 0.3],
+                          }}
+                          transition={{ duration: 3, repeat: Infinity }}
+                        />
+                        <motion.div
+                          className="absolute w-24 h-24 rounded-full border border-white/5 group-hover:border-white/15 transition-colors"
+                          animate={{
+                            scale: [1.05, 1, 1.05],
+                            opacity: [0.5, 0.3, 0.5],
+                          }}
+                          transition={{ duration: 3, repeat: Infinity, delay: 0.2 }}
+                        />
+
+                        {/* Main Icon Box */}
+                        <motion.div
+                          className="relative w-28 h-28 rounded-3xl border-2 border-white/15 flex items-center justify-center group-hover:border-white/30 transition-all duration-300"
+                          style={{
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 30px rgba(0,0,0,0.2)`,
+                          }}
+                          whileHover={{
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 40px ${setting.glowColor}`,
+                          }}
                           transition={{ duration: 0.3 }}
                         >
-                          <Icon className="w-12 h-12" />
+                          <motion.div
+                            initial={{ color: '#94A3B8' }}
+                            whileHover={{ color: setting.accentColor }}
+                            transition={{ duration: 0.4 }}
+                          >
+                            <Icon className="w-14 h-14 drop-shadow-lg" strokeWidth={1.5} />
+                          </motion.div>
                         </motion.div>
                       </motion.div>
 
-                      {/* Text Content */}
-                      <div>
-                        <h3 className="text-lg font-black tracking-tight text-white mb-1.5 group-hover:text-white/95 transition-colors">
+                      {/* Text Content - Enhanced Typography */}
+                      <div className="space-y-3">
+                        <motion.h3 
+                          className="text-2xl font-black tracking-tight text-white group-hover:text-white transition-colors duration-300"
+                          initial={{ opacity: 0.9 }}
+                          whileHover={{ opacity: 1 }}
+                        >
                           {setting.title}
-                        </h3>
-                        <p className="text-xs text-white/40 group-hover:text-white/50 transition-colors leading-relaxed">
+                        </motion.h3>
+                        <motion.p 
+                          className="text-sm text-white/45 group-hover:text-white/55 transition-colors duration-300 leading-relaxed font-medium"
+                          initial={{ opacity: 0.7 }}
+                          whileHover={{ opacity: 0.85 }}
+                        >
                           {setting.description}
-                        </p>
+                        </motion.p>
                       </div>
 
-                      {/* Footer Arrow */}
-                      <div className="mt-4 pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors w-full">
+                      {/* Footer Divider & CTA */}
+                      <motion.div 
+                        className="w-full mt-6 pt-6 border-t border-white/5 group-hover:border-white/10 transition-colors duration-300"
+                        initial={{ opacity: 0.5 }}
+                        whileHover={{ opacity: 1 }}
+                      >
                         <motion.div
-                          animate={{ x: [0, 4, 0] }}
+                          className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          animate={{ x: [0, 6, 0] }}
                           transition={{ duration: 2, repeat: Infinity }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                         >
-                          <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
+                          <ArrowRight className="w-5 h-5" style={{ color: setting.accentColor }} />
                         </motion.div>
-                      </div>
+                      </motion.div>
                     </div>
+
+                    {/* Corner Accent Dots */}
+                    <motion.div
+                      className="absolute top-4 right-4 w-2 h-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: setting.accentColor }}
+                      initial={{ scale: 0 }}
+                      whileHover={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 600, damping: 10 }}
+                    />
+                    <motion.div
+                      className="absolute bottom-4 left-4 w-2 h-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: setting.accentColor }}
+                      initial={{ scale: 0 }}
+                      whileHover={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 600, damping: 10, delay: 0.1 }}
+                    />
                   </div>
                 </motion.div>
               );
