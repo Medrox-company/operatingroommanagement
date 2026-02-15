@@ -104,7 +104,13 @@ const SettingsPage: React.FC = () => {
                   transition={{ delay: index * 0.08 }}
                 >
                   {/* Main Card Container - Exact RoomCard Design */}
-                  <div className="absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06] group-hover:border-white/10">
+                  <motion.div 
+                    className="absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06] group-hover:border-white/10"
+                    whileHover={{
+                      boxShadow: `0 15px 35px -10px ${setting.accentColor}40, inset 0 0 30px ${setting.accentColor}10`,
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
                     
                     {/* Dynamic State Glow Layer - Gray inactive, Color on hover */}
                     <motion.div 
@@ -119,7 +125,36 @@ const SettingsPage: React.FC = () => {
                         backgroundColor: { duration: 0.4 }
                       }}
                     />
-                  </div>
+
+                    {/* Hover Gradient Wave Animation */}
+                    <motion.div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      style={{
+                        background: `linear-gradient(135deg, ${setting.accentColor}15, transparent 50%, ${setting.accentColor}15)`,
+                      }}
+                      animate={{
+                        backgroundPosition: ['0% 0%', '100% 100%'],
+                      }}
+                      transition={{
+                        backgroundPosition: { duration: 3, repeat: Infinity, ease: 'linear' },
+                      }}
+                    />
+
+                    {/* Animated Border Glow */}
+                    <motion.div
+                      className="absolute inset-0 rounded-[2.5rem] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
+                      animate={{
+                        boxShadow: [
+                          `inset 0 0 0 1px ${setting.accentColor}00`,
+                          `inset 0 0 20px 1px ${setting.accentColor}30`,
+                          `inset 0 0 0 1px ${setting.accentColor}00`,
+                        ],
+                      }}
+                      transition={{
+                        boxShadow: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+                      }}
+                    />
+                  </motion.div>
 
                   {/* Content Container */}
                   <div className="relative h-full w-full z-10 p-6 flex flex-col">
