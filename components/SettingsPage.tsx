@@ -104,29 +104,32 @@ const SettingsPage: React.FC = () => {
               return (
                 <motion.div
                   key={setting.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.08, duration: 0.4, ease: 'easeOut' }}
-                  whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                  className="group relative cursor-pointer h-full"
+                  whileHover={{ 
+                    scale: 1.02,
+                    transition: { duration: 0.3 }
+                  }}
+                  className="group relative cursor-pointer h-[340px]"
                 >
                   {/* Glow effect on hover */}
                   <motion.div
-                    className="absolute -inset-1 z-0 rounded-[1.5rem] blur-xl pointer-events-none opacity-0 group-hover:opacity-70 transition-opacity duration-300"
+                    className="absolute -inset-1 z-0 rounded-[2.5rem] blur-xl pointer-events-none opacity-0 group-hover:opacity-60 transition-opacity duration-300"
                     style={{
                       background: `radial-gradient(ellipse at 50% 0%, ${setting.glowColor}, transparent 70%)`,
                     }}
                   />
 
                   {/* Main Card */}
-                  <div className="relative z-10 h-full rounded-[1.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-lg overflow-hidden group-hover:border-white/15 transition-all duration-300 p-6 flex flex-col items-center justify-center text-center"
+                  <div className="absolute inset-0 z-10 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] overflow-hidden group-hover:border-white/15 transition-all duration-300 p-6 flex flex-col"
                     style={{
                       boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.2)`,
                     }}
                   >
                     {/* Gradient Background */}
                     <motion.div 
-                      className={`absolute inset-0 bg-gradient-to-br ${setting.color} rounded-[1.5rem] opacity-0 group-hover:opacity-[0.02] transition-opacity duration-300 pointer-events-none`}
+                      className={`absolute inset-0 bg-gradient-to-br ${setting.color} rounded-[2.5rem] opacity-0 group-hover:opacity-[0.02] transition-opacity duration-300 pointer-events-none`}
                     />
 
                     {/* Top Accent Line */}
@@ -141,27 +144,17 @@ const SettingsPage: React.FC = () => {
                     />
 
                     {/* Content */}
-                    <div className="relative z-20 flex flex-col items-center h-full justify-center gap-4 w-full">
-                      {/* Icon Container */}
+                    <div className="relative z-20 flex flex-col items-center h-full justify-center gap-5 w-full">
+                      {/* Icon Box */}
                       <motion.div
                         className="relative flex items-center justify-center"
                         initial={{ scale: 1 }}
-                        whileHover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.08 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                       >
-                        {/* Icon Background Ring */}
-                        <motion.div
-                          className="absolute w-20 h-20 rounded-full border border-white/8 group-hover:border-white/12 transition-colors"
-                          animate={{
-                            scale: [1, 1.08, 1],
-                            opacity: [0.3, 0.5, 0.3],
-                          }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                        />
-
                         {/* Main Icon Box */}
                         <motion.div
-                          className="relative w-16 h-16 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/20 transition-all duration-300"
+                          className="w-20 h-20 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/20 transition-all duration-300"
                           style={{
                             background: `linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)`,
@@ -176,14 +169,14 @@ const SettingsPage: React.FC = () => {
                             whileHover={{ color: setting.accentColor }}
                             transition={{ duration: 0.3 }}
                           >
-                            <Icon className="w-8 h-8" strokeWidth={1.5} />
+                            <Icon className="w-10 h-10" strokeWidth={1.5} />
                           </motion.div>
                         </motion.div>
                       </motion.div>
 
                       {/* Text Content */}
-                      <div className="space-y-2">
-                        <h3 className="text-base font-bold tracking-tight text-white group-hover:text-white/95 transition-colors">
+                      <div className="space-y-2 text-center flex-1 flex flex-col justify-center">
+                        <h3 className="text-lg font-bold tracking-tight text-white group-hover:text-white/95 transition-colors">
                           {setting.title}
                         </h3>
                         <p className="text-xs text-white/40 group-hover:text-white/50 transition-colors leading-relaxed">
@@ -193,7 +186,7 @@ const SettingsPage: React.FC = () => {
 
                       {/* Footer Arrow */}
                       <motion.div 
-                        className="w-full mt-3 pt-3 border-t border-white/4 group-hover:border-white/8 transition-colors"
+                        className="w-full pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors flex justify-center"
                       >
                         <motion.div
                           className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
