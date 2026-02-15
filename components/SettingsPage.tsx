@@ -104,14 +104,19 @@ const SettingsPage: React.FC = () => {
                   transition={{ delay: index * 0.08 }}
                 >
                   {/* Main Card Container - Exact RoomCard Design */}
-                  <div className="absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]">
+                  <div className="absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06] group-hover:border-white/10">
                     
-                    {/* Dynamic State Glow Layer */}
+                    {/* Dynamic State Glow Layer - Gray inactive, Color on hover */}
                     <motion.div 
-                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] transition-opacity duration-1000 pointer-events-none"
+                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] transition-all duration-500 pointer-events-none"
+                      initial={{ backgroundColor: '#64748B' }}
+                      whileHover={{ backgroundColor: setting.accentColor }}
                       animate={{ 
-                        backgroundColor: setting.accentColor,
-                        opacity: 0.15
+                        opacity: [0.08, 0.12, 0.08]
+                      }}
+                      transition={{ 
+                        opacity: { duration: 4, repeat: Infinity },
+                        backgroundColor: { duration: 0.4 }
                       }}
                     />
                   </div>
@@ -122,12 +127,20 @@ const SettingsPage: React.FC = () => {
                     {/* Header */}
                     <div className="w-full flex justify-between items-start min-w-0 gap-2 shrink-0 mb-4">
                       <div className="flex flex-col min-w-0 flex-1">
-                        <p className="text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors text-white/30">
+                        <motion.p 
+                          className="text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors"
+                          initial={{ color: '#64748B' }}
+                          whileHover={{ color: setting.accentColor }}
+                        >
                           MODUL
-                        </p>
-                        <h3 className="text-lg font-bold tracking-tight uppercase leading-none transition-colors truncate text-white/90 group-hover:text-white">
+                        </motion.p>
+                        <motion.h3 
+                          className="text-lg font-bold tracking-tight uppercase leading-none transition-colors truncate"
+                          initial={{ color: 'rgba(255, 255, 255, 0.60)' }}
+                          whileHover={{ color: '#FFFFFF' }}
+                        >
                           {setting.title}
-                        </h3>
+                        </motion.h3>
                       </div>
                     </div>
 
@@ -163,9 +176,13 @@ const SettingsPage: React.FC = () => {
                       </motion.div>
 
                       {/* Description */}
-                      <p className="text-xs text-white/40 group-hover:text-white/50 transition-colors leading-relaxed text-center">
+                      <motion.p 
+                        className="text-xs leading-relaxed text-center transition-colors"
+                        initial={{ color: 'rgba(255, 255, 255, 0.30)' }}
+                        whileHover={{ color: 'rgba(255, 255, 255, 0.50)' }}
+                      >
                         {setting.description}
-                      </p>
+                      </motion.p>
                     </div>
 
                     {/* Bottom Info */}
