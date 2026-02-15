@@ -80,7 +80,7 @@ const SettingsPage: React.FC = () => {
         {/* Settings Grid */}
         <div className="pb-20 px-2">
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ staggerChildren: 0.08, delayChildren: 0.15 }}
