@@ -205,7 +205,7 @@ const SettingsPage: React.FC = () => {
                             whileHover={{ color: setting.accentColor }}
                             transition={{ duration: 0.3 }}
                           >
-                            <Icon className="w-8 h-8" strokeWidth={1.5} />
+                            <Icon className="w-16 h-16" strokeWidth={1.5} />
                           </motion.div>
                         </motion.div>
                       </motion.div>
