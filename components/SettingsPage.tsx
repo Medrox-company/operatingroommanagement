@@ -190,13 +190,13 @@ const SettingsPage: React.FC = () => {
                       >
                         {/* Main Icon Box */}
                         <motion.div
-                          className="w-16 h-16 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/20 transition-all duration-300"
+                          className="w-24 h-24 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/20 transition-all duration-300"
                           style={{
                             background: `linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)`,
                           }}
                           whileHover={{
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 24px ${setting.accentColor}40`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 30px ${setting.accentColor}50`,
                           }}
                           transition={{ duration: 0.3 }}
                         >
