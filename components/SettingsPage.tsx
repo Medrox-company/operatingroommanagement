@@ -9,49 +9,56 @@ const SettingsPage: React.FC = () => {
       title: 'Operační sály',
       description: 'Správa a konfigurace operačních sálů',
       icon: Building2,
-      accentColor: '#0EA5E9',
+      accentColor: '#00D8C1',
+      glowColor: '#00D8C1',
     },
     {
       id: 'schedule',
       title: 'Rozpis operačních sálů',
       description: 'Plánování a správa rozpisu sálů',
       icon: Calendar,
-      accentColor: '#A855F7',
+      accentColor: '#7C3AED',
+      glowColor: '#7C3AED',
     },
     {
       id: 'staff',
       title: 'Personál',
       description: 'Správa zaměstnanců a jejich přiřazení',
       icon: Users,
-      accentColor: '#10B981',
+      accentColor: '#06B6D4',
+      glowColor: '#06B6D4',
     },
     {
       id: 'departments',
       title: 'Oddělení',
       description: 'Správa oddělení a jejich konfigurací',
       icon: Stethoscope,
-      accentColor: '#F97316',
+      accentColor: '#EC4899',
+      glowColor: '#EC4899',
     },
     {
       id: 'contacts',
       title: 'Kontakty',
       description: 'Správa kontaktů a komunikace',
       icon: Phone,
-      accentColor: '#6366F1',
+      accentColor: '#3B82F6',
+      glowColor: '#3B82F6',
     },
     {
       id: 'calendar',
       title: 'Kalendář',
       description: 'Správa kalendáře a událostí',
       icon: Clock,
-      accentColor: '#EAB308',
+      accentColor: '#F59E0B',
+      glowColor: '#F59E0B',
     },
     {
       id: 'settings',
       title: 'Nastavení',
       description: 'Konfigurace systému a preferencí',
       icon: SettingsIcon,
-      accentColor: '#64748B',
+      accentColor: '#8B5CF6',
+      glowColor: '#8B5CF6',
     },
   ];
 
@@ -112,11 +119,11 @@ const SettingsPage: React.FC = () => {
                     transition={{ duration: 0.3 }}
                   >
                     
-                    {/* Dynamic State Glow Layer - Gray inactive, Color on hover */}
+                    {/* Dynamic State Glow Layer - Gray inactive, Color on hover with multiple glows */}
                     <motion.div 
                       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] transition-all duration-500 pointer-events-none"
                       initial={{ backgroundColor: '#64748B' }}
-                      whileHover={{ backgroundColor: setting.accentColor }}
+                      whileHover={{ backgroundColor: setting.glowColor }}
                       animate={{ 
                         opacity: [0.08, 0.12, 0.08]
                       }}
@@ -126,32 +133,71 @@ const SettingsPage: React.FC = () => {
                       }}
                     />
 
-                    {/* Hover Gradient Wave Animation */}
+                    {/* Secondary Radiant Glow - Creates dual glow effect */}
+                    <motion.div
+                      className="absolute left-1/2 top-1/4 -translate-x-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                      style={{
+                        background: `radial-gradient(circle, ${setting.glowColor}80, transparent)`,
+                      }}
+                    />
+
+                    {/* Hover Gradient Wave Animation - Multiple Direction Waves */}
                     <motion.div
                       className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                      style={{
-                        background: `linear-gradient(135deg, ${setting.accentColor}15, transparent 50%, ${setting.accentColor}15)`,
-                      }}
                       animate={{
                         backgroundPosition: ['0% 0%', '100% 100%'],
                       }}
                       transition={{
-                        backgroundPosition: { duration: 3, repeat: Infinity, ease: 'linear' },
+                        backgroundPosition: { duration: 2.5, repeat: Infinity, ease: 'linear' },
+                      }}
+                      style={{
+                        background: `linear-gradient(45deg, ${setting.glowColor}10, transparent 25%, transparent 50%, ${setting.glowColor}10 75%, ${setting.glowColor}05)`,
+                        backgroundSize: '200% 200%',
                       }}
                     />
 
-                    {/* Animated Border Glow */}
+                    {/* Counter-Wave Animation for dynamic effect */}
                     <motion.div
-                      className="absolute inset-0 rounded-[2.5rem] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      animate={{
+                        backgroundPosition: ['100% 100%', '0% 0%'],
+                      }}
+                      transition={{
+                        backgroundPosition: { duration: 3.5, repeat: Infinity, ease: 'linear' },
+                      }}
+                      style={{
+                        background: `linear-gradient(-45deg, transparent, ${setting.glowColor}08, transparent)`,
+                        backgroundSize: '300% 300%',
+                      }}
+                    />
+
+                    {/* Animated Border Glow with Pulse */}
+                    <motion.div
+                      className="absolute inset-0 rounded-[2.5rem] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
                       animate={{
                         boxShadow: [
-                          `inset 0 0 0 1px ${setting.accentColor}00`,
-                          `inset 0 0 20px 1px ${setting.accentColor}30`,
-                          `inset 0 0 0 1px ${setting.accentColor}00`,
+                          `inset 0 0 0 1px ${setting.glowColor}00, inset 0 0 10px ${setting.glowColor}10`,
+                          `inset 0 0 30px 2px ${setting.glowColor}40, inset 0 0 60px ${setting.glowColor}20`,
+                          `inset 0 0 0 1px ${setting.glowColor}00, inset 0 0 10px ${setting.glowColor}10`,
                         ],
                       }}
                       transition={{
-                        boxShadow: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+                        boxShadow: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
+                      }}
+                    />
+
+                    {/* Shimmer Effect - Light streak */}
+                    <motion.div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-50 pointer-events-none"
+                      animate={{
+                        backgroundPosition: ['-1000px 0', '1000px 0'],
+                      }}
+                      transition={{
+                        backgroundPosition: { duration: 2, repeat: Infinity, ease: 'linear' },
+                      }}
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${setting.glowColor}40, transparent)`,
+                        backgroundSize: '200% 100%',
                       }}
                     />
                   </motion.div>
@@ -188,7 +234,6 @@ const SettingsPage: React.FC = () => {
                         whileHover={{ scale: 1.08 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                       >
-                        {/* Main Icon Box */}
                         <motion.div
                           className="w-16 h-16 rounded-2xl border border-white/10 flex items-center justify-center group-hover:border-white/20 transition-all duration-300"
                           style={{
@@ -196,13 +241,20 @@ const SettingsPage: React.FC = () => {
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)`,
                           }}
                           whileHover={{
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 24px ${setting.accentColor}40`,
+                            scale: 1.15,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 30px ${setting.glowColor}60, inset 0 0 20px ${setting.glowColor}30`,
                           }}
-                          transition={{ duration: 0.3 }}
+                          transition={{ duration: 0.4, type: 'spring', stiffness: 300 }}
                         >
                           <motion.div
                             initial={{ color: '#94A3B8' }}
-                            whileHover={{ color: setting.accentColor }}
+                            whileHover={{ color: setting.glowColor }}
+                            animate={{
+                              textShadow: [
+                                `0 0 0px ${setting.glowColor}00`,
+                                `0 0 0px ${setting.glowColor}00`,
+                              ],
+                            }}
                             transition={{ duration: 0.3 }}
                           >
                             <Icon className="w-8 h-8" strokeWidth={1.5} />
