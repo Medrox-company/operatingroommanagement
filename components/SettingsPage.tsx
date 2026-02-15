@@ -112,46 +112,42 @@ const SettingsPage: React.FC = () => {
                   />
 
                   {/* Main Card */}
-                  <div className="relative z-10 h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-[60px] overflow-hidden group-hover:border-white/20 transition-all duration-300 p-6 flex flex-col">
+                  <div className="relative z-10 h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-[60px] overflow-hidden group-hover:border-white/20 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center">
                     {/* Gradient Background */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${setting.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none`} />
 
                     {/* Content */}
-                    <div className="relative z-20 flex flex-col h-full">
-                      {/* Icon */}
-                      <div className="mb-6">
-                        <motion.div
-                          className="w-14 h-14 rounded-2xl border border-white/20 bg-white/[0.05] flex items-center justify-center group-hover:border-white/40 transition-all duration-300"
-                          style={{
-                            boxShadow: `0 0 0 1px ${setting.accentColor}00`,
-                          }}
-                          whileHover={{
-                            boxShadow: `0 0 20px ${setting.accentColor}40`,
-                          }}
-                        >
-                          <Icon className="w-7 h-7 text-white/50 group-hover:text-white/80 transition-colors" style={{ color: setting.accentColor }} />
-                        </motion.div>
-                      </div>
+                    <div className="relative z-20 flex flex-col items-center h-full justify-center gap-4">
+                      {/* Icon - Large and Centered */}
+                      <motion.div
+                        className="w-24 h-24 rounded-3xl border-2 border-white/20 bg-white/[0.08] flex items-center justify-center group-hover:border-white/40 transition-all duration-300"
+                        style={{
+                          boxShadow: `0 0 0 1px ${setting.accentColor}00`,
+                        }}
+                        whileHover={{
+                          scale: 1.1,
+                          boxShadow: `0 0 30px ${setting.accentColor}50`,
+                        }}
+                      >
+                        <Icon className="w-12 h-12 transition-colors" style={{ color: setting.accentColor }} />
+                      </motion.div>
 
                       {/* Text Content */}
-                      <div className="flex-1">
-                        <h3 className="text-xl font-black tracking-tight text-white mb-2 group-hover:text-white/95 transition-colors">
+                      <div>
+                        <h3 className="text-lg font-black tracking-tight text-white mb-1.5 group-hover:text-white/95 transition-colors">
                           {setting.title}
                         </h3>
-                        <p className="text-sm text-white/40 group-hover:text-white/50 transition-colors leading-relaxed">
+                        <p className="text-xs text-white/40 group-hover:text-white/50 transition-colors leading-relaxed">
                           {setting.description}
                         </p>
                       </div>
 
                       {/* Footer Arrow */}
-                      <div className="mt-6 flex items-center justify-between pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors">
-                        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 group-hover:text-white/40 transition-colors">
-                          Konfigurovat
-                        </span>
+                      <div className="mt-4 pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors w-full">
                         <motion.div
                           animate={{ x: [0, 4, 0] }}
                           transition={{ duration: 2, repeat: Infinity }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                         >
                           <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
                         </motion.div>
