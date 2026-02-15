@@ -130,7 +130,7 @@ const SettingsPage: React.FC = () => {
                   />
 
                   {/* Main Card Container */}
-                  <div className="relative z-10 h-full rounded-[1.75rem] border border-white/8 bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl overflow-hidden group-hover:border-white/20 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center shadow-2xl"
+                  <div className="relative z-10 h-full rounded-[1.75rem] border border-white/5 bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl overflow-hidden group-hover:border-white/15 transition-all duration-300 p-8 flex flex-col items-center justify-center text-center shadow-2xl"
                     style={{
                       boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 60px rgba(0,0,0,0.3)`,
                     }}
