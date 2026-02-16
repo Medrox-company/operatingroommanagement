@@ -96,14 +96,19 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   };
 
   return (
-    <div className="w-full px-8">
+    <div className="w-full">
       {/* Header */}
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Správa operačních sálů</h2>
-          <p className="text-white/50 text-sm">Přidávejte, upravujte a spravujte operační sály používané v aplikaci</p>
+      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0">
+        <div className="text-center lg:text-left">
+          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+            <GripVertical className="w-4 h-4 text-[#00D8C1]" />
+            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATING ROOMS MANAGEMENT</p>
+          </div>
+          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+            OPERAČNÍ <span className="text-white/20">SÁLY</span>
+          </h1>
         </div>
-      </div>
+      </header>
 
       {/* Add New Room Form */}
       <AnimatePresence>
