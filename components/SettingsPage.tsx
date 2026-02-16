@@ -65,7 +65,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
   ];
 
   return (
-  return (
     <div className="relative w-full min-h-screen">
       {/* Show manager if module selected */}
       {selectedModule === 'rooms' ? (
