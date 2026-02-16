@@ -96,7 +96,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full px-8">
       {/* Header */}
       <div className="mb-8 flex justify-between items-start">
         <div>

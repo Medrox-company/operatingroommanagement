@@ -65,7 +65,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
   ];
 
   return (
-    <div className="relative w-full h-full overflow-auto">
+    <div className="relative w-full h-full">
       {/* Show manager if module selected */}
       {selectedModule === 'rooms' ? (
         <motion.div
@@ -89,15 +89,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
           }} />
         </motion.div>
       ) : (
-        <div className="w-full h-full overflow-auto">
+        <div className="w-full h-full flex flex-col">
           {/* Settings Header */}
-          <div className="sticky top-0 z-10 px-8 py-6 mb-8">
+          <div className="sticky top-0 z-10 px-8 py-6 mb-8 flex-shrink-0">
             <h1 className="text-4xl font-bold text-white mb-2">Nastavení</h1>
             <p className="text-white/50 text-sm">Spravujte systém a konfigurujte jednotlivé moduly aplikace</p>
           </div>
 
           {/* Settings Grid */}
-          <div className="px-8 pb-20">
+          <div className="px-8 pb-20 flex-1 overflow-auto">
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
             initial={{ opacity: 0 }}
