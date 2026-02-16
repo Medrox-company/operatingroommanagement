@@ -65,14 +65,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
   ];
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full min-h-screen">
       {/* Show manager if module selected */}
       {selectedModule === 'rooms' ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="w-full h-full px-8 md:pl-32 md:pr-10 py-10 overflow-auto"
+          className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
           <div className="flex items-center gap-3 mb-8">
             <motion.button
@@ -89,7 +89,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
           }} />
         </motion.div>
       ) : (
-        <div className="w-full h-full px-8 md:pl-32 md:pr-10 py-10">
+        <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
           <div className="max-w-[2400px] mx-auto w-full">
             {/* Settings Header */}
             <div className="mb-12">

@@ -195,7 +195,7 @@ const App: React.FC = () => {
                 exit={{ opacity: 0 }}
                 className="w-full h-full overflow-y-auto hide-scrollbar"
               >
-                <SettingsPage rooms={selectedRoom ? [selectedRoom, ...rooms.filter(r => r.id !== selectedRoom.id)] : rooms} onRoomsChange={setRooms} />
+                <SettingsPage rooms={rooms} onRoomsChange={setRooms} />
               </motion.div>
             )}
           </AnimatePresence>
