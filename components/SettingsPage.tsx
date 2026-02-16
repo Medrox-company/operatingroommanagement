@@ -65,23 +65,23 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
   ];
 
   return (
-    <div className="relative w-full min-h-screen">
+    <div className="relative w-full h-full overflow-auto">
       {/* Show manager if module selected */}
       {selectedModule === 'rooms' ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="w-full"
+          className="w-full h-full p-8 overflow-auto"
         >
-          <div className="flex items-center gap-3 mb-6 px-2">
+          <div className="flex items-center gap-3 mb-8">
             <motion.button
               onClick={() => setSelectedModule(null)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all"
               whileHover={{ scale: 1.05 }}
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
-              <span className="text-sm font-semibold text-white/70">Zpět</span>
+              <span className="text-sm font-semibold text-white/70">Zpět do nastavení</span>
             </motion.button>
           </div>
           <OperatingRoomsManager rooms={rooms} onRoomsChange={(updatedRooms) => {
@@ -89,9 +89,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
           }} />
         </motion.div>
       ) : (
-        <>
+        <div className="w-full h-full overflow-auto">
+          {/* Settings Header */}
+          <div className="sticky top-0 z-10 px-8 py-6 mb-8">
+            <h1 className="text-4xl font-bold text-white mb-2">Nastavení</h1>
+            <p className="text-white/50 text-sm">Spravujte systém a konfigurujte jednotlivé moduly aplikace</p>
+          </div>
+
           {/* Settings Grid */}
-          <div className="pb-20 px-2">
+          <div className="px-8 pb-20">
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
             initial={{ opacity: 0 }}
@@ -242,12 +248,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
                           transition={{ duration: 2, repeat: Infinity }}
                         >
                           <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
-                        </motion.div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
             })}
           </motion.div>
         </div>
