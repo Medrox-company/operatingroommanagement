@@ -182,7 +182,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       )}
 
       {/* Rooms List */}
-      <Reorder.Group values={roomsList} onReorder={handleReorder} className="space-y-4">
+      <Reorder.Group values={roomsList} onReorder={handleReorder} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AnimatePresence mode="popLayout">
           {roomsList.map((room) => {
             const deptColor = getDeptColor(room.department);

@@ -74,16 +74,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
           exit={{ opacity: 0 }}
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
-          <div className="flex items-center gap-3 mb-8">
-            <motion.button
-              onClick={() => setSelectedModule(null)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all"
-              whileHover={{ scale: 1.05 }}
-            >
-              <ArrowRight className="w-4 h-4 rotate-180" />
-              <span className="text-sm font-semibold text-white/70">Zpět do nastavení</span>
-            </motion.button>
-          </div>
           <OperatingRoomsManager rooms={rooms} onRoomsChange={(updatedRooms) => {
             onRoomsChange?.(updatedRooms);
           }} />
