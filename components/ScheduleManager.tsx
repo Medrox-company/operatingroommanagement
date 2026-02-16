@@ -12,7 +12,7 @@ interface ScheduleEntry {
   };
 }
 
-const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek'];
+const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
 
 const ScheduleManager: React.FC = () => {
   const [scheduleData, setScheduleData] = useState<ScheduleEntry[]>(
@@ -26,6 +26,8 @@ const ScheduleManager: React.FC = () => {
         'Středa': room.department,
         'Čtvrtek': room.department,
         'Pátek': room.department,
+        'Sobota': room.department,
+        'Neděle': room.department,
       },
     }))
   );
