@@ -193,7 +193,7 @@ const App: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-50"
+                className="w-full h-full overflow-y-auto hide-scrollbar"
               >
                 <SettingsPage rooms={selectedRoom ? [selectedRoom, ...rooms.filter(r => r.id !== selectedRoom.id)] : rooms} onRoomsChange={setRooms} />
               </motion.div>

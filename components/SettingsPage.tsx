@@ -72,7 +72,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="w-full h-full p-8 overflow-auto"
+          className="w-full h-full px-8 md:pl-32 md:pr-10 py-10 overflow-auto"
         >
           <div className="flex items-center gap-3 mb-8">
             <motion.button
@@ -89,15 +89,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
           }} />
         </motion.div>
       ) : (
-        <div className="w-full h-full flex flex-col">
-          {/* Settings Header */}
-          <div className="sticky top-0 z-10 px-8 py-6 mb-8 flex-shrink-0">
-            <h1 className="text-4xl font-bold text-white mb-2">Nastavení</h1>
-            <p className="text-white/50 text-sm">Spravujte systém a konfigurujte jednotlivé moduly aplikace</p>
-          </div>
+        <div className="w-full h-full px-8 md:pl-32 md:pr-10 py-10">
+          <div className="max-w-[2400px] mx-auto w-full">
+            {/* Settings Header */}
+            <div className="mb-12">
+              <h1 className="text-4xl font-bold text-white mb-2">Nastavení</h1>
+              <p className="text-white/50 text-sm">Spravujte systém a konfigurujte jednotlivé moduly aplikace</p>
+            </div>
 
-          {/* Settings Grid */}
-          <div className="px-8 pb-20 flex-1 overflow-auto">
+            {/* Settings Grid */}
+            <div className="pb-20 px-2">
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
             initial={{ opacity: 0 }}
@@ -249,14 +250,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
                         >
                           <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
           </motion.div>
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  );
-            })}
-          </motion.div>
-        </div>
-        </>
       )}
     </div>
   );
