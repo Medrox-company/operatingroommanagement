@@ -475,6 +475,5 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     </div>
   );
 };
-};
 
 export default OperatingRoomsManager;
