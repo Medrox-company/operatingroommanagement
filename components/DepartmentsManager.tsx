@@ -214,6 +214,7 @@ const DepartmentsManager: React.FC = () => {
         <AnimatePresence mode="popLayout">
           {departments.map((dept) => {
             const isEditingName = editingDeptName?.deptId === dept.id;
+            return (
             <motion.div
               key={dept.id}
               initial={{ opacity: 0, y: -20 }}
