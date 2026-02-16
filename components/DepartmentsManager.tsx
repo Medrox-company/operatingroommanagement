@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, ChevronDown, X, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
+import { Plus, Trash2, Edit2, ChevronDown, X, Check, AlertCircle, Lock, Unlock, Stethoscope } from 'lucide-react';
 
 interface SubDepartment {
   id: string;
