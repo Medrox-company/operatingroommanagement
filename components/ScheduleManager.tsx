@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { GripVertical, X, Check, Edit2 } from 'lucide-react';
+import { GripVertical, X, Check, Edit2, ChevronDown } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
+import { DEFAULT_DEPARTMENTS } from '../constants';
 
 interface ScheduleEntry {
   roomId: string;
@@ -34,6 +35,35 @@ const ScheduleManager: React.FC = () => {
 
   const [editingCell, setEditingCell] = useState<{ roomId: string; day: string } | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Flatten departments for display
+  const getAllDepartmentOptions = () => {
+    const options: Array<{ id: string; name: string; color: string }> = [];
+    DEFAULT_DEPARTMENTS.forEach(dept => {
+      if (dept.isActive) {
+        options.push({ id: dept.id, name: dept.name, color: dept.accentColor });
+        dept.subDepartments.forEach(subDept => {
+          if (subDept.isActive) {
+            options.push({ id: subDept.id, name: `${dept.name} - ${subDept.name}`, color: dept.accentColor });
+          }
+        });
+      }
+    });
+    return options;
+  };
+
+  const departmentOptions = getAllDepartmentOptions();
+
+  const getDepartmentColor = (deptId: string) => {
+    for (const dept of DEFAULT_DEPARTMENTS) {
+      if (dept.id === deptId) return dept.accentColor;
+      for (const subDept of dept.subDepartments) {
+        if (subDept.id === deptId) return dept.accentColor;
+      }
+    }
+    return '#64748B';
+  };
 
   const handleCellEdit = (roomId: string, day: string, value: string) => {
     setScheduleData(prev =>
@@ -136,21 +166,46 @@ const ScheduleManager: React.FC = () => {
                         transition={{ duration: 0.2 }}
                       >
                         {isEditing ? (
-                          <div className="w-full h-full flex items-center justify-center gap-2 p-2">
-                            <input
-                              autoFocus
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              className="flex-1 px-2 py-1 rounded bg-white/10 border border-white/30 text-white text-xs text-center focus:outline-none focus:border-[#A855F7]"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleCellEdit(entry.roomId, day, editValue);
-                                } else if (e.key === 'Escape') {
-                                  setEditingCell(null);
-                                }
-                              }}
-                            />
+                          <div className="w-full h-full flex items-center justify-center gap-2 p-2 relative">
+                            <div className="relative flex-1">
+                              <motion.button
+                                onClick={() => setShowDropdown(!showDropdown)}
+                                className="w-full px-3 py-2 rounded bg-white/10 border border-white/30 text-white text-xs font-semibold focus:outline-none focus:border-blue-400 flex items-center justify-between"
+                                style={{ 
+                                  borderColor: `${getDepartmentColor(editValue)}60`,
+                                  backgroundColor: `${getDepartmentColor(editValue)}15`,
+                                }}
+                              >
+                                <span>{editValue || 'Vybrat oddělení'}</span>
+                                <ChevronDown className="w-4 h-4" />
+                              </motion.button>
+                              
+                              {showDropdown && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-white/20 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
+                                >
+                                  {departmentOptions.map((option) => (
+                                    <motion.button
+                                      key={option.id}
+                                      onClick={() => {
+                                        setEditValue(option.id);
+                                        setShowDropdown(false);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-xs font-semibold hover:bg-white/10 transition-colors flex items-center gap-2"
+                                      whileHover={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                                    >
+                                      <div
+                                        className="w-3 h-3 rounded-full flex-shrink-0"
+                                        style={{ backgroundColor: option.color }}
+                                      />
+                                      <span className="text-white/80">{option.name}</span>
+                                    </motion.button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </div>
                             <motion.button
                               onClick={() => handleCellEdit(entry.roomId, day, editValue)}
                               className="p-1.5 rounded hover:bg-green-500/20 text-green-400"
@@ -169,12 +224,24 @@ const ScheduleManager: React.FC = () => {
                         ) : (
                           <motion.button
                             onClick={() => handleStartEdit(entry.roomId, day, cellValue)}
-                            className="w-full h-full flex items-center justify-center text-sm font-semibold text-white/70 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer group"
-                            whileHover={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                            className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg mx-1 text-sm font-semibold text-white transition-all cursor-pointer group"
+                            style={{
+                              backgroundColor: `${getDepartmentColor(cellValue)}15`,
+                              border: `1.5px solid ${getDepartmentColor(cellValue)}40`,
+                            }}
+                            whileHover={{ 
+                              backgroundColor: `${getDepartmentColor(cellValue)}25`,
+                              borderColor: `${getDepartmentColor(cellValue)}80`,
+                            }}
                           >
                             <div className="text-center">
-                              <p className="text-xs text-white/50 group-hover:text-white/70 opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 text-[10px]">Edit</p>
-                              <p>{cellValue || '-'}</p>
+                              {cellValue ? (
+                                <p style={{ color: getDepartmentColor(cellValue) }}>
+                                  {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
+                                </p>
+                              ) : (
+                                <p className="text-white/40">-</p>
+                              )}
                             </div>
                           </motion.button>
                         )}

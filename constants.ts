@@ -15,6 +15,95 @@ import {
   Sparkles
 } from 'lucide-react';
 
+export interface SubDepartment {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  subDepartments: SubDepartment[];
+  accentColor: string;
+}
+
+export const DEFAULT_DEPARTMENTS: Department[] = [
+  {
+    id: 'tra',
+    name: 'Traumatologie',
+    description: 'Léčba úrazů a poranění',
+    isActive: true,
+    subDepartments: [],
+    accentColor: '#00D8C1',
+  },
+  {
+    id: 'chir',
+    name: 'Chirurgie',
+    description: 'Chirurgické výkony',
+    isActive: true,
+    subDepartments: [
+      { id: 'chir-hpb', name: 'HPB (játra, pankreas, žlučník)', isActive: true },
+      { id: 'chir-cevni', name: 'Cévní chirurgie', isActive: true },
+      { id: 'chir-detske', name: 'Dětská chirurgie', isActive: true },
+      { id: 'chir-mammo', name: 'Mammo chirurgie', isActive: true },
+      { id: 'chir-prokto', name: 'Proktochirurgie', isActive: true },
+    ],
+    accentColor: '#7C3AED',
+  },
+  {
+    id: 'neurochir',
+    name: 'Neurochirurgie',
+    description: 'Chirurgie nervové soustavy',
+    isActive: true,
+    subDepartments: [],
+    accentColor: '#06B6D4',
+  },
+  {
+    id: 'uro',
+    name: 'Urologie',
+    description: 'Léčba urogenitálního systému',
+    isActive: true,
+    subDepartments: [],
+    accentColor: '#EC4899',
+  },
+  {
+    id: 'gyn',
+    name: 'Gynekologie',
+    description: 'Gynekologické výkony',
+    isActive: true,
+    subDepartments: [],
+    accentColor: '#F59E0B',
+  },
+  {
+    id: 'orl',
+    name: 'ORL',
+    description: 'Otolaryngologie',
+    isActive: true,
+    subDepartments: [],
+    accentColor: '#3B82F6',
+  },
+  {
+    id: 'oftalmologie',
+    name: 'Oftalmologie',
+    description: 'Oční lékařství',
+    isActive: true,
+    subDepartments: [],
+    accentColor: '#8B5CF6',
+  },
+  {
+    id: 'ortopedicka',
+    name: 'Ortopedická chirurgie',
+    description: 'Ortopedické výkony',
+    isActive: true,
+    subDepartments: [],
+    accentColor: '#14B8A6',
+  },
+];
+
+
 export const WORKFLOW_STEPS = [
   { title: "Příjezd na sál", organizer: "Příjmový tým", status: "Probíhá", color: '#A78BFA', Icon: UserCheck },
   { title: "Začátek anestezie", organizer: "MUDr. Jelínek", status: "Kritické", color: '#2DD4BF', Icon: Syringe },
