@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
+import ScheduleManager from './ScheduleManager';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -100,6 +101,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
           <NotificationsManager />
+        </motion.div>
+      ) : selectedModule === 'schedule' ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full px-8 md:pl-32 md:pr-10 py-10"
+        >
+          <ScheduleManager />
         </motion.div>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
