@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus } from '../types';
 import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
@@ -24,6 +24,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingRoom, setEditingRoom] = useState<EditingRoom | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
   const [newRoomData, setNewRoomData] = useState({
     name: '',
     department: '',
@@ -90,9 +91,36 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     }
   };
 
-  const handleReorder = (newOrder: OperatingRoom[]) => {
-    setRoomsList(newOrder);
-    onRoomsChange?.(newOrder);
+  const handleDragStart = (e: React.DragEvent, roomId: string) => {
+    setDraggedId(roomId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetRoomId: string) => {
+    e.preventDefault();
+    
+    if (!draggedId || draggedId === targetRoomId) {
+      setDraggedId(null);
+      return;
+    }
+
+    const draggedIndex = roomsList.findIndex(r => r.id === draggedId);
+    const targetIndex = roomsList.findIndex(r => r.id === targetRoomId);
+
+    if (draggedIndex < 0 || targetIndex < 0) return;
+
+    const newRoomsList = Array.from(roomsList);
+    const [draggedRoom] = newRoomsList.splice(draggedIndex, 1);
+    newRoomsList.splice(targetIndex, 0, draggedRoom);
+
+    setRoomsList(newRoomsList);
+    onRoomsChange?.(newRoomsList);
+    setDraggedId(null);
   };
 
   return (
@@ -182,31 +210,36 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       )}
 
       {/* Rooms List */}
-      <Reorder.Group values={roomsList} onReorder={handleReorder} as="div" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AnimatePresence mode="popLayout">
           {roomsList.map((room) => {
             const deptColor = getDeptColor(room.department);
             const isEditing = editingRoom?.id === room.id;
             const isDeleting = deleteConfirm === room.id;
+            const isDragging = draggedId === room.id;
 
             return (
-              <Reorder.Item
+              <motion.div
                 key={room.id}
-                value={room}
+                draggable
+                onDragStart={(e) => handleDragStart(e as any, room.id)}
+                onDragOver={handleDragOver as any}
+                onDrop={(e) => handleDrop(e as any, room.id)}
+                onDragEnd={() => setDraggedId(null)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
+                className={`group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-move ${
+                  isDragging ? 'opacity-50 bg-white/[0.06] border-white/20' : ''
+                }`}
+                style={{
+                  boxShadow: `0 15px 35px -10px rgba(0,0,0,0.5)`,
+                }}
+                whileHover={{
+                  boxShadow: !isEditing && !isDeleting ? `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10` : undefined,
+                }}
+                transition={{ duration: 0.3 }}
               >
-                <motion.div
-                  className="group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all"
-                  style={{
-                    boxShadow: `0 15px 35px -10px rgba(0,0,0,0.5)`,
-                  }}
-                  whileHover={{
-                    boxShadow: `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10`,
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
                   {/* Gradient glow on hover */}
                   <motion.div
                     className="absolute -inset-0.5 z-0 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none"
@@ -315,11 +348,10 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     </div>
                   )}
                 </motion.div>
-              </Reorder.Item>
-            );
-          })}
+              );
+            })}
         </AnimatePresence>
-      </Reorder.Group>
+      </div>
 
       {roomsList.length === 0 && (
         <motion.div
