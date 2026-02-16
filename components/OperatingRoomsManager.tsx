@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus } from '../types';
-import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle } from 'lucide-react';
-import { MOCK_ROOMS } from '../constants';
+import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle, ChevronDown } from 'lucide-react';
+import { MOCK_ROOMS, DEFAULT_DEPARTMENTS } from '../constants';
 
 interface OperatingRoomsManagerProps {
   rooms?: OperatingRoom[];
@@ -25,6 +25,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   const [editingRoom, setEditingRoom] = useState<EditingRoom | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [showDeptModal, setShowDeptModal] = useState(false);
+  const [selectedDeptForRoom, setSelectedDeptForRoom] = useState<string | null>(null);
   const [newRoomData, setNewRoomData] = useState({
     name: '',
     department: '',
@@ -257,13 +259,18 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                           value={editingRoom.name}
                           onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
                           className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                          placeholder="Název sálu"
                         />
-                        <input
-                          type="text"
-                          value={editingRoom.department}
-                          onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
-                          className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
-                        />
+                        <motion.button
+                          onClick={() => {
+                            setSelectedDeptForRoom(editingRoom.department);
+                            setShowDeptModal(true);
+                          }}
+                          className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white hover:bg-white/[0.08] focus:outline-none focus:border-white/20 flex items-center justify-between"
+                        >
+                          <span>{editingRoom.department || 'Vybrat oddělení'}</span>
+                          <ChevronDown className="w-4 h-4" />
+                        </motion.button>
                         <input
                           type="text"
                           value={editingRoom.description || ''}
@@ -362,8 +369,112 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
           <p className="text-white/40 text-lg">Zatím nejsou žádné sály. Přidejte první sál kliknutím na tlačítko výše.</p>
         </motion.div>
       )}
+
+      {/* Department Selection Modal */}
+      <AnimatePresence>
+        {showDeptModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowDeptModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-white/10 rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Vybrat oddělení</h2>
+                <motion.button
+                  onClick={() => setShowDeptModal(false)}
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                >
+                  <X className="w-6 h-6 text-white" />
+                </motion.button>
+              </div>
+
+              {/* Department Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
+                  <div key={dept.id}>
+                    {/* Main Department */}
+                    <motion.button
+                      onClick={() => {
+                        setEditingRoom({ ...editingRoom!, department: dept.id });
+                        setShowDeptModal(false);
+                      }}
+                      className="w-full p-4 rounded-lg border-2 text-left transition-all mb-2"
+                      style={{
+                        borderColor: selectedDeptForRoom === dept.id ? dept.accentColor : 'rgba(255,255,255,0.2)',
+                        backgroundColor: `${dept.accentColor}15`,
+                      }}
+                      whileHover={{
+                        backgroundColor: `${dept.accentColor}25`,
+                        scale: 1.02,
+                      }}
+                    >
+                      <p className="font-bold text-white">{dept.name}</p>
+                      <p className="text-xs text-white/50">{dept.description}</p>
+                    </motion.button>
+
+                    {/* Sub-departments */}
+                    {dept.subDepartments.filter(s => s.isActive).length > 0 && (
+                      <div className="pl-4 space-y-2">
+                        {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
+                          <motion.button
+                            key={subDept.id}
+                            onClick={() => {
+                              setEditingRoom({ ...editingRoom!, department: subDept.id });
+                              setShowDeptModal(false);
+                            }}
+                            className="w-full p-3 rounded-lg border text-left text-sm transition-all"
+                            style={{
+                              borderColor: selectedDeptForRoom === subDept.id ? dept.accentColor : 'rgba(255,255,255,0.1)',
+                              backgroundColor: `${dept.accentColor}10`,
+                            }}
+                            whileHover={{
+                              backgroundColor: `${dept.accentColor}20`,
+                              scale: 1.02,
+                            }}
+                          >
+                            <p className="font-semibold text-white/90">{subDept.name}</p>
+                          </motion.button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-end">
+                <motion.button
+                  onClick={() => setShowDeptModal(false)}
+                  className="px-6 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all font-semibold"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  Zrušit
+                </motion.button>
+                <motion.button
+                  onClick={() => setShowDeptModal(false)}
+                  className="px-6 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 hover:bg-blue-500/30 transition-all font-semibold"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  Potvrdit
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
+};
 };
 
 export default OperatingRoomsManager;
