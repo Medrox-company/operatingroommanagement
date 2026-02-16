@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus } from '../types';
-import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle, Sparkles } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
 
 interface OperatingRoomsManagerProps {
@@ -31,20 +31,19 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     description: '',
   });
 
-  // Department colors
-  const deptColors: Record<string, { color: string; accentColor: string }> = {
-    TRA: { color: '#00D8C1', accentColor: '#00D8C1' },
-    CHIR: { color: '#7C3AED', accentColor: '#7C3AED' },
-    ROBOT: { color: '#06B6D4', accentColor: '#06B6D4' },
-    URO: { color: '#EC4899', accentColor: '#EC4899' },
-    ORL: { color: '#3B82F6', accentColor: '#3B82F6' },
-    CÉVNÍ: { color: '#F59E0B', accentColor: '#F59E0B' },
-    'HPB + PLICNÍ': { color: '#8B5CF6', accentColor: '#8B5CF6' },
-    DĚTSKÉ: { color: '#06B6D4', accentColor: '#06B6D4' },
-    MAMMO: { color: '#EC4899', accentColor: '#EC4899' },
+  const deptColors: Record<string, { color: string; accentColor: string; rgb: string }> = {
+    TRA: { color: '#00D8C1', accentColor: '#00D8C1', rgb: '0, 216, 193' },
+    CHIR: { color: '#7C3AED', accentColor: '#7C3AED', rgb: '124, 58, 237' },
+    ROBOT: { color: '#06B6D4', accentColor: '#06B6D4', rgb: '6, 182, 212' },
+    URO: { color: '#EC4899', accentColor: '#EC4899', rgb: '236, 72, 153' },
+    ORL: { color: '#3B82F6', accentColor: '#3B82F6', rgb: '59, 130, 246' },
+    CÉVNÍ: { color: '#F59E0B', accentColor: '#F59E0B', rgb: '245, 158, 11' },
+    'HPB + PLICNÍ': { color: '#8B5CF6', accentColor: '#8B5CF6', rgb: '139, 92, 246' },
+    DĚTSKÉ: { color: '#06B6D4', accentColor: '#06B6D4', rgb: '6, 182, 212' },
+    MAMMO: { color: '#EC4899', accentColor: '#EC4899', rgb: '236, 72, 153' },
   };
 
-  const getDeptColor = (dept: string) => deptColors[dept] || { color: '#64748B', accentColor: '#64748B' };
+  const getDeptColor = (dept: string) => deptColors[dept] || { color: '#64748B', accentColor: '#64748B', rgb: '100, 116, 139' };
 
   const handleAddRoom = () => {
     if (newRoomData.name && newRoomData.department) {
@@ -145,9 +144,11 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="mb-8 p-6 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px]"
+            className="mb-8 p-6 rounded-2xl backdrop-blur-xl"
             style={{
-              boxShadow: `0 15px 35px -10px rgba(0,0,0,0.5)`,
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.1), 0 8px 32px rgba(0,0,0,0.2)',
             }}
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -156,27 +157,27 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 placeholder="Název sálu (např. Sál č. 1)"
                 value={newRoomData.name}
                 onChange={(e) => setNewRoomData({ ...newRoomData, name: e.target.value })}
-                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+                className="px-4 py-3 rounded-xl backdrop-blur border border-white/20 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:border-white/40 focus:bg-white/10 transition-all"
               />
               <input
                 type="text"
                 placeholder="Oddělení (TRA, CHIR, atd.)"
                 value={newRoomData.department}
                 onChange={(e) => setNewRoomData({ ...newRoomData, department: e.target.value })}
-                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+                className="px-4 py-3 rounded-xl backdrop-blur border border-white/20 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:border-white/40 focus:bg-white/10 transition-all"
               />
               <input
                 type="text"
                 placeholder="Popis (volitelně)"
                 value={newRoomData.description}
                 onChange={(e) => setNewRoomData({ ...newRoomData, description: e.target.value })}
-                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+                className="px-4 py-3 rounded-xl backdrop-blur border border-white/20 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:border-white/40 focus:bg-white/10 transition-all"
               />
             </div>
             <div className="flex gap-2">
               <motion.button
                 onClick={handleAddRoom}
-                className="px-6 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-semibold hover:bg-blue-500/30 transition-all"
+                className="px-6 py-2 rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 text-white font-semibold backdrop-blur transition-all"
                 whileHover={{ scale: 1.05 }}
               >
                 <Check className="w-4 h-4 inline mr-2" />
@@ -187,7 +188,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   setIsAddingNew(false);
                   setNewRoomData({ name: '', department: '', description: '' });
                 }}
-                className="px-6 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
+                className="px-6 py-2 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 font-semibold backdrop-blur transition-all"
                 whileHover={{ scale: 1.05 }}
               >
                 Zrušit
@@ -201,7 +202,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       {!isAddingNew && (
         <motion.button
           onClick={() => setIsAddingNew(true)}
-          className="mb-8 px-6 py-3 rounded-lg bg-white/[0.05] border border-white/10 text-white hover:bg-white/[0.08] hover:border-white/15 transition-all flex items-center gap-2 font-semibold"
+          className="mb-8 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold backdrop-blur transition-all flex items-center gap-2"
           whileHover={{ scale: 1.02 }}
         >
           <Plus className="w-5 h-5" />
@@ -209,8 +210,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         </motion.button>
       )}
 
-      {/* Rooms List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-max">
+      {/* Rooms Grid - Premium Glassmorph */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AnimatePresence mode="popLayout">
           {roomsList.map((room) => {
             const deptColor = getDeptColor(room.department);
@@ -226,82 +227,94 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 onDragOver={handleDragOver as any}
                 onDrop={(e) => handleDrop(e as any, room.id)}
                 onDragEnd={() => setDraggedId(null)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -20 }}
                 className={`group relative overflow-hidden rounded-3xl cursor-move transition-all duration-300 ${
-                  isDragging ? 'opacity-40 scale-95' : 'hover:scale-105'
+                  isDragging ? 'opacity-40 scale-95' : ''
                 }`}
               >
-                {/* Animated gradient background */}
+                {/* Animated gradient backdrop */}
                 <motion.div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  className="absolute inset-0"
                   animate={{
-                    backgroundPosition: ['0% 0%', '100% 100%'],
+                    backgroundPosition: isDragging ? '0% 0%' : ['0% 0%', '100% 100%', '0% 0%'],
                   }}
                   transition={{
-                    backgroundPosition: { duration: 8, repeat: Infinity, ease: 'linear' },
+                    backgroundPosition: { duration: 8, repeat: Infinity, ease: 'ease-in-out' },
                   }}
                   style={{
-                    background: `linear-gradient(135deg, ${deptColor.color}20, ${deptColor.color}05, transparent)`,
+                    background: `linear-gradient(135deg, rgba(${deptColor.rgb}, 0.15), rgba(${deptColor.rgb}, 0.05), transparent, rgba(${deptColor.rgb}, 0.08))`,
                     backgroundSize: '200% 200%',
                   }}
                 />
 
-                {/* Glassmorphic background */}
-                <div
-                  className="absolute inset-0 backdrop-blur-2xl"
-                  style={{
-                    background: `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)`,
-                    border: `1.5px solid rgba(255,255,255,0.15)`,
-                    boxShadow: `inset 0 1px 2px rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.1)`,
-                  }}
-                />
-
-                {/* Top gradient accent */}
+                {/* Premium Glassmorph Layer */}
                 <motion.div
-                  className="absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute inset-0 backdrop-blur-2xl"
+                  whileHover={{ backdropFilter: 'blur(30px)' }}
+                  transition={{ duration: 0.3 }}
                   style={{
-                    background: `linear-gradient(90deg, ${deptColor.color}, transparent)`,
+                    background: `linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.08) 100%)`,
+                    border: `1.5px solid rgba(255,255,255,${isEditing || isDeleting ? '0.3' : '0.18'})`,
+                    boxShadow: `inset 0 1px 3px rgba(255,255,255,0.25), inset 0 -1px 3px rgba(0,0,0,0.1), 0 8px 32px rgba(${deptColor.rgb}, 0.1)`,
                   }}
                 />
 
-                {/* Corner accent circle */}
-                <div
-                  className="absolute -top-12 -right-12 w-24 h-24 rounded-full opacity-0 group-hover:opacity-30 blur-2xl transition-opacity"
+                {/* Animated top accent line */}
+                <motion.div
+                  className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100"
+                  animate={{
+                    boxShadow: ['0 0 0 rgba(${deptColor.rgb}, 0)', `0 0 20px rgba(${deptColor.rgb}, 0.6)`],
+                  }}
+                  transition={{ duration: 1, repeat: Infinity }}
                   style={{
-                    background: deptColor.color,
+                    background: `linear-gradient(90deg, rgba(${deptColor.rgb}, 0), ${deptColor.color}, rgba(${deptColor.rgb}, 0))`,
                   }}
                 />
 
-                {/* Content */}
+                {/* Corner glow accents */}
+                <motion.div
+                  className="absolute -top-16 -right-16 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-40"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                  style={{ background: deptColor.color }}
+                />
+
+                <motion.div
+                  className="absolute -bottom-16 -left-16 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-20"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 5, repeat: Infinity }}
+                  style={{ background: deptColor.color }}
+                />
+
+                {/* Content Layer */}
                 <div className="relative z-10 p-8 h-full flex flex-col justify-between min-h-80">
                   {isEditing ? (
-                    // Edit Mode
                     <div className="space-y-4">
                       <input
                         type="text"
                         value={editingRoom.name}
                         onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
-                        className="w-full px-4 py-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-all"
+                        className="w-full px-4 py-3 bg-white/10 backdrop-blur border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all"
                       />
                       <input
                         type="text"
                         value={editingRoom.department}
                         onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
-                        className="w-full px-4 py-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-all"
+                        className="w-full px-4 py-3 bg-white/10 backdrop-blur border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all"
                       />
                       <div className="flex gap-3 pt-4">
                         <motion.button
                           onClick={handleUpdateRoom}
-                          className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 text-white backdrop-blur transition-all"
+                          className="flex-1 px-4 py-3 font-semibold rounded-lg bg-white/25 hover:bg-white/35 border border-white/40 text-white backdrop-blur transition-all"
                           whileHover={{ scale: 1.05 }}
                         >
                           Uložit
                         </motion.button>
                         <motion.button
                           onClick={() => setEditingRoom(null)}
-                          className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 backdrop-blur transition-all"
+                          className="flex-1 px-4 py-3 font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 backdrop-blur transition-all"
                           whileHover={{ scale: 1.05 }}
                         >
                           Zrušit
@@ -309,23 +322,25 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                       </div>
                     </div>
                   ) : isDeleting ? (
-                    // Delete Confirmation
                     <div className="flex flex-col justify-between h-full">
                       <div>
-                        <p className="text-xs font-semibold text-white/60 uppercase tracking-widest mb-3">Potvrzení smazání</p>
-                        <p className="text-lg font-bold text-white"><strong>{room.name}</strong></p>
+                        <div className="flex items-center gap-2 mb-4">
+                          <AlertCircle className="w-5 h-5 text-red-400" />
+                          <p className="text-xs font-bold text-red-300 uppercase tracking-widest">Potvrzení smazání</p>
+                        </div>
+                        <p className="text-xl font-bold text-white">{room.name}</p>
                       </div>
                       <div className="flex gap-3">
                         <motion.button
                           onClick={() => handleDeleteRoom(room.id)}
-                          className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 backdrop-blur transition-all"
+                          className="flex-1 px-4 py-3 font-semibold rounded-lg bg-red-500/30 hover:bg-red-500/40 border border-red-500/50 text-red-200 backdrop-blur transition-all"
                           whileHover={{ scale: 1.05 }}
                         >
                           Smazat
                         </motion.button>
                         <motion.button
                           onClick={() => setDeleteConfirm(null)}
-                          className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 backdrop-blur transition-all"
+                          className="flex-1 px-4 py-3 font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 backdrop-blur transition-all"
                           whileHover={{ scale: 1.05 }}
                         >
                           Zrušit
@@ -333,44 +348,53 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                       </div>
                     </div>
                   ) : (
-                    // View Mode
                     <div className="flex flex-col justify-between h-full">
-                      {/* Top section */}
-                      <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div
-                            className="w-2 h-8 rounded-full"
-                            style={{ background: deptColor.color }}
-                          />
-                          <div>
-                            <p className="text-xs font-black tracking-[0.2em] uppercase opacity-70"
-                              style={{ color: deptColor.color }}
-                            >
-                              {room.department}
-                            </p>
-                            <h3 className="text-2xl font-black text-white leading-tight">{room.name}</h3>
-                          </div>
-                        </div>
+                      {/* Top section with department badge */}
+                      <div className="mb-8">
+                        <motion.div
+                          className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full backdrop-blur border border-white/20"
+                          style={{
+                            background: `rgba(${deptColor.rgb}, 0.15)`,
+                          }}
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <Sparkles className="w-3 h-3" style={{ color: deptColor.color }} />
+                          <p className="text-[11px] font-black tracking-[0.15em] uppercase" style={{ color: deptColor.color }}>
+                            {room.department}
+                          </p>
+                        </motion.div>
+
+                        <motion.h3
+                          className="text-3xl font-black text-white leading-tight"
+                          initial={{ opacity: 0.8 }}
+                          whileHover={{ opacity: 1, scale: 1.02 }}
+                        >
+                          {room.name}
+                        </motion.h3>
                       </div>
 
                       {/* Bottom action bar */}
-                      <div className="flex items-center gap-2 pt-6 border-t border-white/10">
+                      <motion.div
+                        className="flex items-center gap-2 pt-6 border-t border-white/15"
+                        initial={{ opacity: 0.6 }}
+                        whileHover={{ opacity: 1 }}
+                      >
                         <GripVertical className="w-4 h-4 text-white/30 flex-shrink-0" />
                         <motion.button
                           onClick={() => setEditingRoom({ id: room.id, name: room.name, department: room.department })}
-                          className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white backdrop-blur transition-all"
+                          className="flex-1 px-3 py-2 text-xs font-bold rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 hover:text-white backdrop-blur transition-all uppercase"
                           whileHover={{ scale: 1.05 }}
                         >
                           Upravit
                         </motion.button>
                         <motion.button
                           onClick={() => setDeleteConfirm(room.id)}
-                          className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-white/70 hover:text-red-300 backdrop-blur transition-all"
+                          className="flex-1 px-3 py-2 text-xs font-bold rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 text-white/60 hover:text-red-300 backdrop-blur transition-all uppercase"
                           whileHover={{ scale: 1.05 }}
                         >
                           Smazat
                         </motion.button>
-                      </div>
+                      </motion.div>
                     </div>
                   )}
                 </div>
@@ -384,7 +408,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12"
+          className="text-center py-16"
         >
           <p className="text-white/40 text-lg">Zatím nejsou žádné sály. Přidejte první sál kliknutím na tlačítko výše.</p>
         </motion.div>
