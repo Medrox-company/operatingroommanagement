@@ -293,9 +293,6 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                             {room.department}
                           </div>
                           <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
-                          {room.currentProcedure?.name && (
-                            <p className="text-xs text-white/40 truncate mt-1">{room.currentProcedure.name}</p>
-                          )}
                         </div>
                       </div>
 
