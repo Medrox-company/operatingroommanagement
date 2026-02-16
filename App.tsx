@@ -195,7 +195,7 @@ const App: React.FC = () => {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 z-50"
               >
-                <SettingsPage />
+                <SettingsPage rooms={selectedRoom ? [selectedRoom, ...rooms.filter(r => r.id !== selectedRoom.id)] : rooms} onRoomsChange={setRooms} />
               </motion.div>
             )}
           </AnimatePresence>

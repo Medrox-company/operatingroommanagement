@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock } from 'lucide-react';
+import OperatingRoomsManager from './OperatingRoomsManager';
+import { OperatingRoom } from '../types';
 
-const SettingsPage: React.FC = () => {
+interface SettingsPageProps {
+  rooms?: OperatingRoom[];
+  onRoomsChange?: (rooms: OperatingRoom[]) => void;
+}
+
+const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }) => {
+  const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  
   const settings = [
     {
       id: 'rooms',
@@ -56,29 +65,22 @@ const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10"
-    >
-      <div className="max-w-[2400px] mx-auto w-full">
-        {/* Header */}
-        <header className="flex flex-col gap-4 mb-16">
-          <div className="flex items-center justify-start gap-3 mb-2 opacity-60">
-            <SettingsIcon className="w-4 h-4 text-[#00D8C1]" />
-            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">NASTAVENÍ SYSTÉMU</p>
-          </div>
-          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-            NASTAVENÍ <span className="text-white/20">SPRÁVY</span>
-          </h1>
-          <p className="text-white/40 text-sm mt-4 max-w-xl">
-            Nakonfigurujte a spravujte všechny aspekty operačních sálů, personálu a rozpisu.
-          </p>
-        </header>
+    <div className="relative w-full min-h-screen">
+      {/* Show manager if module selected */}
+      {selectedModule === 'rooms' && rooms.length >= 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute inset-0 z-30"
+        >
+          <OperatingRoomsManager rooms={rooms} onRoomsChange={(updatedRooms) => {
+            onRoomsChange?.(updatedRooms);
+          }} />
+        </motion.div>
+      ) : null}
 
-        {/* Settings Grid */}
-        <div className="pb-20 px-2">
+      {/* Settings Grid */}
+      <div className="pb-20 px-2">
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
             initial={{ opacity: 0 }}
@@ -91,7 +93,7 @@ const SettingsPage: React.FC = () => {
                 <motion.div
                   key={setting.id}
                   layout
-                  onClick={() => {}}
+                  onClick={() => setSelectedModule(setting.id)}
                   className="relative group cursor-pointer h-[340px] w-full"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
