@@ -240,9 +240,9 @@ const DepartmentsManager: React.FC = () => {
                         whileHover={{ scale: 1.1 }}
                       >
                         {dept.isActive ? (
-                          <Lock className="w-4 h-4" style={{ color: dept.accentColor }} />
+                          <Unlock className="w-4 h-4" style={{ color: dept.accentColor }} />
                         ) : (
-                          <Unlock className="w-4 h-4 text-white/40" />
+                          <Lock className="w-4 h-4 text-white/40" />
                         )}
                       </motion.button>
                     </div>
