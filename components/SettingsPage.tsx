@@ -249,8 +249,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
                           transition={{ duration: 2, repeat: Infinity }}
                         >
                           <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
+                        </motion.div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </motion.div>
-            </div>
+        </div>
           </div>
         </div>
       )}
