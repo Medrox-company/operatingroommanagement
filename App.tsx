@@ -72,11 +72,11 @@ const App: React.FC = () => {
 
       <Sidebar currentView={currentView} onNavigate={(view) => {
         setCurrentView(view);
-        if (view === 'dashboard') setSelectedRoomId(null);
+        setSelectedRoomId(null);
       }} />
       <MobileNav currentView={currentView} onNavigate={(view) => {
         setCurrentView(view);
-        if (view === 'dashboard') setSelectedRoomId(null);
+        setSelectedRoomId(null);
       }} />
 
       <div className="flex-1 flex flex-col relative z-20 w-full overflow-hidden">
