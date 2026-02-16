@@ -227,69 +227,106 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 onDragOver={handleDragOver as any}
                 onDrop={(e) => handleDrop(e as any, room.id)}
                 onDragEnd={() => setDraggedId(null)}
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -20 }}
-                className={`group relative overflow-hidden rounded-3xl cursor-move transition-all duration-300 ${
-                  isDragging ? 'opacity-40 scale-95' : ''
+                exit={{ opacity: 0, scale: 0.9, y: -30 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className={`group relative overflow-hidden rounded-2xl cursor-move transition-all duration-300 ${
+                  isDragging ? 'opacity-30 scale-95 rotate-2' : ''
                 }`}
               >
-                {/* Animated gradient backdrop */}
+                {/* Multi-layer Backdrop with animated gradients */}
                 <motion.div
                   className="absolute inset-0"
                   animate={{
-                    backgroundPosition: isDragging ? '0% 0%' : ['0% 0%', '100% 100%', '0% 0%'],
+                    backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'],
                   }}
                   transition={{
-                    backgroundPosition: { duration: 8, repeat: Infinity, ease: 'ease-in-out' },
+                    backgroundPosition: { duration: 15, repeat: Infinity, ease: 'easeInOut' },
                   }}
                   style={{
-                    background: `linear-gradient(135deg, rgba(${deptColor.rgb}, 0.15), rgba(${deptColor.rgb}, 0.05), transparent, rgba(${deptColor.rgb}, 0.08))`,
-                    backgroundSize: '200% 200%',
+                    background: `linear-gradient(45deg, rgba(${deptColor.rgb}, 0.25), rgba(${deptColor.rgb}, 0.05), rgba(${deptColor.rgb}, 0.12), rgba(${deptColor.rgb}, 0.03))`,
+                    backgroundSize: '300% 300%',
                   }}
                 />
 
-                {/* Premium Glassmorph Layer */}
+                {/* Premium Glassmorph Base - Super refined */}
                 <motion.div
-                  className="absolute inset-0 backdrop-blur-2xl"
-                  whileHover={{ backdropFilter: 'blur(30px)' }}
+                  className="absolute inset-0 backdrop-blur-3xl"
+                  whileHover={{ backdropFilter: 'blur(40px)' }}
                   transition={{ duration: 0.3 }}
                   style={{
-                    background: `linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.08) 100%)`,
-                    border: `1.5px solid rgba(255,255,255,${isEditing || isDeleting ? '0.3' : '0.18'})`,
-                    boxShadow: `inset 0 1px 3px rgba(255,255,255,0.25), inset 0 -1px 3px rgba(0,0,0,0.1), 0 8px 32px rgba(${deptColor.rgb}, 0.1)`,
+                    background: `linear-gradient(135deg, 
+                      rgba(255,255,255,0.15) 0%, 
+                      rgba(255,255,255,0.06) 25%, 
+                      rgba(255,255,255,0.04) 50%, 
+                      rgba(255,255,255,0.08) 75%,
+                      rgba(255,255,255,0.12) 100%
+                    )`,
+                    border: `1.5px solid rgba(255,255,255,${isEditing || isDeleting ? '0.35' : '0.22'})`,
+                    boxShadow: `
+                      inset 0 1px 2px rgba(255,255,255,0.3),
+                      inset 0 -1px 4px rgba(0,0,0,0.15),
+                      0 25px 50px -12px rgba(0,0,0,0.25),
+                      0 0 40px rgba(${deptColor.rgb}, 0.15)
+                    `,
                   }}
                 />
 
-                {/* Animated top accent line */}
+                {/* Animated top accent glow line */}
                 <motion.div
-                  className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100"
+                  className="absolute top-0 left-0 right-0 h-[1.5px] opacity-0 group-hover:opacity-100"
                   animate={{
-                    boxShadow: ['0 0 0 rgba(${deptColor.rgb}, 0)', `0 0 20px rgba(${deptColor.rgb}, 0.6)`],
+                    boxShadow: [
+                      'none',
+                      `0 0 15px rgba(${deptColor.rgb}, 0.8)`,
+                      `0 0 30px rgba(${deptColor.rgb}, 0.4)`,
+                      'none',
+                    ],
                   }}
-                  transition={{ duration: 1, repeat: Infinity }}
+                  transition={{ duration: 2, repeat: Infinity }}
                   style={{
-                    background: `linear-gradient(90deg, rgba(${deptColor.rgb}, 0), ${deptColor.color}, rgba(${deptColor.rgb}, 0))`,
+                    background: `linear-gradient(90deg, 
+                      rgba(${deptColor.rgb}, 0) 0%, 
+                      ${deptColor.color} 50%, 
+                      rgba(${deptColor.rgb}, 0) 100%
+                    )`,
                   }}
                 />
 
-                {/* Corner glow accents */}
+                {/* Corner accent glows - Dynamic */}
                 <motion.div
-                  className="absolute -top-16 -right-16 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-40"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                  style={{ background: deptColor.color }}
-                />
-
-                <motion.div
-                  className="absolute -bottom-16 -left-16 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-20"
-                  animate={{ scale: [1, 1.3, 1] }}
+                  className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-50"
+                  animate={{ 
+                    scale: [1, 1.3, 1],
+                    opacity: [0, 0.4, 0.2],
+                  }}
                   transition={{ duration: 5, repeat: Infinity }}
                   style={{ background: deptColor.color }}
                 />
 
+                <motion.div
+                  className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-30"
+                  animate={{ 
+                    scale: [1, 1.4, 1],
+                    opacity: [0, 0.25, 0.1],
+                  }}
+                  transition={{ duration: 6, repeat: Infinity, delay: 1 }}
+                  style={{ background: deptColor.color }}
+                />
+
+                {/* Bottom accent glow */}
+                <motion.div
+                  className="absolute top-1/2 right-0 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-20"
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
+                  style={{ background: deptColor.color }}
+                />
+
                 {/* Content Layer */}
-                <div className="relative z-10 p-8 h-full flex flex-col justify-between min-h-80">
+                <div className="relative z-10 p-8 h-full flex flex-col justify-between min-h-96">
                   {isEditing ? (
                     <div className="space-y-4">
                       <input
@@ -349,51 +386,83 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     </div>
                   ) : (
                     <div className="flex flex-col justify-between h-full">
-                      {/* Top section with department badge */}
-                      <div className="mb-8">
+                      {/* Department Badge - Premium */}
+                      <motion.div
+                        className="mb-6"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
                         <motion.div
-                          className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full backdrop-blur border border-white/20"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur border transition-all"
                           style={{
-                            background: `rgba(${deptColor.rgb}, 0.15)`,
+                            background: `rgba(${deptColor.rgb}, 0.18)`,
+                            borderColor: `rgba(${deptColor.rgb}, 0.4)`,
                           }}
-                          whileHover={{ scale: 1.05 }}
+                          whileHover={{ scale: 1.08, boxShadow: `0 0 20px rgba(${deptColor.rgb}, 0.3)` }}
                         >
-                          <Sparkles className="w-3 h-3" style={{ color: deptColor.color }} />
-                          <p className="text-[11px] font-black tracking-[0.15em] uppercase" style={{ color: deptColor.color }}>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                          >
+                            <Sparkles className="w-4 h-4" style={{ color: deptColor.color }} />
+                          </motion.div>
+                          <p className="text-[12px] font-black tracking-[0.2em] uppercase font-bold" style={{ color: deptColor.color }}>
                             {room.department}
                           </p>
                         </motion.div>
+                      </motion.div>
 
+                      {/* Room Name - Bold typography */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8"
+                      >
                         <motion.h3
-                          className="text-3xl font-black text-white leading-tight"
-                          initial={{ opacity: 0.8 }}
-                          whileHover={{ opacity: 1, scale: 1.02 }}
+                          className="text-4xl font-black text-white leading-tight tracking-tight"
+                          initial={{ opacity: 0.85 }}
+                          whileHover={{ opacity: 1 }}
+                          transition={{ duration: 0.3 }}
                         >
                           {room.name}
                         </motion.h3>
-                      </div>
+                      </motion.div>
 
-                      {/* Bottom action bar */}
+                      {/* Action Bar - Bottom */}
                       <motion.div
-                        className="flex items-center gap-2 pt-6 border-t border-white/15"
-                        initial={{ opacity: 0.6 }}
-                        whileHover={{ opacity: 1 }}
+                        className="flex items-center justify-between pt-6 border-t"
+                        style={{
+                          borderTopColor: `rgba(255,255,255,0.15)`,
+                        }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
                       >
-                        <GripVertical className="w-4 h-4 text-white/30 flex-shrink-0" />
-                        <motion.button
-                          onClick={() => setEditingRoom({ id: room.id, name: room.name, department: room.department })}
-                          className="flex-1 px-3 py-2 text-xs font-bold rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 hover:text-white backdrop-blur transition-all uppercase"
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          Upravit
-                        </motion.button>
-                        <motion.button
-                          onClick={() => setDeleteConfirm(room.id)}
-                          className="flex-1 px-3 py-2 text-xs font-bold rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 text-white/60 hover:text-red-300 backdrop-blur transition-all uppercase"
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          Smazat
-                        </motion.button>
+                        <GripVertical className="w-4 h-4 text-white/40 flex-shrink-0" />
+                        <div className="flex gap-2 flex-1 ml-4">
+                          <motion.button
+                            onClick={() => setEditingRoom({ id: room.id, name: room.name, department: room.department })}
+                            className="flex-1 px-3 py-2.5 text-xs font-black rounded-lg backdrop-blur border transition-all uppercase tracking-widest"
+                            style={{
+                              background: `rgba(${deptColor.rgb}, 0.12)`,
+                              borderColor: `rgba(${deptColor.rgb}, 0.3)`,
+                              color: deptColor.color,
+                            }}
+                            whileHover={{ 
+                              scale: 1.05,
+                              boxShadow: `0 0 15px rgba(${deptColor.rgb}, 0.4)`,
+                            }}
+                          >
+                            Upravit
+                          </motion.button>
+                          <motion.button
+                            onClick={() => setDeleteConfirm(room.id)}
+                            className="flex-1 px-3 py-2.5 text-xs font-black rounded-lg bg-white/5 hover:bg-red-500/15 border border-white/15 hover:border-red-500/40 text-white/60 hover:text-red-300 backdrop-blur transition-all uppercase tracking-widest"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            Smazat
+                          </motion.button>
+                        </div>
                       </motion.div>
                     </div>
                   )}
