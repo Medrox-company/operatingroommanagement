@@ -5,6 +5,7 @@ import TopBar from './components/TopBar';
 import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
 import PlaceholderView from './components/PlaceholderView';
+import SettingsPage from './components/SettingsPage';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
@@ -17,6 +18,7 @@ const App: React.FC = () => {
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
@@ -70,12 +72,22 @@ const App: React.FC = () => {
       </div>
 
       <Sidebar currentView={currentView} onNavigate={(view) => {
-        setCurrentView(view);
-        if (view === 'dashboard') setSelectedRoomId(null);
+        if (currentView === 'settings' && view === 'settings') {
+          // Reset settings module when clicking settings again
+          setSettingsResetTrigger(prev => prev + 1);
+        } else {
+          setCurrentView(view);
+          setSelectedRoomId(null);
+        }
       }} />
       <MobileNav currentView={currentView} onNavigate={(view) => {
-        setCurrentView(view);
-        if (view === 'dashboard') setSelectedRoomId(null);
+        if (currentView === 'settings' && view === 'settings') {
+          // Reset settings module when clicking settings again
+          setSettingsResetTrigger(prev => prev + 1);
+        } else {
+          setCurrentView(view);
+          setSelectedRoomId(null);
+        }
       }} />
 
       <div className="flex-1 flex flex-col relative z-20 w-full overflow-hidden">
@@ -187,12 +199,15 @@ const App: React.FC = () => {
               />
             )}
             {currentView === 'settings' && (
-              <PlaceholderView
+              <motion.div
                 key="settings"
-                icon={Settings}
-                title="Nastavení"
-                description="Konfigurace systému a preferencí bude k dispozici v této sekci."
-              />
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="w-full h-full overflow-y-auto hide-scrollbar"
+              >
+                <SettingsPage rooms={rooms} onRoomsChange={setRooms} resetTrigger={settingsResetTrigger} />
+              </motion.div>
             )}
           </AnimatePresence>
         </main>
