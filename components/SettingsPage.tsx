@@ -65,22 +65,34 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
   ];
 
   return (
+  return (
     <div className="relative w-full min-h-screen">
       {/* Show manager if module selected */}
-      {selectedModule === 'rooms' && rooms.length >= 0 ? (
+      {selectedModule === 'rooms' ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="absolute inset-0 z-30"
+          exit={{ opacity: 0 }}
+          className="w-full"
         >
+          <div className="flex items-center gap-3 mb-6 px-2">
+            <motion.button
+              onClick={() => setSelectedModule(null)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all"
+              whileHover={{ scale: 1.05 }}
+            >
+              <ArrowRight className="w-4 h-4 rotate-180" />
+              <span className="text-sm font-semibold text-white/70">Zpět</span>
+            </motion.button>
+          </div>
           <OperatingRoomsManager rooms={rooms} onRoomsChange={(updatedRooms) => {
             onRoomsChange?.(updatedRooms);
           }} />
         </motion.div>
-      ) : null}
-
-      {/* Settings Grid */}
-      <div className="pb-20 px-2">
+      ) : (
+        <>
+          {/* Settings Grid */}
+          <div className="pb-20 px-2">
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
             initial={{ opacity: 0 }}
@@ -240,8 +252,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }
             })}
           </motion.div>
         </div>
-      </div>
-    </motion.div>
+        </>
+      )}
+    </div>
   );
 };
 
