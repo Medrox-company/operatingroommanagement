@@ -1,287 +1,335 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { OperatingRoom, RoomStatus } from '../types';
-import { Plus, Edit2, Trash2, GripVertical, X, Check, Building2, MapPin, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle } from 'lucide-react';
+import { MOCK_ROOMS } from '../constants';
 
 interface OperatingRoomsManagerProps {
-  rooms: OperatingRoom[];
-  onRoomsChange: (rooms: OperatingRoom[]) => void;
+  rooms?: OperatingRoom[];
+  onRoomsChange?: (rooms: OperatingRoom[]) => void;
 }
 
-interface EditingRoom extends Partial<OperatingRoom> {
+interface EditingRoom {
+  id: string;
+  name: string;
+  department: string;
   description?: string;
 }
 
-export default function OperatingRoomsManager({ rooms, onRoomsChange }: OperatingRoomsManagerProps) {
+const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
+  rooms = MOCK_ROOMS,
+  onRoomsChange,
+}) => {
+  const [roomsList, setRoomsList] = useState<OperatingRoom[]>(rooms);
+  const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingRoom, setEditingRoom] = useState<EditingRoom | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [newRoomData, setNewRoomData] = useState({
+    name: '',
+    department: '',
+    description: '',
+  });
 
-  const statusColors: Record<RoomStatus, { bg: string; text: string; border: string }> = {
-    [RoomStatus.FREE]: { bg: '#34C75940', text: '#34C759', border: '#34C75960' },
-    [RoomStatus.BUSY]: { bg: '#FF3B3040', text: '#FF3B30', border: '#FF3B3060' },
-    [RoomStatus.CLEANING]: { bg: '#FBBF2440', text: '#FBBF24', border: '#FBBF2460' },
-    [RoomStatus.MAINTENANCE]: { bg: '#818CF840', text: '#818CF8', border: '#818CF860' },
+  // Department colors
+  const deptColors: Record<string, { color: string; accentColor: string }> = {
+    TRA: { color: '#00D8C1', accentColor: '#00D8C1' },
+    CHIR: { color: '#7C3AED', accentColor: '#7C3AED' },
+    ROBOT: { color: '#06B6D4', accentColor: '#06B6D4' },
+    URO: { color: '#EC4899', accentColor: '#EC4899' },
+    ORL: { color: '#3B82F6', accentColor: '#3B82F6' },
+    CÉVNÍ: { color: '#F59E0B', accentColor: '#F59E0B' },
+    'HPB + PLICNÍ': { color: '#8B5CF6', accentColor: '#8B5CF6' },
+    DĚTSKÉ: { color: '#06B6D4', accentColor: '#06B6D4' },
+    MAMMO: { color: '#EC4899', accentColor: '#EC4899' },
   };
 
-  const handleAdd = () => {
-    setEditingRoom({
-      id: Date.now().toString(),
-      name: '',
-      department: '',
-      status: RoomStatus.FREE,
-      queueCount: 0,
-      operations24h: 0,
-      staff: { doctor: { name: null, role: 'DOCTOR' }, nurse: { name: null, role: 'NURSE' } },
-      currentStepIndex: 0,
-      description: '',
-    });
-    setShowForm(true);
-  };
+  const getDeptColor = (dept: string) => deptColors[dept] || { color: '#64748B', accentColor: '#64748B' };
 
-  const handleEdit = (room: OperatingRoom) => {
-    setEditingRoom({ ...room, description: '' });
-    setShowForm(true);
-  };
-
-  const handleSave = () => {
-    if (!editingRoom || !editingRoom.name?.trim()) return;
-
-    const updatedRooms = rooms.some(r => r.id === editingRoom.id)
-      ? rooms.map(r => r.id === editingRoom.id ? { ...editingRoom as OperatingRoom } : r)
-      : [...rooms, editingRoom as OperatingRoom];
-
-    onRoomsChange(updatedRooms);
-    setShowForm(false);
-    setEditingRoom(null);
-  };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm('Opravdu chcete smazat tento sál?')) {
-      onRoomsChange(rooms.filter(r => r.id !== id));
+  const handleAddRoom = () => {
+    if (newRoomData.name && newRoomData.department) {
+      const newRoom: OperatingRoom = {
+        id: Date.now().toString(),
+        name: newRoomData.name,
+        department: newRoomData.department,
+        status: RoomStatus.FREE,
+        queueCount: 0,
+        operations24h: 0,
+        currentStepIndex: 6,
+        isEmergency: false,
+        isLocked: false,
+        staff: {
+          doctor: { name: null, role: 'DOCTOR' },
+          nurse: { name: null, role: 'NURSE' },
+        },
+      };
+      const updated = [...roomsList, newRoom];
+      setRoomsList(updated);
+      onRoomsChange?.(updated);
+      setNewRoomData({ name: '', department: '', description: '' });
+      setIsAddingNew(false);
     }
   };
 
-  const handleDragStart = (id: string) => {
-    setDraggedId(id);
+  const handleDeleteRoom = (id: string) => {
+    const updated = roomsList.filter(r => r.id !== id);
+    setRoomsList(updated);
+    onRoomsChange?.(updated);
+    setDeleteConfirm(null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (targetId: string) => {
-    if (!draggedId || draggedId === targetId) {
-      setDraggedId(null);
-      return;
+  const handleUpdateRoom = () => {
+    if (editingRoom) {
+      const updated = roomsList.map(r =>
+        r.id === editingRoom.id
+          ? { ...r, name: editingRoom.name, department: editingRoom.department }
+          : r
+      );
+      setRoomsList(updated);
+      onRoomsChange?.(updated);
+      setEditingRoom(null);
     }
+  };
 
-    const draggedIndex = rooms.findIndex(r => r.id === draggedId);
-    const targetIndex = rooms.findIndex(r => r.id === targetId);
-
-    if (draggedIndex < 0 || targetIndex < 0) return;
-
-    const newRooms = Array.from(rooms);
-    const [draggedRoom] = newRooms.splice(draggedIndex, 1);
-    newRooms.splice(targetIndex, 0, draggedRoom);
-
-    onRoomsChange(newRooms);
-    setDraggedId(null);
+  const handleReorder = (newOrder: OperatingRoom[]) => {
+    setRoomsList(newOrder);
+    onRoomsChange?.(newOrder);
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-8">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Operační sály</h2>
-          <p className="text-sm text-white/40">Správa a konfigurace operačních sálů v systému</p>
-        </div>
-        <motion.button
-          onClick={handleAdd}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 text-white font-semibold hover:shadow-lg transition-all"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Plus className="w-5 h-5" />
-          Přidat sál
-        </motion.button>
-      </div>
-
-      {/* Rooms Grid */}
-      <div className="space-y-3">
-        <AnimatePresence>
-            {rooms.map((room, index) => {
-              const status = statusColors[room.status];
-              return (
-                <motion.div
-                  key={room.id}
-                  draggable
-                  onDragStart={() => handleDragStart(room.id)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(room.id)}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  className={`group p-4 rounded-xl border transition-all cursor-move ${
-                    draggedId === room.id 
-                      ? 'opacity-50 bg-white/5 border-white/10' 
-                      : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04]'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <GripVertical className="w-5 h-5 text-white/30 group-hover:text-white/50" />
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-base font-bold text-white truncate">{room.name}</h3>
-                        <span
-                          className="px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap"
-                          style={{
-                            backgroundColor: status.bg,
-                            color: status.text,
-                            border: `1px solid ${status.border}`,
-                          }}
-                        >
-                          {room.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-white/40">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {room.department || 'Neuvedeno'}
-                        </span>
-                        <span>Fronta: {room.queueCount}</span>
-                        <span>Operací za 24h: {room.operations24h}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <motion.button
-                        onClick={() => handleEdit(room)}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button
-                        onClick={() => handleDelete(room.id)}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+          <h2 className="text-3xl font-bold text-white mb-2">Správa operačních sálů</h2>
+          <p className="text-white/50 text-sm">Přidávejte, upravujte a spravujte operační sály používané v aplikaci</p>
         </div>
       </div>
-      </div>
 
-      {/* Edit Form Modal */}
+      {/* Add New Room Form */}
       <AnimatePresence>
-        {showForm && editingRoom && (
+        {isAddingNew && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 rounded-[2.5rem]"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8 p-6 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px]"
+            style={{
+              boxShadow: `0 15px 35px -10px rgba(0,0,0,0.5)`,
+            }}
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">
-                  {rooms.some(r => r.id === editingRoom.id) ? 'Upravit sál' : 'Nový sál'}
-                </h3>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-all"
-                >
-                  <X className="w-5 h-5 text-white/60" />
-                </button>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-semibold text-white/80 mb-2">Název sálu</label>
-                  <input
-                    type="text"
-                    value={editingRoom.name || ''}
-                    onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-all"
-                    placeholder="Sál č. 1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-white/80 mb-2">Oddělení</label>
-                  <input
-                    type="text"
-                    value={editingRoom.department || ''}
-                    onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-all"
-                    placeholder="TRA, URO, ORL..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-white/80 mb-2">Status</label>
-                  <select
-                    value={editingRoom.status || RoomStatus.FREE}
-                    onChange={(e) => setEditingRoom({ ...editingRoom, status: e.target.value as RoomStatus })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/30 transition-all"
-                  >
-                    {Object.values(RoomStatus).map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-white/80 mb-2">Popis sálu</label>
-                  <textarea
-                    value={editingRoom.description || ''}
-                    onChange={(e) => setEditingRoom({ ...editingRoom, description: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-all resize-none"
-                    placeholder="Například: vybavení, kapacita..."
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <motion.button
-                  onClick={() => setShowForm(false)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 transition-all"
-                >
-                  Zrušit
-                </motion.button>
-                <motion.button
-                  onClick={handleSave}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 text-white font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Uložit
-                </motion.button>
-              </div>
-            </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="Název sálu (např. Sál č. 1)"
+                value={newRoomData.name}
+                onChange={(e) => setNewRoomData({ ...newRoomData, name: e.target.value })}
+                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+              />
+              <input
+                type="text"
+                placeholder="Oddělení (TRA, CHIR, atd.)"
+                value={newRoomData.department}
+                onChange={(e) => setNewRoomData({ ...newRoomData, department: e.target.value })}
+                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+              />
+              <input
+                type="text"
+                placeholder="Popis (volitelně)"
+                value={newRoomData.description}
+                onChange={(e) => setNewRoomData({ ...newRoomData, description: e.target.value })}
+                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+              />
+            </div>
+            <div className="flex gap-2">
+              <motion.button
+                onClick={handleAddRoom}
+                className="px-6 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-semibold hover:bg-blue-500/30 transition-all"
+                whileHover={{ scale: 1.05 }}
+              >
+                <Check className="w-4 h-4 inline mr-2" />
+                Přidat
+              </motion.button>
+              <motion.button
+                onClick={() => {
+                  setIsAddingNew(false);
+                  setNewRoomData({ name: '', department: '', description: '' });
+                }}
+                className="px-6 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
+                whileHover={{ scale: 1.05 }}
+              >
+                Zrušit
+              </motion.button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Add Button */}
+      {!isAddingNew && (
+        <motion.button
+          onClick={() => setIsAddingNew(true)}
+          className="mb-8 px-6 py-3 rounded-lg bg-white/[0.05] border border-white/10 text-white hover:bg-white/[0.08] hover:border-white/15 transition-all flex items-center gap-2 font-semibold"
+          whileHover={{ scale: 1.02 }}
+        >
+          <Plus className="w-5 h-5" />
+          Přidat nový sál
+        </motion.button>
+      )}
+
+      {/* Rooms List */}
+      <Reorder.Group values={roomsList} onReorder={handleReorder} className="space-y-4">
+        <AnimatePresence mode="popLayout">
+          {roomsList.map((room) => {
+            const deptColor = getDeptColor(room.department);
+            const isEditing = editingRoom?.id === room.id;
+            const isDeleting = deleteConfirm === room.id;
+
+            return (
+              <Reorder.Item
+                key={room.id}
+                value={room}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <motion.div
+                  className="group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all"
+                  style={{
+                    boxShadow: `0 15px 35px -10px rgba(0,0,0,0.5)`,
+                  }}
+                  whileHover={{
+                    boxShadow: `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10`,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Gradient glow on hover */}
+                  <motion.div
+                    className="absolute -inset-0.5 z-0 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none"
+                    style={{
+                      background: `radial-gradient(ellipse at 50% 0%, ${deptColor.color}, transparent 70%)`,
+                    }}
+                  />
+
+                  {isEditing ? (
+                    // Edit Mode
+                    <div className="relative z-10 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input
+                          type="text"
+                          value={editingRoom.name}
+                          onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
+                          className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                        />
+                        <input
+                          type="text"
+                          value={editingRoom.department}
+                          onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
+                          className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                        />
+                        <input
+                          type="text"
+                          value={editingRoom.description || ''}
+                          onChange={(e) => setEditingRoom({ ...editingRoom, description: e.target.value })}
+                          className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                          placeholder="Popis sálu"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <motion.button
+                          onClick={handleUpdateRoom}
+                          className="px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 hover:bg-green-500/30 transition-all"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <Check className="w-4 h-4" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setEditingRoom(null)}
+                          className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <X className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  ) : isDeleting ? (
+                    // Delete Confirmation
+                    <div className="relative z-10 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-400" />
+                        <span className="text-white/70">Opravdu chcete smazat <strong>{room.name}</strong>?</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <motion.button
+                          onClick={() => handleDeleteRoom(room.id)}
+                          className="px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300 hover:bg-red-500/30 transition-all"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          Smazat
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setDeleteConfirm(null)}
+                          className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          Zrušit
+                        </motion.button>
+                      </div>
+                    </div>
+                  ) : (
+                    // View Mode
+                    <div className="relative z-10 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <GripVertical className="w-5 h-5 text-white/30 cursor-grab flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className="text-[9px] font-black tracking-[0.2em] uppercase mb-1"
+                            style={{ color: deptColor.color }}
+                          >
+                            {room.department}
+                          </div>
+                          <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
+                          {room.currentProcedure?.name && (
+                            <p className="text-xs text-white/40 truncate mt-1">{room.currentProcedure.name}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <motion.button
+                          onClick={() => setEditingRoom({ id: room.id, name: room.name, department: room.department, description: room.name })}
+                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.08] hover:border-white/20 transition-all"
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setDeleteConfirm(room.id)}
+                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              </Reorder.Item>
+            );
+          })}
+        </AnimatePresence>
+      </Reorder.Group>
+
+      {roomsList.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12"
+        >
+          <p className="text-white/40 text-lg">Zatím nejsou žádné sály. Přidejte první sál kliknutím na tlačítko výše.</p>
+        </motion.div>
+      )}
     </div>
   );
-}
+};
+
+export default OperatingRoomsManager;
