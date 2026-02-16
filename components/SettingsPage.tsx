@@ -4,6 +4,7 @@ import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, Arro
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
 import ScheduleManager from './ScheduleManager';
+import DepartmentsManager from './DepartmentsManager';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -110,6 +111,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
           <ScheduleManager />
+        </motion.div>
+      ) : selectedModule === 'departments' ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full px-8 md:pl-32 md:pr-10 py-10"
+        >
+          <DepartmentsManager />
         </motion.div>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
