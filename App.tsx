@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
@@ -71,12 +72,22 @@ const App: React.FC = () => {
       </div>
 
       <Sidebar currentView={currentView} onNavigate={(view) => {
-        setCurrentView(view);
-        setSelectedRoomId(null);
+        if (currentView === 'settings' && view === 'settings') {
+          // Reset settings module when clicking settings again
+          setSettingsResetTrigger(prev => prev + 1);
+        } else {
+          setCurrentView(view);
+          setSelectedRoomId(null);
+        }
       }} />
       <MobileNav currentView={currentView} onNavigate={(view) => {
-        setCurrentView(view);
-        setSelectedRoomId(null);
+        if (currentView === 'settings' && view === 'settings') {
+          // Reset settings module when clicking settings again
+          setSettingsResetTrigger(prev => prev + 1);
+        } else {
+          setCurrentView(view);
+          setSelectedRoomId(null);
+        }
       }} />
 
       <div className="flex-1 flex flex-col relative z-20 w-full overflow-hidden">
@@ -195,7 +206,7 @@ const App: React.FC = () => {
                 exit={{ opacity: 0 }}
                 className="w-full h-full overflow-y-auto hide-scrollbar"
               >
-                <SettingsPage rooms={rooms} onRoomsChange={setRooms} />
+                <SettingsPage rooms={rooms} onRoomsChange={setRooms} resetTrigger={settingsResetTrigger} />
               </motion.div>
             )}
           </AnimatePresence>

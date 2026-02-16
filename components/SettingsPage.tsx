@@ -7,15 +7,16 @@ import { OperatingRoom } from '../types';
 interface SettingsPageProps {
   rooms?: OperatingRoom[];
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
+  resetTrigger?: number;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, resetTrigger = 0 }) => {
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   
-  // Reset selectedModule when component mounts (when navigating to settings)
+  // Reset selectedModule when component mounts or resetTrigger changes
   useEffect(() => {
     setSelectedModule(null);
-  }, []);
+  }, [resetTrigger]);
   
   const settings = [
     {
