@@ -90,11 +90,11 @@ export default function OperatingRoomsManager({ rooms, onRoomsChange }: Operatin
   };
 
   return (
-    <div className="relative z-20 w-full h-full rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] overflow-hidden flex flex-col">
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-8">
       {/* Header */}
-      <div className="relative z-10 p-8 border-b border-white/5 flex justify-between items-center">
+      <div className="mb-8 flex justify-between items-start">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Operační sály</h2>
+          <h2 className="text-3xl font-bold text-white mb-2">Operační sály</h2>
           <p className="text-sm text-white/40">Správa a konfigurace operačních sálů v systému</p>
         </div>
         <motion.button
@@ -108,10 +108,9 @@ export default function OperatingRoomsManager({ rooms, onRoomsChange }: Operatin
         </motion.button>
       </div>
 
-      {/* Rooms List */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="space-y-3">
-          <AnimatePresence>
+      {/* Rooms Grid */}
+      <div className="space-y-3">
+        <AnimatePresence>
             {rooms.map((room, index) => {
               const status = statusColors[room.status];
               return (
@@ -181,19 +180,8 @@ export default function OperatingRoomsManager({ rooms, onRoomsChange }: Operatin
               );
             })}
           </AnimatePresence>
-
-          {rooms.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-12 text-center"
-            >
-              <Building2 className="w-12 h-12 text-white/20 mb-3" />
-              <p className="text-white/40">Žádné sály nejsou přidány</p>
-              <p className="text-xs text-white/20 mt-1">Klikněte na "Přidat sál" pro vytvoření prvního sálu</p>
-            </motion.div>
-          )}
         </div>
+      </div>
       </div>
 
       {/* Edit Form Modal */}
