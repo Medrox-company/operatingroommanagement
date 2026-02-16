@@ -118,6 +118,7 @@ const DepartmentsManager: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>(DEFAULT_DEPARTMENTS);
   const [expandedDept, setExpandedDept] = useState<string | null>(null);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
+  const [editingDeptName, setEditingDeptName] = useState<{ deptId: string; name: string } | null>(null);
   const [editingSubDept, setEditingSubDept] = useState<{ deptId: string; subDept: SubDepartment } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleteSubConfirm, setDeleteSubConfirm] = useState<string | null>(null);
@@ -127,6 +128,13 @@ const DepartmentsManager: React.FC = () => {
     setDepartments(
       departments.map((d) => (d.id === deptId ? { ...d, isActive: !d.isActive } : d))
     );
+  };
+
+  const handleUpdateDepartmentName = (deptId: string, newName: string) => {
+    setDepartments(
+      departments.map((d) => (d.id === deptId ? { ...d, name: newName } : d))
+    );
+    setEditingDeptName(null);
   };
 
   const handleDeleteDepartment = (deptId: string) => {
@@ -201,10 +209,11 @@ const DepartmentsManager: React.FC = () => {
         </div>
       </header>
 
-      {/* Departments List */}
-      <div className="space-y-4">
+      {/* Departments List - 2 Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AnimatePresence mode="popLayout">
-          {departments.map((dept) => (
+          {departments.map((dept) => {
+            const isEditingName = editingDeptName?.deptId === dept.id;
             <motion.div
               key={dept.id}
               initial={{ opacity: 0, y: -20 }}
@@ -227,7 +236,29 @@ const DepartmentsManager: React.FC = () => {
                   </motion.div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-bold text-white">{dept.name}</h3>
+                      {isEditingName ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={editingDeptName?.name || ''}
+                          onChange={(e) => setEditingDeptName({ ...editingDeptName!, name: e.target.value })}
+                          onBlur={() => {
+                            if (editingDeptName?.name.trim()) {
+                              handleUpdateDepartmentName(dept.id, editingDeptName.name);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleUpdateDepartmentName(dept.id, editingDeptName?.name || '');
+                            } else if (e.key === 'Escape') {
+                              setEditingDeptName(null);
+                            }
+                          }}
+                          className="bg-white/10 border border-white/20 rounded px-3 py-1 text-white font-bold text-lg focus:outline-none focus:border-white/40"
+                        />
+                      ) : (
+                        <h3 className="text-lg font-bold text-white">{dept.name}</h3>
+                      )}
                       <motion.button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -254,7 +285,7 @@ const DepartmentsManager: React.FC = () => {
                   <motion.button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setEditingDept(dept);
+                      setEditingDeptName({ deptId: dept.id, name: dept.name });
                     }}
                     className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all"
                     whileHover={{ scale: 1.1 }}
@@ -417,7 +448,8 @@ const DepartmentsManager: React.FC = () => {
                 </motion.div>
               )}
             </motion.div>
-          ))}
+            );
+          })}
         </AnimatePresence>
       </div>
     </div>
