@@ -449,6 +449,7 @@ const DepartmentsManager: React.FC = () => {
                 </motion.div>
               )}
             </motion.div>
+            );
           })}
         </AnimatePresence>
       </div>
