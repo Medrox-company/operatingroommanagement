@@ -13,7 +13,7 @@ const SettingsPage: React.FC = () => {
     },
     {
       id: 'schedule',
-      title: 'Rozpis operačních sálů',
+      title: 'Rozpis sálů',
       description: 'Plánování a správa rozpisu sálů',
       icon: Calendar,
       accentColor: '#A855F7',
