@@ -182,7 +182,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       )}
 
       {/* Rooms List */}
-      <Reorder.Group values={roomsList} onReorder={handleReorder} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Reorder.Group values={roomsList} onReorder={handleReorder} className="flex flex-wrap gap-6">
         <AnimatePresence mode="popLayout">
           {roomsList.map((room) => {
             const deptColor = getDeptColor(room.department);
@@ -196,6 +196,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
+                className="w-full lg:w-[calc(50%-12px)]"
               >
                 <motion.div
                   className="group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all"
