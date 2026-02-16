@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
@@ -11,6 +11,11 @@ interface SettingsPageProps {
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange }) => {
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  
+  // Reset selectedModule when component mounts (when navigating to settings)
+  useEffect(() => {
+    setSelectedModule(null);
+  }, []);
   
   const settings = [
     {
