@@ -370,103 +370,103 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         </motion.div>
       )}
 
-      {/* Department Selection Modal */}
+      {/* Department Selection Modal - Glassmorphism Style */}
       <AnimatePresence>
         {showDeptModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md"
             onClick={() => setShowDeptModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-white/10 rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative overflow-hidden rounded-3xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Vybrat oddělení</h2>
-                <motion.button
-                  onClick={() => setShowDeptModal(false)}
-                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  whileHover={{ scale: 1.1 }}
-                >
-                  <X className="w-6 h-6 text-white" />
-                </motion.button>
-              </div>
+              {/* Glassmorphism Background */}
+              <div className="absolute inset-0 backdrop-blur-3xl" style={{
+                background: `linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.08) 75%, rgba(255,255,255,0.12) 100%)`,
+                border: `1.5px solid rgba(255,255,255,0.25)`,
+                boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 4px rgba(0,0,0,0.15), 0 25px 50px -12px rgba(0,0,0,0.25)`,
+              }} />
 
-              {/* Department Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
-                  <div key={dept.id}>
-                    {/* Main Department */}
-                    <motion.button
-                      onClick={() => {
-                        setEditingRoom({ ...editingRoom!, department: dept.id });
-                        setShowDeptModal(false);
-                      }}
-                      className="w-full p-4 rounded-lg border-2 text-left transition-all mb-2"
-                      style={{
-                        borderColor: selectedDeptForRoom === dept.id ? dept.accentColor : 'rgba(255,255,255,0.2)',
-                        backgroundColor: `${dept.accentColor}15`,
-                      }}
-                      whileHover={{
-                        backgroundColor: `${dept.accentColor}25`,
-                        scale: 1.02,
-                      }}
-                    >
-                      <p className="font-bold text-white">{dept.name}</p>
-                      <p className="text-xs text-white/50">{dept.description}</p>
-                    </motion.button>
+              {/* Content */}
+              <div className="relative z-10 p-8 flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/10">
+                  <h2 className="text-2xl font-bold text-white text-balance">Vybrat oddělení</h2>
+                  <motion.button
+                    onClick={() => setShowDeptModal(false)}
+                    className="p-2 rounded-lg hover:bg-white/10 transition-all flex-shrink-0"
+                    whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                  >
+                    <X className="w-6 h-6 text-white/80 hover:text-white" />
+                  </motion.button>
+                </div>
 
-                    {/* Sub-departments */}
-                    {dept.subDepartments.filter(s => s.isActive).length > 0 && (
-                      <div className="pl-4 space-y-2">
-                        {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
-                          <motion.button
-                            key={subDept.id}
-                            onClick={() => {
-                              setEditingRoom({ ...editingRoom!, department: subDept.id });
-                              setShowDeptModal(false);
-                            }}
-                            className="w-full p-3 rounded-lg border text-left text-sm transition-all"
-                            style={{
-                              borderColor: selectedDeptForRoom === subDept.id ? dept.accentColor : 'rgba(255,255,255,0.1)',
-                              backgroundColor: `${dept.accentColor}10`,
-                            }}
-                            whileHover={{
-                              backgroundColor: `${dept.accentColor}20`,
-                              scale: 1.02,
-                            }}
-                          >
-                            <p className="font-semibold text-white/90">{subDept.name}</p>
-                          </motion.button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                {/* Department Grid - Scrollable */}
+                <div className="overflow-y-auto flex-1 pr-4 mb-6 space-y-3">
+                  {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
+                    <div key={dept.id}>
+                      {/* Main Department */}
+                      <motion.button
+                        onClick={() => {
+                          setEditingRoom({ ...editingRoom!, department: dept.id });
+                          setShowDeptModal(false);
+                        }}
+                        className="w-full p-4 rounded-xl border-1.5 text-left transition-all mb-2 backdrop-blur-sm"
+                        style={{
+                          borderColor: `${dept.accentColor}60`,
+                          backgroundColor: `${dept.accentColor}12`,
+                        }}
+                        whileHover={{
+                          backgroundColor: `${dept.accentColor}20`,
+                          borderColor: `${dept.accentColor}80`,
+                          scale: 1.02,
+                        }}
+                      >
+                        <p className="font-bold text-white">{dept.name}</p>
+                        <p className="text-xs text-white/50 mt-1">{dept.description}</p>
+                      </motion.button>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 justify-end">
-                <motion.button
-                  onClick={() => setShowDeptModal(false)}
-                  className="px-6 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all font-semibold"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  Zrušit
-                </motion.button>
-                <motion.button
-                  onClick={() => setShowDeptModal(false)}
-                  className="px-6 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 hover:bg-blue-500/30 transition-all font-semibold"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  Potvrdit
-                </motion.button>
+                      {/* Sub-departments */}
+                      {dept.subDepartments.filter(s => s.isActive).length > 0 && (
+                        <div className="pl-4 space-y-2 mb-2">
+                          {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
+                            <motion.button
+                              key={subDept.id}
+                              onClick={() => {
+                                setEditingRoom({ ...editingRoom!, department: subDept.id });
+                                setShowDeptModal(false);
+                              }}
+                              className="w-full p-3 rounded-lg border text-left text-sm transition-all backdrop-blur-sm"
+                              style={{
+                                borderColor: `${dept.accentColor}40`,
+                                backgroundColor: `${dept.accentColor}08`,
+                              }}
+                              whileHover={{
+                                backgroundColor: `${dept.accentColor}15`,
+                                borderColor: `${dept.accentColor}60`,
+                                scale: 1.02,
+                              }}
+                            >
+                              <p className="font-semibold text-white/90">{subDept.name}</p>
+                            </motion.button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer Info */}
+                <div className="text-center pt-4 border-t border-white/10">
+                  <p className="text-xs text-white/50">Klikněte na oddělení pro výběr</p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
