@@ -297,7 +297,6 @@ const ScheduleManager: React.FC = () => {
                           borderColor: `${dept.accentColor}80`,
                           scale: 1.02,
                         }}
-                        whileTap={{ scale: 0.98 }}
                       >
                         <p className="font-bold text-white">{dept.name}</p>
                         <p className="text-xs text-white/50 mt-1">{dept.description}</p>
@@ -323,7 +322,6 @@ const ScheduleManager: React.FC = () => {
                                 borderColor: `${dept.accentColor}60`,
                                 scale: 1.02,
                               }}
-                              whileTap={{ scale: 0.98 }}
                             >
                               <p className="font-semibold text-white/90">{subDept.name}</p>
                             </motion.button>
