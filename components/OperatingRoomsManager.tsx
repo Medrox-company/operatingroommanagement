@@ -333,31 +333,12 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                             {room.department}
                           </div>
                           <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <motion.button
-                          onClick={() => setEditingRoom({ id: room.id, name: room.name, department: room.department, description: room.name })}
-                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.08] hover:border-white/20 transition-all"
-                          whileHover={{ scale: 1.1 }}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </motion.button>
-                        <motion.button
-                          onClick={() => setDeleteConfirm(room.id)}
-                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
-                          whileHover={{ scale: 1.1 }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </motion.button>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
-        </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>
 
       {roomsList.length === 0 && (
@@ -409,33 +390,42 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 </div>
 
                 {/* Department Grid - Scrollable */}
-                <div className="overflow-y-auto flex-1 pr-4 mb-6 space-y-3">
+                <div className="overflow-y-auto flex-1 pr-4 space-y-2">
                   {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
                     <div key={dept.id}>
-                      {/* Main Department */}
+                      {/* Main Department Button */}
                       <motion.button
                         onClick={() => {
                           setEditingRoom({ ...editingRoom!, department: dept.id });
                           setShowDeptModal(false);
                         }}
-                        className="w-full p-4 rounded-xl border-1.5 text-left transition-all mb-2 backdrop-blur-sm"
+                        className="w-full p-5 rounded-2xl border-2 text-left transition-all backdrop-blur-md group hover:shadow-lg"
                         style={{
-                          borderColor: `${dept.accentColor}60`,
-                          backgroundColor: `${dept.accentColor}12`,
+                          borderColor: `${dept.accentColor}50`,
+                          backgroundColor: `${dept.accentColor}10`,
                         }}
                         whileHover={{
-                          backgroundColor: `${dept.accentColor}20`,
-                          borderColor: `${dept.accentColor}80`,
+                          backgroundColor: `${dept.accentColor}18`,
+                          borderColor: `${dept.accentColor}70`,
                           scale: 1.02,
                         }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <p className="font-bold text-white">{dept.name}</p>
-                        <p className="text-xs text-white/50 mt-1">{dept.description}</p>
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                            style={{ backgroundColor: dept.accentColor }}
+                          />
+                          <div className="flex-1">
+                            <p className="font-bold text-white text-lg">{dept.name}</p>
+                            <p className="text-xs text-white/50 mt-0.5">{dept.description}</p>
+                          </div>
+                        </div>
                       </motion.button>
 
                       {/* Sub-departments */}
                       {dept.subDepartments.filter(s => s.isActive).length > 0 && (
-                        <div className="pl-4 space-y-2 mb-2">
+                        <div className="pl-6 space-y-2 mt-2 mb-3">
                           {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
                             <motion.button
                               key={subDept.id}
@@ -443,18 +433,25 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                                 setEditingRoom({ ...editingRoom!, department: subDept.id });
                                 setShowDeptModal(false);
                               }}
-                              className="w-full p-3 rounded-lg border text-left text-sm transition-all backdrop-blur-sm"
+                              className="w-full p-3 rounded-xl border text-left transition-all backdrop-blur-sm hover:shadow-md"
                               style={{
-                                borderColor: `${dept.accentColor}40`,
-                                backgroundColor: `${dept.accentColor}08`,
+                                borderColor: `${dept.accentColor}35`,
+                                backgroundColor: `${dept.accentColor}06`,
                               }}
                               whileHover={{
-                                backgroundColor: `${dept.accentColor}15`,
-                                borderColor: `${dept.accentColor}60`,
-                                scale: 1.02,
+                                backgroundColor: `${dept.accentColor}12`,
+                                borderColor: `${dept.accentColor}50`,
+                                scale: 1.01,
                               }}
+                              whileTap={{ scale: 0.98 }}
                             >
-                              <p className="font-semibold text-white/90">{subDept.name}</p>
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: dept.accentColor }}
+                                />
+                                <p className="font-semibold text-white/90 text-sm">{subDept.name}</p>
+                              </div>
                             </motion.button>
                           ))}
                         </div>
