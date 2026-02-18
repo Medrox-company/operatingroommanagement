@@ -335,6 +335,22 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                           <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
                         </div>
                       </div>
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <motion.button
+                          onClick={() => setEditingRoom(room)}
+                          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all"
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setDeleteConfirm(room.id)}
+                          className="p-2 rounded-lg bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-400/60 hover:text-red-400 transition-all"
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </motion.button>
+                      </div>
                     </div>
                   )}
                 </motion.div>
