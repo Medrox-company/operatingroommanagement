@@ -333,13 +333,14 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                             {room.department}
                           </div>
                           <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
 
       {roomsList.length === 0 && (
         <motion.div
