@@ -16,6 +16,7 @@ interface EditingRoom {
   description?: string;
 }
 
+/* Operating Rooms Manager Component */
 const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   rooms = MOCK_ROOMS,
   onRoomsChange,
