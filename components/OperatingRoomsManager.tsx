@@ -355,7 +355,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     </div>
                   )}
                 </motion.div>
-              ))}
+              );
+            })}
             </AnimatePresence>
           </div>
 
