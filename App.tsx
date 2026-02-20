@@ -14,6 +14,7 @@ import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 
+// App Component - Updated
 const App: React.FC = () => {
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
