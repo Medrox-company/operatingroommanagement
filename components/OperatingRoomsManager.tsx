@@ -225,23 +225,28 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               <motion.div
                 key={room.id}
                 draggable
-                onDragStart={(e) => handleDragStart(e as any, room.id)}
-                onDragOver={handleDragOver as any}
-                onDrop={(e) => handleDrop(e as any, room.id)}
+                onDragStart={() => setDraggedId(room.id)}
                 onDragEnd={() => setDraggedId(null)}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className={`group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-move ${
-                  isDragging ? 'opacity-50 bg-white/[0.06] border-white/20' : ''
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => {
+                  if (!draggedId || draggedId === room.id) return;
+                  const draggedIndex = roomsList.findIndex(r => r.id === draggedId);
+                  const targetIndex = roomsList.findIndex(r => r.id === room.id);
+                  const updated = [...roomsList];
+                  const [removed] = updated.splice(draggedIndex, 1);
+                  updated.splice(targetIndex, 0, removed);
+                  setRoomsList(updated);
+                  onRoomsChange?.(updated);
+                }}
+                className={`group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all ${
+                  draggedId === room.id ? 'opacity-50' : ''
                 }`}
                 style={{
                   boxShadow: `0 15px 35px -10px rgba(0,0,0,0.5)`,
                 }}
                 whileHover={{
-                  boxShadow: !isEditing && !isDeleting ? `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10` : undefined,
+                  boxShadow: `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10`,
                 }}
-                transition={{ duration: 0.3 }}
               >
                   {/* Gradient glow on hover */}
                   <motion.div
@@ -323,30 +328,35 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     </div>
                   ) : (
                     // View Mode
-                    <div className="relative z-10 flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <GripVertical className="w-5 h-5 text-white/30 cursor-grab flex-shrink-0" />
+                        <motion.div
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/10"
+                          style={{
+                            backgroundColor: `${deptColor.color}20`,
+                            borderColor: `${deptColor.color}40`,
+                          }}
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <GripVertical className="w-5 h-5" style={{ color: deptColor.color }} />
+                        </motion.div>
                         <div className="min-w-0 flex-1">
-                          <div
-                            className="text-[9px] font-black tracking-[0.2em] uppercase mb-1"
-                            style={{ color: deptColor.color }}
-                          >
-                            {room.department}
-                          </div>
                           <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
+                          <p className="text-xs text-white/40 truncate mt-1">{room.department}</p>
                         </div>
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <motion.button
                           onClick={() => setEditingRoom(room)}
-                          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all"
+                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-blue-500/10 hover:border-blue-500/30 hover:text-blue-400 transition-all"
                           whileHover={{ scale: 1.1 }}
                         >
                           <Edit2 className="w-4 h-4" />
                         </motion.button>
                         <motion.button
                           onClick={() => setDeleteConfirm(room.id)}
-                          className="p-2 rounded-lg bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-400/60 hover:text-red-400 transition-all"
+                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
                           whileHover={{ scale: 1.1 }}
                         >
                           <Trash2 className="w-4 h-4" />
