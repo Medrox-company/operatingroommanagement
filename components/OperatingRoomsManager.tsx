@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus } from '../types';
-import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle } from 'lucide-react';
-import { MOCK_ROOMS } from '../constants';
+import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle, ChevronDown } from 'lucide-react';
+import { MOCK_ROOMS, DEFAULT_DEPARTMENTS } from '../constants';
 
 interface OperatingRoomsManagerProps {
   rooms?: OperatingRoom[];
@@ -16,6 +16,7 @@ interface EditingRoom {
   description?: string;
 }
 
+/* Operating Rooms Manager Component */
 const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   rooms = MOCK_ROOMS,
   onRoomsChange,
@@ -25,6 +26,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   const [editingRoom, setEditingRoom] = useState<EditingRoom | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [showDeptModal, setShowDeptModal] = useState(false);
+  const [selectedDeptForRoom, setSelectedDeptForRoom] = useState<string | null>(null);
   const [newRoomData, setNewRoomData] = useState({
     name: '',
     department: '',
@@ -222,23 +225,28 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               <motion.div
                 key={room.id}
                 draggable
-                onDragStart={(e) => handleDragStart(e as any, room.id)}
-                onDragOver={handleDragOver as any}
-                onDrop={(e) => handleDrop(e as any, room.id)}
+                onDragStart={() => setDraggedId(room.id)}
                 onDragEnd={() => setDraggedId(null)}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className={`group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-move ${
-                  isDragging ? 'opacity-50 bg-white/[0.06] border-white/20' : ''
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => {
+                  if (!draggedId || draggedId === room.id) return;
+                  const draggedIndex = roomsList.findIndex(r => r.id === draggedId);
+                  const targetIndex = roomsList.findIndex(r => r.id === room.id);
+                  const updated = [...roomsList];
+                  const [removed] = updated.splice(draggedIndex, 1);
+                  updated.splice(targetIndex, 0, removed);
+                  setRoomsList(updated);
+                  onRoomsChange?.(updated);
+                }}
+                className={`group relative p-6 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] hover:bg-white/[0.06] hover:border-white/10 transition-all ${
+                  draggedId === room.id ? 'opacity-50' : ''
                 }`}
                 style={{
                   boxShadow: `0 15px 35px -10px rgba(0,0,0,0.5)`,
                 }}
                 whileHover={{
-                  boxShadow: !isEditing && !isDeleting ? `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10` : undefined,
+                  boxShadow: `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10`,
                 }}
-                transition={{ duration: 0.3 }}
               >
                   {/* Gradient glow on hover */}
                   <motion.div
@@ -257,13 +265,18 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                           value={editingRoom.name}
                           onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
                           className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                          placeholder="Název sálu"
                         />
-                        <input
-                          type="text"
-                          value={editingRoom.department}
-                          onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
-                          className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
-                        />
+                        <motion.button
+                          onClick={() => {
+                            setSelectedDeptForRoom(editingRoom.department);
+                            setShowDeptModal(true);
+                          }}
+                          className="px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white hover:bg-white/[0.08] focus:outline-none focus:border-white/20 flex items-center justify-between"
+                        >
+                          <span>{editingRoom.department || 'Vybrat oddělení'}</span>
+                          <ChevronDown className="w-4 h-4" />
+                        </motion.button>
                         <input
                           type="text"
                           value={editingRoom.description || ''}
@@ -315,24 +328,28 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     </div>
                   ) : (
                     // View Mode
-                    <div className="relative z-10 flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <GripVertical className="w-5 h-5 text-white/30 cursor-grab flex-shrink-0" />
+                        <motion.div
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/10"
+                          style={{
+                            backgroundColor: `${deptColor.color}20`,
+                            borderColor: `${deptColor.color}40`,
+                          }}
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <GripVertical className="w-5 h-5" style={{ color: deptColor.color }} />
+                        </motion.div>
                         <div className="min-w-0 flex-1">
-                          <div
-                            className="text-[9px] font-black tracking-[0.2em] uppercase mb-1"
-                            style={{ color: deptColor.color }}
-                          >
-                            {room.department}
-                          </div>
                           <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
+                          <p className="text-xs text-white/40 truncate mt-1">{room.department}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <motion.button
-                          onClick={() => setEditingRoom({ id: room.id, name: room.name, department: room.department, description: room.name })}
-                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.08] hover:border-white/20 transition-all"
+                          onClick={() => setEditingRoom(room)}
+                          className="p-2 rounded-lg border border-white/10 bg-white/[0.03] text-white/50 hover:bg-blue-500/10 hover:border-blue-500/30 hover:text-blue-400 transition-all"
                           whileHover={{ scale: 1.1 }}
                         >
                           <Edit2 className="w-4 h-4" />
@@ -350,8 +367,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 </motion.div>
               );
             })}
-        </AnimatePresence>
-      </div>
+            </AnimatePresence>
+          </div>
 
       {roomsList.length === 0 && (
         <motion.div
@@ -362,6 +379,125 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
           <p className="text-white/40 text-lg">Zatím nejsou žádné sály. Přidejte první sál kliknutím na tlačítko výše.</p>
         </motion.div>
       )}
+
+      {/* Department Selection Modal - Glassmorphism Style */}
+      <AnimatePresence>
+        {showDeptModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md"
+            onClick={() => setShowDeptModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative overflow-hidden rounded-3xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Glassmorphism Background */}
+              <div className="absolute inset-0 backdrop-blur-3xl" style={{
+                background: `linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.08) 75%, rgba(255,255,255,0.12) 100%)`,
+                border: `1.5px solid rgba(255,255,255,0.25)`,
+                boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 4px rgba(0,0,0,0.15), 0 25px 50px -12px rgba(0,0,0,0.25)`,
+              }} />
+
+              {/* Content */}
+              <div className="relative z-10 p-8 flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/10">
+                  <h2 className="text-2xl font-bold text-white text-balance">Vybrat oddělení</h2>
+                  <motion.button
+                    onClick={() => setShowDeptModal(false)}
+                    className="p-2 rounded-lg hover:bg-white/10 transition-all flex-shrink-0"
+                    whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                  >
+                    <X className="w-6 h-6 text-white/80 hover:text-white" />
+                  </motion.button>
+                </div>
+
+                {/* Department Grid - Scrollable */}
+                <div className="overflow-y-auto flex-1 pr-4 space-y-2">
+                  {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
+                    <div key={dept.id}>
+                      {/* Main Department Button */}
+                      <motion.button
+                        onClick={() => {
+                          setEditingRoom({ ...editingRoom!, department: dept.id });
+                          setShowDeptModal(false);
+                        }}
+                        className="w-full p-5 rounded-2xl border-2 text-left transition-all backdrop-blur-md group hover:shadow-lg"
+                        style={{
+                          borderColor: `${dept.accentColor}50`,
+                          backgroundColor: `${dept.accentColor}10`,
+                        }}
+                        whileHover={{
+                          backgroundColor: `${dept.accentColor}18`,
+                          borderColor: `${dept.accentColor}70`,
+                          scale: 1.02,
+                        }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                            style={{ backgroundColor: dept.accentColor }}
+                          />
+                          <div className="flex-1">
+                            <p className="font-bold text-white text-lg">{dept.name}</p>
+                            <p className="text-xs text-white/50 mt-0.5">{dept.description}</p>
+                          </div>
+                        </div>
+                      </motion.button>
+
+                      {/* Sub-departments */}
+                      {dept.subDepartments.filter(s => s.isActive).length > 0 && (
+                        <div className="pl-6 space-y-2 mt-2 mb-3">
+                          {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
+                            <motion.button
+                              key={subDept.id}
+                              onClick={() => {
+                                setEditingRoom({ ...editingRoom!, department: subDept.id });
+                                setShowDeptModal(false);
+                              }}
+                              className="w-full p-3 rounded-xl border text-left transition-all backdrop-blur-sm hover:shadow-md"
+                              style={{
+                                borderColor: `${dept.accentColor}35`,
+                                backgroundColor: `${dept.accentColor}06`,
+                              }}
+                              whileHover={{
+                                backgroundColor: `${dept.accentColor}12`,
+                                borderColor: `${dept.accentColor}50`,
+                                scale: 1.01,
+                              }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: dept.accentColor }}
+                                />
+                                <p className="font-semibold text-white/90 text-sm">{subDept.name}</p>
+                              </div>
+                            </motion.button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer Info */}
+                <div className="text-center pt-4 border-t border-white/10">
+                  <p className="text-xs text-white/50">Klikněte na oddělení pro výběr</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
