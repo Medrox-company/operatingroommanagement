@@ -248,13 +248,6 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   boxShadow: `0 15px 35px -10px ${deptColor.color}40, inset 0 0 20px ${deptColor.color}10`,
                 }}
               >
-                  {/* Gradient glow on hover - enhanced aura effect */}
-                  <motion.div
-                    className="absolute -inset-1.5 z-0 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-60 transition-opacity pointer-events-none"
-                    style={{
-                      background: `radial-gradient(ellipse at 50% 0%, ${deptColor.color}, transparent 70%)`,
-                    }}
-                  />
 
                   {isEditing ? (
                     // Edit Mode
