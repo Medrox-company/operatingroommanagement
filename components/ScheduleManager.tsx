@@ -166,15 +166,13 @@ const ScheduleManager: React.FC = () => {
                         key={`${entry.roomId}-${day}`}
                         className="border-r border-white/10 flex items-center justify-center min-h-20 p-2"
                       >
-                        <div
+                        <button
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className={`w-full h-full flex items-center justify-center px-4 py-3 rounded-2xl font-bold cursor-pointer hover:opacity-90 active:opacity-80 text-sm shadow-lg ${cellValue ? 'text-white' : 'text-white/40'
-                            }`}
+                          className="w-full h-full flex items-center justify-center px-4 py-3 font-bold cursor-pointer hover:bg-white/5 transition-colors text-sm"
                           style={{
-                            backgroundColor: cellValue ? deptColor : '#1a1a2e',
-                            boxShadow: cellValue
-                              ? `0 8px 24px ${deptColor}80`
-                              : 'none',
+                            backgroundColor: 'transparent',
+                            border: cellValue ? `2px solid ${deptColor}` : `2px solid rgba(255,255,255,0.1)`,
+                            color: cellValue ? deptColor : 'rgba(255,255,255,0.3)',
                           }}
                         >
                           {cellValue ? (
@@ -182,7 +180,7 @@ const ScheduleManager: React.FC = () => {
                           ) : (
                             '—'
                           )}
-                        </div>
+                        </button>
                       </div>
                     );
                   })}
