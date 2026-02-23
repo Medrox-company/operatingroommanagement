@@ -167,19 +167,18 @@ const ScheduleManager: React.FC = () => {
                       >
                         <button
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex items-center justify-center px-4 py-3 rounded-xl font-bold cursor-pointer transition-all hover:opacity-90 active:scale-95"
+                          className="w-full h-full flex items-center justify-center px-4 py-3 rounded-2xl font-bold cursor-pointer transition-opacity hover:opacity-80"
                           style={{
                             backgroundColor: cellValue 
                               ? getDepartmentColor(cellValue)
-                              : 'rgba(255,255,255,0.05)',
-                            border: 'none',
-                            color: cellValue ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+                              : 'rgba(255,255,255,0.08)',
+                            color: cellValue ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
                             boxShadow: cellValue
-                              ? `0 4px 12px ${getDepartmentColor(cellValue)}60, inset 0 1px 0 rgba(255,255,255,0.2)`
-                              : 'inset 0 1px 0 rgba(255,255,255,0.1)',
+                              ? `0 8px 20px ${getDepartmentColor(cellValue)}70, inset 0 1px 2px rgba(255,255,255,0.3)`
+                              : 'inset 0 1px 2px rgba(255,255,255,0.1)',
                           }}
                         >
-                          <span className="text-center text-sm">
+                          <span className="text-sm font-bold text-center">
                             {cellValue ? (
                               departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
                             ) : (
