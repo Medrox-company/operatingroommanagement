@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GripVertical, X } from 'lucide-react';
+import { GripVertical, X, CheckCircle } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
@@ -149,25 +149,23 @@ const ScheduleManager: React.FC = () => {
                     return (
                       <div
                         key={`${entry.roomId}-${day}`}
-                        className="border-r border-white/10 flex items-center justify-center min-h-20"
+                        className="border-r border-white/10 flex items-center justify-center min-h-20 p-1"
                       >
                         <button
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg mx-1 text-sm font-semibold text-white transition-all cursor-pointer hover:scale-[1.02]"
+                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg text-sm font-bold text-white cursor-pointer"
                           style={{
-                            backgroundColor: `${getDepartmentColor(cellValue)}30`,
-                            border: `2px solid ${getDepartmentColor(cellValue)}70`,
+                            backgroundColor: `${getDepartmentColor(cellValue)}35`,
+                            border: `2px solid ${getDepartmentColor(cellValue)}80`,
                           }}
                         >
-                          <div className="text-center">
-                            {cellValue ? (
-                              <p style={{ color: getDepartmentColor(cellValue) }} className="font-bold">
-                                {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
-                              </p>
-                            ) : (
-                              <p className="text-white/40">-</p>
-                            )}
-                          </div>
+                          {cellValue ? (
+                            <p style={{ color: getDepartmentColor(cellValue) }}>
+                              {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
+                            </p>
+                          ) : (
+                            <p className="text-white/40">-</p>
+                          )}
                         </button>
                       </div>
                     );
@@ -186,97 +184,79 @@ const ScheduleManager: React.FC = () => {
         </p>
       </div>
 
-      {/* Department Selection Modal - Compact Design */}
+      {/* Department Selection Modal - Compact & Clean */}
       {showDeptModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
           onClick={() => setShowDeptModal(false)}
         >
           <div
-            className="relative overflow-hidden rounded-2xl w-full max-w-md mx-4 flex flex-col"
+            className="relative rounded-xl w-full max-w-sm mx-4 bg-[#1a1a2e] border border-white/20 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Background */}
-            <div className="absolute inset-0 backdrop-blur-3xl" style={{
-              background: `linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)`,
-              border: `1px solid rgba(255,255,255,0.2)`,
-              boxShadow: `0 25px 50px -12px rgba(0,0,0,0.5)`,
-            }} />
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/5 flex-shrink-0">
+              <h3 className="text-base font-bold text-white">Vyberte oddělení</h3>
+              <button
+                onClick={() => setShowDeptModal(false)}
+                className="p-1 rounded hover:bg-white/10"
+              >
+                <X className="w-4 h-4 text-white/70" />
+              </button>
+            </div>
 
-            {/* Content */}
-            <div className="relative z-10 p-6 flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
-                <h2 className="text-xl font-bold text-white">Vybrat oddělení</h2>
-                <button
-                  onClick={() => setShowDeptModal(false)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 transition-all flex-shrink-0"
-                >
-                  <X className="w-5 h-5 text-white/80 hover:text-white" />
-                </button>
-              </div>
+            {/* Department List - Scrollable */}
+            <div className="overflow-y-auto p-4 space-y-2 flex-1">
+              {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
+                <div key={dept.id} className="space-y-1">
+                  {/* Main Department */}
+                  <button
+                    onClick={() => {
+                      if (editingCell) {
+                        handleCellEdit(editingCell.roomId, editingCell.day, dept.id);
+                      }
+                    }}
+                    className="w-full p-3 rounded-lg border text-left flex items-center gap-2.5 hover:bg-white/5"
+                    style={{
+                      borderColor: `${dept.accentColor}60`,
+                      backgroundColor: `${dept.accentColor}12`,
+                    }}
+                  >
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: dept.accentColor }}
+                    />
+                    <span className="font-semibold text-white text-sm">{dept.name}</span>
+                  </button>
 
-              {/* Department Grid - Show all without scrolling */}
-              <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-2">
-                  {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
-                    <div key={dept.id}>
-                      {/* Main Department Button */}
-                      <button
-                        onClick={() => {
-                          if (editingCell) {
-                            handleCellEdit(editingCell.roomId, editingCell.day, dept.id);
-                          }
-                        }}
-                        className="w-full p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.01] active:scale-[0.99]"
-                        style={{
-                          borderColor: `${dept.accentColor}60`,
-                          backgroundColor: `${dept.accentColor}15`,
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: dept.accentColor }}
-                          />
-                          <p className="font-bold text-white">{dept.name}</p>
-                        </div>
-                      </button>
-
-                      {/* Sub-departments */}
-                      {dept.subDepartments.filter(s => s.isActive).length > 0 && (
-                        <div className="pl-4 space-y-1.5 mt-1.5">
-                          {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
-                            <button
-                              key={subDept.id}
-                              onClick={() => {
-                                if (editingCell) {
-                                  handleCellEdit(editingCell.roomId, editingCell.day, subDept.id);
-                                }
-                              }}
-                              className="w-full p-3 rounded-lg border text-left transition-all hover:scale-[1.005] active:scale-[0.995]"
-                              style={{
-                                borderColor: `${dept.accentColor}40`,
-                                backgroundColor: `${dept.accentColor}08`,
-                              }}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <div
-                                  className="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: dept.accentColor }}
-                                />
-                                <p className="font-semibold text-white/90 text-sm">{subDept.name}</p>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  {/* Sub-departments */}
+                  {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
+                    <button
+                      key={subDept.id}
+                      onClick={() => {
+                        if (editingCell) {
+                          handleCellEdit(editingCell.roomId, editingCell.day, subDept.id);
+                        }
+                      }}
+                      className="w-full pl-6 pr-3 py-2.5 rounded-lg border text-left flex items-center gap-2 hover:bg-white/5"
+                      style={{
+                        borderColor: `${dept.accentColor}30`,
+                        backgroundColor: `${dept.accentColor}06`,
+                      }}
+                    >
+                      <div
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: dept.accentColor }}
+                      />
+                      <span className="font-medium text-white/90 text-xs">{subDept.name}</span>
+                    </button>
                   ))}
                 </div>
-              </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   );
