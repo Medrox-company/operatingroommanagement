@@ -63,6 +63,20 @@ const ScheduleManager: React.FC = () => {
     return '#64748B';
   };
 
+  // Determine if text should be white or black based on background color brightness
+  const getTextColor = (hexColor: string) => {
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Calculate luminance using formula
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return white if dark background, black if light
+    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+  };
+
   const handleCellEdit = (roomId: string, day: string, value: string) => {
     setScheduleData(prev =>
       prev.map(entry =>
@@ -153,14 +167,15 @@ const ScheduleManager: React.FC = () => {
                       >
                         <button
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg text-sm font-bold text-white cursor-pointer"
+                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg text-sm font-bold cursor-pointer"
                           style={{
-                            backgroundColor: `${getDepartmentColor(cellValue)}35`,
-                            border: `2px solid ${getDepartmentColor(cellValue)}80`,
+                            backgroundColor: getDepartmentColor(cellValue),
+                            border: `2px solid ${getDepartmentColor(cellValue)}`,
+                            color: getTextColor(getDepartmentColor(cellValue)),
                           }}
                         >
                           {cellValue ? (
-                            <p style={{ color: getDepartmentColor(cellValue) }}>
+                            <p>
                               {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
                             </p>
                           ) : (
