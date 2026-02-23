@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, X, Check, Edit2, ChevronDown } from 'lucide-react';
+import { GripVertical, X } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
@@ -98,11 +97,7 @@ const ScheduleManager: React.FC = () => {
 
       {/* Schedule Table */}
       <div className="w-full overflow-x-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="min-w-full"
-        >
+        <div className="min-w-full">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-3xl overflow-hidden"
             style={{
               boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), 0 25px 50px -12px rgba(0,0,0,0.25)`,
@@ -118,27 +113,21 @@ const ScheduleManager: React.FC = () => {
               </div>
 
               {/* Days Header */}
-              {DAYS_OF_WEEK.map((day, index) => (
-                <motion.div
+              {DAYS_OF_WEEK.map((day) => (
+                <div
                   key={day}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
                   className="p-4 text-center border-r border-white/10 bg-white/[0.05] border-b"
                 >
                   <p className="text-xs font-black text-[#A855F7] tracking-widest uppercase">{day}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {/* Table Rows */}
             <div className="divide-y divide-white/10">
-              {scheduleData.map((entry, rowIndex) => (
-                <motion.div
+              {scheduleData.map((entry) => (
+                <div
                   key={entry.roomId}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: rowIndex * 0.05 }}
                   className="grid gap-px hover:bg-white/[0.02] transition-colors"
                   style={{
                     gridTemplateColumns: `180px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
@@ -158,23 +147,16 @@ const ScheduleManager: React.FC = () => {
                     const cellValue = entry.schedule[day];
 
                     return (
-                      <motion.div
+                      <div
                         key={`${entry.roomId}-${day}`}
                         className="border-r border-white/10 flex items-center justify-center min-h-20"
-                        whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-                        transition={{ duration: 0.2 }}
                       >
-                        <motion.button
+                        <button
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg mx-1 text-sm font-semibold text-white transition-all cursor-pointer group"
+                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg mx-1 text-sm font-semibold text-white transition-all cursor-pointer hover:scale-[1.02]"
                           style={{
                             backgroundColor: `${getDepartmentColor(cellValue)}30`,
                             border: `2px solid ${getDepartmentColor(cellValue)}70`,
-                          }}
-                          whileHover={{ 
-                            backgroundColor: `${getDepartmentColor(cellValue)}45`,
-                            borderColor: `${getDepartmentColor(cellValue)}`,
-                            boxShadow: `0 8px 25px -5px ${getDepartmentColor(cellValue)}40`,
                           }}
                         >
                           <div className="text-center">
@@ -186,149 +168,116 @@ const ScheduleManager: React.FC = () => {
                               <p className="text-white/40">-</p>
                             )}
                           </div>
-                        </motion.button>
-                      </motion.div>
+                        </button>
+                      </div>
                     );
                   })}
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="mt-8 p-4 rounded-lg bg-white/[0.03] border border-white/10"
-      >
+      <div className="mt-8 p-4 rounded-lg bg-white/[0.03] border border-white/10">
         <p className="text-xs text-white/50">
           Klikněte na libovolné pole v tabulce pro úpravu rozvrhu oddělení pro daný den. Změny se automaticky uloží.
         </p>
-      </motion.div>
+      </div>
 
-      {/* Department Selection Modal - Glassmorphism Style */}
-      <AnimatePresence>
-        {showDeptModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md"
-            onClick={() => setShowDeptModal(false)}
+      {/* Department Selection Modal - Compact Design */}
+      {showDeptModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowDeptModal(false)}
+        >
+          <div
+            className="relative overflow-hidden rounded-2xl w-full max-w-md mx-4 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative overflow-hidden rounded-3xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glassmorphism Background */}
-              <div className="absolute inset-0 backdrop-blur-3xl" style={{
-                background: `linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.08) 75%, rgba(255,255,255,0.12) 100%)`,
-                border: `1.5px solid rgba(255,255,255,0.25)`,
-                boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 4px rgba(0,0,0,0.15), 0 25px 50px -12px rgba(0,0,0,0.25)`,
-              }} />
+            {/* Background */}
+            <div className="absolute inset-0 backdrop-blur-3xl" style={{
+              background: `linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)`,
+              border: `1px solid rgba(255,255,255,0.2)`,
+              boxShadow: `0 25px 50px -12px rgba(0,0,0,0.5)`,
+            }} />
 
-              {/* Content */}
-              <div className="relative z-10 p-8 flex flex-col h-full">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/10">
-                  <h2 className="text-2xl font-bold text-white text-balance">Vybrat oddělení</h2>
-                  <motion.button
-                    onClick={() => setShowDeptModal(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-all flex-shrink-0"
-                    whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.15)' }}
-                  >
-                    <X className="w-6 h-6 text-white/80 hover:text-white" />
-                  </motion.button>
-                </div>
+            {/* Content */}
+            <div className="relative z-10 p-6 flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                <h2 className="text-xl font-bold text-white">Vybrat oddělení</h2>
+                <button
+                  onClick={() => setShowDeptModal(false)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 transition-all flex-shrink-0"
+                >
+                  <X className="w-5 h-5 text-white/80 hover:text-white" />
+                </button>
+              </div>
 
-                {/* Department Grid - Scrollable */}
-                <div className="overflow-y-auto flex-1 pr-4 space-y-2">
+              {/* Department Grid - Show all without scrolling */}
+              <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-2">
                   {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
                     <div key={dept.id}>
                       {/* Main Department Button */}
-                      <motion.button
+                      <button
                         onClick={() => {
                           if (editingCell) {
                             handleCellEdit(editingCell.roomId, editingCell.day, dept.id);
                           }
                         }}
-                        className="w-full p-5 rounded-2xl border-2 text-left transition-all backdrop-blur-md group hover:shadow-lg"
+                        className="w-full p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.01] active:scale-[0.99]"
                         style={{
-                          borderColor: `${dept.accentColor}50`,
-                          backgroundColor: `${dept.accentColor}10`,
+                          borderColor: `${dept.accentColor}60`,
+                          backgroundColor: `${dept.accentColor}15`,
                         }}
-                        whileHover={{
-                          backgroundColor: `${dept.accentColor}18`,
-                          borderColor: `${dept.accentColor}70`,
-                          scale: 1.02,
-                        }}
-                        whileTap={{ scale: 0.98 }}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                           <div
-                            className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                            className="w-3 h-3 rounded-full flex-shrink-0"
                             style={{ backgroundColor: dept.accentColor }}
                           />
-                          <div className="flex-1">
-                            <p className="font-bold text-white text-lg">{dept.name}</p>
-                            <p className="text-xs text-white/50 mt-0.5">{dept.description}</p>
-                          </div>
+                          <p className="font-bold text-white">{dept.name}</p>
                         </div>
-                      </motion.button>
+                      </button>
 
                       {/* Sub-departments */}
                       {dept.subDepartments.filter(s => s.isActive).length > 0 && (
-                        <div className="pl-6 space-y-2 mt-2 mb-3">
+                        <div className="pl-4 space-y-1.5 mt-1.5">
                           {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
-                            <motion.button
+                            <button
                               key={subDept.id}
                               onClick={() => {
                                 if (editingCell) {
                                   handleCellEdit(editingCell.roomId, editingCell.day, subDept.id);
                                 }
                               }}
-                              className="w-full p-3 rounded-xl border text-left transition-all backdrop-blur-sm hover:shadow-md"
+                              className="w-full p-3 rounded-lg border text-left transition-all hover:scale-[1.005] active:scale-[0.995]"
                               style={{
-                                borderColor: `${dept.accentColor}35`,
-                                backgroundColor: `${dept.accentColor}06`,
+                                borderColor: `${dept.accentColor}40`,
+                                backgroundColor: `${dept.accentColor}08`,
                               }}
-                              whileHover={{
-                                backgroundColor: `${dept.accentColor}12`,
-                                borderColor: `${dept.accentColor}50`,
-                                scale: 1.01,
-                              }}
-                              whileTap={{ scale: 0.98 }}
                             >
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2.5">
                                 <div
                                   className="w-2 h-2 rounded-full flex-shrink-0"
                                   style={{ backgroundColor: dept.accentColor }}
                                 />
                                 <p className="font-semibold text-white/90 text-sm">{subDept.name}</p>
                               </div>
-                            </motion.button>
+                            </button>
                           ))}
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
-
-                {/* Footer Info */}
-                <div className="text-center pt-4 border-t border-white/10">
-                  <p className="text-xs text-white/50">Klikněte na oddělení pro výběr</p>
-                </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 };
