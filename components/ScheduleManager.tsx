@@ -163,24 +163,29 @@ const ScheduleManager: React.FC = () => {
                     return (
                       <div
                         key={`${entry.roomId}-${day}`}
-                        className="border-r border-white/10 flex items-center justify-center min-h-20 p-1"
+                        className="border-r border-white/10 flex items-center justify-center min-h-20 p-1.5"
                       >
                         <button
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg text-sm font-bold cursor-pointer"
+                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-xl text-sm font-bold cursor-pointer transition-all hover:shadow-lg relative overflow-hidden group"
                           style={{
-                            backgroundColor: getDepartmentColor(cellValue),
-                            border: `2px solid ${getDepartmentColor(cellValue)}`,
-                            color: getTextColor(getDepartmentColor(cellValue)),
+                            backgroundColor: cellValue ? getDepartmentColor(cellValue) : 'rgba(255,255,255,0.03)',
+                            border: cellValue ? `2px solid ${getDepartmentColor(cellValue)}` : `2px solid rgba(255,255,255,0.1)`,
+                            color: cellValue ? getTextColor(getDepartmentColor(cellValue)) : 'rgba(255,255,255,0.4)',
+                            boxShadow: cellValue ? `0 4px 12px ${getDepartmentColor(cellValue)}40` : 'none',
                           }}
                         >
-                          {cellValue ? (
-                            <p>
-                              {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
-                            </p>
-                          ) : (
-                            <p className="text-white/40">-</p>
+                          {/* Subtle shine effect on hover */}
+                          {cellValue && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-white/5 opacity-0 group-hover:opacity-30 transition-opacity rounded-xl" />
                           )}
+                          <p className="relative z-10">
+                            {cellValue ? (
+                              departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
+                            ) : (
+                              '—'
+                            )}
+                          </p>
                         </button>
                       </div>
                     );
