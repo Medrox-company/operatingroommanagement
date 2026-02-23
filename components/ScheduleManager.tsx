@@ -167,34 +167,22 @@ const ScheduleManager: React.FC = () => {
                       >
                         <button
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex flex-col items-center justify-center px-3 py-4 rounded-2xl text-sm font-bold cursor-pointer transition-all hover:shadow-2xl hover:scale-105 active:scale-95 relative overflow-hidden group"
+                          className="w-full h-full flex items-center justify-center px-4 py-3 rounded-xl font-semibold cursor-pointer transition-colors"
                           style={{
-                            background: cellValue 
-                              ? `linear-gradient(135deg, ${getDepartmentColor(cellValue)} 0%, ${getDepartmentColor(cellValue)}e6 100%)`
-                              : 'rgba(255,255,255,0.03)',
+                            backgroundColor: cellValue 
+                              ? getDepartmentColor(cellValue)
+                              : 'rgba(255,255,255,0.02)',
                             border: cellValue 
-                              ? `2.5px solid ${getDepartmentColor(cellValue)}`
-                              : `2px solid rgba(255,255,255,0.1)`,
-                            color: cellValue ? getTextColor(getDepartmentColor(cellValue)) : 'rgba(255,255,255,0.4)',
-                            boxShadow: cellValue 
-                              ? `0 12px 32px ${getDepartmentColor(cellValue)}50, inset 0 1px 1px rgba(255,255,255,0.3)`
-                              : 'inset 0 1px 2px rgba(0,0,0,0.2)',
+                              ? `2px solid ${getDepartmentColor(cellValue)}`
+                              : `2px solid rgba(255,255,255,0.08)`,
+                            color: cellValue ? getTextColor(getDepartmentColor(cellValue)) : 'rgba(255,255,255,0.3)',
                           }}
                         >
-                          {/* Glossy overlay on hover */}
-                          {cellValue && (
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/0 to-transparent opacity-0 group-hover:opacity-60 transition-opacity rounded-2xl" />
+                          {cellValue ? (
+                            departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
+                          ) : (
+                            '—'
                           )}
-                          
-                          <div className="relative z-10 text-center leading-tight">
-                            {cellValue ? (
-                              <p className="font-bold">
-                                {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
-                              </p>
-                            ) : (
-                              <p className="text-white/30 text-lg">—</p>
-                            )}
-                          </div>
                         </button>
                       </div>
                     );
