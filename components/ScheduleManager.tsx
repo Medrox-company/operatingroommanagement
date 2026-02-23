@@ -34,7 +34,6 @@ const ScheduleManager: React.FC = () => {
   );
 
   const [editingCell, setEditingCell] = useState<{ roomId: string; day: string } | null>(null);
-  const [editValue, setEditValue] = useState('');
   const [showDeptModal, setShowDeptModal] = useState(false);
 
   // Flatten departments for display
@@ -74,11 +73,12 @@ const ScheduleManager: React.FC = () => {
       )
     );
     setEditingCell(null);
+    setShowDeptModal(false);
   };
 
-  const handleStartEdit = (roomId: string, day: string, currentValue: string) => {
+  const handleStartEdit = (roomId: string, day: string) => {
     setEditingCell({ roomId, day });
-    setEditValue(currentValue);
+    setShowDeptModal(true);
   };
 
   return (
@@ -155,7 +155,6 @@ const ScheduleManager: React.FC = () => {
 
                   {/* Schedule Cells */}
                   {DAYS_OF_WEEK.map(day => {
-                    const isEditing = editingCell?.roomId === entry.roomId && editingCell?.day === day;
                     const cellValue = entry.schedule[day];
 
                     return (
@@ -165,58 +164,29 @@ const ScheduleManager: React.FC = () => {
                         whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                         transition={{ duration: 0.2 }}
                       >
-                        {isEditing ? (
-                          <div className="w-full h-full flex items-center justify-center gap-2 p-2">
-                            <motion.button
-                              onClick={() => setShowDeptModal(true)}
-                              className="flex-1 px-3 py-2 rounded bg-white/10 border border-white/30 text-white text-xs font-semibold focus:outline-none focus:border-blue-400 flex items-center justify-between"
-                              style={{ 
-                                borderColor: `${getDepartmentColor(editValue)}60`,
-                                backgroundColor: `${getDepartmentColor(editValue)}15`,
-                              }}
-                            >
-                              <span>{editValue || 'Vybrat oddělení'}</span>
-                              <ChevronDown className="w-4 h-4" />
-                            </motion.button>
-                            <motion.button
-                              onClick={() => handleCellEdit(editingCell!.roomId, editingCell!.day, editValue)}
-                              className="p-1.5 rounded hover:bg-green-500/20 text-green-400"
-                              whileHover={{ scale: 1.1 }}
-                            >
-                              <Check className="w-4 h-4" />
-                            </motion.button>
-                            <motion.button
-                              onClick={() => setEditingCell(null)}
-                              className="p-1.5 rounded hover:bg-red-500/20 text-red-400"
-                              whileHover={{ scale: 1.1 }}
-                            >
-                              <X className="w-4 h-4" />
-                            </motion.button>
+                        <motion.button
+                          onClick={() => handleStartEdit(entry.roomId, day)}
+                          className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg mx-1 text-sm font-semibold text-white transition-all cursor-pointer group"
+                          style={{
+                            backgroundColor: `${getDepartmentColor(cellValue)}30`,
+                            border: `2px solid ${getDepartmentColor(cellValue)}70`,
+                          }}
+                          whileHover={{ 
+                            backgroundColor: `${getDepartmentColor(cellValue)}45`,
+                            borderColor: `${getDepartmentColor(cellValue)}`,
+                            boxShadow: `0 8px 25px -5px ${getDepartmentColor(cellValue)}40`,
+                          }}
+                        >
+                          <div className="text-center">
+                            {cellValue ? (
+                              <p style={{ color: getDepartmentColor(cellValue) }} className="font-bold">
+                                {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
+                              </p>
+                            ) : (
+                              <p className="text-white/40">-</p>
+                            )}
                           </div>
-                        ) : (
-                          <motion.button
-                            onClick={() => handleStartEdit(entry.roomId, day, cellValue)}
-                            className="w-full h-full flex items-center justify-center px-3 py-4 rounded-lg mx-1 text-sm font-semibold text-white transition-all cursor-pointer group"
-                            style={{
-                              backgroundColor: `${getDepartmentColor(cellValue)}15`,
-                              border: `1.5px solid ${getDepartmentColor(cellValue)}40`,
-                            }}
-                            whileHover={{ 
-                              backgroundColor: `${getDepartmentColor(cellValue)}25`,
-                              borderColor: `${getDepartmentColor(cellValue)}80`,
-                            }}
-                          >
-                            <div className="text-center">
-                              {cellValue ? (
-                                <p style={{ color: getDepartmentColor(cellValue) }}>
-                                  {departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue}
-                                </p>
-                              ) : (
-                                <p className="text-white/40">-</p>
-                              )}
-                            </div>
-                          </motion.button>
-                        )}
+                        </motion.button>
                       </motion.div>
                     );
                   })}
@@ -284,8 +254,9 @@ const ScheduleManager: React.FC = () => {
                       {/* Main Department Button */}
                       <motion.button
                         onClick={() => {
-                          setEditValue(dept.id);
-                          setShowDeptModal(false);
+                          if (editingCell) {
+                            handleCellEdit(editingCell.roomId, editingCell.day, dept.id);
+                          }
                         }}
                         className="w-full p-5 rounded-2xl border-2 text-left transition-all backdrop-blur-md group hover:shadow-lg"
                         style={{
@@ -318,8 +289,9 @@ const ScheduleManager: React.FC = () => {
                             <motion.button
                               key={subDept.id}
                               onClick={() => {
-                                setEditValue(subDept.id);
-                                setShowDeptModal(false);
+                                if (editingCell) {
+                                  handleCellEdit(editingCell.roomId, editingCell.day, subDept.id);
+                                }
                               }}
                               className="w-full p-3 rounded-xl border text-left transition-all backdrop-blur-sm hover:shadow-md"
                               style={{
