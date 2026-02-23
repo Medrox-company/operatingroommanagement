@@ -257,7 +257,6 @@ const ScheduleManager: React.FC = () => {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 };
