@@ -159,33 +159,31 @@ const ScheduleManager: React.FC = () => {
                   {/* Schedule Cells */}
                   {DAYS_OF_WEEK.map(day => {
                     const cellValue = entry.schedule[day];
+                    const deptColor = getDepartmentColor(cellValue);
 
                     return (
                       <div
                         key={`${entry.roomId}-${day}`}
                         className="border-r border-white/10 flex items-center justify-center min-h-20 p-2"
                       >
-                        <button
+                        <div
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex items-center justify-center px-4 py-3 rounded-2xl font-bold cursor-pointer transition-opacity hover:opacity-80"
+                          className={`w-full h-full flex items-center justify-center px-4 py-3 rounded-2xl font-bold cursor-pointer hover:opacity-90 active:opacity-80 text-sm shadow-lg ${
+                            cellValue ? 'text-white' : 'text-white/40'
+                          }`}
                           style={{
-                            backgroundColor: cellValue 
-                              ? getDepartmentColor(cellValue)
-                              : 'rgba(255,255,255,0.08)',
-                            color: cellValue ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
+                            backgroundColor: cellValue ? deptColor : '#1a1a2e',
                             boxShadow: cellValue
-                              ? `0 8px 20px ${getDepartmentColor(cellValue)}70, inset 0 1px 2px rgba(255,255,255,0.3)`
-                              : 'inset 0 1px 2px rgba(255,255,255,0.1)',
+                              ? `0 8px 24px ${deptColor}80`
+                              : 'none',
                           }}
                         >
-                          <span className="text-sm font-bold text-center">
-                            {cellValue ? (
-                              departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
-                            ) : (
-                              '—'
-                            )}
-                          </span>
-                        </button>
+                          {cellValue ? (
+                            departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
+                          ) : (
+                            '—'
+                          )}
+                        </div>
                       </div>
                     );
                   })}
