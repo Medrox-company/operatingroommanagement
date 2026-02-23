@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GripVertical, X, CheckCircle } from 'lucide-react';
+import { GripVertical, X, ChevronDown } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
@@ -8,9 +8,14 @@ interface ScheduleEntry {
   roomName: string;
   department: string;
   schedule: {
-    [key: string]: string; // day -> department/type
+    [key: string]: {
+      deptId: string;
+      weekType: 'even' | 'odd' | 'both';
+    };
   };
 }
+
+type WeekType = 'even' | 'odd' | 'both';
 
 const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
 
@@ -21,21 +26,22 @@ const ScheduleManager: React.FC = () => {
       roomName: room.name,
       department: room.department,
       schedule: {
-        'Pondělí': room.department,
-        'Úterý': room.department,
-        'Středa': room.department,
-        'Čtvrtek': room.department,
-        'Pátek': room.department,
-        'Sobota': room.department,
-        'Neděle': room.department,
+        'Pondělí': { deptId: room.department, weekType: 'both' },
+        'Úterý': { deptId: room.department, weekType: 'both' },
+        'Středa': { deptId: room.department, weekType: 'both' },
+        'Čtvrtek': { deptId: room.department, weekType: 'both' },
+        'Pátek': { deptId: room.department, weekType: 'both' },
+        'Sobota': { deptId: '', weekType: 'both' },
+        'Neděle': { deptId: '', weekType: 'both' },
       },
     }))
   );
 
   const [editingCell, setEditingCell] = useState<{ roomId: string; day: string } | null>(null);
   const [showDeptModal, setShowDeptModal] = useState(false);
+  const [currentWeekType, setCurrentWeekType] = useState<WeekType>('both');
+  const [draggedItem, setDraggedItem] = useState<{ roomId: string; day: string } | null>(null);
 
-  // Flatten departments for display
   const getAllDepartmentOptions = () => {
     const options: Array<{ id: string; name: string; color: string }> = [];
     DEFAULT_DEPARTMENTS.forEach(dept => {
@@ -63,25 +69,21 @@ const ScheduleManager: React.FC = () => {
     return '#64748B';
   };
 
-  // Determine if text should be white or black based on background color brightness
-  const getTextColor = (hexColor: string) => {
-    const hex = hexColor.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-
-    // Calculate luminance using formula
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    // Return white if dark background, black if light
-    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+  const getDepartmentName = (deptId: string) => {
+    return departmentOptions.find(opt => opt.id === deptId)?.name || deptId;
   };
 
-  const handleCellEdit = (roomId: string, day: string, value: string) => {
+  const handleCellEdit = (roomId: string, day: string, deptId: string, weekType: WeekType = 'both') => {
     setScheduleData(prev =>
       prev.map(entry =>
         entry.roomId === roomId
-          ? { ...entry, schedule: { ...entry.schedule, [day]: value } }
+          ? {
+              ...entry,
+              schedule: {
+                ...entry.schedule,
+                [day]: { deptId, weekType }
+              }
+            }
           : entry
       )
     );
@@ -89,49 +91,120 @@ const ScheduleManager: React.FC = () => {
     setShowDeptModal(false);
   };
 
-  const handleStartEdit = (roomId: string, day: string) => {
-    setEditingCell({ roomId, day });
-    setShowDeptModal(true);
+  const handleDragStart = (roomId: string, day: string) => {
+    setDraggedItem({ roomId, day });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (targetRoomId: string, targetDay: string) => {
+    if (!draggedItem) return;
+
+    const sourceData = scheduleData.find(e => e.roomId === draggedItem.roomId)?.schedule[draggedItem.day];
+    if (!sourceData) return;
+
+    // Move from source to target
+    setScheduleData(prev =>
+      prev.map(entry => {
+        if (entry.roomId === draggedItem.roomId) {
+          return {
+            ...entry,
+            schedule: { ...entry.schedule, [draggedItem.day]: { deptId: '', weekType: 'both' } }
+          };
+        }
+        if (entry.roomId === targetRoomId) {
+          return {
+            ...entry,
+            schedule: { ...entry.schedule, [targetDay]: sourceData }
+          };
+        }
+        return entry;
+      })
+    );
+
+    setDraggedItem(null);
+  };
+
+  const shouldShowCell = (cellWeekType: WeekType) => {
+    if (currentWeekType === 'both') return true;
+    return cellWeekType === 'both' || cellWeekType === currentWeekType;
   };
 
   return (
     <div className="w-full">
       {/* Header */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0">
-        <div className="text-center lg:text-left">
+      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-8 flex-shrink-0">
+        <div>
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <div className="w-4 h-4 text-[#A855F7]">📅</div>
-            <p className="text-[10px] font-black text-[#A855F7] tracking-[0.4em] uppercase">WEEKLY SCHEDULE</p>
+            <p className="text-[10px] font-black text-[#A855F7] tracking-[0.4em] uppercase">TÝDENNÍ OPERAČNÍ PLÁN</p>
           </div>
-          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
             ROZPIS <span className="text-white/20">SÁLŮ</span>
           </h1>
+        </div>
+
+        {/* Week Type Selector */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => setCurrentWeekType('odd')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+              currentWeekType === 'odd'
+                ? 'bg-[#A855F7] text-white'
+                : 'bg-white/10 text-white/60 hover:bg-white/15'
+            }`}
+          >
+            Lichý týden
+          </button>
+          <button
+            onClick={() => setCurrentWeekType('both')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+              currentWeekType === 'both'
+                ? 'bg-[#A855F7] text-white'
+                : 'bg-white/10 text-white/60 hover:bg-white/15'
+            }`}
+          >
+            Všechny
+          </button>
+          <button
+            onClick={() => setCurrentWeekType('even')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+              currentWeekType === 'even'
+                ? 'bg-[#A855F7] text-white'
+                : 'bg-white/10 text-white/60 hover:bg-white/15'
+            }`}
+          >
+            Sudý týden
+          </button>
         </div>
       </header>
 
       {/* Schedule Table */}
       <div className="w-full overflow-x-auto">
         <div className="min-w-full">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-3xl overflow-hidden"
+          <div
+            className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-3xl overflow-hidden"
             style={{
               boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), 0 25px 50px -12px rgba(0,0,0,0.25)`,
             }}
           >
             {/* Table Header */}
-            <div className="grid gap-px bg-white/5" style={{
-              gridTemplateColumns: `180px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
-            }}>
+            <div
+              className="grid gap-px bg-white/5"
+              style={{
+                gridTemplateColumns: `200px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
+              }}
+            >
               {/* Room Names Column */}
               <div className="p-4 border-r border-white/10 bg-white/[0.05]">
-                <p className="text-xs font-black text-white/60 tracking-widest uppercase">Sál</p>
+                <p className="text-xs font-black text-white/60 tracking-widest uppercase">Sál / Oddělení</p>
               </div>
 
               {/* Days Header */}
               {DAYS_OF_WEEK.map((day) => (
-                <div
-                  key={day}
-                  className="p-4 text-center border-r border-white/10 bg-white/[0.05] border-b"
-                >
+                <div key={day} className="p-4 text-center border-r border-white/10 bg-white/[0.05]">
                   <p className="text-xs font-black text-[#A855F7] tracking-widest uppercase">{day}</p>
                 </div>
               ))}
@@ -144,12 +217,12 @@ const ScheduleManager: React.FC = () => {
                   key={entry.roomId}
                   className="grid gap-px hover:bg-white/[0.02] transition-colors"
                   style={{
-                    gridTemplateColumns: `180px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
+                    gridTemplateColumns: `200px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
                   }}
                 >
                   {/* Room Name Cell */}
                   <div className="p-4 border-r border-white/10 flex items-center gap-3 bg-white/[0.02]">
-                    <GripVertical className="w-4 h-4 text-white/30 flex-shrink-0" />
+                    <GripVertical className="w-4 h-4 text-white/30 flex-shrink-0 cursor-grab active:cursor-grabbing" />
                     <div>
                       <p className="text-sm font-bold text-white">{entry.roomName}</p>
                       <p className="text-xs text-white/40">{entry.department}</p>
@@ -158,25 +231,45 @@ const ScheduleManager: React.FC = () => {
 
                   {/* Schedule Cells */}
                   {DAYS_OF_WEEK.map(day => {
-                    const cellValue = entry.schedule[day];
-                    const deptColor = getDepartmentColor(cellValue);
+                    const cellData = entry.schedule[day];
+                    const deptColor = getDepartmentColor(cellData.deptId);
+                    const isVisible = shouldShowCell(cellData.weekType);
+                    const isDragging = draggedItem?.roomId === entry.roomId && draggedItem?.day === day;
 
                     return (
                       <button
                         key={`${entry.roomId}-${day}`}
-                        onClick={() => handleStartEdit(entry.roomId, day)}
-                        className="border-r border-white/10 flex items-center justify-center min-h-20 px-4 py-3 font-bold cursor-pointer hover:bg-white/5 transition-colors text-sm w-full"
+                        draggable
+                        onDragStart={() => handleDragStart(entry.roomId, day)}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(entry.roomId, day)}
+                        onClick={() => {
+                          setEditingCell({ roomId: entry.roomId, day });
+                          setShowDeptModal(true);
+                        }}
+                        className={`border-r border-white/10 flex items-center justify-center min-h-20 px-4 py-3 font-bold cursor-pointer hover:bg-white/5 transition-all text-sm w-full ${
+                          isDragging ? 'opacity-50' : ''
+                        }`}
                         style={{
                           backgroundColor: 'transparent',
-                          border: `${cellValue ? `2px solid ${deptColor}` : `2px solid rgba(255,255,255,0.1)`}`,
-                          color: cellValue ? deptColor : 'rgba(255,255,255,0.3)',
+                          border: `2px solid ${cellData.deptId ? deptColor : 'rgba(255,255,255,0.1)'}`,
+                          color: cellData.deptId ? deptColor : 'rgba(255,255,255,0.3)',
+                          opacity: isVisible ? 1 : 0.3,
+                          pointerEvents: isVisible ? 'auto' : 'none',
                         }}
                       >
-                        {cellValue ? (
-                          departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
-                        ) : (
-                          '—'
-                        )}
+                        <div className="text-center">
+                          {cellData.deptId ? (
+                            <>
+                              <p>{getDepartmentName(cellData.deptId)}</p>
+                              {cellData.weekType !== 'both' && (
+                                <p className="text-xs opacity-70">{cellData.weekType === 'odd' ? 'Lichý' : 'Sudý'}</p>
+                              )}
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </div>
                       </button>
                     );
                   })}
@@ -190,11 +283,11 @@ const ScheduleManager: React.FC = () => {
       {/* Info */}
       <div className="mt-8 p-4 rounded-lg bg-white/[0.03] border border-white/10">
         <p className="text-xs text-white/50">
-          Klikněte na libovolné pole v tabulce pro úpravu rozvrhu oddělení pro daný den. Změny se automaticky uloží.
+          💡 Klikněte na pole pro výběr oddělení. Táhněte pole pro přesunutí operací mezi sály. Zvolte typ týdne pro zobrazení specifických operací.
         </p>
       </div>
 
-      {/* Department Selection Modal - Compact & Clean */}
+      {/* Department Selection Modal */}
       {showDeptModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
@@ -207,39 +300,48 @@ const ScheduleManager: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/5 flex-shrink-0">
               <h3 className="text-base font-bold text-white">Vyberte oddělení</h3>
-              <button
-                onClick={() => setShowDeptModal(false)}
-                className="p-1 rounded hover:bg-white/10"
-              >
+              <button onClick={() => setShowDeptModal(false)} className="p-1 rounded hover:bg-white/10">
                 <X className="w-4 h-4 text-white/70" />
               </button>
             </div>
 
-            {/* Department List - Scrollable */}
+            {/* Week Type Selector in Modal */}
+            <div className="px-5 py-3 border-b border-white/10 bg-white/[0.02] flex gap-2">
+              <select
+                onChange={(e) => {
+                  if (editingCell) {
+                    const deptId = scheduleData.find(e => e.roomId === editingCell.roomId)?.schedule[editingCell.day].deptId || '';
+                    handleCellEdit(editingCell.roomId, editingCell.day, deptId, e.target.value as WeekType);
+                  }
+                }}
+                className="flex-1 px-3 py-1.5 rounded bg-white/10 border border-white/20 text-white text-xs font-medium"
+              >
+                <option value="both">Každý týden</option>
+                <option value="odd">Lichý týden</option>
+                <option value="even">Sudý týden</option>
+              </select>
+            </div>
+
+            {/* Department List */}
             <div className="overflow-y-auto p-4 space-y-2 flex-1">
               {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
                 <div key={dept.id} className="space-y-1">
-                  {/* Main Department */}
                   <button
                     onClick={() => {
                       if (editingCell) {
                         handleCellEdit(editingCell.roomId, editingCell.day, dept.id);
                       }
                     }}
-                    className="w-full p-3 rounded-lg border text-left flex items-center gap-2.5 hover:bg-white/5"
+                    className="w-full p-3 rounded-lg border text-left flex items-center gap-2.5 hover:bg-white/5 transition-colors"
                     style={{
                       borderColor: `${dept.accentColor}60`,
                       backgroundColor: `${dept.accentColor}12`,
                     }}
                   >
-                    <div
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: dept.accentColor }}
-                    />
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.accentColor }} />
                     <span className="font-semibold text-white text-sm">{dept.name}</span>
                   </button>
 
-                  {/* Sub-departments */}
                   {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
                     <button
                       key={subDept.id}
@@ -248,16 +350,13 @@ const ScheduleManager: React.FC = () => {
                           handleCellEdit(editingCell.roomId, editingCell.day, subDept.id);
                         }
                       }}
-                      className="w-full pl-6 pr-3 py-2.5 rounded-lg border text-left flex items-center gap-2 hover:bg-white/5"
+                      className="w-full pl-6 pr-3 py-2.5 rounded-lg border text-left flex items-center gap-2 hover:bg-white/5 transition-colors"
                       style={{
                         borderColor: `${dept.accentColor}30`,
                         backgroundColor: `${dept.accentColor}06`,
                       }}
                     >
-                      <div
-                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: dept.accentColor }}
-                      />
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.accentColor }} />
                       <span className="font-medium text-white/90 text-xs">{subDept.name}</span>
                     </button>
                   ))}
