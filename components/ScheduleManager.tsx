@@ -162,26 +162,22 @@ const ScheduleManager: React.FC = () => {
                     const deptColor = getDepartmentColor(cellValue);
 
                     return (
-                      <div
+                      <button
                         key={`${entry.roomId}-${day}`}
-                        className="border-r border-white/10 flex items-center justify-center min-h-20 p-2"
+                        onClick={() => handleStartEdit(entry.roomId, day)}
+                        className="border-r border-white/10 flex items-center justify-center min-h-20 px-4 py-3 font-bold cursor-pointer hover:bg-white/5 transition-colors text-sm w-full"
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: `${cellValue ? `2px solid ${deptColor}` : `2px solid rgba(255,255,255,0.1)`}`,
+                          color: cellValue ? deptColor : 'rgba(255,255,255,0.3)',
+                        }}
                       >
-                        <button
-                          onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full flex items-center justify-center px-4 py-3 font-bold cursor-pointer hover:bg-white/5 transition-colors text-sm"
-                          style={{
-                            backgroundColor: 'transparent',
-                            border: cellValue ? `2px solid ${deptColor}` : `2px solid rgba(255,255,255,0.1)`,
-                            color: cellValue ? deptColor : 'rgba(255,255,255,0.3)',
-                          }}
-                        >
-                          {cellValue ? (
-                            departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
-                          ) : (
-                            '—'
-                          )}
-                        </button>
-                      </div>
+                        {cellValue ? (
+                          departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
+                        ) : (
+                          '—'
+                        )}
+                      </button>
                     );
                   })}
                 </div>
