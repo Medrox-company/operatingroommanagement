@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GripVertical, X } from 'lucide-react';
+import { GripVertical, X, CheckCircle } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
@@ -8,7 +8,7 @@ interface ScheduleEntry {
   roomName: string;
   department: string;
   schedule: {
-    [key: string]: string;
+    [key: string]: string; // day -> department/type
   };
 }
 
@@ -35,6 +35,7 @@ const ScheduleManager: React.FC = () => {
   const [editingCell, setEditingCell] = useState<{ roomId: string; day: string } | null>(null);
   const [showDeptModal, setShowDeptModal] = useState(false);
 
+  // Flatten departments for display
   const getAllDepartmentOptions = () => {
     const options: Array<{ id: string; name: string; color: string }> = [];
     DEFAULT_DEPARTMENTS.forEach(dept => {
@@ -62,6 +63,20 @@ const ScheduleManager: React.FC = () => {
     return '#64748B';
   };
 
+  // Determine if text should be white or black based on background color brightness
+  const getTextColor = (hexColor: string) => {
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Calculate luminance using formula
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return white if dark background, black if light
+    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+  };
+
   const handleCellEdit = (roomId: string, day: string, value: string) => {
     setScheduleData(prev =>
       prev.map(entry =>
@@ -81,6 +96,7 @@ const ScheduleManager: React.FC = () => {
 
   return (
     <div className="w-full">
+      {/* Header */}
       <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0">
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
@@ -93,6 +109,7 @@ const ScheduleManager: React.FC = () => {
         </div>
       </header>
 
+      {/* Schedule Table */}
       <div className="w-full overflow-x-auto">
         <div className="min-w-full">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-3xl overflow-hidden"
@@ -100,12 +117,16 @@ const ScheduleManager: React.FC = () => {
               boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), 0 25px 50px -12px rgba(0,0,0,0.25)`,
             }}
           >
+            {/* Table Header */}
             <div className="grid gap-px bg-white/5" style={{
               gridTemplateColumns: `180px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
             }}>
+              {/* Room Names Column */}
               <div className="p-4 border-r border-white/10 bg-white/[0.05]">
                 <p className="text-xs font-black text-white/60 tracking-widest uppercase">Sál</p>
               </div>
+
+              {/* Days Header */}
               {DAYS_OF_WEEK.map((day) => (
                 <div
                   key={day}
@@ -116,6 +137,7 @@ const ScheduleManager: React.FC = () => {
               ))}
             </div>
 
+            {/* Table Rows */}
             <div className="divide-y divide-white/10">
               {scheduleData.map((entry) => (
                 <div
@@ -125,6 +147,7 @@ const ScheduleManager: React.FC = () => {
                     gridTemplateColumns: `180px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
                   }}
                 >
+                  {/* Room Name Cell */}
                   <div className="p-4 border-r border-white/10 flex items-center gap-3 bg-white/[0.02]">
                     <GripVertical className="w-4 h-4 text-white/30 flex-shrink-0" />
                     <div>
@@ -133,27 +156,32 @@ const ScheduleManager: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Schedule Cells */}
                   {DAYS_OF_WEEK.map(day => {
                     const cellValue = entry.schedule[day];
-                    const bgColor = cellValue ? getDepartmentColor(cellValue) : '#2a2a40';
+                    const deptColor = getDepartmentColor(cellValue);
 
                     return (
                       <div
                         key={`${entry.roomId}-${day}`}
-                        className="border-r border-white/10 p-2 flex items-center justify-center"
+                        className="border-r border-white/10 flex items-center justify-center min-h-20 p-2"
                       >
                         <div
                           onClick={() => handleStartEdit(entry.roomId, day)}
-                          className="w-full h-full min-h-[60px] flex items-center justify-center rounded-2xl font-bold text-white text-sm cursor-pointer hover:opacity-90 active:opacity-75 transition-opacity"
+                          className={`w-full h-full flex items-center justify-center px-4 py-3 rounded-2xl font-bold cursor-pointer hover:opacity-90 active:opacity-80 text-sm shadow-lg ${
+                            cellValue ? 'text-white' : 'text-white/40'
+                          }`}
                           style={{
-                            backgroundColor: bgColor,
-                            boxShadow: cellValue ? `0 10px 30px -5px ${bgColor}90` : 'none',
+                            backgroundColor: cellValue ? deptColor : '#1a1a2e',
+                            boxShadow: cellValue
+                              ? `0 8px 24px ${deptColor}80`
+                              : 'none',
                           }}
                         >
                           {cellValue ? (
                             departmentOptions.find(opt => opt.id === cellValue)?.name || cellValue
                           ) : (
-                            <span className="text-white/40">—</span>
+                            '—'
                           )}
                         </div>
                       </div>
@@ -166,12 +194,14 @@ const ScheduleManager: React.FC = () => {
         </div>
       </div>
 
+      {/* Info */}
       <div className="mt-8 p-4 rounded-lg bg-white/[0.03] border border-white/10">
         <p className="text-xs text-white/50">
           Klikněte na libovolné pole v tabulce pro úpravu rozvrhu oddělení pro daný den. Změny se automaticky uloží.
         </p>
       </div>
 
+      {/* Department Selection Modal - Compact & Clean */}
       {showDeptModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
@@ -181,6 +211,7 @@ const ScheduleManager: React.FC = () => {
             className="relative rounded-xl w-full max-w-sm mx-4 bg-[#1a1a2e] border border-white/20 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/5 flex-shrink-0">
               <h3 className="text-base font-bold text-white">Vyberte oddělení</h3>
               <button
@@ -191,9 +222,11 @@ const ScheduleManager: React.FC = () => {
               </button>
             </div>
 
+            {/* Department List - Scrollable */}
             <div className="overflow-y-auto p-4 space-y-2 flex-1">
               {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
                 <div key={dept.id} className="space-y-1">
+                  {/* Main Department */}
                   <button
                     onClick={() => {
                       if (editingCell) {
@@ -213,6 +246,7 @@ const ScheduleManager: React.FC = () => {
                     <span className="font-semibold text-white text-sm">{dept.name}</span>
                   </button>
 
+                  {/* Sub-departments */}
                   {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
                     <button
                       key={subDept.id}
