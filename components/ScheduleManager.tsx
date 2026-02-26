@@ -1,273 +1,252 @@
 import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { MOCK_ROOMS } from '../constants';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
-interface ScheduleEntry {
+interface ScheduleCell {
+  date: number;
   roomId: string;
-  roomName: string;
-  department: string;
-  schedule: {
-    [key: string]: {
-      deptId: string;
-      weekType: 'even' | 'odd' | 'both';
-    };
-  };
+  deptId: string;
 }
 
-type WeekType = 'even' | 'odd' | 'both';
-
-const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
-
 const ScheduleManager: React.FC = () => {
-  const [scheduleData, setScheduleData] = useState<ScheduleEntry[]>(
-    MOCK_ROOMS.map(room => ({
-      roomId: room.id,
-      roomName: room.name,
-      department: room.department,
-      schedule: {
-        'Pondělí': { deptId: room.department, weekType: 'both' },
-        'Úterý': { deptId: room.department, weekType: 'both' },
-        'Středa': { deptId: room.department, weekType: 'both' },
-        'Čtvrtek': { deptId: room.department, weekType: 'both' },
-        'Pátek': { deptId: room.department, weekType: 'both' },
-        'Sobota': { deptId: '', weekType: 'both' },
-        'Neděle': { deptId: '', weekType: 'both' },
-      },
-    }))
-  );
+  const [currentDate, setCurrentDate] = useState(new Date(2024, 4, 1)); // May 2024
+  const [schedule, setSchedule] = useState<Map<string, string>>(new Map());
+  const [selectedCell, setSelectedCell] = useState<{ date: number; roomId: string } | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
-  const [editingCell, setEditingCell] = useState<{ roomId: string; day: string } | null>(null);
-  const [showDeptModal, setShowDeptModal] = useState(false);
-  const [currentWeekType, setCurrentWeekType] = useState<WeekType>('both');
+  const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const rooms = [
+    { id: 'room1', name: 'Sál 1' },
+    { id: 'room2', name: 'Sál 2' },
+    { id: 'room3', name: 'Sál 3' },
+  ];
 
-  const getAllDepartmentOptions = () => {
-    const options: Array<{ id: string; name: string; color: string }> = [];
-    DEFAULT_DEPARTMENTS.forEach(dept => {
-      if (dept.isActive) {
-        options.push({ id: dept.id, name: dept.name, color: dept.accentColor });
-        dept.subDepartments.forEach(subDept => {
-          if (subDept.isActive) {
-            options.push({ id: subDept.id, name: `${dept.name} - ${subDept.name}`, color: dept.accentColor });
-          }
-        });
-      }
-    });
-    return options;
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
-  const departmentOptions = getAllDepartmentOptions();
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
 
   const getDepartmentColor = (deptId: string) => {
     for (const dept of DEFAULT_DEPARTMENTS) {
       if (dept.id === deptId) return dept.accentColor;
-      for (const subDept of dept.subDepartments) {
-        if (subDept.id === deptId) return dept.accentColor;
-      }
     }
     return '#64748B';
   };
 
-  const getDepartmentName = (deptId: string) => {
-    return departmentOptions.find(opt => opt.id === deptId)?.name || deptId;
+  const getDepartmentCode = (deptId: string) => {
+    for (const dept of DEFAULT_DEPARTMENTS) {
+      if (dept.id === deptId) return dept.name;
+    }
+    return '';
   };
 
-  const handleCellEdit = (roomId: string, day: string, deptId: string, weekType: WeekType = 'both') => {
-    setScheduleData(prev =>
-      prev.map(entry =>
-        entry.roomId === roomId
-          ? {
-              ...entry,
-              schedule: {
-                ...entry.schedule,
-                [day]: { deptId, weekType }
-              }
-            }
-          : entry
-      )
-    );
-    setEditingCell(null);
-    setShowDeptModal(false);
+  const monthName = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const daysInMonth = getDaysInMonth(currentDate);
+  const firstDay = getFirstDayOfMonth(currentDate);
+
+  const calendarDays = [];
+  for (let i = 0; i < firstDay; i++) {
+    calendarDays.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push(i);
+  }
+
+  const handleCellClick = (date: number, roomId: string) => {
+    setSelectedCell({ date, roomId });
+    setShowModal(true);
   };
 
-  const shouldShowCell = (cellWeekType: WeekType) => {
-    if (currentWeekType === 'both') return true;
-    return cellWeekType === 'both' || cellWeekType === currentWeekType;
+  const handleSelectDepartment = (deptId: string) => {
+    if (selectedCell) {
+      const key = `${selectedCell.date}-${selectedCell.roomId}`;
+      setSchedule(new Map(schedule).set(key, deptId));
+    }
+    setShowModal(false);
+  };
+
+  const handlePreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Main Container */}
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <header className="px-8 py-6 border-b border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">OPERAČNÍ PLÁN</p>
-              <h1 className="text-2xl font-black text-white">Rozpis sálů</h1>
-            </div>
-            <div className="flex gap-2">
+    <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">PLÁNOVÁNÍ</p>
+        <h1 className="text-5xl font-black text-white">
+          ROZPIS <span className="text-white/30">SÁLŮ</span>
+        </h1>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Main Calendar */}
+        <div className="xl:col-span-3 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-3xl p-8">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-black text-white">{monthName}</h2>
+            <div className="flex gap-3">
               <button
-                onClick={() => setCurrentWeekType('odd')}
-                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
-                  currentWeekType === 'odd'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
-                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                }`}
+                onClick={handlePreviousMonth}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
-                Lichý
+                <ChevronLeft className="w-6 h-6 text-white/70" />
               </button>
               <button
-                onClick={() => setCurrentWeekType('both')}
-                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
-                  currentWeekType === 'both'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
-                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                }`}
+                onClick={handleNextMonth}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
-                Všechny
-              </button>
-              <button
-                onClick={() => setCurrentWeekType('even')}
-                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
-                  currentWeekType === 'even'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
-                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                }`}
-              >
-                Sudý
+                <ChevronRight className="w-6 h-6 text-white/70" />
               </button>
             </div>
           </div>
-        </header>
 
-        {/* Schedule Grid */}
-        <div className="flex-1 overflow-auto px-8 py-6">
-          <div className="space-y-4">
-            {/* Days Header */}
-            <div className="grid gap-3" style={{ gridTemplateColumns: `160px repeat(7, 1fr)` }}>
-              <div />
+          {/* Days of Week Header */}
+          <div className="grid grid-cols-7 gap-2 mb-4">
+            {DAYS_OF_WEEK.map(day => (
+              <div key={day} className="text-center text-xs font-bold text-white/50 py-2">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-3">
+            {calendarDays.map((day, index) => (
+              <div key={index} className="aspect-square">
+                {day ? (
+                  <div className="h-full bg-white/[0.02] border border-white/10 rounded-2xl p-3 flex flex-col">
+                    <span className="text-sm font-bold text-white/70 mb-2">{day}</span>
+                    <div className="flex-1 space-y-1.5 overflow-y-auto">
+                      {rooms.map(room => {
+                        const cellKey = `${day}-${room.id}`;
+                        const deptId = schedule.get(cellKey);
+                        const deptColor = deptId ? getDepartmentColor(deptId) : null;
+                        const deptCode = deptId ? getDepartmentCode(deptId) : '';
+
+                        return (
+                          <button
+                            key={room.id}
+                            onClick={() => handleCellClick(day, room.id)}
+                            className="w-full text-xs font-black py-2 rounded-xl transition-all hover:scale-105 border-2 uppercase tracking-wider"
+                            style={{
+                              backgroundColor: deptId ? `${deptColor}40` : 'rgba(255,255,255,0.05)',
+                              borderColor: deptColor || 'rgba(255,255,255,0.1)',
+                              color: deptColor || 'rgba(255,255,255,0.3)',
+                            }}
+                          >
+                            {deptCode || '-'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          {/* Mini Calendar */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-3xl p-4">
+            <div className="grid grid-cols-7 gap-1.5 mb-3">
               {DAYS_OF_WEEK.map(day => (
-                <div key={day} className="text-center">
-                  <p className="text-xs font-semibold text-white/50 uppercase tracking-widest">{day.slice(0, 3)}</p>
+                <div key={day} className="text-center text-xs font-bold text-white/40">
+                  {day[0]}
                 </div>
               ))}
             </div>
-
-            {/* Room Rows */}
-            {scheduleData.map(entry => (
-              <div key={entry.roomId} className="space-y-2">
-                <div className="px-4 py-3 rounded-lg bg-white/[0.04] border border-white/10">
-                  <p className="text-sm font-bold text-white">{entry.roomName}</p>
-                  <p className="text-xs text-white/40">{entry.department}</p>
+            <div className="grid grid-cols-7 gap-1.5">
+              {calendarDays.map((day, index) => (
+                <div
+                  key={index}
+                  className={`aspect-square flex items-center justify-center text-xs font-bold rounded ${
+                    day === currentDate.getDate()
+                      ? 'bg-lime-400 text-black'
+                      : 'text-white/50'
+                  }`}
+                >
+                  {day}
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="grid gap-3" style={{ gridTemplateColumns: `160px repeat(7, 1fr)` }}>
-                  <div />
-                  {DAYS_OF_WEEK.map(day => {
-                    const cellData = entry.schedule[day];
-                    const deptColor = getDepartmentColor(cellData.deptId);
-                    const isVisible = shouldShowCell(cellData.weekType);
-
-                    return (
-                      <button
-                        key={`${entry.roomId}-${day}`}
-                        onClick={() => {
-                          setEditingCell({ roomId: entry.roomId, day });
-                          setShowDeptModal(true);
-                        }}
-                        className="aspect-square rounded-lg border-2 transition-all hover:scale-105 flex items-center justify-center p-2 text-center text-xs font-semibold"
-                        style={{
-                          backgroundColor: cellData.deptId ? `${deptColor}15` : 'transparent',
-                          borderColor: cellData.deptId ? deptColor : 'rgba(255,255,255,0.1)',
-                          color: cellData.deptId ? deptColor : 'rgba(255,255,255,0.3)',
-                          opacity: isVisible ? 1 : 0.4,
-                          pointerEvents: isVisible ? 'auto' : 'none',
-                        }}
-                      >
-                        {cellData.deptId ? getDepartmentName(cellData.deptId) : '—'}
-                      </button>
-                    );
-                  })}
+          {/* Resource Consumption */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-3xl p-6">
+            <h3 className="text-sm font-bold text-white mb-6">Resource consumption</h3>
+            <div className="flex items-center justify-center mb-6">
+              <div className="relative w-32 h-32">
+                <svg className="w-full h-full" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#BFFF00"
+                    strokeWidth="2"
+                    strokeDasharray="50.3 251.3"
+                    strokeLinecap="round"
+                    transform="rotate(-90 50 50)"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-black text-white">20%</span>
                 </div>
               </div>
-            ))}
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between text-white/70">
+                <span>25 Total tasks</span>
+                <span>📋</span>
+              </div>
+              <div className="flex items-center justify-between text-white/70">
+                <span>2 In progress</span>
+                <span>⚙️</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Department Selection Modal */}
-      {showDeptModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md"
-          onClick={() => setShowDeptModal(false)}
-        >
-          <div
-            className="w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+          <div className="w-full max-w-md bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-white/10 bg-slate-800/50 flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Vyberte oddělení</h3>
-              <button onClick={() => setShowDeptModal(false)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
-                <X className="w-4 h-4 text-white/70" />
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Vyberte oddělení</h3>
+              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-white/70" />
               </button>
-            </div>
-
-            {/* Week Type Selector */}
-            <div className="px-6 py-3 border-b border-white/10 bg-slate-800/30">
-              <select
-                onChange={(e) => {
-                  if (editingCell) {
-                    const deptId = scheduleData.find(entry => entry.roomId === editingCell.roomId)?.schedule[editingCell.day].deptId || '';
-                    handleCellEdit(editingCell.roomId, editingCell.day, deptId, e.target.value as WeekType);
-                  }
-                }}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-medium"
-              >
-                <option value="both">Každý týden</option>
-                <option value="odd">Lichý týden</option>
-                <option value="even">Sudý týden</option>
-              </select>
             </div>
 
             {/* Department List */}
             <div className="max-h-96 overflow-y-auto p-4 space-y-2">
-              {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
-                <div key={dept.id} className="space-y-1">
-                  <button
-                    onClick={() => {
-                      if (editingCell) {
-                        handleCellEdit(editingCell.roomId, editingCell.day, dept.id);
-                      }
-                    }}
-                    className="w-full p-3 rounded-lg border transition-all hover:bg-white/5"
-                    style={{
-                      borderColor: `${dept.accentColor}40`,
-                      backgroundColor: `${dept.accentColor}08`,
-                    }}
-                  >
-                    <p className="text-sm font-semibold text-white text-left">{dept.name}</p>
-                  </button>
-
-                  {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
-                    <button
-                      key={subDept.id}
-                      onClick={() => {
-                        if (editingCell) {
-                          handleCellEdit(editingCell.roomId, editingCell.day, subDept.id);
-                        }
-                      }}
-                      className="w-full pl-6 pr-3 py-2 rounded-lg border text-left text-xs transition-all hover:bg-white/5"
-                      style={{
-                        borderColor: `${dept.accentColor}30`,
-                        backgroundColor: `${dept.accentColor}04`,
-                      }}
-                    >
-                      <p className="text-white/80">{subDept.name}</p>
-                    </button>
-                  ))}
-                </div>
+              {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map(dept => (
+                <button
+                  key={dept.id}
+                  onClick={() => handleSelectDepartment(dept.id)}
+                  className="w-full p-4 rounded-xl text-left font-bold text-white transition-all hover:scale-105 border-2"
+                  style={{
+                    backgroundColor: `${dept.accentColor}25`,
+                    borderColor: `${dept.accentColor}60`,
+                  }}
+                >
+                  <span style={{ color: dept.accentColor }}>{dept.name}</span>
+                </button>
               ))}
             </div>
           </div>
