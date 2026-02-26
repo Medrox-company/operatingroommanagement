@@ -304,6 +304,3 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
 };
 
 export default SettingsPage;
-};
-
-export default SettingsPage;
