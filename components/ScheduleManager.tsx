@@ -78,9 +78,9 @@ const ScheduleManager: React.FC = () => {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="w-full">
         {/* Main Content */}
-        <div className="lg:col-span-3">
+        <div>
           {/* Month Header with Controls */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -157,99 +157,6 @@ const ScheduleManager: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Current Date Display */}
-          <div className="text-right">
-            <p className="text-4xl font-black text-white">{dateStr}</p>
-            <div className="flex gap-1 justify-end mt-3">
-              <button onClick={handlePreviousMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                <ChevronLeft className="w-5 h-5 text-white/60" />
-              </button>
-              <button onClick={handleNextMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                <ChevronRight className="w-5 h-5 text-white/60" />
-              </button>
-            </div>
-          </div>
-
-          {/* Mini Calendar */}
-          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 backdrop-blur-xl">
-            <div className="grid grid-cols-7 gap-1.5 mb-3">
-              {DAYS_OF_WEEK.map(day => (
-                <div key={day} className="text-center text-xs font-bold text-white/40">
-                  {day[0]}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1.5">
-              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                <div
-                  key={day}
-                  className={`aspect-square flex items-center justify-center text-xs font-bold rounded ${
-                    day === currentDate.getDate()
-                      ? 'bg-yellow-300 text-slate-900'
-                      : 'text-white/50 hover:bg-white/10 cursor-pointer transition-colors'
-                  }`}
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Resource Consumption */}
-          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 backdrop-blur-xl">
-            <h3 className="text-lg font-black text-white mb-6">Resource consumption</h3>
-            <div className="flex items-center justify-center mb-8">
-              <div className="relative w-36 h-36">
-                <svg className="w-full h-full" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    fill="none"
-                    stroke="#BFFF00"
-                    strokeWidth="3"
-                    strokeDasharray="31.4 157"
-                    strokeLinecap="round"
-                    transform="rotate(-90 60 60)"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black text-white">20%</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="text-white/70 text-sm">
-                <span className="text-2xl">📋</span>
-                <span className="font-bold ml-2">25 Total tasks</span>
-              </div>
-              <div className="text-white/70 text-sm">
-                <span className="text-2xl">⚙️</span>
-                <span className="font-bold ml-2">2 In progress</span>
-              </div>
-            </div>
-          </div>
-
-          {/* My Events */}
-          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 backdrop-blur-xl">
-            <h3 className="text-lg font-black text-white mb-4">My events</h3>
-            <div className="space-y-3">
-              {['Work at office', 'Family', 'Meeting with friends', 'Entertainment', 'Hobbies'].map((event, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <input type="checkbox" className="w-4 h-4 rounded" />
-                  <span className="text-white/70 text-sm">{event}</span>
-                </div>
-              ))}
-              <button className="text-purple-400 text-sm font-bold hover:text-purple-300 transition-colors mt-2">
-                + Add events
-              </button>
             </div>
           </div>
         </div>
