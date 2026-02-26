@@ -4,6 +4,7 @@ import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, Arro
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
 import DepartmentsManager from './DepartmentsManager';
+import ScheduleManager from './ScheduleManager';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -114,27 +115,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
+          className="w-full px-0 py-0"
         >
-          <div className="max-w-[2400px] mx-auto w-full">
-            {/* Schedule Header */}
-            <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0">
-              <div className="text-center lg:text-left">
-                <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-                  <Calendar className="w-4 h-4 text-[#A855F7]" />
-                  <p className="text-[10px] font-black text-[#A855F7] tracking-[0.4em] uppercase">PLÁNOVÁNÍ</p>
-                </div>
-                <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-                  ROZPIS <span className="text-white/20">SÁLŮ</span>
-                </h1>
-              </div>
-            </header>
-
-            {/* Schedule Content */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-3xl p-8">
-              <p className="text-white/60">Rozpis sálů je dostupný pouze přes pokročilé nastavení.</p>
-            </div>
-          </div>
+          <ScheduleManager />
         </motion.div>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
