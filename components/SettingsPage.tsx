@@ -174,6 +174,24 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             </div>
           </div>
         </motion.div>
+      ) : (
+        <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
+          <div className="max-w-[2400px] mx-auto w-full">
+            {/* Settings Header */}
+            <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0">
+              <div className="text-center lg:text-left">
+                <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+                  <SettingsIcon className="w-4 h-4 text-[#8B5CF6]" />
+                  <p className="text-[10px] font-black text-[#8B5CF6] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
+                </div>
+                <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+                  NASTAVENÍ <span className="text-white/20">SYSTÉMU</span>
+                </h1>
+              </div>
+            </header>
+
+            {/* Settings Grid */}
+            <div className="pb-20 px-2">
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
             initial={{ opacity: 0 }}
