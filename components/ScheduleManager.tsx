@@ -123,13 +123,18 @@ const ScheduleManager: React.FC = () => {
                 return (
                   <div
                     key={idx}
-                    className="min-h-40 bg-slate-900/50 border border-white/15 rounded-2xl overflow-hidden flex flex-col cursor-pointer hover:border-white/30 transition-all"
+                    className="min-h-40 rounded-xl overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-all group"
                     onClick={() => day && handleCellClick(day)}
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      backdropFilter: 'blur(8px)',
+                    }}
                   >
                     {day ? (
                       <>
                         {/* Top section - events and day number */}
-                        <div className="flex-1 p-3 flex flex-col border-b border-white/10 bg-gradient-to-b from-slate-800/40 to-slate-900/20">
+                        <div className="flex-1 p-3 flex flex-col border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                           <p className="text-xs font-bold text-white/60 mb-2">{day}</p>
                           <div className="flex-1 space-y-1 overflow-hidden">
                             {dayData?.events?.map((event, i) => (
@@ -142,10 +147,12 @@ const ScheduleManager: React.FC = () => {
                         <div className="flex-1 p-2 flex items-center justify-center">
                           {dept ? (
                             <div
-                              className="w-full h-full rounded-lg font-black text-xl flex items-center justify-center"
+                              className="w-full h-full rounded-lg font-black text-lg flex items-center justify-center transition-all"
                               style={{
-                                backgroundColor: dept.accentColor,
+                                background: dept.accentColor + '20',
+                                border: `1px solid ${dept.accentColor}40`,
                                 color: '#FFFFFF',
+                                boxShadow: `0 0 16px ${dept.accentColor}20, 0 2px 8px ${dept.accentColor}10`,
                               }}
                             >
                               {dept.name.split(' ')[0].substring(0, 3).toUpperCase()}
