@@ -1,64 +1,88 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, X, Play, Settings, Bell, Search, LayoutGrid, Table, List } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Play, Settings, Bell, Search, Table, List } from 'lucide-react';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
 const ScheduleManager: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 4, 30)); // May 30, 2024
+  const [currentDate, setCurrentDate] = useState(new Date(2023, 4, 30)); // May 30, 2023
   const [viewMode, setViewMode] = useState<'month' | 'table' | 'list'>('month');
-  const [schedule, setSchedule] = useState<Map<string, string>>(new Map());
-  const [selectedCell, setSelectedCell] = useState<{ date: number; dayIndex: number } | null>(null);
+  const [schedule, setSchedule] = useState<Map<string, string>>(new Map([
+    ['1-0', 'tra'],
+    ['2-0', 'chir'],
+    ['4-0', 'tra'],
+    ['5-0', 'uro'],
+    ['7-0', 'ucoch'],
+    ['8-0', 'chir'],
+    ['14-0', 'chir'],
+    ['21-0', 'nch'],
+    ['22-0', 'gyn'],
+    ['26-0', 'tra'],
+  ]));
+  const [selectedCell, setSelectedCell] = useState<{ date: number; } | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [selectedDept, setSelectedDept] = useState<string | null>(null);
 
   const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const ROOM_NAMES = ['Room 1', 'Room 2', 'Room 3', 'Room 4', 'Room 5', 'Room 6'];
-
-  // Get the Monday of the week containing currentDate
-  const getWeekStart = (date: Date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
+  
+  const departmentColors: { [key: string]: string } = {
+    tra: '#7FD400',      // Lime green
+    chir: '#4A7BA7',     // Blue
+    uro: '#FFA500',      // Orange
+    ucoch: '#8B0000',    // Dark red
+    nch: '#0099FF',      // Bright blue
+    gyn: '#FF00FF',      // Magenta
   };
 
-  const weekStart = getWeekStart(currentDate);
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(weekStart);
-    date.setDate(date.getDate() + i);
-    return date;
-  });
-
-  const getDepartmentColor = (deptId: string) => {
-    for (const dept of DEFAULT_DEPARTMENTS) {
-      if (dept.id === deptId) return dept.accentColor;
-    }
-    return '#64748B';
+  const departmentNames: { [key: string]: string } = {
+    tra: 'TRA',
+    chir: 'CHIR',
+    uro: 'URO',
+    ucoch: 'UCOCH',
+    nch: 'NCH',
+    gyn: 'GYN',
   };
 
-  const getDepartmentName = (deptId: string) => {
-    for (const dept of DEFAULT_DEPARTMENTS) {
-      if (dept.id === deptId) return dept.name;
-    }
-    return '';
+  // Get days for current month
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
-  const getDateString = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
 
-  const handleCellClick = (date: Date, roomIndex: number) => {
-    setSelectedCell({ date: date.getDate(), dayIndex: roomIndex });
+  const monthName = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const dateStr = `${currentDate.getDate()} ${currentDate.toLocaleString('en-US', { month: 'short', year: 'numeric' })}`;
+  const daysInMonth = getDaysInMonth(currentDate);
+  const firstDay = getFirstDayOfMonth(currentDate);
+
+  // Build calendar grid
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) {
+    calendarDays.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push(i);
+  }
+
+  const handleCellClick = (date: number) => {
+    setSelectedCell({ date });
     setShowModal(true);
   };
 
   const handleSelectDepartment = (deptId: string) => {
     if (selectedCell) {
-      const key = `${selectedCell.date}-${selectedCell.dayIndex}`;
+      const key = `${selectedCell.date}-0`;
       setSchedule(new Map(schedule).set(key, deptId));
     }
     setShowModal(false);
   };
 
-  const monthName = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-  const dateStr = `${currentDate.getDate()} ${currentDate.toLocaleString('en-US', { month: 'short', year: 'numeric' })}`;
+  const handlePreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  };
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 p-8">
@@ -76,7 +100,6 @@ const ScheduleManager: React.FC = () => {
           {/* Control Bar */}
           <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-6 backdrop-blur-xl">
             <div className="flex items-center justify-between gap-4">
-              {/* Left: Logo & User */}
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-yellow-300 rounded-xl flex items-center justify-center">
                   <div className="w-6 h-6 bg-slate-900 rounded" />
@@ -90,7 +113,6 @@ const ScheduleManager: React.FC = () => {
                 </div>
               </div>
 
-              {/* Middle: Icons */}
               <div className="flex items-center gap-3">
                 <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                   <Settings className="w-5 h-5 text-white/60" />
@@ -101,7 +123,6 @@ const ScheduleManager: React.FC = () => {
                 <div className="w-6 h-6 rounded-full bg-white/20" />
               </div>
 
-              {/* Right: Search */}
               <div className="flex-1 max-w-xs">
                 <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 flex items-center gap-2">
                   <Search className="w-4 h-4 text-white/40" />
@@ -113,7 +134,6 @@ const ScheduleManager: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right: Quick Tutorial */}
               <button className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
                 <Play className="w-4 h-4" />
                 <span className="text-sm">Quick tutorial</span>
@@ -166,48 +186,49 @@ const ScheduleManager: React.FC = () => {
 
           {/* Calendar Grid */}
           <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-6 backdrop-blur-xl overflow-hidden">
-            {/* Days Header */}
+            {/* Days of Week Header */}
             <div className="grid grid-cols-7 gap-3 mb-4">
-              {DAYS_OF_WEEK.map((day, i) => {
-                const d = weekDays[i];
-                return (
-                  <div key={day} className="text-center">
-                    <p className="text-xs font-bold text-white/40 uppercase mb-1">{day}</p>
-                    <p className="text-xl font-black text-white">{d.getDate()}</p>
-                  </div>
-                );
-              })}
+              {DAYS_OF_WEEK.map(day => (
+                <div key={day} className="text-center">
+                  <p className="text-sm font-bold text-white/50 uppercase">{day}</p>
+                </div>
+              ))}
             </div>
 
-            {/* Calendar Days */}
+            {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-3">
-              {weekDays.map((date, dayIdx) => (
-                <div key={dayIdx} className="bg-white/[0.02] border border-white/20 rounded-3xl p-4 min-h-80">
-                  {/* Events/Rooms in this day */}
-                  <div className="space-y-2">
-                    {ROOM_NAMES.map((room, roomIdx) => {
-                      const cellKey = `${date.getDate()}-${roomIdx}`;
-                      const deptId = schedule.get(cellKey);
-                      const deptColor = deptId ? getDepartmentColor(deptId) : null;
-                      const deptName = deptId ? getDepartmentName(deptId) : '';
-
-                      return (
+              {calendarDays.map((day, idx) => (
+                <div
+                  key={idx}
+                  className="min-h-40 bg-gradient-to-br from-blue-900/30 to-slate-800/30 border border-white/15 rounded-3xl p-3 flex flex-col"
+                >
+                  {day ? (
+                    <>
+                      <p className="text-sm font-bold text-white/60 mb-2">{day}</p>
+                      <div className="flex-1 flex items-center justify-center">
                         <button
-                          key={roomIdx}
-                          onClick={() => handleCellClick(date, roomIdx)}
-                          className="w-full py-6 rounded-2xl font-black text-lg transition-all hover:scale-105 active:scale-95 border-2"
+                          onClick={() => handleCellClick(day)}
+                          className="w-full h-24 rounded-2xl font-black text-2xl transition-all hover:scale-105 active:scale-95 border-2"
                           style={{
-                            backgroundColor: deptId ? `${deptColor}60` : 'rgba(255,255,255,0.08)',
-                            borderColor: deptColor ? deptColor : 'rgba(255,255,255,0.15)',
-                            color: deptColor ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
-                            textShadow: deptId ? `0 0 10px ${deptColor}60` : 'none',
+                            backgroundColor: schedule.has(`${day}-0`)
+                              ? `${departmentColors[schedule.get(`${day}-0`) || 'tra']}80`
+                              : 'rgba(255,255,255,0.08)',
+                            borderColor: schedule.has(`${day}-0`)
+                              ? departmentColors[schedule.get(`${day}-0`) || 'tra']
+                              : 'rgba(255,255,255,0.2)',
+                            color: schedule.has(`${day}-0`) ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+                            textShadow: schedule.has(`${day}-0`)
+                              ? `0 0 20px ${departmentColors[schedule.get(`${day}-0`) || 'tra']}40`
+                              : 'none',
                           }}
                         >
-                          {deptName || ''}
+                          {schedule.has(`${day}-0`)
+                            ? departmentNames[schedule.get(`${day}-0`) || 'tra']
+                            : ''}
                         </button>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -220,10 +241,10 @@ const ScheduleManager: React.FC = () => {
           <div className="text-right">
             <p className="text-4xl font-black text-white">{dateStr}</p>
             <div className="flex gap-2 justify-end mt-2">
-              <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <button onClick={handlePreviousMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                 <ChevronLeft className="w-5 h-5 text-white/60" />
               </button>
-              <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <button onClick={handleNextMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                 <ChevronRight className="w-5 h-5 text-white/60" />
               </button>
             </div>
@@ -304,15 +325,15 @@ const ScheduleManager: React.FC = () => {
             </div>
             <div className="space-y-3">
               {[
-                { label: 'Work at office', icon: '📋' },
-                { label: 'Family', icon: '👨‍👩‍👧' },
-                { label: 'Meeting with friends', icon: '👥' },
-                { label: 'Entertainment', icon: '🎬' },
-                { label: 'Hobbies', icon: '🎯' },
+                'Work at office',
+                'Family',
+                'Meeting with friends',
+                'Entertainment',
+                'Hobbies',
               ].map((event, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <input type="checkbox" className="w-4 h-4 rounded" />
-                  <span className="text-white/70 text-sm">{event.label}</span>
+                  <span className="text-white/70 text-sm">{event}</span>
                 </div>
               ))}
               <button className="text-purple-400 text-sm font-bold hover:text-purple-300 transition-colors mt-2">
@@ -348,15 +369,15 @@ const ScheduleManager: React.FC = () => {
                   <p className="text-sm text-white/60 mb-2">Hour</p>
                   <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
                     <button className="text-white/60 hover:text-white">‹</button>
-                    <span className="text-white font-bold flex-1">20:00pm</span>
+                    <span className="text-white font-bold flex-1 text-center">20:00pm</span>
                     <button className="text-white/60 hover:text-white">›</button>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-white/60 mb-2">Date</p>
+                  <p className="text-sm text-white/60 mb-2">Hour</p>
                   <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
                     <button className="text-white/60 hover:text-white">‹</button>
-                    <span className="text-white font-bold flex-1">21:00pm</span>
+                    <span className="text-white font-bold flex-1 text-center">21:00pm</span>
                     <button className="text-white/60 hover:text-white">›</button>
                   </div>
                 </div>
