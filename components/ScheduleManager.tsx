@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GripVertical, X, ChevronDown } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MOCK_ROOMS } from '../constants';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
@@ -40,7 +40,6 @@ const ScheduleManager: React.FC = () => {
   const [editingCell, setEditingCell] = useState<{ roomId: string; day: string } | null>(null);
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [currentWeekType, setCurrentWeekType] = useState<WeekType>('both');
-  const [draggedItem, setDraggedItem] = useState<{ roomId: string; day: string } | null>(null);
 
   const getAllDepartmentOptions = () => {
     const options: Array<{ id: string; name: string; color: string }> = [];
@@ -91,230 +90,140 @@ const ScheduleManager: React.FC = () => {
     setShowDeptModal(false);
   };
 
-  const handleDragStart = (roomId: string, day: string) => {
-    setDraggedItem({ roomId, day });
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (targetRoomId: string, targetDay: string) => {
-    if (!draggedItem) return;
-
-    const sourceData = scheduleData.find(e => e.roomId === draggedItem.roomId)?.schedule[draggedItem.day];
-    if (!sourceData) return;
-
-    // Move from source to target
-    setScheduleData(prev =>
-      prev.map(entry => {
-        if (entry.roomId === draggedItem.roomId) {
-          return {
-            ...entry,
-            schedule: { ...entry.schedule, [draggedItem.day]: { deptId: '', weekType: 'both' } }
-          };
-        }
-        if (entry.roomId === targetRoomId) {
-          return {
-            ...entry,
-            schedule: { ...entry.schedule, [targetDay]: sourceData }
-          };
-        }
-        return entry;
-      })
-    );
-
-    setDraggedItem(null);
-  };
-
   const shouldShowCell = (cellWeekType: WeekType) => {
     if (currentWeekType === 'both') return true;
     return cellWeekType === 'both' || cellWeekType === currentWeekType;
   };
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-8 flex-shrink-0">
-        <div>
-          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <div className="w-4 h-4 text-[#A855F7]">📅</div>
-            <p className="text-[10px] font-black text-[#A855F7] tracking-[0.4em] uppercase">TÝDENNÍ OPERAČNÍ PLÁN</p>
+    <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Main Container */}
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <header className="px-8 py-6 border-b border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">OPERAČNÍ PLÁN</p>
+              <h1 className="text-2xl font-black text-white">Rozpis sálů</h1>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentWeekType('odd')}
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
+                  currentWeekType === 'odd'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                Lichý
+              </button>
+              <button
+                onClick={() => setCurrentWeekType('both')}
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
+                  currentWeekType === 'both'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                Všechny
+              </button>
+              <button
+                onClick={() => setCurrentWeekType('even')}
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
+                  currentWeekType === 'even'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                Sudý
+              </button>
+            </div>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
-            ROZPIS <span className="text-white/20">SÁLŮ</span>
-          </h1>
-        </div>
+        </header>
 
-        {/* Week Type Selector */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => setCurrentWeekType('odd')}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-              currentWeekType === 'odd'
-                ? 'bg-[#A855F7] text-white'
-                : 'bg-white/10 text-white/60 hover:bg-white/15'
-            }`}
-          >
-            Lichý týden
-          </button>
-          <button
-            onClick={() => setCurrentWeekType('both')}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-              currentWeekType === 'both'
-                ? 'bg-[#A855F7] text-white'
-                : 'bg-white/10 text-white/60 hover:bg-white/15'
-            }`}
-          >
-            Všechny
-          </button>
-          <button
-            onClick={() => setCurrentWeekType('even')}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-              currentWeekType === 'even'
-                ? 'bg-[#A855F7] text-white'
-                : 'bg-white/10 text-white/60 hover:bg-white/15'
-            }`}
-          >
-            Sudý týden
-          </button>
-        </div>
-      </header>
-
-      {/* Schedule Table */}
-      <div className="w-full overflow-x-auto">
-        <div className="min-w-full">
-          <div
-            className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-3xl overflow-hidden"
-            style={{
-              boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), 0 25px 50px -12px rgba(0,0,0,0.25)`,
-            }}
-          >
-            {/* Table Header */}
-            <div
-              className="grid gap-px bg-white/5"
-              style={{
-                gridTemplateColumns: `200px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
-              }}
-            >
-              {/* Room Names Column */}
-              <div className="p-4 border-r border-white/10 bg-white/[0.05]">
-                <p className="text-xs font-black text-white/60 tracking-widest uppercase">Sál / Oddělení</p>
-              </div>
-
-              {/* Days Header */}
-              {DAYS_OF_WEEK.map((day) => (
-                <div key={day} className="p-4 text-center border-r border-white/10 bg-white/[0.05]">
-                  <p className="text-xs font-black text-[#A855F7] tracking-widest uppercase">{day}</p>
+        {/* Schedule Grid */}
+        <div className="flex-1 overflow-auto px-8 py-6">
+          <div className="space-y-4">
+            {/* Days Header */}
+            <div className="grid gap-3" style={{ gridTemplateColumns: `160px repeat(7, 1fr)` }}>
+              <div />
+              {DAYS_OF_WEEK.map(day => (
+                <div key={day} className="text-center">
+                  <p className="text-xs font-semibold text-white/50 uppercase tracking-widest">{day.slice(0, 3)}</p>
                 </div>
               ))}
             </div>
 
-            {/* Table Rows */}
-            <div className="divide-y divide-white/10">
-              {scheduleData.map((entry) => (
-                <div
-                  key={entry.roomId}
-                  className="grid gap-px hover:bg-white/[0.02] transition-colors"
-                  style={{
-                    gridTemplateColumns: `200px repeat(${DAYS_OF_WEEK.length}, 1fr)`,
-                  }}
-                >
-                  {/* Room Name Cell */}
-                  <div className="p-4 border-r border-white/10 flex items-center gap-3 bg-white/[0.02]">
-                    <GripVertical className="w-4 h-4 text-white/30 flex-shrink-0 cursor-grab active:cursor-grabbing" />
-                    <div>
-                      <p className="text-sm font-bold text-white">{entry.roomName}</p>
-                      <p className="text-xs text-white/40">{entry.department}</p>
-                    </div>
-                  </div>
+            {/* Room Rows */}
+            {scheduleData.map(entry => (
+              <div key={entry.roomId} className="space-y-2">
+                <div className="px-4 py-3 rounded-lg bg-white/[0.04] border border-white/10">
+                  <p className="text-sm font-bold text-white">{entry.roomName}</p>
+                  <p className="text-xs text-white/40">{entry.department}</p>
+                </div>
 
-                  {/* Schedule Cells */}
+                <div className="grid gap-3" style={{ gridTemplateColumns: `160px repeat(7, 1fr)` }}>
+                  <div />
                   {DAYS_OF_WEEK.map(day => {
                     const cellData = entry.schedule[day];
                     const deptColor = getDepartmentColor(cellData.deptId);
                     const isVisible = shouldShowCell(cellData.weekType);
-                    const isDragging = draggedItem?.roomId === entry.roomId && draggedItem?.day === day;
 
                     return (
                       <button
                         key={`${entry.roomId}-${day}`}
-                        draggable
-                        onDragStart={() => handleDragStart(entry.roomId, day)}
-                        onDragOver={handleDragOver}
-                        onDrop={() => handleDrop(entry.roomId, day)}
                         onClick={() => {
                           setEditingCell({ roomId: entry.roomId, day });
                           setShowDeptModal(true);
                         }}
-                        className={`border-r border-white/10 flex items-center justify-center min-h-20 px-4 py-3 font-bold cursor-pointer hover:bg-white/5 transition-all text-sm w-full ${
-                          isDragging ? 'opacity-50' : ''
-                        }`}
+                        className="aspect-square rounded-lg border-2 transition-all hover:scale-105 flex items-center justify-center p-2 text-center text-xs font-semibold"
                         style={{
-                          backgroundColor: 'transparent',
-                          border: `2px solid ${cellData.deptId ? deptColor : 'rgba(255,255,255,0.1)'}`,
+                          backgroundColor: cellData.deptId ? `${deptColor}15` : 'transparent',
+                          borderColor: cellData.deptId ? deptColor : 'rgba(255,255,255,0.1)',
                           color: cellData.deptId ? deptColor : 'rgba(255,255,255,0.3)',
-                          opacity: isVisible ? 1 : 0.3,
+                          opacity: isVisible ? 1 : 0.4,
                           pointerEvents: isVisible ? 'auto' : 'none',
                         }}
                       >
-                        <div className="text-center">
-                          {cellData.deptId ? (
-                            <>
-                              <p>{getDepartmentName(cellData.deptId)}</p>
-                              {cellData.weekType !== 'both' && (
-                                <p className="text-xs opacity-70">{cellData.weekType === 'odd' ? 'Lichý' : 'Sudý'}</p>
-                              )}
-                            </>
-                          ) : (
-                            '—'
-                          )}
-                        </div>
+                        {cellData.deptId ? getDepartmentName(cellData.deptId) : '—'}
                       </button>
                     );
                   })}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* Info */}
-      <div className="mt-8 p-4 rounded-lg bg-white/[0.03] border border-white/10">
-        <p className="text-xs text-white/50">
-          💡 Klikněte na pole pro výběr oddělení. Táhněte pole pro přesunutí operací mezi sály. Zvolte typ týdne pro zobrazení specifických operací.
-        </p>
       </div>
 
       {/* Department Selection Modal */}
       {showDeptModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md"
           onClick={() => setShowDeptModal(false)}
         >
           <div
-            className="relative rounded-xl w-full max-w-sm mx-4 bg-[#1a1a2e] border border-white/20 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            className="w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/5 flex-shrink-0">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-white/10 bg-slate-800/50 flex items-center justify-between">
               <h3 className="text-base font-bold text-white">Vyberte oddělení</h3>
-              <button onClick={() => setShowDeptModal(false)} className="p-1 rounded hover:bg-white/10">
+              <button onClick={() => setShowDeptModal(false)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
                 <X className="w-4 h-4 text-white/70" />
               </button>
             </div>
 
-            {/* Week Type Selector in Modal */}
-            <div className="px-5 py-3 border-b border-white/10 bg-white/[0.02] flex gap-2">
+            {/* Week Type Selector */}
+            <div className="px-6 py-3 border-b border-white/10 bg-slate-800/30">
               <select
                 onChange={(e) => {
                   if (editingCell) {
-                    const deptId = scheduleData.find(e => e.roomId === editingCell.roomId)?.schedule[editingCell.day].deptId || '';
+                    const deptId = scheduleData.find(entry => entry.roomId === editingCell.roomId)?.schedule[editingCell.day].deptId || '';
                     handleCellEdit(editingCell.roomId, editingCell.day, deptId, e.target.value as WeekType);
                   }
                 }}
-                className="flex-1 px-3 py-1.5 rounded bg-white/10 border border-white/20 text-white text-xs font-medium"
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-medium"
               >
                 <option value="both">Každý týden</option>
                 <option value="odd">Lichý týden</option>
@@ -323,7 +232,7 @@ const ScheduleManager: React.FC = () => {
             </div>
 
             {/* Department List */}
-            <div className="overflow-y-auto p-4 space-y-2 flex-1">
+            <div className="max-h-96 overflow-y-auto p-4 space-y-2">
               {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
                 <div key={dept.id} className="space-y-1">
                   <button
@@ -332,14 +241,13 @@ const ScheduleManager: React.FC = () => {
                         handleCellEdit(editingCell.roomId, editingCell.day, dept.id);
                       }
                     }}
-                    className="w-full p-3 rounded-lg border text-left flex items-center gap-2.5 hover:bg-white/5 transition-colors"
+                    className="w-full p-3 rounded-lg border transition-all hover:bg-white/5"
                     style={{
-                      borderColor: `${dept.accentColor}60`,
-                      backgroundColor: `${dept.accentColor}12`,
+                      borderColor: `${dept.accentColor}40`,
+                      backgroundColor: `${dept.accentColor}08`,
                     }}
                   >
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.accentColor }} />
-                    <span className="font-semibold text-white text-sm">{dept.name}</span>
+                    <p className="text-sm font-semibold text-white text-left">{dept.name}</p>
                   </button>
 
                   {dept.subDepartments.filter(s => s.isActive).map((subDept) => (
@@ -350,14 +258,13 @@ const ScheduleManager: React.FC = () => {
                           handleCellEdit(editingCell.roomId, editingCell.day, subDept.id);
                         }
                       }}
-                      className="w-full pl-6 pr-3 py-2.5 rounded-lg border text-left flex items-center gap-2 hover:bg-white/5 transition-colors"
+                      className="w-full pl-6 pr-3 py-2 rounded-lg border text-left text-xs transition-all hover:bg-white/5"
                       style={{
                         borderColor: `${dept.accentColor}30`,
-                        backgroundColor: `${dept.accentColor}06`,
+                        backgroundColor: `${dept.accentColor}04`,
                       }}
                     >
-                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.accentColor }} />
-                      <span className="font-medium text-white/90 text-xs">{subDept.name}</span>
+                      <p className="text-white/80">{subDept.name}</p>
                     </button>
                   ))}
                 </div>
