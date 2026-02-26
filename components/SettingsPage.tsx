@@ -115,7 +115,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="w-full px-0 py-0"
+          className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
           <ScheduleManager />
         </motion.div>
