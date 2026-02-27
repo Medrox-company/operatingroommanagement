@@ -59,10 +59,22 @@ const ScheduleManager: React.FC = () => {
 
   const handleCellClick = (date: number) => {
     const existing = schedule.get(String(date));
-    setTempGridConfig(existing || { cols: 1, rows: 1, departments: [''], displaySize: 'full' });
     setSelectedCell({ date });
+    setTempGridConfig(existing || { cols: 1, rows: 1, departments: [''], displaySize: 'full' });
     setModalStep('size-select');
     setShowModal(true);
+  };
+
+  const handleSelectGridSize = (cols: number, rows: number) => {
+    const totalCells = cols * rows;
+    const newDepts = Array(totalCells).fill('');
+    setTempGridConfig({
+      cols,
+      rows,
+      departments: newDepts,
+      displaySize: totalCells === 1 ? 'full' : 'half',
+    });
+    setModalStep('grid-select');
   };
 
   const handleSizeSelect = (displaySize: 'half' | 'full') => {
@@ -81,9 +93,9 @@ const ScheduleManager: React.FC = () => {
     setModalStep('grid-config');
   };
 
-  const handleDepartmentChange = (index: number, deptId: string) => {
+  const handleDepartmentSelect = (cellIndex: number, deptId: string) => {
     const updated = [...tempGridConfig.departments];
-    updated[index] = deptId;
+    updated[cellIndex] = deptId;
     setTempGridConfig({ ...tempGridConfig, departments: updated });
   };
 
@@ -420,7 +432,7 @@ const ScheduleManager: React.FC = () => {
                             </span>
                             <select
                               value={deptId || ''}
-                              onChange={(e) => handleDepartmentChange(idx, e.target.value)}
+                              onChange={(e) => handleDepartmentSelect(idx, e.target.value)}
                               className="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm transition-all hover:bg-white/10 focus:outline-none focus:border-white/40"
                             >
                               <option value="">Prázdné</option>
