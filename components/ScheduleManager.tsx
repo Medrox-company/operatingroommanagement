@@ -100,7 +100,7 @@ const ScheduleManager: React.FC = () => {
   const activeConfig = activeDay ? scheduleGrid.get(activeDay) : null;
 
   return (
-    <div className="w-full h-screen flex overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="w-full h-full flex overflow-hidden relative z-20">
       {/* Main Content Area */}
       <div className="flex-grow flex flex-col overflow-hidden">
         {/* Header */}
@@ -218,7 +218,7 @@ const ScheduleManager: React.FC = () => {
       <AnimatePresence>
         {activeDay && (
           <motion.div
-            className="w-72 bg-gradient-to-b from-slate-900/80 to-slate-950 border-l border-white/10 backdrop-blur-xl flex flex-col overflow-hidden"
+            className="w-72 bg-black/60 border-l border-white/10 backdrop-blur-xl flex flex-col overflow-hidden"
             initial={{ x: 300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 300, opacity: 0 }}
