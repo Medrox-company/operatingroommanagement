@@ -21,7 +21,15 @@ const ScheduleManager: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date(2023, 4, 1));
   const [scheduleGrid, setScheduleGrid] = useState<ScheduleGrid>(new Map([
     [1, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'tra']]) }],
-    [2, { cols: 2, rows: 2, roomAssignments: new Map([['1-1', 'chir'], ['1-2', 'uro']]) }],
+    [2, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'chir']]) }],
+    [3, { cols: 1, rows: 1, roomAssignments: new Map() }],
+    [5, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'uro']]) }],
+    [7, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'neurochir']]) }],
+    [8, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'chir']]) }],
+    [14, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'chir']]) }],
+    [21, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'orl']]) }],
+    [22, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'gyn']]) }],
+    [26, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'tra']]) }],
   ]));
   const [boxSizes, setBoxSizes] = useState<BoxSizes>(new Map());
   const [selectedCell, setSelectedCell] = useState<{ date: number; gridCell?: string } | null>(null);
@@ -189,10 +197,19 @@ const ScheduleManager: React.FC = () => {
         </div>
         
         {/* Instructions */}
-        <div className="mt-2 flex gap-4 text-xs text-white/50">
-          <p>👆 Klikněte na den pro nastavení mřížky</p>
-          <p>🖱️ Táhněte za roh pro změnu velikosti</p>
-          <p>➕ Klikněte na buňku pro výběr sálu</p>
+        <div className="mt-3 flex flex-wrap gap-6 text-xs text-white/60">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-purple-400">1.</span>
+            <p>Klikněte na den pro nastavení mřížky a struktury sálu</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-purple-400">2.</span>
+            <p>Táhněte za roh boxu pro změnu velikosti</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-purple-400">3.</span>
+            <p>Klikněte na sekci a vyberte oddělení</p>
+          </div>
         </div>
       </div>
 
@@ -230,14 +247,19 @@ const ScheduleManager: React.FC = () => {
               >
                 {day && config ? (
                   <div className="w-full h-full p-1.5 flex flex-col">
-                    {/* Day number */}
+                    {/* Day number and resize handle */}
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs font-bold text-white/60">{day}</p>
-                      <div 
-                        className="opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize p-1 hover:bg-white/10 rounded"
-                        onMouseDown={(e) => handleMouseDown(day, e, 'corner')}
-                      >
-                        <GripHorizontal className="w-3 h-3 text-white/50" />
+                      <div className="flex items-center gap-1">
+                        {config.cols === 1 && config.rows === 1 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300 opacity-60 group-hover:opacity-100 transition-opacity">Celý sál</span>
+                        )}
+                        <div 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize p-1 hover:bg-white/10 rounded"
+                          onMouseDown={(e) => handleMouseDown(day, e, 'corner')}
+                        >
+                          <GripHorizontal className="w-3 h-3 text-white/50" />
+                        </div>
                       </div>
                     </div>
                     
@@ -439,39 +461,71 @@ const ScheduleManager: React.FC = () => {
                   </div>
                 </motion.div>
 
-                {/* Preset Grid Buttons */}
+                {/* Grid Preview */}
+                <motion.div
+                  className="p-4 rounded-lg border"
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.2)' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <p className="text-xs text-white/60 uppercase font-bold mb-3">Náhled mřížky ({tempGridConfig.cols}×{tempGridConfig.rows})</p>
+                  <div className="flex gap-1 p-3 rounded-lg bg-black/30" style={{ 
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${tempGridConfig.cols}, 1fr)`,
+                    gap: '4px'
+                  }}>
+                    {Array.from({ length: tempGridConfig.cols * tempGridConfig.rows }).map((_, idx) => (
+                      <motion.div
+                        key={idx}
+                        className="aspect-square rounded-md border"
+                        style={{
+                          backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                          borderColor: 'rgba(139, 92, 246, 0.4)',
+                        }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.05 + idx * 0.02 }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-white/50 mt-2">Celkem sekcí: <span className="font-bold text-white">{tempGridConfig.cols * tempGridConfig.rows}</span></p>
+                </motion.div>
+
+                {/* Preset Grid Buttons - Enhanced */}
                 <div>
-                  <p className="text-xs text-white/60 uppercase font-bold mb-3">Rychlé předvolby</p>
+                  <p className="text-xs text-white/60 uppercase font-bold mb-3 tracking-wider">Rychlé předvolby</p>
                   <div className="grid grid-cols-4 gap-2">
                     {[
-                      { cols: 1, rows: 1, label: '1×1' },
-                      { cols: 2, rows: 1, label: '2×1' },
-                      { cols: 1, rows: 2, label: '1×2' },
-                      { cols: 2, rows: 2, label: '2×2' },
-                      { cols: 3, rows: 2, label: '3×2' },
-                      { cols: 2, rows: 3, label: '2×3' },
-                      { cols: 3, rows: 3, label: '3×3' },
-                      { cols: 4, rows: 4, label: '4×4' },
+                      { cols: 1, rows: 1, label: '1×1', desc: 'Celý sál' },
+                      { cols: 2, rows: 1, label: '2×1', desc: '2 sloupce' },
+                      { cols: 1, rows: 2, label: '1×2', desc: '2 řádky' },
+                      { cols: 2, rows: 2, label: '2×2', desc: '4 sekce' },
+                      { cols: 3, rows: 2, label: '3×2', desc: '6 sekcí' },
+                      { cols: 2, rows: 3, label: '2×3', desc: '6 sekcí' },
+                      { cols: 3, rows: 3, label: '3×3', desc: '9 sekcí' },
+                      { cols: 4, rows: 4, label: '4×4', desc: '16 sekcí' },
                     ].map((preset) => (
                       <motion.button
                         key={`${preset.cols}-${preset.rows}`}
                         onClick={() => setTempGridConfig({ cols: preset.cols, rows: preset.rows })}
-                        className="p-3 rounded-lg font-bold text-sm transition-all border"
+                        className="p-3 rounded-lg font-bold text-sm transition-all border flex flex-col items-center justify-center h-16 group"
                         style={{
                           backgroundColor:
                             tempGridConfig.cols === preset.cols && tempGridConfig.rows === preset.rows
-                              ? 'rgba(139, 92, 246, 0.4)'
-                              : 'rgba(139, 92, 246, 0.1)',
+                              ? 'rgba(139, 92, 246, 0.5)'
+                              : 'rgba(139, 92, 246, 0.08)',
                           borderColor:
                             tempGridConfig.cols === preset.cols && tempGridConfig.rows === preset.rows
-                              ? 'rgba(139, 92, 246, 0.8)'
+                              ? 'rgba(139, 92, 246, 1)'
                               : 'rgba(139, 92, 246, 0.2)',
                           color: '#FFFFFF',
                         }}
-                        whileHover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.08, backgroundColor: 'rgba(139, 92, 246, 0.3)' }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        {preset.label}
+                        <span className="text-sm font-black">{preset.label}</span>
+                        <span className="text-[10px] text-white/60 group-hover:text-white/80 transition-colors">{preset.desc}</span>
                       </motion.button>
                     ))}
                   </div>
@@ -488,23 +542,37 @@ const ScheduleManager: React.FC = () => {
                     <motion.div 
                       className="p-5 rounded-xl border space-y-3"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.15)' }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
                     >
-                      <p className="text-sm font-black text-white">Přiřazené obory</p>
-                      {assignedRooms.map(({ cellKey, dept }) => (
-                        <motion.div
-                          key={cellKey}
-                          className="p-3 rounded-lg border flex items-center justify-between"
-                          style={{
-                            borderColor: dept?.accentColor || 'rgba(255, 255, 255, 0.1)',
-                            background: `${dept?.accentColor}15` || 'rgba(255,255,255,0.05)',
-                          }}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                        >
-                          <span className="font-bold text-white">{dept?.name}</span>
-                          <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded">R:{cellKey.split('-')[0]}, S:{cellKey.split('-')[1]}</span>
-                        </motion.div>
-                      ))}
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-black text-white">Přiřazené obory</p>
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(139, 92, 246, 0.3)', color: '#C4B5FD' }}>
+                          {assignedRooms.length} sekcí
+                        </span>
+                      </div>
+                      {assignedRooms.map(({ cellKey, dept }, idx) => {
+                        const [row, col] = cellKey.split('-').map(Number);
+                        return (
+                          <motion.div
+                            key={cellKey}
+                            className="p-3 rounded-lg border flex items-center justify-between group hover:scale-105 transition-transform"
+                            style={{
+                              borderColor: dept?.accentColor || 'rgba(255, 255, 255, 0.1)',
+                              background: `${dept?.accentColor}15` || 'rgba(255,255,255,0.05)',
+                            }}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.35 + idx * 0.05 }}
+                          >
+                            <span className="font-bold text-white">{dept?.name}</span>
+                            <span className="text-xs text-white/70 bg-white/10 px-2.5 py-1 rounded-md font-mono group-hover:bg-white/20 transition-colors">
+                              Řádek {row}, Sloupec {col}
+                            </span>
+                          </motion.div>
+                        );
+                      })}
                     </motion.div>
                   ) : null;
                 })()}
@@ -627,26 +695,49 @@ const ScheduleManager: React.FC = () => {
               )}
 
               {/* Content */}
-              <div className="px-7 py-6 space-y-4">
+              <div className="px-7 py-6 space-y-5">
                 <div>
-                  <p className="text-xs text-white/60 uppercase font-bold mb-3">Vyberte oddělení</p>
+                  <p className="text-xs text-white/60 uppercase font-bold mb-3 tracking-wider">Vyberte oddělení</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => (
-                      <motion.button
-                        key={dept.id}
-                        onClick={() => handleSelectDepartment(dept.id)}
-                        className="p-4 rounded-xl text-center font-bold text-sm transition-all border"
-                        style={{
-                          backgroundColor: `${dept.accentColor}20`,
-                          borderColor: `${dept.accentColor}40`,
-                          color: '#FFFFFF',
-                        }}
-                        whileHover={{ scale: 1.05, backgroundColor: `${dept.accentColor}30` }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {dept.name}
-                      </motion.button>
-                    ))}
+                    {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept, idx) => {
+                      const currentDeptId = selectedCell?.gridCell ? scheduleGrid.get(selectedCell.date)?.roomAssignments.get(selectedCell.gridCell) : null;
+                      const isSelected = currentDeptId === dept.id;
+                      
+                      return (
+                        <motion.button
+                          key={dept.id}
+                          onClick={() => handleSelectDepartment(dept.id)}
+                          className="p-4 rounded-xl text-center font-bold text-sm transition-all border relative overflow-hidden group"
+                          style={{
+                            backgroundColor: isSelected ? `${dept.accentColor}40` : `${dept.accentColor}15`,
+                            borderColor: isSelected ? `${dept.accentColor}80` : `${dept.accentColor}40`,
+                            color: '#FFFFFF',
+                          }}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 + idx * 0.05 }}
+                          whileHover={{ 
+                            scale: 1.08, 
+                            backgroundColor: isSelected ? `${dept.accentColor}50` : `${dept.accentColor}25`,
+                            boxShadow: `0 0 20px ${dept.accentColor}40, inset 0 0 10px ${dept.accentColor}20`
+                          }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <div className="flex flex-col items-center gap-1">
+                            <span>{dept.name}</span>
+                            {isSelected && (
+                              <motion.span 
+                                className="text-xs opacity-70"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                              >
+                                ✓ Vybrán
+                              </motion.span>
+                            )}
+                          </div>
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -665,13 +756,17 @@ const ScheduleManager: React.FC = () => {
                       }
                     }
                   }}
-                  className="w-full p-3 rounded-lg border transition-all"
+                  className="w-full p-3 rounded-lg border transition-all font-bold"
                   style={{
                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
                     borderColor: 'rgba(239, 68, 68, 0.3)',
                     color: '#FCA5A5',
                   }}
-                  whileHover={{ backgroundColor: 'rgba(239, 68, 68, 0.2)' }}
+                  whileHover={{ 
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: 'rgba(239, 68, 68, 0.5)',
+                    boxShadow: '0 0 12px rgba(239, 68, 68, 0.3)'
+                  }}
                   whileTap={{ scale: 0.98 }}
                 >
                   Vymazat sál
