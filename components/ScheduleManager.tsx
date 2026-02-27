@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, GripHorizontal } from 'lucide-react';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
 interface GridConfig {
@@ -9,7 +9,13 @@ interface GridConfig {
   roomAssignments: Map<string, string>;
 }
 
+interface BoxDimensions {
+  width: number;
+  height: number;
+}
+
 type ScheduleGrid = Map<number, GridConfig>;
+type BoxSizes = Map<number, BoxDimensions>;
 
 const ScheduleManager: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date(2023, 4, 1));
@@ -17,10 +23,14 @@ const ScheduleManager: React.FC = () => {
     [1, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'tra']]) }],
     [2, { cols: 2, rows: 2, roomAssignments: new Map([['1-1', 'chir'], ['1-2', 'uro']]) }],
   ]));
+  const [boxSizes, setBoxSizes] = useState<BoxSizes>(new Map());
   const [selectedCell, setSelectedCell] = useState<{ date: number; gridCell?: string } | null>(null);
   const [showGridModal, setShowGridModal] = useState(false);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [tempGridConfig, setTempGridConfig] = useState<{ cols: number; rows: number }>({ cols: 1, rows: 1 });
+  const [draggingBox, setDraggingBox] = useState<number | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const boxRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
 
@@ -45,7 +55,56 @@ const ScheduleManager: React.FC = () => {
     calendarDays.push(i);
   }
 
-  const handleCellClick = (date: number) => {
+  const handleMouseDown = (date: number, e: React.MouseEvent, target: 'corner' | 'edge') => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    setDraggingBox(date);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  React.useEffect(() => {
+    if (!draggingBox || !dragStart) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const box = boxRefs.current.get(draggingBox);
+      if (!box) return;
+
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      const currentDims = boxSizes.get(draggingBox) || { width: 0, height: 0 };
+      const minSize = 80;
+
+      const newWidth = Math.max(minSize, currentDims.width + deltaX);
+      const newHeight = Math.max(minSize, currentDims.height + deltaY);
+
+      setBoxSizes(new Map(boxSizes).set(draggingBox, { width: newWidth, height: newHeight }));
+      setDragStart({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleMouseUp = () => {
+      setDraggingBox(null);
+      setDragStart(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [draggingBox, dragStart, boxSizes]);
+
+  const getBoxStyle = (day: number) => {
+    const dims = boxSizes.get(day);
+    if (!dims) return {};
+    return {
+      width: `${dims.width}px`,
+      height: `${dims.height}px`,
+    };
+  };
+
+  
     setSelectedCell({ date });
     setTempGridConfig(scheduleGrid.get(date) || { cols: 1, rows: 1 });
     setShowGridModal(true);
@@ -149,18 +208,31 @@ const ScheduleManager: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="rounded-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-all group min-h-0"
+                ref={(el) => {
+                  if (el && day) boxRefs.current.set(day, el);
+                }}
+                className="rounded-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-all group min-h-0 relative"
                 onClick={() => day && handleCellClick(day)}
                 style={{
                   background: 'rgba(255,255,255,0.02)',
                   border: '1px solid rgba(255,255,255,0.08)',
                   backdropFilter: 'blur(8px)',
+                  ...getBoxStyle(day || 0),
+                  position: draggingBox === day ? 'relative' : 'relative',
                 }}
               >
                 {day && config ? (
                   <div className="w-full h-full p-1.5 flex flex-col">
                     {/* Day number */}
-                    <p className="text-xs font-bold text-white/60 mb-1">{day}</p>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-bold text-white/60">{day}</p>
+                      <div 
+                        className="opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize p-1 hover:bg-white/10 rounded"
+                        onMouseDown={(e) => handleMouseDown(day, e, 'corner')}
+                      >
+                        <GripHorizontal className="w-3 h-3 text-white/50" />
+                      </div>
+                    </div>
                     
                     {/* Grid cells */}
                     <div className="flex-1 flex overflow-hidden min-h-0" style={{ gap: '2px' }}>
@@ -200,6 +272,17 @@ const ScheduleManager: React.FC = () => {
                     <p className="text-xs font-bold text-white/60">{day}</p>
                   </div>
                 ) : null}
+
+                {/* Resize handle indicator */}
+                {day && (
+                  <div 
+                    className="absolute bottom-0 right-0 w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize"
+                    onMouseDown={(e) => handleMouseDown(day, e, 'corner')}
+                    style={{
+                      background: 'linear-gradient(135deg, transparent 50%, rgba(147, 51, 234, 0.3) 50%)',
+                    }}
+                  />
+                )}
               </div>
             );
           })}
