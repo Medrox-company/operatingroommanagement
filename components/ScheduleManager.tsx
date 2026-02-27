@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, X, GripHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Plus, Minus } from 'lucide-react';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
 interface GridConfig {
@@ -9,13 +9,7 @@ interface GridConfig {
   roomAssignments: Map<string, string>;
 }
 
-interface BoxDimensions {
-  width: number;
-  height: number;
-}
-
 type ScheduleGrid = Map<number, GridConfig>;
-type BoxSizes = Map<number, BoxDimensions>;
 
 const ScheduleManager: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date(2023, 4, 1));
@@ -31,14 +25,12 @@ const ScheduleManager: React.FC = () => {
     [22, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'gyn']]) }],
     [26, { cols: 1, rows: 1, roomAssignments: new Map([['1-1', 'tra']]) }],
   ]));
-  const [boxSizes, setBoxSizes] = useState<BoxSizes>(new Map());
-  const [selectedCell, setSelectedCell] = useState<{ date: number; gridCell?: string } | null>(null);
-  const [showGridModal, setShowGridModal] = useState(false);
-  const [showRoomModal, setShowRoomModal] = useState(false);
-  const [tempGridConfig, setTempGridConfig] = useState<{ cols: number; rows: number }>({ cols: 1, rows: 1 });
-  const [draggingBox, setDraggingBox] = useState<number | null>(null);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
-  const boxRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedGridCell, setSelectedGridCell] = useState<string | null>(null);
+  const [activeMode, setActiveMode] = useState<'layout' | 'department' | null>(null);
+  const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
 
@@ -48,6 +40,10 @@ const ScheduleManager: React.FC = () => {
 
   const getFirstDayOfMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const getDepartmentById = (deptId: string) => {
+    return DEFAULT_DEPARTMENTS.find(d => d.id === deptId);
   };
 
   const monthName = currentDate.toLocaleString('cs-CZ', { month: 'long', year: 'numeric' });
@@ -63,105 +59,37 @@ const ScheduleManager: React.FC = () => {
     calendarDays.push(i);
   }
 
-  const handleMouseDown = (date: number, e: React.MouseEvent, target: 'corner' | 'edge') => {
-    if (e.button !== 0) return;
+  const handleDayClick = (day: number, e: React.MouseEvent) => {
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    setSelectedDay(day);
+    setActiveMode('layout');
+    setPopoverPos({ x: rect.left, y: rect.bottom + 8 });
+  };
+
+  const handleGridCellClick = (cellKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDraggingBox(date);
-    setDragStart({ x: e.clientX, y: e.clientY });
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    setSelectedGridCell(cellKey);
+    setActiveMode('department');
+    setPopoverPos({ x: rect.left, y: rect.bottom + 8 });
   };
 
-  React.useEffect(() => {
-    if (!draggingBox || !dragStart) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const box = boxRefs.current.get(draggingBox);
-      if (!box) return;
-
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
-      const currentDims = boxSizes.get(draggingBox) || { width: 0, height: 0 };
-      const minSize = 80;
-
-      const newWidth = Math.max(minSize, currentDims.width + deltaX);
-      const newHeight = Math.max(minSize, currentDims.height + deltaY);
-
-      setBoxSizes(new Map(boxSizes).set(draggingBox, { width: newWidth, height: newHeight }));
-      setDragStart({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleMouseUp = () => {
-      setDraggingBox(null);
-      setDragStart(null);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [draggingBox, dragStart, boxSizes]);
-
-  const getBoxStyle = (day: number) => {
-    const dims = boxSizes.get(day);
-    if (!dims) return {};
-    return {
-      width: `${dims.width}px`,
-      height: `${dims.height}px`,
-    };
+  const updateGridLayout = (cols: number, rows: number) => {
+    if (!selectedDay) return;
+    const config = scheduleGrid.get(selectedDay) || { cols: 1, rows: 1, roomAssignments: new Map() };
+    const newAssignments = new Map<string, string>();
+    setScheduleGrid(new Map(scheduleGrid).set(selectedDay, { cols, rows, roomAssignments: newAssignments }));
   };
 
-  const handleCellClick = (date: number) => {
-    setSelectedCell({ date });
-    setTempGridConfig(scheduleGrid.get(date) || { cols: 1, rows: 1 });
-    setShowGridModal(true);
-  };
-
-  const handleGridCellClick = (gridCell: string) => {
-    setSelectedCell(prev => prev ? { ...prev, gridCell } : null);
-    setShowRoomModal(true);
-  };
-
-  const handleSelectDepartment = (deptId: string) => {
-    if (selectedCell && selectedCell.gridCell) {
-      const date = selectedCell.date;
-      const gridConfig = scheduleGrid.get(date);
-      if (gridConfig) {
-        const newAssignments = new Map(gridConfig.roomAssignments);
-        newAssignments.set(selectedCell.gridCell, deptId);
-        const updatedConfig = { ...gridConfig, roomAssignments: newAssignments };
-        setScheduleGrid(new Map(scheduleGrid).set(date, updatedConfig));
-        setShowRoomModal(false);
-      }
-    }
-  };
-
-  const handleGridSave = (cols: number, rows: number) => {
-    if (selectedCell) {
-      const date = selectedCell.date;
-      const newAssignments = new Map<string, string>();
-      const oldConfig = scheduleGrid.get(date);
-      
-      if (oldConfig) {
-        for (let c = 1; c <= cols; c++) {
-          for (let r = 1; r <= rows; r++) {
-            const cellKey = `${c}-${r}`;
-            newAssignments.set(cellKey, oldConfig.roomAssignments.get(cellKey) || '');
-          }
-        }
-      } else {
-        for (let c = 1; c <= cols; c++) {
-          for (let r = 1; r <= rows; r++) {
-            newAssignments.set(`${c}-${r}`, '');
-          }
-        }
-      }
-
-      const updatedConfig = { cols, rows, roomAssignments: newAssignments };
-      setScheduleGrid(new Map(scheduleGrid).set(date, updatedConfig));
-      setShowGridModal(false);
-    }
+  const updateDepartment = (deptId: string) => {
+    if (!selectedDay || !selectedGridCell) return;
+    const config = scheduleGrid.get(selectedDay);
+    if (!config) return;
+    const newAssignments = new Map(config.roomAssignments);
+    newAssignments.set(selectedGridCell, deptId);
+    setScheduleGrid(new Map(scheduleGrid).set(selectedDay, { ...config, roomAssignments: newAssignments }));
+    setActiveMode(null);
+    setSelectedGridCell(null);
   };
 
   const handlePreviousMonth = () => {
@@ -172,49 +100,34 @@ const ScheduleManager: React.FC = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
-  const getDepartmentById = (deptId: string) => {
-    return DEFAULT_DEPARTMENTS.find(d => d.id === deptId);
-  };
-
   return (
-    <div className="w-full h-screen flex flex-col overflow-hidden">
+    <div className="w-full h-screen flex flex-col overflow-hidden bg-slate-950">
       {/* Main Header */}
-      <div className="pb-4 flex-shrink-0 px-4">
+      <div className="pb-3 flex-shrink-0 px-4 pt-4">
         <p className="text-xs font-bold text-purple-400/60 uppercase tracking-[0.2em] mb-1">PLÁNOVÁNÍ</p>
         <div className="flex items-center justify-between">
-          <h1 className="text-4xl font-black text-white">
+          <h1 className="text-3xl font-black text-white">
             ROZPIS <span className="text-slate-700">SÁLŮ</span>
           </h1>
           <div className="flex items-center gap-2">
-            <button onClick={handlePreviousMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+            <button onClick={handlePreviousMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
               <ChevronLeft className="w-5 h-5 text-white/60" />
             </button>
-            <p className="text-2xl font-black text-white w-64 text-center">{monthName}</p>
-            <button onClick={handleNextMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+            <p className="text-xl font-black text-white w-48 text-center">{monthName}</p>
+            <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
               <ChevronRight className="w-5 h-5 text-white/60" />
             </button>
           </div>
         </div>
-        
-        {/* Instructions */}
-        <div className="mt-3 flex flex-wrap gap-6 text-xs text-white/60">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-purple-400">1.</span>
-            <p>Klikněte na den pro nastavení mřížky a struktury sálu</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-purple-400">2.</span>
-            <p>Táhněte za roh boxu pro změnu velikosti</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-purple-400">3.</span>
-            <p>Klikněte na sekci a vyberte oddělení</p>
-          </div>
+
+        {/* Instructions - Minimal */}
+        <div className="mt-2 flex gap-4 text-[11px] text-white/50">
+          <p>Klikněte na den → nastavte mřížku → vyberte sály</p>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="flex-grow overflow-hidden flex flex-col px-4">
+      <div ref={calendarRef} className="flex-grow overflow-hidden flex flex-col px-4 pb-4">
         {/* Days of Week Header */}
         <div className="grid grid-cols-7 gap-2 pb-2 flex-shrink-0">
           {DAYS_OF_WEEK.map(day => (
@@ -230,40 +143,29 @@ const ScheduleManager: React.FC = () => {
             const config = day ? scheduleGrid.get(day) : null;
 
             return (
-              <div
+              <motion.div
                 key={idx}
-                ref={(el) => {
-                  if (el && day) boxRefs.current.set(day, el);
-                }}
-                className="rounded-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-all group min-h-0 relative"
-                onClick={() => day && handleCellClick(day)}
+                onClick={(e) => day && handleDayClick(day, e)}
+                className="rounded-lg cursor-pointer hover:shadow-lg transition-all group relative overflow-hidden flex flex-col"
                 style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: selectedDay === day 
+                    ? 'rgba(139, 92, 246, 0.15)' 
+                    : 'rgba(255,255,255,0.02)',
+                  border: selectedDay === day 
+                    ? '1px solid rgba(139, 92, 246, 0.5)' 
+                    : '1px solid rgba(255,255,255,0.08)',
                   backdropFilter: 'blur(8px)',
-                  ...getBoxStyle(day || 0),
-                  position: draggingBox === day ? 'relative' : 'relative',
+                }}
+                whileHover={{ 
+                  background: 'rgba(255,255,255,0.03)',
+                  borderColor: 'rgba(255,255,255,0.12)'
                 }}
               >
                 {day && config ? (
-                  <div className="w-full h-full p-1.5 flex flex-col">
-                    {/* Day number and resize handle */}
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-bold text-white/60">{day}</p>
-                      <div className="flex items-center gap-1">
-                        {config.cols === 1 && config.rows === 1 && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300 opacity-60 group-hover:opacity-100 transition-opacity">Celý sál</span>
-                        )}
-                        <div 
-                          className="opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize p-1 hover:bg-white/10 rounded"
-                          onMouseDown={(e) => handleMouseDown(day, e, 'corner')}
-                        >
-                          <GripHorizontal className="w-3 h-3 text-white/50" />
-                        </div>
-                      </div>
-                    </div>
+                  <div className="w-full h-full p-1.5 flex flex-col min-h-0">
+                    <p className="text-xs font-bold text-white/60 mb-1">{day}</p>
                     
-                    {/* Grid cells */}
+                    {/* Mini Grid Display */}
                     <div className="flex-1 flex overflow-hidden min-h-0" style={{ gap: '2px' }}>
                       {Array.from({ length: config.cols }).map((_, col) => (
                         <div key={col} className="flex-1 flex flex-col gap-0.5 min-w-0">
@@ -271,29 +173,20 @@ const ScheduleManager: React.FC = () => {
                             const cellKey = `${col + 1}-${row + 1}`;
                             const deptId = config.roomAssignments.get(cellKey) || '';
                             const dept = deptId ? getDepartmentById(deptId) : null;
-                            const fontSize = config.cols > 2 || config.rows > 2 ? 'text-[8px]' : 'text-xs';
 
                             return (
                               <motion.div
                                 key={cellKey}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleGridCellClick(cellKey);
-                                }}
-                                className={`flex-1 rounded-md font-black flex items-center justify-center transition-all cursor-pointer min-h-0 ${fontSize} group/cell`}
+                                onClick={(e) => day && handleGridCellClick(cellKey, e)}
+                                className="flex-1 rounded-sm font-bold flex items-center justify-center transition-all cursor-pointer min-h-0 text-[7px]"
                                 style={{
-                                  background: dept ? `${dept.accentColor}20` : 'rgba(255,255,255,0.05)',
-                                  border: dept ? `1px solid ${dept.accentColor}40` : '1px solid rgba(255,255,255,0.1)',
-                                  color: dept ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
-                                  boxShadow: dept ? `0 0 12px ${dept.accentColor}20` : 'none',
+                                  background: dept ? `${dept.accentColor}25` : 'rgba(255,255,255,0.05)',
+                                  border: dept ? `1px solid ${dept.accentColor}40` : '0.5px solid rgba(255,255,255,0.1)',
+                                  color: dept ? '#FFFFFF' : 'rgba(255,255,255,0.25)',
                                 }}
-                                whileHover={{ 
-                                  scale: 1.08,
-                                  boxShadow: dept ? `0 0 20px ${dept.accentColor}40` : '0 0 12px rgba(255,255,255,0.2)',
-                                }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.1 }}
                               >
-                                {dept ? dept.name.split(' ')[0].substring(0, 2).toUpperCase() : '+'}
+                                {dept ? dept.name.substring(0, 2) : '+'}
                               </motion.div>
                             );
                           })}
@@ -303,422 +196,204 @@ const ScheduleManager: React.FC = () => {
                   </div>
                 ) : day ? (
                   <div className="w-full h-full p-2 flex items-center justify-center">
-                    <p className="text-xs font-bold text-white/60">{day}</p>
+                    <p className="text-sm font-bold text-white/40">{day}</p>
                   </div>
                 ) : null}
-
-                {/* Resize handle indicator */}
-                {day && (
-                  <motion.div 
-                    className="absolute bottom-0 right-0 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize flex items-center justify-center"
-                    onMouseDown={(e) => handleMouseDown(day, e, 'corner')}
-                    whileHover={{ scale: 1.2 }}
-                    style={{
-                      background: 'linear-gradient(135deg, transparent 50%, rgba(147, 51, 234, 0.5) 50%)',
-                    }}
-                  >
-                    <div className="w-2 h-2 rounded-full bg-purple-400 opacity-60" />
-                  </motion.div>
-                )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
       </div>
 
-      {/* Grid Configuration Modal */}
+      {/* Context Popover - Layout Mode */}
       <AnimatePresence>
-        {showGridModal && selectedCell && (
+        {activeMode === 'layout' && selectedDay && popoverPos && (
           <motion.div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            className="fixed z-50"
+            style={{ left: popoverPos.x, top: popoverPos.y }}
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ duration: 0.15 }}
           >
-            <motion.div
-              className="absolute inset-0 bg-black/60 backdrop-blur-2xl"
-              onClick={() => setShowGridModal(false)}
-            />
-
-            <motion.div
-              className="relative w-full max-w-4xl rounded-3xl border shadow-2xl overflow-hidden my-auto"
+            <div
+              className="rounded-lg border p-3 space-y-2 shadow-2xl"
               style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                backdropFilter: 'blur(40px) saturate(180%)',
+                background: 'rgba(20, 20, 30, 0.95)',
                 borderColor: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(16px)',
               }}
-              initial={{ scale: 0.9, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 20, opacity: 0 }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.15)' }}>
-                <h2 className="text-lg font-black text-white">Rozložení sálu č. {selectedCell.date}</h2>
-                <button
-                  onClick={() => setShowGridModal(false)}
-                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-                >
-                  <X className="w-4 h-4 text-white/60" />
-                </button>
-              </div>
+              {/* Layout Title */}
+              <p className="text-xs font-bold text-white/70">Struktura mřížky</p>
 
-              {/* Content */}
-              <div className="px-6 py-4 space-y-4 max-h-[calc(100vh-320px)] overflow-y-auto">
-                {/* Preview Section */}
-                <div>
-                  <p className="text-xs text-white/50 uppercase font-bold mb-2">Náhled</p>
-                  <motion.div 
-                    className="p-4 rounded-lg border" 
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.1)' }}
-                    layout
-                  >
-                    <motion.div className="flex gap-2" layout style={{ aspectRatio: `${tempGridConfig.cols} / ${tempGridConfig.rows}`, minHeight: '100px' }}>
-                      {Array.from({ length: tempGridConfig.cols }).map((_, col) => (
-                        <motion.div 
-                          key={col} 
-                          className="flex-1 flex flex-col gap-2"
-                          layout
-                        >
-                          {Array.from({ length: tempGridConfig.rows }).map((_, row) => {
-                            const config = scheduleGrid.get(selectedCell.date);
-                            const cellKey = `${col + 1}-${row + 1}`;
-                            const deptId = config?.roomAssignments.get(cellKey);
-                            const dept = deptId ? getDepartmentById(deptId) : null;
-                            
-                            return (
-                              <motion.div 
-                                key={`${col}-${row}`} 
-                                className="flex-1 rounded-md border flex items-center justify-center font-bold text-xs transition-all"
-                                style={{
-                                  background: dept ? `${dept.accentColor}20` : 'rgba(255,255,255,0.03)',
-                                  borderColor: dept ? `${dept.accentColor}40` : 'rgba(255,255,255,0.08)',
-                                  boxShadow: dept ? `0 0 8px ${dept.accentColor}15` : 'none',
-                                  color: dept ? '#FFFFFF' : 'rgba(255,255,255,0.2)',
-                                }}
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: (col + row * tempGridConfig.cols) * 0.05 }}
-                                whileHover={{ scale: 1.08 }}
-                              >
-                                {dept ? dept.name.split(' ')[0].substring(0, 2) : '+'}
-                              </motion.div>
-                            );
-                          })}
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  </motion.div>
-                </div>
-
-                {/* Grid Structure Controls - Compact */}
-                <motion.div 
-                  className="p-4 rounded-lg border space-y-3"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.1)' }}
-                >
-                  <p className="text-xs font-bold text-white/80">Struktura</p>
+              {/* Quick Preset Buttons - Inline */}
+              <div className="flex gap-1.5">
+                {[
+                  { cols: 1, rows: 1, label: '1×1' },
+                  { cols: 2, rows: 1, label: '2×1' },
+                  { cols: 1, rows: 2, label: '1×2' },
+                  { cols: 2, rows: 2, label: '2×2' },
+                ].map((preset) => {
+                  const config = scheduleGrid.get(selectedDay);
+                  const isActive = config?.cols === preset.cols && config?.rows === preset.rows;
                   
-                  {/* Rows Control */}
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-white/70">Řádky:</label>
-                    <div className="flex items-center gap-3 bg-white/5 rounded-md px-3 py-1.5 border border-white/10">
-                      <button
-                        onClick={() => setTempGridConfig({ ...tempGridConfig, rows: Math.max(1, tempGridConfig.rows - 1) })}
-                        className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                      >
-                        <span className="text-sm font-bold text-white/60">−</span>
-                      </button>
-                      <span className="text-sm font-bold text-white min-w-[24px] text-center">{tempGridConfig.rows}</span>
-                      <button
-                        onClick={() => setTempGridConfig({ ...tempGridConfig, rows: Math.min(4, tempGridConfig.rows + 1) })}
-                        className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                      >
-                        <span className="text-sm font-bold text-white/60">+</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Columns Control */}
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-white/70">Sloupce:</label>
-                    <div className="flex items-center gap-3 bg-white/5 rounded-md px-3 py-1.5 border border-white/10">
-                      <button
-                        onClick={() => setTempGridConfig({ ...tempGridConfig, cols: Math.max(1, tempGridConfig.cols - 1) })}
-                        className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                      >
-                        <span className="text-sm font-bold text-white/60">−</span>
-                      </button>
-                      <span className="text-sm font-bold text-white min-w-[24px] text-center">{tempGridConfig.cols}</span>
-                      <button
-                        onClick={() => setTempGridConfig({ ...tempGridConfig, cols: Math.min(4, tempGridConfig.cols + 1) })}
-                        className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                      >
-                        <span className="text-sm font-bold text-white/60">+</span>
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Quick Presets - Grid */}
-                <div>
-                  <p className="text-xs text-white/50 uppercase font-bold mb-2">Předvolby</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { cols: 1, rows: 1, label: '1×1' },
-                      { cols: 2, rows: 1, label: '2×1' },
-                      { cols: 1, rows: 2, label: '1×2' },
-                      { cols: 2, rows: 2, label: '2×2' },
-                    ].map((preset) => (
-                      <motion.button
-                        key={`${preset.cols}-${preset.rows}`}
-                        onClick={() => setTempGridConfig({ cols: preset.cols, rows: preset.rows })}
-                        className="p-2 rounded-md font-bold text-xs transition-all border"
-                        style={{
-                          backgroundColor:
-                            tempGridConfig.cols === preset.cols && tempGridConfig.rows === preset.rows
-                              ? 'rgba(139, 92, 246, 0.4)'
-                              : 'rgba(139, 92, 246, 0.08)',
-                          borderColor:
-                            tempGridConfig.cols === preset.cols && tempGridConfig.rows === preset.rows
-                              ? 'rgba(139, 92, 246, 0.7)'
-                              : 'rgba(139, 92, 246, 0.2)',
-                          color: '#FFFFFF',
-                        }}
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {preset.label}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Assigned Rooms Section */}
-                {(() => {
-                  const config = scheduleGrid.get(selectedCell.date);
-                  const assignedRooms = Array.from(config?.roomAssignments.entries() || [])
-                    .filter(([_, deptId]) => deptId)
-                    .map(([cellKey, deptId]) => ({ cellKey, dept: getDepartmentById(deptId) }));
-                  
-                  return assignedRooms.length > 0 ? (
-                    <motion.div 
-                      className="p-5 rounded-xl border space-y-3"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.15)' }}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
+                  return (
+                    <motion.button
+                      key={`${preset.cols}-${preset.rows}`}
+                      onClick={() => updateGridLayout(preset.cols, preset.rows)}
+                      className="px-2 py-1 rounded text-xs font-bold transition-all border"
+                      style={{
+                        backgroundColor: isActive ? 'rgba(139, 92, 246, 0.4)' : 'rgba(139, 92, 246, 0.08)',
+                        borderColor: isActive ? 'rgba(139, 92, 246, 0.6)' : 'rgba(139, 92, 246, 0.2)',
+                        color: '#FFFFFF',
+                      }}
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.92 }}
                     >
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-black text-white">Přiřazené obory</p>
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(139, 92, 246, 0.3)', color: '#C4B5FD' }}>
-                          {assignedRooms.length} sekcí
-                        </span>
-                      </div>
-                      {assignedRooms.map(({ cellKey, dept }, idx) => {
-                        const [row, col] = cellKey.split('-').map(Number);
-                        return (
-                          <motion.div
-                            key={cellKey}
-                            className="p-3 rounded-lg border flex items-center justify-between group hover:scale-105 transition-transform"
-                            style={{
-                              borderColor: dept?.accentColor || 'rgba(255, 255, 255, 0.1)',
-                              background: `${dept?.accentColor}15` || 'rgba(255,255,255,0.05)',
-                            }}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.35 + idx * 0.05 }}
-                          >
-                            <span className="font-bold text-white">{dept?.name}</span>
-                            <span className="text-xs text-white/70 bg-white/10 px-2.5 py-1 rounded-md font-mono group-hover:bg-white/20 transition-colors">
-                              Řádek {row}, Sloupec {col}
-                            </span>
-                          </motion.div>
-                        );
-                      })}
-                    </motion.div>
-                  ) : null;
-                })()}
-
-                {/* Save Button */}
-                <div className="flex gap-3 pt-2">
-                  <motion.button
-                    onClick={() => setShowGridModal(false)}
-                    className="flex-1 p-3 rounded-lg font-bold transition-all border"
-                    style={{
-                      backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                      borderColor: 'rgba(139, 92, 246, 0.2)',
-                      color: '#FFFFFF',
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Zrušit
-                  </motion.button>
-                  <motion.button
-                    onClick={() => handleGridSave(tempGridConfig.cols, tempGridConfig.rows)}
-                    className="flex-1 p-3 rounded-lg font-bold transition-all border"
-                    style={{
-                      backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                      borderColor: 'rgba(59, 130, 246, 0.6)',
-                      color: '#FFFFFF',
-                    }}
-                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(59, 130, 246, 0.4)' }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Uložit změny
-                  </motion.button>
-                </div>
+                      {preset.label}
+                    </motion.button>
+                  );
+                })}
               </div>
-            </motion.div>
+
+              {/* Manual Controls */}
+              <div className="space-y-1.5 pt-1 border-t border-white/10">
+                {['cols', 'rows'].map((key) => {
+                  const config = scheduleGrid.get(selectedDay);
+                  const value = config?.[key as keyof GridConfig] as number || 1;
+                  const label = key === 'cols' ? 'Sloupce' : 'Řádky';
+                  
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-white/60">{label}:</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => updateGridLayout(
+                            key === 'cols' ? Math.max(1, value - 1) : value,
+                            key === 'rows' ? Math.max(1, value - 1) : value
+                          )}
+                          className="p-0.5 hover:bg-white/10 rounded transition-colors"
+                        >
+                          <Minus className="w-3 h-3 text-white/60" />
+                        </button>
+                        <span className="text-xs font-bold text-white min-w-[20px] text-center">{value}</span>
+                        <button
+                          onClick={() => updateGridLayout(
+                            key === 'cols' ? Math.min(4, value + 1) : value,
+                            key === 'rows' ? Math.min(4, value + 1) : value
+                          )}
+                          className="p-0.5 hover:bg-white/10 rounded transition-colors"
+                        >
+                          <Plus className="w-3 h-3 text-white/60" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setActiveMode(null)}
+                className="w-full p-1.5 text-xs text-white/60 hover:text-white/90 transition-colors hover:bg-white/5 rounded"
+              >
+                ✕ Zavřít
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Room Selection Modal */}
+      {/* Context Popover - Department Mode */}
       <AnimatePresence>
-        {showRoomModal && selectedCell && (
+        {activeMode === 'department' && selectedDay && selectedGridCell && popoverPos && (
           <motion.div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            className="fixed z-50"
+            style={{ left: popoverPos.x, top: popoverPos.y }}
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div
+              className="rounded-lg border p-2.5 space-y-1.5 shadow-2xl max-w-xs"
+              style={{
+                background: 'rgba(20, 20, 30, 0.95)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              {/* Departments Grid - Compact */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept) => {
+                  const config = scheduleGrid.get(selectedDay);
+                  const isSelected = config?.roomAssignments.get(selectedGridCell) === dept.id;
+                  
+                  return (
+                    <motion.button
+                      key={dept.id}
+                      onClick={() => updateDepartment(dept.id)}
+                      className="p-2 rounded text-xs font-bold transition-all border text-center"
+                      style={{
+                        backgroundColor: isSelected ? `${dept.accentColor}35` : `${dept.accentColor}12`,
+                        borderColor: isSelected ? `${dept.accentColor}60` : `${dept.accentColor}25`,
+                        color: '#FFFFFF',
+                      }}
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.92 }}
+                    >
+                      {dept.name.substring(0, 6)}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Clear & Close Buttons */}
+              <div className="flex gap-1.5 pt-1 border-t border-white/10">
+                <button
+                  onClick={() => {
+                    const config = scheduleGrid.get(selectedDay);
+                    if (config) {
+                      const newAssignments = new Map(config.roomAssignments);
+                      newAssignments.delete(selectedGridCell);
+                      setScheduleGrid(new Map(scheduleGrid).set(selectedDay, { ...config, roomAssignments: newAssignments }));
+                    }
+                    setActiveMode(null);
+                    setSelectedGridCell(null);
+                  }}
+                  className="flex-1 p-1.5 text-xs text-red-400/60 hover:text-red-300 transition-colors hover:bg-red-400/10 rounded border border-red-400/20"
+                >
+                  Vymazat
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveMode(null);
+                    setSelectedGridCell(null);
+                  }}
+                  className="flex-1 p-1.5 text-xs text-white/60 hover:text-white/90 transition-colors hover:bg-white/5 rounded border border-white/10"
+                >
+                  Zavřít
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Backdrop - Dismiss on Click */}
+      <AnimatePresence>
+        {activeMode && (
+          <motion.div
+            className="fixed inset-0 z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="absolute inset-0 bg-black/60 backdrop-blur-2xl"
-              onClick={() => setShowRoomModal(false)}
-            />
-
-            <motion.div
-              className="relative w-full max-w-[500px] rounded-3xl border shadow-2xl overflow-hidden"
-              style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                backdropFilter: 'blur(40px) saturate(180%)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-              }}
-              initial={{ scale: 0.9, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 20, opacity: 0 }}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.15)' }}>
-                <h2 className="text-lg font-black text-white">Vyberte sál</h2>
-                <button
-                  onClick={() => setShowRoomModal(false)}
-                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-                >
-                  <X className="w-4 h-4 text-white/60" />
-                </button>
-              </div>
-
-              {/* Grid Position Indicator - Compact */}
-              {selectedCell && selectedCell.gridCell && scheduleGrid.get(selectedCell.date) && (
-                <motion.div 
-                  className="px-6 py-3 border-b"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div className="flex gap-1.5">
-                    {(() => {
-                      const config = scheduleGrid.get(selectedCell.date);
-                      if (!config) return null;
-                      
-                      return Array.from({ length: config.cols }).map((_, col) => (
-                        <div key={col} className="flex gap-1">
-                          {Array.from({ length: config.rows }).map((_, row) => {
-                            const cellKey = `${col + 1}-${row + 1}`;
-                            const isSelected = cellKey === selectedCell.gridCell;
-                            const deptId = config.roomAssignments.get(cellKey) || '';
-                            const dept = deptId ? DEFAULT_DEPARTMENTS.find(d => d.id === deptId) : null;
-                            
-                            return (
-                              <motion.div
-                                key={cellKey}
-                                className="w-8 h-8 rounded border transition-all"
-                                style={{
-                                  background: isSelected ? 'rgba(139, 92, 246, 0.5)' : dept ? `${dept.accentColor}20` : 'rgba(255,255,255,0.03)',
-                                  borderColor: isSelected ? 'rgba(139, 92, 246, 0.8)' : dept ? `${dept.accentColor}50` : 'rgba(255,255,255,0.1)',
-                                  boxShadow: isSelected ? '0 0 12px rgba(139, 92, 246, 0.3)' : 'none',
-                                }}
-                                whileHover={{ scale: 1.15 }}
-                              />
-                            );
-                          })}
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Content - Compact */}
-              <div className="px-6 py-4 space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto">
-                <div>
-                  <p className="text-xs text-white/50 uppercase font-bold mb-2.5">Oddělení</p>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept, idx) => {
-                      const currentDeptId = selectedCell?.gridCell ? scheduleGrid.get(selectedCell.date)?.roomAssignments.get(selectedCell.gridCell) : null;
-                      const isSelected = currentDeptId === dept.id;
-                      
-                      return (
-                        <motion.button
-                          key={dept.id}
-                          onClick={() => handleSelectDepartment(dept.id)}
-                          className="p-3 rounded-lg text-center font-bold text-xs transition-all border relative overflow-hidden"
-                          style={{
-                            backgroundColor: isSelected ? `${dept.accentColor}35` : `${dept.accentColor}12`,
-                            borderColor: isSelected ? `${dept.accentColor}70` : `${dept.accentColor}30`,
-                            color: '#FFFFFF',
-                          }}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.15 + idx * 0.04 }}
-                          whileHover={{ 
-                            scale: 1.08, 
-                            backgroundColor: isSelected ? `${dept.accentColor}45` : `${dept.accentColor}20`,
-                            boxShadow: `0 0 16px ${dept.accentColor}30`
-                          }}
-                          whileTap={{ scale: 0.92 }}
-                        >
-                          <span>{dept.name}</span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Clear button - Compact */}
-                <motion.button
-                  onClick={() => {
-                    if (selectedCell && selectedCell.gridCell) {
-                      const date = selectedCell.date;
-                      const gridConfig = scheduleGrid.get(date);
-                      if (gridConfig) {
-                        const newAssignments = new Map(gridConfig.roomAssignments);
-                        newAssignments.set(selectedCell.gridCell, '');
-                        const updatedConfig = { ...gridConfig, roomAssignments: newAssignments };
-                        setScheduleGrid(new Map(scheduleGrid).set(date, updatedConfig));
-                        setShowRoomModal(false);
-                      }
-                    }
-                  }}
-                  className="w-full p-2.5 rounded-lg border transition-all font-bold text-xs"
-                  style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                    borderColor: 'rgba(239, 68, 68, 0.25)',
-                    color: '#FCA5A5',
-                  }}
-                  whileHover={{ 
-                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                    borderColor: 'rgba(239, 68, 68, 0.4)',
-                    boxShadow: '0 0 10px rgba(239, 68, 68, 0.25)'
-                  }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  Vymazat
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
+            onClick={() => {
+              setActiveMode(null);
+              setSelectedGridCell(null);
+            }}
+          />
         )}
       </AnimatePresence>
     </div>
