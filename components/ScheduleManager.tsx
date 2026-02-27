@@ -15,25 +15,61 @@ interface GridConfig {
 
 type ScheduleGrid = Map<number, GridConfig>;
 
+interface ScheduleData {
+  [week: string]: {
+    [pavilion: string]: ScheduleGrid;
+  };
+}
+
 const ScheduleManager: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date(2023, 4, 1));
-  const [scheduleGrid, setScheduleGrid] = useState<ScheduleGrid>(new Map([
-    [1, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'tra' }]]) }],
-    [2, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
-    [3, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: '' }]]) }],
-    [5, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'uro' }]]) }],
-    [7, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'neurochir' }]]) }],
-    [8, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
-    [14, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
-    [21, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'orl' }]]) }],
-    [22, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'gyn' }]]) }],
-    [26, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'tra' }]]) }],
-  ]));
+  const [selectedPavilion, setSelectedPavilion] = useState('pavilion-a');
+  
+  const [scheduleData, setScheduleData] = useState<ScheduleData>({
+    'week-1': {
+      'pavilion-a': new Map([
+        [1, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'tra' }]]) }],
+        [2, { cols: 2, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }], ['2-1', { deptId: 'uro' }]]) }],
+        [3, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: '' }]]) }],
+        [4, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'neuro' }]]) }],
+        [5, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'uro' }]]) }],
+        [6, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: '' }]]) }],
+        [7, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'orl' }]]) }],
+      ]),
+      'pavilion-b': new Map([
+        [1, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
+        [2, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'gyn' }]]) }],
+        [3, { cols: 2, rows: 2, cells: new Map([['1-1', { deptId: 'tra' }], ['2-1', { deptId: 'neurochir' }], ['1-2', { deptId: 'uro' }], ['2-2', { deptId: '' }]]) }],
+        [4, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'orl' }]]) }],
+        [5, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
+        [6, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'gyn' }]]) }],
+        [7, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'tra' }]]) }],
+      ]),
+    },
+    'week-2': {
+      'pavilion-a': new Map([
+        [1, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'gyn' }]]) }],
+        [2, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'orl' }]]) }],
+        [3, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
+        [4, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'uro' }]]) }],
+        [5, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'tra' }]]) }],
+        [6, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: '' }]]) }],
+        [7, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'neuro' }]]) }],
+      ]),
+      'pavilion-b': new Map([
+        [1, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'tra' }]]) }],
+        [2, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
+        [3, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'gyn' }]]) }],
+        [4, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'orl' }]]) }],
+        [5, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'uro' }]]) }],
+        [6, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: '' }]]) }],
+        [7, { cols: 1, rows: 1, cells: new Map([['1-1', { deptId: 'chir' }]]) }],
+      ]),
+    },
+  });
 
-  const [activeDay, setActiveDay] = useState<number | null>(null);
-  const [activeCell, setActiveCell] = useState<string | null>(null);
-  const [tempCols, setTempCols] = useState(1);
-  const [tempRows, setTempRows] = useState(1);
+  const getCurrentWeekKey = () => `week-${Math.ceil(currentDate.getDate() / 7)}`;
+  const scheduleGrid = scheduleData[getCurrentWeekKey()]?.[selectedPavilion] || new Map();
 
   const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
 
@@ -72,6 +108,7 @@ const ScheduleManager: React.FC = () => {
 
   const handleUpdateGrid = (cols: number, rows: number) => {
     if (!activeDay) return;
+    const weekKey = getCurrentWeekKey();
     const config = scheduleGrid.get(activeDay);
     if (config) {
       setTempCols(cols);
@@ -83,17 +120,32 @@ const ScheduleManager: React.FC = () => {
           newCells.set(key, config.cells.get(key) || { deptId: '' });
         }
       }
-      setScheduleGrid(new Map(scheduleGrid).set(activeDay, { cols, rows, cells: newCells }));
+      const newGrid = new Map(scheduleGrid).set(activeDay, { cols, rows, cells: newCells });
+      setScheduleData({
+        ...scheduleData,
+        [weekKey]: {
+          ...scheduleData[weekKey],
+          [selectedPavilion]: newGrid,
+        },
+      });
     }
   };
 
   const handleSetDepartment = (cellKey: string, deptId: string) => {
     if (!activeDay) return;
+    const weekKey = getCurrentWeekKey();
     const config = scheduleGrid.get(activeDay);
     if (config) {
       const newCells = new Map(config.cells);
       newCells.set(cellKey, { deptId });
-      setScheduleGrid(new Map(scheduleGrid).set(activeDay, { ...config, cells: newCells }));
+      const newGrid = new Map(scheduleGrid).set(activeDay, { ...config, cells: newCells });
+      setScheduleData({
+        ...scheduleData,
+        [weekKey]: {
+          ...scheduleData[weekKey],
+          [selectedPavilion]: newGrid,
+        },
+      });
     }
   };
 
@@ -105,23 +157,47 @@ const ScheduleManager: React.FC = () => {
       <div className="flex-grow flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 flex-shrink-0 border-b border-white/5">
-          <p className="text-xs font-bold text-purple-400/60 uppercase tracking-[0.2em] mb-2">PLÁNOVÁNÍ</p>
-          <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-purple-400/60 uppercase tracking-[0.2em] mb-3">PLÁNOVÁNÍ</p>
+          <div className="flex items-center justify-between gap-6">
             <h1 className="text-3xl font-black text-white">ROZPIS SÁLŮ</h1>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5 text-white/60" />
-              </button>
-              <p className="text-xl font-black text-white min-w-48 text-center">{monthName}</p>
-              <button
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <ChevronRight className="w-5 h-5 text-white/60" />
-              </button>
+            
+            {/* Pavilion & Week Selectors */}
+            <div className="flex items-center gap-6">
+              {/* Pavilion Selector */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-white/60 uppercase">Pavilon:</label>
+                <select
+                  value={selectedPavilion}
+                  onChange={(e) => {
+                    setSelectedPavilion(e.target.value);
+                    setActiveDay(null);
+                    setActiveCell(null);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-xs font-bold text-white cursor-pointer hover:bg-white/15 transition-colors"
+                >
+                  <option value="pavilion-a">Pavilon A</option>
+                  <option value="pavilion-b">Pavilon B</option>
+                </select>
+              </div>
+
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Předchozí měsíc"
+                >
+                  <ChevronLeft className="w-5 h-5 text-white/60" />
+                </button>
+                <p className="text-lg font-black text-white min-w-48 text-center">{monthName}</p>
+                <button
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Příští měsíc"
+                >
+                  <ChevronRight className="w-5 h-5 text-white/60" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
