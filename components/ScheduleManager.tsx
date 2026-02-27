@@ -308,7 +308,7 @@ const ScheduleManager: React.FC = () => {
       <AnimatePresence>
         {showGridModal && selectedCell && (
           <motion.div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -319,7 +319,7 @@ const ScheduleManager: React.FC = () => {
             />
 
             <motion.div
-              className="relative w-full max-w-[500px] rounded-3xl border shadow-2xl overflow-hidden"
+              className="relative w-full max-w-4xl rounded-3xl border shadow-2xl overflow-hidden my-auto"
               style={{
                 background: 'rgba(255, 255, 255, 0.04)',
                 backdropFilter: 'blur(40px) saturate(180%)',
@@ -330,31 +330,128 @@ const ScheduleManager: React.FC = () => {
               exit={{ scale: 0.95, y: 20, opacity: 0 }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-7 py-5 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
-                <h2 className="text-2xl font-black text-white">Nastavit mřížku</h2>
+              <div className="flex items-center justify-between px-7 py-5 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.2)' }}>
+                <div>
+                  <h2 className="text-2xl font-black text-white">Upravit rozpis: Sál č. {selectedCell.date}</h2>
+                  <p className="text-xs text-white/60 mt-1">Nastavte rozložení operačního sálu</p>
+                </div>
                 <button
                   onClick={() => setShowGridModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
                 >
                   <X className="w-5 h-5 text-white/50" />
                 </button>
               </div>
 
               {/* Content */}
-              <div className="px-7 py-6 space-y-6">
+              <div className="px-7 py-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                {/* Preview Section */}
+                <div>
+                  <p className="text-xs text-white/60 uppercase font-bold mb-4">Náhled rozložení</p>
+                  <motion.div 
+                    className="p-6 rounded-2xl border" 
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.2)' }}
+                    layout
+                  >
+                    <motion.div className="flex gap-3" layout style={{ aspectRatio: `${tempGridConfig.cols} / ${tempGridConfig.rows}` }}>
+                      {Array.from({ length: tempGridConfig.cols }).map((_, col) => (
+                        <motion.div 
+                          key={col} 
+                          className="flex-1 flex flex-col gap-3"
+                          layout
+                        >
+                          {Array.from({ length: tempGridConfig.rows }).map((_, row) => {
+                            const config = scheduleGrid.get(selectedCell.date);
+                            const cellKey = `${col + 1}-${row + 1}`;
+                            const deptId = config?.roomAssignments.get(cellKey);
+                            const dept = deptId ? getDepartmentById(deptId) : null;
+                            
+                            return (
+                              <motion.div 
+                                key={`${col}-${row}`} 
+                                className="flex-1 rounded-lg border flex items-center justify-center font-bold text-sm transition-all"
+                                style={{
+                                  background: dept ? `${dept.accentColor}30` : 'rgba(255,255,255,0.05)',
+                                  borderColor: dept ? `${dept.accentColor}60` : 'rgba(255,255,255,0.1)',
+                                  boxShadow: dept ? `0 0 12px ${dept.accentColor}30, inset 0 0 8px ${dept.accentColor}10` : 'none',
+                                  color: dept ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+                                }}
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: (col + row * tempGridConfig.cols) * 0.05 }}
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                {dept ? dept.name.split(' ')[0] : '+'}
+                              </motion.div>
+                            );
+                          })}
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </motion.div>
+                </div>
+
+                {/* Grid Structure Controls */}
+                <motion.div 
+                  className="p-5 rounded-xl border space-y-4"
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.15)' }}
+                >
+                  <p className="text-sm font-black text-white">Struktura mřížky</p>
+                  
+                  {/* Rows Control */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-white">Řádky:</label>
+                    <div className="flex items-center gap-4 bg-white/5 rounded-lg px-4 py-2 border border-white/10">
+                      <button
+                        onClick={() => setTempGridConfig({ ...tempGridConfig, rows: Math.max(1, tempGridConfig.rows - 1) })}
+                        className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                      >
+                        <span className="text-lg font-bold text-white/60">−</span>
+                      </button>
+                      <span className="text-lg font-bold text-white min-w-[30px] text-center">{tempGridConfig.rows}</span>
+                      <button
+                        onClick={() => setTempGridConfig({ ...tempGridConfig, rows: Math.min(4, tempGridConfig.rows + 1) })}
+                        className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                      >
+                        <span className="text-lg font-bold text-white/60">+</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Columns Control */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-white">Sloupce:</label>
+                    <div className="flex items-center gap-4 bg-white/5 rounded-lg px-4 py-2 border border-white/10">
+                      <button
+                        onClick={() => setTempGridConfig({ ...tempGridConfig, cols: Math.max(1, tempGridConfig.cols - 1) })}
+                        className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                      >
+                        <span className="text-lg font-bold text-white/60">−</span>
+                      </button>
+                      <span className="text-lg font-bold text-white min-w-[30px] text-center">{tempGridConfig.cols}</span>
+                      <button
+                        onClick={() => setTempGridConfig({ ...tempGridConfig, cols: Math.min(4, tempGridConfig.cols + 1) })}
+                        className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                      >
+                        <span className="text-lg font-bold text-white/60">+</span>
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+
                 {/* Preset Grid Buttons */}
                 <div>
-                  <p className="text-xs text-white/60 uppercase font-bold mb-3">Předvolby</p>
+                  <p className="text-xs text-white/60 uppercase font-bold mb-3">Rychlé předvolby</p>
                   <div className="grid grid-cols-4 gap-2">
                     {[
-                      { cols: 1, rows: 1, label: '1x1' },
-                      { cols: 2, rows: 2, label: '2x2' },
-                      { cols: 2, rows: 3, label: '2x3' },
-                      { cols: 3, rows: 3, label: '3x3' },
-                      { cols: 4, rows: 4, label: '4x4' },
-                      { cols: 3, rows: 2, label: '3x2' },
-                      { cols: 2, rows: 1, label: '2x1' },
-                      { cols: 1, rows: 4, label: '1x4' },
+                      { cols: 1, rows: 1, label: '1×1' },
+                      { cols: 2, rows: 1, label: '2×1' },
+                      { cols: 1, rows: 2, label: '1×2' },
+                      { cols: 2, rows: 2, label: '2×2' },
+                      { cols: 3, rows: 2, label: '3×2' },
+                      { cols: 2, rows: 3, label: '2×3' },
+                      { cols: 3, rows: 3, label: '3×3' },
+                      { cols: 4, rows: 4, label: '4×4' },
                     ].map((preset) => (
                       <motion.button
                         key={`${preset.cols}-${preset.rows}`}
@@ -380,94 +477,67 @@ const ScheduleManager: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Manual Configuration */}
-                <div className="space-y-4 pt-2 border-t border-white/10">
-                  <p className="text-xs text-white/60 uppercase font-bold">Ruční nastavení</p>
-                  <div>
-                    <label className="text-sm font-bold text-white mb-2 block">Sloupce: {tempGridConfig.cols}</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="range"
-                        min="1"
-                        max="4"
-                        value={tempGridConfig.cols}
-                        onChange={(e) => setTempGridConfig({ ...tempGridConfig, cols: parseInt(e.target.value) })}
-                        className="flex-1"
-                      />
-                      <span className="text-sm font-bold text-white/60 min-w-fit">{tempGridConfig.cols}/4</span>
-                    </div>
-                  </div>
+                {/* Assigned Rooms Section */}
+                {(() => {
+                  const config = scheduleGrid.get(selectedCell.date);
+                  const assignedRooms = Array.from(config?.roomAssignments.entries() || [])
+                    .filter(([_, deptId]) => deptId)
+                    .map(([cellKey, deptId]) => ({ cellKey, dept: getDepartmentById(deptId) }));
                   
-                  <div>
-                    <label className="text-sm font-bold text-white mb-2 block">Řádky: {tempGridConfig.rows}</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="range"
-                        min="1"
-                        max="4"
-                        value={tempGridConfig.rows}
-                        onChange={(e) => setTempGridConfig({ ...tempGridConfig, rows: parseInt(e.target.value) })}
-                        className="flex-1"
-                      />
-                      <span className="text-sm font-bold text-white/60 min-w-fit">{tempGridConfig.rows}/4</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Animated Preview with Color-Coded Cells */}
-                <motion.div 
-                  className="p-4 rounded-lg border" 
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.2)' }}
-                  layout
-                >
-                  <p className="text-xs text-white/60 mb-3 uppercase font-bold">Náhled mřížky ({tempGridConfig.cols}x{tempGridConfig.rows})</p>
-                  <motion.div className="flex gap-2" layout>
-                    {Array.from({ length: tempGridConfig.cols }).map((_, col) => (
-                      <motion.div 
-                        key={col} 
-                        className="flex-1 flex flex-col gap-2"
-                        layout
-                      >
-                        {Array.from({ length: tempGridConfig.rows }).map((_, row) => {
-                          const colorOptions = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#06B6D4', '#6366F1'];
-                          const colorIndex = (col + row * tempGridConfig.cols) % colorOptions.length;
-                          const color = colorOptions[colorIndex];
-                          
-                          return (
-                            <motion.div 
-                              key={`${col}-${row}`} 
-                              className="aspect-square rounded border transition-all"
-                              style={{
-                                background: `${color}25`,
-                                borderColor: `${color}60`,
-                                boxShadow: `0 0 12px ${color}30`,
-                              }}
-                              initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ delay: (col + row * tempGridConfig.cols) * 0.05 }}
-                              whileHover={{ scale: 1.08 }}
-                            />
-                          );
-                        })}
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </motion.div>
+                  return assignedRooms.length > 0 ? (
+                    <motion.div 
+                      className="p-5 rounded-xl border space-y-3"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.15)' }}
+                    >
+                      <p className="text-sm font-black text-white">Přiřazené obory</p>
+                      {assignedRooms.map(({ cellKey, dept }) => (
+                        <motion.div
+                          key={cellKey}
+                          className="p-3 rounded-lg border flex items-center justify-between"
+                          style={{
+                            borderColor: dept?.accentColor || 'rgba(255, 255, 255, 0.1)',
+                            background: `${dept?.accentColor}15` || 'rgba(255,255,255,0.05)',
+                          }}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                        >
+                          <span className="font-bold text-white">{dept?.name}</span>
+                          <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded">R:{cellKey.split('-')[0]}, S:{cellKey.split('-')[1]}</span>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  ) : null;
+                })()}
 
                 {/* Save Button */}
-                <motion.button
-                  onClick={() => handleGridSave(tempGridConfig.cols, tempGridConfig.rows)}
-                  className="w-full p-3 rounded-lg font-bold transition-all border"
-                  style={{
-                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                    borderColor: 'rgba(139, 92, 246, 0.4)',
-                    color: '#FFFFFF',
-                  }}
-                  whileHover={{ scale: 1.02, backgroundColor: 'rgba(139, 92, 246, 0.3)' }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Uložit mřížku ({tempGridConfig.cols}x{tempGridConfig.rows})
-                </motion.button>
+                <div className="flex gap-3 pt-2">
+                  <motion.button
+                    onClick={() => setShowGridModal(false)}
+                    className="flex-1 p-3 rounded-lg font-bold transition-all border"
+                    style={{
+                      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                      borderColor: 'rgba(139, 92, 246, 0.2)',
+                      color: '#FFFFFF',
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Zrušit
+                  </motion.button>
+                  <motion.button
+                    onClick={() => handleGridSave(tempGridConfig.cols, tempGridConfig.rows)}
+                    className="flex-1 p-3 rounded-lg font-bold transition-all border"
+                    style={{
+                      backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                      borderColor: 'rgba(59, 130, 246, 0.6)',
+                      color: '#FFFFFF',
+                    }}
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(59, 130, 246, 0.4)' }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Uložit změny
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
