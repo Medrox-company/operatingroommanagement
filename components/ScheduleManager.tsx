@@ -24,6 +24,10 @@ interface ScheduleData {
 const ScheduleManager: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date(2023, 4, 1));
   const [selectedPavilion, setSelectedPavilion] = useState('pavilion-a');
+  const [activeDay, setActiveDay] = useState<number | null>(null);
+  const [activeCell, setActiveCell] = useState<string | null>(null);
+  const [tempCols, setTempCols] = useState(1);
+  const [tempRows, setTempRows] = useState(1);
   
   const [scheduleData, setScheduleData] = useState<ScheduleData>({
     'week-1': {
