@@ -144,7 +144,7 @@ const ScheduleManager: React.FC = () => {
               const isActive = activeDay === day;
 
               return (
-                <div key={idx} className="min-h-0">
+                <div key={idx} className="min-h-0 flex flex-col">
                   {day && config ? (
                     <motion.div
                       onClick={() => handleActiveDay(day)}
@@ -204,7 +204,9 @@ const ScheduleManager: React.FC = () => {
                         })}
                       </div>
                     </motion.div>
-                  ) : null}
+                  ) : (
+                    <div className="w-full h-full rounded-xl border" style={{ background: 'rgba(255,255,255,0.01)', borderColor: 'rgba(255,255,255,0.04)' }} />
+                  )}
                 </div>
               );
             })}
