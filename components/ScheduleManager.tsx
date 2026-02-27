@@ -7,6 +7,7 @@ interface GridConfig {
   cols: number;
   rows: number;
   departments: string[];
+  displaySize?: 'half' | 'full'; // 'half' for half-width, 'full' for full-width
 }
 
 const ScheduleManager: React.FC = () => {
@@ -21,8 +22,8 @@ const ScheduleManager: React.FC = () => {
   
   const [selectedCell, setSelectedCell] = useState<{ date: number } | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [modalStep, setModalStep] = useState<'grid-select' | 'grid-config'>('grid-select');
-  const [tempGridConfig, setTempGridConfig] = useState<GridConfig>({ cols: 1, rows: 1, departments: [''] });
+  const [modalStep, setModalStep] = useState<'size-select' | 'grid-select' | 'grid-config'>('size-select');
+  const [tempGridConfig, setTempGridConfig] = useState<GridConfig>({ cols: 1, rows: 1, departments: [''], displaySize: 'full' });
 
   const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
   const GRID_PRESETS = [
@@ -58,15 +59,21 @@ const ScheduleManager: React.FC = () => {
 
   const handleCellClick = (date: number) => {
     const existing = schedule.get(String(date));
-    setTempGridConfig(existing || { cols: 1, rows: 1, departments: [''] });
+    setTempGridConfig(existing || { cols: 1, rows: 1, departments: [''], displaySize: 'full' });
     setSelectedCell({ date });
-    setModalStep('grid-select');
+    setModalStep('size-select');
     setShowModal(true);
+  };
+
+  const handleSizeSelect = (displaySize: 'half' | 'full') => {
+    setTempGridConfig({ ...tempGridConfig, displaySize });
+    setModalStep('grid-select');
   };
 
   const handleGridSelect = (cols: number, rows: number) => {
     const size = cols * rows;
     setTempGridConfig({
+      ...tempGridConfig,
       cols,
       rows,
       departments: Array(size).fill(''),
@@ -145,11 +152,12 @@ const ScheduleManager: React.FC = () => {
         <div className="grid grid-cols-7 gap-2 flex-grow overflow-hidden">
           {calendarDays.map((day, idx) => {
             const config = day ? schedule.get(String(day)) : null;
+            const isFullWidth = config?.displaySize === 'full';
 
             return (
               <div
                 key={idx}
-                className="rounded-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-all group min-h-0"
+                className={`rounded-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-all group min-h-0 ${isFullWidth ? 'col-span-7' : ''}`}
                 onClick={() => day && handleCellClick(day)}
                 style={{
                   background: 'rgba(255,255,255,0.02)',
@@ -165,14 +173,14 @@ const ScheduleManager: React.FC = () => {
                     </div>
 
                     {/* Grid of departments */}
-                    <div className="flex-1 p-1 overflow-hidden">
+                    <div className={`${isFullWidth ? 'p-3 h-48' : 'flex-1 p-1'} overflow-hidden`}>
                       {config ? (
                         <div
                           style={{
                             display: 'grid',
                             gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
                             gridTemplateRows: `repeat(${config.rows}, 1fr)`,
-                            gap: '0.25rem',
+                            gap: isFullWidth ? '0.5rem' : '0.25rem',
                             height: '100%',
                           }}
                         >
@@ -181,7 +189,7 @@ const ScheduleManager: React.FC = () => {
                             return (
                               <div
                                 key={cellIdx}
-                                className="rounded-sm flex items-center justify-center text-xs font-black transition-all"
+                                className={`rounded-${isFullWidth ? 'lg' : 'sm'} flex items-center justify-center ${isFullWidth ? 'text-sm' : 'text-xs'} font-bold transition-all`}
                                 style={{
                                   background: dept ? `${dept.accentColor}20` : 'rgba(255,255,255,0.05)',
                                   border: dept ? `1px solid ${dept.accentColor}40` : '1px solid rgba(255,255,255,0.1)',
@@ -189,7 +197,7 @@ const ScheduleManager: React.FC = () => {
                                   boxShadow: dept ? `0 0 8px ${dept.accentColor}15` : 'none',
                                 }}
                               >
-                                {dept ? dept.name.split(' ')[0].substring(0, 2).toUpperCase() : ''}
+                                {dept ? dept.name.split(' ')[0].substring(0, isFullWidth ? 4 : 2).toUpperCase() : ''}
                               </div>
                             );
                           })}
@@ -242,12 +250,19 @@ const ScheduleManager: React.FC = () => {
                 style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.2)' }}
               >
                 <motion.h2 className="text-2xl font-black text-white flex items-center gap-2">
-                  {modalStep === 'grid-select' ? (
+                  {modalStep === 'size-select' && (
+                    <>
+                      <Maximize2 className="w-6 h-6" />
+                      Výběr zobrazení
+                    </>
+                  )}
+                  {modalStep === 'grid-select' && (
                     <>
                       <Grid3x3 className="w-6 h-6" />
                       Vyberte rozložení
                     </>
-                  ) : (
+                  )}
+                  {modalStep === 'grid-config' && (
                     <>
                       <Maximize2 className="w-6 h-6" />
                       Nastavte sály
@@ -272,7 +287,65 @@ const ScheduleManager: React.FC = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
               >
-                {modalStep === 'grid-select' ? (
+                {modalStep === 'size-select' ? (
+                  // Display Size Selection
+                  <div className="space-y-4">
+                    <p className="text-sm text-white/70 mb-4">Zvolte, jak se má sál zobrazovat v kalendáři</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <motion.button
+                        onClick={() => handleSizeSelect('half')}
+                        className="p-6 rounded-xl border transition-all group"
+                        style={{
+                          backgroundColor: 'rgba(147, 51, 234, 0.15)',
+                          borderColor: tempGridConfig.displaySize === 'half' ? '#9333EA' : 'rgba(147, 51, 234, 0.4)',
+                        }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 }}
+                        whileHover={{
+                          scale: 1.05,
+                          borderColor: '#9333EA',
+                          backgroundColor: 'rgba(147, 51, 234, 0.3)',
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <div className="space-y-2">
+                          <div className="text-center">
+                            <div className="text-2xl font-black text-white mb-1">½</div>
+                            <p className="text-sm font-bold text-white">Půl šířky</p>
+                          </div>
+                          <p className="text-xs text-white/60">Zobrazit v jedné polovině pole</p>
+                        </div>
+                      </motion.button>
+
+                      <motion.button
+                        onClick={() => handleSizeSelect('full')}
+                        className="p-6 rounded-xl border transition-all group"
+                        style={{
+                          backgroundColor: 'rgba(147, 51, 234, 0.15)',
+                          borderColor: tempGridConfig.displaySize === 'full' ? '#9333EA' : 'rgba(147, 51, 234, 0.4)',
+                        }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        whileHover={{
+                          scale: 1.05,
+                          borderColor: '#9333EA',
+                          backgroundColor: 'rgba(147, 51, 234, 0.3)',
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <div className="space-y-2">
+                          <div className="text-center">
+                            <div className="text-2xl font-black text-white mb-1">⬜</div>
+                            <p className="text-sm font-bold text-white">Celá šířka</p>
+                          </div>
+                          <p className="text-xs text-white/60">Rozšířit přes celý řádek</p>
+                        </div>
+                      </motion.button>
+                    </div>
+                  </div>
+                ) : modalStep === 'grid-select' ? (
                   // Grid Selection
                   <div className="space-y-4">
                     <div className="grid grid-cols-4 gap-2">
