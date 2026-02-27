@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, X, Grid2x2, Grid3x3, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Plus, Minus } from 'lucide-react';
 import { DEFAULT_DEPARTMENTS } from '../constants';
 
-type GridCell = { deptId: string };
-type GridConfig = { cols: number; rows: number; cells: Map<string, GridCell> };
+interface GridCell {
+  deptId: string;
+}
+
+interface GridConfig {
+  cols: number;
+  rows: number;
+  cells: Map<string, GridCell>;
+}
+
 type ScheduleGrid = Map<number, GridConfig>;
 
 const ScheduleManager: React.FC = () => {
@@ -38,8 +46,12 @@ const ScheduleManager: React.FC = () => {
   const adjustedFirstDay = (firstDay + 6) % 7;
 
   const calendarDays: (number | null)[] = [];
-  for (let i = 0; i < adjustedFirstDay; i++) calendarDays.push(null);
-  for (let i = 1; i <= daysInMonth; i++) calendarDays.push(i);
+  for (let i = 0; i < adjustedFirstDay; i++) {
+    calendarDays.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push(i);
+  }
 
   const getDepartmentById = (id: string) => DEFAULT_DEPARTMENTS.find(d => d.id === id);
 
@@ -89,7 +101,7 @@ const ScheduleManager: React.FC = () => {
 
   return (
     <div className="w-full h-screen flex overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="flex-grow flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 flex-shrink-0 border-b border-white/5">
@@ -114,9 +126,9 @@ const ScheduleManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Calendar Grid */}
+        {/* Calendar Area */}
         <div className="flex-grow overflow-hidden flex flex-col px-6 py-4 gap-3">
-          {/* Days Header */}
+          {/* Days of Week Header */}
           <div className="grid grid-cols-7 gap-2">
             {DAYS_OF_WEEK.map(day => (
               <div key={day} className="text-center">
@@ -125,14 +137,14 @@ const ScheduleManager: React.FC = () => {
             ))}
           </div>
 
-          {/* Calendar Cells */}
+          {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-2 flex-grow overflow-hidden">
             {calendarDays.map((day, idx) => {
               const config = day ? scheduleGrid.get(day) : null;
               const isActive = activeDay === day;
 
               return (
-                <div key={idx} className="relative group min-h-0">
+                <div key={idx} className="min-h-0">
                   {day && config ? (
                     <motion.div
                       onClick={() => handleActiveDay(day)}
@@ -147,7 +159,7 @@ const ScheduleManager: React.FC = () => {
                         borderColor: 'rgba(139, 92, 246, 0.3)',
                       }}
                     >
-                      {/* Day Number */}
+                      {/* Day Header */}
                       <div className="px-2 py-1.5 border-b border-white/5 flex items-center justify-between bg-black/20">
                         <span className="text-xs font-bold text-white/70">{day}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">
@@ -155,8 +167,12 @@ const ScheduleManager: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Grid Content */}
-                      <div className="flex-grow flex overflow-hidden gap-0.5 p-1" style={{ display: 'grid', gridTemplateColumns: `repeat(${config.cols}, 1fr)` }}>
+                      {/* Grid Display */}
+                      <div className="flex-grow flex overflow-hidden gap-0.5 p-1" style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
+                        gridTemplateRows: `repeat(${config.rows}, 1fr)`,
+                      }}>
                         {Array.from({ length: config.cols * config.rows }).map((_, i) => {
                           const col = (i % config.cols) + 1;
                           const row = Math.floor(i / config.cols) + 1;
@@ -196,7 +212,7 @@ const ScheduleManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Side Panel - Controls */}
+      {/* Side Panel */}
       <AnimatePresence>
         {activeDay && (
           <motion.div
@@ -206,7 +222,7 @@ const ScheduleManager: React.FC = () => {
             exit={{ x: 300, opacity: 0 }}
             transition={{ type: 'spring', damping: 20 }}
           >
-            {/* Header */}
+            {/* Panel Header */}
             <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between flex-shrink-0">
               <h3 className="text-sm font-black text-white">Sál {activeDay}</h3>
               <button
@@ -217,13 +233,18 @@ const ScheduleManager: React.FC = () => {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="flex-grow overflow-y-auto px-4 py-4 space-y-4 scrollbar-hide">
+            {/* Panel Content */}
+            <div className="flex-grow overflow-y-auto px-4 py-4 space-y-4">
               {/* Grid Preview */}
               <motion.div className="space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
                 <p className="text-xs font-bold text-white/60 uppercase">Náhled</p>
                 <div className="p-3 rounded-lg border border-white/10 bg-black/20">
-                  <div className="flex gap-1" style={{ display: 'grid', gridTemplateColumns: `repeat(${tempCols}, 1fr)`, aspectRatio: `${tempCols} / ${tempRows}` }}>
+                  <div className="flex gap-1" style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${tempCols}, 1fr)`,
+                    gridTemplateRows: `repeat(${tempRows}, 1fr)`,
+                    aspectRatio: `${tempCols} / ${tempRows}`,
+                  }}>
                     {Array.from({ length: tempCols * tempRows }).map((_, i) => {
                       const col = (i % tempCols) + 1;
                       const row = Math.floor(i / tempCols) + 1;
@@ -256,7 +277,7 @@ const ScheduleManager: React.FC = () => {
               <motion.div className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
                 <p className="text-xs font-bold text-white/60 uppercase">Struktura</p>
 
-                {/* Rows */}
+                {/* Rows Control */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/70">Řádky</span>
                   <div className="flex items-center gap-2 bg-white/5 rounded-lg border border-white/10 px-2 py-1">
@@ -276,7 +297,7 @@ const ScheduleManager: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Columns */}
+                {/* Columns Control */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/70">Sloupce</span>
                   <div className="flex items-center gap-2 bg-white/5 rounded-lg border border-white/10 px-2 py-1">
@@ -297,7 +318,7 @@ const ScheduleManager: React.FC = () => {
                 </div>
               </motion.div>
 
-              {/* Presets */}
+              {/* Quick Presets */}
               <motion.div className="space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
                 <p className="text-xs font-bold text-white/60 uppercase">Předvolby</p>
                 <div className="grid grid-cols-2 gap-2">
