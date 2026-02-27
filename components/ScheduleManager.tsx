@@ -104,7 +104,7 @@ const ScheduleManager: React.FC = () => {
     };
   };
 
-  
+  const handleCellClick = (date: number) => {
     setSelectedCell({ date });
     setTempGridConfig(scheduleGrid.get(date) || { cols: 1, rows: 1 });
     setShowGridModal(true);
