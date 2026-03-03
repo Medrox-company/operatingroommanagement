@@ -35,6 +35,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(null);
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(null);
   const [patientCallElapsedTime, setPatientCallElapsedTime] = useState('00:00');
+  const [showPatientCalledText, setShowPatientCalledText] = useState(false);
+  const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
 
   const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
@@ -78,8 +80,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   useEffect(() => {
     if (!patientCalledTime || patientArrivedTime) return;
 
-    console.log("[v0] Patient call timer started", { patientCalledTime });
-
     patientCallTimerRef.current = window.setInterval(() => {
       const now = new Date();
       const diff = now.getTime() - patientCalledTime.getTime();
@@ -87,7 +87,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       setPatientCallElapsedTime(`${minutes}:${seconds}`);
-      console.log("[v0] Patient call elapsed time:", `${minutes}:${seconds}`);
     }, 1000);
 
     return () => {
@@ -317,46 +316,56 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* Patient Actions - Center Right */}
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
         {/* Patient Call Button */}
-        <button
+        <motion.button
           onClick={() => {
-            console.log("[v0] Call button clicked", { patientCalledTime, patientArrivedTime });
             if (!patientCalledTime) {
-              console.log("[v0] Setting patient called time");
               setPatientCalledTime(new Date());
+              setShowPatientCalledText(true);
+              setTimeout(() => setShowPatientCalledText(false), 3000);
             }
           }}
-          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 h-24 w-24 border ${
+          disabled={!!patientCalledTime}
+          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-60 disabled:cursor-not-allowed ${
             patientCalledTime && !patientArrivedTime
-              ? 'bg-green-500/20 border-green-500/40 opacity-100 hover:opacity-100'
-              : patientArrivedTime
-              ? 'bg-white/5 border-white/10 opacity-20 cursor-not-allowed'
-              : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+              ? 'bg-green-500/20 border-green-500/40 opacity-100'
+              : ''
           }`}
+          animate={{
+            boxShadow: patientCalledTime && !patientArrivedTime
+              ? ['0 0 10px rgba(34, 197, 94, 0.3)', '0 0 20px rgba(34, 197, 94, 0.5)', '0 0 10px rgba(34, 197, 94, 0.3)']
+              : 'none'
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
         >
           <Phone className={`w-8 h-8 ${patientCalledTime && !patientArrivedTime ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
           <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
-        </button>
+        </motion.button>
 
         {/* Patient Arrival Button */}
-        <button
+        <motion.button
           onClick={() => {
-            console.log("[v0] Arrival button clicked", { patientCalledTime, patientArrivedTime });
             if (patientCalledTime && !patientArrivedTime) {
-              console.log("[v0] Setting patient arrived time");
               setPatientArrivedTime(new Date());
+              setShowPatientArrivedText(true);
+              setTimeout(() => setShowPatientArrivedText(false), 3000);
             }
           }}
-          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 h-24 w-24 border ${
+          disabled={!patientCalledTime || !!patientArrivedTime}
+          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-60 disabled:cursor-not-allowed ${
             patientArrivedTime
-              ? 'bg-blue-500/20 border-blue-500/40 opacity-100 hover:opacity-100'
-              : !patientCalledTime
-              ? 'bg-white/5 border-white/10 opacity-20 cursor-not-allowed'
-              : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+              ? 'bg-blue-500/20 border-blue-500/40 opacity-100'
+              : ''
           }`}
+          animate={{
+            boxShadow: patientArrivedTime
+              ? ['0 0 10px rgba(59, 130, 246, 0.3)', '0 0 20px rgba(59, 130, 246, 0.5)', '0 0 10px rgba(59, 130, 246, 0.3)']
+              : 'none'
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
         >
           <UserCheck className={`w-8 h-8 ${patientArrivedTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
           <span className="text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Pause Button - Bottom Right */}
