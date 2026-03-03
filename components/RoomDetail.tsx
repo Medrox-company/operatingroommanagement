@@ -566,21 +566,42 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     </h2>
                   </motion.div>
                 ) : patientCalledTime && !patientArrivedTime ? (
-                  <>
-                    {console.log("[v0] Displaying patient called time", { patientCalledTime, patientCallElapsedTime })}
-                    <motion.div
-                      key="patient-called-time"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="text-center"
-                    >
-                      <p className="text-2xl font-bold tracking-tight text-white/60 uppercase mb-4">Volání pacienta</p>
-                      <h2 className="text-8xl font-black tracking-tighter text-green-300">
-                        {patientCallElapsedTime}
-                      </h2>
-                    </motion.div>
-                  </>
+                  <motion.div
+                    key="patient-called-time"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="text-center"
+                  >
+                    <p className="text-2xl font-bold tracking-tight text-white/60 uppercase mb-4">Volání pacienta</p>
+                    <h2 className="text-8xl font-black tracking-tighter text-green-300">
+                      {patientCallElapsedTime}
+                    </h2>
+                  </motion.div>
+                ) : showPatientCalledText ? (
+                  <motion.div
+                    key="patient-called-text"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="h-36 flex items-center justify-center"
+                  >
+                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
+                      Volání pacienta
+                    </h2>
+                  </motion.div>
+                ) : showPatientArrivedText ? (
+                  <motion.div
+                    key="patient-arrived-text"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="h-36 flex items-center justify-center"
+                  >
+                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
+                      Příjezd pacienta
+                    </h2>
+                  </motion.div>
                 ) : isPaused ? (
                   <motion.div
                     key="pause-text"
