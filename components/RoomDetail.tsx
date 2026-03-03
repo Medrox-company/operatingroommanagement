@@ -394,17 +394,32 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </motion.button>
       )}
 
-      {/* Main Immersive Dial */}
-      <main className="w-full h-full flex items-center justify-center relative z-20">
-        <div className="relative w-[650px] h-[650px] flex items-center justify-center">
+      {/* Main Immersive Dial - Cover Flow Container */}
+      <main className="w-full h-full flex items-center justify-center relative z-20" style={{ perspective: '1500px' }}>
+        <motion.div 
+          className="relative w-[650px] h-[650px] flex items-center justify-center"
+          style={{ 
+            transformStyle: 'preserve-3d',
+            perspective: '2000px'
+          }}
+          animate={{ 
+            rotateX: isPaused ? 5 : 0,
+            rotateZ: room.isEmergency ? [-1, 1, -1] : 0
+          }}
+          transition={{ 
+            rotateX: { duration: 0.5, ease: 'easeOut' },
+            rotateZ: room.isEmergency ? { duration: 0.5, repeat: Infinity, ease: 'easeInOut' } : {}
+          }}
+        >
           
           {/* Static Rings */}
           <div className="absolute inset-0 border border-white/5 rounded-full" />
           <div className="absolute inset-10 border border-dashed border-white/5 rounded-full" />
 
-          {/* Workflow Icons Outer Ring */}
+          {/* Workflow Icons Outer Ring - Cover Flow Style */}
           <motion.div 
             className="absolute inset-0 z-30 pointer-events-none"
+            style={{ perspective: '1200px' }}
             animate={{ rotate: rotation }}
             transition={{ type: 'spring', stiffness: 100, damping: 20 }}
           >
@@ -415,25 +430,49 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               // In locked state, only allow clicking forward icons
               const isSelectable = !isPaused && (!room.isLocked || (index > currentStepIndex && index !== 0));
               
+              // Cover Flow: angle-based rotation for 3D effect
+              const rotationY = (angle - 180) * 0.3;
+              const scale = isActive ? 1.35 : Math.cos((angle - 180) * Math.PI / 180) * 0.6 + 0.7;
+              const zIndex = isActive ? 100 : Math.round(Math.cos((angle - 180) * Math.PI / 180) * 50);
+              
               return (
                 <div key={index} className="absolute w-full h-full" style={{ transform: `rotate(${angle}deg)` }}>
                   <motion.div 
                     className="absolute top-[-30px] left-1/2 -ml-6 w-12 h-12 flex items-center justify-center"
-                    animate={{ rotate: -angle - rotation }}
+                    animate={{ 
+                      rotate: -angle - rotation,
+                      rotateY: rotationY,
+                      scale: scale,
+                      z: zIndex
+                    }}
                     transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+                    style={{ transformStyle: 'preserve-3d' }}
                   >
                     <button 
                       onClick={() => isSelectable && changeStep(index)}
                       disabled={!isSelectable}
                       className={`w-full h-full rounded-2xl border flex items-center justify-center transition-all duration-500 backdrop-blur-md pointer-events-auto
-                        ${isActive ? 'bg-white/10 shadow-lg scale-125' : (isSelectable ? 'bg-white/5 opacity-40 hover:opacity-100' : 'bg-white/5 opacity-5 cursor-not-allowed')}
-                      `}
+                        ${isActive 
+                          ? 'bg-gradient-to-br from-white/20 to-white/5 shadow-2xl' 
+                          : (isSelectable 
+                              ? 'bg-white/5 opacity-40 hover:opacity-100 hover:shadow-lg' 
+                              : 'bg-white/5 opacity-5 cursor-not-allowed'
+                          )
+                      }`}
                       style={{ 
                         borderColor: isActive ? activeColor : 'rgba(255,255,255,0.1)',
-                        boxShadow: isActive ? `0 0 20px ${activeColor}44` : 'none'
+                        boxShadow: isActive 
+                          ? `0 20px 60px ${activeColor}44, 0 0 30px ${activeColor}33, inset 0 1px 0 rgba(255,255,255,0.2)`
+                          : 'none',
+                        transform: 'translateZ(50px)',
                       }}
                     >
-                      <step.Icon className="w-5 h-5" style={{ color: isActive ? activeColor : 'white' }} />
+                      <motion.div
+                        animate={{ rotateY: -rotationY }}
+                        style={{ transformStyle: 'preserve-3d' }}
+                      >
+                        <step.Icon className="w-5 h-5" style={{ color: isActive ? activeColor : 'white' }} />
+                      </motion.div>
                     </button>
                   </motion.div>
                 </div>
@@ -617,7 +656,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </AnimatePresence>
             </div>
           </motion.button>
-        </div>
+        </motion.div>
       </main>
 
       {/* Left Info Panel */}
