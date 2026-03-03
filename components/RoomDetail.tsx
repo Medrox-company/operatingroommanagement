@@ -289,7 +289,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Patient Call Button */}
           <motion.button
             onClick={() => setPatientCalled(!patientCalled)}
-            className={`p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
+            className={`w-full p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
               patientCalled
                 ? 'bg-green-500/20 border-green-500/40 opacity-100'
                 : ''
@@ -310,7 +310,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Patient Arrival Button */}
           <motion.button
             onClick={() => setPatientArrived(!patientArrived)}
-            className={`p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
+            className={`w-full p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
               patientArrived
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100'
                 : ''
