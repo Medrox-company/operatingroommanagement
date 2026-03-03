@@ -10,6 +10,14 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      optimizeDeps: {
+        include: ['react', 'react-dom', 'framer-motion', 'lucide-react'],
+      },
+      server: {
+        hmr: {
+          overlay: true,
+        }
       }
     };
 });
