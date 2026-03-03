@@ -127,7 +127,11 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                   animate={{ opacity: [0.15, 0.35, 0.15], scale: [0.9, 1.1, 0.9] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 />
-                <svg className="w-28 h-28 -rotate-90 overflow-visible select-none flex-shrink-0">
+                <motion.svg
+                  className="w-28 h-28 -rotate-90 overflow-visible select-none flex-shrink-0"
+                  animate={{ rotate: ['-90deg', '-84deg', '-90deg'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                >
                     <circle 
                       cx={center} cy={center} r={radius} 
                       fill="none" 
@@ -135,15 +139,16 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                       strokeWidth="1.5" 
                       className="opacity-[0.03]" 
                     />
-                    <circle 
+                    <motion.circle 
                       cx={center} cy={center} r={radius} 
                       fill="none"
                       stroke={themeColor} 
                       strokeWidth={strokeWidth} 
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
-                      strokeDashoffset={strokeDashoffset}
-                      style={{ filter: `drop-shadow(0 0 6px ${themeColor}66)`, transition: 'stroke-dashoffset 1.5s ease' }}
+                      animate={{ strokeDashoffset: [strokeDashoffset + 8, strokeDashoffset - 8, strokeDashoffset + 8] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
                     />
                     <text
                       x={center}
@@ -159,7 +164,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                     >
                       {room.operations24h}
                     </text>
-                </svg>
+                </motion.svg>
             </div>
             
             {room.estimatedEndTime && (
