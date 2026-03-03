@@ -290,8 +290,131 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
       </header>
 
-      {/* Right Column Action Buttons - Absolute Positioning */}
+      {/* Timeline Panel - Right side vertical */}
+      <div className="absolute right-40 top-1/2 -translate-y-1/2 z-50 flex flex-col items-start" style={{ width: 220 }}>
+        {/* Panel header */}
+        <p className="text-[10px] font-black tracking-[0.35em] uppercase mb-5" style={{ color: '#c0bdb7' }}>Průběh operace</p>
+
+        <div className="relative flex flex-col gap-0" style={{ width: '100%' }}>
+          {/* Vertical connector line */}
+          <div className="absolute left-[19px] top-5 bottom-5 w-px" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.08), rgba(255,255,255,0.03))' }} />
+
+          {/* Filled progress line */}
+          <div
+            className="absolute left-[19px] top-5 w-px transition-all duration-700"
+            style={{
+              height: `calc(${(currentStepIndex / (WORKFLOW_STEPS.length - 1)) * 100}% - 10px)`,
+              background: `linear-gradient(to bottom, ${activeColor}cc, ${activeColor}22)`,
+              boxShadow: `0 0 8px ${activeColor}66`,
+            }}
+          />
+
+          {WORKFLOW_STEPS.map((step, index) => {
+            const isDone = index < currentStepIndex;
+            const isActive = index === currentStepIndex;
+            const isFuture = index > currentStepIndex;
+            const isSelectable = !isPaused && (!room.isLocked || (index > currentStepIndex && index !== 0));
+
+            return (
+              <button
+                key={index}
+                onClick={() => isSelectable && changeStep(index)}
+                disabled={!isSelectable}
+                className="relative flex items-center gap-3 py-2.5 group text-left w-full disabled:cursor-not-allowed transition-all"
+              >
+                {/* Node dot */}
+                <div className="relative z-10 flex-shrink-0" style={{ width: 38, height: 38 }}>
+                  <div
+                    className="w-full h-full rounded-full flex items-center justify-center border transition-all duration-500"
+                    style={{
+                      backgroundColor: isActive
+                        ? `${activeColor}22`
+                        : isDone
+                        ? `${step.color}15`
+                        : 'rgba(255,255,255,0.03)',
+                      borderColor: isActive
+                        ? activeColor
+                        : isDone
+                        ? `${step.color}55`
+                        : 'rgba(255,255,255,0.08)',
+                      boxShadow: isActive ? `0 0 14px ${activeColor}55` : 'none',
+                    }}
+                  >
+                    {isDone ? (
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2.5 7L5.5 10L11.5 4" stroke={step.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <step.Icon
+                        className="w-4 h-4"
+                        style={{ color: isActive ? activeColor : isFuture ? 'rgba(255,255,255,0.2)' : step.color }}
+                      />
+                    )}
+                  </div>
+                  {/* Active pulse ring */}
+                  {isActive && (
+                    <div
+                      className="absolute inset-0 rounded-full animate-ping"
+                      style={{ backgroundColor: activeColor, opacity: 0.15 }}
+                    />
+                  )}
+                </div>
+
+                {/* Step info */}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span
+                    className="text-[11px] font-black uppercase tracking-wider leading-tight truncate transition-all duration-300"
+                    style={{
+                      color: isActive
+                        ? '#ffffff'
+                        : isDone
+                        ? `${step.color}bb`
+                        : 'rgba(255,255,255,0.22)',
+                    }}
+                  >
+                    {step.title}
+                  </span>
+                  {isActive && (
+                    <motion.span
+                      initial={{ opacity: 0, y: 3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-[10px] font-bold tracking-widest uppercase mt-0.5"
+                      style={{ color: `${activeColor}cc` }}
+                    >
+                      {elapsedTime}
+                    </motion.span>
+                  )}
+                  {isDone && (
+                    <span className="text-[10px] font-bold tracking-widest uppercase mt-0.5" style={{ color: `${step.color}66` }}>
+                      Dokončeno
+                    </span>
+                  )}
+                </div>
+
+                {/* Active right accent bar */}
+                {isActive && (
+                  <div
+                    className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 rounded-full"
+                    style={{
+                      height: 28,
+                      backgroundColor: activeColor,
+                      boxShadow: `0 0 8px ${activeColor}`,
+                    }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Close Button - Top Right */}
+      <button 
+        onClick={onClose}
+        className="absolute top-8 right-8 p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24 z-50"
+      >
+        <X className="w-8 h-8" />
+      </button>
       <button 
         onClick={onClose}
         className="absolute top-8 right-8 p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24 z-50"
@@ -401,45 +524,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Static Rings */}
           <div className="absolute inset-0 border border-white/5 rounded-full" />
           <div className="absolute inset-10 border border-dashed border-white/5 rounded-full" />
-
-          {/* Workflow Icons Outer Ring */}
-          <motion.div 
-            className="absolute inset-0 z-30 pointer-events-none"
-            animate={{ rotate: rotation }}
-            transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-          >
-            {WORKFLOW_STEPS.map((step, index) => {
-              const angle = (index / WORKFLOW_STEPS.length) * 360;
-              const isActive = index === currentStepIndex;
-              
-              // In locked state, only allow clicking forward icons
-              const isSelectable = !isPaused && (!room.isLocked || (index > currentStepIndex && index !== 0));
-              
-              return (
-                <div key={index} className="absolute w-full h-full" style={{ transform: `rotate(${angle}deg)` }}>
-                  <motion.div 
-                    className="absolute top-[-30px] left-1/2 -ml-6 w-12 h-12 flex items-center justify-center"
-                    animate={{ rotate: -angle - rotation }}
-                    transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                  >
-                    <button 
-                      onClick={() => isSelectable && changeStep(index)}
-                      disabled={!isSelectable}
-                      className={`w-full h-full rounded-2xl border flex items-center justify-center transition-all duration-500 backdrop-blur-md pointer-events-auto
-                        ${isActive ? 'bg-white/10 shadow-lg scale-125' : (isSelectable ? 'bg-white/5 opacity-40 hover:opacity-100' : 'bg-white/5 opacity-5 cursor-not-allowed')}
-                      `}
-                      style={{ 
-                        borderColor: isActive ? activeColor : 'rgba(255,255,255,0.1)',
-                        boxShadow: isActive ? `0 0 20px ${activeColor}44` : 'none'
-                      }}
-                    >
-                      <step.Icon className="w-5 h-5" style={{ color: isActive ? activeColor : 'white' }} />
-                    </button>
-                  </motion.div>
-                </div>
-              );
-            })}
-          </motion.div>
 
           {/* Navigation Controls */}
           {!isInteractionBlocked && (
