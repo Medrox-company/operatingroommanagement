@@ -539,9 +539,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
+                    className="h-36 flex items-center justify-center"
                   >
-                    <h2 className="text-8xl font-black tracking-tighter text-white uppercase">
-                      VOLÁNÍ PACIENTA
+                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
+                      Volání pacienta
                     </h2>
                   </motion.div>
                 ) : showPatientArrivedText ? (
@@ -550,9 +551,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
+                    className="h-36 flex items-center justify-center"
                   >
-                    <h2 className="text-8xl font-black tracking-tighter text-white uppercase">
-                      PŘÍJEZD PACIENTA
+                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
+                      Příjezd pacienta
                     </h2>
                   </motion.div>
                 ) : isPaused ? (
