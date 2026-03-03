@@ -149,19 +149,16 @@ const App: React.FC = () => {
 
                     {/* Grid following the header */}
                     <div className="pb-20 px-2">
-                      <div
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
-                      >
-                          {rooms.map((room) => (
-                            <RoomCard
-                              key={room.id}
-                              room={room}
-                              onClick={() => setSelectedRoomId(room.id)}
-                              onEmergency={() => toggleEmergency(room.id)}
-                              onLock={() => toggleLock(room.id)}
-                            />
-                          ))}
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12">
+                        {rooms.map((room) => (
+                          <RoomCard
+                            key={room.id}
+                            room={room}
+                            onClick={() => setSelectedRoomId(room.id)}
+                            onEmergency={() => toggleEmergency(room.id)}
+                            onLock={() => toggleLock(room.id)}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
