@@ -289,7 +289,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Patient Call Button */}
           <motion.button
             onClick={() => setPatientCalled(!patientCalled)}
-            className={`p-6 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center gap-3 ${
+            className={`p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
               patientCalled
                 ? 'bg-green-500/20 border-green-500/40 opacity-100'
                 : ''
@@ -303,14 +303,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <span className="text-[11px] font-bold uppercase tracking-widest mr-2">Volat pacienta</span>
-            <Phone className={`w-6 h-6 ${patientCalled ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
+            <Phone className={`w-8 h-8 ${patientCalled ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
+            <span className="text-[12px] font-bold uppercase tracking-widest">Volat</span>
           </motion.button>
 
           {/* Patient Arrival Button */}
           <motion.button
             onClick={() => setPatientArrived(!patientArrived)}
-            className={`p-6 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center gap-3 ${
+            className={`p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
               patientArrived
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100'
                 : ''
@@ -324,8 +324,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <span className="text-[11px] font-bold uppercase tracking-widest mr-2">Příjezd pacienta</span>
-            <UserCheck className={`w-6 h-6 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+            <UserCheck className={`w-8 h-8 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+            <span className="text-[12px] font-bold uppercase tracking-widest">Příjezd</span>
           </motion.button>
         </div>
       </header>
