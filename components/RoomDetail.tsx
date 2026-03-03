@@ -325,10 +325,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             }
           }}
           disabled={!!patientCalledTime}
-          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-60 disabled:cursor-not-allowed ${
+          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 h-24 w-24 disabled:cursor-not-allowed border ${
             patientCalledTime && !patientArrivedTime
               ? 'bg-green-500/20 border-green-500/40 opacity-100'
-              : ''
+              : patientArrivedTime
+              ? 'bg-white/5 border-white/10 opacity-60'
+              : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
           }`}
           animate={{
             boxShadow: patientCalledTime && !patientArrivedTime
@@ -337,8 +339,33 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <Phone className={`w-8 h-8 ${patientCalledTime && !patientArrivedTime ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
+          <AnimatePresence mode="wait">
+            {patientCalledTime && !patientArrivedTime ? (
+              <motion.div
+                key="call-timer"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex flex-col items-center gap-1"
+              >
+                <Phone className="w-5 h-5 text-green-300" strokeWidth={2} />
+                <span className="text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
+                  {patientCallElapsedTime}
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="call-idle"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex flex-col items-center gap-2"
+              >
+                <Phone className={`w-8 h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.button>
 
         {/* Patient Arrival Button */}
@@ -563,31 +590,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   >
                     <h2 className="text-8xl font-black tracking-tighter text-white font-mono">
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                    </h2>
-                  </motion.div>
-                ) : showPatientCalledText ? (
-                  <motion.div
-                    key="patient-called-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="h-36 flex items-center justify-center"
-                  >
-                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
-                      Volání pacienta
-                    </h2>
-                  </motion.div>
-                ) : patientCalledTime && !patientArrivedTime ? (
-                  <motion.div
-                    key="patient-called-time"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="text-center"
-                  >
-                    <p className="text-2xl font-bold tracking-tight text-white/60 uppercase mb-4">Volání pacienta</p>
-                    <h2 className="text-8xl font-black tracking-tighter text-green-300">
-                      {patientCallElapsedTime}
                     </h2>
                   </motion.div>
                 ) : showPatientArrivedText ? (
