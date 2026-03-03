@@ -119,142 +119,184 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
 
         {/* Central Content Wrapper */}
         <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-            <div className="relative flex items-center justify-center" style={{ width: 140, height: 140 }}>
+            <div className="relative flex items-center justify-center" style={{ width: 148, height: 148 }}>
 
-                {/* Deep ambient glow */}
+                {/* Layer 1 — Deep ambient glow */}
                 <motion.div
-                  className="absolute rounded-full"
-                  style={{ width: 140, height: 140, backgroundColor: themeColor, filter: 'blur(60px)' }}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 0.35, scale: 1 }}
-                  transition={{ duration: 1.4, ease: 'easeOut' }}
+                  className="absolute rounded-full pointer-events-none"
+                  style={{ width: 148, height: 148, backgroundColor: themeColor, filter: 'blur(55px)' }}
+                  initial={{ opacity: 0, scale: 0.4 }}
+                  animate={{ opacity: 0.28, scale: 1 }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
                 />
 
-                {/* Outer orbital ring — tilted 3D perspective */}
+                {/* Layer 2 — Outer tilted orbital track + progress arc */}
                 <motion.svg
                   className="absolute overflow-visible"
-                  style={{ width: 140, height: 140, perspective: '400px' }}
-                  initial={{ opacity: 0, rotateX: 60 }}
-                  animate={{ opacity: 1, rotateX: 0 }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                >
-                  <defs>
-                    <linearGradient id={`orbit-grad-${room.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor={themeColor} stopOpacity="0" />
-                      <stop offset="40%" stopColor={themeColor} stopOpacity="0.9" />
-                      <stop offset="100%" stopColor={themeColor} stopOpacity="0" />
-                    </linearGradient>
-                    <filter id={`glow-${room.id}`}>
-                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                  </defs>
-                  {/* Outer track */}
-                  <ellipse cx="70" cy="70" rx="62" ry="22"
-                    fill="none" stroke="white" strokeWidth="1"
-                    style={{ opacity: 0.06, transform: 'rotateX(75deg)', transformOrigin: '70px 70px' }}
-                  />
-                  {/* Animated progress arc */}
-                  <motion.ellipse cx="70" cy="70" rx="62" ry="22"
-                    fill="none"
-                    stroke={`url(#orbit-grad-${room.id})`}
-                    strokeWidth="2.5"
-                    strokeDasharray={`${2 * Math.PI * 62 * progressPercent} ${2 * Math.PI * 62}`}
-                    strokeLinecap="round"
-                    filter={`url(#glow-${room.id})`}
-                    style={{ transform: 'rotateX(75deg)', transformOrigin: '70px 70px' }}
-                    initial={{ strokeDasharray: `0 ${2 * Math.PI * 62}` }}
-                    animate={{ strokeDasharray: `${2 * Math.PI * 62 * progressPercent} ${2 * Math.PI * 62}` }}
-                    transition={{ duration: 1.4, ease: 'easeOut', delay: 0.3 }}
-                  />
-                </motion.svg>
-
-                {/* Inner orbital ring — opposite tilt */}
-                <motion.svg
-                  className="absolute overflow-visible"
-                  style={{ width: 100, height: 100, top: 20, left: 20 }}
+                  width="148" height="148"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+                  transition={{ duration: 0.9, ease: 'easeOut', delay: 0.1 }}
                 >
-                  <ellipse cx="50" cy="50" rx="44" ry="16"
-                    fill="none" stroke={themeColor} strokeWidth="1"
-                    style={{ opacity: 0.15, transform: 'rotateX(-70deg)', transformOrigin: '50px 50px' }}
-                  />
-                </motion.svg>
+                  <defs>
+                    {/* Sweep gradient for arc */}
+                    <linearGradient id={`arc-grad-${room.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={themeColor} stopOpacity="0.05" />
+                      <stop offset="50%" stopColor={themeColor} stopOpacity="1" />
+                      <stop offset="100%" stopColor={themeColor} stopOpacity="0.15" />
+                    </linearGradient>
+                    {/* Glow filter */}
+                    <filter id={`arc-glow-${room.id}`} x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="2.5" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    {/* Radial gradient for sphere fill */}
+                    <radialGradient id={`sphere-fill-${room.id}`} cx="38%" cy="32%" r="65%">
+                      <stop offset="0%" stopColor={themeColor} stopOpacity="0.45" />
+                      <stop offset="45%" stopColor={themeColor} stopOpacity="0.12" />
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.88" />
+                    </radialGradient>
+                    {/* Highlight gradient */}
+                    <radialGradient id={`highlight-${room.id}`} cx="40%" cy="28%" r="55%">
+                      <stop offset="0%" stopColor="white" stopOpacity="0.28" />
+                      <stop offset="100%" stopColor="white" stopOpacity="0" />
+                    </radialGradient>
+                    {/* Rim light gradient */}
+                    <radialGradient id={`rim-${room.id}`} cx="50%" cy="50%" r="50%">
+                      <stop offset="72%" stopColor="transparent" stopOpacity="0" />
+                      <stop offset="100%" stopColor={themeColor} stopOpacity="0.35" />
+                    </radialGradient>
+                    {/* Inner shadow */}
+                    <radialGradient id={`shadow-${room.id}`} cx="65%" cy="68%" r="55%">
+                      <stop offset="0%" stopColor="#000000" stopOpacity="0.65" />
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+                    </radialGradient>
+                    <clipPath id={`sphere-clip-${room.id}`}>
+                      <circle cx="74" cy="74" r="40" />
+                    </clipPath>
+                  </defs>
 
-                {/* 3D Sphere body */}
-                <motion.div
-                  className="absolute rounded-full"
-                  style={{
-                    width: 88, height: 88,
-                    top: 26, left: 26,
-                    background: `radial-gradient(circle at 38% 32%, ${themeColor}55 0%, ${themeColor}18 40%, rgba(0,0,0,0.85) 100%)`,
-                    boxShadow: `inset 0 0 28px ${themeColor}44, inset -6px -6px 20px rgba(0,0,0,0.7), 0 8px 32px ${themeColor}33`,
-                    border: `1px solid ${themeColor}30`,
-                  }}
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-                >
-                  {/* Light sweep highlight */}
-                  <motion.div
-                    className="absolute rounded-full"
-                    style={{
-                      width: 38, height: 22,
-                      top: 10, left: 14,
-                      background: 'radial-gradient(ellipse, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 100%)',
-                      filter: 'blur(4px)',
-                    }}
+                  {/* Outer static track ring */}
+                  <circle
+                    cx="74" cy="74" r="66"
+                    fill="none" stroke="white" strokeWidth="1"
+                    opacity="0.05"
+                  />
+
+                  {/* Outer dashed decorative ring */}
+                  <circle
+                    cx="74" cy="74" r="58"
+                    fill="none" stroke={themeColor} strokeWidth="1"
+                    strokeDasharray="3 9"
+                    opacity="0.18"
+                  />
+
+                  {/* Progress arc */}
+                  <motion.circle
+                    cx="74" cy="74" r="66"
+                    fill="none"
+                    stroke={`url(#arc-grad-${room.id})`}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 66}`}
+                    filter={`url(#arc-glow-${room.id})`}
+                    style={{ rotate: '-90deg', transformOrigin: '74px 74px' }}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 66 }}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 66 * (1 - progressPercent) }}
+                    transition={{ duration: 1.4, ease: 'easeOut', delay: 0.3 }}
+                  />
+
+                  {/* 3D Sphere — layered fills */}
+                  {/* Base fill */}
+                  <motion.circle
+                    cx="74" cy="74" r="40"
+                    fill={`url(#sphere-fill-${room.id})`}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    style={{ transformOrigin: '74px 74px' }}
+                    transition={{ duration: 0.85, ease: 'easeOut', delay: 0.1 }}
+                  />
+                  {/* Rim light */}
+                  <motion.circle
+                    cx="74" cy="74" r="40"
+                    fill={`url(#rim-${room.id})`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 1, delay: 0.6 }}
+                    transition={{ duration: 1.1, ease: 'easeOut', delay: 0.5 }}
                   />
-                </motion.div>
+                  {/* Inner shadow (depth) */}
+                  <motion.circle
+                    cx="74" cy="74" r="40"
+                    fill={`url(#shadow-${room.id})`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.4 }}
+                  />
+                  {/* Specular highlight */}
+                  <motion.ellipse
+                    cx="66" cy="62" rx="14" ry="9"
+                    fill={`url(#highlight-${room.id})`}
+                    clipPath={`url(#sphere-clip-${room.id})`}
+                    style={{ filter: 'blur(3px)' }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.65 }}
+                  />
+                  {/* Sphere border */}
+                  <motion.circle
+                    cx="74" cy="74" r="40"
+                    fill="none"
+                    stroke={themeColor}
+                    strokeWidth="1"
+                    opacity={0.25}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 0.25 }}
+                    style={{ transformOrigin: '74px 74px' }}
+                    transition={{ duration: 0.85, ease: 'easeOut', delay: 0.1 }}
+                  />
 
-                {/* Number */}
-                <motion.div
-                  className="absolute flex items-center justify-center"
-                  style={{ width: 88, height: 88, top: 26, left: 26 }}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.7, ease: 'easeOut', delay: 0.4 }}
-                >
-                  <span
-                    className="font-black select-none"
-                    style={{
-                      fontSize: 34,
-                      letterSpacing: '-0.05em',
-                      color: 'white',
-                      textShadow: `0 0 20px ${themeColor}cc, 0 2px 8px rgba(0,0,0,0.8)`,
-                      lineHeight: 1,
-                    }}
+                  {/* Number label */}
+                  <motion.text
+                    x="74" y="74"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontWeight="900"
+                    fontSize="30"
+                    letterSpacing="-1.5"
+                    fill="white"
+                    style={{ filter: `drop-shadow(0 0 10px ${themeColor}cc) drop-shadow(0 2px 6px rgba(0,0,0,0.9))` }}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    // @ts-ignore
+                    transformOrigin="74px 74px"
+                    transition={{ duration: 0.7, ease: 'easeOut', delay: 0.45 }}
                   >
                     {room.operations24h}
-                  </span>
-                </motion.div>
+                  </motion.text>
 
-                {/* Sparkle dots on orbit */}
-                {[0, 120, 240].map((deg, i) => {
-                  const rad = (deg * Math.PI) / 180;
-                  const x = 70 + 62 * Math.cos(rad) - 4;
-                  const y = 70 + 22 * Math.sin(rad) * 0.25 - 4;
-                  return (
-                    <motion.div
-                      key={i}
-                      className="absolute rounded-full"
-                      style={{
-                        width: 5, height: 5,
-                        left: x, top: y,
-                        backgroundColor: themeColor,
-                        boxShadow: `0 0 6px ${themeColor}`,
-                      }}
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: [0, 1, 0.6], scale: [0, 1.2, 1] }}
-                      transition={{ duration: 0.5, ease: 'easeOut', delay: 1 + i * 0.15 }}
-                    />
-                  );
-                })}
+                  {/* Sparkle dots at arc end */}
+                  {[0, 0.33, 0.66].map((frac, i) => {
+                    const angle = (frac * progressPercent * 2 * Math.PI) - Math.PI / 2;
+                    const x = 74 + 66 * Math.cos(angle);
+                    const y = 74 + 66 * Math.sin(angle);
+                    return (
+                      <motion.circle
+                        key={i}
+                        cx={x} cy={y} r={i === 0 ? 3 : 1.5}
+                        fill={themeColor}
+                        style={{ filter: `drop-shadow(0 0 4px ${themeColor})` }}
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: i === 0 ? 1 : 0.5, scale: 1 }}
+                        // @ts-ignore
+                        transformOrigin={`${x}px ${y}px`}
+                        transition={{ duration: 0.4, ease: 'easeOut', delay: 1.4 + i * 0.1 }}
+                      />
+                    );
+                  })}
+                </motion.svg>
             </div>
             
             {room.estimatedEndTime && (
