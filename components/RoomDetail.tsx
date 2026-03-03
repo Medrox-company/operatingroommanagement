@@ -282,53 +282,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <span className="text-[10px] font-bold uppercase tracking-widest mr-2">Zavřít</span>
           <Menu className="w-8 h-8" />
         </button>
-
-        {/* Patient Call & Arrival Actions - Top Right Corner */}
-        <div className="flex items-center gap-4">
-          {/* Call Patient Button */}
-          <motion.button
-            onClick={() => setPatientCalled(!patientCalled)}
-            className={`px-5 py-3 rounded-2xl border backdrop-blur-md transition-all font-bold text-sm uppercase tracking-widest flex items-center gap-2.5 ${
-              patientCalled 
-                ? 'bg-green-500/20 border-green-500/60 text-green-300 shadow-lg' 
-                : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Phone className="w-4 h-4" strokeWidth={2.5} />
-            <span className="text-xs">Volat pacienta</span>
-            {patientCalled && (
-              <motion.div 
-                className="w-2 h-2 rounded-full bg-green-400"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-            )}
-          </motion.button>
-
-          {/* Patient Arrival Button */}
-          <motion.button
-            onClick={() => setPatientArrived(!patientArrived)}
-            className={`px-5 py-3 rounded-2xl border backdrop-blur-md transition-all font-bold text-sm uppercase tracking-widest flex items-center gap-2.5 ${
-              patientArrived 
-                ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 shadow-lg' 
-                : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <UserCheck className="w-4 h-4" strokeWidth={2.5} />
-            <span className="text-xs">Příjezd pacienta</span>
-            {patientArrived && (
-              <motion.div 
-                className="w-2 h-2 rounded-full bg-blue-400"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-            )}
-          </motion.button>
-        </div>
       </header>
 
       {/* Main Immersive Dial */}
@@ -430,6 +383,104 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </div>
             </>
           )}
+
+          {/* Patient Call & Arrival Actions - Bottom Center */}
+          <div className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 flex items-center gap-6 z-50">
+            {/* Call Patient Button */}
+            <motion.button
+              onClick={() => setPatientCalled(!patientCalled)}
+              className={`w-24 h-24 rounded-full border backdrop-blur-md transition-all flex items-center justify-center flex-col gap-2 ${
+                patientCalled 
+                  ? 'bg-green-500/25 border-green-500/70 shadow-lg' 
+                  : 'bg-white/10 border-white/20 hover:bg-white/15'
+              }`}
+              animate={{ 
+                boxShadow: patientCalled 
+                  ? ['0 0 20px rgba(34, 197, 94, 0.4)', '0 0 40px rgba(34, 197, 94, 0.6)', '0 0 20px rgba(34, 197, 94, 0.4)']
+                  : 'none',
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.92 }}
+            >
+              <Phone className={`w-6 h-6 ${patientCalled ? 'text-green-300' : 'text-white/70'}`} strokeWidth={2} />
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${patientCalled ? 'text-green-300' : 'text-white/50'}`}>
+                Volat
+              </span>
+            </motion.button>
+
+            {/* Patient Arrival Button */}
+            <motion.button
+              onClick={() => setPatientArrived(!patientArrived)}
+              className={`w-24 h-24 rounded-full border backdrop-blur-md transition-all flex items-center justify-center flex-col gap-2 ${
+                patientArrived 
+                  ? 'bg-blue-500/25 border-blue-500/70 shadow-lg' 
+                  : 'bg-white/10 border-white/20 hover:bg-white/15'
+              }`}
+              animate={{ 
+                boxShadow: patientArrived 
+                  ? ['0 0 20px rgba(59, 130, 246, 0.4)', '0 0 40px rgba(59, 130, 246, 0.6)', '0 0 20px rgba(59, 130, 246, 0.4)']
+                  : 'none',
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.92 }}
+            >
+              <UserCheck className={`w-6 h-6 ${patientArrived ? 'text-blue-300' : 'text-white/70'}`} strokeWidth={2} />
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${patientArrived ? 'text-blue-300' : 'text-white/50'}`}>
+                Příjezd
+              </span>
+            </motion.button>
+          </div>
+
+          {/* Patient Call & Arrival Actions - Bottom Center */}
+          <div className="absolute bottom-[-120px] left-1/2 -translate-x-1/2 flex items-center gap-8 z-50">
+            {/* Call Patient Button */}
+            <motion.button
+              onClick={() => setPatientCalled(!patientCalled)}
+              className={`w-20 h-20 rounded-full border backdrop-blur-md transition-all flex items-center justify-center flex-col gap-1.5 ${
+                patientCalled 
+                  ? 'bg-green-500/25 border-green-500/70 shadow-lg' 
+                  : 'bg-white/10 border-white/20 hover:bg-white/15'
+              }`}
+              animate={{ 
+                boxShadow: patientCalled 
+                  ? ['0 0 20px rgba(34, 197, 94, 0.4)', '0 0 40px rgba(34, 197, 94, 0.6)', '0 0 20px rgba(34, 197, 94, 0.4)']
+                  : 'none',
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.92 }}
+            >
+              <Phone className={`w-5 h-5 ${patientCalled ? 'text-green-300' : 'text-white/70'}`} strokeWidth={2} />
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${patientCalled ? 'text-green-300' : 'text-white/50'}`}>
+                Volat
+              </span>
+            </motion.button>
+
+            {/* Patient Arrival Button */}
+            <motion.button
+              onClick={() => setPatientArrived(!patientArrived)}
+              className={`w-20 h-20 rounded-full border backdrop-blur-md transition-all flex items-center justify-center flex-col gap-1.5 ${
+                patientArrived 
+                  ? 'bg-blue-500/25 border-blue-500/70 shadow-lg' 
+                  : 'bg-white/10 border-white/20 hover:bg-white/15'
+              }`}
+              animate={{ 
+                boxShadow: patientArrived 
+                  ? ['0 0 20px rgba(59, 130, 246, 0.4)', '0 0 40px rgba(59, 130, 246, 0.6)', '0 0 20px rgba(59, 130, 246, 0.4)']
+                  : 'none',
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.92 }}
+            >
+              <UserCheck className={`w-5 h-5 ${patientArrived ? 'text-blue-300' : 'text-white/70'}`} strokeWidth={2} />
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${patientArrived ? 'text-blue-300' : 'text-white/50'}`}>
+                Příjezd
+              </span>
+            </motion.button>
+          </div>
 
           {/* Core Visual Elements - INTERACTIVE BUTTON CENTER */}
           <motion.button 
