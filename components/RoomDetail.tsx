@@ -384,47 +384,50 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </>
           )}
 
-          {/* Patient Call & Arrival Actions - Right Side of Circle */}
-          <div className="absolute right-[-180px] top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 z-50">
-            {/* Call Patient Button */}
+          {/* Patient Call & Arrival Actions - Top & Bottom of Circle */}
+          {/* Call Patient - Top */}
+          <div className="absolute top-[-180px] left-1/2 -translate-x-1/2 z-50">
             <motion.button
               onClick={() => setPatientCalled(!patientCalled)}
-              className={`w-16 h-16 rounded-full border backdrop-blur-md transition-all flex items-center justify-center ${
-                patientCalled 
-                  ? 'bg-green-500/30 border-green-500/70 shadow-lg' 
-                  : 'bg-white/10 border-white/20 hover:bg-white/15'
-              }`}
+              className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
               animate={{ 
                 boxShadow: patientCalled 
-                  ? ['0 0 15px rgba(34, 197, 94, 0.4)', '0 0 30px rgba(34, 197, 94, 0.6)', '0 0 15px rgba(34, 197, 94, 0.4)']
-                  : 'none',
+                  ? [`0 0 15px rgba(34, 197, 94, 0.6)`, `0 0 45px rgba(34, 197, 94, 0.8)`, `0 0 15px rgba(34, 197, 94, 0.6)`]
+                  : [`0 0 15px rgba(255, 255, 255, 0.1)`, `0 0 45px rgba(255, 255, 255, 0.2)`, `0 0 15px rgba(255, 255, 255, 0.1)`],
+                borderColor: patientCalled ? 'rgba(34, 197, 94, 0.7)' : 'rgba(255, 255, 255, 0.2)'
               }}
-              transition={{ duration: 2, repeat: Infinity }}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.94 }}
+              transition={{
+                boxShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                borderColor: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+              }}
+              whileHover={{ scale: 1.1, y: -5 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Phone className={`w-6 h-6 ${patientCalled ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2.5} />
+              <div className={`absolute inset-0 ${patientCalled ? 'bg-green-500/10' : 'bg-white/5'}`} />
+              <Phone className={`w-12 h-12 relative z-10 ${patientCalled ? 'text-green-300' : 'text-white'}`} strokeWidth={1.5} />
             </motion.button>
+          </div>
 
-            {/* Patient Arrival Button */}
+          {/* Patient Arrival - Bottom */}
+          <div className="absolute bottom-[-180px] left-1/2 -translate-x-1/2 z-50">
             <motion.button
               onClick={() => setPatientArrived(!patientArrived)}
-              className={`w-16 h-16 rounded-full border backdrop-blur-md transition-all flex items-center justify-center ${
-                patientArrived 
-                  ? 'bg-blue-500/30 border-blue-500/70 shadow-lg' 
-                  : 'bg-white/10 border-white/20 hover:bg-white/15'
-              }`}
+              className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
               animate={{ 
                 boxShadow: patientArrived 
-                  ? ['0 0 15px rgba(59, 130, 246, 0.4)', '0 0 30px rgba(59, 130, 246, 0.6)', '0 0 15px rgba(59, 130, 246, 0.4)']
-                  : 'none',
+                  ? [`0 0 15px rgba(59, 130, 246, 0.6)`, `0 0 45px rgba(59, 130, 246, 0.8)`, `0 0 15px rgba(59, 130, 246, 0.6)`]
+                  : [`0 0 15px rgba(255, 255, 255, 0.1)`, `0 0 45px rgba(255, 255, 255, 0.2)`, `0 0 15px rgba(255, 255, 255, 0.1)`],
+                borderColor: patientArrived ? 'rgba(59, 130, 246, 0.7)' : 'rgba(255, 255, 255, 0.2)'
               }}
-              transition={{ duration: 2, repeat: Infinity }}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.94 }}
-              title="Příjezd pacienta na sál"
+              transition={{
+                boxShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                borderColor: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+              }}
+              whileHover={{ scale: 1.1, y: 5 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <UserCheck className={`w-6 h-6 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2.5} />
+              <div className={`absolute inset-0 ${patientArrived ? 'bg-blue-500/10' : 'bg-white/5'}`} />
+              <UserCheck className={`w-12 h-12 relative z-10 ${patientArrived ? 'text-blue-300' : 'text-white'}`} strokeWidth={1.5} />
             </motion.button>
           </div>
 
