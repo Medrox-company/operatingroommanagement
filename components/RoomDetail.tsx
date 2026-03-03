@@ -386,7 +386,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
           {/* Patient Call & Arrival Actions - Right of Circle, Above & Below Plus */}
           {/* Call Patient - Above Plus */}
-          <div className="absolute top-[-120px] right-[-180px] z-50">
+          <div className="absolute top-[-80px] right-[-180px] z-50">
             <motion.button
               onClick={() => setPatientCalled(!patientCalled)}
               className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
@@ -409,7 +409,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </div>
 
           {/* Patient Arrival - Below Plus */}
-          <div className="absolute top-[120px] right-[-180px] z-50">
+          <div className="absolute top-[80px] right-[-180px] z-50">
             <motion.button
               onClick={() => setPatientArrived(!patientArrived)}
               className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
