@@ -600,8 +600,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     exit={{ opacity: 0, scale: 0.8 }}
                     className="flex flex-col items-center gap-4"
                   >
-                    <Phone className="w-16 h-16 text-green-300" strokeWidth={1.5} />
-                    <h2 className="text-5xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl text-green-300">
+                    <Phone className="w-16 h-16" strokeWidth={1.5} />
+                    <h2 className="text-5xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
                       Volání pacienta
                     </h2>
                   </motion.div>
