@@ -280,7 +280,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Close Button */}
           <button 
             onClick={onClose}
-            className="p-4 hover:bg-white/10 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center gap-3"
+            className="w-full p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center gap-3 h-24"
           >
             <span className="text-[10px] font-bold uppercase tracking-widest mr-2">Zavřít</span>
             <Menu className="w-8 h-8" />
@@ -289,7 +289,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Patient Call Button */}
           <motion.button
             onClick={() => setPatientCalled(!patientCalled)}
-            className={`w-full p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
+            className={`w-full p-8 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 h-24 ${
               patientCalled
                 ? 'bg-green-500/20 border-green-500/40 opacity-100'
                 : ''
@@ -300,8 +300,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 : 'none'
             }}
             transition={{ duration: 2, repeat: Infinity }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
             <Phone className={`w-8 h-8 ${patientCalled ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
             <span className="text-[12px] font-bold uppercase tracking-widest">Volat</span>
@@ -310,7 +308,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Patient Arrival Button */}
           <motion.button
             onClick={() => setPatientArrived(!patientArrived)}
-            className={`w-full p-8 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 ${
+            className={`w-full p-8 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 h-24 ${
               patientArrived
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100'
                 : ''
@@ -321,8 +319,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 : 'none'
             }}
             transition={{ duration: 2, repeat: Infinity }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
             <UserCheck className={`w-8 h-8 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
             <span className="text-[12px] font-bold uppercase tracking-widest">Příjezd</span>
@@ -332,7 +328,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {!(room.isLocked && isFinalStep) && (
             <motion.button
               onClick={() => setIsPaused(!isPaused)}
-              className={`w-full p-8 rounded-2xl transition-all active:scale-95 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 border ${
+              className={`w-full p-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 border h-24 ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100'
                   : 'bg-white/5 border-white/10'
@@ -343,8 +339,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   : 'none'
               }}
               transition={{ duration: 2, repeat: Infinity }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
               {isPaused ? (
                 <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
