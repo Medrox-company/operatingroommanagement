@@ -2,15 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  background-color: #000;
-  color: #fff;
-}
-
 html {
+  font-family: system-ui, -apple-system, sans-serif;
   color-scheme: dark;
 }
 
@@ -23,48 +16,4 @@ body {
 #root {
   width: 100%;
   height: 100%;
-}
-
-/* Hide root until React loads - prevents flashing */
-#root:empty {
-  display: block;
-  background: #000;
-  min-height: 100vh;
-}
-
-.app-background {
-  background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
-  min-height: 100vh;
-}
-
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-.hide-scrollbar::-webkit-scrollbar { 
-  display: none; 
-}
-
-.hide-scrollbar { 
-  -ms-overflow-style: none; 
-  scrollbar-width: none; 
-}
-
-.animated-grid-bg {
-  background-image:
-    linear-gradient(to right, #EAEBEE 1px, transparent 1px),
-    linear-gradient(to bottom, #EAEBEE 1px, transparent 1px);
-  background-size: 20px 20px;
-  animation: grid-pan 2s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { 
-    animation-duration: 0.01ms !important; 
-    animation-iteration-count: 1 !important; 
-    transition-duration: 0.01ms !important; 
-  }
 }
