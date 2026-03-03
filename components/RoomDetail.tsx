@@ -517,46 +517,123 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </>
           )}
 
-          {/* Core Visual Elements - INTERACTIVE BUTTON CENTER */}
+          {/* Core Visual Elements - COVER FLOW 3D CIRCLES */}
           <motion.button 
             onClick={handleNextStep}
             disabled={isInteractionBlocked}
             className={`relative w-[480px] h-[480px] flex items-center justify-center rounded-full group transition-all focus:outline-none 
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
+            style={{ perspective: '1200px' }}
             whileHover={isInteractionBlocked ? {} : { scale: 1.05 }}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
-            {/* Primary Background Glow - static */}
+            {/* 3D Rotating Circles Container */}
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ 
+                perspective: '1200px',
+                transformStyle: 'preserve-3d'
+              }}
+              animate={{ rotateY: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+            >
+              {/* Circle Layer 1 - Outermost */}
+              <motion.div
+                className="absolute rounded-full border-4 flex items-center justify-center"
+                style={{
+                  width: 420,
+                  height: 420,
+                  borderColor: `${activeColor}40`,
+                  background: `radial-gradient(circle at 35% 35%, ${activeColor}30, ${activeColor}08)`,
+                  boxShadow: `inset 0 0 60px ${activeColor}25, 0 0 40px ${activeColor}20, 0 0 80px ${activeColor}15`,
+                  transformStyle: 'preserve-3d',
+                }}
+                animate={{ 
+                  rotateZ: [0, -360],
+                  scale: [1, 1.05, 1]
+                }}
+                transition={{ 
+                  rotateZ: { duration: 25, repeat: Infinity, ease: 'linear' },
+                  scale: { duration: 4, repeat: Infinity, ease: 'easeInOut' }
+                }}
+              >
+                {/* Inner circle 1 */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: 340,
+                    height: 340,
+                    border: `2px solid ${activeColor}30`,
+                    background: `linear-gradient(135deg, ${activeColor}15 0%, ${activeColor}05 100%)`,
+                  }}
+                />
+              </motion.div>
+
+              {/* Circle Layer 2 - Middle */}
+              <motion.div
+                className="absolute rounded-full border-4 flex items-center justify-center"
+                style={{
+                  width: 340,
+                  height: 340,
+                  borderColor: `${activeColor}60`,
+                  background: `radial-gradient(circle at 40% 40%, ${activeColor}45, ${activeColor}15)`,
+                  boxShadow: `inset 0 0 50px ${activeColor}35, 0 0 60px ${activeColor}30, 0 0 100px ${activeColor}20`,
+                  transformStyle: 'preserve-3d',
+                }}
+                animate={{ 
+                  rotateZ: [0, 360],
+                  scale: [1, 0.95, 1]
+                }}
+                transition={{ 
+                  rotateZ: { duration: 30, repeat: Infinity, ease: 'linear' },
+                  scale: { duration: 5, repeat: Infinity, ease: 'easeInOut' }
+                }}
+              >
+                {/* Inner circle 2 */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: 260,
+                    height: 260,
+                    border: `2px solid ${activeColor}40`,
+                    background: `linear-gradient(45deg, ${activeColor}25 0%, ${activeColor}08 100%)`,
+                  }}
+                />
+              </motion.div>
+
+              {/* Circle Layer 3 - Innermost Core */}
+              <motion.div
+                className="absolute rounded-full border-4 flex items-center justify-center"
+                style={{
+                  width: 240,
+                  height: 240,
+                  borderColor: `${activeColor}80`,
+                  background: `radial-gradient(circle at 45% 45%, ${activeColor}60, ${activeColor}25)`,
+                  boxShadow: `inset 0 0 40px ${activeColor}50, inset 0 -4px 20px rgba(0,0,0,0.4), 0 0 80px ${activeColor}40, 0 0 120px ${activeColor}25`,
+                  transformStyle: 'preserve-3d',
+                }}
+                animate={{ 
+                  rotateZ: [0, -360],
+                  scale: [1, 1.08, 1]
+                }}
+                transition={{ 
+                  rotateZ: { duration: 20, repeat: Infinity, ease: 'linear' },
+                  scale: { duration: 3.5, repeat: Infinity, ease: 'easeInOut' }
+                }}
+              />
+            </motion.div>
+
+            {/* Ambient Background Glow - static behind all circles */}
             <div 
-              className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
+              className="absolute inset-0 rounded-full blur-[120px] transition-colors duration-700"
               style={{ 
                 backgroundColor: activeColor,
-                opacity: (room.isEmergency || room.isLocked) ? 0.45 : 0.25,
+                opacity: (room.isEmergency || room.isLocked) ? 0.35 : 0.2,
               }}
             />
 
-            {/* Inner Glow Core */}
-            <div 
-              className="absolute inset-10 rounded-full blur-[80px] opacity-20 transition-colors duration-500"
-              style={{ backgroundColor: activeColor }}
-            />
-
-            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.1]">
-               <circle cx="240" cy="240" r="210" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-               <motion.circle 
-                  key={currentStepIndex}
-                  cx="240" cy="240" r="210" fill="none"
-                  stroke={activeColor} strokeWidth="8" strokeLinecap="round"
-                  strokeDasharray="1320"
-                  initial={{ strokeDashoffset: 1320 }}
-                  animate={{ strokeDashoffset: 0 }}
-                  transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
-                  className="opacity-80"
-               />
-            </svg>
-
+            {/* Content Center - Text Layer */}
             <div className="text-center relative z-20 pointer-events-none">
               <AnimatePresence mode="wait">
                 {room.isLocked && isFinalStep ? (
