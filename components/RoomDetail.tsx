@@ -275,8 +275,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
 
-        {/* Left Side - Patient Actions */}
+        {/* Right Side - Close & Patient Actions */}
         <div className="flex flex-col items-end gap-3">
+          {/* Close Button */}
+          <button 
+            onClick={onClose}
+            className="p-4 hover:bg-white/10 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center gap-3"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest mr-2">Zavřít</span>
+            <Menu className="w-8 h-8" />
+          </button>
+
           {/* Patient Call Button */}
           <motion.button
             onClick={() => setPatientCalled(!patientCalled)}
@@ -319,14 +328,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <UserCheck className={`w-5 h-5 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
           </motion.button>
         </div>
-
-        <button 
-          onClick={onClose}
-          className="p-4 hover:bg-white/10 rounded-2xl transition-all active:scale-95 bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center gap-3"
-        >
-          <span className="text-[10px] font-bold uppercase tracking-widest mr-2">Zavřít</span>
-          <Menu className="w-8 h-8" />
-        </button>
       </header>
 
       {/* Main Immersive Dial */}
