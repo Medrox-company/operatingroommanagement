@@ -275,16 +275,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
 
-        {/* Right Top - Close Button */}
-        <button 
-          onClick={onClose}
-          className="p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24"
-        >
-          <X className="w-8 h-8" />
-        </button>
+        {/* Right Column - All Actions Stacked */}
+        <div className="flex flex-col items-end gap-3">
+          {/* Close Button */}
+          <button 
+            onClick={onClose}
+            className="p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24"
+          >
+            <X className="w-8 h-8" />
+          </button>
 
-        {/* Center - Patient Actions (Vertical Stack) */}
-        <div className="flex flex-col items-center gap-3">
           {/* Patient Call Button */}
           <motion.button
             onClick={() => setPatientCalled(!patientCalled)}
@@ -322,32 +322,32 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <UserCheck className={`w-8 h-8 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
             <span className="text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
           </motion.button>
-        </div>
 
-        {/* Right Bottom - Pause Button */}
-        {!(room.isLocked && isFinalStep) && (
-          <motion.button
-            onClick={() => setIsPaused(!isPaused)}
-            className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 ${
-              isPaused
-                ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100'
-                : 'bg-white/5 border-white/10'
-            }`}
-            animate={{
-              boxShadow: isPaused
-                ? ['0 0 10px rgba(34, 211, 238, 0.3)', '0 0 20px rgba(34, 211, 238, 0.5)', '0 0 10px rgba(34, 211, 238, 0.3)']
-                : 'none'
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            {isPaused ? (
-              <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
-            ) : (
-              <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
-            )}
-            <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
-          </motion.button>
-        )}
+          {/* Pause Button */}
+          {!(room.isLocked && isFinalStep) && (
+            <motion.button
+              onClick={() => setIsPaused(!isPaused)}
+              className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 ${
+                isPaused
+                  ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100'
+                  : 'bg-white/5 border-white/10'
+              }`}
+              animate={{
+                boxShadow: isPaused
+                  ? ['0 0 10px rgba(34, 211, 238, 0.3)', '0 0 20px rgba(34, 211, 238, 0.5)', '0 0 10px rgba(34, 211, 238, 0.3)']
+                  : 'none'
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              {isPaused ? (
+                <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
+              ) : (
+                <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
+              )}
+              <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+            </motion.button>
+          )}
+        </div>
       </header>
 
       {/* Main Immersive Dial */}
