@@ -2,49 +2,41 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
-import { Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, MoreVertical, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
 
 /* --- Layout constants --- */
-const ROOM_LABEL_WIDTH = 200;
-const HOURS_COUNT = 24;
+const ROOM_LABEL_WIDTH = 220;
 
 /* --- Generate week days --- */
 const generateWeekDays = (startDate: Date) => {
   const days = [];
+  const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
   for (let i = 0; i < 7; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
     days.push({
       date,
       dayNum: date.getDate(),
-      dayName: date.toLocaleDateString('cs-CZ', { weekday: 'short' }),
+      dayName: dayNames[date.getDay() === 0 ? 6 : date.getDay() - 1],
       isToday: date.toDateString() === new Date().toDateString(),
     });
   }
   return days;
 };
 
-const getMinutesFrom7 = (date: Date) => {
-  const h = date.getHours();
-  const m = date.getMinutes();
-  return h >= 7 ? (h - 7) * 60 + m : (h + 17) * 60 + m;
-};
-
-const getTimePercent = (date: Date) => (getMinutesFrom7(date) / (HOURS_COUNT * 60)) * 100;
-
-/* --- Enhanced step colors for Gantt bars --- */
-const GANTT_COLORS: Record<number, { gradient: string; border: string; text: string; stripe: string }> = {
-  0: { gradient: 'linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%)', border: '#2DD4BF', text: '#ffffff', stripe: 'rgba(255,255,255,0.15)' },
-  1: { gradient: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)', border: '#A78BFA', text: '#ffffff', stripe: 'rgba(255,255,255,0.15)' },
-  2: { gradient: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', border: '#34D399', text: '#ffffff', stripe: 'rgba(255,255,255,0.15)' },
-  3: { gradient: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)', border: '#FBBF24', text: '#1a1a2e', stripe: 'rgba(0,0,0,0.1)' },
-  4: { gradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)', border: '#818CF8', text: '#ffffff', stripe: 'rgba(255,255,255,0.15)' },
-  5: { gradient: 'linear-gradient(135deg, #5B65DC 0%, #4F46E5 100%)', border: '#5B65DC', text: '#ffffff', stripe: 'rgba(255,255,255,0.15)' },
-  6: { gradient: 'linear-gradient(135deg, #34C759 0%, #22C55E 100%)', border: '#34C759', text: '#ffffff', stripe: 'rgba(255,255,255,0.15)' },
+/* --- Enhanced Gantt colors with vibrant stripes --- */
+const GANTT_COLORS: Record<number, { bg: string; border: string; text: string; stripe: string; glow: string }> = {
+  0: { bg: '#0D9488', border: '#14B8A6', text: '#ffffff', stripe: 'rgba(255,255,255,0.25)', glow: 'rgba(45,212,191,0.4)' },
+  1: { bg: '#7C3AED', border: '#A78BFA', text: '#ffffff', stripe: 'rgba(255,255,255,0.25)', glow: 'rgba(167,139,250,0.4)' },
+  2: { bg: '#059669', border: '#34D399', text: '#ffffff', stripe: 'rgba(255,255,255,0.25)', glow: 'rgba(52,211,153,0.4)' },
+  3: { bg: '#D97706', border: '#FBBF24', text: '#1a1a2e', stripe: 'rgba(0,0,0,0.15)', glow: 'rgba(251,191,36,0.4)' },
+  4: { bg: '#4F46E5', border: '#818CF8', text: '#ffffff', stripe: 'rgba(255,255,255,0.25)', glow: 'rgba(129,140,248,0.4)' },
+  5: { bg: '#4338CA', border: '#5B65DC', text: '#ffffff', stripe: 'rgba(255,255,255,0.25)', glow: 'rgba(91,101,220,0.4)' },
+  6: { bg: '#15803D', border: '#34C759', text: '#ffffff', stripe: 'rgba(255,255,255,0.25)', glow: 'rgba(52,199,89,0.4)' },
 };
 
 /* --- Step colors for popup --- */
@@ -322,51 +314,63 @@ const GanttBar: React.FC<{
   totalDays: number;
   colorIndex: number;
   onClick: () => void;
-}> = ({ room, dayIndex, totalDays, colorIndex, onClick }) => {
+  weekDays: Array<{ date: Date; dayNum: number; dayName: string; isToday: boolean }>;
+}> = ({ room, dayIndex, totalDays, colorIndex, onClick, weekDays }) => {
   const colors = GANTT_COLORS[colorIndex % Object.keys(GANTT_COLORS).length];
   const step = WORKFLOW_STEPS[Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1)];
   
-  // Calculate bar position based on start and duration
-  const startDayOffset = dayIndex;
-  const durationDays = Math.min(room.currentProcedure?.estimatedDuration ? Math.ceil(room.currentProcedure.estimatedDuration / 480) : 2, totalDays - startDayOffset);
+  // Calculate bar position
+  const startDayOffset = Math.max(0, dayIndex);
+  const durationDays = Math.min(
+    room.currentProcedure?.estimatedDuration ? Math.ceil(room.currentProcedure.estimatedDuration / 480) : 3,
+    totalDays - startDayOffset
+  );
   
   const leftPercent = (startDayOffset / totalDays) * 100;
-  const widthPercent = (durationDays / totalDays) * 100;
+  const widthPercent = Math.max((durationDays / totalDays) * 100, 25);
 
-  // Get time info
-  const startTime = room.currentProcedure?.startTime || '08:00';
-  const endTime = room.estimatedEndTime 
-    ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
-    : '16:00';
+  // Format date range
+  const startDay = weekDays[startDayOffset];
+  const endDayIndex = Math.min(startDayOffset + durationDays - 1, totalDays - 1);
+  const endDay = weekDays[endDayIndex];
+  
+  const formatDate = (day: typeof weekDays[0]) => {
+    const monthNames = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+    return `${day.dayName} ${day.dayNum} ${monthNames[day.date.getMonth()]}`;
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, scaleX: 0 }}
-      animate={{ opacity: 1, scaleX: 1 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute top-2 bottom-2 rounded-xl cursor-pointer group"
+      initial={{ opacity: 0, scaleX: 0, x: -20 }}
+      animate={{ opacity: 1, scaleX: 1, x: 0 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="absolute top-2 bottom-2 rounded-xl cursor-pointer group overflow-hidden"
       style={{
-        left: `${leftPercent}%`,
-        width: `${widthPercent}%`,
-        minWidth: '120px',
-        background: colors.gradient,
-        border: `1px solid ${colors.border}`,
-        boxShadow: `0 4px 20px ${colors.border}40`,
+        left: `calc(${leftPercent}% + 8px)`,
+        width: `calc(${widthPercent}% - 16px)`,
+        minWidth: '160px',
+        background: colors.bg,
+        border: `2px solid ${colors.border}`,
+        boxShadow: `0 4px 24px ${colors.glow}`,
         transformOrigin: 'left center',
       }}
       onClick={onClick}
-      whileHover={{ scale: 1.02, boxShadow: `0 8px 30px ${colors.border}60` }}
+      whileHover={{ 
+        scale: 1.02, 
+        boxShadow: `0 8px 32px ${colors.glow}, 0 0 0 1px ${colors.border}`,
+        y: -2
+      }}
     >
-      {/* Diagonal stripes pattern */}
+      {/* Diagonal stripes pattern - more prominent */}
       <div 
-        className="absolute inset-0 rounded-xl overflow-hidden opacity-60"
+        className="absolute inset-0 overflow-hidden"
         style={{
           backgroundImage: `repeating-linear-gradient(
-            45deg,
+            -45deg,
             transparent,
-            transparent 8px,
-            ${colors.stripe} 8px,
-            ${colors.stripe} 9px
+            transparent 6px,
+            ${colors.stripe} 6px,
+            ${colors.stripe} 8px
           )`,
         }}
       />
@@ -374,20 +378,23 @@ const GanttBar: React.FC<{
       {/* Content */}
       <div className="relative h-full flex items-center justify-between px-4 z-10">
         <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Icon badge */}
           <div 
             className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+            style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}
           >
             <step.Icon className="w-4 h-4" style={{ color: colors.text }} />
           </div>
+          
+          {/* Task info */}
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold truncate" style={{ color: colors.text }}>
+            <p className="text-sm font-bold truncate drop-shadow-sm" style={{ color: colors.text }}>
               {step.title}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <Clock className="w-3 h-3" style={{ color: `${colors.text}80` }} />
-              <span className="text-[10px] font-medium" style={{ color: `${colors.text}90` }}>
-                {startTime} - {endTime}
+              <Clock className="w-3 h-3 flex-shrink-0" style={{ color: `${colors.text}90` }} />
+              <span className="text-[10px] font-medium truncate" style={{ color: `${colors.text}90` }}>
+                {formatDate(startDay)} - {formatDate(endDay)}
               </span>
             </div>
           </div>
@@ -395,9 +402,9 @@ const GanttBar: React.FC<{
 
         {/* Menu button */}
         <motion.button
-          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
-          whileHover={{ backgroundColor: 'rgba(255,255,255,0.25)' }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+          whileHover={{ backgroundColor: 'rgba(255,255,255,0.3)', scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -434,15 +441,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return weekDays.findIndex(d => d.isToday);
   }, [weekDays]);
 
-  /* --- Stats --- */
-  const stats = useMemo(() => {
-    const operations = rooms.filter(r => r.currentStepIndex >= 0 && r.currentStepIndex <= 4 && !r.isEmergency && !r.isLocked).length;
-    const cleaning = rooms.filter(r => r.currentStepIndex === 5 && !r.isEmergency && !r.isLocked).length;
-    const free = rooms.filter(r => r.currentStepIndex >= 6 && !r.isEmergency && !r.isLocked).length;
-    const emergency = rooms.filter(r => r.isEmergency).length;
-    return { operations, cleaning, free, emergency };
-  }, [rooms]);
-
   /* --- Sorted rooms --- */
   const sortedRooms = useMemo(() => {
     return [...rooms].sort((a, b) => {
@@ -458,10 +456,22 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     });
   }, [rooms]);
 
-  const dateRangeStr = `${weekDays[0].date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long' })} - ${weekDays[6].date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  // Format date range
+  const dateRangeStr = useMemo(() => {
+    const monthNames = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+    const start = weekDays[0];
+    const end = weekDays[6];
+    return `${monthNames[start.date.getMonth()]} ${start.dayNum} - ${end.dayNum}, ${end.date.getFullYear()}`;
+  }, [weekDays]);
 
   return (
-    <div className="w-full h-full overflow-hidden flex flex-col relative" style={{ background: 'linear-gradient(180deg, #1a1a2e 0%, #16162a 100%)' }}>
+    <div className="w-full h-full overflow-hidden flex flex-col relative" style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16162a 50%, #0f0f1a 100%)' }}>
+      
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#5B65DC]/10 blur-[120px]" />
+        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-[#2DD4BF]/8 blur-[100px]" />
+      </div>
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -471,78 +481,67 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       </AnimatePresence>
 
       {/* ======== Header ======== */}
-      <header className="relative z-10 flex items-center justify-between gap-4 px-6 pt-6 pb-4 flex-shrink-0">
+      <header className="relative z-10 flex items-center justify-between gap-4 px-8 pt-8 pb-6 flex-shrink-0">
         <div className="flex items-center gap-6">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-white mb-1">Timeline Project</h1>
-            <p className="text-xs text-white/40">Prehled operacnich salu</p>
+            <h1 className="text-3xl font-black tracking-tight text-white mb-1">Timeline Project</h1>
+            <p className="text-sm text-white/40">Přehled operačních sálů a plánování</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {/* Date range badge */}
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
-            <CalendarDays className="w-4 h-4 text-white/40" />
-            <span className="text-sm font-medium text-white/70">{dateRangeStr}</span>
+          <div className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
+            <CalendarDays className="w-4 h-4 text-white/50" />
+            <span className="text-sm font-semibold text-white/80">{dateRangeStr}</span>
           </div>
 
-          {/* Week selector */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/5 border border-white/10">
-            <motion.button
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
-              onClick={() => setWeekOffset(w => w - 1)}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ChevronLeft className="w-4 h-4 text-white/60" />
-            </motion.button>
-            <span className="text-sm font-medium text-white/70 px-2">Tento tyden</span>
-            <motion.button
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
-              onClick={() => setWeekOffset(w => w + 1)}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ChevronRight className="w-4 h-4 text-white/60" />
-            </motion.button>
-          </div>
-
-          {/* Stats pills */}
+          {/* Week selector dropdown style */}
           <div className="flex items-center gap-2">
-            {stats.emergency > 0 && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/30">
-                <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                <span className="text-xs font-bold text-red-400">{stats.emergency}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30">
-              <Activity className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-xs font-bold text-emerald-400">{stats.operations}</span>
+            <motion.button
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+              onClick={() => setWeekOffset(w => w - 1)}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ChevronLeft className="w-5 h-5 text-white/60" />
+            </motion.button>
+            
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10">
+              <span className="text-sm font-semibold text-white/80">Tento týden</span>
+              <ChevronDown className="w-4 h-4 text-white/40" />
             </div>
-          </div>
-
-          {/* Time display */}
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2DD4BF]/10 border border-[#2DD4BF]/30">
-            <Clock className="w-4 h-4 text-[#2DD4BF]" />
-            <span className="text-sm font-mono font-bold text-[#2DD4BF]">
-              {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </span>
+            
+            <motion.button
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+              onClick={() => setWeekOffset(w => w + 1)}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ChevronRight className="w-5 h-5 text-white/60" />
+            </motion.button>
           </div>
         </div>
       </header>
 
       {/* ======== Main Timeline Grid ======== */}
-      <div className="flex-1 min-h-0 flex flex-col relative z-10 px-6 pb-6 overflow-hidden">
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1e1e3f]/50 backdrop-blur-sm">
+      <div className="flex-1 min-h-0 flex flex-col relative z-10 px-8 pb-8 overflow-hidden">
+        <div 
+          className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-3xl border backdrop-blur-sm"
+          style={{ 
+            background: 'linear-gradient(180deg, rgba(30, 30, 63, 0.8) 0%, rgba(26, 26, 46, 0.9) 100%)',
+            borderColor: 'rgba(255, 255, 255, 0.08)'
+          }}
+        >
 
           {/* Day Headers */}
-          <div className="flex flex-shrink-0 border-b border-white/10">
+          <div className="flex flex-shrink-0 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
             {/* Room label header */}
             <div 
-              className="flex-shrink-0 flex items-center px-4 py-3 border-r border-white/10 bg-[#1a1a35]"
-              style={{ width: ROOM_LABEL_WIDTH }}
+              className="flex-shrink-0 flex items-center px-5 py-4 border-r"
+              style={{ width: ROOM_LABEL_WIDTH, borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0,0,0,0.15)' }}
             >
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-white/40" />
-                <span className="text-xs font-bold tracking-wide uppercase text-white/40">Operacni saly</span>
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-white/40" />
+                <span className="text-sm font-bold tracking-wide text-white/50">Operační sály</span>
               </div>
             </div>
 
@@ -551,16 +550,20 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               {weekDays.map((day, i) => (
                 <div 
                   key={i}
-                  className={`flex-1 flex flex-col items-center justify-center py-3 border-r border-white/5 last:border-r-0 transition-colors ${
-                    day.isToday ? 'bg-[#2DD4BF]/10' : ''
+                  className={`flex-1 flex flex-col items-center justify-center py-4 border-r last:border-r-0 transition-all relative ${
+                    day.isToday ? '' : ''
                   }`}
+                  style={{ 
+                    borderColor: 'rgba(255, 255, 255, 0.05)',
+                    background: day.isToday ? 'rgba(45, 212, 191, 0.08)' : 'transparent'
+                  }}
                 >
-                  <span className={`text-lg font-bold ${day.isToday ? 'text-[#2DD4BF]' : 'text-white/80'}`}>
-                    {day.dayNum}
+                  <span className={`text-xs font-medium uppercase tracking-wider mb-1 ${day.isToday ? 'text-[#2DD4BF]' : 'text-white/40'}`}>
+                    {day.dayNum} {day.dayName}
                   </span>
-                  <span className={`text-[10px] font-medium uppercase tracking-wider ${day.isToday ? 'text-[#2DD4BF]/70' : 'text-white/40'}`}>
-                    {day.dayName}
-                  </span>
+                  {day.isToday && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#2DD4BF]" />
+                  )}
                 </div>
               ))}
             </div>
@@ -573,43 +576,62 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               const isActive = stepIndex < 6;
               const isFree = stepIndex >= 6;
 
+              // Generate avatar URL based on room
+              const avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(room.name)}&backgroundColor=5B65DC,2DD4BF,A78BFA,34C759&backgroundType=gradientLinear`;
+
               return (
                 <motion.div
                   key={room.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: roomIndex * 0.03, duration: 0.4 }}
-                  className="flex items-stretch border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors"
-                  style={{ minHeight: '64px' }}
+                  transition={{ delay: roomIndex * 0.04, duration: 0.5 }}
+                  className="flex items-stretch border-b last:border-b-0 hover:bg-white/[0.02] transition-colors group/row"
+                  style={{ minHeight: '72px', borderColor: 'rgba(255, 255, 255, 0.05)' }}
                 >
                   {/* Room label */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
-                    style={{ width: ROOM_LABEL_WIDTH }}
+                    className="flex-shrink-0 flex items-center gap-4 px-5 border-r cursor-pointer hover:bg-white/5 transition-colors"
+                    style={{ width: ROOM_LABEL_WIDTH, borderColor: 'rgba(255, 255, 255, 0.08)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     {/* Avatar */}
-                    <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2"
-                      style={{ 
-                        background: room.isEmergency 
-                          ? 'linear-gradient(135deg, #FF3B30 0%, #FF6B6B 100%)' 
-                          : room.isLocked 
-                            ? 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)'
+                    <div className="relative">
+                      <div 
+                        className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 border-2 shadow-lg"
+                        style={{ 
+                          borderColor: room.isEmergency 
+                            ? '#FF3B30' 
+                            : room.isLocked 
+                              ? '#FBBF24'
+                              : isActive 
+                                ? GANTT_COLORS[stepIndex % 7].border 
+                                : 'rgba(255,255,255,0.15)',
+                          boxShadow: room.isEmergency 
+                            ? '0 0 16px rgba(255,59,48,0.4)' 
                             : isActive 
-                              ? `linear-gradient(135deg, ${GANTT_COLORS[stepIndex % 7].border} 0%, ${GANTT_COLORS[stepIndex % 7].border}80 100%)`
-                              : 'linear-gradient(135deg, #374151 0%, #1F2937 100%)',
-                        borderColor: room.isEmergency ? '#FF3B30' : room.isLocked ? '#FBBF24' : isActive ? GANTT_COLORS[stepIndex % 7].border : '#374151'
-                      }}
-                    >
-                      {room.isEmergency ? (
-                        <AlertTriangle className="w-5 h-5 text-white" />
-                      ) : room.isLocked ? (
-                        <Lock className="w-5 h-5 text-white" />
-                      ) : (
-                        <span className="text-sm font-bold text-white">
-                          {room.name.charAt(0)}
-                        </span>
+                              ? `0 0 12px ${GANTT_COLORS[stepIndex % 7].glow}`
+                              : 'none'
+                        }}
+                      >
+                        {room.isEmergency ? (
+                          <div className="w-full h-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-white" />
+                          </div>
+                        ) : room.isLocked ? (
+                          <div className="w-full h-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
+                            <Lock className="w-5 h-5 text-white" />
+                          </div>
+                        ) : (
+                          <img 
+                            src={avatarUrl} 
+                            alt={room.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      {/* Online indicator for active rooms */}
+                      {isActive && !room.isEmergency && !room.isLocked && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#34C759] border-2 border-[#1a1a2e]" />
                       )}
                     </div>
 
@@ -618,8 +640,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       <p className={`text-sm font-semibold truncate ${isActive || room.isEmergency ? 'text-white' : 'text-white/50'}`}>
                         {room.name}
                       </p>
-                      <p className="text-[10px] text-white/30 truncate">
-                        {room.isEmergency ? 'EMERGENCY' : room.isLocked ? 'Uzamceno' : room.department || 'Volny'}
+                      <p className="text-[11px] text-white/35 truncate mt-0.5">
+                        {room.isEmergency ? 'EMERGENCY' : room.isLocked ? 'Uzamčeno' : room.department || 'Volný'}
                       </p>
                     </div>
                   </div>
@@ -631,12 +653,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       {weekDays.map((day, i) => (
                         <div 
                           key={i} 
-                          className={`flex-1 border-r border-white/5 last:border-r-0 ${day.isToday ? 'bg-[#2DD4BF]/5' : ''}`}
+                          className="flex-1 border-r last:border-r-0"
+                          style={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.05)',
+                            background: day.isToday ? 'rgba(45, 212, 191, 0.04)' : 'transparent'
+                          }}
                         />
                       ))}
                     </div>
 
-                    {/* Today indicator line */}
+                    {/* Today indicator line - dashed vertical */}
                     {todayIndex >= 0 && (
                       <div 
                         className="absolute top-0 bottom-0 z-20 pointer-events-none"
@@ -645,48 +671,81 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <div 
                           className="absolute -left-px top-0 bottom-0 w-[2px]"
                           style={{ 
-                            backgroundImage: 'repeating-linear-gradient(to bottom, #2DD4BF 0px, #2DD4BF 6px, transparent 6px, transparent 12px)'
+                            backgroundImage: 'repeating-linear-gradient(to bottom, #2DD4BF 0px, #2DD4BF 8px, transparent 8px, transparent 16px)'
                           }}
                         />
                         {roomIndex === 0 && (
-                          <div className="absolute -left-[6px] -top-[2px] w-[14px] h-[14px] rounded-full bg-[#2DD4BF] shadow-[0_0_12px_#2DD4BF]" />
+                          <motion.div 
+                            className="absolute -left-[7px] -top-[3px] w-[16px] h-[16px] rounded-full bg-[#2DD4BF]"
+                            style={{ boxShadow: '0 0 16px rgba(45, 212, 191, 0.6)' }}
+                            animate={{ scale: [1, 1.15, 1] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                          />
                         )}
                       </div>
                     )}
 
                     {/* Gantt bars */}
-                    {isActive && !room.isLocked && (
+                    {isActive && !room.isLocked && !room.isEmergency && (
                       <GanttBar
                         room={room}
-                        dayIndex={room.isEmergency ? todayIndex : Math.max(0, todayIndex - 1)}
+                        dayIndex={Math.max(0, todayIndex - 1)}
                         totalDays={7}
                         colorIndex={stepIndex}
                         onClick={() => setSelectedRoom(room)}
+                        weekDays={weekDays}
                       />
                     )}
 
                     {/* Emergency full bar */}
                     {room.isEmergency && (
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(90deg, rgba(255,59,48,0.3) 0%, rgba(255,59,48,0.15) 50%, rgba(255,59,48,0.3) 100%)', border: '1px solid rgba(255,59,48,0.4)' }}>
-                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,59,48,1) 8px, rgba(255,59,48,1) 9px)' }} />
+                      <motion.div 
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden" 
+                        style={{ 
+                          background: 'linear-gradient(90deg, rgba(255,59,48,0.35) 0%, rgba(255,59,48,0.2) 50%, rgba(255,59,48,0.35) 100%)', 
+                          border: '2px solid rgba(255,59,48,0.5)' 
+                        }}
+                        initial={{ opacity: 0, scaleX: 0 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <div 
+                          className="absolute inset-0 opacity-30" 
+                          style={{ 
+                            backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(255,59,48,1) 6px, rgba(255,59,48,1) 8px)' 
+                          }} 
+                        />
                         <div className="relative h-full flex items-center justify-center">
-                          <span className="text-sm font-black tracking-[0.4em] text-white/70 uppercase">EMERGENCY</span>
+                          <AlertTriangle className="w-4 h-4 text-red-400 mr-2" />
+                          <span className="text-sm font-black tracking-[0.3em] text-white/80 uppercase">EMERGENCY</span>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
 
                     {/* Locked bar */}
                     {room.isLocked && (
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center gap-3" style={{ background: 'rgba(251,191,36,0.08)', border: '1px dashed rgba(251,191,36,0.3)' }}>
-                        <Lock className="w-4 h-4 text-amber-400/40" />
-                        <span className="text-xs font-bold tracking-[0.2em] text-amber-400/50 uppercase">Uzamceno</span>
-                      </div>
+                      <motion.div 
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center gap-3" 
+                        style={{ 
+                          background: 'rgba(251,191,36,0.08)', 
+                          border: '2px dashed rgba(251,191,36,0.35)' 
+                        }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        <Lock className="w-4 h-4 text-amber-400/50" />
+                        <span className="text-xs font-bold tracking-[0.15em] text-amber-400/60 uppercase">Uzamčeno</span>
+                      </motion.div>
                     )}
 
                     {/* Free indicator */}
                     {isFree && !room.isLocked && (
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center" style={{ border: '1px dashed rgba(255,255,255,0.1)' }}>
-                        <span className="text-[10px] font-bold tracking-[0.3em] text-white/15 uppercase">Volny</span>
+                      <div 
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center" 
+                        style={{ border: '1px dashed rgba(255,255,255,0.08)' }}
+                      >
+                        <span className="text-[11px] font-semibold tracking-[0.2em] text-white/15 uppercase">Volný</span>
                       </div>
                     )}
                   </div>
