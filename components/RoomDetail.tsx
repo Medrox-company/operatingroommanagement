@@ -354,7 +354,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             if (patientCalledTime && !patientArrivedTime) {
               setPatientArrivedTime(new Date());
               setShowPatientArrivedText(true);
-              setTimeout(() => setShowPatientArrivedText(false), 3000);
+              setTimeout(() => {
+                setShowPatientArrivedText(false);
+                // Reset call state so Volat can be used again
+                setPatientCalledTime(null);
+                setPatientArrivedTime(null);
+                setPatientCallElapsedTime('00:00');
+              }, 3000);
             }
           }}
           disabled={!patientCalledTime || !!patientArrivedTime}
