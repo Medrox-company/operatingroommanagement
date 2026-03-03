@@ -6,7 +6,8 @@ import { WORKFLOW_STEPS } from '../constants';
 import { 
   Plus, Minus, Menu, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
-  ChevronRight, Pause, Play, AlertTriangle, Lock
+  ChevronRight, Pause, Play, AlertTriangle, Lock,
+  Phone, UserCheck
 } from 'lucide-react';
 
 interface RoomDetailProps {
@@ -31,6 +32,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
   const [showEndTime, setShowEndTime] = useState(false);
   const endTimeTimeoutRef = useRef<number | null>(null);
+  const [patientCalled, setPatientCalled] = useState(false);
+  const [patientArrived, setPatientArrived] = useState(false);
 
   const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
 
@@ -279,6 +282,53 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <span className="text-[10px] font-bold uppercase tracking-widest mr-2">Zavřít</span>
           <Menu className="w-8 h-8" />
         </button>
+
+        {/* Patient Call & Arrival Actions - Top Right Corner */}
+        <div className="flex items-center gap-4">
+          {/* Call Patient Button */}
+          <motion.button
+            onClick={() => setPatientCalled(!patientCalled)}
+            className={`px-5 py-3 rounded-2xl border backdrop-blur-md transition-all font-bold text-sm uppercase tracking-widest flex items-center gap-2.5 ${
+              patientCalled 
+                ? 'bg-green-500/20 border-green-500/60 text-green-300 shadow-lg' 
+                : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Phone className="w-4 h-4" strokeWidth={2.5} />
+            <span className="text-xs">Volat pacienta</span>
+            {patientCalled && (
+              <motion.div 
+                className="w-2 h-2 rounded-full bg-green-400"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+            )}
+          </motion.button>
+
+          {/* Patient Arrival Button */}
+          <motion.button
+            onClick={() => setPatientArrived(!patientArrived)}
+            className={`px-5 py-3 rounded-2xl border backdrop-blur-md transition-all font-bold text-sm uppercase tracking-widest flex items-center gap-2.5 ${
+              patientArrived 
+                ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 shadow-lg' 
+                : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <UserCheck className="w-4 h-4" strokeWidth={2.5} />
+            <span className="text-xs">Příjezd pacienta</span>
+            {patientArrived && (
+              <motion.div 
+                className="w-2 h-2 rounded-full bg-blue-400"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+            )}
+          </motion.button>
+        </div>
       </header>
 
       {/* Main Immersive Dial */}
@@ -554,6 +604,30 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
              <div className="w-14 h-14 rounded-full border-4 border-black bg-indigo-600 overflow-hidden shadow-2xl">
                 <img src={`https://i.pravatar.cc/150?u=${currentStep.organizer}`} alt="Staff" className="w-full h-full object-cover" />
              </div>
+          </div>
+        </div>
+
+        {/* Patient Status Indicators */}
+        <div className="flex items-center gap-4 pt-2">
+          <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
+            patientCalled 
+              ? 'bg-green-500/15 border-green-500/40 text-green-300' 
+              : 'bg-white/5 border-white/10 text-white/30'
+          }`}>
+            <span className="flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5" />
+              {patientCalled ? 'Vyvolán' : 'Nevyvolán'}
+            </span>
+          </div>
+          <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
+            patientArrived 
+              ? 'bg-blue-500/15 border-blue-500/40 text-blue-300' 
+              : 'bg-white/5 border-white/10 text-white/30'
+          }`}>
+            <span className="flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5" />
+              {patientArrived ? 'Přijel' : 'Nepřijel'}
+            </span>
           </div>
         </div>
       </div>
