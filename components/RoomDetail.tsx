@@ -327,6 +327,33 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <UserCheck className={`w-8 h-8 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
             <span className="text-[12px] font-bold uppercase tracking-widest">Příjezd</span>
           </motion.button>
+
+          {/* Pause Button */}
+          {!(room.isLocked && isFinalStep) && (
+            <motion.button
+              onClick={() => setIsPaused(!isPaused)}
+              className={`w-full p-8 rounded-2xl transition-all active:scale-95 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 border ${
+                isPaused
+                  ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100'
+                  : 'bg-white/5 border-white/10'
+              }`}
+              animate={{
+                boxShadow: isPaused
+                  ? ['0 0 10px rgba(34, 211, 238, 0.3)', '0 0 20px rgba(34, 211, 238, 0.5)', '0 0 10px rgba(34, 211, 238, 0.3)']
+                  : 'none'
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isPaused ? (
+                <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
+              ) : (
+                <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
+              )}
+              <span className="text-[12px] font-bold uppercase tracking-widest">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
+            </motion.button>
+          )}
         </div>
       </header>
 
@@ -629,24 +656,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Control Panel Indicators */}
-      <div className="absolute right-16 bottom-16 flex flex-col items-end gap-12 z-50">
-        {!(room.isLocked && isFinalStep) && (
-          <motion.button 
-            onClick={() => setIsPaused(!isPaused)}
-            className={`p-5 rounded-3xl border transition-all duration-300 ${isPaused ? 'bg-cyan-400/20 border-cyan-400/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-              {isPaused ? (
-                <Play className="w-10 h-10 transition-colors duration-300 text-cyan-300" />
-              ) : (
-                <Pause className="w-10 h-10 transition-colors duration-300 text-white/50" />
-              )}
-          </motion.button>
-        )}
       </div>
 
       {/* Navigation Indicators */}
