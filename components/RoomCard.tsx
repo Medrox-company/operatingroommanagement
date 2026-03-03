@@ -124,13 +124,16 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                 <motion.div
                   className="absolute rounded-full blur-[40px]"
                   style={{ width: 80, height: 80, backgroundColor: themeColor }}
-                  animate={{ opacity: [0.15, 0.35, 0.15], scale: [0.9, 1.1, 0.9] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 0.25, scale: 1 }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
                 />
                 <motion.svg
-                  className="w-28 h-28 -rotate-90 overflow-visible select-none flex-shrink-0"
-                  animate={{ rotate: ['-90deg', '-84deg', '-90deg'] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-28 h-28 overflow-visible select-none flex-shrink-0"
+                  style={{ rotate: '-90deg' }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.7, ease: 'easeOut' }}
                 >
                     <circle 
                       cx={center} cy={center} r={radius} 
@@ -146,8 +149,9 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                       strokeWidth={strokeWidth} 
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
-                      animate={{ strokeDashoffset: [strokeDashoffset + 8, strokeDashoffset - 8, strokeDashoffset + 8] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                      initial={{ strokeDashoffset: strokeDasharray }}
+                      animate={{ strokeDashoffset: strokeDashoffset }}
+                      transition={{ duration: 1.2, ease: 'easeOut' }}
                       style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
                     />
                     <text
