@@ -59,11 +59,11 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
   }, [rooms]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-black/80 to-black/90">
+    <div className="w-full h-full flex flex-col backdrop-blur-md" style={{ background: 'rgba(0, 0, 0, 0.4)' }}>
       {/* ====== Header with stats ====== */}
       <motion.div 
         className="flex-shrink-0 px-8 py-6 border-b"
-        style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+        style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -79,10 +79,10 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
           >
-            <StatPill label="Aktivní" value={stats.active} color="rgba(129,140,248,0.3)" />
-            <StatPill label="Pozastaveny" value={stats.paused} color="rgba(251,191,36,0.3)" />
-            <StatPill label="Ukončený" value={stats.finished} color="rgba(52,199,89,0.3)" />
-            {stats.emergency > 0 && <StatPill label="Emergency" value={stats.emergency} color="rgba(255,59,48,0.3)" />}
+            <StatPill label="Aktivní" value={stats.active} color="rgba(129,140,248,0.15)" />
+            <StatPill label="Pozastaveny" value={stats.paused} color="rgba(251,191,36,0.15)" />
+            <StatPill label="Ukončený" value={stats.finished} color="rgba(52,199,89,0.15)" />
+            {stats.emergency > 0 && <StatPill label="Emergency" value={stats.emergency} color="rgba(255,59,48,0.15)" />}
           </motion.div>
         </div>
       </motion.div>
@@ -91,21 +91,24 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {/* Hour markers header */}
         <motion.div 
-          className="sticky top-0 z-40 flex bg-black/40 backdrop-blur-md border-b"
-          style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}
+          className="sticky top-0 z-40 flex border-b backdrop-blur-sm"
+          style={{ 
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            background: 'rgba(0, 0, 0, 0.3)'
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.4 }}
         >
-          <div style={{ width: ROOM_LABEL_WIDTH }} className="flex-shrink-0 px-6 py-3 border-r" style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}>
-            <p className="text-[10px] font-black text-white/30 tracking-widest uppercase">Sál</p>
+          <div style={{ width: ROOM_LABEL_WIDTH }} className="flex-shrink-0 px-6 py-3 border-r" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+            <p className="text-[10px] font-black text-white/40 tracking-widest uppercase">Sál</p>
           </div>
           <div className="flex-1 flex overflow-x-auto hide-scrollbar">
             {TIME_MARKERS.map((h, i) => (
               <div 
                 key={i} 
                 className="flex-shrink-0 px-3 py-3 text-center border-r"
-                style={{ width: 60, borderColor: 'rgba(255, 255, 255, 0.04)' }}
+                style={{ width: 60, borderColor: 'rgba(255, 255, 255, 0.05)' }}
               >
                 <p className="text-[9px] font-bold text-white/30">{hourLabel(h)}</p>
               </div>
@@ -124,31 +127,33 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             return (
               <motion.div
                 key={room.id}
-                className="flex rounded-2xl overflow-hidden"
+                className="flex rounded-2xl overflow-hidden border transition-all cursor-pointer"
                 style={{ 
                   background: isSelected 
-                    ? `linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)`
-                    : 'rgba(255, 255, 255, 0.02)',
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(255, 255, 255, 0.04)',
                   backdropFilter: 'blur(20px)',
-                  border: isSelected 
-                    ? `1px solid ${themeColor}40` 
-                    : 'rgba(255, 255, 255, 0.06)',
-                  boxShadow: isSelected ? `inset 0 0 80px ${themeColor}10` : 'none'
+                  borderColor: isSelected 
+                    ? `${themeColor}50` 
+                    : 'rgba(255, 255, 255, 0.1)',
+                  boxShadow: isSelected ? `0 0 40px ${themeColor}20` : 'none'
                 }}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 + idx * 0.05, duration: 0.4, ease: 'easeOut' }}
-                whileHover={{ scale: 1.01 }}
+                whileHover={{ 
+                  scale: 1.01,
+                  background: isSelected ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.06)'
+                }}
                 onClick={() => setSelectedRoomId(isSelected ? null : room.id)}
               >
                 {/* Room label */}
                 <motion.div 
-                  className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-r cursor-pointer"
+                  className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-r"
                   style={{ 
                     width: ROOM_LABEL_WIDTH,
-                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
                   }}
-                  whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.04)' }}
                 >
                   <div>
                     <p className="text-sm font-black text-white">{room.name}</p>
@@ -176,7 +181,7 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           style={{ 
                             width: 60, 
                             borderColor: 'rgba(255, 255, 255, 0.04)',
-                            background: i % 4 === 0 ? 'rgba(255, 255, 255, 0.01)' : 'transparent'
+                            background: i % 4 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent'
                           }}
                         />
                       ))}
@@ -184,10 +189,11 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
                     {/* Progress bar background */}
                     <motion.div
-                      className="absolute inset-0 rounded-xl"
+                      className="absolute inset-0 rounded-xl border border-l-2"
                       style={{ 
-                        background: `${themeColor}08`,
-                        borderLeft: `3px solid ${themeColor}`,
+                        background: `${themeColor}10`,
+                        borderColor: 'rgba(255, 255, 255, 0.08)',
+                        borderLeftColor: themeColor,
                         width: `${(stepIndex / 7) * 100}%`,
                       }}
                       initial={{ width: 0 }}
@@ -197,25 +203,26 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
                     {/* Current time indicator */}
                     <motion.div
-                      className="absolute top-0 bottom-0 w-0.5 bg-white pointer-events-none z-50"
+                      className="absolute top-0 bottom-0 w-0.5 pointer-events-none z-50"
                       style={{ 
                         left: `${nowPercent}%`,
-                        boxShadow: '0 0 12px rgba(255, 255, 255, 0.6)'
+                        background: 'rgba(255, 255, 255, 0.8)',
+                        boxShadow: '0 0 12px rgba(255, 255, 255, 0.5), 0 0 24px rgba(255, 255, 255, 0.2)'
                       }}
-                      animate={{ opacity: [0.6, 1, 0.6] }}
+                      animate={{ opacity: [0.5, 1, 0.5] }}
                       transition={{ duration: 2, repeat: Infinity }}
                     />
 
                     {/* Step labels */}
                     <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
                       <motion.div 
-                        className="flex items-center gap-2 text-[10px] font-bold text-white/60"
+                        className="flex items-center gap-2 text-[10px] font-bold text-white/70"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.4 + idx * 0.05, duration: 0.4 }}
                       >
                         <div 
-                          className="w-4 h-4 rounded-lg flex items-center justify-center flex-shrink-0"
+                          className="w-4 h-4 rounded-lg flex items-center justify-center flex-shrink-0 backdrop-blur-sm"
                           style={{ 
                             backgroundColor: `${themeColor}25`,
                             borderColor: `${themeColor}50`,
@@ -242,8 +249,8 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
       {/* ====== Bottom info bar ====== */}
       <motion.div 
-        className="flex-shrink-0 px-8 py-4 border-t flex items-center justify-between text-xs"
-        style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+        className="flex-shrink-0 px-8 py-4 border-t flex items-center justify-between text-xs backdrop-blur-sm"
+        style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(0, 0, 0, 0.2)' }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.4 }}
@@ -264,18 +271,20 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 /* ============================== */
 const StatPill: React.FC<{ label: string; value: number; color: string }> = ({ label, value, color }) => (
   <motion.div
-    className="px-3.5 py-2 rounded-xl border flex items-center gap-2"
+    className="px-3.5 py-2 rounded-xl border flex items-center gap-2 backdrop-blur-md"
     style={{ 
       background: color,
-      borderColor: 'rgba(255, 255, 255, 0.1)',
-      backdropFilter: 'blur(20px)'
+      borderColor: 'rgba(255, 255, 255, 0.15)',
     }}
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.3 }}
-    whileHover={{ scale: 1.05 }}
+    whileHover={{ 
+      scale: 1.05,
+      background: color.replace('0.15', '0.2')
+    }}
   >
-    <span className="text-[10px] font-black tracking-wider uppercase text-white/60">{label}</span>
+    <span className="text-[10px] font-black tracking-wider uppercase text-white/70">{label}</span>
     <span className="text-sm font-black text-white">{value}</span>
   </motion.div>
 );
