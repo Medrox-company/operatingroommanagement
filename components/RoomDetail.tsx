@@ -394,32 +394,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </motion.button>
       )}
 
-      {/* Main Immersive Dial - Cover Flow Container */}
-      <main className="w-full h-full flex items-center justify-center relative z-20" style={{ perspective: '1500px' }}>
-        <motion.div 
-          className="relative w-[650px] h-[650px] flex items-center justify-center"
-          style={{ 
-            transformStyle: 'preserve-3d',
-            perspective: '2000px'
-          }}
-          animate={{ 
-            rotateX: isPaused ? 5 : 0,
-            rotateZ: room.isEmergency ? [-1, 1, -1] : 0
-          }}
-          transition={{ 
-            rotateX: { duration: 0.5, ease: 'easeOut' },
-            rotateZ: room.isEmergency ? { duration: 0.5, repeat: Infinity, ease: 'easeInOut' } : {}
-          }}
-        >
+      {/* Main Immersive Dial */}
+      <main className="w-full h-full flex items-center justify-center relative z-20">
+        <div className="relative w-[650px] h-[650px] flex items-center justify-center">
           
           {/* Static Rings */}
           <div className="absolute inset-0 border border-white/5 rounded-full" />
           <div className="absolute inset-10 border border-dashed border-white/5 rounded-full" />
 
-          {/* Workflow Icons Outer Ring - Cover Flow Style */}
+          {/* Workflow Icons Outer Ring */}
           <motion.div 
             className="absolute inset-0 z-30 pointer-events-none"
-            style={{ perspective: '1200px' }}
             animate={{ rotate: rotation }}
             transition={{ type: 'spring', stiffness: 100, damping: 20 }}
           >
@@ -430,49 +415,25 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               // In locked state, only allow clicking forward icons
               const isSelectable = !isPaused && (!room.isLocked || (index > currentStepIndex && index !== 0));
               
-              // Cover Flow: angle-based rotation for 3D effect
-              const rotationY = (angle - 180) * 0.3;
-              const scale = isActive ? 1.35 : Math.cos((angle - 180) * Math.PI / 180) * 0.6 + 0.7;
-              const zIndex = isActive ? 100 : Math.round(Math.cos((angle - 180) * Math.PI / 180) * 50);
-              
               return (
                 <div key={index} className="absolute w-full h-full" style={{ transform: `rotate(${angle}deg)` }}>
                   <motion.div 
                     className="absolute top-[-30px] left-1/2 -ml-6 w-12 h-12 flex items-center justify-center"
-                    animate={{ 
-                      rotate: -angle - rotation,
-                      rotateY: rotationY,
-                      scale: scale,
-                      z: zIndex
-                    }}
+                    animate={{ rotate: -angle - rotation }}
                     transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                    style={{ transformStyle: 'preserve-3d' }}
                   >
                     <button 
                       onClick={() => isSelectable && changeStep(index)}
                       disabled={!isSelectable}
                       className={`w-full h-full rounded-2xl border flex items-center justify-center transition-all duration-500 backdrop-blur-md pointer-events-auto
-                        ${isActive 
-                          ? 'bg-gradient-to-br from-white/20 to-white/5 shadow-2xl' 
-                          : (isSelectable 
-                              ? 'bg-white/5 opacity-40 hover:opacity-100 hover:shadow-lg' 
-                              : 'bg-white/5 opacity-5 cursor-not-allowed'
-                          )
-                      }`}
+                        ${isActive ? 'bg-white/10 shadow-lg scale-125' : (isSelectable ? 'bg-white/5 opacity-40 hover:opacity-100' : 'bg-white/5 opacity-5 cursor-not-allowed')}
+                      `}
                       style={{ 
                         borderColor: isActive ? activeColor : 'rgba(255,255,255,0.1)',
-                        boxShadow: isActive 
-                          ? `0 20px 60px ${activeColor}44, 0 0 30px ${activeColor}33, inset 0 1px 0 rgba(255,255,255,0.2)`
-                          : 'none',
-                        transform: 'translateZ(50px)',
+                        boxShadow: isActive ? `0 0 20px ${activeColor}44` : 'none'
                       }}
                     >
-                      <motion.div
-                        animate={{ rotateY: -rotationY }}
-                        style={{ transformStyle: 'preserve-3d' }}
-                      >
-                        <step.Icon className="w-5 h-5" style={{ color: isActive ? activeColor : 'white' }} />
-                      </motion.div>
+                      <step.Icon className="w-5 h-5" style={{ color: isActive ? activeColor : 'white' }} />
                     </button>
                   </motion.div>
                 </div>
@@ -517,147 +478,46 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </>
           )}
 
-          {/* Core Visual Elements - COVER FLOW 3D CIRCLES */}
+          {/* Core Visual Elements - INTERACTIVE BUTTON CENTER */}
           <motion.button 
             onClick={handleNextStep}
             disabled={isInteractionBlocked}
             className={`relative w-[480px] h-[480px] flex items-center justify-center rounded-full group transition-all focus:outline-none 
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
-            style={{ perspective: '1200px' }}
             whileHover={isInteractionBlocked ? {} : { scale: 1.05 }}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
-            {/* 3D Cover Flow Circles Container */}
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center"
+            {/* Primary Background Glow - static */}
+            <div 
+              className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
               style={{ 
-                perspective: '1800px',
-                transformStyle: 'preserve-3d'
+                backgroundColor: activeColor,
+                opacity: (room.isEmergency || room.isLocked) ? 0.45 : 0.25,
               }}
-            >
-              {/* Cover Flow: 3 stacked circles with depth rotation */}
-              
-              {/* Circle Layer 1 - Back (tilted back) */}
-              <motion.div
-                className="absolute rounded-full border-4 flex items-center justify-center pointer-events-none"
-                style={{
-                  width: 420,
-                  height: 420,
-                  borderColor: `${activeColor}25`,
-                  background: `radial-gradient(circle at 35% 35%, ${activeColor}15, ${activeColor}02)`,
-                  boxShadow: `inset 0 0 60px ${activeColor}10, 0 0 40px ${activeColor}08`,
-                  transformStyle: 'preserve-3d',
-                  zIndex: 1
-                }}
-                animate={{ 
-                  rotateX: [35, 35],
-                  rotateY: [-15, -15],
-                  z: [-80, -80],
-                  opacity: [0.6, 0.6]
-                }}
-                transition={{ duration: 0.1 }}
-              >
-                <div
-                  className="absolute rounded-full"
-                  style={{
-                    width: 340,
-                    height: 340,
-                    border: `2px solid ${activeColor}15`,
-                    background: `linear-gradient(135deg, ${activeColor}08 0%, ${activeColor}02 100%)`,
-                  }}
-                />
-              </motion.div>
+            />
 
-              {/* Circle Layer 2 - Middle (slightly tilted) */}
-              <motion.div
-                className="absolute rounded-full border-4 flex items-center justify-center pointer-events-none"
-                style={{
-                  width: 360,
-                  height: 360,
-                  borderColor: `${activeColor}45`,
-                  background: `radial-gradient(circle at 40% 40%, ${activeColor}35, ${activeColor}08)`,
-                  boxShadow: `inset 0 0 50px ${activeColor}25, 0 0 60px ${activeColor}18, 0 0 100px ${activeColor}12`,
-                  transformStyle: 'preserve-3d',
-                  zIndex: 2
-                }}
-                animate={{ 
-                  rotateX: [12, 12],
-                  rotateY: [-5, -5],
-                  z: [-30, -30],
-                  opacity: [0.85, 0.85]
-                }}
-                transition={{ duration: 0.1 }}
-              >
-                <div
-                  className="absolute rounded-full"
-                  style={{
-                    width: 280,
-                    height: 280,
-                    border: `2px solid ${activeColor}30`,
-                    background: `linear-gradient(45deg, ${activeColor}18 0%, ${activeColor}05 100%)`,
-                  }}
-                />
-              </motion.div>
+            {/* Inner Glow Core */}
+            <div 
+              className="absolute inset-10 rounded-full blur-[80px] opacity-20 transition-colors duration-500"
+              style={{ backgroundColor: activeColor }}
+            />
 
-              {/* Circle Layer 3 - Front (center, flat) */}
-              <motion.div
-                className="absolute rounded-full border-4 flex items-center justify-center"
-                style={{
-                  width: 300,
-                  height: 300,
-                  borderColor: `${activeColor}75`,
-                  background: `radial-gradient(circle at 45% 42%, ${activeColor}55, ${activeColor}20)`,
-                  boxShadow: `inset 0 0 40px ${activeColor}45, inset 0 -8px 25px rgba(0,0,0,0.5), 0 0 80px ${activeColor}40, 0 0 120px ${activeColor}25, 0 20px 60px rgba(0,0,0,0.6)`,
-                  transformStyle: 'preserve-3d',
-                  zIndex: 3,
-                  cursor: 'pointer'
-                }}
-                animate={{ 
-                  rotateX: [0, 0],
-                  rotateY: [0, 0],
-                  z: [0, 0],
-                  opacity: [1, 1]
-                }}
-                transition={{ duration: 0.1 }}
-              >
-                {/* Specular highlight on center circle */}
-                <div
-                  className="absolute rounded-full"
-                  style={{
-                    width: 220,
-                    height: 220,
-                    border: `2px solid ${activeColor}50`,
-                    background: `linear-gradient(135deg, ${activeColor}35 0%, ${activeColor}12 50%, rgba(0,0,0,0.1) 100%)`,
-                    boxShadow: `inset -4px -4px 15px rgba(0,0,0,0.3)`
-                  }}
-                />
-                
-                {/* Light reflection on top edge */}
-                <div
-                  className="absolute top-6 left-1/2 -translate-x-1/2 rounded-full"
-                  style={{
-                    width: 100,
-                    height: 30,
-                    background: `radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 80%)`,
-                    filter: 'blur(8px)',
-                    zIndex: 10
-                  }}
-                />
-              </motion.div>
+            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.1]">
+               <circle cx="240" cy="240" r="210" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
+               <motion.circle 
+                  key={currentStepIndex}
+                  cx="240" cy="240" r="210" fill="none"
+                  stroke={activeColor} strokeWidth="8" strokeLinecap="round"
+                  strokeDasharray="1320"
+                  initial={{ strokeDashoffset: 1320 }}
+                  animate={{ strokeDashoffset: 0 }}
+                  transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
+                  className="opacity-80"
+               />
+            </svg>
 
-              {/* Ambient Background Glow - static behind all circles */}
-              <div 
-                className="absolute inset-0 rounded-full blur-[120px] transition-colors duration-700 pointer-events-none"
-                style={{ 
-                  backgroundColor: activeColor,
-                  opacity: (room.isEmergency || room.isLocked) ? 0.35 : 0.2,
-                  zIndex: 0
-                }}
-              />
-            </motion.div>
-
-            {/* Content Center - Text Layer */}
             <div className="text-center relative z-20 pointer-events-none">
               <AnimatePresence mode="wait">
                 {room.isLocked && isFinalStep ? (
@@ -757,7 +617,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </AnimatePresence>
             </div>
           </motion.button>
-        </motion.div>
+        </div>
       </main>
 
       {/* Left Info Panel */}
