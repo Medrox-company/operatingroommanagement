@@ -10,7 +10,7 @@ import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom } from './types';
-import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 
@@ -100,11 +100,8 @@ const App: React.FC = () => {
           <AnimatePresence mode="wait">
             {currentView === 'dashboard' && (
               selectedRoom ? (
-                <motion.div
+                  <div
                   key="detail"
-                  initial={{ opacity: 0, scale: 1.05 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.05 }}
                   className="absolute inset-0 z-50"
                 >
                   <RoomDetail
@@ -113,13 +110,10 @@ const App: React.FC = () => {
                     onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
                     onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   />
-                </motion.div>
+                  </div>
               ) : (
-                <motion.div
+                <div
                   key="grid-container"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
                   className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10"
                 >
                   <div className="max-w-[2400px] mx-auto w-full">
@@ -155,11 +149,9 @@ const App: React.FC = () => {
 
                     {/* Grid following the header */}
                     <div className="pb-20 px-2">
-                      <LayoutGroup>
-                        <motion.div
-                          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
-                          layout
-                        >
+                      <div
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
+                      >
                           {rooms.map((room) => (
                             <RoomCard
                               key={room.id}
@@ -169,12 +161,11 @@ const App: React.FC = () => {
                               onLock={() => toggleLock(room.id)}
                             />
                           ))}
-                        </motion.div>
-                      </LayoutGroup>
+                        </div>
+                      </div>
                     </div>
-
                   </div>
-                </motion.div>
+                </div>
               )
             )}
 
