@@ -1,6 +1,5 @@
 import React from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
-import { motion } from 'framer-motion';
 import { Command, Zap } from 'lucide-react';
 
 interface SidebarProps {
