@@ -222,9 +222,10 @@ export const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                             border: '1px solid'
                           }}
                         >
-                          {WORKFLOW_STEPS[stepIndex]?.Icon && (
-                            <WORKFLOW_STEPS[stepIndex].Icon className="w-2.5 h-2.5" style={{ color: themeColor }} />
-                          )}
+                          {(() => {
+                            const IconComponent = WORKFLOW_STEPS[stepIndex]?.Icon;
+                            return IconComponent ? <IconComponent className="w-2.5 h-2.5" style={{ color: themeColor }} /> : null;
+                          })()}
                         </div>
                         <span style={{ color: themeColor }}>
                           {WORKFLOW_STEPS[stepIndex]?.title || 'Ukončeno'}
