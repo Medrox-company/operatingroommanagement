@@ -1,296 +1,339 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Plus, Minus } from 'lucide-react';
 import { DEFAULT_DEPARTMENTS } from '../constants';
+
+interface GridCell {
+  deptId: string;
+}
+
+interface GridConfig {
+  cols: number;
+  rows: number;
+  cells: Map<string, GridCell>;
+}
+
+interface PavilionSchedule {
+  [pavilion: string]: GridConfig[];
+}
 
 const ScheduleManager: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date(2023, 4, 1));
-  const [schedule, setSchedule] = useState<Map<string, string>>(new Map([
-    ['1', 'tra'],
-    ['2', 'chir'],
-    ['3', ''],
-    ['5', 'uro'],
-    ['7', 'neurochir'],
-    ['8', 'chir'],
-    ['14', 'chir'],
-    ['21', 'orl'],
-    ['22', 'gyn'],
-    ['26', 'tra'],
-  ]));
-  const [selectedCell, setSelectedCell] = useState<{ date: number } | null>(null);
-  const [showModal, setShowModal] = useState(false);
-
+  const [activeDay, setActiveDay] = useState<{ pavilion: string; dayIndex: number } | null>(null);
+  const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
+  
+  const PAVILIONS = Array.from({ length: 10 }, (_, i) => `pavilion-${i + 1}`);
   const DAYS_OF_WEEK = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
-
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
-
   const monthName = currentDate.toLocaleString('cs-CZ', { month: 'long', year: 'numeric' });
-  const daysInMonth = getDaysInMonth(currentDate);
-  const firstDay = getFirstDayOfMonth(currentDate);
-  const adjustedFirstDay = (firstDay + 6) % 7;
 
-  const calendarDays: (number | null)[] = [];
-  for (let i = 0; i < adjustedFirstDay; i++) {
-    calendarDays.push(null);
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    calendarDays.push(i);
-  }
-
-  const handleCellClick = (date: number) => {
-    setSelectedCell({ date });
-    setShowModal(true);
+  // Initialize schedules for all 10 pavilions
+  const initializeSchedules = () => {
+    const result: PavilionSchedule = {};
+    PAVILIONS.forEach(pavilion => {
+      result[pavilion] = Array.from({ length: 7 }, () => ({
+        cols: 1,
+        rows: 1,
+        cells: new Map([['1-1', { deptId: '' }]]),
+      }));
+    });
+    return result;
   };
 
-  const handleSelectDepartment = (deptId: string) => {
-    if (selectedCell) {
-      const key = String(selectedCell.date);
-      setSchedule(new Map(schedule).set(key, deptId));
-      setShowModal(false);
-    }
+  const [schedules, setSchedules] = useState<PavilionSchedule>(initializeSchedules());
+
+  const getDepartmentById = (id: string) => DEFAULT_DEPARTMENTS.find(d => d.id === id);
+
+  const handleUpdateGridSize = (pavilion: string, dayIndex: number, cols: number, rows: number) => {
+    setSchedules(prev => {
+      const newSchedules = { ...prev };
+      const config = newSchedules[pavilion][dayIndex];
+      const newCells = new Map<string, GridCell>();
+
+      for (let c = 1; c <= cols; c++) {
+        for (let r = 1; r <= rows; r++) {
+          const key = `${c}-${r}`;
+          newCells.set(key, config.cells.get(key) || { deptId: '' });
+        }
+      }
+
+      const scheduleArray = [...newSchedules[pavilion]];
+      scheduleArray[dayIndex] = { cols, rows, cells: newCells };
+      newSchedules[pavilion] = scheduleArray;
+      return newSchedules;
+    });
   };
 
-  const handlePreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  };
+  const handleSetDepartment = (pavilion: string, dayIndex: number, cellKey: string, deptId: string) => {
+    setSchedules(prev => {
+      const newSchedules = { ...prev };
+      const config = newSchedules[pavilion][dayIndex];
+      const newCells = new Map(config.cells);
+      newCells.set(cellKey, { deptId });
 
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+      const scheduleArray = [...newSchedules[pavilion]];
+      scheduleArray[dayIndex] = { ...config, cells: newCells };
+      newSchedules[pavilion] = scheduleArray;
+      return newSchedules;
+    });
   };
-
-  const getDepartmentById = (deptId: string) => {
-    return DEFAULT_DEPARTMENTS.find(d => d.id === deptId);
-  };
-
-  const selectedDept = selectedCell ? getDepartmentById(schedule.get(String(selectedCell.date)) || '') : null;
-  const themeColor = selectedDept?.accentColor || '#9333EA';
 
   return (
-    <div className="w-full h-screen flex flex-col overflow-hidden">
-      {/* Main Header */}
-      <div className="pb-4 flex-shrink-0 px-4">
-        <p className="text-xs font-bold text-purple-400/60 uppercase tracking-[0.2em] mb-1">PLÁNOVÁNÍ</p>
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-white/5 flex-shrink-0">
+        <p className="text-xs font-bold text-purple-400/60 uppercase tracking-[0.2em] mb-3">PLÁNOVÁNÍ</p>
         <div className="flex items-center justify-between">
-          <h1 className="text-4xl font-black text-white">
-            ROZPIS <span className="text-slate-700">SÁLŮ</span>
-          </h1>
-          <div className="flex items-center gap-2">
-            <button onClick={handlePreviousMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+          <h1 className="text-3xl font-black text-white">ROZPIS SÁLŮ - VŠECHNY PAVILONY</h1>
+          
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              title="Předchozí měsíc"
+            >
               <ChevronLeft className="w-5 h-5 text-white/60" />
             </button>
-            <p className="text-2xl font-black text-white w-64 text-center">{monthName}</p>
-            <button onClick={handleNextMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+            <p className="text-lg font-black text-white min-w-48 text-center">{monthName}</p>
+            <button
+              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              title="Příští měsíc"
+            >
               <ChevronRight className="w-5 h-5 text-white/60" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="flex-grow overflow-hidden flex flex-col px-4">
-        {/* Days of Week Header */}
-        <div className="grid grid-cols-7 gap-2 pb-2 flex-shrink-0">
-          {DAYS_OF_WEEK.map(day => (
-            <div key={day} className="text-center">
-              <p className="text-xs font-bold text-white/50 uppercase">{day}</p>
+      {/* Main Content - Scrollable */}
+      <div className="flex-grow overflow-auto px-6 py-4">
+        {/* Days Header - Sticky */}
+        <div className="sticky top-0 grid gap-2 mb-4 z-10" style={{ gridTemplateColumns: 'minmax(120px, 1fr) repeat(7, 1fr)' }}>
+          <div className="h-12" />
+          {DAYS_OF_WEEK.map((day) => (
+            <div key={day} className="text-center h-12 flex items-center justify-center">
+              <p className="text-xs font-bold text-purple-300 uppercase">{day}</p>
             </div>
           ))}
         </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-2 flex-grow overflow-hidden">
-          {calendarDays.map((day, idx) => {
-            const deptId = day ? schedule.get(String(day)) : null;
-            const dept = deptId ? getDepartmentById(deptId) : null;
+        {/* Pavilions Grid */}
+        <div className="space-y-4">
+          {PAVILIONS.map((pavilion, pavilionIdx) => {
+            const pavilionSchedule = schedules[pavilion];
 
             return (
-              <div
-                key={idx}
-                className="rounded-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-all group min-h-0"
-                onClick={() => day && handleCellClick(day)}
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                {day ? (
-                  <>
-                    {/* Top section - day number */}
-                    <div className="flex-1 p-2 flex flex-col border-b overflow-hidden" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                      <p className="text-xs font-bold text-white/60 mb-1">{day}</p>
-                    </div>
+              <div key={pavilion} className="grid gap-2" style={{ gridTemplateColumns: 'minmax(120px, 1fr) repeat(7, 1fr)' }}>
+                {/* Pavilion Name */}
+                <div className="flex items-center justify-center bg-white/5 rounded-lg border border-white/10 px-3 py-2 min-h-24">
+                  <span className="text-sm font-black text-white text-center">Pavilon {pavilionIdx + 1}</span>
+                </div>
 
-                    {/* Bottom section - department box */}
-                    <div className="flex-1 p-1.5 flex items-center justify-center min-h-0">
-                      {dept ? (
-                        <div
-                          className="w-full h-full rounded-md font-black text-sm flex items-center justify-center transition-all"
-                          style={{
-                            background: dept.accentColor + '20',
-                            border: `1px solid ${dept.accentColor}40`,
-                            color: '#FFFFFF',
-                            boxShadow: `0 0 16px ${dept.accentColor}20, 0 2px 8px ${dept.accentColor}10`,
-                          }}
-                        >
-                          {dept.name.split(' ')[0].substring(0, 3).toUpperCase()}
-                        </div>
-                      ) : null}
-                    </div>
-                  </>
-                ) : null}
+                {/* Days for this Pavilion */}
+                {pavilionSchedule.map((config, dayIndex) => {
+                  const isActive = activeDay?.pavilion === pavilion && activeDay?.dayIndex === dayIndex;
+
+                  return (
+                    <motion.div
+                      key={`${pavilion}-day-${dayIndex}`}
+                      onClick={() => {
+                        setActiveDay(isActive ? null : { pavilion, dayIndex });
+                        setSelectedCellKey(null);
+                      }}
+                      className="rounded-lg border cursor-pointer overflow-hidden flex flex-col transition-all min-h-24"
+                      style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        borderColor: isActive ? 'rgba(139, 92, 246, 0.5)' : 'rgba(255,255,255,0.08)',
+                        boxShadow: isActive ? '0 0 20px rgba(139, 92, 246, 0.2)' : 'none',
+                      }}
+                      whileHover={{
+                        background: 'rgba(255,255,255,0.04)',
+                        borderColor: 'rgba(139, 92, 246, 0.3)',
+                      }}
+                    >
+                      {/* Grid Info Bar */}
+                      <div className="px-2 py-1 border-b border-white/5 bg-black/20 flex items-center justify-between flex-shrink-0">
+                        <span className="text-[10px] font-bold text-white/50">D{dayIndex + 1}</span>
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/20 text-purple-300">
+                          {config.cols}×{config.rows}
+                        </span>
+                      </div>
+
+                      {/* Grid Display */}
+                      <div className="flex-grow p-1 overflow-hidden" style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
+                        gridTemplateRows: `repeat(${config.rows}, 1fr)`,
+                        gap: '1px',
+                      }}>
+                        {Array.from({ length: config.cols * config.rows }).map((_, i) => {
+                          const col = (i % config.cols) + 1;
+                          const row = Math.floor(i / config.cols) + 1;
+                          const cellKey = `${col}-${row}`;
+                          const cell = config.cells.get(cellKey);
+                          const dept = cell?.deptId ? getDepartmentById(cell.deptId) : null;
+                          const isCellActive = selectedCellKey === cellKey && isActive;
+
+                          return (
+                            <motion.button
+                              key={cellKey}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isActive) {
+                                  setSelectedCellKey(isCellActive ? null : cellKey);
+                                }
+                              }}
+                              className="flex-1 rounded-sm border text-[8px] font-bold flex items-center justify-center transition-all"
+                              style={{
+                                background: dept ? `${dept.accentColor}25` : isCellActive ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.02)',
+                                borderColor: dept ? `${dept.accentColor}50` : isCellActive ? 'rgba(139, 92, 246, 0.4)' : 'rgba(255,255,255,0.08)',
+                                color: dept ? '#FFF' : 'rgba(255,255,255,0.2)',
+                                fontSize: '7px',
+                              }}
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              {dept ? dept.name.substring(0, 2).toUpperCase() : '+'}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Modal - TimelineModule Style */}
+      {/* Side Panel */}
       <AnimatePresence>
-        {showModal && selectedCell && (
+        {activeDay && (
           <motion.div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            className="fixed right-0 top-0 bottom-0 w-96 bg-black/60 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden z-50"
+            initial={{ x: 400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 400, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20 }}
           >
-            {/* Glassmorph backdrop */}
-            <motion.div
-              className="absolute inset-0 bg-black/60 backdrop-blur-2xl"
-              onClick={() => setShowModal(false)}
-              initial={{ backdropFilter: 'blur(0px)' }}
-              animate={{ backdropFilter: 'blur(32px)' }}
-              exit={{ backdropFilter: 'blur(0px)' }}
-            />
-
-            {/* Popup with glassmorph */}
-            <motion.div
-              className="relative w-full max-w-[500px] rounded-3xl border shadow-2xl overflow-hidden"
-              style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                backdropFilter: 'blur(40px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 0 80px ${themeColor}15`,
-              }}
-              initial={{ scale: 0.9, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 20, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            >
-              {/* Animated top glow */}
-              <motion.div
-                className="absolute top-0 left-0 right-0 h-[2px]"
-                style={{
-                  background: `linear-gradient(90deg, transparent 0%, ${themeColor} 50%, transparent 100%)`,
-                  filter: `drop-shadow(0 0 8px ${themeColor})`,
-                }}
-                animate={{ opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              />
-
-              {/* Ambient glow orbs */}
-              <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: themeColor }} />
-              <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none" style={{ background: themeColor }} />
-
-              {/* Header */}
-              <motion.div
-                className="flex items-center justify-between px-7 py-5 border-b relative"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.2)' }}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.4 }}
+            {/* Panel Header */}
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between flex-shrink-0 bg-black/40">
+              <h3 className="text-lg font-black text-white">
+                {activeDay.pavilion.replace('-', ' ').toUpperCase()} - Den {activeDay.dayIndex + 1}
+              </h3>
+              <button
+                onClick={() => setActiveDay(null)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
-                <motion.h2
-                  className="text-2xl font-black text-white"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
-                >
-                  Vyberte sál
-                </motion.h2>
+                <X className="w-5 h-5 text-white/60" />
+              </button>
+            </div>
 
-                <motion.button
-                  onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, rotate: -90 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  transition={{ delay: 0.4, duration: 0.3 }}
-                >
-                  <X className="w-5 h-5 text-white/50" />
-                </motion.button>
-              </motion.div>
+            {/* Panel Content */}
+            <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
+              {/* Grid Structure */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-white/60 uppercase tracking-wide">Struktura mřížky</p>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-white/80 font-medium">Sloupce:</span>
+                    <div className="flex items-center gap-3 bg-white/10 rounded-lg px-3 py-2 border border-white/20">
+                      <button
+                        onClick={() => handleUpdateGridSize(activeDay.pavilion, activeDay.dayIndex, Math.max(1, schedules[activeDay.pavilion][activeDay.dayIndex].cols - 1), schedules[activeDay.pavilion][activeDay.dayIndex].rows)}
+                        className="p-1 hover:bg-white/20 rounded transition-colors"
+                      >
+                        <Minus className="w-4 h-4 text-white/70" />
+                      </button>
+                      <span className="text-sm font-bold text-white w-8 text-center">{schedules[activeDay.pavilion][activeDay.dayIndex].cols}</span>
+                      <button
+                        onClick={() => handleUpdateGridSize(activeDay.pavilion, activeDay.dayIndex, Math.min(4, schedules[activeDay.pavilion][activeDay.dayIndex].cols + 1), schedules[activeDay.pavilion][activeDay.dayIndex].rows)}
+                        className="p-1 hover:bg-white/20 rounded transition-colors"
+                      >
+                        <Plus className="w-4 h-4 text-white/70" />
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Content - Department list */}
-              <motion.div
-                className="px-7 py-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-              >
-                <div className="grid grid-cols-2 gap-3">
-                  {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map((dept, idx) => (
-                    <motion.button
-                      key={dept.id}
-                      onClick={() => handleSelectDepartment(dept.id)}
-                      className="p-4 rounded-xl text-center font-bold text-sm transition-all border relative overflow-hidden group"
-                      style={{
-                        backgroundColor: `${dept.accentColor}20`,
-                        borderColor: `${dept.accentColor}40`,
-                        color: '#FFFFFF',
-                      }}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + idx * 0.05, duration: 0.3 }}
-                      whileHover={{
-                        scale: 1.05,
-                        borderColor: dept.accentColor,
-                        backgroundColor: `${dept.accentColor}30`,
-                        boxShadow: `0 0 20px ${dept.accentColor}40, inset 0 0 15px ${dept.accentColor}15`,
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {dept.name}
-                    </motion.button>
-                  ))}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-white/80 font-medium">Řádky:</span>
+                    <div className="flex items-center gap-3 bg-white/10 rounded-lg px-3 py-2 border border-white/20">
+                      <button
+                        onClick={() => handleUpdateGridSize(activeDay.pavilion, activeDay.dayIndex, schedules[activeDay.pavilion][activeDay.dayIndex].cols, Math.max(1, schedules[activeDay.pavilion][activeDay.dayIndex].rows - 1))}
+                        className="p-1 hover:bg-white/20 rounded transition-colors"
+                      >
+                        <Minus className="w-4 h-4 text-white/70" />
+                      </button>
+                      <span className="text-sm font-bold text-white w-8 text-center">{schedules[activeDay.pavilion][activeDay.dayIndex].rows}</span>
+                      <button
+                        onClick={() => handleUpdateGridSize(activeDay.pavilion, activeDay.dayIndex, schedules[activeDay.pavilion][activeDay.dayIndex].cols, Math.min(4, schedules[activeDay.pavilion][activeDay.dayIndex].rows + 1))}
+                        className="p-1 hover:bg-white/20 rounded transition-colors"
+                      >
+                        <Plus className="w-4 h-4 text-white/70" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                {/* Clear button */}
-                {schedule.get(String(selectedCell.date)) && (
-                  <motion.button
-                    onClick={() => {
-                      const key = String(selectedCell.date);
-                      setSchedule(new Map(schedule).set(key, ''));
-                      setShowModal(false);
-                    }}
-                    className="w-full mt-4 p-3 rounded-lg border transition-all"
-                    style={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                      borderColor: 'rgba(239, 68, 68, 0.3)',
-                      color: '#FCA5A5',
-                    }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6, duration: 0.3 }}
-                    whileHover={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                      borderColor: 'rgba(239, 68, 68, 0.5)',
-                    }}
-                  >
-                    Vymazat sál
-                  </motion.button>
-                )}
-              </motion.div>
-            </motion.div>
+              {/* Presets */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-white/60 uppercase tracking-wide">Předvolby</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { cols: 1, rows: 1, label: '1×1' },
+                    { cols: 2, rows: 1, label: '2×1' },
+                    { cols: 1, rows: 2, label: '1×2' },
+                    { cols: 2, rows: 2, label: '2×2' },
+                  ].map(preset => {
+                    const config = schedules[activeDay.pavilion][activeDay.dayIndex];
+                    const isActive = config.cols === preset.cols && config.rows === preset.rows;
+                    return (
+                      <button
+                        key={`${preset.cols}-${preset.rows}`}
+                        onClick={() => handleUpdateGridSize(activeDay.pavilion, activeDay.dayIndex, preset.cols, preset.rows)}
+                        className="px-4 py-3 rounded-lg font-bold border transition-all text-sm"
+                        style={{
+                          background: isActive ? 'rgba(139, 92, 246, 0.3)' : 'rgba(255,255,255,0.05)',
+                          borderColor: isActive ? 'rgba(139, 92, 246, 0.6)' : 'rgba(255,255,255,0.1)',
+                          color: '#FFF',
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Department Assignment */}
+              {selectedCellKey && (
+                <div className="space-y-3 border-t border-white/10 pt-6">
+                  <p className="text-xs font-bold text-white/60 uppercase tracking-wide">Oddělení - Buňka {selectedCellKey}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DEFAULT_DEPARTMENTS.filter(d => d.isActive).map(dept => {
+                      const config = schedules[activeDay.pavilion][activeDay.dayIndex];
+                      const isSelected = config.cells.get(selectedCellKey)?.deptId === dept.id;
+                      return (
+                        <button
+                          key={dept.id}
+                          onClick={() => handleSetDepartment(activeDay.pavilion, activeDay.dayIndex, selectedCellKey, isSelected ? '' : dept.id)}
+                          className="px-3 py-2 rounded-lg font-bold border transition-all text-xs"
+                          style={{
+                            background: isSelected ? `${dept.accentColor}30` : `${dept.accentColor}12`,
+                            borderColor: isSelected ? `${dept.accentColor}60` : `${dept.accentColor}30`,
+                            color: '#FFF',
+                          }}
+                        >
+                          {dept.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
