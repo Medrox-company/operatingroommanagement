@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
 import { 
-  Plus, Minus, Menu, QrCode, User, Video, Cast, 
+  Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
   Phone, UserCheck
@@ -275,21 +275,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
 
-        {/* Right Side - Close & Patient Actions */}
-        <div className="flex flex-col items-end gap-3">
-          {/* Close Button */}
-          <button 
-            onClick={onClose}
-            className="w-full p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center gap-3 h-24"
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest mr-2">Zavřít</span>
-            <Menu className="w-8 h-8" />
-          </button>
+        {/* Right Top - Close Button */}
+        <button 
+          onClick={onClose}
+          className="p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24"
+        >
+          <X className="w-8 h-8" />
+        </button>
 
+        {/* Center - Patient Actions (Vertical Stack) */}
+        <div className="flex flex-col items-center gap-3">
           {/* Patient Call Button */}
           <motion.button
             onClick={() => setPatientCalled(!patientCalled)}
-            className={`w-full p-8 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 h-24 ${
+            className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 ${
               patientCalled
                 ? 'bg-green-500/20 border-green-500/40 opacity-100'
                 : ''
@@ -302,13 +301,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             transition={{ duration: 2, repeat: Infinity }}
           >
             <Phone className={`w-8 h-8 ${patientCalled ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
-            <span className="text-[12px] font-bold uppercase tracking-widest">Volat</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
           </motion.button>
 
           {/* Patient Arrival Button */}
           <motion.button
             onClick={() => setPatientArrived(!patientArrived)}
-            className={`w-full p-8 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 h-24 ${
+            className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 ${
               patientArrived
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100'
                 : ''
@@ -321,34 +320,34 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             transition={{ duration: 2, repeat: Infinity }}
           >
             <UserCheck className={`w-8 h-8 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-            <span className="text-[12px] font-bold uppercase tracking-widest">Příjezd</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
           </motion.button>
-
-          {/* Pause Button */}
-          {!(room.isLocked && isFinalStep) && (
-            <motion.button
-              onClick={() => setIsPaused(!isPaused)}
-              className={`w-full p-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center gap-2 border h-24 ${
-                isPaused
-                  ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100'
-                  : 'bg-white/5 border-white/10'
-              }`}
-              animate={{
-                boxShadow: isPaused
-                  ? ['0 0 10px rgba(34, 211, 238, 0.3)', '0 0 20px rgba(34, 211, 238, 0.5)', '0 0 10px rgba(34, 211, 238, 0.3)']
-                  : 'none'
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              {isPaused ? (
-                <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
-              ) : (
-                <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
-              )}
-              <span className="text-[12px] font-bold uppercase tracking-widest">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
-            </motion.button>
-          )}
         </div>
+
+        {/* Right Bottom - Pause Button */}
+        {!(room.isLocked && isFinalStep) && (
+          <motion.button
+            onClick={() => setIsPaused(!isPaused)}
+            className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 ${
+              isPaused
+                ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100'
+                : 'bg-white/5 border-white/10'
+            }`}
+            animate={{
+              boxShadow: isPaused
+                ? ['0 0 10px rgba(34, 211, 238, 0.3)', '0 0 20px rgba(34, 211, 238, 0.5)', '0 0 10px rgba(34, 211, 238, 0.3)']
+                : 'none'
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            {isPaused ? (
+              <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
+            ) : (
+              <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
+            )}
+            <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+          </motion.button>
+        )}
       </header>
 
       {/* Main Immersive Dial */}
