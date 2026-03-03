@@ -503,119 +503,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               style={{ backgroundColor: activeColor }}
             />
 
-            {/* Cover Flow 3D Circles */}
-            <div 
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              style={{ 
-                perspective: '1200px',
-                transformStyle: 'preserve-3d'
-              }}
-            >
-              {/* Circle 1 - Back layer (tilted back) */}
-              <motion.div
-                className="absolute rounded-full border"
-                style={{
-                  width: 420,
-                  height: 420,
-                  borderColor: `${activeColor}25`,
-                  background: `radial-gradient(circle at 35% 35%, ${activeColor}12, rgba(0,0,0,0.5))`,
-                  boxShadow: `inset 0 0 50px ${activeColor}15, 0 0 40px ${activeColor}10`,
-                  borderWidth: 3,
-                  transformStyle: 'preserve-3d',
-                }}
-                initial={{ rotateX: 45, opacity: 0.5 }}
-                animate={{ rotateX: 45, opacity: 0.5 }}
-                transition={{ duration: 0.1 }}
-              >
-                <div
-                  className="absolute inset-0 rounded-full border"
-                  style={{
-                    borderColor: `${activeColor}15`,
-                    borderWidth: 1,
-                  }}
-                />
-              </motion.div>
-
-              {/* Circle 2 - Middle layer (slightly tilted) */}
-              <motion.div
-                className="absolute rounded-full border"
-                style={{
-                  width: 360,
-                  height: 360,
-                  borderColor: `${activeColor}45`,
-                  background: `radial-gradient(circle at 40% 40%, ${activeColor}25, rgba(0,0,0,0.6))`,
-                  boxShadow: `inset 0 0 45px ${activeColor}30, 0 0 60px ${activeColor}20, 0 0 100px ${activeColor}12`,
-                  borderWidth: 3,
-                  transformStyle: 'preserve-3d',
-                }}
-                initial={{ rotateX: 15, opacity: 0.8 }}
-                animate={{ rotateX: 15, opacity: 0.8 }}
-                transition={{ duration: 0.1 }}
-              >
-                <div
-                  className="absolute inset-0 rounded-full border"
-                  style={{
-                    borderColor: `${activeColor}25`,
-                    borderWidth: 1,
-                  }}
-                />
-              </motion.div>
-
-              {/* Circle 3 - Front layer (center, flat) - Progress circle */}
-              <motion.div
-                className="absolute rounded-full border flex items-center justify-center"
-                style={{
-                  width: 300,
-                  height: 300,
-                  borderColor: `${activeColor}75`,
-                  background: `radial-gradient(circle at 45% 42%, ${activeColor}50, ${activeColor}15)`,
-                  boxShadow: `inset 0 0 40px ${activeColor}50, inset 0 -8px 25px rgba(0,0,0,0.5), 0 0 80px ${activeColor}40, 0 0 120px ${activeColor}25, 0 20px 60px rgba(0,0,0,0.6)`,
-                  borderWidth: 4,
-                  transformStyle: 'preserve-3d',
-                }}
-                initial={{ rotateX: 0, scale: 0.9 }}
-                animate={{ rotateX: 0, scale: 1 }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-              >
-                {/* Inner circle for progress ring */}
-                <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]" style={{ zIndex: 5 }}>
-                  <circle cx="150" cy="150" r="135" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-                  <motion.circle 
-                    key={currentStepIndex}
-                    cx="150" cy="150" r="135" fill="none"
-                    stroke={activeColor} strokeWidth="6" strokeLinecap="round"
-                    strokeDasharray="849"
-                    initial={{ strokeDashoffset: 849 }}
-                    animate={{ strokeDashoffset: 0 }}
-                    transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ filter: `drop-shadow(0 0 12px ${activeColor}88)` }}
-                    className="opacity-80"
-                  />
-                </svg>
-
-                {/* Specular highlight */}
-                <div
-                  className="absolute top-6 left-1/2 -translate-x-1/2 rounded-full"
-                  style={{
-                    width: 90,
-                    height: 25,
-                    background: `radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.18) 0%, transparent 80%)`,
-                    filter: 'blur(8px)',
-                    zIndex: 10,
-                    pointerEvents: 'none'
-                  }}
-                />
-
-                {/* Inner decorative circles */}
-                <div
-                  className="absolute inset-8 rounded-full border pointer-events-none"
-                  style={{
-                    borderColor: `${activeColor}40`,
-                    borderWidth: 1.5,
-                  }}
-                />
-              </motion.div>
-            </div>
+            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.1]">
+               <circle cx="240" cy="240" r="210" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
+               <motion.circle 
+                  key={currentStepIndex}
+                  cx="240" cy="240" r="210" fill="none"
+                  stroke={activeColor} strokeWidth="8" strokeLinecap="round"
+                  strokeDasharray="1320"
+                  initial={{ strokeDashoffset: 1320 }}
+                  animate={{ strokeDashoffset: 0 }}
+                  transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
+                  className="opacity-80"
+               />
+            </svg>
 
             <div className="text-center relative z-20 pointer-events-none">
               <AnimatePresence mode="wait">
