@@ -638,7 +638,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
           
           <div>
-            <p className="text-[11px] font-black text-white/30 uppercase tracking-widest mb-2">
+            <p className="text-[11px] font-black uppercase tracking-widest mb-2" style={{ color: '#c0bdb7' }}>
               {isPaused ? 'DOBA TRVÁNÍ PAUZY' : 'DOBA TRVÁNÍ FÁZE'}
             </p>
             <div className="flex items-center gap-5">
@@ -663,8 +663,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
         <div className="flex items-center gap-7">
           <div className="flex flex-col">
-            <span className="text-[11px] font-black text-white/50 uppercase tracking-widest mb-1">Odpovědná osoba</span>
-            <span className="text-2xl font-bold text-white/90">{currentStep.organizer}</span>
+            <span className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: '#c0bdb7' }}>Odpovědná osoba</span>
+            <span className="text-2xl font-bold" style={{ color: '#c0bdb7' }}>{currentStep.organizer}</span>
           </div>
           <div className="flex items-center -space-x-4">
              <div className="w-14 h-14 rounded-full border-4 border-black bg-indigo-600 overflow-hidden shadow-2xl">
@@ -678,8 +678,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
             patientCalledTime 
               ? 'bg-green-500/15 border-green-500/50 text-green-300' 
-              : 'bg-white/8 border-white/20 text-white/55'
-          }`}>
+              : 'bg-white/5 text-[#c0bdb7]'
+          }`} style={!patientCalledTime ? { borderColor: '#c0bdb7' } : {}}>
             <span className="flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5" />
               {patientCalledTime ? `Vyvolán ${patientCallElapsedTime}` : 'Nevyvolán'}
@@ -688,8 +688,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
             patientArrivedTime 
               ? 'bg-blue-500/15 border-blue-500/50 text-blue-300' 
-              : 'bg-white/8 border-white/20 text-white/55'
-          }`}>
+              : 'bg-white/5 text-[#c0bdb7]'
+          }`} style={!patientArrivedTime ? { borderColor: '#c0bdb7' } : {}}>
             <span className="flex items-center gap-1.5">
               <UserCheck className="w-3.5 h-3.5" />
               {patientArrivedTime ? 'Přijel' : 'Nepřijel'}
