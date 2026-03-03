@@ -592,6 +592,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </h2>
                   </motion.div>
+                ) : showPatientCalledText ? (
+                  <motion.div
+                    key="patient-called-text"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex flex-col items-center gap-4"
+                  >
+                    <Phone className="w-16 h-16 text-green-300" strokeWidth={1.5} />
+                    <h2 className="text-5xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl text-green-300">
+                      Volání pacienta
+                    </h2>
+                  </motion.div>
                 ) : showPatientArrivedText ? (
                   <motion.div
                     key="patient-arrived-text"
