@@ -34,6 +34,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const endTimeTimeoutRef = useRef<number | null>(null);
   const [patientCalled, setPatientCalled] = useState(false);
   const [patientArrived, setPatientArrived] = useState(false);
+  const [showPatientCalledText, setShowPatientCalledText] = useState(false);
+  const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
 
   const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
 
@@ -289,7 +291,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
         {/* Patient Call Button */}
         <motion.button
-          onClick={() => setPatientCalled(!patientCalled)}
+          onClick={() => {
+            setPatientCalled(!patientCalled);
+            setShowPatientCalledText(true);
+            setTimeout(() => setShowPatientCalledText(false), 3000);
+          }}
           className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 ${
             patientCalled
               ? 'bg-green-500/20 border-green-500/40 opacity-100'
@@ -308,7 +314,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
         {/* Patient Arrival Button */}
         <motion.button
-          onClick={() => setPatientArrived(!patientArrived)}
+          onClick={() => {
+            setPatientArrived(!patientArrived);
+            setShowPatientArrivedText(true);
+            setTimeout(() => setShowPatientArrivedText(false), 3000);
+          }}
           className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 ${
             patientArrived
               ? 'bg-blue-500/20 border-blue-500/40 opacity-100'
@@ -522,6 +532,34 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     <h2 className="text-8xl font-black tracking-tighter text-white font-mono">
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </h2>
+                  </motion.div>
+                ) : showPatientCalledText ? (
+                  <motion.div
+                    key="patient-called-text"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                  >
+                    <h2 className="text-7xl font-black tracking-tighter text-green-300 uppercase">
+                      Volání
+                    </h2>
+                    <p className="text-3xl font-bold tracking-tight text-green-300/80 uppercase mt-2">
+                      pacienta
+                    </p>
+                  </motion.div>
+                ) : showPatientArrivedText ? (
+                  <motion.div
+                    key="patient-arrived-text"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                  >
+                    <h2 className="text-7xl font-black tracking-tighter text-blue-300 uppercase">
+                      Příjezd
+                    </h2>
+                    <p className="text-3xl font-bold tracking-tight text-blue-300/80 uppercase mt-2">
+                      pacienta
+                    </p>
                   </motion.div>
                 ) : isPaused ? (
                   <motion.div
