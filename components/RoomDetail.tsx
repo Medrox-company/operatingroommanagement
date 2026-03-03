@@ -32,10 +32,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
   const [showEndTime, setShowEndTime] = useState(false);
   const endTimeTimeoutRef = useRef<number | null>(null);
-  const [patientCalled, setPatientCalled] = useState(false);
-  const [patientArrived, setPatientArrived] = useState(false);
-  const [showPatientCalledText, setShowPatientCalledText] = useState(false);
-  const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
+  const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(null);
+  const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(null);
+  const [patientCallElapsedTime, setPatientCallElapsedTime] = useState('00:00');
+  const patientCallTimerRef = useRef<number | null>(null);
 
   const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
 
@@ -73,6 +73,30 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
     return () => clearInterval(timer);
   }, [isPaused]);
+
+  // Patient call timer
+  useEffect(() => {
+    if (!patientCalledTime || patientArrivedTime) return;
+
+    patientCallTimerRef.current = window.setInterval(() => {
+      const now = new Date();
+      const diff = now.getTime() - patientCalledTime.getTime();
+      const totalSeconds = Math.floor(diff / 1000);
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const seconds = String(totalSeconds % 60).padStart(2, '0');
+      setPatientCallElapsedTime(`${minutes}:${seconds}`);
+    }, 1000);
+
+    return () => {
+      if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
+    };
+  }, [patientCalledTime, patientArrivedTime]);
+
+  useEffect(() => {
+    if (patientArrivedTime && patientCallTimerRef.current) {
+      clearInterval(patientCallTimerRef.current);
+    }
+  }, [patientArrivedTime]);
 
 
   const currentStepIndex = room.currentStepIndex;
@@ -292,46 +316,48 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         {/* Patient Call Button */}
         <motion.button
           onClick={() => {
-            setPatientCalled(!patientCalled);
-            setShowPatientCalledText(true);
-            setTimeout(() => setShowPatientCalledText(false), 3000);
+            if (!patientCalledTime) {
+              setPatientCalledTime(new Date());
+            }
           }}
-          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 ${
-            patientCalled
+          disabled={!!patientArrivedTime}
+          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-20 disabled:cursor-not-allowed ${
+            patientCalledTime && !patientArrivedTime
               ? 'bg-green-500/20 border-green-500/40 opacity-100'
               : ''
           }`}
           animate={{
-            boxShadow: patientCalled
+            boxShadow: patientCalledTime && !patientArrivedTime
               ? ['0 0 10px rgba(34, 197, 94, 0.3)', '0 0 20px rgba(34, 197, 94, 0.5)', '0 0 10px rgba(34, 197, 94, 0.3)']
               : 'none'
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <Phone className={`w-8 h-8 ${patientCalled ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
+          <Phone className={`w-8 h-8 ${patientCalledTime && !patientArrivedTime ? 'text-green-300' : 'text-white/60'}`} strokeWidth={2} />
           <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
         </motion.button>
 
         {/* Patient Arrival Button */}
         <motion.button
           onClick={() => {
-            setPatientArrived(!patientArrived);
-            setShowPatientArrivedText(true);
-            setTimeout(() => setShowPatientArrivedText(false), 3000);
+            if (patientCalledTime && !patientArrivedTime) {
+              setPatientArrivedTime(new Date());
+            }
           }}
-          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 ${
-            patientArrived
+          disabled={!patientCalledTime}
+          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-20 disabled:cursor-not-allowed ${
+            patientArrivedTime
               ? 'bg-blue-500/20 border-blue-500/40 opacity-100'
               : ''
           }`}
           animate={{
-            boxShadow: patientArrived
+            boxShadow: patientArrivedTime
               ? ['0 0 10px rgba(59, 130, 246, 0.3)', '0 0 20px rgba(59, 130, 246, 0.5)', '0 0 10px rgba(59, 130, 246, 0.3)']
               : 'none'
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <UserCheck className={`w-8 h-8 ${patientArrived ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+          <UserCheck className={`w-8 h-8 ${patientArrivedTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
           <span className="text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
         </motion.button>
       </div>
@@ -533,28 +559,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </h2>
                   </motion.div>
-                ) : showPatientCalledText ? (
+                ) : patientCalledTime && !patientArrivedTime ? (
                   <motion.div
-                    key="patient-called-text"
+                    key="patient-called-time"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="h-36 flex items-center justify-center"
+                    className="text-center"
                   >
-                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
-                      Volání pacienta
-                    </h2>
-                  </motion.div>
-                ) : showPatientArrivedText ? (
-                  <motion.div
-                    key="patient-arrived-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="h-36 flex items-center justify-center"
-                  >
-                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
-                      Příjezd pacienta
+                    <p className="text-2xl font-bold tracking-tight text-white/60 uppercase mb-4">Volání pacienta</p>
+                    <h2 className="text-8xl font-black tracking-tighter text-green-300">
+                      {patientCallElapsedTime}
                     </h2>
                   </motion.div>
                 ) : isPaused ? (
