@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
 import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
@@ -119,6 +120,13 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
         {/* Central Content Wrapper */}
         <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <div className="relative flex items-center justify-center">
+                {/* Animated glow behind the circle */}
+                <motion.div
+                  className="absolute rounded-full blur-[40px]"
+                  style={{ width: 80, height: 80, backgroundColor: themeColor }}
+                  animate={{ opacity: [0.15, 0.35, 0.15], scale: [0.9, 1.1, 0.9] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                />
                 <svg className="w-28 h-28 -rotate-90 overflow-visible select-none flex-shrink-0">
                     <circle 
                       cx={center} cy={center} r={radius} 
