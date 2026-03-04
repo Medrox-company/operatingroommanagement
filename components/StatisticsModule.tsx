@@ -1,50 +1,135 @@
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, TrendingUp, TrendingDown, Minus, X, Activity } from 'lucide-react';
+import {
+  TrendingUp, TrendingDown, Minus, X, Activity, Users, Clock,
+  LayoutGrid, BarChart3, Thermometer, ChevronRight,
+} from 'lucide-react';
 import { OperatingRoom, RoomStatus } from '../types';
 import { MOCK_ROOMS, WORKFLOW_STEPS, STEP_DURATIONS } from '../constants';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip,
-  LineChart, Line, CartesianGrid, ScatterChart, Scatter, ZAxis,
-  ComposedChart, Legend,
+  LineChart, Line, CartesianGrid, ComposedChart,
 } from 'recharts';
 
-interface StatisticsModuleProps {
-  rooms?: OperatingRoom[];
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants & helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+type View = 'overview' | 'rooms' | 'charts' | 'heatmap';
+
+const ACCENT = '#06B6D4';
+const GREEN  = '#10B981';
+const ORANGE = '#F97316';
+const YELLOW = '#FBBF24';
+
+const UPS_DEPTS = ['EMERGENCY', 'CÉVNÍ', 'ROBOT'];
+const isUPS = (r: OperatingRoom) => r.isEmergency || UPS_DEPTS.includes(r.department);
+const dayMin = (r: OperatingRoom) => (isUPS(r) ? 1440 : 720);
+
+function scColor(s: RoomStatus) {
+  if (s === RoomStatus.BUSY)      return ORANGE;
+  if (s === RoomStatus.FREE)      return GREEN;
+  if (s === RoomStatus.CLEANING)  return ACCENT;
+  return '#6B7280';
+}
+function scLabel(s: RoomStatus) {
+  if (s === RoomStatus.BUSY)      return 'Obsazeno';
+  if (s === RoomStatus.FREE)      return 'Volno';
+  if (s === RoomStatus.CLEANING)  return 'Úklid';
+  return 'Údržba';
 }
 
-type Period = 'den' | 'týden' | 'měsíc';
+type Seg = { color: string; title: string; pct: number; min: number };
 
-const accent = '#06B6D4';
+function buildTimeline(room: OperatingRoom): Seg[] {
+  const dm = dayMin(room);
+  const passes = Math.max(1, Math.floor(room.operations24h * (dm / 1440)));
+  const durs = WORKFLOW_STEPS.map((_, i) =>
+    i === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[i]
+  );
+  const cycleTotal = durs.reduce((a, b) => a + b, 0);
+  const mpp = Math.floor(dm / passes);
+  const raw: Seg[] = [];
+  for (let p = 0; p < passes; p++) {
+    WORKFLOW_STEPS.forEach((step, si) => {
+      const m = Math.round((durs[si] / cycleTotal) * mpp);
+      if (m > 0) raw.push({ color: step.color, title: step.title, pct: (m / dm) * 100, min: m });
+    });
+    if (p < passes - 1) raw.push({ color: 'rgba(255,255,255,0.06)', title: 'Pauza', pct: (4 / dm) * 100, min: 4 });
+  }
+  const total = raw.reduce((a, s) => a + s.pct, 0);
+  return raw.map(s => ({ ...s, pct: (s.pct / total) * 100 }));
+}
 
-// ── Stable mock data ──────────────────────────────────────────────────────────
-const weekData = [
+function mergeSeg(segs: Seg[]): Seg[] {
+  return segs.reduce<Seg[]>((acc, s) => {
+    const last = acc[acc.length - 1];
+    if (last && last.title === s.title) { last.pct += s.pct; last.min += s.min; }
+    else acc.push({ ...s });
+    return acc;
+  }, []);
+}
+
+function buildDist(room: OperatingRoom): Seg[] {
+  const durs = WORKFLOW_STEPS.map((_, i) =>
+    i === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[i]
+  );
+  const total = durs.reduce((a, b) => a + b, 0);
+  return WORKFLOW_STEPS.map((s, i) => ({
+    color: s.color, title: s.title,
+    pct: Math.round((durs[i] / total) * 100), min: durs[i],
+  }));
+}
+
+// Seeded random-ish helpers
+const seed = (id: string, n: number) => (parseInt(id, 10) * 31 + n * 17) % 100;
+
+function dayCurve(room: OperatingRoom) {
+  const ups = isUPS(room);
+  const start = ups ? 0 : 7;
+  const len   = ups ? 24 : 12;
+  return Array.from({ length: len }, (_, i) => ({
+    t: `${start + i}`,
+    v: Math.max(5, Math.min(100, 55 + seed(room.id, i) - 25 + (i < 3 ? i * 8 : i > 9 ? -(i - 9) * 5 : 20))),
+  }));
+}
+
+function weekBars(room: OperatingRoom) {
+  const days = ['Po','Út','St','Čt','Pá','So','Ne'];
+  return days.map((d, di) => {
+    const base: Record<string, number | string> = { d };
+    WORKFLOW_STEPS.forEach((step, si) => {
+      const dur = si === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[si];
+      base[step.title] = di >= 5 ? Math.floor(dur * 0.3) : Math.max(1, dur + seed(room.id, di + si) % 15 - 7);
+    });
+    return base;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tooltip
+// ─────────────────────────────────────────────────────────────────────────────
+const TT = {
+  contentStyle: { background: 'rgba(4,11,28,0.97)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, fontSize: 12, color: 'rgba(255,255,255,0.75)' },
+  labelStyle: { color: 'rgba(255,255,255,0.35)', marginBottom: 4 },
+  itemStyle: { color: ACCENT },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Global mock data
+// ─────────────────────────────────────────────────────────────────────────────
+const WEEK_DATA = [
   { t: 'Po', v: 92 }, { t: 'Út', v: 88 }, { t: 'St', v: 95 },
   { t: 'Čt', v: 87 }, { t: 'Pá', v: 79 }, { t: 'So', v: 45 }, { t: 'Ne', v: 30 },
 ];
-const dayData = [
-  { t: '7', v: 62 }, { t: '8', v: 78 }, { t: '9', v: 89 },
-  { t: '10', v: 94 }, { t: '11', v: 91 }, { t: '12', v: 82 },
-  { t: '13', v: 76 }, { t: '14', v: 88 }, { t: '15', v: 85 },
-  { t: '16', v: 70 }, { t: '17', v: 55 }, { t: '18', v: 38 },
-];
-const monthData = Array.from({ length: 30 }, (_, i) => ({
+const MONTH_DATA = Array.from({ length: 30 }, (_, i) => ({
   t: `${i + 1}`,
   v: [88,82,90,74,85,91,78,72,86,93,89,84,77,88,92,70,83,87,79,91,85,74,88,93,80,76,89,82,91,86][i],
 }));
-
-const phaseRows = [
-  { label: 'Příjezd na sál',      min: 12, pct: 5.5,  trend: -1  },
-  { label: 'Začátek anestezie',   min: 8,  pct: 3.7,  trend: -0.5},
-  { label: 'Chirurgický výkon',   min: 95, pct: 43.8, trend: +2  },
-  { label: 'Ukončení výkonu',     min: 15, pct: 6.9,  trend: -2  },
-  { label: 'Ukončení anestezie',  min: 10, pct: 4.6,  trend: 0   },
-  { label: 'Úklid sálu',         min: 20, pct: 9.2,  trend: +1  },
-  { label: 'Sál připraven',       min: 47, pct: 21.6, trend: +5  },
-];
-
-const HEATMAP: number[][] = [
+const HEAT: number[][] = [
   [5,5,5,5,5,5,5,10,45,80,95,90,88,85,90,92,88,75,60,40,20,10,5,5],
   [5,5,5,5,5,5,5,12,50,82,96,91,89,86,91,93,89,76,61,41,21,10,5,5],
   [5,5,5,5,5,5,5,10,48,79,94,90,88,85,90,92,88,74,59,39,20,9,5,5],
@@ -60,374 +145,192 @@ function heatColor(v: number) {
   if (v >= 70) return 'rgba(249,115,22,0.75)';
   if (v >= 50) return 'rgba(251,191,36,0.65)';
   if (v >= 25) return 'rgba(16,185,129,0.60)';
-  return 'rgba(30,41,59,0.6)';
+  return 'rgba(255,255,255,0.05)';
 }
 
-function TrendIcon({ v }: { v: number }) {
-  if (v > 0) return <TrendingUp className="w-4 h-4" style={{ color: '#F97316' }} />;
-  if (v < 0) return <TrendingDown className="w-4 h-4" style={{ color: '#10B981' }} />;
-  return <Minus className="w-4 h-4 opacity-30" />;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared card wrapper
+// ─────────────────────────────────────────────────────────────────────────────
+const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`rounded-xl p-5 ${className}`}
+    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+    {children}
+  </div>
+);
 
-const TooltipStyle = {
-  contentStyle: {
-    background: 'rgba(2,8,23,0.97)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 6,
-    fontSize: 12,
-  },
-  labelStyle: { color: 'rgba(255,255,255,0.5)' },
-  itemStyle: { color: accent },
-};
+const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-4">{children}</p>
+);
 
-// ── Room helpers ──────────────────────────────────────────────────────────────
-function statusLabel(s: RoomStatus) {
-  if (s === RoomStatus.BUSY) return 'Obsazeno';
-  if (s === RoomStatus.FREE) return 'Volno';
-  if (s === RoomStatus.CLEANING) return 'Úklid';
-  return 'Údržba';
-}
-function statusColor(s: RoomStatus) {
-  if (s === RoomStatus.BUSY) return '#F97316';
-  if (s === RoomStatus.FREE) return '#10B981';
-  if (s === RoomStatus.CLEANING) return '#06B6D4';
-  return '#6B7280';
-}
-
-const UPS_DEPARTMENTS = ['EMERGENCY', 'CÉVNÍ', 'ROBOT'];
-function isUPS(room: OperatingRoom) {
-  return room.isEmergency || UPS_DEPARTMENTS.includes(room.department);
-}
-function scheduleDayMin(room: OperatingRoom) {
-  return isUPS(room) ? 1440 : 720;
-}
-function scheduleTimeRange(room: OperatingRoom) {
-  return isUPS(room) ? '00:00–24:00' : '07:00–19:00';
-}
-
-// ── Timeline segments ─────────────────────────────────────────────────────────
-type Segment = { color: string; title: string; pct: number; min: number };
-
-function buildTimeline(room: OperatingRoom): Segment[] {
-  const dayMin = scheduleDayMin(room);
-  const passCount = Math.max(1, Math.floor(room.operations24h * (dayMin / 1440)));
-  const cycleDurations = WORKFLOW_STEPS.map((_, i) =>
-    i === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[i]
-  );
-  const cycleTotal = cycleDurations.reduce((s, d) => s + d, 0);
-  const mpp = Math.floor(dayMin / passCount);
-  const raw: Segment[] = [];
-  for (let pass = 0; pass < passCount; pass++) {
-    WORKFLOW_STEPS.forEach((step, si) => {
-      const scaledMin = Math.round((cycleDurations[si] / cycleTotal) * mpp);
-      if (scaledMin > 0) raw.push({ color: step.color, title: step.title, pct: (scaledMin / dayMin) * 100, min: scaledMin });
-    });
-    if (pass < passCount - 1) raw.push({ color: 'rgba(255,255,255,0.05)', title: 'Pauza', pct: (5 / dayMin) * 100, min: 5 });
-  }
-  const total = raw.reduce((s, seg) => s + seg.pct, 0);
-  return raw.map(seg => ({ ...seg, pct: (seg.pct / total) * 100 }));
-}
-
-function buildStatusDist(room: OperatingRoom): Segment[] {
-  const durations = WORKFLOW_STEPS.map((_, i) =>
-    i === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[i]
-  );
-  const total = durations.reduce((s, d) => s + d, 0);
-  return WORKFLOW_STEPS.map((step, i) => ({
-    color: step.color, title: step.title,
-    pct: Math.round((durations[i] / total) * 100), min: durations[i],
-  }));
-}
-
-function mergeSegments(segs: Segment[]): Segment[] {
-  const out: Segment[] = [];
-  for (const seg of segs) {
-    const last = out[out.length - 1];
-    if (last && last.title === seg.title) { last.pct += seg.pct; last.min += seg.min; }
-    else out.push({ ...seg });
-  }
-  return out;
-}
-
-// ── Per-room mini day curve (stable, seeded by room id) ───────────────────────
-function buildRoomDayCurve(room: OperatingRoom) {
-  const seed = parseInt(room.id, 10) || 1;
-  const ups = isUPS(room);
-  const hours = ups
-    ? Array.from({ length: 24 }, (_, h) => h)
-    : Array.from({ length: 12 }, (_, h) => h + 7);
-  return hours.map((h, i) => ({
-    t: `${h}`,
-    v: Math.max(0, Math.min(100,
-      ups
-        ? (h >= 7 && h <= 19 ? 75 + ((seed * (i + 1)) % 20) - 10 : 30 + ((seed * (i + 2)) % 25))
-        : 60 + ((seed * (i + 1)) % 35) - 5
-    )),
-  }));
-}
-
-// ── Radar data for a room ─────────────────────────────────────────────────────
-function buildRadarData(room: OperatingRoom) {
-  const seed = parseInt(room.id, 10) || 1;
-  return [
-    { subject: 'Využití', A: Math.min(100, 50 + (seed * 7) % 50) },
-    { subject: 'Výkony', A: Math.min(100, room.operations24h * 10) },
-    { subject: 'Efektivita', A: Math.min(100, 60 + (seed * 11) % 40) },
-    { subject: 'Personál', A: Math.min(100, 70 + (seed * 3) % 30) },
-    { subject: 'Čistota', A: Math.min(100, 75 + (seed * 5) % 25) },
-  ];
-}
-
-// ── Room mini box ─────────────────────────────────────────────────────────────
-interface RoomBoxProps {
-  room: OperatingRoom;
-  index: number;
-  onClick: () => void;
-}
-
-const RoomBox: React.FC<RoomBoxProps> = ({ room, index, onClick }) => {
-  const sc = statusColor(room.status);
-  const ups = isUPS(room);
-  const timeline = useMemo(() => mergeSegments(buildTimeline(room)), [room]);
-  const dist = useMemo(() => buildStatusDist(room), [room]);
-  const utilPct = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// Room mini box
+// ─────────────────────────────────────────────────────────────────────────────
+const RoomBox: React.FC<{ room: OperatingRoom; idx: number; onSelect: () => void }> = ({ room, idx, onSelect }) => {
+  const sc       = scColor(room.status);
+  const ups      = isUPS(room);
+  const timeline = useMemo(() => mergeSeg(buildTimeline(room)), [room]);
+  const dist     = useMemo(() => buildDist(room), [room]);
+  const util     = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
 
   return (
     <motion.button
-      className="text-left rounded-lg p-3 cursor-pointer w-full group"
+      onClick={onSelect}
+      className="text-left w-full rounded-lg p-3 flex flex-col gap-2"
       style={{
-        background: room.status === RoomStatus.BUSY ? `${sc}08` : 'rgba(255,255,255,0.015)',
-        border: `1px solid ${room.status === RoomStatus.BUSY ? `${sc}35` : 'rgba(255,255,255,0.07)'}`,
+        background: room.status === RoomStatus.BUSY ? `${sc}0A` : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${room.status === RoomStatus.BUSY ? `${sc}40` : 'rgba(255,255,255,0.07)'}`,
       }}
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.18, delay: index * 0.025 }}
-      whileHover={{ scale: 1.02, border: `1px solid ${sc}50` } as any}
-      onClick={onClick}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15, delay: idx * 0.02 }}
+      whileHover={{ scale: 1.025 } as any}
     >
-      {/* Status dot + name */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 5px ${sc}` }} />
-          <span className="text-xs font-black text-white/85 truncate">{room.name}</span>
-        </div>
-        <div className="flex items-center gap-1 shrink-0 ml-1">
-          {ups && <span className="text-[9px] font-black px-1 py-px rounded" style={{ background: 'rgba(6,182,212,0.15)', color: '#06B6D4' }}>ÚPS</span>}
-          {room.isSeptic && <span className="text-[9px] font-black px-1 py-px rounded" style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>SEP</span>}
-        </div>
+      {/* Row 1: dot + name + badges */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 4px ${sc}` }} />
+        <span className="text-xs font-black text-white/85 truncate flex-1">{room.name}</span>
+        {ups      && <span className="text-[8px] font-black px-1 py-px rounded shrink-0" style={{ background: 'rgba(6,182,212,0.15)', color: '#06B6D4' }}>ÚPS</span>}
+        {room.isSeptic && <span className="text-[8px] font-black px-1 py-px rounded shrink-0" style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>SEP</span>}
       </div>
 
-      {/* Dept */}
-      <p className="text-[10px] text-white/30 mb-1.5 truncate font-medium">{room.department}</p>
+      {/* Row 2: dept */}
+      <p className="text-[9px] text-white/30 truncate leading-none">{room.department}</p>
 
-      {/* Mini timeline bar */}
-      <div className="flex h-2 w-full rounded overflow-hidden gap-px mb-2.5">
+      {/* Row 3: timeline */}
+      <div className="flex h-1.5 w-full rounded overflow-hidden gap-px">
         {timeline.map((seg, i) => (
-          <div key={i} className="h-full shrink-0" style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.85 }} />
+          <div key={i} className="h-full shrink-0" style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.9 }} />
         ))}
       </div>
 
-      {/* KPIs inline */}
+      {/* Row 4: KPIs + status */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <p className="text-[9px] text-white/25 uppercase tracking-widest leading-none mb-0.5">Ops</p>
-            <p className="text-sm font-black leading-none" style={{ color: accent }}>{room.operations24h}</p>
-          </div>
-          <div>
-            <p className="text-[9px] text-white/25 uppercase tracking-widest leading-none mb-0.5">Výk</p>
-            <p className="text-sm font-black leading-none text-white/65">{utilPct}%</p>
-          </div>
-          <div>
-            <p className="text-[9px] text-white/25 uppercase tracking-widest leading-none mb-0.5">Fr</p>
-            <p className="text-sm font-black leading-none text-white/65">{room.queueCount}</p>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[9px] text-white/25">Ops <span className="font-black text-white/70" style={{ color: ACCENT }}>{room.operations24h}</span></span>
+          <span className="text-[9px] text-white/25">Výk <span className="font-black text-white/60">{util}%</span></span>
+          <span className="text-[9px] text-white/25">Fr <span className="font-black text-white/60">{room.queueCount}</span></span>
         </div>
-        <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-          style={{ background: `${sc}14`, color: sc }}>
-          {statusLabel(room.status).slice(0, 3)}
+        <span className="text-[8px] font-black uppercase px-1.5 py-px rounded" style={{ background: `${sc}15`, color: sc }}>
+          {scLabel(room.status).slice(0, 3)}
         </span>
       </div>
     </motion.button>
   );
 };
 
-// ── Room detail modal / overlay ───────────────────────────────────────────────
-interface RoomDetailPanelProps {
-  room: OperatingRoom;
-  onClose: () => void;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Room detail slide-over
+// ─────────────────────────────────────────────────────────────────────────────
+const RoomDetail: React.FC<{ room: OperatingRoom; onClose: () => void }> = ({ room, onClose }) => {
+  const sc        = scColor(room.status);
+  const ups       = isUPS(room);
+  const dm        = dayMin(room);
+  const opsDay    = Math.max(1, Math.floor(room.operations24h * (dm / 1440)));
+  const timeline  = useMemo(() => mergeSeg(buildTimeline(room)), [room]);
+  const dist      = useMemo(() => buildDist(room), [room]);
+  const curve     = useMemo(() => dayCurve(room), [room]);
+  const weekly    = useMemo(() => weekBars(room), [room]);
+  const util      = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
+  const pieData   = useMemo(() => dist.filter(d => d.min > 0), [dist]);
 
-const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
-  const sc = statusColor(room.status);
-  const ups = isUPS(room);
-  const rawTimeline = useMemo(() => buildTimeline(room), [room]);
-  const timeline    = useMemo(() => mergeSegments(rawTimeline), [rawTimeline]);
-  const dist        = useMemo(() => buildStatusDist(room), [room]);
-  const dayCurve    = useMemo(() => buildRoomDayCurve(room), [room]);
-  const radarData   = useMemo(() => buildRadarData(room), [room]);
-  const dayMin      = scheduleDayMin(room);
-  const opsDay      = Math.max(1, Math.floor(room.operations24h * (dayMin / 1440)));
-  const utilPct     = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
-
-  // Stacked bar — workflow distribution across 7 days
-  const weeklyStackedData = useMemo(() => {
-    const days = ['Po','Út','St','Čt','Pá','So','Ne'];
-    return days.map((day, di) => {
-      const base: Record<string, number | string> = { day };
-      WORKFLOW_STEPS.forEach((step, si) => {
-        const seed = parseInt(room.id) + di + si;
-        const dur = (si === 2 && room.currentProcedure) ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[si];
-        const variation = dur > 0 ? Math.max(1, dur + (seed % 10) - 5) : 0;
-        base[step.title] = di >= 5 ? Math.floor(variation * 0.3) : variation;
-      });
-      return base;
-    });
-  }, [room]);
-
-  // Scatter data — procedure duration vs queue for "similar rooms" (mock)
-  const scatterData = useMemo(() => {
-    const seed = parseInt(room.id);
-    return Array.from({ length: 12 }, (_, i) => ({
-      duration: 30 + ((seed * (i + 1) * 7) % 200),
-      queue: (seed * (i + 3)) % 6,
-      ops: 1 + (i % 6),
-    }));
-  }, [room]);
-
-  // Hourly efficiency (ComposedChart — bar + line overlay)
-  const hourlyData = useMemo(() => {
-    const start = ups ? 0 : 7;
-    const end   = ups ? 24 : 19;
-    const seed  = parseInt(room.id);
-    return Array.from({ length: end - start }, (_, i) => {
-      const h = start + i;
-      const eff  = Math.max(10, Math.min(100, 55 + ((seed * (i + 2) * 3) % 45)));
-      const idle = 100 - eff;
-      return { h: `${h}`, efficiency: eff, idle, patients: Math.floor(eff / 25) };
-    });
-  }, [room, ups]);
-
-  // Cumulative ops line
-  const cumulativeData = useMemo(() => {
-    const seed = parseInt(room.id);
-    let cum = 0;
-    return Array.from({ length: 30 }, (_, i) => {
-      const daily = Math.max(0, opsDay + ((seed * (i + 1)) % 3) - 1);
-      cum += daily;
-      return { d: `${i + 1}`, cum, daily };
-    });
-  }, [room, opsDay]);
-
-  // Phase data for this room (bar chart)
-  const phaseBarData = useMemo(() => WORKFLOW_STEPS.map((step, i) => ({
-    name: step.title.split(' ').slice(-1)[0],
+  const phaseData = WORKFLOW_STEPS.map((step, i) => ({
+    name: step.title.split(' ').pop() ?? step.title,
     min: i === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[i],
     color: step.color,
-  })), [room]);
-
-  // Pie from dist
-  const pieData = useMemo(() => dist.filter(d => d.min > 0), [dist]);
+  }));
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-8 px-4"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      className="fixed inset-0 z-50 flex"
+      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
+      {/* Slide-over panel */}
       <motion.div
-        className="w-full max-w-5xl rounded-2xl overflow-hidden"
-        style={{ background: 'rgb(4,11,28)', border: `1px solid ${sc}30` }}
-        initial={{ opacity: 0, y: 30, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.98 }}
-        transition={{ duration: 0.22 }}
+        className="ml-auto h-full w-full max-w-3xl overflow-y-auto"
+        style={{ background: 'rgb(5,13,30)', borderLeft: `1px solid ${sc}25` }}
+        initial={{ x: 60, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 60, opacity: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
       >
-        {/* ── Header ── */}
-        <div className="flex items-center gap-4 px-7 py-5"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <div className="w-3 h-3 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 10px ${sc}` }} />
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center gap-3 px-6 py-4"
+          style={{ background: 'rgb(5,13,30)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 8px ${sc}` }} />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-2xl font-black text-white/95">{room.name}</h2>
-              <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
-                style={{ background: `${sc}18`, color: sc }}>{statusLabel(room.status)}</span>
-              {ups && <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
-                style={{ background: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>ÚPS — 24 h</span>}
-              {room.isSeptic && <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
-                style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>SEPTICKÝ</span>}
-              {room.isEmergency && <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
-                style={{ background: 'rgba(249,115,22,0.12)', color: '#F97316' }}>EMERGENCY</span>}
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg font-black text-white/95">{room.name}</h2>
+              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                style={{ background: `${sc}18`, color: sc }}>{scLabel(room.status)}</span>
+              {ups && <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                style={{ background: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>ÚPS 24 h</span>}
+              {room.isSeptic && <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>SEPTICKÝ</span>}
             </div>
-            <p className="text-sm text-white/35 mt-1">{room.department} — {room.currentProcedure?.name ?? 'Žádný výkon'}</p>
+            <p className="text-xs text-white/30 mt-0.5">{room.department} — {room.currentProcedure?.name ?? 'Žádný výkon'}</p>
           </div>
-          <button onClick={onClose} className="shrink-0 p-2 rounded-lg transition-colors hover:bg-white/10 text-white/40 hover:text-white/80">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-white/35 hover:text-white/70 transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-7 space-y-8">
+        <div className="p-6 space-y-6">
 
-          {/* ── KPI row ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-xl overflow-hidden"
-            style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+          {/* KPIs */}
+          <div className="grid grid-cols-4 gap-3">
             {[
-              { l: 'Výkony / den', v: opsDay, hi: true },
-              { l: 'Využití výkonem', v: `${utilPct}%`, hi: false },
-              { l: 'Fronta', v: room.queueCount, hi: false },
-              { l: 'Provoz', v: ups ? '24 h' : '12 h', hi: ups },
+              { l: 'Výkony / den', v: opsDay,       c: ACCENT },
+              { l: 'Využití',      v: `${util}%`,   c: 'rgba(255,255,255,0.8)' },
+              { l: 'Fronta',       v: room.queueCount, c: 'rgba(255,255,255,0.8)' },
+              { l: 'Provoz',       v: ups ? '24 h' : '12 h', c: ups ? ACCENT : 'rgba(255,255,255,0.5)' },
             ].map((k, i) => (
-              <div key={i} className="px-5 py-4"
-                style={{ background: 'rgba(255,255,255,0.025)', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.06)' : undefined }}>
-                <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-2">{k.l}</p>
-                <p className="text-3xl font-black leading-none" style={{ color: k.hi ? accent : 'rgba(255,255,255,0.85)' }}>{k.v}</p>
-              </div>
+              <Card key={i} className="!p-4">
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2 leading-tight">{k.l}</p>
+                <p className="text-2xl font-black leading-none" style={{ color: k.c }}>{k.v}</p>
+              </Card>
             ))}
           </div>
 
-          {/* ── Timeline bar ── */}
+          {/* Timeline bar */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-black uppercase tracking-widest text-white/30">
-                Časová osa — {scheduleTimeRange(room)}
-              </p>
-              <p className="text-xs font-black uppercase tracking-widest"
-                style={{ color: ups ? '#06B6D4' : 'rgba(255,255,255,0.3)' }}>
-                {ups ? 'ÚPS / Služba — 24 h' : 'Pracovní doba — 07:00–19:00'}
-              </p>
+            <div className="flex items-center justify-between mb-2">
+              <SectionTitle>Časová osa — {ups ? '00:00–24:00' : '07:00–19:00'}</SectionTitle>
+              <span className="text-[10px] font-black uppercase tracking-widest"
+                style={{ color: ups ? ACCENT : 'rgba(255,255,255,0.2)' }}>
+                {ups ? 'ÚPS / Služba' : 'Pracovní doba'}
+              </span>
             </div>
-            <div className="flex h-8 w-full rounded-lg overflow-hidden gap-[1px]">
+            <div className="flex h-7 w-full rounded-lg overflow-hidden gap-px">
               {timeline.map((seg, i) => (
-                <motion.div key={i} className="h-full shrink-0 relative"
-                  style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.88 }}
-                  initial={{ opacity: 0 }} animate={{ opacity: 0.88 }}
-                  transition={{ duration: 0.4, delay: i * 0.03 }}
-                  title={`${seg.title} — ${seg.min} min (${seg.pct.toFixed(1)}%)`}>
-                  {seg.pct >= 8 && (
-                    <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-black/70 pointer-events-none">
+                <div key={i} className="h-full shrink-0 relative" style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.88 }}
+                  title={`${seg.title} — ${seg.min} min`}>
+                  {seg.pct >= 9 && (
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-black/65 pointer-events-none">
                       {Math.round(seg.pct)}%
                     </span>
                   )}
-                </motion.div>
+                </div>
               ))}
             </div>
-            {/* Legend */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-2.5 mt-4">
+            {/* Step legend */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
               {WORKFLOW_STEPS.map((step, si) => {
                 const match = timeline.filter(s => s.title === step.title);
                 const pct = match.reduce((a, s) => a + s.pct, 0);
                 const min = match.reduce((a, s) => a + s.min, 0);
                 if (!min) return null;
                 return (
-                  <div key={si} className="flex items-center gap-2 min-w-0">
-                    <div className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: step.color }} />
-                    <div className="min-w-0">
-                      <p className="text-xs text-white/45 truncate">{step.title}</p>
-                      <p className="text-sm font-black" style={{ color: step.color }}>
-                        {Math.round(pct)}%<span className="text-white/30 font-normal ml-1">{min} min</span>
+                  <div key={si} className="flex items-start gap-1.5">
+                    <div className="w-2 h-2 rounded-[2px] shrink-0 mt-0.5" style={{ background: step.color }} />
+                    <div>
+                      <p className="text-[9px] text-white/35 leading-tight truncate">{step.title}</p>
+                      <p className="text-xs font-black leading-tight" style={{ color: step.color }}>
+                        {Math.round(pct)}%
+                        <span className="text-white/25 font-normal ml-1">{min} min</span>
                       </p>
                     </div>
                   </div>
@@ -436,933 +339,672 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
             </div>
           </div>
 
-          {/* ── Charts row 1: Day curve + Status distribution ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Charts: 2 column */}
+          <div className="grid grid-cols-2 gap-4">
 
-            {/* Area — vytížení v průběhu dne */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Vytížení v průběhu dne</p>
-              <ResponsiveContainer width="100%" height={140}>
-                <AreaChart data={dayCurve} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+            {/* Day curve */}
+            <Card>
+              <SectionTitle>Vytížení v průběhu dne</SectionTitle>
+              <ResponsiveContainer width="100%" height={130}>
+                <AreaChart data={curve} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
                   <defs>
-                    <linearGradient id={`rg-${room.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={sc} stopOpacity={0.25} />
+                    <linearGradient id={`g${room.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor={sc} stopOpacity={0.3} />
                       <stop offset="95%" stopColor={sc} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="t" stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} domain={[0, 100]} />
-                  <Tooltip {...TooltipStyle} formatter={(v: number) => [`${v}%`, 'Vytížení']} />
-                  <Area type="monotone" dataKey="v" stroke={sc} fill={`url(#rg-${room.id})`} strokeWidth={1.5} dot={false} />
+                  <XAxis dataKey="t" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} domain={[0,100]} />
+                  <Tooltip {...TT} formatter={(v: number) => [`${v}%`, 'Vytížení']} />
+                  <Area type="monotone" dataKey="v" stroke={sc} fill={`url(#g${room.id})`} strokeWidth={1.5} dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
+            </Card>
 
-            {/* Status distribution bars */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Rozložení statusů — cyklus</p>
-              <div className="space-y-3">
+            {/* Status dist horizontal bars */}
+            <Card>
+              <SectionTitle>Rozložení statusů</SectionTitle>
+              <div className="space-y-2.5">
                 {dist.map((d, i) => (
                   <div key={i}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: d.color }} />
-                        <span className="text-xs text-white/55">{d.title}</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: d.color }} />
+                        <span className="text-xs text-white/50">{d.title}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-white/30">{d.min} min</span>
-                        <span className="text-sm font-black w-10 text-right" style={{ color: d.color }}>{d.pct}%</span>
-                      </div>
+                      <span className="text-xs font-black" style={{ color: d.color }}>{d.pct}%
+                        <span className="text-white/25 font-normal ml-1">{d.min} min</span>
+                      </span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                       <motion.div className="h-full rounded-full" style={{ background: d.color, opacity: 0.85 }}
                         initial={{ width: 0 }} animate={{ width: `${d.pct}%` }}
-                        transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }} />
+                        transition={{ duration: 0.5, delay: i * 0.04, ease: 'easeOut' }} />
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           </div>
 
-          {/* ── Charts row 2: Hourly Composed + Weekly Stacked Bar ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Charts: 3 column */}
+          <div className="grid grid-cols-3 gap-4">
 
-            {/* ComposedChart — hourly efficiency bar + patients line */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">
-                Hodinová efektivita — výkon vs. prodlevy
-              </p>
+            {/* Phase duration bar (horizontal) */}
+            <Card>
+              <SectionTitle>Délka fází</SectionTitle>
               <ResponsiveContainer width="100%" height={160}>
-                <ComposedChart data={hourlyData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
-                  <XAxis dataKey="h" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis yAxisId="l" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} domain={[0,100]} />
-                  <YAxis yAxisId="r" orientation="right" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
-                  <Tooltip {...TooltipStyle} />
-                  <Bar yAxisId="l" dataKey="efficiency" fill={sc} opacity={0.7} radius={[2,2,0,0]} name="Efektivita %" stackId="a" />
-                  <Bar yAxisId="l" dataKey="idle" fill="rgba(255,255,255,0.08)" opacity={0.9} radius={[2,2,0,0]} name="Prodleva %" stackId="a" />
-                  <Line yAxisId="r" type="monotone" dataKey="patients" stroke="#FBBF24" strokeWidth={2} dot={{ fill: '#FBBF24', r: 2, strokeWidth: 0 }} name="Pacienti" />
-                </ComposedChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{ c: sc, l: 'Efektivita' }, { c: 'rgba(255,255,255,0.2)', l: 'Prodleva' }, { c: '#FBBF24', l: 'Pacienti' }].map(x => (
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: x.c }} />
-                    <span className="text-[10px] text-white/35">{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Weekly stacked bar per workflow step */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">
-                Týdenní rozložení workflow — min / den
-              </p>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={weeklyStackedData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }} barSize={16}>
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
-                  <Tooltip {...TooltipStyle} />
-                  {WORKFLOW_STEPS.map(step => (
-                    <Bar key={step.title} dataKey={step.title} stackId="w" fill={step.color} opacity={0.82} />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2">
-                {WORKFLOW_STEPS.map(s => (
-                  <div key={s.title} className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: s.color }} />
-                    <span className="text-[9px] text-white/35">{s.title.split(' ').slice(-1)[0]}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Charts row 3: Phase bar + Radar + Pie ── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            {/* Phase duration bar chart */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Délka fází (min)</p>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={phaseBarData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 0 }} barSize={8}>
-                  <XAxis type="number" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} width={56} />
-                  <Tooltip {...TooltipStyle} formatter={(v: number) => [`${v} min`, 'Trvání']} />
-                  <Bar dataKey="min" radius={[0, 2, 2, 0]}>
-                    {phaseBarData.map((entry, i) => <Cell key={i} fill={entry.color} opacity={0.8} />)}
+                <BarChart data={phaseData} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }} barSize={7}>
+                  <XAxis type="number" stroke="rgba(255,255,255,0.1)" fontSize={9} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.1)" fontSize={9} tickLine={false} axisLine={false} width={52} />
+                  <Tooltip {...TT} formatter={(v: number) => [`${v} min`, 'Trvání']} />
+                  <Bar dataKey="min" radius={[0,2,2,0]}>
+                    {phaseData.map((e, i) => <Cell key={i} fill={e.color} opacity={0.82} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-
-            {/* Radar chart */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-2">Výkonnostní profil</p>
-              <ResponsiveContainer width="100%" height={180}>
-                <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                  <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }} />
-                  <Radar dataKey="A" stroke={sc} fill={sc} fillOpacity={0.15} strokeWidth={1.5} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
+            </Card>
 
             {/* Pie chart */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-2">Struktura cyklu</p>
-              <ResponsiveContainer width="100%" height={150}>
+            <Card>
+              <SectionTitle>Struktura cyklu</SectionTitle>
+              <ResponsiveContainer width="100%" height={130}>
                 <PieChart>
                   <Pie data={pieData} dataKey="pct" nameKey="title" cx="50%" cy="50%"
-                    innerRadius={38} outerRadius={60} paddingAngle={2} strokeWidth={0}>
-                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} opacity={0.85} />)}
+                    innerRadius={32} outerRadius={54} paddingAngle={2} strokeWidth={0}>
+                    {pieData.map((e, i) => <Cell key={i} fill={e.color} opacity={0.85} />)}
                   </Pie>
-                  <Tooltip contentStyle={TooltipStyle.contentStyle} formatter={(v: number, name: string) => [`${v}%`, name]} />
+                  <Tooltip contentStyle={TT.contentStyle} formatter={(v: number, name: string) => [`${v}%`, name]} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-1">
+              <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1">
                 {pieData.map((d, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: d.color }} />
-                    <span className="text-[10px] text-white/40">{d.title.split(' ').slice(-1)[0]}</span>
+                  <div key={i} className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-[1px] shrink-0" style={{ background: d.color }} />
+                    <span className="text-[8px] text-white/35">{d.title.split(' ').pop()}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
+
+            {/* Radar */}
+            <Card>
+              <SectionTitle>Výkonnostní profil</SectionTitle>
+              <ResponsiveContainer width="100%" height={160}>
+                <RadarChart data={[
+                  { s: 'Využití', A: Math.min(100, 50 + (parseInt(room.id) * 7) % 50) },
+                  { s: 'Výkony',  A: Math.min(100, room.operations24h * 10) },
+                  { s: 'Efekt.',  A: Math.min(100, 60 + (parseInt(room.id) * 11) % 40) },
+                  { s: 'Personál', A: Math.min(100, 70 + (parseInt(room.id) * 3) % 30) },
+                  { s: 'Čistota', A: Math.min(100, 75 + (parseInt(room.id) * 5) % 25) },
+                ]} margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
+                  <PolarGrid stroke="rgba(255,255,255,0.07)" />
+                  <PolarAngleAxis dataKey="s" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 700 }} />
+                  <Radar dataKey="A" stroke={sc} fill={sc} fillOpacity={0.12} strokeWidth={1.5} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </Card>
           </div>
 
-          {/* ── Charts row 4: Scatter + Cumulative ComposedChart ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* Scatter — procedure duration vs queue depth */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-1">Délka výkonu vs. fronta</p>
-              <p className="text-[10px] text-white/25 mb-4">Korelace trvání operace s délkou fronty</p>
-              <ResponsiveContainer width="100%" height={160}>
-                <ScatterChart margin={{ top: 4, right: 10, bottom: 0, left: -20 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
-                  <XAxis dataKey="duration" name="Trvání" unit=" min" stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis dataKey="queue" name="Fronta" stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
-                  <ZAxis dataKey="ops" range={[30, 120]} />
-                  <Tooltip contentStyle={TooltipStyle.contentStyle} cursor={{ stroke: 'rgba(255,255,255,0.1)' }}
-                    formatter={(v: number, name: string) => [name === 'Trvání' ? `${v} min` : v, name]} />
-                  <Scatter data={scatterData} fill={sc} opacity={0.7} />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* ComposedChart — cumulative ops + daily bar */}
-            <div className="rounded-xl p-5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-1">Kumulativní operace — 30 dní</p>
-              <p className="text-[10px] text-white/25 mb-4">Sloupce = denní výkony, čára = kumulativní součet</p>
-              <ResponsiveContainer width="100%" height={160}>
-                <ComposedChart data={cumulativeData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3" />
-                  <XAxis dataKey="d" stroke="rgba(255,255,255,0.1)" fontSize={9} tickLine={false} axisLine={false}
-                    ticks={['1','5','10','15','20','25','30']} />
-                  <YAxis yAxisId="l" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis yAxisId="r" orientation="right" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
-                  <Tooltip {...TooltipStyle} />
-                  <Bar yAxisId="l" dataKey="daily" fill={sc} opacity={0.4} radius={[1,1,0,0]} name="Denní výkony" />
-                  <Line yAxisId="r" type="monotone" dataKey="cum" stroke="#10B981" strokeWidth={2} dot={false} name="Kumulativní" />
-                </ComposedChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{ c: sc, l: 'Denní výkony' }, { c: '#10B981', l: 'Kumulativní' }].map(x => (
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: x.c }} />
-                    <span className="text-[10px] text-white/35">{x.l}</span>
-                  </div>
+          {/* Weekly stacked bar */}
+          <Card>
+            <SectionTitle>Týdenní rozložení workflow (min / den)</SectionTitle>
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={weekly} margin={{ top: 4, right: 0, bottom: 0, left: -24 }} barSize={18}>
+                <XAxis dataKey="d" stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip {...TT} />
+                {WORKFLOW_STEPS.map(s => (
+                  <Bar key={s.title} dataKey={s.title} stackId="w" fill={s.color} opacity={0.82} />
                 ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Charts row 5: Workflow step line ── */}
-          <div className="rounded-xl p-5"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Průběh workflow fází — trvání (min)</p>
-            <ResponsiveContainer width="100%" height={120}>
-              <LineChart data={WORKFLOW_STEPS.map((step, i) => ({
-                name: step.title.split(' ').slice(-1)[0],
-                min: i === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[i],
-              }))} margin={{ top: 4, right: 10, bottom: 0, left: -24 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
-                <XAxis dataKey="name" stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip {...TooltipStyle} formatter={(v: number) => [`${v} min`, 'Trvání']} />
-                <Line type="monotone" dataKey="min" stroke={sc} strokeWidth={1.5} dot={{ fill: sc, strokeWidth: 0, r: 3 }} />
-              </LineChart>
+              </BarChart>
             </ResponsiveContainer>
-          </div>
-
-          {/* ── Workflow step indicator ── */}
-          <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Aktuální fáze workflow</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {WORKFLOW_STEPS.map((step, i) => {
-                const isCurrent = i === room.currentStepIndex;
-                const isDone    = i < room.currentStepIndex;
-                return (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded text-xs font-black uppercase tracking-wider transition-all"
-                      style={{
-                        background: isCurrent ? `${step.color}22` : isDone ? 'rgba(255,255,255,0.04)' : 'transparent',
-                        color:      isCurrent ? step.color : isDone ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.18)',
-                        border:     `1px solid ${isCurrent ? step.color : 'rgba(255,255,255,0.07)'}`,
-                      }}>
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: step.color, opacity: isCurrent ? 1 : 0.3 }} />
-                      {step.title}
-                    </div>
-                    {i < WORKFLOW_STEPS.length - 1 && (
-                      <div className="w-3 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                    )}
-                  </div>
-                );
-              })}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+              {WORKFLOW_STEPS.map(s => (
+                <div key={s.title} className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: s.color }} />
+                  <span className="text-[9px] text-white/35">{s.title}</span>
+                </div>
+              ))}
             </div>
-          </div>
+          </Card>
 
-          {/* ── Personnel & patient ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Personál</p>
+          {/* Personnel + patient */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card>
+              <SectionTitle>Personál</SectionTitle>
               <div className="space-y-3">
                 {[
-                  { role: 'Chirurg',      name: room.staff.doctor.name },
-                  { role: 'Sestra',       name: room.staff.nurse.name },
+                  { role: 'Chirurg', name: room.staff.doctor.name },
+                  { role: 'Sestra', name: room.staff.nurse.name },
                   { role: 'Anesteziolog', name: room.staff.anesthesiologist?.name ?? null },
                 ].map(p => (
                   <div key={p.role} className="flex items-center justify-between">
                     <span className="text-xs text-white/30 uppercase tracking-wider">{p.role}</span>
-                    <span className="text-sm font-bold text-white/70">{p.name ?? '—'}</span>
+                    <span className="text-xs font-bold text-white/65">{p.name ?? '—'}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
-            <div className="space-y-5">
-              {room.currentPatient && (
-                <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Aktuální pacient</p>
-                  <div className="space-y-3">
-                    {[
-                      { l: 'Jméno',        v: room.currentPatient.name },
-                      { l: 'Věk',          v: `${room.currentPatient.age} let` },
-                      { l: 'Krev. skupina', v: room.currentPatient.bloodType ?? '—' },
-                    ].map(row => (
-                      <div key={row.l} className="flex items-center justify-between">
-                        <span className="text-xs text-white/30 uppercase tracking-wider">{row.l}</span>
-                        <span className="text-sm font-bold text-white/70">{row.v}</span>
-                      </div>
-                    ))}
-                  </div>
+            {room.currentPatient ? (
+              <Card>
+                <SectionTitle>Aktuální pacient</SectionTitle>
+                <div className="space-y-3">
+                  {[
+                    { l: 'Jméno', v: room.currentPatient.name },
+                    { l: 'Věk', v: `${room.currentPatient.age} let` },
+                    { l: 'Krevní skupina', v: room.currentPatient.bloodType ?? '—' },
+                  ].map(f => (
+                    <div key={f.l} className="flex items-center justify-between">
+                      <span className="text-xs text-white/30 uppercase tracking-wider">{f.l}</span>
+                      <span className="text-xs font-bold text-white/65">{f.v}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </Card>
+            ) : (
+              <Card>
+                <SectionTitle>Aktuální výkon</SectionTitle>
+                <p className="text-xs text-white/25">Žádný aktivní pacient</p>
+              </Card>
+            )}
+          </div>
 
-              {room.currentProcedure && (
-                <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Aktuální výkon</p>
-                  <div className="space-y-3">
-                    {[
-                      { l: 'Výkon',    v: room.currentProcedure.name },
-                      { l: 'Trvání',   v: `${room.currentProcedure.estimatedDuration} min` },
-                      { l: 'Zahájení', v: room.currentProcedure.startTime },
-                    ].map(row => (
-                      <div key={row.l} className="flex items-center justify-between">
-                        <span className="text-xs text-white/30 uppercase tracking-wider">{row.l}</span>
-                        <span className="text-sm font-bold text-white/70 text-right max-w-[220px] truncate">{row.v}</span>
-                      </div>
-                    ))}
-                    {room.currentProcedure.progress > 0 && (
-                      <div className="mt-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-white/30 uppercase tracking-wider">Průběh výkonu</span>
-                          <span className="text-base font-black" style={{ color: accent }}>{room.currentProcedure.progress}%</span>
-                        </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                          <motion.div className="h-full rounded-full" style={{ background: accent }}
-                            initial={{ width: 0 }} animate={{ width: `${room.currentProcedure.progress}%` }}
-                            transition={{ duration: 0.6, ease: 'easeOut' }} />
-                        </div>
-                      </div>
+          {/* Workflow indicator */}
+          <Card>
+            <SectionTitle>Aktuální fáze workflow</SectionTitle>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {WORKFLOW_STEPS.map((step, i) => {
+                const isCur  = i === room.currentStepIndex;
+                const isDone = i < room.currentStepIndex;
+                return (
+                  <React.Fragment key={i}>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wide"
+                      style={{
+                        background: isCur ? `${step.color}20` : isDone ? 'rgba(255,255,255,0.04)' : 'transparent',
+                        color:      isCur ? step.color : isDone ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.18)',
+                        border:     `1px solid ${isCur ? step.color : 'rgba(255,255,255,0.07)'}`,
+                      }}>
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: step.color, opacity: isCur ? 1 : 0.3 }} />
+                      {step.title}
+                    </div>
+                    {i < WORKFLOW_STEPS.length - 1 && (
+                      <div className="w-2.5 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
                     )}
-                  </div>
-                </div>
-              )}
+                  </React.Fragment>
+                );
+              })}
             </div>
-          </div>
+          </Card>
 
-          {/* ── SCHEDULE-SPECIFIC STATISTICS ── */}
-          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex-1">
-                <p className="text-xs font-black uppercase tracking-widest text-white/30">
-                  {ups ? 'Statistiky ÚPS — 24h provoz' : 'Statistiky pracovní doby'}
-                </p>
-              </div>
-              <div className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider"
-                style={{ background: ups ? 'rgba(6,182,212,0.15)' : 'rgba(249,115,22,0.15)', 
-                         color: ups ? '#06B6D4' : '#F97316' }}>
-                {ups ? 'ÚPS' : 'STD'}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Day availability */}
-              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Dostupnost / den</p>
-                <div className="text-2xl font-black text-white/80">{ups ? '24' : '12'}</div>
-                <p className="text-xs text-white/25 mt-1">hodin</p>
-              </div>
-
-              {/* Avg ops per schedule */}
-              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Prům. výkony</p>
-                <div className="text-2xl font-black" style={{ color: accent }}>{opsDay}</div>
-                <p className="text-xs text-white/25 mt-1">za provozní dobu</p>
-              </div>
-
-              {/* Utilization during hours */}
-              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Aut. vytížení</p>
-                <div className="text-2xl font-black text-white/80">{utilPct}%</div>
-                <p className="text-xs text-white/25 mt-1">výkonu</p>
-              </div>
-
-              {/* Peak hour efficiency */}
-              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Peak efekt.</p>
-                <div className="text-2xl font-black" style={{ color: '#10B981' }}>{Math.min(100, utilPct + 15)}%</div>
-                <p className="text-xs text-white/25 mt-1">vrchol dne</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── SCHEDULE COMPARISON (if both exist conceptually) ── */}
-          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Srovnění provozních režimů</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { mode: 'Pracovní doba', hours: '12 h', ops: Math.floor(opsDay * 0.7), util: Math.floor(utilPct * 0.9), color: '#F97316' },
-                { mode: 'ÚPS/Služba', hours: '24 h', ops: Math.floor(opsDay * 1.4), util: Math.floor(utilPct * 0.6), color: '#06B6D4' },
-              ].map(m => (
-                <div key={m.mode} className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${m.color}20` }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-black text-white/70">{m.mode}</span>
-                    <span className="px-2 py-1 rounded text-[10px] font-black" style={{ background: `${m.color}20`, color: m.color }}>
-                      {m.hours}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/30">Výkony</span>
-                      <span className="text-sm font-bold text-white/70">{m.ops}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/30">Vytížení</span>
-                      <span className="text-sm font-bold" style={{ color: m.color }}>{m.util}%</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── SAFETY & COMPLIANCE ── */}
-          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Bezpečnost & Compliance</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[
-                { label: 'Sterilní stav', value: '100', unit: '%', color: '#10B981' },
-                { label: 'Příprava sálu', value: '98', unit: '%', color: '#06B6D4' },
-                { label: 'Incidenty', value: '0', unit: 'za měsíc', color: '#F97316' },
-                { label: 'Audit status', value: 'OK', unit: '', color: '#10B981' },
-                { label: 'Servis stav', value: 'Aktuální', unit: '', color: '#06B6D4' },
-                { label: 'Certifikace', value: 'Platná', unit: '', color: '#10B981' },
-              ].map(s => (
-                <div key={s.label} className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="text-xs text-white/30 uppercase tracking-wider mb-2">{s.label}</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black" style={{ color: s.color }}>{s.value}</span>
-                    {s.unit && <span className="text-xs text-white/30">{s.unit}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── STAFF ALLOCATION & ROTATION ── */}
-          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Obsazení a rotace personálu</p>
-            <div className="space-y-4">
-              {[
-                { role: 'Chirurgové',      current: 2, available: 5, util: 40 },
-                { role: 'Operační sestry', current: 2, available: 6, util: 33 },
-                { role: 'Anesteziologové', current: 1, available: 3, util: 33 },
-                { role: 'Asistenti',       current: 1, available: 4, util: 25 },
-              ].map(st => (
-                <div key={st.role}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm text-white/50">{st.role}</span>
-                    <span className="text-xs font-black text-white/40">{st.current}/{st.available}</span>
-                  </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <motion.div className="h-full rounded-full" style={{ background: accent, opacity: 0.85 }}
-                      initial={{ width: 0 }} animate={{ width: `${st.util}%` }}
-                      transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Rozšířené statistiky ── */}
-          <div className="pt-6 space-y-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30">Rozšířené statistiky</p>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[
-                { label: 'Průměrná doba výkonu', value: Math.round(STEP_DURATIONS[2]), unit: 'minut', color: accent },
-                { label: 'Pacienti / den',         value: Math.max(1, Math.floor(opsDay * 0.8)), unit: 'osob', color: 'rgba(255,255,255,0.8)' },
-                { label: 'Pacienti / měsíc',       value: Math.max(1, Math.floor(opsDay * 0.8)) * 22, unit: 'osob', color: 'rgba(255,255,255,0.8)' },
-                { label: 'Efektivita workflow',    value: `${Math.min(100, 60 + (parseInt(room.id) % 40))}`, unit: '%', color: Math.min(100, 60 + (parseInt(room.id) % 40)) > 80 ? '#10B981' : accent },
-                { label: 'Dostupnost personálu',   value: `${92 + (parseInt(room.id) % 8)}`, unit: '%', color: 'rgba(255,255,255,0.8)' },
-                { label: 'Pacientů / rok (est.)',  value: Math.round(Math.max(1, Math.floor(opsDay * 0.8)) * 22 * 12 / 100) * 100, unit: 'osob', color: 'rgba(255,255,255,0.8)' },
-              ].map(s => (
-                <div key={s.label} className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="text-xs text-white/30 uppercase tracking-wider mb-2">{s.label}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black" style={{ color: s.color }}>{s.value}</span>
-                    <span className="text-xs text-white/30">{s.unit}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Top Procedures */}
-            <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs text-white/30 uppercase tracking-wider mb-4">Nejčastější výkony (tento měsíc)</p>
-              <div className="space-y-3">
-                {['Vasektomie', 'Karpální tunel', 'Stenóza tepen'].map((proc, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="text-sm text-white/50">{proc}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ width: 60, background: 'rgba(255,255,255,0.06)' }}>
-                        <motion.div className="h-full rounded-full" style={{ background: accent, opacity: 0.85 }}
-                          initial={{ width: 0 }} animate={{ width: `${100 - i * 20}%` }}
-                          transition={{ duration: 0.6, delay: i * 0.1, ease: 'easeOut' }} />
-                      </div>
-                      <span className="text-xs text-white/30 w-8 text-right">{100 - i * 20}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>{/* end Rozšířené statistiky */}
-
-        </div>{/* end p-7 space-y-8 */}
+        </div>
       </motion.div>
     </motion.div>
   );
 };
 
-// ── Main component ────────────────────────────────────────────────────────────
-const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS }) => {
-  const [period, setPeriod] = useState<Period>('týden');
-  const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
+// ─────────────────────────────────────────────────────────────────────────────
+// Views
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const utilData = period === 'den' ? dayData : period === 'týden' ? weekData : monthData;
+const OverviewView: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms }) => {
+  const busy     = rooms.filter(r => r.status === RoomStatus.BUSY).length;
+  const free     = rooms.filter(r => r.status === RoomStatus.FREE).length;
+  const cleaning = rooms.filter(r => r.status === RoomStatus.CLEANING).length;
+  const totalOps = rooms.reduce((a, r) => a + r.operations24h, 0);
+  const totalQ   = rooms.reduce((a, r) => a + r.queueCount, 0);
+  const avgUtil  = Math.round(rooms.reduce((a, r) => {
+    const d = buildDist(r);
+    return a + (d.find(x => x.title === 'Chirurgický výkon')?.pct ?? 0);
+  }, 0) / rooms.length);
 
-  const totalOps  = useMemo(() => rooms.reduce((s, r) => s + r.operations24h, 0), [rooms]);
-  const busyRooms = useMemo(() => rooms.filter(r => r.status === RoomStatus.BUSY).length, [rooms]);
-  const freeRooms = useMemo(() => rooms.filter(r => r.status === RoomStatus.FREE).length, [rooms]);
-  const avgOps    = useMemo(() => (totalOps / rooms.length).toFixed(1), [totalOps, rooms]);
-  const avgUtil   = useMemo(() => Math.round(utilData.reduce((s, d) => s + d.v, 0) / utilData.length), [utilData]);
+  // ops trend per department
+  const deptData = Object.entries(
+    rooms.reduce<Record<string, number>>((acc, r) => {
+      acc[r.department] = (acc[r.department] ?? 0) + r.operations24h;
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([d, v]) => ({ d, v }));
 
-  const roomBarData = useMemo(() =>
-    rooms.map(r => ({ name: r.name.replace('Sál č. ', 'S'), ops: r.operations24h })), [rooms]);
+  // status pie
+  const statusPie = [
+    { name: 'Obsazeno', value: busy,     color: ORANGE },
+    { name: 'Volno',    value: free,     color: GREEN  },
+    { name: 'Úklid',    value: cleaning, color: ACCENT },
+    { name: 'Údržba',   value: rooms.length - busy - free - cleaning, color: '#6B7280' },
+  ].filter(d => d.value > 0);
 
-  const deptMap = useMemo(() => {
-    const m: Record<string, number> = {};
-    rooms.forEach(r => { m[r.department] = (m[r.department] || 0) + r.operations24h; });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [rooms]);
-
-  const statusPct = useMemo(() => ({
-    busy:  Math.round((busyRooms / rooms.length) * 100),
-    free:  Math.round((freeRooms / rooms.length) * 100),
-    other: Math.round(((rooms.length - busyRooms - freeRooms) / rooms.length) * 100),
-  }), [busyRooms, freeRooms, rooms.length]);
-
-  const workflowTotals = useMemo(() => {
-    const totals = WORKFLOW_STEPS.map(step => ({ color: step.color, title: step.title, totalMin: 0 }));
-    rooms.forEach(room => {
-      WORKFLOW_STEPS.forEach((_, i) => {
-        totals[i].totalMin += (i === 2 && room.currentProcedure) ? room.currentProcedure.estimatedDuration : STEP_DURATIONS[i];
-      });
-    });
-    const grand = totals.reduce((s, t) => s + t.totalMin, 0);
-    return totals.map(t => ({ ...t, pct: Math.round((t.totalMin / grand) * 100) }));
-  }, [rooms]);
-
-  // Global dept pie
-  const deptPieData = useMemo(() =>
-    deptMap.map(([name, value], i) => ({
-      name, value,
-      color: ['#06B6D4','#F97316','#10B981','#FBBF24','#A78BFA','#2DD4BF','#818CF8','#EC4899'][i % 8],
-    })), [deptMap]);
-
-  // Ops trend line (stable)
-  const opsTrendData = [
-    { t: 'T-6', v: 198 }, { t: 'T-5', v: 212 }, { t: 'T-4', v: 205 },
-    { t: 'T-3', v: 221 }, { t: 'T-2', v: 215 }, { t: 'T-1', v: 228 }, { t: 'Dnes', v: totalOps },
-  ];
+  // workflow aggregate
+  const workflowAgg = WORKFLOW_STEPS.map(step => {
+    const dist = rooms.flatMap(r => buildDist(r));
+    const matching = dist.filter(d => d.title === step.title);
+    return {
+      name: step.title,
+      color: step.color,
+      pct: Math.round(matching.reduce((a, d) => a + d.pct, 0) / rooms.length),
+    };
+  });
 
   return (
-    <div className="w-full min-h-screen flex flex-col text-white">
-
-      {/* ── Header ── */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0">
-        <div className="text-center lg:text-left">
-          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <BarChart3 className="w-4 h-4" style={{ color: accent }} />
-            <p className="text-[10px] font-black tracking-[0.4em] uppercase" style={{ color: accent }}>
-              ANALÝZY A METRIKY
-            </p>
-          </div>
-          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-            STATISTIKY <span className="text-white/20">SYSTÉMU</span>
-          </h1>
-        </div>
-      </header>
-
-      {/* ── Period switcher ── */}
-      <div className="flex items-center gap-1.5 mb-10">
-        {(['den','týden','měsíc'] as Period[]).map(p => (
-          <button key={p} onClick={() => setPeriod(p)}
-            className="px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded transition-all"
-            style={{
-              background: period === p ? `${accent}18` : 'transparent',
-              color: period === p ? accent : 'rgba(255,255,255,0.3)',
-              border: `1px solid ${period === p ? accent : 'rgba(255,255,255,0.08)'}`,
-            }}>
-            {p}
-          </button>
-        ))}
-      </div>
-
-      {/* ── KPI strip ── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px mb-10"
-        style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, overflow: 'hidden' }}>
+    <div className="space-y-6">
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Sálů celkem',         value: rooms.length },
-          { label: 'Aktivních',           value: busyRooms,    hi: busyRooms > 0 },
-          { label: 'Volných',             value: freeRooms },
-          { label: 'Operací / 24 h',      value: totalOps,     hi: true },
-          { label: 'Průměr / sál',        value: `${avgOps}` },
-          { label: `Využití (${period})`, value: `${avgUtil}%` },
+          { l: 'Celkem sálů',  v: rooms.length,  c: 'rgba(255,255,255,0.9)' },
+          { l: 'Obsazeno',     v: busy,           c: ORANGE },
+          { l: 'Volno',        v: free,           c: GREEN  },
+          { l: 'Ops / 24 h',   v: totalOps,       c: ACCENT },
+          { l: 'Fronta',       v: totalQ,         c: YELLOW },
+          { l: 'Avg. využití', v: `${avgUtil}%`,  c: 'rgba(255,255,255,0.7)' },
         ].map((k, i) => (
-          <div key={i} className="flex flex-col justify-between px-4 py-4"
-            style={{ background: 'rgba(255,255,255,0.02)', borderRight: i < 5 ? '1px solid rgba(255,255,255,0.06)' : undefined }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-2">{k.label}</p>
-            <p className="text-3xl font-black leading-none" style={{ color: (k as any).hi ? accent : 'white' }}>{k.value}</p>
-          </div>
+          <Card key={i} className="!p-4">
+            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2 leading-tight">{k.l}</p>
+            <p className="text-3xl font-black leading-none" style={{ color: k.c }}>{k.v}</p>
+          </Card>
         ))}
       </div>
 
-      {/* ── Main grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
-        {/* Utilization area chart */}
-        <motion.section className="lg:col-span-2 rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Vytížení v čase — {period}</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={utilData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+      {/* Row: area chart + status pie */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="md:col-span-2">
+          <SectionTitle>Vytížení — posledních 7 dní</SectionTitle>
+          <ResponsiveContainer width="100%" height={160}>
+            <AreaChart data={WEEK_DATA} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
               <defs>
-                <linearGradient id="ug" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={accent} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={accent} stopOpacity={0} />
+                <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={ACCENT} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={ACCENT} stopOpacity={0}    />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="t" stroke="rgba(255,255,255,0.15)" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.15)" fontSize={12} tickLine={false} axisLine={false} domain={[0,100]} />
-              <Tooltip {...TooltipStyle} formatter={(v: number) => [`${v}%`, 'Využití']} />
-              <Area type="monotone" dataKey="v" stroke={accent} fill="url(#ug)" strokeWidth={1.5} dot={false} />
+              <XAxis dataKey="t" stroke="rgba(255,255,255,0.12)" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.12)" fontSize={11} tickLine={false} axisLine={false} domain={[0,100]} />
+              <Tooltip {...TT} formatter={(v: number) => [`${v}%`, 'Vytížení']} />
+              <Area type="monotone" dataKey="v" stroke={ACCENT} fill="url(#wg)" strokeWidth={1.5} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
-        </motion.section>
+        </Card>
 
-        {/* Status breakdown */}
-        <motion.section className="rounded-xl p-5 flex flex-col"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
-          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-6">Stav sálů</p>
-          <div className="flex-1 flex flex-col justify-center gap-5">
-            {[
-              { label: 'Obsazeno', pct: statusPct.busy,  color: '#F97316' },
-              { label: 'Volno',    pct: statusPct.free,  color: '#10B981' },
-              { label: 'Ostatní', pct: statusPct.other, color: 'rgba(255,255,255,0.2)' },
-            ].map(s => (
-              <div key={s.label}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-black uppercase tracking-wider text-white/50">{s.label}</span>
-                  <span className="text-base font-black" style={{ color: s.color }}>{s.pct}%</span>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <motion.div className="h-full rounded-full" style={{ background: s.color }}
-                    initial={{ width: 0 }} animate={{ width: `${s.pct}%` }}
-                    transition={{ duration: 0.7, ease: 'easeOut' }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-3">Fronta / sál</p>
-            <div className="space-y-2">
-              {rooms.filter(r => r.queueCount > 0).slice(0, 4).map(r => (
-                <div key={r.id} className="flex items-center justify-between">
-                  <span className="text-sm text-white/40">{r.name}</span>
-                  <span className="text-sm font-black text-white/70">{r.queueCount}</span>
-                </div>
-              ))}
-              {rooms.filter(r => r.queueCount > 0).length === 0 && (
-                <p className="text-sm text-white/25">Žádná fronta</p>
-              )}
-            </div>
-          </div>
-        </motion.section>
-      </div>
-
-      {/* ── Row 2: Bar + Dept + Trend ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
-        {/* Ops per room bar */}
-        <motion.section className="rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.07 }}>
-          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Operace / sál (24 h)</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={roomBarData} margin={{ top: 0, right: 0, bottom: 0, left: -24 }} barSize={10}>
-              <XAxis dataKey="name" stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.15)" fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip {...TooltipStyle} formatter={(v: number) => [v, 'Operace']} />
-              <Bar dataKey="ops" fill={accent} opacity={0.75} radius={[2,2,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.section>
-
-        {/* Dept pie + bars */}
-        <motion.section className="rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.09 }}>
-          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-2">Výkony dle oddělení</p>
-          <ResponsiveContainer width="100%" height={100}>
+        <Card>
+          <SectionTitle>Stav sálů</SectionTitle>
+          <ResponsiveContainer width="100%" height={140}>
             <PieChart>
-              <Pie data={deptPieData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                innerRadius={28} outerRadius={44} paddingAngle={2} strokeWidth={0}>
-                {deptPieData.map((entry, i) => <Cell key={i} fill={entry.color} opacity={0.85} />)}
+              <Pie data={statusPie} dataKey="value" nameKey="name" cx="50%" cy="50%"
+                innerRadius={38} outerRadius={58} paddingAngle={2} strokeWidth={0}>
+                {statusPie.map((e, i) => <Cell key={i} fill={e.color} opacity={0.85} />)}
               </Pie>
-              <Tooltip contentStyle={TooltipStyle.contentStyle} formatter={(v: number, name: string) => [v, name]} />
+              <Tooltip contentStyle={TT.contentStyle} formatter={(v: number, name: string) => [v, name]} />
             </PieChart>
           </ResponsiveContainer>
-          <div className="space-y-2 mt-1">
-            {deptMap.slice(0,5).map(([dept, count], i) => (
-              <div key={dept}>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2">
+            {statusPie.map(d => (
+              <div key={d.name} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-[2px]" style={{ background: d.color }} />
+                <span className="text-xs text-white/40">{d.name} <span className="font-black text-white/70">{d.value}</span></span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Row: dept bar + workflow agg */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <SectionTitle>Výkony dle oddělení (24 h)</SectionTitle>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={deptData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 0 }} barSize={9}>
+              <XAxis type="number" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis type="category" dataKey="d" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} width={70} />
+              <Tooltip {...TT} formatter={(v: number) => [v, 'Výkony']} />
+              <Bar dataKey="v" fill={ACCENT} opacity={0.7} radius={[0,2,2,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+
+        <Card>
+          <SectionTitle>Souhrnné rozložení workflow</SectionTitle>
+          <div className="flex h-5 w-full rounded overflow-hidden gap-px mb-4">
+            {workflowAgg.map((w, i) => (
+              <motion.div key={i} className="h-full" style={{ background: w.color, opacity: 0.85 }}
+                initial={{ width: 0 }} animate={{ width: `${w.pct}%` }}
+                transition={{ duration: 0.6, delay: i * 0.07, ease: 'easeOut' }}
+                title={`${w.name} — ${w.pct}%`} />
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+            {workflowAgg.map((w, i) => (
+              <div key={i}>
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{ background: deptPieData[i]?.color ?? accent }} />
-                    <span className="text-xs text-white/55">{dept}</span>
+                    <div className="w-2 h-2 rounded-[2px]" style={{ background: w.color }} />
+                    <span className="text-xs text-white/45">{w.name}</span>
                   </div>
-                  <span className="text-xs font-black text-white/75">{count}</span>
+                  <span className="text-xs font-black" style={{ color: w.color }}>{w.pct}%</span>
                 </div>
-                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <motion.div className="h-full rounded-full"
-                    style={{ background: deptPieData[i]?.color ?? accent, opacity: 0.8 }}
-                    initial={{ width: 0 }} animate={{ width: `${(count / deptMap[0][1]) * 100}%` }}
-                    transition={{ duration: 0.6, delay: i * 0.04, ease: 'easeOut' }} />
+                <div className="h-px rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <motion.div className="h-full rounded-full" style={{ background: w.color }}
+                    initial={{ width: 0 }} animate={{ width: `${w.pct}%` }}
+                    transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }} />
                 </div>
               </div>
             ))}
           </div>
-        </motion.section>
-
-        {/* Ops trend line */}
-        <motion.section className="rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.10 }}>
-          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Trend operací (7 dní)</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={opsTrendData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
-              <XAxis dataKey="t" stroke="rgba(255,255,255,0.15)" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.15)" fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip {...TooltipStyle} formatter={(v: number) => [v, 'Operace']} />
-              <Line type="monotone" dataKey="v" stroke="#10B981" strokeWidth={1.5}
-                dot={{ fill: '#10B981', strokeWidth: 0, r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.section>
+        </Card>
       </div>
 
-      {/* ── Aggregate workflow status ── */}
-      <motion.section className="rounded-xl p-5 mb-6"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.11 }}>
-        <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">
-          Souhrnné rozložení workflow statusů — všechny sály
-        </p>
-        <div className="flex h-5 w-full rounded overflow-hidden gap-px mb-5">
-          {workflowTotals.map((seg, i) => (
-            <motion.div key={i} className="h-full" style={{ background: seg.color, opacity: 0.85 }}
-              initial={{ width: 0 }} animate={{ width: `${seg.pct}%` }}
-              transition={{ duration: 0.7, delay: i * 0.06, ease: 'easeOut' }}
-              title={`${seg.title} — ${seg.pct}%`} />
-          ))}
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-3">
-          {workflowTotals.map((seg, i) => (
-            <div key={i}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-[1px] shrink-0" style={{ background: seg.color, opacity: 0.85 }} />
-                  <span className="text-xs text-white/45">{seg.title}</span>
-                </div>
-                <span className="text-xs font-black" style={{ color: seg.color }}>{seg.pct}%</span>
-              </div>
-              <div className="h-px rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <motion.div className="h-full" style={{ background: seg.color, opacity: 0.7 }}
-                  initial={{ width: 0 }} animate={{ width: `${seg.pct}%` }}
-                  transition={{ duration: 0.5, delay: i * 0.06, ease: 'easeOut' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.section>
-
-      {/* ── Phase breakdown ── */}
-      <motion.section className="rounded-xl p-5 mb-6"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.12 }}>
-        <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-5">Fáze operačního cyklu — průměrné trvání</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-          {phaseRows.map((ph, i) => (
-            <div key={i}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm text-white/55 flex items-center gap-2">
-                  <TrendIcon v={ph.trend} />
-                  {ph.label}
-                </span>
-                <span className="text-sm font-black text-white/80">{ph.min} min</span>
-              </div>
-              <div className="h-px rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                <motion.div className="h-full"
-                  style={{ background: ph.pct > 20 ? accent : 'rgba(255,255,255,0.25)' }}
-                  initial={{ width: 0 }} animate={{ width: `${Math.min(ph.pct * 2, 100)}%` }}
-                  transition={{ duration: 0.6, delay: i * 0.04, ease: 'easeOut' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.section>
-
-      {/* ── Heatmap ── */}
-      <motion.section className="rounded-xl p-5 mb-6"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.14 }}>
-        <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-5">Heatmapa vytížení — den × hodina</p>
-        <div className="overflow-x-auto">
-          <div className="inline-flex flex-col gap-0.5" style={{ minWidth: 520 }}>
-            <div className="flex gap-0.5 pl-7">
-              {Array.from({ length: 24 }, (_, h) => (
-                <div key={h} className="w-5 text-center text-[9px] text-white/20 font-bold shrink-0">{h}</div>
-              ))}
-            </div>
-            {DAYS.map((day, di) => (
-              <div key={di} className="flex items-center gap-0.5">
-                <span className="w-6 text-xs font-black text-white/30 shrink-0">{day}</span>
-                {HEATMAP[di].map((val, hi) => (
-                  <div key={hi} className="w-5 h-4 rounded-[2px] shrink-0"
-                    style={{ background: heatColor(val) }}
-                    title={`${day} ${hi}:00 — ${val}%`} />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-4 mt-4 flex-wrap">
-          {[
-            { c: 'rgba(30,41,59,0.6)',    l: '< 25%'  },
-            { c: 'rgba(16,185,129,0.60)', l: '25–50%' },
-            { c: 'rgba(251,191,36,0.65)', l: '50–70%' },
-            { c: 'rgba(249,115,22,0.75)', l: '70–90%' },
-            { c: 'rgba(255,59,48,0.85)',  l: '> 90%'  },
-          ].map(l => (
-            <div key={l.l} className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded-[2px]" style={{ background: l.c }} />
-              <span className="text-xs text-white/30">{l.l}</span>
-            </div>
-          ))}
-        </div>
-      </motion.section>
-
-      {/* ══════════════════════════════════════════════════════════════════════
-          ── Sály — mřížka malých boxů ──
-          ══════════════════════════════════════════════════════════════════ */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-1">
-              Sály — kliknutím zobrazíte detailní statistiky
-            </p>
-            <p className="text-sm text-white/25">
-              Každý box zobrazuje miniaturní časovou osu, KPIs a stav sálu.
-              Sály ÚPS jsou označeny modře a mají 24h provoz.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Activity className="w-4 h-4" style={{ color: accent }} />
-            <span className="text-xs font-black" style={{ color: accent }}>{rooms.length} sálů</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-          {rooms.map((room, i) => (
-            <RoomBox key={room.id} room={room} index={i} onClick={() => setSelectedRoom(room)} />
-          ))}
-        </div>
-      </div>
-
-      {/* ── Summary table ── */}
-      <motion.section className="rounded-xl mb-16"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.16 }}>
-        <div className="px-5 pt-5 pb-1">
-          <p className="text-xs font-black uppercase tracking-widest text-white/30">Přehled sálů</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['Sál','Oddělení','Chirurg','Operace / 24h','Stav'].map(h => (
-                  <th key={h} className="px-5 py-3 text-left font-black uppercase tracking-widest text-white/25 text-xs">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rooms.map((r, i) => (
-                <tr key={r.id}
-                  className="cursor-pointer transition-colors hover:bg-white/[0.02]"
-                  onClick={() => setSelectedRoom(r)}
-                  style={{ borderBottom: i < rooms.length - 1 ? '1px solid rgba(255,255,255,0.04)' : undefined }}>
-                  <td className="px-5 py-3 font-bold text-white/80">{r.name}</td>
-                  <td className="px-5 py-3 text-white/40">{r.department}</td>
-                  <td className="px-5 py-3 text-white/40">{r.staff.doctor.name ?? '—'}</td>
-                  <td className="px-5 py-3 font-black" style={{ color: accent }}>{r.operations24h}</td>
-                  <td className="px-5 py-3">
-                    <span className="text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded"
-                      style={{
-                        background: r.status === RoomStatus.BUSY  ? 'rgba(249,115,22,0.12)'
-                                  : r.status === RoomStatus.FREE  ? 'rgba(16,185,129,0.12)'
-                                  : 'rgba(255,255,255,0.06)',
-                        color:      r.status === RoomStatus.BUSY  ? '#F97316'
-                                  : r.status === RoomStatus.FREE  ? '#10B981'
-                                  : 'rgba(255,255,255,0.4)',
-                      }}>
-                      {statusLabel(r.status)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.section>
-
-      {/* ── Room detail overlay ── */}
-      <AnimatePresence>
-        {selectedRoom && (
-          <RoomDetailPanel room={selectedRoom} onClose={() => setSelectedRoom(null)} />
-        )}
-      </AnimatePresence>
-
+      {/* Monthly area */}
+      <Card>
+        <SectionTitle>Vytížení — posledních 30 dní</SectionTitle>
+        <ResponsiveContainer width="100%" height={120}>
+          <AreaChart data={MONTH_DATA} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+            <defs>
+              <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={ACCENT} stopOpacity={0.2} />
+                <stop offset="95%" stopColor={ACCENT} stopOpacity={0}   />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="t" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false}
+              ticks={['1','5','10','15','20','25','30']} />
+            <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} domain={[0,100]} />
+            <Tooltip {...TT} formatter={(v: number) => [`${v}%`, 'Vytížení']} />
+            <Area type="monotone" dataKey="v" stroke={ACCENT} fill="url(#mg)" strokeWidth={1.5} dot={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </Card>
     </div>
   );
 };
 
-export default StatisticsModule;
+// ─────────────────────────────────────────────────────────────────────────────
+const RoomsView: React.FC<{ rooms: OperatingRoom[]; onSelect: (r: OperatingRoom) => void }> = ({ rooms, onSelect }) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <p className="text-xs text-white/30">Kliknutím na sál zobrazíte podrobné statistiky.</p>
+      <div className="flex items-center gap-4 text-xs text-white/30">
+        {[{ c: ORANGE, l: 'Obsazeno' }, { c: GREEN, l: 'Volno' }, { c: ACCENT, l: 'Úklid' }].map(x => (
+          <div key={x.l} className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ background: x.c }} />
+            {x.l}
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+      {rooms.map((r, i) => (
+        <RoomBox key={r.id} room={r} idx={i} onSelect={() => onSelect(r)} />
+      ))}
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+const ChartsView: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms }) => {
+  const phaseRows = [
+    { label: 'Příjezd na sál',     min: 12, pct: 5.5,  trend: -1   },
+    { label: 'Začátek anestezie',  min: 8,  pct: 3.7,  trend: -0.5 },
+    { label: 'Chirurgický výkon',  min: 95, pct: 43.8, trend: +2   },
+    { label: 'Ukončení výkonu',    min: 15, pct: 6.9,  trend: -2   },
+    { label: 'Ukončení anestezie', min: 10, pct: 4.6,  trend: 0    },
+    { label: 'Úklid sálu',        min: 20, pct: 9.2,  trend: +1   },
+    { label: 'Sál připraven',      min: 47, pct: 21.6, trend: +5   },
+  ];
+
+  const roomBarData = rooms.map(r => ({ name: r.name.replace('Sál č. ', '#'), ops: r.operations24h }));
+
+  return (
+    <div className="space-y-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Ops per room */}
+        <Card>
+          <SectionTitle>Výkony dle sálu (24 h)</SectionTitle>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={roomBarData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }} barSize={12}>
+              <XAxis dataKey="name" stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
+              <Tooltip {...TT} formatter={(v: number) => [v, 'Výkony']} />
+              <Bar dataKey="ops" fill={ACCENT} opacity={0.75} radius={[2,2,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Phase cycle */}
+        <Card>
+          <SectionTitle>Průměrná délka fáze cyklu</SectionTitle>
+          <div className="space-y-3">
+            {phaseRows.map((ph, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    {ph.trend > 0
+                      ? <TrendingUp className="w-3 h-3 shrink-0" style={{ color: ORANGE }} />
+                      : ph.trend < 0
+                        ? <TrendingDown className="w-3 h-3 shrink-0" style={{ color: GREEN }} />
+                        : <Minus className="w-3 h-3 shrink-0 opacity-25" />}
+                    <span className="text-xs text-white/50">{ph.label}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-white/30">{ph.min} min</span>
+                    <span className="text-sm font-black" style={{ color: ACCENT }}>{ph.pct}%</span>
+                  </div>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <motion.div className="h-full rounded-full" style={{ background: ACCENT, opacity: 0.75 }}
+                    initial={{ width: 0 }} animate={{ width: `${ph.pct}%` }}
+                    transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* ComposedChart: ops bar + utilisation line */}
+      <Card>
+        <SectionTitle>Srovnání sálů — výkony vs. využití výkonem</SectionTitle>
+        <ResponsiveContainer width="100%" height={180}>
+          <ComposedChart data={rooms.map(r => {
+            const dist = buildDist(r);
+            return {
+              name: r.name.replace('Sál č. ', '#'),
+              ops: r.operations24h,
+              util: dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0,
+            };
+          })} margin={{ top: 4, right: 10, bottom: 0, left: -24 }}>
+            <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3" />
+            <XAxis dataKey="name" stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
+            <YAxis yAxisId="l" stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
+            <YAxis yAxisId="r" orientation="right" stroke="rgba(255,255,255,0.12)" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip {...TT} />
+            <Bar yAxisId="l" dataKey="ops" fill={ACCENT} opacity={0.6} radius={[2,2,0,0]} name="Výkony" />
+            <Line yAxisId="r" type="monotone" dataKey="util" stroke={ORANGE} strokeWidth={2}
+              dot={{ fill: ORANGE, r: 3, strokeWidth: 0 }} name="Využití %" />
+          </ComposedChart>
+        </ResponsiveContainer>
+        <div className="flex gap-6 mt-3">
+          {[{ c: ACCENT, l: 'Výkony' }, { c: ORANGE, l: 'Využití výkonem %' }].map(x => (
+            <div key={x.l} className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-[2px]" style={{ background: x.c }} />
+              <span className="text-xs text-white/35">{x.l}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Queue + UPS breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <SectionTitle>Fronta dle sálu</SectionTitle>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={rooms.filter(r => r.queueCount > 0).map(r => ({ name: r.name.replace('Sál č. ', '#'), q: r.queueCount }))}
+              margin={{ top: 4, right: 0, bottom: 0, left: -24 }} barSize={14}>
+              <XAxis dataKey="name" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+              <Tooltip {...TT} formatter={(v: number) => [v, 'Fronta']} />
+              <Bar dataKey="q" fill={YELLOW} opacity={0.7} radius={[2,2,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+
+        <Card>
+          <SectionTitle>Přehled sálů</SectionTitle>
+          <div className="space-y-2">
+            {rooms.map(r => {
+              const sc = scColor(r.status);
+              return (
+                <div key={r.id} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc }} />
+                  <span className="text-xs text-white/60 w-20 truncate">{r.name}</span>
+                  <span className="text-xs text-white/30 flex-1 truncate">{r.department}</span>
+                  <span className="text-xs font-black" style={{ color: ACCENT }}>{r.operations24h}</span>
+                  <span className="text-[9px] font-black uppercase px-1.5 py-px rounded"
+                    style={{ background: `${sc}14`, color: sc }}>{scLabel(r.status).slice(0,3)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+const HeatmapView: React.FC = () => (
+  <div className="space-y-4">
+    <Card>
+      <SectionTitle>Heatmapa vytížení — den × hodina</SectionTitle>
+      <div className="overflow-x-auto">
+        <div className="inline-flex flex-col gap-1" style={{ minWidth: 560 }}>
+          <div className="flex gap-1 pl-8">
+            {Array.from({ length: 24 }, (_, h) => (
+              <div key={h} className="w-5 text-center text-[8px] text-white/20 font-bold shrink-0">{h}</div>
+            ))}
+          </div>
+          {DAYS.map((day, di) => (
+            <div key={di} className="flex items-center gap-1">
+              <span className="w-7 text-xs font-black text-white/30 shrink-0">{day}</span>
+              {HEAT[di].map((v, hi) => (
+                <div key={hi} className="w-5 h-5 rounded-[3px] shrink-0 flex items-center justify-center"
+                  style={{ background: heatColor(v) }}
+                  title={`${day} ${hi}:00 — ${v}%`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Legend */}
+      <div className="flex items-center gap-5 mt-4">
+        {[
+          { c: heatColor(10),  l: '< 25%'  },
+          { c: heatColor(35),  l: '25–50%' },
+          { c: heatColor(60),  l: '50–70%' },
+          { c: heatColor(80),  l: '70–90%' },
+          { c: heatColor(95),  l: '> 90%'  },
+        ].map(x => (
+          <div key={x.l} className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-[3px]" style={{ background: x.c }} />
+            <span className="text-xs text-white/35">{x.l}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+
+    <div className="grid grid-cols-7 gap-2">
+      {DAYS.map((day, di) => {
+        const avg = Math.round(HEAT[di].reduce((a, b) => a + b, 0) / 24);
+        const peak = Math.max(...HEAT[di]);
+        return (
+          <Card key={di} className="!p-3">
+            <p className="text-xs font-black text-white/30 mb-2">{day}</p>
+            <p className="text-2xl font-black" style={{ color: heatColor(avg) }}>{avg}%</p>
+            <p className="text-[9px] text-white/25 mt-0.5">avg</p>
+            <p className="text-sm font-black mt-2" style={{ color: heatColor(peak) }}>{peak}%</p>
+            <p className="text-[9px] text-white/25">peak</p>
+          </Card>
+        );
+      })}
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
+interface StatisticsModuleProps { rooms?: OperatingRoom[] }
+
+const NAV: { id: View; label: string; Icon: React.ElementType }[] = [
+  { id: 'overview', label: 'Přehled',    Icon: BarChart3   },
+  { id: 'rooms',    label: 'Sály',       Icon: LayoutGrid  },
+  { id: 'charts',   label: 'Grafy',      Icon: Activity    },
+  { id: 'heatmap',  label: 'Heatmapa',   Icon: Thermometer },
+];
+
+export default function StatisticsModule({ rooms: propRooms }: StatisticsModuleProps) {
+  const rooms   = propRooms ?? MOCK_ROOMS;
+  const [view,   setView]   = useState<View>('overview');
+  const [detail, setDetail] = useState<OperatingRoom | null>(null);
+
+  return (
+    <div className="min-h-screen" style={{ background: 'transparent' }}>
+
+      {/* ── Title (matches SettingsPage) ── */}
+      <div className="px-8 pt-8 pb-6">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/20 mb-2">Modul</p>
+        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none text-white">
+          Statistiky
+        </h1>
+        <p className="text-sm text-white/25 mt-3 max-w-lg">
+          Přehled výkonu operačních sálů, vytížení workflow a podrobné statistiky každého sálu.
+        </p>
+      </div>
+
+      {/* ── Layout: nav + content ── */}
+      <div className="flex gap-0 px-8 pb-8">
+
+        {/* Side nav */}
+        <nav className="shrink-0 w-36 mr-6 space-y-1">
+          {NAV.map(n => (
+            <button
+              key={n.id}
+              onClick={() => setView(n.id)}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-black uppercase tracking-wider transition-all"
+              style={{
+                background: view === n.id ? `${ACCENT}18` : 'transparent',
+                color:      view === n.id ? ACCENT          : 'rgba(255,255,255,0.28)',
+                border:     `1px solid ${view === n.id ? `${ACCENT}40` : 'transparent'}`,
+              }}
+            >
+              <n.Icon className="w-3.5 h-3.5 shrink-0" />
+              {n.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+            >
+              {view === 'overview' && <OverviewView rooms={rooms} />}
+              {view === 'rooms'    && <RoomsView rooms={rooms} onSelect={r => setDetail(r)} />}
+              {view === 'charts'   && <ChartsView rooms={rooms} />}
+              {view === 'heatmap'  && <HeatmapView />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Room detail slide-over */}
+      <AnimatePresence>
+        {detail && <RoomDetail room={detail} onClose={() => setDetail(null)} />}
+      </AnimatePresence>
+    </div>
+  );
+}
