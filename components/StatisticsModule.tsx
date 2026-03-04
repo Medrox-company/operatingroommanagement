@@ -461,3 +461,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
 };
 
 export default StatisticsModule;
+  );
+};
+
+export default StatisticsModule;
