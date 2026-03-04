@@ -419,7 +419,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                             transition={{ delay: dayIdx * 0.01 + hourIdx * 0.002, duration: 0.3 }}
                             title={`${utilization}%`}
                           />
-                        );
+  );
+};
+
+export default StatisticsModule;
                       })}
                     </div>
                   ))}
