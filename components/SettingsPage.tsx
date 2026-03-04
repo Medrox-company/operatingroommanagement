@@ -133,7 +133,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           exit={{ opacity: 0 }}
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
-          <StatisticsModule />
+          <StatisticsModule rooms={rooms} />
         </motion.div>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
