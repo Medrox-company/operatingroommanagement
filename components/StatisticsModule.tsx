@@ -779,9 +779,13 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
               ))}
             </div>
           </div>
-            
+
+          {/* ── Rozšířené statistiky ── */}
+          <div className="pt-6 space-y-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30">Rozšířené statistiky</p>
+
             {/* Grid of stat cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {/* Avg Procedure Duration */}
               <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Průměrná doba výkonu</p>
@@ -873,8 +877,9 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        </div>
+          </div>{/* end Rozšířené statistiky */}
+
+        </div>{/* end p-7 space-y-8 */}
       </motion.div>
     </motion.div>
   );
