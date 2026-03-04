@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Calendar, TrendingUp, Clock, Building2, Activity, ChevronDown, Zap, Target, ArrowUpRight } from 'lucide-react';
+import { BarChart3, Calendar, TrendingUp, Clock, Building2, Activity, ChevronDown, Zap, Target, ArrowUpRight, Percent, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { OperatingRoom } from '../types';
 import { MOCK_ROOMS } from '../constants';
-import { LineChart, Line, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { LineChart, Line, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart } from 'recharts';
 
 interface StatisticsModuleProps {
   rooms?: OperatingRoom[];
@@ -15,6 +15,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
   const [selectedRoomId, setSelectedRoomId] = useState<string>(rooms[0]?.id || '1');
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
+  const [comparisonMode, setComparisonMode] = useState(false);
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId);
 
@@ -53,6 +54,29 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
     { phase: 'Úklid→Připraveno', duration: 20, color: '#FBBF24', label: 'Úklid', percent: 9.2 },
     { phase: 'Pauza mezi operacemi', duration: 47, color: '#94A3B8', label: 'Pauza', percent: 21.6 },
   ];
+
+  // Advanced metrics data
+  const advancedMetrics = useMemo(() => {
+    return [
+      { label: 'Čas přijezdu→Anestezie', value: '12m', trend: '-1m', status: 'optimal' },
+      { label: 'Čas Anestezie→Výkon', value: '8m', trend: '-0.5m', status: 'optimal' },
+      { label: 'Doba chirurgického výkonu', value: '95m', trend: '+2m', status: 'warning' },
+      { label: 'Čas Výkon→Konec anestezie', value: '15m', trend: '-2m', status: 'optimal' },
+      { label: 'Doba úklidu sálu', value: '20m', trend: '+1m', status: 'info' },
+      { label: 'Pauza mezi operacemi', value: '47m', trend: '+5m', status: 'warning' },
+    ];
+  }, []);
+
+  // Comparison data - all rooms
+  const comparisonData = useMemo(() => {
+    return rooms.map((room) => ({
+      name: room.name,
+      operations: room.operations24h,
+      utilization: Math.floor(Math.random() * 25) + 75,
+      efficiency: Math.floor(Math.random() * 15) + 85,
+      avgCycle: Math.floor(Math.random() * 40) + 180,
+    }));
+  }, [rooms]);
 
   const totalDuration = phaseData.reduce((sum, p) => sum + p.duration, 0);
 
@@ -222,7 +246,136 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
               })}
             </motion.div>
 
-            {/* Main Chart - Utilization Timeline */}
+            {/* Advanced Metrics - Detailed Timing */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22, duration: 0.4 }}
+            >
+              <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+                <Clock className="w-6 h-6" style={{ color: colors.primary }} />
+                Detailní metriky jednotlivých fází - Časový rozpis
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {advancedMetrics.map((metric, idx) => {
+                  const statusColor = metric.status === 'optimal' ? colors.success : metric.status === 'warning' ? colors.warning : colors.info;
+                  return (
+                    <motion.div
+                      key={idx}
+                      className="p-4 rounded-lg border backdrop-blur-sm flex items-start justify-between"
+                      style={{
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                      }}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.22 + idx * 0.03, duration: 0.4 }}
+                      whileHover={{ background: 'rgba(255, 255, 255, 0.08)' }}
+                    >
+                      <div className="flex-1">
+                        <p className="text-xs text-white/60 mb-2">{metric.label}</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-white">{metric.value}</span>
+                          <span className="text-xs font-bold" style={{ color: statusColor }}>
+                            {metric.trend}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${statusColor}20` }}>
+                        {metric.status === 'optimal' && <CheckCircle className="w-4 h-4" style={{ color: statusColor }} />}
+                        {metric.status === 'warning' && <AlertCircle className="w-4 h-4" style={{ color: statusColor }} />}
+                        {metric.status === 'info' && <Info className="w-4 h-4" style={{ color: statusColor }} />}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            {/* Rooms Comparison */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-black text-white flex items-center gap-3">
+                  <Building2 className="w-6 h-6" style={{ color: colors.warning }} />
+                  Srovnění všech operačních sálů
+                </h2>
+                <button
+                  onClick={() => setComparisonMode(!comparisonMode)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border backdrop-blur-sm transition-all"
+                  style={{
+                    borderColor: comparisonMode ? colors.warning : 'rgba(255, 255, 255, 0.1)',
+                    background: comparisonMode ? `${colors.warning}20` : 'rgba(255, 255, 255, 0.04)',
+                    color: comparisonMode ? colors.warning : 'rgba(255, 255, 255, 0.7)',
+                  }}
+                >
+                  {comparisonMode ? 'Tabulka' : 'Grafika'}
+                </button>
+              </div>
+              
+              {!comparisonMode ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={comparisonData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
+                    <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
+                    <YAxis stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'rgba(0, 0, 0, 0.95)',
+                        border: `1px solid rgba(255, 255, 255, 0.15)`,
+                        borderRadius: '12px',
+                      }}
+                      labelStyle={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                    />
+                    <Bar dataKey="operations" fill={colors.primary} radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="utilization" fill={colors.secondary} radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                        <th className="text-left px-4 py-3 text-white/70 font-bold">Sál</th>
+                        <th className="text-left px-4 py-3 text-white/70 font-bold">Operace</th>
+                        <th className="text-left px-4 py-3 text-white/70 font-bold">Vytížení</th>
+                        <th className="text-left px-4 py-3 text-white/70 font-bold">Efektivita</th>
+                        <th className="text-left px-4 py-3 text-white/70 font-bold">Cyklus</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.map((room, idx) => (
+                        <tr key={idx} className="border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+                          <td className="px-4 py-4 font-bold text-white">{room.name}</td>
+                          <td className="px-4 py-4 text-white/80">{room.operations}</td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-20 h-2 rounded-full overflow-hidden bg-white/10">
+                                <div className="h-full bg-blue-500" style={{ width: `${room.utilization}%` }} />
+                              </div>
+                              <span className="text-white/80 text-xs">{room.utilization}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="px-2 py-1 rounded-lg text-xs font-bold" style={{ background: `${colors.success}20`, color: colors.success }}>
+                              {room.efficiency}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-white/80">{room.avgCycle}m</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
