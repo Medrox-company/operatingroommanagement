@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Calendar, TrendingUp, Clock, Building2, Activity, ChevronDown, Zap, Target } from 'lucide-react';
+import { BarChart3, Calendar, TrendingUp, Clock, Building2, Activity, ChevronDown, Zap, Target, ArrowUpRight } from 'lucide-react';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS, MOCK_ROOMS } from '../constants';
+import { MOCK_ROOMS } from '../constants';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 interface StatisticsModuleProps {
@@ -45,18 +45,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
   }, [timePeriod]);
 
   const phaseData = [
-    { phase: 'Přijezd→Anestezie', duration: 12, color: '#818CF8', label: 'Příprava' },
-    { phase: 'Anestezie→Výkon', duration: 8, color: '#A855F7', label: 'Anestezie' },
-    { phase: 'Chirurgický výkon', duration: 95, color: '#06B6D4', label: 'Výkon' },
-    { phase: 'Výkon→Konec anestezie', duration: 15, color: '#10B981', label: 'Probuzení' },
-    { phase: 'Anestezie→Úklid', duration: 10, color: '#F97316', label: 'Podchyt' },
-    { phase: 'Úklid→Připraveno', duration: 20, color: '#FBBF24', label: 'Úklid' },
+    { phase: 'Přijezd→Anestezie', duration: 12, color: '#818CF8', label: 'Příprava', percent: 5.5 },
+    { phase: 'Anestezie→Výkon', duration: 8, color: '#A855F7', label: 'Anestezie', percent: 3.7 },
+    { phase: 'Chirurgický výkon', duration: 95, color: '#06B6D4', label: 'Výkon', percent: 43.8 },
+    { phase: 'Výkon→Konec anestezie', duration: 15, color: '#10B981', label: 'Probuzení', percent: 6.9 },
+    { phase: 'Anestezie→Úklid', duration: 10, color: '#F97316', label: 'Podchyt', percent: 4.6 },
+    { phase: 'Úklid→Připraveno', duration: 20, color: '#FBBF24', label: 'Úklid', percent: 9.2 },
+    { phase: 'Pauza mezi operacemi', duration: 47, color: '#94A3B8', label: 'Pauza', percent: 21.6 },
   ];
 
   const totalDuration = phaseData.reduce((sum, p) => sum + p.duration, 0);
 
   const radarData = [
-    { metric: 'Časová efektivita', value: 89 },
+    { metric: 'Efektivita', value: 89 },
     { metric: 'Vytížení', value: 87 },
     { metric: 'Kvalita', value: 92 },
     { metric: 'Bezpečnost', value: 95 },
@@ -87,33 +88,38 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex-shrink-0 pb-12 border-b"
+        className="flex-shrink-0 px-8 py-8 border-b"
         style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2 opacity-60">
-              <BarChart3 className="w-4 h-4" style={{ color: colors.info }} />
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3 opacity-70">
+              <div className="p-2 rounded-lg" style={{ background: 'rgba(6, 182, 212, 0.1)', borderLeft: '3px solid #06B6D4' }}>
+                <BarChart3 className="w-4 h-4" style={{ color: colors.info }} />
+              </div>
               <p className="text-[10px] font-black text-white/60 tracking-[0.4em] uppercase">Pokročilé Analýzy</p>
             </div>
-            <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-              Statistiky <span className="text-white/20">operačních sálů</span>
+            <h1 className="text-6xl md:text-7xl font-black tracking-tighter uppercase leading-none mb-2">
+              Statistiky <span className="text-white/20">sálů</span>
             </h1>
+            <p className="text-sm text-white/50">Detailní metriky efektivnosti, vytížení a procesních fází</p>
           </div>
 
+          {/* Time Period Selector */}
           <motion.div className="relative">
             <button
               onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-              className="px-4 py-2 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
+              className="px-4 py-3 rounded-xl border backdrop-blur-sm flex items-center gap-2 transition-all hover:bg-white/10 font-semibold"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.15)', background: 'rgba(255, 255, 255, 0.06)' }}
             >
               <Calendar className="w-4 h-4 text-white/70" />
-              <span className="text-sm font-bold text-white">
+              <span className="text-sm text-white">
                 {periodOptions.find(p => p.value === timePeriod)?.label}
               </span>
               <ChevronDown className="w-4 h-4 text-white/50" />
@@ -124,8 +130,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.8)', minWidth: '200px' }}
+                className="absolute top-full mt-2 right-0 z-50 rounded-xl border backdrop-blur-md overflow-hidden shadow-2xl"
+                style={{ borderColor: 'rgba(255, 255, 255, 0.15)', background: 'rgba(15, 23, 42, 0.9)' }}
               >
                 {periodOptions.map((option) => (
                   <button
@@ -134,11 +140,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                       setTimePeriod(option.value);
                       setShowPeriodMenu(false);
                     }}
-                    className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-sm border-b last:border-b-0"
+                    className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-sm border-b last:border-b-0 font-semibold"
                     style={{
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                      color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
+                      borderColor: 'rgba(255, 255, 255, 0.08)',
+                      background: timePeriod === option.value ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                      color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.8)',
                     }}
                   >
                     {option.label}
@@ -149,15 +155,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
           </motion.div>
         </div>
 
+        {/* Room Selector Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2">
           {rooms.map((room) => (
             <motion.button
               key={room.id}
               onClick={() => setSelectedRoomId(room.id)}
-              className="px-4 py-2 rounded-lg border backdrop-blur-sm text-sm font-bold whitespace-nowrap transition-all"
+              className="px-5 py-2.5 rounded-lg border backdrop-blur-sm text-sm font-bold whitespace-nowrap transition-all"
               style={{
                 borderColor: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.1)',
-                background: selectedRoomId === room.id ? `${colors.info}20` : 'rgba(255, 255, 255, 0.04)',
+                background: selectedRoomId === room.id ? `${colors.info}25` : 'rgba(255, 255, 255, 0.04)',
                 color: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.7)',
               }}
               whileHover={{ scale: 1.05 }}
@@ -168,42 +175,54 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         </div>
       </motion.header>
 
+      {/* Content */}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {selectedRoom && (
-          <div className="space-y-8 py-8 px-2">
+          <div className="space-y-6 p-8">
+            {/* KPI Cards Grid */}
             <motion.div
-              className="grid grid-cols-1 md:grid-cols-4 gap-4"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.4 }}
             >
               {[
-                { label: 'Operace/den', value: selectedRoom.operations24h, icon: Activity, color: colors.primary },
-                { label: 'Vytížení', value: '87%', icon: TrendingUp, color: colors.success },
-                { label: 'Cyklus (min)', value: '145', icon: Clock, color: colors.warning },
-                { label: 'Efektivita', value: '89%', icon: Zap, color: colors.secondary },
+                { label: 'Operace za periodu', value: String(selectedRoom.operations24h * 7), icon: Activity, color: colors.primary, trend: '+12%' },
+                { label: 'Průměrné vytížení', value: '87%', icon: TrendingUp, color: colors.success, trend: '+2.3%' },
+                { label: 'Cyklus (min)', value: '217', icon: Clock, color: colors.warning, trend: '-8m' },
+                { label: 'Efektivita', value: '89%', icon: Zap, color: colors.secondary, trend: '+5%' },
               ].map((metric, idx) => {
                 const Icon = metric.icon;
                 return (
                   <motion.div
                     key={idx}
-                    className="p-4 rounded-xl border backdrop-blur-sm"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+                    className="p-5 rounded-xl border backdrop-blur-sm overflow-hidden group cursor-pointer"
+                    style={{
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                    }}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * idx + 0.15, duration: 0.4 }}
+                    whileHover={{ scale: 1.02, background: 'rgba(255, 255, 255, 0.08)' }}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <Icon className="w-5 h-5" style={{ color: metric.color }} />
-                      <span className="text-xs text-green-400 font-bold">+2.3%</span>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="p-2.5 rounded-lg" style={{ background: `${metric.color}20` }}>
+                        <Icon className="w-5 h-5" style={{ color: metric.color }} />
+                      </div>
+                      <div className="flex items-center gap-1 text-xs font-bold" style={{ color: metric.color }}>
+                        <ArrowUpRight className="w-3 h-3" />
+                        {metric.trend}
+                      </div>
                     </div>
-                    <p className="text-xs text-white/60 mb-1">{metric.label}</p>
-                    <p className="text-2xl font-black text-white">{metric.value}</p>
+                    <p className="text-xs text-white/60 mb-1.5">{metric.label}</p>
+                    <p className="text-3xl font-black text-white">{metric.value}</p>
                   </motion.div>
                 );
               })}
             </motion.div>
 
+            {/* Main Chart - Utilization Timeline */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
@@ -211,28 +230,35 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.4 }}
             >
-              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" style={{ color: colors.primary }} />
+              <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+                <TrendingUp className="w-6 h-6" style={{ color: colors.primary }} />
                 Vytížení v čase
               </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={timelineData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                  <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.5)" fontSize={12} />
-                  <YAxis stroke="rgba(255, 255, 255, 0.5)" fontSize={12} />
+              <ResponsiveContainer width="100%" height={350}>
+                <AreaChart data={timelineData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorUtilization" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={colors.primary} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={colors.primary} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
+                  <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
+                  <YAxis stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
                   <Tooltip
                     contentStyle={{
-                      background: 'rgba(0, 0, 0, 0.9)',
-                      border: `1px solid rgba(255, 255, 255, 0.1)`,
-                      borderRadius: '8px',
+                      background: 'rgba(0, 0, 0, 0.95)',
+                      border: `1px solid rgba(255, 255, 255, 0.15)`,
+                      borderRadius: '12px',
                     }}
-                    labelStyle={{ color: 'rgba(255, 255, 255, 0.8)' }}
+                    labelStyle={{ color: 'rgba(255, 255, 255, 0.9)' }}
                   />
-                  <Area type="monotone" dataKey="utilization" fill={colors.primary} stroke={colors.primary} fillOpacity={0.2} />
+                  <Area type="monotone" dataKey="utilization" fill="url(#colorUtilization)" stroke={colors.primary} strokeWidth={3} dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </motion.div>
 
+            {/* Phase Breakdown - Horizontal Timeline */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
@@ -240,32 +266,101 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.4 }}
             >
-              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5" style={{ color: colors.info }} />
-                Heatmapa vytížení
+              <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+                <Clock className="w-6 h-6" style={{ color: colors.info }} />
+                Fáze operačního cyklu - Procentuální rozpis
               </h2>
-              <div className="overflow-x-auto">
+              
+              {/* Visual Timeline */}
+              <div className="mb-8">
+                <div className="flex h-12 rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                  {phaseData.map((phase, idx) => (
+                    <motion.div
+                      key={idx}
+                      className="group relative transition-all hover:opacity-80 cursor-pointer"
+                      style={{
+                        width: `${phase.percent}%`,
+                        background: phase.color,
+                        opacity: 0.9,
+                      }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${phase.percent}%` }}
+                      transition={{ delay: 0.3 + idx * 0.05, duration: 0.6 }}
+                      title={`${phase.label}: ${phase.duration}min (${phase.percent}%)`}
+                    >
+                      {phase.percent > 8 && (
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white/80">
+                          {phase.percent}%
+                        </span>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Detailed Phase Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {phaseData.map((phase, idx) => (
+                  <motion.div
+                    key={idx}
+                    className="p-4 rounded-lg border backdrop-blur-sm"
+                    style={{
+                      borderColor: `${phase.color}40`,
+                      background: `${phase.color}10`,
+                    }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + idx * 0.05, duration: 0.4 }}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-xs font-black text-white/70">{phase.label}</span>
+                      <span className="text-xs font-bold" style={{ color: phase.color }}>
+                        {phase.percent}%
+                      </span>
+                    </div>
+                    <p className="text-2xl font-black text-white mb-1">{phase.duration}</p>
+                    <p className="text-xs text-white/50">minut</p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Heatmap - Utilization by Hour and Day */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+            >
+              <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+                <Target className="w-6 h-6" style={{ color: colors.warning }} />
+                Heatmapa vytížení - Denní a hodinový rozvrh
+              </h2>
+              <div className="overflow-x-auto pb-4">
                 <div className="inline-block min-w-full">
-                  <div className="flex">
-                    <div className="w-16" />
+                  {/* Time labels */}
+                  <div className="flex mb-1">
+                    <div className="w-12 flex-shrink-0" />
                     {Array.from({ length: 24 }, (_, i) => (
-                      <div key={`h-${i}`} className="w-8 text-center text-xs text-white/40">
+                      <div key={`h-${i}`} className="w-10 flex-shrink-0 text-center text-xs text-white/40 font-bold">
                         {i}h
                       </div>
                     ))}
                   </div>
-                  {['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'].map((day, dayIdx) => (
-                    <div key={`row-${dayIdx}`} className="flex">
-                      <div className="w-16 flex items-center text-sm font-bold text-white">{day}</div>
+                  {/* Heatmap rows */}
+                  {['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'].map((day, dayIdx) => (
+                    <div key={`row-${dayIdx}`} className="flex mb-2">
+                      <div className="w-12 flex-shrink-0 flex items-center text-xs font-bold text-white/80">{day.slice(0, 2)}</div>
                       {Array.from({ length: 24 }, (_, hourIdx) => {
                         const utilization = Math.floor(Math.random() * 100);
                         return (
                           <motion.div
                             key={`cell-${dayIdx}-${hourIdx}`}
-                            className="w-8 h-8 rounded border border-white/10"
+                            className="w-10 h-8 flex-shrink-0 rounded border border-white/10 transition-all hover:scale-110 hover:shadow-lg"
                             style={{ background: getHeatmapColor(utilization) }}
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.8 }}
+                            animate={{ opacity: 0.85 }}
                             transition={{ delay: dayIdx * 0.02 + hourIdx * 0.005 }}
                             title={`${utilization}%`}
                           />
@@ -275,77 +370,32 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                   ))}
                 </div>
               </div>
-              <div className="flex gap-4 mt-4 text-xs">
+              {/* Legend */}
+              <div className="flex flex-wrap gap-6 mt-6 text-xs border-t pt-4" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded" style={{ background: '#06B6D4' }} />
-                  <span className="text-white/60">Nízké &lt;40%</span>
+                  <div className="w-6 h-4 rounded" style={{ background: '#06B6D4' }} />
+                  <span className="text-white/70">Nízké &lt;40%</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded" style={{ background: '#10B981' }} />
-                  <span className="text-white/60">Normální 40-60%</span>
+                  <div className="w-6 h-4 rounded" style={{ background: '#10B981' }} />
+                  <span className="text-white/70">Normální 40-60%</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded" style={{ background: '#FBBF24' }} />
-                  <span className="text-white/60">Vyšší 60-75%</span>
+                  <div className="w-6 h-4 rounded" style={{ background: '#FBBF24' }} />
+                  <span className="text-white/70">Vyšší 60-75%</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded" style={{ background: '#F97316' }} />
-                  <span className="text-white/60">Vysoké 75-90%</span>
+                  <div className="w-6 h-4 rounded" style={{ background: '#F97316' }} />
+                  <span className="text-white/70">Vysoké 75-90%</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded" style={{ background: '#FF3B30' }} />
-                  <span className="text-white/60">Kritické &gt;90%</span>
+                  <div className="w-6 h-4 rounded" style={{ background: '#FF3B30' }} />
+                  <span className="text-white/70">Kritické &gt;90%</span>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div
-              className="p-6 rounded-2xl border backdrop-blur-sm"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-            >
-              <h2 className="text-lg font-black text-white mb-6 flex items-center gap-2">
-                <Clock className="w-5 h-5" style={{ color: colors.info }} />
-                Rozpis fází operačního cyklu
-              </h2>
-              <div className="space-y-3">
-                {phaseData.map((phase, idx) => {
-                  const percentage = ((phase.duration / totalDuration) * 100).toFixed(1);
-                  return (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 + idx * 0.05, duration: 0.4 }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 rounded-full" style={{ background: phase.color }} />
-                          <span className="text-sm font-bold text-white">{phase.phase}</span>
-                          <span className="text-xs text-white/40">({phase.label})</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-black text-white">{phase.duration} min</span>
-                          <span className="text-xs text-white/50 ml-2">({percentage}%)</span>
-                        </div>
-                      </div>
-                      <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255, 255, 255, 0.1)' }}>
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ background: phase.color }}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${percentage}%` }}
-                          transition={{ delay: 0.3 + idx * 0.05 + 0.2, duration: 0.6, ease: 'easeOut' }}
-                        />
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-
+            {/* Efficiency Radar */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
@@ -353,62 +403,61 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.4 }}
             >
-              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5" style={{ color: colors.secondary }} />
+              <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+                <Target className="w-6 h-6" style={{ color: colors.secondary }} />
                 Profil efektivnosti
               </h2>
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={radarData}>
-                  <PolarGrid stroke="rgba(255, 255, 255, 0.1)" />
-                  <PolarAngleAxis dataKey="metric" stroke="rgba(255, 255, 255, 0.5)" fontSize={12} />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="rgba(255, 255, 255, 0.3)" />
-                  <Radar name="Efektivita" dataKey="value" stroke={colors.secondary} fill={colors.secondary} fillOpacity={0.3} />
+                  <PolarGrid stroke="rgba(255, 255, 255, 0.08)" />
+                  <PolarAngleAxis dataKey="metric" stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="rgba(255, 255, 255, 0.2)" />
+                  <Radar name="Skóre" dataKey="value" stroke={colors.secondary} fill={colors.secondary} fillOpacity={0.25} />
                   <Tooltip
                     contentStyle={{
-                      background: 'rgba(0, 0, 0, 0.9)',
-                      border: `1px solid rgba(255, 255, 255, 0.1)`,
-                      borderRadius: '8px',
+                      background: 'rgba(0, 0, 0, 0.95)',
+                      border: `1px solid rgba(255, 255, 255, 0.15)`,
+                      borderRadius: '12px',
                     }}
-                    labelStyle={{ color: 'rgba(255, 255, 255, 0.8)' }}
+                    labelStyle={{ color: 'rgba(255, 255, 255, 0.9)' }}
                   />
                 </RadarChart>
               </ResponsiveContainer>
             </motion.div>
 
+            {/* Room Comparison */}
             <motion.div
-              className="p-6 rounded-2xl border backdrop-blur-sm"
+              className="p-6 rounded-2xl border backdrop-blur-sm mb-16"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.4 }}
             >
-              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
-                <Building2 className="w-5 h-5" style={{ color: colors.warning }} />
-                Srovnění sálů
+              <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+                <Building2 className="w-6 h-6" style={{ color: colors.warning }} />
+                Srovnění všech sálů
               </h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={rooms.map(r => ({
                   name: r.name,
-                  operations: r.operations24h,
+                  operations: r.operations24h * 7,
                   utilization: Math.floor(Math.random() * 25) + 75,
                 }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                  <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.5)" fontSize={12} />
-                  <YAxis stroke="rgba(255, 255, 255, 0.5)" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
+                  <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
+                  <YAxis stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
                   <Tooltip
                     contentStyle={{
-                      background: 'rgba(0, 0, 0, 0.9)',
-                      border: `1px solid rgba(255, 255, 255, 0.1)`,
-                      borderRadius: '8px',
+                      background: 'rgba(0, 0, 0, 0.95)',
+                      border: `1px solid rgba(255, 255, 255, 0.15)`,
+                      borderRadius: '12px',
                     }}
-                    labelStyle={{ color: 'rgba(255, 255, 255, 0.8)' }}
+                    labelStyle={{ color: 'rgba(255, 255, 255, 0.9)' }}
                   />
-                  <Bar dataKey="operations" fill={colors.primary} radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="operations" fill={colors.primary} radius={[12, 12, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </motion.div>
-
-            <div className="pb-16" />
           </div>
         )}
       </div>
