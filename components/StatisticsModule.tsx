@@ -93,51 +93,55 @@ function statusColor(s: RoomStatus) {
   return '#6B7280';
 }
 
-// ── Workflow timeline bar for a single room ──────────────────────────────────
-// Simulates a 12h operating day (7:00-19:00 = 720 min) filled with workflow cycles
-const WORK_DAY_MIN = 720;
+// ── Schedule type ─────────────────────────────────────────────────────────────
+// UPS rooms run 24h (1440 min), standard rooms run working day 12h (720 min)
+const UPS_DEPARTMENTS = ['EMERGENCY', 'CÉVNÍ', 'ROBOT'];
+function isUPS(room: OperatingRoom) {
+  return room.isEmergency || UPS_DEPARTMENTS.includes(room.department);
+}
+function scheduleLabel(room: OperatingRoom) {
+  return isUPS(room) ? 'ÚPS / Služba — 24 h' : 'Pracovní doba — 07:00–19:00';
+}
+function scheduleDayMin(room: OperatingRoom) {
+  return isUPS(room) ? 1440 : 720;
+}
+function scheduleTimeRange(room: OperatingRoom) {
+  return isUPS(room) ? '00:00–24:00' : '07:00–19:00';
+}
 
-function buildTimeline(room: OperatingRoom) {
-  // Build segments: cycle through workflow steps, repeating for ops24h passes
-  const passCount = Math.max(1, Math.floor(room.operations24h));
-  const segments: { color: string; title: string; pct: number; min: number }[] = [];
+// ── Build timeline segments ───────────────────────────────────────────────────
+type Segment = { color: string; title: string; pct: number; min: number };
 
-  // Total duration for one cycle (using STEP_DURATIONS, override surgical step with procedure)
+function buildTimeline(room: OperatingRoom): Segment[] {
+  const dayMin = scheduleDayMin(room);
+  const passCount = Math.max(1, Math.floor(room.operations24h * (dayMin / 1440)));
+
   const cycleDurations = WORKFLOW_STEPS.map((_, i) => {
     if (i === 2 && room.currentProcedure) return room.currentProcedure.estimatedDuration;
     return STEP_DURATIONS[i];
   });
   const cycleTotal = cycleDurations.reduce((s, d) => s + d, 0);
+  const minutesPerPass = Math.floor(dayMin / passCount);
 
-  // Distribute WORK_DAY_MIN across passes
-  const minutesPerPass = Math.floor(WORK_DAY_MIN / passCount);
-
+  const raw: Segment[] = [];
   for (let pass = 0; pass < passCount; pass++) {
     for (let si = 0; si < WORKFLOW_STEPS.length; si++) {
       const step = WORKFLOW_STEPS[si];
       const rawMin = cycleDurations[si];
       const scaledMin = Math.round((rawMin / cycleTotal) * minutesPerPass);
       if (scaledMin === 0) continue;
-      segments.push({
-        color: step.color,
-        title: step.title,
-        pct: (scaledMin / WORK_DAY_MIN) * 100,
-        min: scaledMin,
-      });
+      raw.push({ color: step.color, title: step.title, pct: (scaledMin / dayMin) * 100, min: scaledMin });
     }
-    // small gap between operations
     if (pass < passCount - 1) {
-      segments.push({ color: 'rgba(255,255,255,0.05)', title: 'Pauza', pct: (5 / WORK_DAY_MIN) * 100, min: 5 });
+      raw.push({ color: 'rgba(255,255,255,0.05)', title: 'Pauza', pct: (5 / dayMin) * 100, min: 5 });
     }
   }
-
-  // Normalise so total = 100%
-  const total = segments.reduce((s, seg) => s + seg.pct, 0);
-  return segments.map(seg => ({ ...seg, pct: (seg.pct / total) * 100 }));
+  const total = raw.reduce((s, seg) => s + seg.pct, 0);
+  return raw.map(seg => ({ ...seg, pct: (seg.pct / total) * 100 }));
 }
 
 // ── Per-room status distribution (aggregate of workflow step proportions) ─────
-function buildStatusDistribution(room: OperatingRoom) {
+function buildStatusDistribution(room: OperatingRoom): Segment[] {
   const cycleDurations = WORKFLOW_STEPS.map((_, i) => {
     if (i === 2 && room.currentProcedure) return room.currentProcedure.estimatedDuration;
     return STEP_DURATIONS[i];
@@ -151,6 +155,21 @@ function buildStatusDistribution(room: OperatingRoom) {
   }));
 }
 
+// ── Merge adjacent same-step segments for a cleaner timeline label ────────────
+function mergeSegments(segs: Segment[]): Segment[] {
+  const out: Segment[] = [];
+  for (const seg of segs) {
+    const last = out[out.length - 1];
+    if (last && last.title === seg.title) {
+      last.pct += seg.pct;
+      last.min += seg.min;
+    } else {
+      out.push({ ...seg });
+    }
+  }
+  return out;
+}
+
 // ── RoomDetailCard ────────────────────────────────────────────────────────────
 interface RoomDetailCardProps {
   room: OperatingRoom;
@@ -159,12 +178,17 @@ interface RoomDetailCardProps {
 
 const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
   const [expanded, setExpanded] = useState(false);
-  const timeline = useMemo(() => buildTimeline(room), [room]);
-  const dist = useMemo(() => buildStatusDistribution(room), [room]);
-  const sc = statusColor(room.status);
+  const rawTimeline = useMemo(() => buildTimeline(room), [room]);
+  const timeline    = useMemo(() => mergeSegments(rawTimeline), [rawTimeline]);
+  const dist        = useMemo(() => buildStatusDistribution(room), [room]);
+  const sc          = statusColor(room.status);
+  const ups         = isUPS(room);
 
-  // Utilisation = surgical step pct from distribution
   const utilPct = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
+
+  // Aggregate total minutes per workflow step across all ops in the day
+  const dayMin  = scheduleDayMin(room);
+  const opsDay  = Math.max(1, Math.floor(room.operations24h * (dayMin / 1440)));
 
   return (
     <motion.div
@@ -176,78 +200,123 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
     >
       {/* ── Card header ── */}
       <div
-        className="flex items-center gap-4 px-4 py-3 cursor-pointer select-none"
+        className="flex items-center gap-4 px-5 py-4 cursor-pointer select-none"
         onClick={() => setExpanded(e => !e)}
-        style={{ borderBottom: expanded ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       >
         {/* Status dot */}
-        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 6px ${sc}` }} />
+        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 8px ${sc}` }} />
 
         {/* Name + dept */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] font-black text-white/90">{room.name}</span>
-            <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
-              style={{ background: `${sc}14`, color: sc }}>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-base font-black text-white/95">{room.name}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+              style={{ background: `${sc}18`, color: sc }}>
               {statusLabel(room.status)}
             </span>
+            {ups && (
+              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                style={{ background: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>ÚPS</span>
+            )}
             {room.isSeptic && (
-              <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
                 style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>SEPTICKÝ</span>
             )}
             {room.isEmergency && (
-              <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
                 style={{ background: 'rgba(249,115,22,0.12)', color: '#F97316' }}>EMERGENCY</span>
             )}
           </div>
-          <p className="text-[9px] text-white/30 mt-0.5 truncate">{room.department} — {room.currentProcedure?.name ?? 'Žádný výkon'}</p>
+          <p className="text-xs text-white/35 mt-0.5 truncate">
+            {room.department} — {room.currentProcedure?.name ?? 'Žádný výkon'}
+          </p>
         </div>
 
         {/* Quick stats */}
-        <div className="hidden sm:flex items-center gap-5 shrink-0">
+        <div className="hidden sm:flex items-center gap-6 shrink-0">
           <div className="text-right">
-            <p className="text-[8px] text-white/25 uppercase tracking-widest">Výkony / 24h</p>
-            <p className="text-sm font-black" style={{ color: accent }}>{room.operations24h}</p>
+            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Výkony / den</p>
+            <p className="text-xl font-black" style={{ color: accent }}>{opsDay}</p>
           </div>
           <div className="text-right">
-            <p className="text-[8px] text-white/25 uppercase tracking-widest">Využití výkonem</p>
-            <p className="text-sm font-black text-white/80">{utilPct}%</p>
+            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Využití výkonem</p>
+            <p className="text-xl font-black text-white/80">{utilPct}%</p>
           </div>
           <div className="text-right">
-            <p className="text-[8px] text-white/25 uppercase tracking-widest">Fronta</p>
-            <p className="text-sm font-black text-white/80">{room.queueCount}</p>
+            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Fronta</p>
+            <p className="text-xl font-black text-white/80">{room.queueCount}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Provoz</p>
+            <p className="text-[11px] font-black" style={{ color: ups ? '#06B6D4' : 'rgba(255,255,255,0.5)' }}>
+              {ups ? '24 h' : '12 h'}
+            </p>
           </div>
         </div>
 
         {/* Expand toggle */}
-        <div className="shrink-0 text-white/20">
-          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        <div className="shrink-0 text-white/25 ml-2">
+          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </div>
 
       {/* ── Timeline bar (always visible) ── */}
-      <div className="px-4 pt-3 pb-1">
-        <p className="text-[8px] font-black uppercase tracking-widest text-white/20 mb-1.5">
-          Simulace 12h provozního dne (07:00–19:00)
-        </p>
-        <div className="flex h-3 w-full rounded overflow-hidden gap-px">
+      <div className="px-5 pt-4 pb-4">
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/30">
+            Časová osa — {scheduleTimeRange(room)}
+          </p>
+          <p className="text-[10px] font-black uppercase tracking-widest"
+            style={{ color: ups ? '#06B6D4' : 'rgba(255,255,255,0.3)' }}>
+            {scheduleLabel(room)}
+          </p>
+        </div>
+
+        {/* Main stacked colour bar */}
+        <div className="flex h-6 w-full rounded-lg overflow-hidden gap-[1px]">
           {timeline.map((seg, i) => (
-            <div
+            <motion.div
               key={i}
-              className="h-full shrink-0 transition-all"
-              style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.85 }}
+              className="h-full shrink-0 relative group"
+              style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.88 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.88 }}
+              transition={{ duration: 0.4, delay: i * 0.03 }}
               title={`${seg.title} — ${seg.min} min (${seg.pct.toFixed(1)}%)`}
-            />
+            >
+              {/* Inline pct label for wider segments */}
+              {seg.pct >= 8 && (
+                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-black/70 leading-none pointer-events-none">
+                  {Math.round(seg.pct)}%
+                </span>
+              )}
+            </motion.div>
           ))}
         </div>
-        {/* Workflow step legend */}
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-          {WORKFLOW_STEPS.map((step, i) => (
-            <div key={i} className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-[1px] shrink-0" style={{ background: step.color, opacity: 0.85 }} />
-              <span className="text-[8px] text-white/30">{step.title}</span>
-            </div>
-          ))}
+
+        {/* Per-segment legend with pct + min */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2 mt-3">
+          {WORKFLOW_STEPS.map((step, si) => {
+            // aggregate pct + min for this step from merged timeline
+            const match = timeline.filter(s => s.title === step.title);
+            const totalPct = match.reduce((a, s) => a + s.pct, 0);
+            const totalMin = match.reduce((a, s) => a + s.min, 0);
+            if (totalMin === 0) return null;
+            return (
+              <div key={si} className="flex items-center gap-2 min-w-0">
+                <div className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: step.color }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] text-white/50 truncate leading-tight">{step.title}</p>
+                  <p className="text-[11px] font-black leading-tight" style={{ color: step.color }}>
+                    {Math.round(totalPct)}%
+                    <span className="text-white/30 font-normal ml-1">{totalMin} min</span>
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -258,36 +327,36 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.2 }}
-          className="px-4 pt-3 pb-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+          className="px-5 pt-4 pb-5"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-            {/* Status distribution */}
+            {/* ── Status distribution with animated bars ── */}
             <div>
-              <p className="text-[8px] font-black uppercase tracking-widest text-white/25 mb-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-4">
                 Rozložení statusů — průměrný cyklus
               </p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {dist.map((d, i) => (
                   <div key={i}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-[1px] shrink-0" style={{ background: d.color, opacity: 0.85 }} />
-                        <span className="text-[9px] text-white/50">{d.title}</span>
-                      </div>
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-white/30">{d.min} min</span>
-                        <span className="text-[9px] font-black" style={{ color: d.color }}>{d.pct}%</span>
+                        <div className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: d.color }} />
+                        <span className="text-xs text-white/60">{d.title}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-white/35">{d.min} min</span>
+                        <span className="text-sm font-black w-10 text-right" style={{ color: d.color }}>{d.pct}%</span>
                       </div>
                     </div>
-                    <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                       <motion.div
                         className="h-full rounded-full"
-                        style={{ background: d.color, opacity: 0.8 }}
+                        style={{ background: d.color, opacity: 0.85 }}
                         initial={{ width: 0 }}
                         animate={{ width: `${d.pct}%` }}
-                        transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }}
+                        transition={{ duration: 0.55, delay: i * 0.05, ease: 'easeOut' }}
                       />
                     </div>
                   </div>
@@ -295,19 +364,19 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
               </div>
             </div>
 
-            {/* Personnel & patient */}
-            <div className="space-y-4">
+            {/* ── Personnel & patient ── */}
+            <div className="space-y-5">
               <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-white/25 mb-2">Personál</p>
-                <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Personál</p>
+                <div className="space-y-2">
                   {[
-                    { role: 'Chirurg',          name: room.staff.doctor.name },
-                    { role: 'Sestra',           name: room.staff.nurse.name },
-                    { role: 'Anesteziolog',     name: room.staff.anesthesiologist?.name ?? null },
+                    { role: 'Chirurg',      name: room.staff.doctor.name },
+                    { role: 'Sestra',       name: room.staff.nurse.name },
+                    { role: 'Anesteziolog', name: room.staff.anesthesiologist?.name ?? null },
                   ].map(p => (
                     <div key={p.role} className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">{p.role}</span>
-                      <span className="text-[9px] font-bold text-white/60">{p.name ?? '—'}</span>
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">{p.role}</span>
+                      <span className="text-xs font-bold text-white/70">{p.name ?? '—'}</span>
                     </div>
                   ))}
                 </div>
@@ -315,19 +384,19 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
 
               {room.currentPatient && (
                 <div>
-                  <p className="text-[8px] font-black uppercase tracking-widest text-white/25 mb-2">Aktuální pacient</p>
-                  <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Aktuální pacient</p>
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">Jméno</span>
-                      <span className="text-[9px] font-bold text-white/60">{room.currentPatient.name}</span>
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Jméno</span>
+                      <span className="text-xs font-bold text-white/70">{room.currentPatient.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">Věk</span>
-                      <span className="text-[9px] font-bold text-white/60">{room.currentPatient.age} let</span>
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Věk</span>
+                      <span className="text-xs font-bold text-white/70">{room.currentPatient.age} let</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">Krevní skupina</span>
-                      <span className="text-[9px] font-bold text-white/60">{room.currentPatient.bloodType ?? '—'}</span>
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Krevní skupina</span>
+                      <span className="text-xs font-bold text-white/70">{room.currentPatient.bloodType ?? '—'}</span>
                     </div>
                   </div>
                 </div>
@@ -335,29 +404,29 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
 
               {room.currentProcedure && (
                 <div>
-                  <p className="text-[8px] font-black uppercase tracking-widest text-white/25 mb-2">Aktuální výkon</p>
-                  <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Aktuální výkon</p>
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">Výkon</span>
-                      <span className="text-[9px] font-bold text-white/60 text-right max-w-[160px] truncate">
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Výkon</span>
+                      <span className="text-xs font-bold text-white/70 text-right max-w-[200px] truncate">
                         {room.currentProcedure.name}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">Trvání</span>
-                      <span className="text-[9px] font-bold text-white/60">{room.currentProcedure.estimatedDuration} min</span>
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Trvání</span>
+                      <span className="text-xs font-bold text-white/70">{room.currentProcedure.estimatedDuration} min</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">Zahájení</span>
-                      <span className="text-[9px] font-bold text-white/60">{room.currentProcedure.startTime}</span>
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Zahájení</span>
+                      <span className="text-xs font-bold text-white/70">{room.currentProcedure.startTime}</span>
                     </div>
                     {room.currentProcedure.progress > 0 && (
-                      <div className="mt-1.5">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[8px] text-white/20 uppercase tracking-wider">Průběh</span>
-                          <span className="text-[8px] font-black" style={{ color: accent }}>{room.currentProcedure.progress}%</span>
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] text-white/30 uppercase tracking-wider">Průběh výkonu</span>
+                          <span className="text-sm font-black" style={{ color: accent }}>{room.currentProcedure.progress}%</span>
                         </div>
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                           <motion.div
                             className="h-full rounded-full"
                             style={{ background: accent }}
@@ -374,24 +443,25 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
             </div>
           </div>
 
-          {/* Workflow step indicator */}
-          <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-            <p className="text-[8px] font-black uppercase tracking-widest text-white/25 mb-2">Aktuální fáze workflow</p>
-            <div className="flex items-center gap-1 flex-wrap">
+          {/* ── Workflow step indicator ── */}
+          <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Aktuální fáze workflow</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
               {WORKFLOW_STEPS.map((step, i) => {
                 const isCurrent = i === room.currentStepIndex;
-                const isDone = i < room.currentStepIndex;
+                const isDone    = i < room.currentStepIndex;
                 return (
-                  <div key={i} className="flex items-center gap-1">
+                  <div key={i} className="flex items-center gap-1.5">
                     <div
-                      className="flex items-center gap-1 px-2 py-1 rounded text-[8px] font-black uppercase tracking-wider transition-all"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all"
                       style={{
-                        background: isCurrent ? `${step.color}20` : isDone ? 'rgba(255,255,255,0.04)' : 'transparent',
-                        color: isCurrent ? step.color : isDone ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)',
-                        border: `1px solid ${isCurrent ? step.color : 'rgba(255,255,255,0.06)'}`,
+                        background: isCurrent ? `${step.color}22` : isDone ? 'rgba(255,255,255,0.04)' : 'transparent',
+                        color:      isCurrent ? step.color : isDone ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.18)',
+                        border:     `1px solid ${isCurrent ? step.color : 'rgba(255,255,255,0.07)'}`,
                       }}
                     >
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: step.color, opacity: isCurrent ? 1 : 0.3 }} />
+                      <div className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: step.color, opacity: isCurrent ? 1 : 0.3 }} />
                       {step.title}
                     </div>
                     {i < WORKFLOW_STEPS.length - 1 && (
@@ -766,11 +836,13 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
           ── Per-room detail section ──
           ══════════════════════════════════════════════════════════════════ */}
       <div className="mb-6">
-        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-4">
+        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">
           Podrobné statistiky jednotlivých sálů
         </p>
-        <p className="text-[10px] text-white/20 mb-5">
-          Kliknutím na sál zobrazíte rozložení statusů, personál a detail výkonu.
+        <p className="text-xs text-white/25 mb-5">
+          Každý sál zobrazuje barevnou časovou osu s procentuálním a minutovým využitím jednotlivých workflow statusů.
+          Sály s provozem 24 h jsou označeny <span className="font-black" style={{ color: '#06B6D4' }}>ÚPS</span>.
+          Kliknutím rozbalíte podrobnosti, personál a stav výkonu.
         </p>
         <div className="space-y-2">
           {rooms.map((room, i) => (
