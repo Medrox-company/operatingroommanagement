@@ -94,70 +94,59 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
   ];
 
   return (
-    <div className="w-full h-full text-white overflow-hidden flex flex-col">
+    <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <motion.header
-        className="flex items-center justify-between mb-12 px-4 md:pl-28 md:pr-6 pt-5"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div>
-          <div className="flex items-center gap-3 mb-2 opacity-60">
-            <BarChart3 className="w-4 h-4" style={{ color: colors.info }} />
-            <p className="text-[10px] font-black text-white/60 tracking-[0.4em] uppercase">Analýzy a Metriky</p>
-          </div>
-          <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">
-            Statistiky <span className="text-white/20">operačních sálů</span>
-          </h1>
-        </div>
-
-        {/* Time Period Selector */}
-        <motion.div className="relative" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-          <button
-            onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-            className="px-4 py-2 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
-          >
-            <Calendar className="w-4 h-4 text-white/70" />
-            <span className="text-sm font-bold text-white">
-              {periodOptions.find(p => p.value === timePeriod)?.label}
-            </span>
-            <ChevronDown className="w-4 h-4 text-white/50" />
-          </button>
-
-          {showPeriodMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.95)', minWidth: '200px' }}
+      <div className="px-6 py-4 border-b border-white/5 flex-shrink-0">
+        <p className="text-xs font-bold text-cyan-400/60 uppercase tracking-[0.2em] mb-2">Analýzy a Metriky</p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-black text-white">Statistiky Operačních Sálů</h1>
+          
+          <motion.div className="relative" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+            <button
+              onClick={() => setShowPeriodMenu(!showPeriodMenu)}
+              className="px-3 py-1.5 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10 text-xs font-bold"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
             >
-              {periodOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setTimePeriod(option.value);
-                    setShowPeriodMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-sm border-b last:border-b-0"
-                  style={{
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                    color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </motion.div>
-      </motion.header>
+              <Calendar className="w-3.5 h-3.5 text-white/70" />
+              <span className="text-white uppercase tracking-wider">
+                {periodOptions.find(p => p.value === timePeriod)?.label}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-white/50" />
+            </button>
+
+            {showPeriodMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
+                style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.95)', minWidth: '180px' }}
+              >
+                {periodOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setTimePeriod(option.value);
+                      setShowPeriodMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-xs border-b last:border-b-0 font-bold"
+                    style={{
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                      color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </motion.div>
+        </div>
+      </div>
 
       {/* Room Selector Tabs */}
-      <div className="flex-shrink-0 flex gap-2 overflow-x-auto px-4 md:pl-28 md:pr-6 pb-4 border-b hide-scrollbar" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+      <div className="flex-shrink-0 flex gap-2 overflow-x-auto px-6 py-3 border-b border-white/5 hide-scrollbar">
         {rooms.map((room) => (
           <motion.button
             key={room.id}
@@ -176,7 +165,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 md:pl-28 md:pr-6 py-4 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
         {selectedRoom && (
           <>
             {/* KPI Metrics */}
@@ -333,6 +322,77 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                     </motion.div>
                   );
                 })}
+              </div>
+            </motion.div>
+
+            {/* Heatmap - Utilization by Hour and Day */}
+            <motion.div
+              className="p-6 rounded-xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.5)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+            >
+              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5" style={{ color: colors.info }} />
+                Heatmapa vytížení - Den vs Hodina
+              </h2>
+              <div className="overflow-x-auto">
+                <div className="inline-block min-w-full">
+                  {/* Day labels */}
+                  <div className="flex">
+                    <div className="w-12" />
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <div key={`h-${i}`} className="w-6 text-center text-[9px] text-white/40 font-bold">
+                        {i}h
+                      </div>
+                    ))}
+                  </div>
+                  {/* Heatmap cells */}
+                  {['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'].map((day, dayIdx) => (
+                    <div key={`row-${dayIdx}`} className="flex">
+                      <div className="w-12 flex items-center text-xs font-bold text-white/70">{day}</div>
+                      {Array.from({ length: 24 }, (_, hourIdx) => {
+                        const utilization = Math.floor(Math.random() * 100);
+                        const bgColor = utilization >= 90 ? '#FF3B30' : utilization >= 75 ? '#F97316' : utilization >= 60 ? '#FBBF24' : utilization >= 40 ? '#10B981' : '#06B6D4';
+                        return (
+                          <motion.div
+                            key={`cell-${dayIdx}-${hourIdx}`}
+                            className="w-6 h-6 rounded border border-white/10"
+                            style={{ background: bgColor }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.8 }}
+                            transition={{ delay: dayIdx * 0.01 + hourIdx * 0.002, duration: 0.3 }}
+                            title={`${utilization}%`}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="flex gap-3 mt-4 text-[9px] flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ background: '#06B6D4' }} />
+                  <span className="text-white/60">Nízké &lt;40%</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ background: '#10B981' }} />
+                  <span className="text-white/60">Normální 40-60%</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ background: '#FBBF24' }} />
+                  <span className="text-white/60">Vyšší 60-75%</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ background: '#F97316' }} />
+                  <span className="text-white/60">Vysoké 75-90%</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ background: '#FF3B30' }} />
+                  <span className="text-white/60">Kritické &gt;90%</span>
+                </div>
               </div>
             </motion.div>
 
