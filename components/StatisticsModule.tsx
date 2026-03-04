@@ -96,57 +96,63 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/5 flex-shrink-0">
-        <p className="text-xs font-bold text-cyan-400/60 uppercase tracking-[0.2em] mb-2">Analýzy a Metriky</p>
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-black text-white">Statistiky Operačních Sálů</h1>
-          
-          <motion.div className="relative" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <button
-              onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-              className="px-3 py-1.5 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10 text-xs font-bold"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
-            >
-              <Calendar className="w-3.5 h-3.5 text-white/70" />
-              <span className="text-white uppercase tracking-wider">
-                {periodOptions.find(p => p.value === timePeriod)?.label}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-white/50" />
-            </button>
-
-            {showPeriodMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.95)', minWidth: '180px' }}
-              >
-                {periodOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      setTimePeriod(option.value);
-                      setShowPeriodMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-xs border-b last:border-b-0 font-bold"
-                    style={{
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                      color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </motion.div>
+      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0 px-6 py-4">
+        <div className="text-center lg:text-left">
+          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+            <BarChart3 className="w-4 h-4" style={{ color: colors.info }} />
+            <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">Analýzy a Metriky</p>
+          </div>
+          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+            Statistiky <span className="text-white/20">Operačních Sálů</span>
+          </h1>
         </div>
-      </div>
+
+        {/* Time Period Selector */}
+        <motion.div className="relative self-end lg:absolute lg:top-8 lg:right-6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+          <button
+            onClick={() => setShowPeriodMenu(!showPeriodMenu)}
+            className="px-3 py-1.5 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10 text-xs font-bold"
+            style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
+          >
+            <Calendar className="w-3.5 h-3.5 text-white/70" />
+            <span className="text-white uppercase tracking-wider">
+              {periodOptions.find(p => p.value === timePeriod)?.label}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-white/50" />
+          </button>
+
+          {showPeriodMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.95)', minWidth: '180px' }}
+            >
+              {periodOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setTimePeriod(option.value);
+                    setShowPeriodMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-xs border-b last:border-b-0 font-bold"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                    color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </motion.div>
+      </header>
 
       {/* Room Selector Tabs */}
-      <div className="flex-shrink-0 flex gap-2 overflow-x-auto px-6 py-3 border-b border-white/5 hide-scrollbar">
+      <div className="flex-shrink-0 flex gap-2 overflow-x-auto px-6 pb-4 border-b border-white/5 hide-scrollbar">
         {rooms.map((room) => (
           <motion.button
             key={room.id}
@@ -165,7 +171,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6 pb-20">
         {selectedRoom && (
           <>
             {/* KPI Metrics */}
