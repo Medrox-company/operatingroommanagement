@@ -175,7 +175,9 @@ const App: React.FC = () => {
 
             {currentView === 'statistics' && (
               <motion.div key="statistics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full overflow-y-auto hide-scrollbar">
-                <StatisticsModule rooms={rooms} />
+                <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
+                  <StatisticsModule rooms={rooms} />
+                </div>
               </motion.div>
             )}
 
