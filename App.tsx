@@ -13,6 +13,7 @@ import { OperatingRoom } from './types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
+import StatisticsModule from './components/StatisticsModule';
 
 // Main App Component - Operating Rooms Management System
 // Last updated: 2026-02-22T12:00:00Z
@@ -169,6 +170,12 @@ const App: React.FC = () => {
             {currentView === 'timeline' && (
               <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full h-full overflow-hidden">
                 <TimelineModule rooms={rooms} />
+              </motion.div>
+            )}
+
+            {currentView === 'statistics' && (
+              <motion.div key="statistics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full overflow-y-auto hide-scrollbar">
+                <StatisticsModule rooms={rooms} />
               </motion.div>
             )}
 
