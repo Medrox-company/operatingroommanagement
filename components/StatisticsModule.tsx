@@ -49,6 +49,47 @@ const phaseRows = [
   { label: 'Sál připraven',       min: 47, pct: 21.6, trend: +5,  color: '#34C759' },
 ];
 
+// ── Monthly cumulative ops ────────────────────────────────────────────────────
+const monthCumulative = monthData.reduce<{ t: string; v: number; cumul: number }[]>((acc, d) => {
+  const prev = acc.length > 0 ? acc[acc.length - 1].cumul : 0;
+  acc.push({ t: d.t, v: d.v, cumul: prev + Math.round(d.v * 0.8) });
+  return acc;
+}, []);
+
+// ── Avg procedure length vs benchmark ────────────────────────────────────────
+const procedureLengthData = [
+  { dept: 'ORTOPÉDIE',  avg: 118, bench: 100 },
+  { dept: 'KARDIOCHIR', avg: 210, bench: 180 },
+  { dept: 'NEUROCHIR',  avg: 165, bench: 150 },
+  { dept: 'UROLOGIE',   avg: 85,  bench: 90  },
+  { dept: 'BŘIŠNÍ',     avg: 95,  bench: 95  },
+  { dept: 'CÉVNÍ',      avg: 145, bench: 130 },
+];
+
+// ── Turnover time trend ───────────────────────────────────────────────────────
+const turnoverData = [
+  { t: 'Po', v: 22, target: 20 }, { t: 'Út', v: 19, target: 20 },
+  { t: 'St', v: 25, target: 20 }, { t: 'Čt', v: 18, target: 20 },
+  { t: 'Pá', v: 21, target: 20 },
+];
+
+// ── FCOTS (First Case On-Time Start) ─────────────────────────────────────────
+const fcotsData = [
+  { dept: 'ORTOPÉDIE',  pct: 88 }, { dept: 'KARDIOCHIR', pct: 72 },
+  { dept: 'NEUROCHIR',  pct: 91 }, { dept: 'UROLOGIE',   pct: 85 },
+  { dept: 'BŘIŠNÍ',     pct: 78 }, { dept: 'CÉVNÍ',      pct: 95 },
+];
+
+// ── Cancellation & delay data ─────────────────────────────────────────────────
+const cancellationData = [
+  { month: 'Říj', cancelled: 3, delayed: 8, onTime: 89 },
+  { month: 'Lis', cancelled: 5, delayed: 12, onTime: 83 },
+  { month: 'Pro', cancelled: 2, delayed: 6, onTime: 92 },
+  { month: 'Led', cancelled: 4, delayed: 9, onTime: 87 },
+  { month: 'Úno', cancelled: 3, delayed: 7, onTime: 90 },
+  { month: 'Bře', cancelled: 6, delayed: 11, onTime: 83 },
+];
+
 const HEATMAP: number[][] = [
   [5,5,5,5,5,5,5,10,45,80,95,90,88,85,90,92,88,75,60,40,20,10,5,5],
   [5,5,5,5,5,5,5,12,50,82,96,91,89,86,91,93,89,76,61,41,21,10,5,5],
@@ -192,6 +233,46 @@ function buildScatter(room: OperatingRoom) {
     x: 30 + ((seed * (i + 1) * 7) % 60),
     y: 40 + ((seed * (i + 2) * 5) % 55),
     z: 5 + (i % 4) * 3,
+  }));
+}
+
+// ── Histogram of procedure durations ─────────────────────────────────────────
+function buildDurationHistogram(room: OperatingRoom) {
+  const seed = parseInt(room.id, 10) || 1;
+  const bins = [30, 60, 90, 120, 150, 180, 210, 240];
+  return bins.map((b, i) => ({
+    range: `${b - 30}–${b}`,
+    count: Math.max(0, Math.round(4 - Math.abs(i - 3) * 0.8 + ((seed * (i + 1)) % 4))),
+  }));
+}
+
+// ── Monthly ops trend for single room ────────────────────────────────────────
+function buildMonthOps(room: OperatingRoom) {
+  const seed = parseInt(room.id, 10) || 1;
+  return Array.from({ length: 12 }, (_, i) => ({
+    month: ['Led','Úno','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'][i],
+    ops: Math.round(room.operations24h * 25 + ((seed * (i + 1) * 3) % (room.operations24h * 8))),
+    target: room.operations24h * 28,
+  }));
+}
+
+// ── Per-hour efficiency for a room ───────────────────────────────────────────
+function buildHourlyEfficiency(room: OperatingRoom) {
+  const seed = parseInt(room.id, 10) || 1;
+  return Array.from({ length: 12 }, (_, i) => ({
+    h: `${i + 7}h`,
+    eff: Math.max(40, Math.min(100, 70 + ((seed * (i + 1) * 5) % 30) - 5)),
+    target: 80,
+  }));
+}
+
+// ── Incident & delay log mock ─────────────────────────────────────────────────
+function buildDelayLog(room: OperatingRoom) {
+  const seed = parseInt(room.id, 10) || 1;
+  return Array.from({ length: 6 }, (_, i) => ({
+    date: `${i + 1}.3.`,
+    delay: Math.round(((seed * (i + 1) * 7) % 20)),
+    type: ['Pacient','Personál','Technika','Příprava','Anestezie','Úklid'][i % 6],
   }));
 }
 
@@ -342,38 +423,39 @@ interface RoomDetailPanelProps {
 const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
   const sc = statusColor(room.status);
   const ups = isUPS(room);
-  const rawTL    = useMemo(() => buildTimeline(room), [room]);
-  const timeline = useMemo(() => merge(rawTL), [rawTL]);
-  const dist     = useMemo(() => buildDist(room), [room]);
-  const dayCurve = useMemo(() => buildDayCurve(room), [room]);
-  const weekCurve= useMemo(() => buildWeekCurve(room), [room]);
-  const radar    = useMemo(() => buildRadar(room), [room]);
-  const scatter  = useMemo(() => buildScatter(room), [room]);
-  const dm       = dayMin(room);
-  const opsDay   = Math.max(1, Math.floor(room.operations24h * (dm / 1440)));
-  const utilPct  = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
-  const isBusy   = room.status === RoomStatus.BUSY;
+  const rawTL      = useMemo(() => buildTimeline(room), [room]);
+  const timeline   = useMemo(() => merge(rawTL), [rawTL]);
+  const dist       = useMemo(() => buildDist(room), [room]);
+  const dayCurve   = useMemo(() => buildDayCurve(room), [room]);
+  const weekCurve  = useMemo(() => buildWeekCurve(room), [room]);
+  const radar      = useMemo(() => buildRadar(room), [room]);
+  const histogram  = useMemo(() => buildDurationHistogram(room), [room]);
+  const monthOps   = useMemo(() => buildMonthOps(room), [room]);
+  const hourlyEff  = useMemo(() => buildHourlyEfficiency(room), [room]);
+  const delayLog   = useMemo(() => buildDelayLog(room), [room]);
+  const dm         = dayMin(room);
+  const opsDay     = Math.max(1, Math.floor(room.operations24h * (dm / 1440)));
+  const utilPct    = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
+  const isBusy     = room.status === RoomStatus.BUSY;
+  const avgDelay   = Math.round(delayLog.reduce((s, d) => s + d.delay, 0) / delayLog.length);
+  const maxMonthOps = Math.max(...monthOps.map(m => m.ops));
 
-  // Phase bar chart data
-  const phaseBar = dist.map(d => ({ name: d.title.replace('Chirurgický ', 'Chir. ').replace('Ukončení ', 'Ukončení '), min: d.min, pct: d.pct, color: d.color }));
-
-  // Stacked area for daily breakdown
-  const stackedDay = dayCurve.map((d, i) => ({
-    t: d.t,
-    výkon: Math.round(d.v * 0.44),
-    příprava: Math.round(d.v * 0.18),
-    anestezie: Math.round(d.v * 0.22),
-    úklid: Math.round(d.v * 0.16),
+  const phaseBar = dist.map(d => ({
+    name: d.title.replace('Chirurgický výkon', 'Chir. výkon').replace('Ukončení ', 'Ukončení '),
+    min: d.min, pct: d.pct, color: d.color,
   }));
 
-  // Efficiency trend (last 14 days)
+  const stackedDay = dayCurve.map(d => ({
+    t: d.t,
+    výkon:     Math.round(d.v * 0.44),
+    příprava:  Math.round(d.v * 0.18),
+    anestezie: Math.round(d.v * 0.22),
+    úklid:     Math.round(d.v * 0.16),
+  }));
+
   const effTrend = Array.from({ length: 14 }, (_, i) => {
     const seed = parseInt(room.id, 10) || 1;
-    return {
-      t: `${i + 1}`,
-      v: Math.round(65 + ((seed * (i + 1) * 3) % 30)),
-      bench: 80,
-    };
+    return { t: `${i + 1}`, v: Math.round(65 + ((seed * (i + 1) * 3) % 30)), bench: 80 };
   });
 
   return (
@@ -434,13 +516,16 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
         <div className="p-8 space-y-8">
 
           {/* ── KPI strip ── */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             {[
-              { l: 'Výkony / den', v: String(opsDay), color: accent, icon: <Zap className="w-4 h-4" /> },
-              { l: 'Využití výkonem', v: `${utilPct}%`, color: 'rgba(255,255,255,0.8)', icon: <Activity className="w-4 h-4" /> },
-              { l: 'Fronta', v: String(room.queueCount), color: room.queueCount > 2 ? '#F97316' : 'rgba(255,255,255,0.8)', icon: <Users className="w-4 h-4" /> },
-              { l: 'Provoz', v: ups ? '24 h' : '12 h', color: ups ? '#06B6D4' : 'rgba(255,255,255,0.6)', icon: <Clock className="w-4 h-4" /> },
-              { l: 'Průběh výkonu', v: room.currentProcedure ? `${room.currentProcedure.progress}%` : '—', color: '#A78BFA', icon: <BarChart3 className="w-4 h-4" /> },
+              { l: 'Výkony / den',     v: String(opsDay),                                     color: accent,                       icon: <Zap className="w-4 h-4" /> },
+              { l: 'Využití výkonem',  v: `${utilPct}%`,                                      color: 'rgba(255,255,255,0.8)',       icon: <Activity className="w-4 h-4" /> },
+              { l: 'Fronta',           v: String(room.queueCount),                            color: room.queueCount > 2 ? '#F97316' : 'rgba(255,255,255,0.8)', icon: <Users className="w-4 h-4" /> },
+              { l: 'Provoz',           v: ups ? '24 h' : '12 h',                              color: ups ? '#06B6D4' : 'rgba(255,255,255,0.6)',                  icon: <Clock className="w-4 h-4" /> },
+              { l: 'Průběh výkonu',    v: room.currentProcedure ? `${room.currentProcedure.progress}%` : '—', color: '#A78BFA',   icon: <BarChart3 className="w-4 h-4" /> },
+              { l: 'Prům. zpoždění',   v: `${avgDelay} min`,                                  color: avgDelay > 15 ? '#F97316' : '#10B981',                      icon: <AlertTriangle className="w-4 h-4" /> },
+              { l: 'Výkony / měsíc',   v: String(maxMonthOps),                                color: 'rgba(255,255,255,0.8)',       icon: <TrendingUp className="w-4 h-4" /> },
+              { l: 'Typ provozu',      v: ups ? 'ÚPS' : 'Standard',                           color: ups ? '#06B6D4' : 'rgba(255,255,255,0.5)',                  icon: <Zap className="w-4 h-4" /> },
             ].map((k, i) => (
               <div key={i} className="rounded-2xl px-4 py-4"
                 style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -448,7 +533,7 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
                   {k.icon}
                   <p className="text-[10px] font-black uppercase tracking-widest">{k.l}</p>
                 </div>
-                <p className="text-3xl font-black leading-none" style={{ color: k.color }}>{k.v}</p>
+                <p className="text-2xl font-black leading-none" style={{ color: k.color }}>{k.v}</p>
               </div>
             ))}
           </div>
@@ -668,6 +753,98 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
                   <Area type="monotone" dataKey="v" stroke="#FBBF24" fill="#FBBF24" fillOpacity={0.1} strokeWidth={2} dot={false} name="Efektivita" />
                 </ComposedChart>
               </ResponsiveContainer>
+            </ChartCard>
+          </div>
+
+          {/* ── Chart row 5: Monthly ops trend + Histogram ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <ChartCard title="Měsíční trend výkonů — rok">
+              <ResponsiveContainer width="100%" height={160}>
+                <ComposedChart data={monthOps} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+                  <defs>
+                    <linearGradient id={`mg-${room.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#A78BFA" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 0" vertical={false} />
+                  <XAxis dataKey="month" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                  <Tooltip {...TT} formatter={(v: number) => [`${v} výkonů`]} />
+                  <Area type="monotone" dataKey="ops" stroke="#A78BFA" fill={`url(#mg-${room.id})`} strokeWidth={2} dot={false} name="Výkony" />
+                  <Line type="monotone" dataKey="target" stroke="rgba(255,255,255,0.2)" strokeWidth={1} dot={false} strokeDasharray="4 4" name="Cíl" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Histogram délky výkonů (min)">
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={histogram} margin={{ top: 4, right: 4, bottom: 0, left: -16 }} barSize={22}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 0" vertical={false} />
+                  <XAxis dataKey="range" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip {...TT} formatter={(v: number) => [`${v}×`]} />
+                  <Bar dataKey="count" radius={[3, 3, 0, 0]} name="Počet výkonů">
+                    {histogram.map((_, i) => (
+                      <Cell key={i} fill={`hsl(${180 + i * 12}, 70%, ${45 + i * 4}%)`} fillOpacity={0.85} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+
+          {/* ── Chart row 6: Hourly efficiency + Delay log ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <ChartCard title="Hodinová efektivita průběhu dne">
+              <ResponsiveContainer width="100%" height={160}>
+                <ComposedChart data={hourlyEff} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+                  <defs>
+                    <linearGradient id={`hg-${room.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.28} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 0" vertical={false} />
+                  <XAxis dataKey="h" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} domain={[40, 100]} />
+                  <Tooltip {...TT} formatter={(v: number) => [`${v}%`]} />
+                  <ReferenceLine y={80} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4" />
+                  <Area type="monotone" dataKey="eff" stroke="#10B981" fill={`url(#hg-${room.id})`} strokeWidth={2} dot={false} name="Efektivita" />
+                  <Line type="monotone" dataKey="target" stroke="rgba(255,255,255,0.15)" strokeWidth={1} dot={false} strokeDasharray="4 4" name="Cíl" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Zpoždění výkonů — posledních 6 dní (min)">
+              <div className="space-y-3 mt-1">
+                {delayLog.map((d, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-xs text-white/30 w-10 shrink-0">{d.date}</span>
+                    <span className="text-xs text-white/40 w-20 shrink-0">{d.type}</span>
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      <motion.div className="h-full rounded-full"
+                        style={{ background: d.delay > 15 ? '#F97316' : d.delay > 8 ? '#FBBF24' : '#10B981', opacity: 0.85 }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, d.delay * 5)}%` }}
+                        transition={{ duration: 0.5, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }} />
+                    </div>
+                    <span className="text-sm font-black w-10 text-right shrink-0"
+                      style={{ color: d.delay > 15 ? '#F97316' : d.delay > 8 ? '#FBBF24' : '#10B981' }}>
+                      {d.delay} m
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <span className="text-xs text-white/25 uppercase tracking-wider">Průměr</span>
+                <span className="text-xl font-black"
+                  style={{ color: avgDelay > 15 ? '#F97316' : avgDelay > 8 ? '#FBBF24' : '#10B981' }}>
+                  {avgDelay} min
+                </span>
+              </div>
             </ChartCard>
           </div>
 
@@ -1032,7 +1209,139 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </div>
         </div>
 
-        {/* ── Workflow aggregate ── */}
+        {/* ── Charts row 3: Procedure length + FCOTS ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+
+          <div className="rounded-2xl p-5"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/25 mb-4">Průměrná délka výkonu vs. benchmark (min)</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={procedureLengthData} layout="vertical" margin={{ top: 0, right: 40, bottom: 0, left: 10 }}>
+                <XAxis type="number" stroke="rgba(255,255,255,0.08)" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="dept" width={80} stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip {...TT} formatter={(v: number) => [`${v} min`]} />
+                <Bar dataKey="avg" radius={[0, 4, 4, 0]} barSize={10} name="Průměr" fill={accent} fillOpacity={0.8} />
+                <Bar dataKey="bench" radius={[0, 4, 4, 0]} barSize={10} name="Benchmark" fill="rgba(255,255,255,0.12)" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-5 mt-3">
+              {[{ l: 'Průměr', c: accent }, { l: 'Benchmark', c: 'rgba(255,255,255,0.2)' }].map(l => (
+                <div key={l.l} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-[2px]" style={{ background: l.c }} />
+                  <span className="text-xs text-white/35">{l.l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-5"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/25 mb-4">FCOTS — zahájení prvního výkonu včas (%)</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={fcotsData} layout="vertical" margin={{ top: 0, right: 40, bottom: 0, left: 10 }}>
+                <XAxis type="number" domain={[0, 100]} stroke="rgba(255,255,255,0.08)" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="dept" width={80} stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip {...TT} formatter={(v: number) => [`${v}%`]} />
+                <ReferenceLine x={90} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4" />
+                <Bar dataKey="pct" radius={[0, 4, 4, 0]} barSize={10} name="FCOTS %">
+                  {fcotsData.map((entry, i) => (
+                    <Cell key={i} fill={entry.pct >= 90 ? '#10B981' : entry.pct >= 80 ? '#FBBF24' : '#F97316'} fillOpacity={0.85} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ── Charts row 4: Cancellation stacked + Cumulative monthly ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+
+          <div className="rounded-2xl p-5"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/25 mb-4">Rušení & zpoždění výkonů — posledních 6 měsíců (%)</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={cancellationData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} barSize={18}>
+                <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 0" vertical={false} />
+                <XAxis dataKey="month" stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip {...TT} />
+                <Bar dataKey="onTime"    stackId="a" fill="#10B981" fillOpacity={0.75} name="Včas"    radius={[0, 0, 0, 0]} />
+                <Bar dataKey="delayed"   stackId="a" fill="#FBBF24" fillOpacity={0.80} name="Zpoždění" />
+                <Bar dataKey="cancelled" stackId="a" fill="#F97316" fillOpacity={0.85} name="Zrušeno" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-5 mt-3">
+              {[{ l: 'Včas', c: '#10B981' }, { l: 'Zpoždění', c: '#FBBF24' }, { l: 'Zrušeno', c: '#F97316' }].map(l => (
+                <div key={l.l} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-[2px]" style={{ background: l.c }} />
+                  <span className="text-xs text-white/35">{l.l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-5"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/25 mb-4">Kumulativní výkony — měsíc</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={monthCumulative} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+                <defs>
+                  <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#FBBF24" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#FBBF24" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 0" vertical={false} />
+                <XAxis dataKey="t" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} interval={4} />
+                <YAxis yAxisId="left"  stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip {...TT} />
+                <Bar yAxisId="left" dataKey="v" fill={accent} fillOpacity={0.4} radius={[2, 2, 0, 0]} barSize={8} name="Denní výkony %" />
+                <Area yAxisId="right" type="monotone" dataKey="cumul" stroke="#FBBF24" fill="url(#cg)" strokeWidth={2} dot={false} name="Kumulace" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ── Turnover time ── */}
+        <div className="rounded-2xl p-5 mb-5"
+          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <p className="text-xs font-black uppercase tracking-widest text-white/25 mb-4">Doba obrátky sálu — turnover time (min)</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ResponsiveContainer width="100%" height={150}>
+              <ComposedChart data={turnoverData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+                <defs>
+                  <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 0" vertical={false} />
+                <XAxis dataKey="t" stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.1)" fontSize={11} tickLine={false} axisLine={false} domain={[0, 30]} />
+                <Tooltip {...TT} formatter={(v: number) => [`${v} min`]} />
+                <ReferenceLine y={20} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4" />
+                <Area type="monotone" dataKey="v" stroke="#2DD4BF" fill="url(#tg)" strokeWidth={2} dot={{ r: 3, fill: '#2DD4BF', strokeWidth: 0 }} name="Obrátka" />
+                <Line type="monotone" dataKey="target" stroke="rgba(255,255,255,0.18)" strokeWidth={1} dot={false} strokeDasharray="4 4" name="Cíl" />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div className="space-y-3 pt-2">
+              {turnoverData.map((d, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-sm text-white/45">{d.t}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                      <div className="h-full rounded-full"
+                        style={{ width: `${(d.v / 30) * 100}%`, background: d.v > 20 ? '#F97316' : '#2DD4BF', opacity: 0.85 }} />
+                    </div>
+                    <span className="text-sm font-black w-12 text-right"
+                      style={{ color: d.v > 20 ? '#F97316' : '#2DD4BF' }}>{d.v} min</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="rounded-2xl p-5 mb-5"
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <p className="text-xs font-black uppercase tracking-widest text-white/25 mb-4">
