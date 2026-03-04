@@ -223,7 +223,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                     className="p-5 rounded-xl border backdrop-blur-sm overflow-hidden group cursor-pointer"
                     style={{
                       borderColor: 'rgba(255, 255, 255, 0.1)',
-                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                      background: 'rgba(15, 23, 42, 0.5)',
                     }}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -249,7 +249,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             {/* Advanced Metrics - Detailed Timing */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.6)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.4 }}
@@ -267,7 +267,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                       className="p-4 rounded-lg border backdrop-blur-sm flex items-start justify-between"
                       style={{
                         borderColor: 'rgba(255, 255, 255, 0.1)',
-                        background: 'rgba(255, 255, 255, 0.04)',
+                        background: 'rgba(15, 23, 42, 0.4)',
                       }}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -297,7 +297,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             {/* Rooms Comparison */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.6)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.4 }}
@@ -312,7 +312,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                   className="px-3 py-1.5 rounded-lg text-xs font-bold border backdrop-blur-sm transition-all"
                   style={{
                     borderColor: comparisonMode ? colors.warning : 'rgba(255, 255, 255, 0.1)',
-                    background: comparisonMode ? `${colors.warning}20` : 'rgba(255, 255, 255, 0.04)',
+                    background: comparisonMode ? `${colors.warning}20` : 'rgba(15, 23, 42, 0.4)',
                     color: comparisonMode ? colors.warning : 'rgba(255, 255, 255, 0.7)',
                   }}
                 >
@@ -378,7 +378,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             </motion.div>
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.6)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.4 }}
@@ -414,7 +414,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             {/* Phase Breakdown - Horizontal Timeline */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.6)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.4 }}
@@ -481,7 +481,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             {/* Heatmap - Utilization by Hour and Day */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.6)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.4 }}
@@ -551,7 +551,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             {/* Efficiency Radar */}
             <motion.div
               className="p-6 rounded-2xl border backdrop-blur-sm"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.6)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.4 }}
