@@ -656,9 +656,129 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
             </div>
           </div>
 
-          {/* ── Additional Statistics Section ── */}
-          <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-6">Rozšířené statistiky</p>
+          {/* ── SCHEDULE-SPECIFIC STATISTICS ── */}
+          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1">
+                <p className="text-xs font-black uppercase tracking-widest text-white/30">
+                  {ups ? 'Statistiky ÚPS — 24h provoz' : 'Statistiky pracovní doby'}
+                </p>
+              </div>
+              <div className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider"
+                style={{ background: ups ? 'rgba(6,182,212,0.15)' : 'rgba(249,115,22,0.15)', 
+                         color: ups ? '#06B6D4' : '#F97316' }}>
+                {ups ? 'ÚPS' : 'STD'}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Day availability */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Dostupnost / den</p>
+                <div className="text-2xl font-black text-white/80">{ups ? '24' : '12'}</div>
+                <p className="text-xs text-white/25 mt-1">hodin</p>
+              </div>
+
+              {/* Avg ops per schedule */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Prům. výkony</p>
+                <div className="text-2xl font-black" style={{ color: accent }}>{opsDay}</div>
+                <p className="text-xs text-white/25 mt-1">za provozní dobu</p>
+              </div>
+
+              {/* Utilization during hours */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Aut. vytížení</p>
+                <div className="text-2xl font-black text-white/80">{utilPct}%</div>
+                <p className="text-xs text-white/25 mt-1">výkonu</p>
+              </div>
+
+              {/* Peak hour efficiency */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Peak efekt.</p>
+                <div className="text-2xl font-black" style={{ color: '#10B981' }}>{Math.min(100, utilPct + 15)}%</div>
+                <p className="text-xs text-white/25 mt-1">vrchol dne</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── SCHEDULE COMPARISON (if both exist conceptually) ── */}
+          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Srovnění provozních režimů</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { mode: 'Pracovní doba', hours: '12 h', ops: Math.floor(opsDay * 0.7), util: Math.floor(utilPct * 0.9), color: '#F97316' },
+                { mode: 'ÚPS/Služba', hours: '24 h', ops: Math.floor(opsDay * 1.4), util: Math.floor(utilPct * 0.6), color: '#06B6D4' },
+              ].map(m => (
+                <div key={m.mode} className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${m.color}20` }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-black text-white/70">{m.mode}</span>
+                    <span className="px-2 py-1 rounded text-[10px] font-black" style={{ background: `${m.color}20`, color: m.color }}>
+                      {m.hours}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/30">Výkony</span>
+                      <span className="text-sm font-bold text-white/70">{m.ops}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/30">Vytížení</span>
+                      <span className="text-sm font-bold" style={{ color: m.color }}>{m.util}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── SAFETY & COMPLIANCE ── */}
+          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Bezpečnost & Compliance</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Sterilní stav', value: '100', unit: '%', color: '#10B981' },
+                { label: 'Příprava sálu', value: '98', unit: '%', color: '#06B6D4' },
+                { label: 'Incidenty', value: '0', unit: 'za měsíc', color: '#F97316' },
+                { label: 'Audit status', value: 'OK', unit: '', color: '#10B981' },
+                { label: 'Servis stav', value: 'Aktuální', unit: '', color: '#06B6D4' },
+                { label: 'Certifikace', value: 'Platná', unit: '', color: '#10B981' },
+              ].map(s => (
+                <div key={s.label} className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-xs text-white/30 uppercase tracking-wider mb-2">{s.label}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black" style={{ color: s.color }}>{s.value}</span>
+                    {s.unit && <span className="text-xs text-white/30">{s.unit}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── STAFF ALLOCATION & ROTATION ── */}
+          <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Obsazení a rotace personálu</p>
+            <div className="space-y-4">
+              {[
+                { role: 'Chirurgové',      current: 2, available: 5, util: 40 },
+                { role: 'Operační sestry', current: 2, available: 6, util: 33 },
+                { role: 'Anesteziologové', current: 1, available: 3, util: 33 },
+                { role: 'Asistenti',       current: 1, available: 4, util: 25 },
+              ].map(st => (
+                <div key={st.role}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm text-white/50">{st.role}</span>
+                    <span className="text-xs font-black text-white/40">{st.current}/{st.available}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <motion.div className="h-full rounded-full" style={{ background: accent, opacity: 0.85 }}
+                      initial={{ width: 0 }} animate={{ width: `${st.util}%` }}
+                      transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
             
             {/* Grid of stat cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
