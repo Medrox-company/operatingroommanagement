@@ -95,74 +95,74 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
 
   return (
     <div className="w-full h-full text-white overflow-hidden flex flex-col">
-      {/* ======== Header ======== */}
-      <header className="relative z-10 flex items-center justify-between gap-4 px-4 md:pl-28 md:pr-6 pt-5 pb-3 flex-shrink-0 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="flex items-center gap-2 opacity-50">
+      {/* Header */}
+      <motion.header
+        className="flex items-center justify-between mb-12 px-4 md:pl-28 md:pr-6 pt-5"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <div className="flex items-center gap-3 mb-2 opacity-60">
             <BarChart3 className="w-4 h-4" style={{ color: colors.info }} />
-            <span className="text-[9px] font-black text-white/60 tracking-[0.3em] uppercase hidden lg:inline">Analýzy & Metriky</span>
+            <p className="text-[10px] font-black text-white/60 tracking-[0.4em] uppercase">Analýzy a Metriky</p>
           </div>
-          <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">Statistiky</h1>
+          <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">
+            Statistiky <span className="text-white/20">operačních sálů</span>
+          </h1>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap justify-end">
-          {/* Time Period Selector */}
-          <motion.div className="relative">
-            <button
-              onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-              className="px-3 py-1.5 rounded-lg border backdrop-blur-sm flex items-center gap-2 transition-all hover:bg-white/5 text-[9px] font-bold"
-              style={{
-                borderColor: 'rgba(255, 255, 255, 0.15)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                color: 'rgba(255, 255, 255, 0.7)',
-              }}
+        {/* Time Period Selector */}
+        <motion.div className="relative" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+          <button
+            onClick={() => setShowPeriodMenu(!showPeriodMenu)}
+            className="px-4 py-2 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10"
+            style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
+          >
+            <Calendar className="w-4 h-4 text-white/70" />
+            <span className="text-sm font-bold text-white">
+              {periodOptions.find(p => p.value === timePeriod)?.label}
+            </span>
+            <ChevronDown className="w-4 h-4 text-white/50" />
+          </button>
+
+          {showPeriodMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.95)', minWidth: '200px' }}
             >
-              <Calendar className="w-3 h-3" />
-              <span className="hidden sm:inline uppercase tracking-wider">
-                {periodOptions.find(p => p.value === timePeriod)?.label}
-              </span>
-              <ChevronDown className="w-3 h-3" />
-            </button>
+              {periodOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setTimePeriod(option.value);
+                    setShowPeriodMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-sm border-b last:border-b-0"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                    color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </motion.div>
+      </motion.header>
 
-            {showPeriodMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.15)', background: 'rgba(15, 23, 42, 0.95)', minWidth: '160px' }}
-              >
-                {periodOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      setTimePeriod(option.value);
-                      setShowPeriodMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 transition-colors text-[9px] border-b last:border-b-0 font-bold uppercase tracking-wider"
-                    style={{
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                      color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.6)',
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </motion.div>
-        </div>
-      </header>
-
-      {/* ======== Room Selector Tabs ======== */}
-      <div className="flex-shrink-0 flex gap-2 overflow-x-auto px-4 md:pl-28 md:pr-6 py-3 border-b hide-scrollbar" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+      {/* Room Selector Tabs */}
+      <div className="flex-shrink-0 flex gap-2 overflow-x-auto px-4 md:pl-28 md:pr-6 pb-4 border-b hide-scrollbar" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
         {rooms.map((room) => (
           <motion.button
             key={room.id}
             onClick={() => setSelectedRoomId(room.id)}
-            className="px-2.5 py-1 rounded-lg border backdrop-blur-sm text-[9px] font-bold whitespace-nowrap transition-all uppercase tracking-wider"
+            className="px-3 py-1.5 rounded-lg border backdrop-blur-sm text-xs font-bold whitespace-nowrap transition-all uppercase tracking-wider"
             style={{
               borderColor: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.1)',
               background: selectedRoomId === room.id ? `${colors.info}15` : 'rgba(255, 255, 255, 0.03)',
@@ -175,7 +175,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         ))}
       </div>
 
-      {/* ======== Content ======== */}
+      {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 md:pl-28 md:pr-6 py-4 space-y-6">
         {selectedRoom && (
           <>
