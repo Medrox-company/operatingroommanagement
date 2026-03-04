@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Calendar, TrendingUp, Clock, Building2, Activity, ChevronDown, Zap, Target, AlertCircle, CheckCircle, Info, Users } from 'lucide-react';
+import { BarChart3, Calendar, TrendingUp, Clock, Building2, Activity, ChevronDown, Zap, Target, AlertCircle, CheckCircle, Info, Users, Download, BarChart as BarChartIcon, Table } from 'lucide-react';
 import { OperatingRoom } from '../types';
 import { MOCK_ROOMS } from '../constants';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
@@ -15,6 +15,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
   const [selectedRoomId, setSelectedRoomId] = useState<string>(rooms[0]?.id || '1');
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
+  const [comparisonMode, setComparisonMode] = useState(false);
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId);
 
@@ -96,8 +98,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0 px-6 py-4">
-        <div className="text-center lg:text-left">
+      <header className="flex flex-col items-center lg:items-start gap-4 mb-12 flex-shrink-0 px-6 py-4">
+        <div className="text-center lg:text-left w-full">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <BarChart3 className="w-4 h-4" style={{ color: colors.info }} />
             <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">Analýzy a Metriky</p>
@@ -106,37 +108,102 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             Statistiky <span className="text-white/20">Operačních Sálů</span>
           </h1>
         </div>
+      </header>
 
-        {/* Time Period Selector */}
-        <motion.div className="relative self-end lg:absolute lg:top-8 lg:right-6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+      {/* Room Selector Tabs & Controls */}
+      <div className="flex-shrink-0 flex items-center justify-between gap-4 px-6 pb-4 border-b border-white/5">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1 min-w-0">
+          {rooms.map((room) => (
+            <motion.button
+              key={room.id}
+              onClick={() => setSelectedRoomId(room.id)}
+              className="px-3 py-1.5 rounded-lg border backdrop-blur-sm text-xs font-bold whitespace-nowrap transition-all uppercase tracking-wider flex-shrink-0"
+              style={{
+                borderColor: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.1)',
+                background: selectedRoomId === room.id ? `${colors.info}15` : 'rgba(255, 255, 255, 0.03)',
+                color: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.5)',
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              {room.name}
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* View Mode Toggle */}
+          <motion.div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <button
+              onClick={() => setViewMode('chart')}
+              className="px-2.5 py-1 rounded text-xs font-bold transition-all"
+              style={{
+                background: viewMode === 'chart' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                color: viewMode === 'chart' ? colors.info : 'rgba(255, 255, 255, 0.5)',
+              }}
+              title="Grafické zobrazení"
+            >
+              <BarChartIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className="px-2.5 py-1 rounded text-xs font-bold transition-all"
+              style={{
+                background: viewMode === 'table' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                color: viewMode === 'table' ? colors.info : 'rgba(255, 255, 255, 0.5)',
+              }}
+              title="Tabulkové zobrazení"
+            >
+              <Table className="w-4 h-4" />
+            </button>
+          </motion.div>
+
+          {/* Download Button */}
           <button
-            onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-            className="px-3 py-1.5 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10 text-xs font-bold"
+            onClick={() => {
+              const csvContent = 'data:text/csv;charset=utf-8,Statistiky Operačních Sálů\n...';
+              const link = document.createElement('a');
+              link.href = csvContent;
+              link.download = `statistiky_${selectedRoomId}_${timePeriod}.csv`;
+              link.click();
+            }}
+            className="px-2.5 py-1.5 rounded-lg border backdrop-blur-md flex items-center gap-1 transition-all hover:bg-white/10 text-xs font-bold"
             style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
+            title="Stáhnout jako CSV"
           >
-            <Calendar className="w-3.5 h-3.5 text-white/70" />
-            <span className="text-white uppercase tracking-wider">
-              {periodOptions.find(p => p.value === timePeriod)?.label}
-            </span>
-            <ChevronDown className="w-3.5 h-3.5 text-white/50" />
+            <Download className="w-4 h-4 text-white/70" />
           </button>
 
-          {showPeriodMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.95)', minWidth: '180px' }}
+          {/* Time Period Selector */}
+          <motion.div className="relative" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+            <button
+              onClick={() => setShowPeriodMenu(!showPeriodMenu)}
+              className="px-3 py-1.5 rounded-lg border backdrop-blur-md flex items-center gap-2 transition-all hover:bg-white/10 text-xs font-bold"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)' }}
             >
-              {periodOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setTimePeriod(option.value);
-                    setShowPeriodMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-xs border-b last:border-b-0 font-bold"
+              <Calendar className="w-3.5 h-3.5 text-white/70" />
+              <span className="text-white uppercase tracking-wider hidden sm:inline">
+                {periodOptions.find(p => p.value === timePeriod)?.label}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-white/50" />
+            </button>
+
+            {showPeriodMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
+                style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.95)', minWidth: '180px' }}
+              >
+                {periodOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setTimePeriod(option.value);
+                      setShowPeriodMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-xs border-b last:border-b-0 font-bold"
                   style={{
                     borderColor: 'rgba(255, 255, 255, 0.1)',
                     background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
@@ -149,25 +216,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             </motion.div>
           )}
         </motion.div>
-      </header>
-
-      {/* Room Selector Tabs */}
-      <div className="flex-shrink-0 flex gap-2 overflow-x-auto px-6 pb-4 border-b border-white/5 hide-scrollbar">
-        {rooms.map((room) => (
-          <motion.button
-            key={room.id}
-            onClick={() => setSelectedRoomId(room.id)}
-            className="px-3 py-1.5 rounded-lg border backdrop-blur-sm text-xs font-bold whitespace-nowrap transition-all uppercase tracking-wider"
-            style={{
-              borderColor: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.1)',
-              background: selectedRoomId === room.id ? `${colors.info}15` : 'rgba(255, 255, 255, 0.03)',
-              color: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.5)',
-            }}
-            whileHover={{ scale: 1.05 }}
-          >
-            {room.name}
-          </motion.button>
-        ))}
       </div>
 
       {/* Content */}
