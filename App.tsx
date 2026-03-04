@@ -99,22 +99,28 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-hidden relative pb-20 md:pb-0">
           <AnimatePresence mode="wait">
-            {currentView === 'dashboard' && (
-              selectedRoom ? (
-                  <div
-                  key="detail"
-                  className="absolute inset-0 z-50"
-                >
-                  <RoomDetail
-                    room={selectedRoom}
-                    onClose={() => setSelectedRoomId(null)}
-                    onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
-                    onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
-                  />
-                  </div>
-              ) : (
-                <div
+            {currentView === 'dashboard' && selectedRoom && (
+              <motion.div
+                key="detail"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50"
+              >
+                <RoomDetail
+                  room={selectedRoom}
+                  onClose={() => setSelectedRoomId(null)}
+                  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+                  onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
+                />
+              </motion.div>
+            )}
+            {currentView === 'dashboard' && !selectedRoom && (
+                <motion.div
                   key="grid-container"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10"
                 >
                   <div className="max-w-[2400px] mx-auto w-full">
@@ -163,8 +169,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-              )
+                </motion.div>
             )}
 
             {currentView === 'timeline' && (
@@ -182,20 +187,22 @@ const App: React.FC = () => {
             )}
 
             {currentView === 'staff' && (
-              <PlaceholderView
-                key="staff"
-                icon={User}
-                title="Personál"
-                description="Přehled personálu a přiřazení k sálům bude dostupný v nadcházející aktualizaci."
-              />
+              <motion.div key="staff" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
+                <PlaceholderView
+                  icon={User}
+                  title="Personál"
+                  description="Přehled personálu a přiřazení k sálům bude dostupný v nadcházející aktualizaci."
+                />
+              </motion.div>
             )}
             {currentView === 'alerts' && (
-              <PlaceholderView
-                key="alerts"
-                icon={AlertCircle}
-                title="Upozornění"
-                description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
-              />
+              <motion.div key="alerts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
+                <PlaceholderView
+                  icon={AlertCircle}
+                  title="Upozornění"
+                  description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
+                />
+              </motion.div>
             )}
             {currentView === 'settings' && (
               <motion.div
