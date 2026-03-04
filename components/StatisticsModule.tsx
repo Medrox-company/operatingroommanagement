@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { BarChart3, Calendar, TrendingUp, Clock, Building2, Activity, ChevronDown, Zap, Target, AlertCircle, CheckCircle, Info, Users, Download, BarChart as BarChartIcon, Table } from 'lucide-react';
 import { OperatingRoom } from '../types';
 import { MOCK_ROOMS } from '../constants';
-import { LineChart, Line, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+
 
 interface StatisticsModuleProps {
   rooms?: OperatingRoom[];
@@ -269,22 +269,22 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                 <TrendingUp className="w-5 h-5" style={{ color: colors.primary }} />
                 Vytížení v čase
               </h2>
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={timelineData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                  <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.5)" fontSize={12} />
-                  <YAxis stroke="rgba(255, 255, 255, 0.5)" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'rgba(0, 0, 0, 0.9)',
-                      border: `1px solid rgba(255, 255, 255, 0.1)`,
-                      borderRadius: '8px',
-                    }}
-                    labelStyle={{ color: 'rgba(255, 255, 255, 0.8)' }}
-                  />
-                  <Area type="monotone" dataKey="utilization" fill={colors.primary} stroke={colors.primary} fillOpacity={0.2} />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="flex items-end gap-1 h-48 w-full">
+                {timelineData.map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+                    <div
+                      className="w-full rounded-t transition-all duration-300"
+                      style={{
+                        height: `${d.utilization}%`,
+                        background: `linear-gradient(to top, ${colors.primary}cc, ${colors.primary}44)`,
+                        minHeight: 4,
+                      }}
+                      title={`${d.time}: ${d.utilization}%`}
+                    />
+                    <span className="text-[8px] text-white/30 font-bold">{d.time}</span>
+                  </div>
+                ))}
+              </div>
             </motion.div>
 
             {/* Phase Duration Breakdown */}
@@ -463,23 +463,48 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                 <Building2 className="w-5 h-5" style={{ color: colors.warning }} />
                 Srovnění všech operačních sálů
               </h2>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={comparisonData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
-                  <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
-                  <YAxis stroke="rgba(255, 255, 255, 0.4)" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'rgba(0, 0, 0, 0.95)',
-                      border: `1px solid rgba(255, 255, 255, 0.15)`,
-                      borderRadius: '12px',
-                    }}
-                    labelStyle={{ color: 'rgba(255, 255, 255, 0.9)' }}
-                  />
-                  <Bar dataKey="operations" fill={colors.primary} radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="utilization" fill={colors.secondary} radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                {comparisonData.map((room, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-white/70 w-24 truncate flex-shrink-0">{room.name}</span>
+                    <div className="flex-1 flex gap-1 items-center h-6">
+                      <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ background: colors.primary }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(room.operations / 15) * 100}%` }}
+                          transition={{ delay: idx * 0.05, duration: 0.6 }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-white/50 w-6 text-right">{room.operations}</span>
+                    </div>
+                    <div className="flex-1 flex gap-1 items-center h-6">
+                      <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ background: colors.secondary }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${room.utilization}%` }}
+                          transition={{ delay: idx * 0.05 + 0.1, duration: 0.6 }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-white/50 w-8 text-right">{room.utilization}%</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/5">
+                  <span className="w-24 flex-shrink-0" />
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-3 h-3 rounded-full" style={{ background: colors.primary }} />
+                    <span className="text-[10px] text-white/40 font-bold">Operace / 24h</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-3 h-3 rounded-full" style={{ background: colors.secondary }} />
+                    <span className="text-[10px] text-white/40 font-bold">Vytížení %</span>
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
             <div className="pb-8" />
