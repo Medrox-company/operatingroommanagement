@@ -63,17 +63,17 @@ function heatColor(v: number) {
 }
 
 function TrendIcon({ v }: { v: number }) {
-  if (v > 0) return <TrendingUp className="w-3 h-3" style={{ color: '#F97316' }} />;
-  if (v < 0) return <TrendingDown className="w-3 h-3" style={{ color: '#10B981' }} />;
-  return <Minus className="w-3 h-3 opacity-30" />;
+  if (v > 0) return <TrendingUp className="w-4 h-4" style={{ color: '#F97316' }} />;
+  if (v < 0) return <TrendingDown className="w-4 h-4" style={{ color: '#10B981' }} />;
+  return <Minus className="w-4 h-4 opacity-30" />;
 }
 
-const TooltipStyle = {
+  const TooltipStyle = {
   contentStyle: {
     background: 'rgba(2,8,23,0.96)',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 6,
-    fontSize: 11,
+    fontSize: 13,
   },
   labelStyle: { color: 'rgba(255,255,255,0.5)' },
   itemStyle: { color: accent },
@@ -205,30 +205,30 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       >
         {/* Status dot */}
-        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 8px ${sc}` }} />
+        <div className="w-3 h-3 rounded-full shrink-0" style={{ background: sc, boxShadow: `0 0 10px ${sc}` }} />
 
         {/* Name + dept */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-base font-black text-white/95">{room.name}</span>
-            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-lg font-black text-white/95">{room.name}</span>
+            <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
               style={{ background: `${sc}18`, color: sc }}>
               {statusLabel(room.status)}
             </span>
             {ups && (
-              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+              <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
                 style={{ background: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>ÚPS</span>
             )}
             {room.isSeptic && (
-              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+              <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
                 style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>SEPTICKÝ</span>
             )}
             {room.isEmergency && (
-              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+              <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded"
                 style={{ background: 'rgba(249,115,22,0.12)', color: '#F97316' }}>EMERGENCY</span>
             )}
           </div>
-          <p className="text-xs text-white/35 mt-0.5 truncate">
+          <p className="text-sm text-white/35 mt-1 truncate">
             {room.department} — {room.currentProcedure?.name ?? 'Žádný výkon'}
           </p>
         </div>
@@ -236,20 +236,20 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
         {/* Quick stats */}
         <div className="hidden sm:flex items-center gap-6 shrink-0">
           <div className="text-right">
-            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Výkony / den</p>
-            <p className="text-xl font-black" style={{ color: accent }}>{opsDay}</p>
+            <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Výkony / den</p>
+            <p className="text-2xl font-black" style={{ color: accent }}>{opsDay}</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Využití výkonem</p>
-            <p className="text-xl font-black text-white/80">{utilPct}%</p>
+            <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Využití výkonem</p>
+            <p className="text-2xl font-black text-white/80">{utilPct}%</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Fronta</p>
-            <p className="text-xl font-black text-white/80">{room.queueCount}</p>
+            <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Fronta</p>
+            <p className="text-2xl font-black text-white/80">{room.queueCount}</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-0.5">Provoz</p>
-            <p className="text-[11px] font-black" style={{ color: ups ? '#06B6D4' : 'rgba(255,255,255,0.5)' }}>
+            <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Provoz</p>
+            <p className="text-sm font-black" style={{ color: ups ? '#06B6D4' : 'rgba(255,255,255,0.5)' }}>
               {ups ? '24 h' : '12 h'}
             </p>
           </div>
@@ -264,14 +264,58 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
       {/* ── Timeline bar (always visible) ── */}
       <div className="px-5 pt-4 pb-4">
         {/* Header row */}
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest text-white/30">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-black uppercase tracking-widest text-white/30">
             Časová osa — {scheduleTimeRange(room)}
           </p>
-          <p className="text-[10px] font-black uppercase tracking-widest"
+          <p className="text-xs font-black uppercase tracking-widest"
             style={{ color: ups ? '#06B6D4' : 'rgba(255,255,255,0.3)' }}>
             {scheduleLabel(room)}
           </p>
+        </div>
+
+        {/* Main stacked colour bar */}
+        <div className="flex h-8 w-full rounded-lg overflow-hidden gap-[1px]">
+          {timeline.map((seg, i) => (
+            <motion.div
+              key={i}
+              className="h-full shrink-0 relative group"
+              style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.88 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.88 }}
+              transition={{ duration: 0.4, delay: i * 0.03 }}
+              title={`${seg.title} — ${seg.min} min (${seg.pct.toFixed(1)}%)`}
+            >
+              {/* Inline pct label for wider segments */}
+              {seg.pct >= 8 && (
+                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-black/70 leading-none pointer-events-none">
+                  {Math.round(seg.pct)}%
+                </span>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Per-segment legend with pct + min */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-3 mt-4">
+          {WORKFLOW_STEPS.map((step, si) => {
+            const match = timeline.filter(s => s.title === step.title);
+            const totalPct = match.reduce((a, s) => a + s.pct, 0);
+            const totalMin = match.reduce((a, s) => a + s.min, 0);
+            if (totalMin === 0) return null;
+            return (
+              <div key={si} className="flex items-center gap-2.5 min-w-0">
+                <div className="w-3 h-3 rounded-[2px] shrink-0" style={{ background: step.color }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-white/50 truncate leading-tight">{step.title}</p>
+                  <p className="text-sm font-black leading-tight" style={{ color: step.color }}>
+                    {Math.round(totalPct)}%
+                    <span className="text-white/30 font-normal ml-1.5">{totalMin} min</span>
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Main stacked colour bar */}
@@ -334,23 +378,23 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
 
             {/* ── Status distribution with animated bars ── */}
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-4">
+              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-5">
                 Rozložení statusů — průměrný cyklus
               </p>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {dist.map((d, i) => (
                   <div key={i}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: d.color }} />
-                        <span className="text-xs text-white/60">{d.title}</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-3 h-3 rounded-[2px] shrink-0" style={{ background: d.color }} />
+                        <span className="text-sm text-white/60">{d.title}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-white/35">{d.min} min</span>
-                        <span className="text-sm font-black w-10 text-right" style={{ color: d.color }}>{d.pct}%</span>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-white/35">{d.min} min</span>
+                        <span className="text-base font-black w-12 text-right" style={{ color: d.color }}>{d.pct}%</span>
                       </div>
                     </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                       <motion.div
                         className="h-full rounded-full"
                         style={{ background: d.color, opacity: 0.85 }}
@@ -365,18 +409,18 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
             </div>
 
             {/* ── Personnel & patient ── */}
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Personál</p>
-                <div className="space-y-2">
+                <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Personál</p>
+                <div className="space-y-3">
                   {[
                     { role: 'Chirurg',      name: room.staff.doctor.name },
                     { role: 'Sestra',       name: room.staff.nurse.name },
                     { role: 'Anesteziolog', name: room.staff.anesthesiologist?.name ?? null },
                   ].map(p => (
                     <div key={p.role} className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">{p.role}</span>
-                      <span className="text-xs font-bold text-white/70">{p.name ?? '—'}</span>
+                      <span className="text-xs text-white/30 uppercase tracking-wider">{p.role}</span>
+                      <span className="text-sm font-bold text-white/70">{p.name ?? '—'}</span>
                     </div>
                   ))}
                 </div>
@@ -384,19 +428,19 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
 
               {room.currentPatient && (
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Aktuální pacient</p>
-                  <div className="space-y-2">
+                  <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Aktuální pacient</p>
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Jméno</span>
-                      <span className="text-xs font-bold text-white/70">{room.currentPatient.name}</span>
+                      <span className="text-xs text-white/30 uppercase tracking-wider">Jméno</span>
+                      <span className="text-sm font-bold text-white/70">{room.currentPatient.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Věk</span>
-                      <span className="text-xs font-bold text-white/70">{room.currentPatient.age} let</span>
+                      <span className="text-xs text-white/30 uppercase tracking-wider">Věk</span>
+                      <span className="text-sm font-bold text-white/70">{room.currentPatient.age} let</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Krevní skupina</span>
-                      <span className="text-xs font-bold text-white/70">{room.currentPatient.bloodType ?? '—'}</span>
+                      <span className="text-xs text-white/30 uppercase tracking-wider">Krevní skupina</span>
+                      <span className="text-sm font-bold text-white/70">{room.currentPatient.bloodType ?? '—'}</span>
                     </div>
                   </div>
                 </div>
@@ -404,29 +448,29 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
 
               {room.currentProcedure && (
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Aktuální výkon</p>
-                  <div className="space-y-2">
+                  <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Aktuální výkon</p>
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Výkon</span>
-                      <span className="text-xs font-bold text-white/70 text-right max-w-[200px] truncate">
+                      <span className="text-xs text-white/30 uppercase tracking-wider">Výkon</span>
+                      <span className="text-sm font-bold text-white/70 text-right max-w-[200px] truncate">
                         {room.currentProcedure.name}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Trvání</span>
-                      <span className="text-xs font-bold text-white/70">{room.currentProcedure.estimatedDuration} min</span>
+                      <span className="text-xs text-white/30 uppercase tracking-wider">Trvání</span>
+                      <span className="text-sm font-bold text-white/70">{room.currentProcedure.estimatedDuration} min</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Zahájení</span>
-                      <span className="text-xs font-bold text-white/70">{room.currentProcedure.startTime}</span>
+                      <span className="text-xs text-white/30 uppercase tracking-wider">Zahájení</span>
+                      <span className="text-sm font-bold text-white/70">{room.currentProcedure.startTime}</span>
                     </div>
                     {room.currentProcedure.progress > 0 && (
                       <div className="mt-2">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] text-white/30 uppercase tracking-wider">Průběh výkonu</span>
-                          <span className="text-sm font-black" style={{ color: accent }}>{room.currentProcedure.progress}%</span>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-white/30 uppercase tracking-wider">Průběh výkonu</span>
+                          <span className="text-base font-black" style={{ color: accent }}>{room.currentProcedure.progress}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                           <motion.div
                             className="h-full rounded-full"
                             style={{ background: accent }}
@@ -444,23 +488,23 @@ const RoomDetailCard: React.FC<RoomDetailCardProps> = ({ room, index }) => {
           </div>
 
           {/* ── Workflow step indicator ── */}
-          <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Aktuální fáze workflow</p>
-            <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Aktuální fáze workflow</p>
+            <div className="flex items-center gap-2 flex-wrap">
               {WORKFLOW_STEPS.map((step, i) => {
                 const isCurrent = i === room.currentStepIndex;
                 const isDone    = i < room.currentStepIndex;
                 return (
-                  <div key={i} className="flex items-center gap-1.5">
+                  <div key={i} className="flex items-center gap-2">
                     <div
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all"
+                      className="flex items-center gap-2 px-3 py-2 rounded text-xs font-black uppercase tracking-wider transition-all"
                       style={{
                         background: isCurrent ? `${step.color}22` : isDone ? 'rgba(255,255,255,0.04)' : 'transparent',
                         color:      isCurrent ? step.color : isDone ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.18)',
                         border:     `1px solid ${isCurrent ? step.color : 'rgba(255,255,255,0.07)'}`,
                       }}
                     >
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0"
+                      <div className="w-2 h-2 rounded-full shrink-0"
                         style={{ background: step.color, opacity: isCurrent ? 1 : 0.3 }} />
                       {step.title}
                     </div>
@@ -544,12 +588,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
       </header>
 
       {/* ── Period switcher ── */}
-      <div className="flex items-center gap-1 mb-10">
+      <div className="flex items-center gap-1.5 mb-10">
         {(['den','týden','měsíc'] as Period[]).map(p => (
           <button
             key={p}
             onClick={() => setPeriod(p)}
-            className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded transition-all"
+            className="px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded transition-all"
             style={{
               background: period === p ? `${accent}18` : 'transparent',
               color: period === p ? accent : 'rgba(255,255,255,0.3)',
@@ -575,7 +619,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
           <div key={i}
                className="flex flex-col justify-between px-4 py-4"
                style={{ background: 'rgba(255,255,255,0.02)', borderRight: i < 5 ? '1px solid rgba(255,255,255,0.06)' : undefined }}>
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">{k.label}</p>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-2">{k.label}</p>
             <p className="text-3xl font-black leading-none" style={{ color: k.hi ? accent : 'white' }}>{k.value}</p>
           </div>
         ))}
@@ -590,7 +634,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
         >
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-4">Vytížení v čase — {period}</p>
+          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Vytížení v čase — {period}</p>
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={utilData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
               <defs>
@@ -599,8 +643,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                   <stop offset="95%" stopColor={accent} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="t" stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} domain={[0,100]} />
+              <XAxis dataKey="t" stroke="rgba(255,255,255,0.15)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.15)" fontSize={12} tickLine={false} axisLine={false} domain={[0,100]} />
               <Tooltip {...TooltipStyle} formatter={(v: number) => [`${v}%`, 'Využití']} />
               <Area type="monotone" dataKey="v" stroke={accent} fill="url(#ug)" strokeWidth={1.5} dot={false} />
             </AreaChart>
@@ -613,7 +657,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}
         >
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-6">Stav sálů</p>
+          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-6">Stav sálů</p>
           <div className="flex-1 flex flex-col justify-center gap-5">
             {[
               { label: 'Obsazeno', pct: statusPct.busy,  color: '#F97316' },
@@ -621,11 +665,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
               { label: 'Ostatní', pct: statusPct.other, color: 'rgba(255,255,255,0.2)' },
             ].map(s => (
               <div key={s.label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-white/50">{s.label}</span>
-                  <span className="text-sm font-black" style={{ color: s.color }}>{s.pct}%</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-black uppercase tracking-wider text-white/50">{s.label}</span>
+                  <span className="text-base font-black" style={{ color: s.color }}>{s.pct}%</span>
                 </div>
-                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                   <motion.div className="h-full rounded-full"
                     style={{ background: s.color }}
                     initial={{ width: 0 }}
@@ -637,17 +681,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             ))}
           </div>
 
-          <div className="mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-3">Fronta / sál</p>
-            <div className="space-y-1">
+          <div className="mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-3">Fronta / sál</p>
+            <div className="space-y-2">
               {rooms.filter(r => r.queueCount > 0).slice(0, 4).map(r => (
                 <div key={r.id} className="flex items-center justify-between">
-                  <span className="text-[10px] text-white/40">{r.name}</span>
-                  <span className="text-[10px] font-black text-white/70">{r.queueCount}</span>
+                  <span className="text-sm text-white/40">{r.name}</span>
+                  <span className="text-sm font-black text-white/70">{r.queueCount}</span>
                 </div>
               ))}
               {rooms.filter(r => r.queueCount > 0).length === 0 && (
-                <p className="text-[10px] text-white/25">Žádná fronta</p>
+                <p className="text-sm text-white/25">Žádná fronta</p>
               )}
             </div>
           </div>
@@ -663,11 +707,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.08 }}
         >
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-4">Operace / sál (24 h)</p>
+          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Operace / sál (24 h)</p>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={roomBarData} margin={{ top: 0, right: 0, bottom: 0, left: -24 }} barSize={10}>
-              <XAxis dataKey="name" stroke="rgba(255,255,255,0.15)" fontSize={9} tickLine={false} axisLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} />
+              <XAxis dataKey="name" stroke="rgba(255,255,255,0.15)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.15)" fontSize={12} tickLine={false} axisLine={false} />
               <Tooltip {...TooltipStyle} formatter={(v: number) => [v, 'Operace']} />
               <Bar dataKey="ops" fill={accent} opacity={0.75} radius={[2,2,0,0]} />
             </BarChart>
@@ -680,15 +724,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-4">Výkony dle oddělení</p>
-          <div className="space-y-2.5">
+          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Výkony dle oddělení</p>
+          <div className="space-y-3">
             {deptMap.map(([dept, count], i) => {
               const max = deptMap[0][1];
               return (
                 <div key={dept}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold text-white/60">{dept}</span>
-                    <span className="text-[10px] font-black text-white/80">{count}</span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-bold text-white/60">{dept}</span>
+                    <span className="text-sm font-black text-white/80">{count}</span>
                   </div>
                   <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                     <motion.div
@@ -712,12 +756,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.11 }}
       >
-        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-4">
+        <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">
           Souhrnné rozložení workflow statusů — všechny sály
         </p>
 
         {/* Stacked colour bar */}
-        <div className="flex h-4 w-full rounded overflow-hidden gap-px mb-4">
+        <div className="flex h-5 w-full rounded overflow-hidden gap-px mb-5">
           {workflowTotals.map((seg, i) => (
             <motion.div
               key={i}
@@ -732,15 +776,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         </div>
 
         {/* Step breakdown */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2.5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-3">
           {workflowTotals.map((seg, i) => (
             <div key={i}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-[1px] shrink-0" style={{ background: seg.color, opacity: 0.85 }} />
-                  <span className="text-[9px] text-white/45">{seg.title}</span>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-[1px] shrink-0" style={{ background: seg.color, opacity: 0.85 }} />
+                  <span className="text-xs text-white/45">{seg.title}</span>
                 </div>
-                <span className="text-[9px] font-black" style={{ color: seg.color }}>{seg.pct}%</span>
+                <span className="text-xs font-black" style={{ color: seg.color }}>{seg.pct}%</span>
               </div>
               <div className="h-px rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                 <motion.div
@@ -762,16 +806,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.12 }}
       >
-        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-5">Fáze operačního cyklu — průměrné trvání</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3">
+        <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-5">Fáze operačního cyklu — průměrné trvání</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
           {phaseRows.map((ph, i) => (
             <div key={i}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-white/55 flex items-center gap-1.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm text-white/55 flex items-center gap-2">
                   <TrendIcon v={ph.trend} />
                   {ph.label}
                 </span>
-                <span className="text-[10px] font-black text-white/80">{ph.min} min</span>
+                <span className="text-sm font-black text-white/80">{ph.min} min</span>
               </div>
               <div className="h-px rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
                 <motion.div
@@ -793,17 +837,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.14 }}
       >
-        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-5">Heatmapa vytížení — den × hodina</p>
+        <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-5">Heatmapa vytížení — den × hodina</p>
         <div className="overflow-x-auto">
           <div className="inline-flex flex-col gap-0.5" style={{ minWidth: 520 }}>
             <div className="flex gap-0.5 pl-7">
               {Array.from({ length: 24 }, (_, h) => (
-                <div key={h} className="w-5 text-center text-[7px] text-white/20 font-bold shrink-0">{h}</div>
+                <div key={h} className="w-5 text-center text-[9px] text-white/20 font-bold shrink-0">{h}</div>
               ))}
             </div>
             {DAYS.map((day, di) => (
               <div key={di} className="flex items-center gap-0.5">
-                <span className="w-6 text-[9px] font-black text-white/30 shrink-0">{day}</span>
+                <span className="w-6 text-xs font-black text-white/30 shrink-0">{day}</span>
                 {HEATMAP[di].map((val, hi) => (
                   <div
                     key={hi}
@@ -824,9 +868,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
             { c: 'rgba(249,115,22,0.75)', l: '70–90%' },
             { c: 'rgba(255,59,48,0.85)',  l: '> 90%'  },
           ].map(l => (
-            <div key={l.l} className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-[2px]" style={{ background: l.c }} />
-              <span className="text-[9px] text-white/30">{l.l}</span>
+            <div key={l.l} className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 rounded-[2px]" style={{ background: l.c }} />
+              <span className="text-xs text-white/30">{l.l}</span>
             </div>
           ))}
         </div>
@@ -839,7 +883,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">
           Podrobné statistiky jednotlivých sálů
         </p>
-        <p className="text-xs text-white/25 mb-5">
+        <p className="text-sm text-white/25 mb-6">
           Každý sál zobrazuje barevnou časovou osu s procentuálním a minutovým využitím jednotlivých workflow statusů.
           Sály s provozem 24 h jsou označeny <span className="font-black" style={{ color: '#06B6D4' }}>ÚPS</span>.
           Kliknutím rozbalíte podrobnosti, personál a stav výkonu.
@@ -858,27 +902,27 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.16 }}
       >
         <div className="px-5 pt-5 pb-1">
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Přehled sálů</p>
+          <p className="text-xs font-black uppercase tracking-widest text-white/30">Přehled sálů</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-[11px]">
+          <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 {['Sál','Oddělení','Chirurg','Operace / 24h','Stav'].map(h => (
-                  <th key={h} className="px-5 py-3 text-left font-black uppercase tracking-widest text-white/25 text-[9px]">{h}</th>
+                  <th key={h} className="px-5 py-3 text-left font-black uppercase tracking-widest text-white/25 text-xs">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {rooms.map((r, i) => (
                 <tr key={r.id} style={{ borderBottom: i < rooms.length - 1 ? '1px solid rgba(255,255,255,0.04)' : undefined }}>
-                  <td className="px-5 py-2.5 font-bold text-white/80">{r.name}</td>
-                  <td className="px-5 py-2.5 text-white/40">{r.department}</td>
-                  <td className="px-5 py-2.5 text-white/40">{r.staff.doctor.name ?? '—'}</td>
-                  <td className="px-5 py-2.5 font-black" style={{ color: accent }}>{r.operations24h}</td>
-                  <td className="px-5 py-2.5">
+                  <td className="px-5 py-3 font-bold text-white/80">{r.name}</td>
+                  <td className="px-5 py-3 text-white/40">{r.department}</td>
+                  <td className="px-5 py-3 text-white/40">{r.staff.doctor.name ?? '—'}</td>
+                  <td className="px-5 py-3 font-black" style={{ color: accent }}>{r.operations24h}</td>
+                  <td className="px-5 py-3">
                     <span
-                      className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded"
+                      className="text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded"
                       style={{
                         background: r.status === RoomStatus.BUSY     ? 'rgba(249,115,22,0.12)'
                                   : r.status === RoomStatus.FREE     ? 'rgba(16,185,129,0.12)'
