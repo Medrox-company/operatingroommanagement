@@ -212,7 +212,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                   >
                     {option.label}
                   </button>
-              ))}
+                ))}
             </motion.div>
           )}
         </motion.div>
