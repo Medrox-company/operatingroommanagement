@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, Users, Clock, AlertCircle, CheckCircle, Calendar, ArrowLeft } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 
 const StatisticsModule: React.FC = () => {
   // Mock data
@@ -70,23 +70,29 @@ const StatisticsModule: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Header */}
-      <motion.div
+      {/* Header with title in app style */}
+      <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="flex-shrink-0 pb-8 border-b"
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="flex-shrink-0 pb-12 border-b"
         style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
-        <h1 className="text-3xl font-black text-white mb-2">Statistiky systému</h1>
-        <p className="text-sm text-white/50">Přehled výkonu a metrik operačních sálů</p>
-      </motion.div>
+        <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+          <BarChart3 className="w-4 h-4 text-[#06B6D4]" />
+          <p className="text-[10px] font-black text-[#06B6D4] tracking-[0.4em] uppercase">Analytics & Metrics</p>
+        </div>
+        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+          Statistiky <span className="text-white/20">systému</span>
+        </h1>
+        <p className="text-sm text-white/50 mt-4">Přehled výkonu a klíčových metrik operačních sálů v reálném čase</p>
+      </motion.header>
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {/* Stat Cards Grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -136,14 +142,17 @@ const StatisticsModule: React.FC = () => {
           })}
         </motion.div>
 
-        {/* Daily Summary */}
+        {/* Daily Summary Section */}
         <motion.div
-          className="py-8"
+          className="py-12 border-t"
+          style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <h2 className="text-xl font-bold text-white mb-6">Dnešní přehled</h2>
+          <h2 className="text-3xl font-black text-white mb-8 tracking-tight">
+            Dnešní <span className="text-white/20">přehled</span>
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {dailyStats.map((stat, idx) => (
               <motion.div
@@ -181,14 +190,17 @@ const StatisticsModule: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Detailed Metrics */}
+        {/* Detailed Metrics Section */}
         <motion.div
-          className="py-8 pb-16"
+          className="py-12 pb-16 border-t"
+          style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <h2 className="text-xl font-bold text-white mb-6">Detailní metriky</h2>
+          <h2 className="text-3xl font-black text-white mb-8 tracking-tight">
+            Detailní <span className="text-white/20">metriky</span>
+          </h2>
           <div className="space-y-4">
             {[
               { label: 'Průměrná čekací doba', value: stats.avgWaitTime, max: 30 },
