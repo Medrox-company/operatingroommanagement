@@ -874,6 +874,11 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 // ── Main component ────────────────────────────────────────────────────────────
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS }) => {
