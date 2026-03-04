@@ -286,11 +286,24 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
   const opsDay      = Math.max(1, Math.floor(room.operations24h * (dayMin / 1440)));
   const utilPct     = dist.find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
 
-  // Bar chart of phase durations
-  const phaseBarData = dist.map(d => ({ name: d.title.split(' ').slice(-1)[0], min: d.min, color: d.color }));
+  // Additional statistics
+  const avgProcedureDuration = Math.round(STEP_DURATIONS[2]);
+  const patientsPerDay = Math.max(1, Math.floor(opsDay * 0.8));
+  const patientsPerMonth = patientsPerDay * 22;
+  const workflowEfficiency = Math.min(100, 60 + (parseInt(room.id) % 40));
+  const topProcedures = ['Vasektomie', 'Karpální tunel', 'Stenóza tepen'].slice(0, 3);
+  const staffAvailability = 92 + (parseInt(room.id) % 8);
 
-  // Pie data
-  const pieData = dist.filter(d => d.min > 0);
+  // 7-day trend for this room (stable seeded)
+  const roomOpsTrend = [
+    { t: 'Po', v: Math.max(0, opsDay - 2 + (parseInt(room.id) % 3)) },
+    { t: 'Út', v: Math.max(0, opsDay + 1 + (parseInt(room.id) % 2)) },
+    { t: 'St', v: Math.max(0, opsDay - 1 + (parseInt(room.id) % 3)) },
+    { t: 'Čt', v: Math.max(0, opsDay + 2) },
+    { t: 'Pá', v: Math.max(0, opsDay + (parseInt(room.id) % 3)) },
+    { t: 'So', v: Math.max(0, Math.floor(opsDay * 0.6)) },
+    { t: 'Ne', v: Math.max(0, Math.floor(opsDay * 0.3)) },
+  ];
 
   return (
     <motion.div
@@ -643,11 +656,104 @@ const RoomDetailPanel: React.FC<RoomDetailPanelProps> = ({ room, onClose }) => {
             </div>
           </div>
 
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
+          {/* ── Additional Statistics Section ── */}
+          <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-6">Rozšířené statistiky</p>
+            
+            {/* Grid of stat cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              {/* Avg Procedure Duration */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Průměrná doba výkonu</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black" style={{ color: accent }}>{avgProcedureDuration}</span>
+                  <span className="text-xs text-white/30">minut</span>
+                </div>
+              </div>
+
+              {/* Patients Per Day */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Pacienti / den</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-white/80">{patientsPerDay}</span>
+                  <span className="text-xs text-white/30">osob</span>
+                </div>
+              </div>
+
+              {/* Patients Per Month */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Pacienti / měsíc</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-white/80">{patientsPerMonth}</span>
+                  <span className="text-xs text-white/30">osob</span>
+                </div>
+              </div>
+
+              {/* Workflow Efficiency */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Efektivita workflow</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black" style={{ color: workflowEfficiency > 80 ? '#10B981' : accent }}>{workflowEfficiency}</span>
+                  <span className="text-xs text-white/30">%</span>
+                </div>
+              </div>
+
+              {/* Staff Availability */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Dostupnost personálu</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-white/80">{staffAvailability}</span>
+                  <span className="text-xs text-white/30">%</span>
+                </div>
+              </div>
+
+              {/* Total Patients YTD */}
+              <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Pacientů / rok (est.)</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-white/80">{Math.round(patientsPerMonth * 12 / 100) * 100}</span>
+                  <span className="text-xs text-white/30">osob</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Procedures */}
+            <div className="rounded-lg p-4 mb-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="text-xs text-white/30 uppercase tracking-wider mb-4">Nejčastější výkony (tento měsíc)</p>
+              <div className="space-y-3">
+                {topProcedures.map((proc, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-sm text-white/50">{proc}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 rounded-full" style={{ width: 60, background: 'rgba(255,255,255,0.06)' }}>
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ background: accent, opacity: 0.85 }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${100 - i * 20}%` }}
+                          transition={{ duration: 0.6, delay: i * 0.1, ease: 'easeOut' }}
+                        />
+                      </div>
+                      <span className="text-xs text-white/30 w-6 text-right">{100 - i * 20}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 7-day trend for this room */}
+            <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="text-xs text-white/30 uppercase tracking-wider mb-3">Trend operací (týdenní)</p>
+              <ResponsiveContainer width="100%" height={100}>
+                <LineChart data={roomOpsTrend} margin={{ top: 4, right: 10, bottom: 0, left: -24 }}>
+                  <XAxis dataKey="t" stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" fontSize={10} tickLine={false} axisLine={false} />
+                  <Tooltip {...TooltipStyle} formatter={(v: number) => [`${v} op.`, 'Výkony']} />
+                  <Line type="monotone" dataKey="v" stroke={accent} strokeWidth={2} dot={{ fill: accent, r: 3, strokeWidth: 0 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
 // ── Main component ────────────────────────────────────────────────────────────
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS }) => {
