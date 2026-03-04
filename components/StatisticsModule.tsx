@@ -204,14 +204,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS 
                       setShowPeriodMenu(false);
                     }}
                     className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-xs border-b last:border-b-0 font-bold"
-                  style={{
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                    color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
-                  }}
-                >
-                  {option.label}
-                </button>
+                    style={{
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      background: timePeriod === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                      color: timePeriod === option.value ? colors.info : 'rgba(255, 255, 255, 0.7)',
+                    }}
+                  >
+                    {option.label}
+                  </button>
               ))}
             </motion.div>
           )}
