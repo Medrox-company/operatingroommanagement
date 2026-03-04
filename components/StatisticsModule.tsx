@@ -1,112 +1,112 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, Calendar, TrendingUp, Users, Clock, Building2, Activity, ChevronDown, Zap, Pause, Hourglass, AlertTriangle, CheckCircle } from 'lucide-react';
+import { BarChart3, Calendar, TrendingUp, Users, Clock, Building2, Activity, ChevronDown, Zap, Pause, Hourglass, AlertTriangle, CheckCircle, ChevronRight } from 'lucide-react';
 import { OperatingRoom } from '../types';
-import { LineChart, Line, BarChart, Bar, ComposedChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area, Treemap } from 'recharts';
+import { WORKFLOW_STEPS, MOCK_ROOMS } from '../constants';
+import { LineChart, Line, BarChart, Bar, ComposedChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts';
 
 interface StatisticsModuleProps {
   rooms?: OperatingRoom[];
 }
 
-type TimePeriod = 'day' | 'week' | 'month' | 'year';
+type TimePeriod = 'day' | 'week' | 'month';
 
-interface PhaseMetrics {
-  name: string;
-  duration: number;
-  color: string;
-  percentage: number;
-}
-
-interface OperationCycle {
-  patientCallToArrival: number;
-  arrivalToAnesthesia: number;
-  anesthesiaToStart: number;
-  surgicalTime: number;
-  endToAnesthesiaEnd: number;
-  anesthesiaEndToCleanup: number;
-  cleanupToReady: number;
-  pauseDuration: number;
-}
-
-const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = [] }) => {
+const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = MOCK_ROOMS }) => {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(rooms[0]?.id || null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>(rooms[0]?.id || '1');
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
 
-  // Generuj detailní data
-  const generateTimelineData = () => {
-    const baseData = Array.from({ length: timePeriod === 'day' ? 24 : timePeriod === 'week' ? 7 : timePeriod === 'month' ? 30 : 12 }, (_, i) => {
-      const timeLabel = timePeriod === 'day' ? `${i}:00` : timePeriod === 'week' ? ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'][i] : timePeriod === 'month' ? `${i + 1}.` : ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro'][i];
-      return {
-        time: timeLabel,
-        totalOperations: Math.floor(Math.random() * 20) + 5,
-        utilization: Math.floor(Math.random() * 35) + 65,
-        avgCycleTime: Math.floor(Math.random() * 60) + 120,
-        pauseTime: Math.floor(Math.random() * 30) + 10,
-        completed: Math.floor(Math.random() * 15) + 3,
-        cancelled: Math.floor(Math.random() * 3),
-      };
-    });
-    return baseData;
+  const selectedRoom = rooms.find(r => r.id === selectedRoomId);
+
+  // Generuj detailní data pro jednotlivé fáze
+  const generateRoomPhaseData = (roomId: string) => {
+    const phaseNames = [
+      'Přijezd→Anestezie',
+      'Anestezie→Výkon',
+      'Chirurgický výkon',
+      'Výkon→Konec anestezie',
+      'Anestezie→Úklid',
+      'Úklid→Připraveno'
+    ];
+
+    return phaseNames.map((name, idx) => ({
+      phase: name,
+      duration: Math.floor(Math.random() * 45) + 15,
+      avgDuration: Math.floor(Math.random() * 50) + 20,
+      color: WORKFLOW_STEPS[idx]?.color || '#818CF8',
+    }));
   };
 
-  const timelineData = useMemo(() => generateTimelineData(), [timePeriod]);
+  // Timeline data pro vybraný sál
+  const timelineData = useMemo(() => {
+    const periods = {
+      day: Array.from({ length: 24 }, (_, i) => ({
+        time: `${i}:00`,
+        utilisationPercent: Math.floor(Math.random() * 30) + 70,
+        operations: Math.floor(Math.random() * 8) + 2,
+        pauseTime: Math.floor(Math.random() * 20) + 5,
+        efficiency: Math.floor(Math.random() * 20) + 80,
+      })),
+      week: [
+        { time: 'Po', utilisationPercent: 92, operations: 6, pauseTime: 18, efficiency: 88 },
+        { time: 'Út', utilisationPercent: 88, operations: 5, pauseTime: 22, efficiency: 85 },
+        { time: 'St', utilisationPercent: 95, operations: 7, pauseTime: 15, efficiency: 91 },
+        { time: 'Čt', utilisationPercent: 87, operations: 5, pauseTime: 25, efficiency: 82 },
+        { time: 'Pá', utilisationPercent: 79, operations: 4, pauseTime: 30, efficiency: 75 },
+        { time: 'So', utilisationPercent: 45, operations: 2, pauseTime: 40, efficiency: 50 },
+        { time: 'Ne', utilisationPercent: 30, operations: 1, pauseTime: 50, efficiency: 35 },
+      ],
+      month: Array.from({ length: 30 }, (_, i) => ({
+        time: `${i + 1}.`,
+        utilisationPercent: Math.floor(Math.random() * 20) + 75,
+        operations: Math.floor(Math.random() * 10) + 5,
+        pauseTime: Math.floor(Math.random() * 25) + 15,
+        efficiency: Math.floor(Math.random() * 15) + 80,
+      })),
+    };
+    return periods[timePeriod];
+  }, [timePeriod]);
 
-  // Detailní metriky jednotlivého sálu
-  const selectedRoom = rooms.find(r => r.id === selectedRoomId);
-  
-  const generateRoomOperationCycles = (): OperationCycle[] => [
-    {
-      patientCallToArrival: Math.floor(Math.random() * 10) + 5,
-      arrivalToAnesthesia: Math.floor(Math.random() * 15) + 10,
-      anesthesiaToStart: Math.floor(Math.random() * 20) + 15,
-      surgicalTime: Math.floor(Math.random() * 120) + 60,
-      endToAnesthesiaEnd: Math.floor(Math.random() * 15) + 10,
-      anesthesiaEndToCleanup: Math.floor(Math.random() * 10) + 5,
-      cleanupToReady: Math.floor(Math.random() * 15) + 10,
-      pauseDuration: Math.floor(Math.random() * 30),
-    },
-    {
-      patientCallToArrival: Math.floor(Math.random() * 10) + 5,
-      arrivalToAnesthesia: Math.floor(Math.random() * 15) + 10,
-      anesthesiaToStart: Math.floor(Math.random() * 20) + 15,
-      surgicalTime: Math.floor(Math.random() * 120) + 60,
-      endToAnesthesiaEnd: Math.floor(Math.random() * 15) + 10,
-      anesthesiaEndToCleanup: Math.floor(Math.random() * 10) + 5,
-      cleanupToReady: Math.floor(Math.random() * 15) + 10,
-      pauseDuration: 0,
-    },
+  // Phase duration distribution
+  const phaseData = useMemo(() => generateRoomPhaseData(selectedRoomId || '1'), [selectedRoomId]);
+
+  // Heatmap data - hodiny vs dny
+  const heatmapData = [
+    { day: 'Pondělí', '06-08': 45, '08-10': 92, '10-12': 88, '12-14': 75, '14-16': 85, '16-18': 92 },
+    { day: 'Úterý', '06-08': 52, '08-10': 88, '10-12': 91, '12-14': 78, '14-16': 88, '16-18': 85 },
+    { day: 'Středa', '06-08': 58, '08-10': 95, '10-12': 94, '12-14': 82, '14-16': 91, '16-18': 88 },
+    { day: 'Čtvrtek', '06-08': 48, '08-10': 87, '10-12': 89, '12-14': 80, '14-16': 86, '16-18': 82 },
+    { day: 'Pátek', '06-08': 35, '08-10': 79, '10-12': 81, '12-14': 72, '14-16': 75, '16-18': 68 },
   ];
 
-  const operationCycles = useMemo(() => generateRoomOperationCycles(), [selectedRoomId]);
+  // Room comparison data
+  const roomComparisonData = rooms.map(r => ({
+    name: r.name,
+    utilization: Math.floor(Math.random() * 25) + 75,
+    operations24h: r.operations24h,
+    efficiency: Math.floor(Math.random() * 20) + 75,
+  }));
 
-  const calculatePhaseMetrics = (cycle: OperationCycle): PhaseMetrics[] => {
-    const total = Object.values(cycle).reduce((a, b) => a + b, 0);
-    return [
-      { name: 'Volání → Příjezd', duration: cycle.patientCallToArrival, color: '#A78BFA', percentage: (cycle.patientCallToArrival / total) * 100 },
-      { name: 'Příjezd → Anestezie', duration: cycle.arrivalToAnesthesia, color: '#818CF8', percentage: (cycle.arrivalToAnesthesia / total) * 100 },
-      { name: 'Anestezie → Start', duration: cycle.anesthesiaToStart, color: '#06B6D4', percentage: (cycle.anesthesiaToStart / total) * 100 },
-      { name: 'Chirurgický čas', duration: cycle.surgicalTime, color: '#FF3B30', percentage: (cycle.surgicalTime / total) * 100 },
-      { name: 'Konec → Anestezie end', duration: cycle.endToAnesthesiaEnd, color: '#FBBF24', percentage: (cycle.endToAnesthesiaEnd / total) * 100 },
-      { name: 'Anestezie end → Úklid', duration: cycle.anesthesiaEndToCleanup, color: '#34C759', percentage: (cycle.anesthesiaEndToCleanup / total) * 100 },
-      { name: 'Úklid → Připraveno', duration: cycle.cleanupToReady, color: '#5B65DC', percentage: (cycle.cleanupToReady / total) * 100 },
-      ...(cycle.pauseDuration > 0 ? [{ name: 'Pauza', duration: cycle.pauseDuration, color: '#64748B', percentage: (cycle.pauseDuration / total) * 100 }] : []),
-    ];
+  const colors = {
+    primary: '#0EA5E9',
+    secondary: '#A855F7',
+    success: '#10B981',
+    warning: '#F97316',
+    danger: '#FF3B30',
+    info: '#06B6D4',
   };
 
   const periodOptions: { label: string; value: TimePeriod }[] = [
     { label: 'Dnes', value: 'day' },
     { label: 'Tento týden', value: 'week' },
     { label: 'Tento měsíc', value: 'month' },
-    { label: 'Tento rok', value: 'year' },
   ];
 
-  const colors = {
-    primary: '#0EA5E9',
-    success: '#10B981',
-    warning: '#F97316',
-    danger: '#FF3B30',
-    info: '#06B6D4',
+  const getUtilizationColor = (value: number) => {
+    if (value >= 85) return colors.success;
+    if (value >= 70) return colors.info;
+    if (value >= 55) return colors.warning;
+    return colors.danger;
   };
 
   return (
@@ -116,17 +116,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = [] }) => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex-shrink-0 pb-12 border-b"
+        className="flex-shrink-0 pb-8 border-b"
         style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2 opacity-60">
               <BarChart3 className="w-4 h-4" style={{ color: colors.info }} />
-              <p className="text-[10px] font-black text-white/60 tracking-[0.4em] uppercase">Detailní Analýzy</p>
+              <p className="text-[10px] font-black text-white/60 tracking-[0.4em] uppercase">Podrobné Analýzy</p>
             </div>
-            <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-              Statistiky operačních sálů <span className="text-white/20">& analýzy</span>
+            <h1 className="text-6xl font-black tracking-tighter uppercase leading-none">
+              Detailní Statistiky <span className="text-white/20">sálů</span>
             </h1>
           </div>
 
@@ -150,7 +150,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = [] }) => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full mt-2 right-0 z-50 rounded-lg border backdrop-blur-md overflow-hidden"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.8)', minWidth: '200px' }}
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.2)', background: 'rgba(0, 0, 0, 0.8)', minWidth: '180px' }}
                 >
                   {periodOptions.map((option) => (
                     <button
@@ -174,236 +174,287 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms = [] }) => {
             </AnimatePresence>
           </motion.div>
         </div>
+
+        {/* Room Selector */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {rooms.map((room) => (
+            <motion.button
+              key={room.id}
+              onClick={() => setSelectedRoomId(room.id)}
+              className="px-4 py-2 rounded-lg border backdrop-blur-sm text-sm font-bold whitespace-nowrap transition-all"
+              style={{
+                borderColor: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.1)',
+                background: selectedRoomId === room.id ? `${colors.info}20` : 'rgba(255, 255, 255, 0.04)',
+                color: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.7)',
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              {room.name}
+            </motion.button>
+          ))}
+        </div>
       </motion.header>
 
-      {/* Scrollable Content */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
-        {/* Overview Charts */}
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-12"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          {/* Total Operations Timeline */}
-          <motion.div
-            className="p-8 rounded-2xl border backdrop-blur-md"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
-          >
-            <h2 className="text-xl font-black text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" style={{ color: colors.primary }} />
-              Počet operací v čase
-            </h2>
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <YAxis stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <Tooltip contentStyle={{ background: 'rgba(0, 0, 0, 0.9)', border: `1px solid rgba(255, 255, 255, 0.1)`, borderRadius: '8px' }} />
-                <Area type="monotone" dataKey="totalOperations" fill={colors.primary} stroke={colors.primary} fillOpacity={0.3} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </motion.div>
+        {selectedRoom && (
+          <div className="space-y-8 py-8">
+            {/* Key Metrics Cards */}
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+            >
+              {[
+                { label: 'Dnešní operace', value: selectedRoom.operations24h, icon: Activity, color: colors.primary },
+                { label: 'Vytížení', value: `${Math.floor(Math.random() * 25) + 75}%`, icon: TrendingUp, color: colors.success },
+                { label: 'Průměrná cyklus', value: '145 min', icon: Clock, color: colors.warning },
+                { label: 'Efektivita', value: `${Math.floor(Math.random() * 15) + 80}%`, icon: Zap, color: colors.secondary },
+              ].map((metric, idx) => {
+                const Icon = metric.icon;
+                return (
+                  <motion.div
+                    key={idx}
+                    className="p-4 rounded-xl border backdrop-blur-sm"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * idx + 0.15, duration: 0.4 }}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <Icon className="w-5 h-5" style={{ color: metric.color }} />
+                    </div>
+                    <p className="text-xs text-white/60 mb-1">{metric.label}</p>
+                    <p className="text-2xl font-black text-white">{metric.value}</p>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
 
-          {/* Utilization Heatmap */}
-          <motion.div
-            className="p-8 rounded-2xl border backdrop-blur-md"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-          >
-            <h2 className="text-xl font-black text-white mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5" style={{ color: colors.success }} />
-              Průměrné využití kapacity
-            </h2>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <YAxis stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <Tooltip contentStyle={{ background: 'rgba(0, 0, 0, 0.9)', border: `1px solid rgba(255, 255, 255, 0.1)`, borderRadius: '8px' }} />
-                <Bar dataKey="utilization" fill={colors.success} radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
+            {/* Utilization Timeline */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" style={{ color: colors.primary }} />
+                Vytížení v čase - {timePeriod === 'day' ? 'Hodinově' : timePeriod === 'week' ? 'Denně' : 'Denně'}
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={timelineData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                  <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.5)" />
+                  <YAxis stroke="rgba(255, 255, 255, 0.5)" />
+                  <Tooltip
+                    contentStyle={{ background: 'rgba(0, 0, 0, 0.9)', border: `1px solid rgba(255, 255, 255, 0.1)`, borderRadius: '8px' }}
+                    labelStyle={{ color: 'rgba(255, 255, 255, 0.8)' }}
+                  />
+                  <Legend />
+                  <Area type="monotone" dataKey="utilisationPercent" fill={colors.primary} stroke={colors.primary} fillOpacity={0.2} name="Vytížení %" />
+                  <Bar dataKey="operations" fill={colors.secondary} name="Operace" yAxisId="right" />
+                  <YAxis yAxisId="right" orientation="right" stroke="rgba(255, 255, 255, 0.5)" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </motion.div>
 
-          {/* Completed vs Cancelled */}
-          <motion.div
-            className="p-8 rounded-2xl border backdrop-blur-md"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.4 }}
-          >
-            <h2 className="text-xl font-black text-white mb-4 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" style={{ color: colors.success }} />
-              Dokončené vs Zrušené operace
-            </h2>
-            <ResponsiveContainer width="100%" height={280}>
-              <ComposedChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <YAxis stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <Tooltip contentStyle={{ background: 'rgba(0, 0, 0, 0.9)', border: `1px solid rgba(255, 255, 255, 0.1)`, borderRadius: '8px' }} />
-                <Legend />
-                <Bar dataKey="completed" fill={colors.success} radius={[8, 8, 0, 0]} name="Dokončené" />
-                <Bar dataKey="cancelled" fill={colors.danger} radius={[8, 8, 0, 0]} name="Zrušené" />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Pause Duration */}
-          <motion.div
-            className="p-8 rounded-2xl border backdrop-blur-md"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-          >
-            <h2 className="text-xl font-black text-white mb-4 flex items-center gap-2">
-              <Pause className="w-5 h-5" style={{ color: colors.warning }} />
-              Doba pauzy v sálech
-            </h2>
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis dataKey="time" stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <YAxis stroke="rgba(255, 255, 255, 0.5)" style={{ fontSize: '12px' }} />
-                <Tooltip contentStyle={{ background: 'rgba(0, 0, 0, 0.9)', border: `1px solid rgba(255, 255, 255, 0.1)`, borderRadius: '8px' }} />
-                <Line type="monotone" dataKey="pauseTime" stroke={colors.warning} strokeWidth={3} dot={false} name="Minuity pauzy" />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </motion.div>
-
-        {/* Room Selection & Detailed Metrics */}
-        <motion.div
-          className="py-12 border-t"
-          style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
-        >
-          <h2 className="text-2xl font-black text-white mb-6">Detailní analýza jednotlivých sálů</h2>
-          
-          {/* Room Selector */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
-            {rooms.map((room) => (
-              <motion.button
-                key={room.id}
-                onClick={() => setSelectedRoomId(room.id)}
-                className="p-4 rounded-xl border transition-all"
-                style={{
-                  borderColor: selectedRoomId === room.id ? colors.info : 'rgba(255, 255, 255, 0.1)',
-                  background: selectedRoomId === room.id ? `${colors.info}20` : 'rgba(255, 255, 255, 0.04)',
-                  boxShadow: selectedRoomId === room.id ? `0 0 20px ${colors.info}30` : 'none',
-                }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <Building2 className="w-5 h-5" style={{ color: colors.primary }} />
-                  <span className="text-sm font-bold text-white">{room.name}</span>
-                  <span className="text-xs text-white/50">{room.department}</span>
-                </div>
-              </motion.button>
-            ))}
-          </div>
-
-          {/* Operation Cycles Detail */}
-          {operationCycles.map((cycle, cycleIdx) => {
-            const phases = calculatePhaseMetrics(cycle);
-            const totalTime = Object.values(cycle).reduce((a, b) => a + b, 0);
-            
-            return (
-              <motion.div
-                key={cycleIdx}
-                className="p-8 rounded-2xl border backdrop-blur-md mb-8"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 + cycleIdx * 0.1, duration: 0.4 }}
-              >
-                <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
-                  <Hourglass className="w-5 h-5" style={{ color: colors.primary }} />
-                  Operační cyklus #{cycleIdx + 1} - Celkový čas: {Math.round(totalTime)} minut
-                </h3>
-
-                {/* Phase Breakdown Timeline */}
-                <div className="space-y-3 mb-8">
-                  {phases.map((phase, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 + cycleIdx * 0.1 + idx * 0.05, duration: 0.3 }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ background: phase.color }}
-                          />
-                          <span className="text-sm font-bold text-white">{phase.name}</span>
-                        </div>
-                        <div className="flex gap-4">
-                          <span className="text-sm text-white/70">{phase.duration} min</span>
-                          <span className="text-sm font-bold text-white/50" style={{ color: phase.color }}>
-                            {phase.percentage.toFixed(1)}%
-                          </span>
-                        </div>
+            {/* Phase Duration Analysis */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
+            >
+              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+                <Hourglass className="w-5 h-5" style={{ color: colors.warning }} />
+                Trvání jednotlivých fází operačního cyklu
+              </h2>
+              <div className="space-y-3">
+                {phaseData.map((phase, idx) => (
+                  <motion.div
+                    key={idx}
+                    className="p-3 rounded-lg border backdrop-blur-sm"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 + idx * 0.05, duration: 0.4 }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-white text-sm">{phase.phase}</span>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-white/70">
+                          <span className="font-black text-white">{phase.duration} min</span> / průměr: {phase.avgDuration} min
+                        </span>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ background: phase.color }}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${phase.percentage}%` }}
-                          transition={{ delay: 0.5 + cycleIdx * 0.1 + idx * 0.05 + 0.2, duration: 0.6, ease: 'easeOut' }}
-                        />
+                    </div>
+                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: phase.color }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(phase.duration / 180) * 100}%` }}
+                        transition={{ delay: 0.3 + idx * 0.05, duration: 0.8 }}
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Heatmap Section */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+            >
+              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+                <Activity className="w-5 h-5" style={{ color: colors.info }} />
+                Heatmapa vytížení - Den vs Čas
+              </h2>
+              <div className="overflow-x-auto">
+                <div className="min-w-max">
+                  <div className="flex">
+                    <div className="w-24 pt-8" />
+                    <div className="flex gap-2">
+                      {['06-08', '08-10', '10-12', '12-14', '14-16', '16-18'].map((time) => (
+                        <div key={time} className="w-16 text-center">
+                          <span className="text-[10px] text-white/60 font-bold">{time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {heatmapData.map((row, rowIdx) => (
+                    <div key={rowIdx} className="flex gap-2 mb-2">
+                      <div className="w-24 text-right pr-2">
+                        <span className="text-[11px] font-bold text-white/80">{row.day}</span>
                       </div>
-                    </motion.div>
+                      <div className="flex gap-2">
+                        {(['06-08', '08-10', '10-12', '12-14', '14-16', '16-18'] as const).map((time) => {
+                          const value = row[time];
+                          const intensity = value / 100;
+                          return (
+                            <motion.div
+                              key={time}
+                              className="w-16 h-10 rounded-lg border cursor-pointer transition-all hover:scale-110"
+                              style={{
+                                background: getUtilizationColor(value),
+                                opacity: 0.3 + intensity * 0.7,
+                                borderColor: 'rgba(255, 255, 255, 0.1)',
+                              }}
+                              title={`${time}: ${value}%`}
+                              whileHover={{ scale: 1.1 }}
+                            >
+                              <div className="flex items-center justify-center h-full">
+                                <span className="text-[10px] font-bold text-white/80">{value}%</span>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
                 </div>
+              </div>
+            </motion.div>
 
-                {/* Statistics Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Volání → Příjezd', value: `${cycle.patientCallToArrival} min`, icon: Clock, color: '#A78BFA' },
-                    { label: 'Příprava (Anestezie)', value: `${cycle.arrivalToAnesthesia + cycle.anesthesiaToStart} min`, icon: Zap, color: '#06B6D4' },
-                    { label: 'Chirurgický čas', value: `${cycle.surgicalTime} min`, icon: AlertTriangle, color: '#FF3B30' },
-                    { label: 'Ukončení & Úklid', value: `${cycle.endToAnesthesiaEnd + cycle.anesthesiaEndToCleanup + cycle.cleanupToReady} min`, icon: CheckCircle, color: '#34C759' },
-                  ].map((stat, idx) => {
-                    const Icon = stat.icon;
-                    return (
-                      <motion.div
-                        key={idx}
-                        className="p-4 rounded-xl border backdrop-blur-sm"
-                        style={{
-                          borderColor: 'rgba(255, 255, 255, 0.1)',
-                          background: `${stat.color}10`,
-                        }}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.55 + cycleIdx * 0.1 + idx * 0.05, duration: 0.3 }}
-                      >
-                        <Icon className="w-4 h-4 mb-2" style={{ color: stat.color }} />
-                        <p className="text-xs text-white/60 mb-1">{stat.label}</p>
-                        <p className="text-lg font-black text-white">{stat.value}</p>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+            {/* Room Comparison */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4 }}
+            >
+              <h2 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+                <Building2 className="w-5 h-5" style={{ color: colors.success }} />
+                Porovnání sálů
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={roomComparisonData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                  <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.5)" />
+                  <YAxis stroke="rgba(255, 255, 255, 0.5)" />
+                  <Tooltip
+                    contentStyle={{ background: 'rgba(0, 0, 0, 0.9)', border: `1px solid rgba(255, 255, 255, 0.1)`, borderRadius: '8px' }}
+                    labelStyle={{ color: 'rgba(255, 255, 255, 0.8)' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="utilization" fill={colors.info} name="Vytížení %" />
+                  <Bar dataKey="efficiency" fill={colors.success} name="Efektivita %" />
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
 
-        {/* Footer spacing */}
-        <div className="pb-16" />
+            {/* Detailed Phase Breakdown */}
+            <motion.div
+              className="p-6 rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.04)' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+            >
+              <h2 className="text-lg font-black text-white mb-6">Podrobný rozpis jednotlivých statusů</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {WORKFLOW_STEPS.map((step, idx) => {
+                  const Icon = step.Icon;
+                  return (
+                    <motion.div
+                      key={idx}
+                      className="p-4 rounded-lg border backdrop-blur-sm group cursor-pointer transition-all"
+                      style={{
+                        borderColor: `${step.color}40`,
+                        background: `${step.color}10`,
+                      }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + idx * 0.05, duration: 0.4 }}
+                      whileHover={{ scale: 1.05, background: `${step.color}20` }}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div
+                          className="p-2 rounded-lg"
+                          style={{ background: `${step.color}30` }}
+                        >
+                          <Icon className="w-5 h-5" style={{ color: step.color }} />
+                        </div>
+                        <span
+                          className="text-[11px] font-black px-2 py-1 rounded-full"
+                          style={{
+                            background: `${step.color}30`,
+                            color: step.color,
+                          }}
+                        >
+                          {(Math.random() * 25 + 15).toFixed(1)} min
+                        </span>
+                      </div>
+                      <h3 className="font-black text-white text-sm mb-1">{step.title}</h3>
+                      <p className="text-xs text-white/60 mb-3">{step.organizer}</p>
+                      <div className="space-y-1 text-[11px] text-white/50">
+                        <div className="flex justify-between">
+                          <span>Dnešní: <span className="text-white/80 font-bold">{Math.floor(Math.random() * 15) + 5}x</span></span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Týden: <span className="text-white/80 font-bold">{Math.floor(Math.random() * 80) + 30}x</span></span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Efektivita: <span className="text-white/80 font-bold">{Math.floor(Math.random() * 20) + 80}%</span></span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            <div className="pb-16" />
+          </div>
+        )}
       </div>
     </div>
   );
