@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell } from 'lucide-react';
+import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3 } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
 import DepartmentsManager from './DepartmentsManager';
 import ScheduleManager from './ScheduleManager';
+import ShiftScheduleManager from './ShiftScheduleManager';
+import StatisticsModule from './StatisticsModule';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -34,6 +36,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       description: 'Plánování a správa rozpisu sálů',
       icon: Calendar,
       accentColor: '#A855F7',
+    },
+    {
+      id: 'shifts',
+      title: 'Rozpis služeb',
+      description: 'Správa pracovních směn a personálu',
+      icon: Briefcase,
+      accentColor: '#F97316',
     },
     {
       id: 'staff',
@@ -71,6 +80,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       accentColor: '#EC4899',
     },
     {
+      id: 'statistics',
+      title: 'Statistiky',
+      description: 'Přehled metrik a výkonu systému',
+      icon: BarChart3,
+      accentColor: '#06B6D4',
+    },
+    {
       id: 'settings',
       title: 'Nastavení',
       description: 'Konfigurace systému a preferencí',
@@ -92,6 +108,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             onRoomsChange?.(updatedRooms);
           }} />
         </motion.div>
+      ) : selectedModule === 'shifts' ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full px-8 md:pl-32 md:pr-10 py-10"
+        >
+          <ShiftScheduleManager />
+        </motion.div>
       ) : selectedModule === 'notifications' ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -101,23 +126,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         >
           <NotificationsManager />
         </motion.div>
-      ) : selectedModule === 'departments' ? (
+      ) : selectedModule === 'statistics' ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
-          <DepartmentsManager />
-        </motion.div>
-      ) : selectedModule === 'schedule' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
-          <ScheduleManager />
+          <StatisticsModule rooms={rooms} />
         </motion.div>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">

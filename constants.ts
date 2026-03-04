@@ -12,7 +12,8 @@ import {
   Scissors,
   Star,
   SprayCan,
-  Sparkles
+  Sparkles,
+  BarChart3
 } from 'lucide-react';
 
 export interface SubDepartment {
@@ -127,6 +128,7 @@ export const STEP_DURATIONS = [
 export const SIDEBAR_ITEMS = [
   { icon: LayoutGrid, label: 'Přehled', id: 'dashboard' },
   { icon: CalendarDays, label: 'Timeline', id: 'timeline' },
+  { icon: BarChart3, label: 'Statistiky', id: 'statistics' },
   { icon: User, label: 'Personál', id: 'staff' },
   { icon: AlertCircle, label: 'Upozornění', id: 'alerts' },
   { icon: Settings, label: 'Nastavení', id: 'settings' },
