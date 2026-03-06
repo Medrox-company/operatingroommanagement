@@ -662,7 +662,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
 
         <div className="flex items-center gap-8">
-          <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-12">
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO sestra</span>
               <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
