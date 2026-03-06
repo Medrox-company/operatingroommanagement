@@ -130,12 +130,12 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-black text-white overflow-hidden">
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+      <Sidebar currentView={currentView} onNavigate={(view) => { setSelectedRoomId(null); setCurrentView(view); }} />
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar
           currentView={currentView}
-          onNavigate={setCurrentView}
+          onNavigate={(view) => { setSelectedRoomId(null); setCurrentView(view); }}
           onSettingsReset={() => setSettingsResetTrigger(t => t + 1)}
         />
         <main className="flex-1 overflow-hidden">
@@ -156,16 +156,23 @@ const App: React.FC = () => {
 
       <AnimatePresence>
         {selectedRoom && (
-          <RoomDetail
-            room={selectedRoom}
-            onClose={() => setSelectedRoomId(null)}
-            onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
-            onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
-          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 md:left-24"
+          >
+            <RoomDetail
+              room={selectedRoom}
+              onClose={() => setSelectedRoomId(null)}
+              onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+              onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
 
-      <MobileNav currentView={currentView} onNavigate={setCurrentView} />
+      <MobileNav currentView={currentView} onNavigate={(view) => { setSelectedRoomId(null); setCurrentView(view); }} />
     </div>
   );
 };
