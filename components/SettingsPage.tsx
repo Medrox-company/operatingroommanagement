@@ -7,7 +7,7 @@ import DepartmentsManager from './DepartmentsManager';
 import ScheduleManager from './ScheduleManager';
 import ShiftScheduleManager from './ShiftScheduleManager';
 import StatisticsModule from './StatisticsModule';
-import { OperatingRoom } from '@/types';
+import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
   rooms?: OperatingRoom[];

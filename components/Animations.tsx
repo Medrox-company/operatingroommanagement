@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { OperatingRoom } from '@/types';
-import { MOCK_ROOMS } from '@/constants';
+import { OperatingRoom } from '../types';
+import { MOCK_ROOMS } from '../constants';
 import { motion, AnimatePresence, useCycle, Variants } from 'framer-motion';
 import { 
   ArrowLeft, User, Phone, Scissors, Star, Bed, UserCheck, SprayCan, Sparkles,

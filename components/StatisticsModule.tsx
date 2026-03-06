@@ -4,8 +4,8 @@ import {
   TrendingUp, TrendingDown, Minus, Activity,
   AlertTriangle, Shield, Clock, Layers, Zap, X,
 } from 'lucide-react';
-import { OperatingRoom, RoomStatus } from '@/types';
-import { WORKFLOW_STEPS, STEP_DURATIONS } from '@/constants';
+import { OperatingRoom, RoomStatus } from '../types';
+import { WORKFLOW_STEPS, STEP_DURATIONS } from '../constants';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip,

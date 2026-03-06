@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Plus, Minus } from 'lucide-react';
-import { DEFAULT_DEPARTMENTS } from '@/constants';
+import { DEFAULT_DEPARTMENTS } from '../constants';
 
 interface GridCell {
   deptId: string;
