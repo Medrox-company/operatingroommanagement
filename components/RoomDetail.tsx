@@ -664,23 +664,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="flex items-center gap-8">
           <div className="flex flex-col gap-3">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>Odpovědná osoba</span>
-              <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{currentStep.organizer}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO sestra</span>
+              <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
             </div>
             {room.staff.anesthesiologist?.name && (
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO personál</span>
+                <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO lékař</span>
                 <span className="text-xl font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col items-center -space-y-3">
-            <div className="w-12 h-12 rounded-full border-2 border-black bg-indigo-600 overflow-hidden shadow-2xl">
-              <img src={`https://i.pravatar.cc/150?u=${currentStep.organizer}`} alt="Odpovědná osoba" className="w-full h-full object-cover" />
-            </div>
-            {room.staff.anesthesiologist?.name && (
-              <div className="w-12 h-12 rounded-full border-2 border-black bg-cyan-700 overflow-hidden shadow-2xl">
-                <img src={`https://i.pravatar.cc/150?u=${room.staff.anesthesiologist.name}`} alt="ARO personál" className="w-full h-full object-cover" />
               </div>
             )}
           </div>
