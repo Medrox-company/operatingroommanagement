@@ -99,14 +99,13 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-hidden relative pb-20 md:pb-0">
           <AnimatePresence mode="wait">
+
+            {/* Dashboard — room detail */}
             {currentView === 'dashboard' && selectedRoom && (
-              <motion.div
-                key="detail"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-50"
-              >
+              <motion.div key="detail"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0 z-50">
                 <RoomDetail
                   room={selectedRoom}
                   onClose={() => setSelectedRoomId(null)}
@@ -115,79 +114,84 @@ const App: React.FC = () => {
                 />
               </motion.div>
             )}
+
+            {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
-                <motion.div
-                  key="grid-container"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10"
-                >
-                  <div className="max-w-[2400px] mx-auto w-full">
-
-                    {/* Non-fixed Header that scrolls with content */}
-                    <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 mb-16 flex-shrink-0">
-                      <div className="text-center lg:text-left">
-                        <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-                          <Shield className="w-4 h-4 text-[#00D8C1]" />
-                          <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
-                        </div>
-                        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-                          OPERATING <span className="text-white/20">ROOM</span>
-                        </h1>
+              <motion.div key="grid-container"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10">
+                <div className="max-w-[2400px] mx-auto w-full">
+                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 mb-16 flex-shrink-0">
+                    <div className="text-center lg:text-left">
+                      <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+                        <Shield className="w-4 h-4 text-[#00D8C1]" />
+                        <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
                       </div>
-
-                      {/* Global Stats Bar */}
-                      <div className="flex gap-4 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                        {[
-                          { label: 'AKTIVNÍ', value: rooms.filter(r => r.currentStepIndex < 6).length, icon: Activity, color: 'text-red-500' },
-                          { label: 'PŘIPRAVENO', value: rooms.filter(r => r.currentStepIndex >= 6).length, icon: LayoutGrid, color: 'text-[#00D8C1]' },
-                        ].map((stat) => (
-                          <div key={stat.label} className="flex flex-col items-center justify-center px-10 py-4 rounded-3xl hover:bg-white/5 transition-all min-w-[150px] z-10">
-                            <div className="flex items-center gap-2.5 mb-2 opacity-40">
-                              <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                              <p className="text-[9px] font-black uppercase tracking-[0.2em]">{stat.label}</p>
-                            </div>
-                            <AnimatedCounter to={stat.value} />
+                      <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+                        OPERATING <span className="text-white/20">ROOM</span>
+                      </h1>
+                    </div>
+                    <div className="flex gap-4 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                      {[
+                        { label: 'AKTIVNÍ',   value: rooms.filter(r => r.currentStepIndex < 6).length,  icon: Activity,    color: 'text-red-500'      },
+                        { label: 'PŘIPRAVENO', value: rooms.filter(r => r.currentStepIndex >= 6).length, icon: LayoutGrid,  color: 'text-[#00D8C1]'   },
+                      ].map((stat) => (
+                        <div key={stat.label} className="flex flex-col items-center justify-center px-10 py-4 rounded-3xl hover:bg-white/5 transition-all min-w-[150px] z-10">
+                          <div className="flex items-center gap-2.5 mb-2 opacity-40">
+                            <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em]">{stat.label}</p>
                           </div>
-                        ))}
-                      </div>
-                    </header>
-
-                    {/* Grid following the header */}
-                    <div className="pb-20 px-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12">
-                        {rooms.map((room) => (
-                          <RoomCard
-                            key={room.id}
-                            room={room}
-                            onClick={() => setSelectedRoomId(room.id)}
-                            onEmergency={() => toggleEmergency(room.id)}
-                            onLock={() => toggleLock(room.id)}
-                          />
-                        ))}
-                      </div>
+                          <AnimatedCounter to={stat.value} />
+                        </div>
+                      ))}
+                    </div>
+                  </header>
+                  <div className="pb-20 px-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12">
+                      {rooms.map((room) => (
+                        <RoomCard
+                          key={room.id}
+                          room={room}
+                          onClick={() => setSelectedRoomId(room.id)}
+                          onEmergency={() => toggleEmergency(room.id)}
+                          onLock={() => toggleLock(room.id)}
+                        />
+                      ))}
                     </div>
                   </div>
-                </motion.div>
+                </div>
+              </motion.div>
             )}
 
+            {/* Timeline */}
             {currentView === 'timeline' && (
-              <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full h-full overflow-hidden">
+              <motion.div key="timeline"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full overflow-hidden">
                 <TimelineModule rooms={rooms} />
               </motion.div>
             )}
 
+            {/* Statistics */}
             {currentView === 'statistics' && (
-              <motion.div key="statistics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full overflow-y-auto hide-scrollbar">
+              <motion.div key="statistics"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full overflow-y-auto hide-scrollbar">
                 <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
                   <StatisticsModule rooms={rooms} />
                 </div>
               </motion.div>
             )}
 
+            {/* Staff */}
             {currentView === 'staff' && (
-              <motion.div key="staff" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
+              <motion.div key="staff"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full">
                 <PlaceholderView
                   icon={User}
                   title="Personál"
@@ -195,8 +199,13 @@ const App: React.FC = () => {
                 />
               </motion.div>
             )}
+
+            {/* Alerts */}
             {currentView === 'alerts' && (
-              <motion.div key="alerts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
+              <motion.div key="alerts"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full">
                 <PlaceholderView
                   icon={AlertCircle}
                   title="Upozornění"
@@ -204,17 +213,17 @@ const App: React.FC = () => {
                 />
               </motion.div>
             )}
+
+            {/* Settings */}
             {currentView === 'settings' && (
-              <motion.div
-                key="settings"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="w-full h-full overflow-y-auto hide-scrollbar"
-              >
+              <motion.div key="settings"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full overflow-y-auto hide-scrollbar">
                 <SettingsPage rooms={rooms} onRoomsChange={setRooms} resetTrigger={settingsResetTrigger} />
               </motion.div>
             )}
+
           </AnimatePresence>
         </main>
       </div>
