@@ -128,8 +128,56 @@ function mergeSeg(segs:Seg[]):Seg[]{
   return out;
 }
 
-// ── Card primitives ───────────────────────────────────────────────────────────
-function Card({children,className='',style={}}:{children:React.ReactNode;className?:string;style?:React.CSSProperties}){
+// ── Room mini card (extracted so hooks are always called at component level) ──
+interface RoomMiniCardProps { r: OperatingRoom; index: number; onClick: () => void; }
+const RoomMiniCard: React.FC<RoomMiniCardProps> = ({ r, index, onClick }) => {
+  const sc2   = statusColor(r.status);
+  const tl2   = useMemo(() => mergeSeg(buildTimeline(r)), [r]);
+  const utilP = buildDist(r).find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
+  const ups2  = isUPS(r);
+  return (
+    <motion.button onClick={onClick}
+      className="text-left rounded-lg p-3 w-full group"
+      style={{
+        background: r.status === RoomStatus.BUSY ? `${sc2}08` : C.surface,
+        border: `1px solid ${r.status === RoomStatus.BUSY ? `${sc2}30` : C.border}`,
+      }}
+      initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.18, delay: index * 0.025 }}
+      whileHover={{ scale: 1.03 } as any}>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
+          <span className="text-xs font-black truncate" style={{ color: C.text }}>{r.name}</span>
+        </div>
+        {ups2 && <span className="text-[8px] font-black px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
+      </div>
+      <p className="text-[10px] mb-2 truncate" style={{ color: C.faint }}>{r.department}</p>
+      {/* Micro timeline */}
+      <div className="flex h-1.5 w-full rounded overflow-hidden gap-px mb-2">
+        {tl2.map((seg, si) => (
+          <div key={si} className="h-full shrink-0" style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.85 }} />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div>
+            <p className="text-[8px]" style={{ color: C.ghost }}>Ops</p>
+            <p className="text-sm font-black leading-none" style={{ color: C.accent }}>{r.operations24h}</p>
+          </div>
+          <div>
+            <p className="text-[8px]" style={{ color: C.ghost }}>Výk%</p>
+            <p className="text-sm font-black leading-none" style={{ color: C.text }}>{utilP}%</p>
+          </div>
+        </div>
+        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+          style={{ background: `${sc2}14`, color: sc2 }}>
+          {statusLabel(r.status).slice(0, 3)}
+        </span>
+      </div>
+    </motion.button>
+  );
+};
   return(
     <div className={`rounded-xl ${className}`} style={{background:C.surface,border:`1px solid ${C.border}`,...style}}>
       {children}
@@ -225,7 +273,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose})=>{
   // Utilisation per status (time-based %)
   const statusUtil=[
     {label:'Výkon',      pct:utilPct,                         color:WORKFLOW_STEPS[2].color},
-    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Začátek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:WORKFLOW_STEPS[1].color},
+    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Za��átek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:WORKFLOW_STEPS[1].color},
     {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:WORKFLOW_STEPS[0].color},
     {label:'Úklid',      pct:dist.find(d=>d.title==='Úklid sálu')?.pct??0,                                                                 color:WORKFLOW_STEPS[5].color},
     {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:WORKFLOW_STEPS[6].color},
@@ -914,54 +962,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <div>
               <SectionLabel>Sály — kliknutím zobrazíte podrobné statistiky</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-                {rooms.map((r,i)=>{
-                  const sc2=statusColor(r.status);
-                  const tl2=useMemo(()=>mergeSeg(buildTimeline(r)),[r]);
-                  const utilP=buildDist(r).find(d=>d.title==='Chirurgický výkon')?.pct??0;
-                  const ups2=isUPS(r);
-                  return(
-                    <motion.button key={r.id} onClick={()=>setSelectedRoom(r)}
-                      className="text-left rounded-lg p-3 w-full group"
-                      style={{
-                        background:r.status===RoomStatus.BUSY?`${sc2}08`:C.surface,
-                        border:`1px solid ${r.status===RoomStatus.BUSY?`${sc2}30`:C.border}`,
-                      }}
-                      initial={{opacity:0,scale:0.96}} animate={{opacity:1,scale:1}}
-                      transition={{duration:0.18,delay:i*0.025}}
-                      whileHover={{scale:1.03} as any}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:sc2,boxShadow:`0 0 5px ${sc2}`}}/>
-                          <span className="text-xs font-black truncate" style={{color:C.text}}>{r.name}</span>
-                        </div>
-                        {ups2&&<span className="text-[8px] font-black px-1 py-px rounded shrink-0" style={{background:`${C.accent}15`,color:C.accent}}>ÚPS</span>}
-                      </div>
-                      <p className="text-[10px] mb-2 truncate" style={{color:C.faint}}>{r.department}</p>
-                      {/* Micro timeline */}
-                      <div className="flex h-1.5 w-full rounded overflow-hidden gap-px mb-2">
-                        {tl2.map((seg,si)=>(
-                          <div key={si} className="h-full shrink-0" style={{width:`${seg.pct}%`,background:seg.color,opacity:0.85}}/>
-                        ))}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <p className="text-[8px]" style={{color:C.ghost}}>Ops</p>
-                            <p className="text-sm font-black leading-none" style={{color:C.accent}}>{r.operations24h}</p>
-                          </div>
-                          <div>
-                            <p className="text-[8px]" style={{color:C.ghost}}>Výk%</p>
-                            <p className="text-sm font-black leading-none" style={{color:C.text}}>{utilP}%</p>
-                          </div>
-                        </div>
-                        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                          style={{background:`${sc2}14`,color:sc2}}>
-                          {statusLabel(r.status).slice(0,3)}
-                        </span>
-                      </div>
-                    </motion.button>
-                  );
-                })}
+                {rooms.map((r, i) => (
+                  <RoomMiniCard key={r.id} r={r} index={i} onClick={() => setSelectedRoom(r)} />
+                ))}
               </div>
             </div>
 
