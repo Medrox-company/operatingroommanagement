@@ -677,28 +677,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
 
         {/* Patient Status Indicators */}
-        <div className="flex items-center gap-4 pt-2">
-          <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
-            patientCalledTime 
-              ? 'bg-green-500/15 border-green-500/50 text-green-300' 
-              : 'bg-white/5 text-[#c0bdb7]'
-          }`} style={!patientCalledTime ? { borderColor: '#c0bdb7' } : {}}>
-            <span className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5" />
-              {patientCalledTime ? `Vyvolán ${patientCallElapsedTime}` : 'Nevyvolán'}
-            </span>
-          </div>
-          <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
-            patientArrivedTime 
-              ? 'bg-blue-500/15 border-blue-500/50 text-blue-300' 
-              : 'bg-white/5 text-[#c0bdb7]'
-          }`} style={!patientArrivedTime ? { borderColor: '#c0bdb7' } : {}}>
-            <span className="flex items-center gap-1.5">
-              <UserCheck className="w-3.5 h-3.5" />
-              {patientArrivedTime ? 'Přijel' : 'Nepřijel'}
-            </span>
-          </div>
-        </div>
+        {/* Patient status info removed */}
       </div>
 
       {/* Navigation Indicators */}
