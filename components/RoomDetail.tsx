@@ -661,7 +661,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
         </div>
 
-        <div className="flex items-end justify-end gap-12 h-20">
+        <div className="flex items-end justify-end gap-4 h-20 pr-2">
           {/* ARO lékař — vpravo dole */}
           {room.staff.anesthesiologist?.name && (
             <div>
