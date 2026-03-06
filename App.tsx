@@ -92,8 +92,8 @@ const App: React.FC = () => {
                       key={room.id}
                       room={room}
                       onClick={() => setSelectedRoomId(room.id)}
-                      onToggleEmergency={toggleEmergency}
-                      onToggleLock={toggleLock}
+                      onEmergency={() => toggleEmergency(room.id)}
+                      onLock={() => toggleLock(room.id)}
                     />
                   ))}
                 </AnimatePresence>
