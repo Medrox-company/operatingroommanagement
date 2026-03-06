@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import TopBar from './components/TopBar';
@@ -11,10 +11,9 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom } from './types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
+import { Activity, LayoutGrid, Shield, User, AlertCircle } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms } from './lib/db';
 
 // Main App Component - Operating Rooms Management System
 const App: React.FC = () => {
@@ -22,87 +21,33 @@ const App: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
-  const [dbLoaded, setDbLoaded] = useState(false);
-
-  // Load rooms from database, fall back to MOCK_ROOMS on error
-  useEffect(() => {
-    const loadRooms = async () => {
-      try {
-        const data = await fetchOperatingRooms();
-        if (data && data.length > 0) {
-          setRooms(data);
-        }
-        setDbLoaded(true);
-      } catch {
-        // Silently fall back to MOCK_ROOMS
-        setDbLoaded(false);
-      }
-    };
-    loadRooms();
-  }, []);
-
-  // Real-time subscription
-  useEffect(() => {
-    const unsubscribe = subscribeToOperatingRooms((updatedRoom) => {
-      setRooms((prev) =>
-        prev.some((r) => r.id === updatedRoom.id)
-          ? prev.map((r) => (r.id === updatedRoom.id ? updatedRoom : r))
-          : [...prev, updatedRoom]
-      );
-    });
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
-  const updateRoomStep = async (roomId: string, newStepIndex: number) => {
+  const updateRoomStep = (roomId: string, newStepIndex: number) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
     ));
-    if (dbLoaded) {
-      try { await updateOperatingRoom(roomId, { current_step_index: newStepIndex }); } catch { /* noop */ }
-    }
   };
 
-  const toggleEmergency = async (roomId: string) => {
+  const toggleEmergency = (roomId: string) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, isEmergency: !room.isEmergency } : room
     ));
-    if (dbLoaded) {
-      const room = rooms.find(r => r.id === roomId);
-      if (room) {
-        try { await updateOperatingRoom(roomId, { is_emergency: !room.isEmergency }); } catch { /* noop */ }
-      }
-    }
   };
 
-  const toggleLock = async (roomId: string) => {
+  const toggleLock = (roomId: string) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, isLocked: !room.isLocked } : room
     ));
-    if (dbLoaded) {
-      const room = rooms.find(r => r.id === roomId);
-      if (room) {
-        try { await updateOperatingRoom(roomId, { is_locked: !room.isLocked }); } catch { /* noop */ }
-      }
-    }
   };
 
-  const handleUpdateRoomEndTime = async (roomId: string, newTime: Date | null) => {
+  const handleUpdateRoomEndTime = (roomId: string, newTime: Date | null) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, estimatedEndTime: newTime ? newTime.toISOString() : undefined }
         : room
     ));
-    if (dbLoaded) {
-      try {
-        await updateOperatingRoom(roomId, {
-          estimated_end_time: newTime ? newTime.toISOString() : null,
-        });
-      } catch { /* noop */ }
-    }
   };
 
   const operatingCount = rooms.filter(r => r.status === 'BUSY').length;
