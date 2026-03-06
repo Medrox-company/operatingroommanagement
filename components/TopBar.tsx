@@ -2,7 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Globe, ShieldCheck } from 'lucide-react';
 
-const TopBar: React.FC = () => {
+interface TopBarProps {
+  currentView?: string;
+  onNavigate?: (view: string) => void;
+  onSettingsReset?: () => void;
+}
+
+const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsReset }) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {

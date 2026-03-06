@@ -11,7 +11,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom } from './types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, LayoutGrid, Shield, User, AlertCircle } from 'lucide-react';
+import { Activity, LayoutGrid, User, AlertCircle } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
 
@@ -60,40 +60,48 @@ const App: React.FC = () => {
       case 'dashboard':
         return (
           <div className="flex flex-col h-full">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 px-4 pt-4 lg:px-6">
-              {[
-                { label: 'Obsazené sály', value: operatingCount, color: '#FF3B30', Icon: Activity },
-                { label: 'Volné sály', value: freeCount, color: '#34C759', Icon: LayoutGrid },
-                { label: 'Úklid', value: cleaningCount, color: '#FBBF24', Icon: Shield },
-                { label: 'Urgentní', value: emergencyCount, color: '#FF9500', Icon: AlertCircle },
-              ].map(({ label, value, color, Icon }) => (
-                <motion.div
-                  key={label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-[#111] border border-white/10 rounded-xl p-3 flex items-center gap-3"
-                >
-                  <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}20` }}>
-                    <Icon size={18} style={{ color }} />
+            {/* Header with title and stats */}
+            <div className="flex justify-between items-start px-6 pt-6 pb-4">
+              <div>
+                <p className="text-[10px] font-black tracking-[0.4em] text-[#00D8C1] uppercase mb-2 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-[#00D8C1] rounded-full"></span>
+                  OPERATINGROOM CONTROL
+                </p>
+                <h1 className="text-5xl font-black tracking-tight uppercase">
+                  <span className="text-white">OPERATING</span>
+                  <span className="text-white/30">ROOM</span>
+                </h1>
+              </div>
+              
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex gap-8">
+                <div className="text-center">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-4 h-4 text-yellow-400" />
+                    <span className="text-[9px] font-black tracking-widest text-white/40 uppercase">Aktivní</span>
                   </div>
-                  <div>
-                    <AnimatedCounter value={value} className="text-xl font-bold text-white" />
-                    <p className="text-xs text-white/50">{label}</p>
+                  <AnimatedCounter value={operatingCount} className="text-3xl font-black text-white" />
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center gap-2 mb-1">
+                    <LayoutGrid className="w-4 h-4 text-[#00D8C1]" />
+                    <span className="text-[9px] font-black tracking-widest text-white/40 uppercase">Připraveno</span>
                   </div>
-                </motion.div>
-              ))}
+                  <AnimatedCounter value={freeCount} className="text-3xl font-black text-white" />
+                </div>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 lg:px-6 pb-24 lg:pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+            {/* Room cards grid */}
+            <div className="flex-1 overflow-y-auto px-6 pb-24 lg:pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
                 <AnimatePresence>
                   {rooms.map((room) => (
                     <RoomCard
                       key={room.id}
                       room={room}
                       onClick={() => setSelectedRoomId(room.id)}
-                      onEmergency={() => toggleEmergency(room.id)}
-                      onLock={() => toggleLock(room.id)}
+                      onEmergency={(e) => { e.stopPropagation(); toggleEmergency(room.id); }}
+                      onLock={(e) => { e.stopPropagation(); toggleLock(room.id); }}
                     />
                   ))}
                 </AnimatePresence>
@@ -151,10 +159,8 @@ const App: React.FC = () => {
           <RoomDetail
             room={selectedRoom}
             onClose={() => setSelectedRoomId(null)}
-            onUpdateStep={updateRoomStep}
-            onToggleEmergency={toggleEmergency}
-            onToggleLock={toggleLock}
-            onUpdateEndTime={handleUpdateRoomEndTime}
+            onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+            onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
           />
         )}
       </AnimatePresence>
