@@ -1,6 +1,6 @@
 import React from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
-import { Command, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
