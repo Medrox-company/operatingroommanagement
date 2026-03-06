@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { OperatingRoom } from '@/types';
+import { WORKFLOW_STEPS } from '@/constants';
 import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
 
 interface RoomCardProps {

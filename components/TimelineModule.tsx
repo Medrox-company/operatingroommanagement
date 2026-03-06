@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { OperatingRoom } from '@/types';
+import { WORKFLOW_STEPS } from '@/constants';
 import { Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe } from 'lucide-react';
 
 interface TimelineModuleProps {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OperatingRoom, RoomStatus } from '../types';
+import { OperatingRoom, RoomStatus } from '@/types';
 import { Plus, Trash2, Edit2, GripVertical, X, Check, AlertCircle, ChevronDown } from 'lucide-react';
-import { MOCK_ROOMS, DEFAULT_DEPARTMENTS } from '../constants';
+import { MOCK_ROOMS, DEFAULT_DEPARTMENTS } from '@/constants';
 
 interface OperatingRoomsManagerProps {
   rooms?: OperatingRoom[];

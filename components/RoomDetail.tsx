@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { OperatingRoom } from '@/types';
+import { WORKFLOW_STEPS } from '@/constants';
 import { 
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,

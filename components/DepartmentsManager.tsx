@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit2, ChevronDown, X, Check, AlertCircle, Lock, Unlock, Stethoscope } from 'lucide-react';
-import { DEFAULT_DEPARTMENTS, Department, SubDepartment } from '../constants';
+import { DEFAULT_DEPARTMENTS, Department, SubDepartment } from '@/constants';
 
 const DepartmentsManager: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>(DEFAULT_DEPARTMENTS);
