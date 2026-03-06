@@ -661,18 +661,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
         </div>
 
-        <div className="absolute right-12 bottom-16 flex items-end justify-end gap-4 h-20">
+        <div className="absolute right-10 bottom-12 flex flex-col items-end justify-end gap-3">
           {/* ARO lékař — vpravo dole */}
           {room.staff.anesthesiologist?.name && (
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO lékař</span>
-              <span className="text-xl font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+            <div className="text-right">
+              <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#888' }}>ARO LÉKAŘ</div>
+              <div className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</div>
             </div>
           )}
+          {/* Divider line */}
+          <div style={{ width: '100px', height: '1px', backgroundColor: activeColor, opacity: 0.4 }} />
           {/* ARO sestra — vpravo dole */}
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO sestra</span>
-            <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+          <div className="text-right">
+            <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#888' }}>ARO SESTRA</div>
+            <div className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</div>
           </div>
         </div>
 
