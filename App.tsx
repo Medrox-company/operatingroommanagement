@@ -160,7 +160,7 @@ const App: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 md:left-24"
+            className="fixed inset-0 z-50 md:left-24"
           >
             <RoomDetail
               room={selectedRoom}

@@ -9,7 +9,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none">
+    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[200] pointer-events-none">
       
       <div className="mb-12 w-14 h-14 flex-shrink-0" />
 
