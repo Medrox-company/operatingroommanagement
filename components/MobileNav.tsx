@@ -1,5 +1,5 @@
 import React from 'react';
-import { SIDEBAR_ITEMS } from '@/constants';
+import { SIDEBAR_ITEMS } from '../constants';
 
 interface MobileNavProps {
   currentView: string;
