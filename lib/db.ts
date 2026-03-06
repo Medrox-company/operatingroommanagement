@@ -531,3 +531,33 @@ export async function deleteSubDepartment(id: string): Promise<void> {
     throw error;
   }
 }
+
+// ============= REAL-TIME SUBSCRIPTIONS =============
+
+export function subscribeToOperatingRooms(
+  onUpdate: (room: OperatingRoom) => void
+): (() => void) | null {
+  const subscription = supabase
+    .channel('operating_rooms_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'operating_rooms',
+      },
+      (payload) => {
+        console.log('[v0] Real-time update:', payload);
+        if (payload.new) {
+          onUpdate(payload.new as OperatingRoom);
+        }
+      }
+    )
+    .subscribe((status) => {
+      console.log('[v0] Subscription status:', status);
+    });
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}

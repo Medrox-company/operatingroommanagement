@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import TopBar from './components/TopBar';
@@ -8,48 +8,114 @@ import PlaceholderView from './components/PlaceholderView';
 import SettingsPage from './components/SettingsPage';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { MOCK_ROOMS } from './constants';
 import { OperatingRoom } from './types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
+import { fetchOperatingRooms, subscribeToOperatingRooms, updateOperatingRoom } from './lib/db';
 
 // Main App Component - Operating Rooms Management System
 // Last updated: 2026-02-22T12:00:00Z
 const App: React.FC = () => {
-  const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
+  const [rooms, setRooms] = useState<OperatingRoom[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
+  // Load rooms from database on mount
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchOperatingRooms();
+        setRooms(data);
+        setError(null);
+      } catch (err) {
+        console.error('[v0] Failed to load operating rooms:', err);
+        setError('Nepodařilo se načíst operační sály');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRooms();
+  }, []);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const unsubscribe = subscribeToOperatingRooms((newRoom) => {
+      setRooms((prev) =>
+        prev.some((r) => r.id === newRoom.id)
+          ? prev.map((r) => (r.id === newRoom.id ? newRoom : r))
+          : [...prev, newRoom]
+      );
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   const updateRoomStep = (roomId: string, newStepIndex: number) => {
-    setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
-    ));
+    const room = rooms.find((r) => r.id === roomId);
+    if (room) {
+      updateOperatingRoom(roomId, { currentStepIndex: newStepIndex });
+    }
   };
 
   const toggleEmergency = (roomId: string) => {
-    setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, isEmergency: !room.isEmergency } : room
-    ));
+    const room = rooms.find((r) => r.id === roomId);
+    if (room) {
+      updateOperatingRoom(roomId, { isEmergency: !room.isEmergency });
+    }
   };
 
   const toggleLock = (roomId: string) => {
-    setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, isLocked: !room.isLocked } : room
-    ));
+    const room = rooms.find((r) => r.id === roomId);
+    if (room) {
+      updateOperatingRoom(roomId, { isLocked: !room.isLocked });
+    }
   };
 
   const handleUpdateRoomEndTime = (roomId: string, newTime: Date | null) => {
-    setRooms(prev => prev.map(room =>
-      room.id === roomId
-        ? { ...room, estimatedEndTime: newTime ? newTime.toISOString() : undefined }
-        : room
-    ));
+    updateOperatingRoom(roomId, {
+      estimatedEndTime: newTime ? newTime.toISOString() : undefined,
+    });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen w-full bg-black">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00D8C1] mx-auto mb-4"></div>
+          <p className="text-white">Načítám operační sály...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen w-full bg-black">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#00D8C1] text-black rounded-lg hover:bg-[#00C9B5]"
+          >
+            Zkusit znovu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
   return (
     <ErrorBoundary>
