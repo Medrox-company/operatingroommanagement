@@ -661,41 +661,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
         </div>
 
-        <div className="flex items-center gap-7">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: '#c0bdb7' }}>Odpovědná osoba</span>
-            <span className="text-2xl font-bold" style={{ color: '#c0bdb7' }}>{currentStep.organizer}</span>
-          </div>
-          <div className="flex items-center -space-x-4">
-             <div className="w-14 h-14 rounded-full border-4 border-black bg-indigo-600 overflow-hidden shadow-2xl">
-                <img src={`https://i.pravatar.cc/150?u=${currentStep.organizer}`} alt="Staff" className="w-full h-full object-cover" />
-             </div>
+        <div className="absolute right-12 bottom-16 flex items-end justify-end gap-4 h-20">
+          {/* ARO lékař — vpravo dole */}
+          {room.staff.anesthesiologist?.name && (
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO lékař</span>
+              <span className="text-xl font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+            </div>
+          )}
+          {/* ARO sestra — vpravo dole */}
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO sestra</span>
+            <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
           </div>
         </div>
 
         {/* Patient Status Indicators */}
-        <div className="flex items-center gap-4 pt-2">
-          <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
-            patientCalledTime 
-              ? 'bg-green-500/15 border-green-500/50 text-green-300' 
-              : 'bg-white/5 text-[#c0bdb7]'
-          }`} style={!patientCalledTime ? { borderColor: '#c0bdb7' } : {}}>
-            <span className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5" />
-              {patientCalledTime ? `Vyvolán ${patientCallElapsedTime}` : 'Nevyvolán'}
-            </span>
-          </div>
-          <div className={`px-3 py-1.5 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${
-            patientArrivedTime 
-              ? 'bg-blue-500/15 border-blue-500/50 text-blue-300' 
-              : 'bg-white/5 text-[#c0bdb7]'
-          }`} style={!patientArrivedTime ? { borderColor: '#c0bdb7' } : {}}>
-            <span className="flex items-center gap-1.5">
-              <UserCheck className="w-3.5 h-3.5" />
-              {patientArrivedTime ? 'Přijel' : 'Nepřijel'}
-            </span>
-          </div>
-        </div>
+        {/* Patient status info removed */}
       </div>
 
       {/* Navigation Indicators */}
