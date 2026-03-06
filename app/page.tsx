@@ -1,23 +1,23 @@
+'use client';
+
 import React, { useState } from 'react';
-import Sidebar from './components/Sidebar';
-import MobileNav from './components/MobileNav';
-import TopBar from './components/TopBar';
-import RoomCard from './components/RoomCard';
-import RoomDetail from './components/RoomDetail';
-import PlaceholderView from './components/PlaceholderView';
-import SettingsPage from './components/SettingsPage';
-import AnimatedCounter from './components/AnimatedCounter';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { MOCK_ROOMS } from './constants';
-import { OperatingRoom } from './types';
+import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
+import TopBar from '@/components/TopBar';
+import RoomCard from '@/components/RoomCard';
+import RoomDetail from '@/components/RoomDetail';
+import PlaceholderView from '@/components/PlaceholderView';
+import SettingsPage from '@/components/SettingsPage';
+import AnimatedCounter from '@/components/AnimatedCounter';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { MOCK_ROOMS } from '@/constants';
+import { OperatingRoom } from '@/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
-import TimelineModule from './components/TimelineModule';
-import StatisticsModule from './components/StatisticsModule';
+import TimelineModule from '@/components/TimelineModule';
+import StatisticsModule from '@/components/StatisticsModule';
 
-// Main App Component - Operating Rooms Management System
-// Last updated: 2026-02-22T12:00:00Z
-const App: React.FC = () => {
+const Page: React.FC = () => {
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -63,12 +63,10 @@ const App: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/90" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.95)_100%)]" />
-
-        {/* Subtle Texture Overlay */}
         <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
       </div>
 
-      {/* Atmospheric Edge Glows - Tuned Blue */}
+      {/* Atmospheric Edge Glows */}
       <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
         <div className="absolute -left-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
         <div className="absolute -right-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
@@ -76,7 +74,6 @@ const App: React.FC = () => {
 
       <Sidebar currentView={currentView} onNavigate={(view) => {
         if (currentView === 'settings' && view === 'settings') {
-          // Reset settings module when clicking settings again
           setSettingsResetTrigger(prev => prev + 1);
         } else {
           setCurrentView(view);
@@ -85,7 +82,6 @@ const App: React.FC = () => {
       }} />
       <MobileNav currentView={currentView} onNavigate={(view) => {
         if (currentView === 'settings' && view === 'settings') {
-          // Reset settings module when clicking settings again
           setSettingsResetTrigger(prev => prev + 1);
         } else {
           setCurrentView(view);
@@ -94,9 +90,6 @@ const App: React.FC = () => {
       }} />
 
       <div className="flex-1 flex flex-col relative z-20 w-full overflow-hidden">
-        {/* Horní lišta se nezobrazuje – všechny moduly mají plnou stránku jako dashboard */}
-        {/* <TopBar /> */}
-
         <main className="flex-1 overflow-hidden relative pb-20 md:pb-0">
           <AnimatePresence mode="wait">
 
@@ -232,4 +225,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default Page;
