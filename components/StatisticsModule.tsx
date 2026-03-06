@@ -178,6 +178,9 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = ({ r, index, onClick }) => {
     </motion.button>
   );
 };
+
+// ── Card primitive ────────────────────────────────────────────────────────────
+function Card({children,className='',style={}}:{children:React.ReactNode;className?:string;style?:React.CSSProperties}){
   return(
     <div className={`rounded-xl ${className}`} style={{background:C.surface,border:`1px solid ${C.border}`,...style}}>
       {children}
