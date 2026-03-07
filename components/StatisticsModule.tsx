@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, TrendingDown, Minus, Activity,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus } from '../types';
 import { WORKFLOW_STEPS, STEP_DURATIONS } from '../constants';
+import { fetchRoomStatistics, fetchStatusHistory, RoomStatistics, StatusHistoryRow } from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip,
@@ -565,6 +566,45 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
+  const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
+  const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  // Load statistics from database
+  useEffect(() => {
+    const loadStats = async () => {
+      setIsLoadingStats(true);
+      
+      // Calculate date range based on period
+      const now = new Date();
+      let fromDate: Date;
+      switch (period) {
+        case 'den':
+          fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case 'týden':
+          fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'měsíc':
+          fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case 'rok':
+          fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+      }
+
+      const [stats, history] = await Promise.all([
+        fetchRoomStatistics(fromDate, now),
+        fetchStatusHistory({ fromDate, toDate: now, limit: 500 }),
+      ]);
+
+      if (stats) setDbStats(stats);
+      if (history) setStatusHistory(history);
+      setIsLoadingStats(false);
+    };
+
+    loadStats();
+  }, [period]);
 
   const utilData = useMemo(()=>{
     if(period==='den')    return genDayData();
@@ -573,17 +613,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return genYearData();
   },[period]);
 
-  const avgUtil   = Math.round(utilData.reduce((s,d)=>s+d.v,0)/utilData.length);
+  const avgUtil   = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s,d)=>s+d.v,0)/utilData.length);
   const peakUtil  = Math.max(...utilData.map(d=>d.v));
   const minUtil   = Math.min(...utilData.map(d=>d.v));
-  const totalOps  = rooms.reduce((s,r)=>s+r.operations24h,0);
+  const totalOps  = dbStats?.totalOperations ?? rooms.reduce((s,r)=>s+r.operations24h,0);
   const busyCount = rooms.filter(r=>r.status===RoomStatus.BUSY).length;
   const freeCount = rooms.filter(r=>r.status===RoomStatus.FREE).length;
   const cleanCount= rooms.filter(r=>r.status===RoomStatus.CLEANING).length;
   const maintCount= rooms.filter(r=>r.status===RoomStatus.MAINTENANCE).length;
   const totalQueue= rooms.reduce((s,r)=>s+r.queueCount,0);
   const septicCnt = rooms.filter(r=>r.isSeptic).length;
-  const emergCnt  = rooms.filter(r=>r.isEmergency).length;
+  const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
   const upsCnt    = rooms.filter(isUPS).length;
 
   const deptMap = useMemo(()=>{
@@ -599,10 +639,23 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     color:statusColor(r.status),
   }));
 
-  const opsTrend=[
-    {t:'T-6',v:198},{t:'T-5',v:212},{t:'T-4',v:205},
-    {t:'T-3',v:221},{t:'T-2',v:215},{t:'T-1',v:228},{t:'Dnes',v:totalOps},
-  ];
+  // Generate opsTrend from real DB data or fallback to rooms data
+  const opsTrend = useMemo(() => {
+    if (dbStats?.operationsByDay && Object.keys(dbStats.operationsByDay).length > 0) {
+      const days = Object.entries(dbStats.operationsByDay)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-7);
+      return days.map(([date, count], i) => ({
+        t: i === days.length - 1 ? 'Dnes' : `T-${days.length - 1 - i}`,
+        v: count,
+      }));
+    }
+    // Fallback to calculated from rooms
+    return [
+      {t:'T-6',v:totalOps},{t:'T-5',v:totalOps},{t:'T-4',v:totalOps},
+      {t:'T-3',v:totalOps},{t:'T-2',v:totalOps},{t:'T-1',v:totalOps},{t:'Dnes',v:totalOps},
+    ];
+  }, [dbStats, totalOps]);
 
   // Status pie data
   const statusPie=[
@@ -621,11 +674,34 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return{title:step.title,color:step.color,pct:avg};
   }),[rooms]);
 
-  // Utilisation per interval for comparison bar
-  const intervalCompare=[
-    {t:'Pondělí', v:88},{t:'Úterý',  v:92},{t:'Středa',  v:87},
-    {t:'Čtvrtek', v:90},{t:'Pátek',  v:82},{t:'Sobota',  v:44},{t:'Neděle', v:28},
-  ];
+  // Utilisation per interval for comparison bar - use real data if available
+  const intervalCompare = useMemo(() => {
+    const dayNames = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
+    const dayOrder = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
+    
+    if (dbStats?.operationsByDay && Object.keys(dbStats.operationsByDay).length > 0) {
+      const byDay: Record<string, number[]> = {};
+      Object.entries(dbStats.operationsByDay).forEach(([date, count]) => {
+        const d = new Date(date);
+        const dayName = dayNames[d.getDay()];
+        if (!byDay[dayName]) byDay[dayName] = [];
+        byDay[dayName].push(count);
+      });
+      
+      return dayOrder.map(t => ({
+        t,
+        v: byDay[t]?.length > 0 
+          ? Math.round(byDay[t].reduce((a, b) => a + b, 0) / byDay[t].length)
+          : 0,
+      }));
+    }
+    
+    // Fallback
+    return [
+      {t:'Pondělí', v:0},{t:'Úterý',  v:0},{t:'Středa',  v:0},
+      {t:'Čtvrtek', v:0},{t:'Pátek',  v:0},{t:'Sobota',  v:0},{t:'Neděle', v:0},
+    ];
+  }, [dbStats]);
 
   // Scatter: ops24h vs utilPct per room
   const scatterData=rooms.map(r=>({
