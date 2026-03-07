@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
+import TopBar from './components/TopBar';
 import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
 import PlaceholderView from './components/PlaceholderView';
@@ -10,10 +11,11 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom } from './types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, LayoutGrid, User, AlertCircle, Settings } from 'lucide-react';
+import { Activity, LayoutGrid, User, AlertCircle } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
 
+// Main App Component - Operating Rooms Management System
 const App: React.FC = () => {
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -48,95 +50,50 @@ const App: React.FC = () => {
     ));
   };
 
-  const handleNavigate = (view: string) => {
-    if (currentView === 'settings' && view === 'settings') {
-      setSettingsResetTrigger(prev => prev + 1);
-    } else {
-      setCurrentView(view);
-      setSelectedRoomId(null);
-    }
-  };
+  const operatingCount = rooms.filter(r => r.status === 'BUSY').length;
+  const freeCount = rooms.filter(r => r.status === 'FREE').length;
+  const cleaningCount = rooms.filter(r => r.status === 'CLEANING').length;
+  const emergencyCount = rooms.filter(r => r.isEmergency).length;
 
-  return (
-    <div className="relative w-full h-screen bg-black text-white overflow-hidden font-sans">
-
-      {/* Immersive Global Background Layer */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(30,41,80,0.6)_0%,transparent_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_100%_100%,rgba(20,30,60,0.4)_0%,transparent_60%)]" />
-        <div
-          className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='1' height='1' fill='white'/%3E%3C/svg%3E\")",
-            backgroundSize: '4px 4px',
-          }}
-        />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-      </div>
-
-      {/* Sidebar - always on top */}
-      <Sidebar currentView={currentView} onNavigate={handleNavigate} />
-      <MobileNav currentView={currentView} onNavigate={handleNavigate} />
-
-      {/* Main content area - offset by sidebar */}
-      <main className="absolute inset-0 lg:left-[72px] overflow-hidden">
-
-        {/* Dashboard — room detail overlay */}
-        <AnimatePresence>
-          {currentView === 'dashboard' && selectedRoom && (
-            <RoomDetail
-              key={selectedRoom.id}
-              room={selectedRoom}
-              onClose={() => setSelectedRoomId(null)}
-              onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
-              onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Dashboard — room grid */}
-        {currentView === 'dashboard' && !selectedRoom && (
-          <motion.div
-            key="dashboard"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="h-full flex flex-col"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between px-6 pt-6 pb-4 flex-shrink-0">
+  const renderView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return (
+          <div className="flex flex-col h-full">
+            {/* Header with title and stats */}
+            <div className="flex justify-between items-start px-6 pt-6 pb-4">
               <div>
                 <p className="text-[10px] font-black tracking-[0.4em] text-[#00D8C1] uppercase mb-2 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#00D8C1] inline-block" />
+                  <span className="w-2 h-2 bg-[#00D8C1] rounded-full"></span>
                   OPERATINGROOM CONTROL
                 </p>
-                <h1 className="text-5xl lg:text-6xl font-black tracking-tight uppercase leading-none">
+                <h1 className="text-5xl font-black tracking-tight uppercase">
                   <span className="text-white">OPERATING</span>
-                  <span className="text-white/20"> ROOM</span>
+                  <span className="text-white/30">ROOM</span>
                 </h1>
               </div>
-
-              {/* Stats box - top right */}
-              <div className="hidden sm:flex items-center gap-0 bg-white/[0.04] border border-white/[0.08] rounded-2xl overflow-hidden">
-                {[
-                  { label: 'AKTIVNÍ', value: rooms.filter(r => r.currentStepIndex < 6).length, Icon: Activity, color: 'text-red-500' },
-                  { label: 'PŘIPRAVENO', value: rooms.filter(r => r.currentStepIndex >= 6).length, Icon: LayoutGrid, color: 'text-[#00D8C1]' },
-                ].map((stat, i) => (
-                  <div key={stat.label} className={`flex flex-col items-center px-8 py-4 ${i === 0 ? 'border-r border-white/[0.08]' : ''}`}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <stat.Icon className={`w-3.5 h-3.5 ${stat.color}`} />
-                      <span className="text-[9px] font-black tracking-[0.25em] text-white/40 uppercase">{stat.label}</span>
-                    </div>
-                    <AnimatedCounter value={stat.value} className="text-4xl font-black text-white" />
+              
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex gap-8">
+                <div className="text-center">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-4 h-4 text-yellow-400" />
+                    <span className="text-[9px] font-black tracking-widest text-white/40 uppercase">Aktivní</span>
                   </div>
-                ))}
+                  <AnimatedCounter value={operatingCount} className="text-3xl font-black text-white" />
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center gap-2 mb-1">
+                    <LayoutGrid className="w-4 h-4 text-[#00D8C1]" />
+                    <span className="text-[9px] font-black tracking-widest text-white/40 uppercase">Připraveno</span>
+                  </div>
+                  <AnimatedCounter value={freeCount} className="text-3xl font-black text-white" />
+                </div>
               </div>
             </div>
 
-            {/* Room Grid */}
+            {/* Room cards grid */}
             <div className="flex-1 overflow-y-auto px-6 pb-24 lg:pb-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
                 <AnimatePresence>
                   {rooms.map((room) => (
                     <RoomCard
@@ -150,47 +107,65 @@ const App: React.FC = () => {
                 </AnimatePresence>
               </div>
             </div>
-          </motion.div>
-        )}
+          </div>
+        );
+      case 'timeline':
+        return <TimelineModule rooms={rooms} />;
+      case 'statistics':
+        return <StatisticsModule rooms={rooms} />;
+      case 'staff':
+        return <PlaceholderView icon={User} title="Správa personálu" description="Přehled operačního personálu a jejich přiřazení k sálům." />;
+      case 'alerts':
+        return <PlaceholderView icon={AlertCircle} title="Upozornění" description="Kritické výstrahy a notifikace vyžadující pozornost." />;
+      case 'settings':
+        return (
+          <ErrorBoundary>
+            <SettingsPage key={settingsResetTrigger} />
+          </ErrorBoundary>
+        );
+      default:
+        return null;
+    }
+  };
 
-        {/* Timeline */}
-        {currentView === 'timeline' && (
-          <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full overflow-y-auto">
-            <TimelineModule rooms={rooms} />
-          </motion.div>
-        )}
+  return (
+    <div className="flex h-screen bg-black text-white overflow-hidden">
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} />
 
-        {/* Statistics */}
-        {currentView === 'statistics' && (
-          <motion.div key="statistics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full overflow-y-auto">
-            <StatisticsModule rooms={rooms} />
-          </motion.div>
-        )}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <TopBar
+          currentView={currentView}
+          onNavigate={setCurrentView}
+          onSettingsReset={() => setSettingsResetTrigger(t => t + 1)}
+        />
+        <main className="flex-1 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="h-full overflow-y-auto"
+            >
+              {renderView()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
 
-        {/* Staff */}
-        {currentView === 'staff' && (
-          <motion.div key="staff" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full overflow-y-auto">
-            <PlaceholderView icon={User} title="Personál" description="Správa personálu operačního bloku." />
-          </motion.div>
+      <AnimatePresence>
+        {selectedRoom && (
+          <RoomDetail
+            room={selectedRoom}
+            onClose={() => setSelectedRoomId(null)}
+            onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+            onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
+          />
         )}
+      </AnimatePresence>
 
-        {/* Alerts */}
-        {currentView === 'alerts' && (
-          <motion.div key="alerts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full overflow-y-auto">
-            <PlaceholderView icon={AlertCircle} title="Upozornění" description="Přehled upozornění a notifikací." />
-          </motion.div>
-        )}
-
-        {/* Settings */}
-        {currentView === 'settings' && (
-          <motion.div key={`settings-${settingsResetTrigger}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full overflow-y-auto">
-            <ErrorBoundary>
-              <SettingsPage resetTrigger={settingsResetTrigger} />
-            </ErrorBoundary>
-          </motion.div>
-        )}
-
-      </main>
+      <MobileNav currentView={currentView} onNavigate={setCurrentView} />
     </div>
   );
 };

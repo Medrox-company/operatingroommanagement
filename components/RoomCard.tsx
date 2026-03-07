@@ -32,7 +32,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
   return (
     <div
       onClick={onClick}
-      className="relative group cursor-pointer h-[260px] w-full"
+      className="relative group cursor-pointer h-[340px] w-full"
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
@@ -67,7 +67,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
       </div>
 
       {/* Content Container */}
-      <div className="relative h-full w-full z-10 p-4 flex flex-col">
+      <div className="relative h-full w-full z-10 p-6 flex flex-col">
         
         {/* Header */}
         <div className="w-full flex justify-between items-start min-w-0 gap-2 shrink-0">
@@ -129,7 +129,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                   transition={{ duration: 1.2, ease: 'easeOut' }}
                 />
                 <motion.svg
-                  className="w-24 h-24 overflow-visible select-none flex-shrink-0"
+                  className="w-28 h-28 overflow-visible select-none flex-shrink-0"
                   style={{ rotate: '-90deg' }}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
