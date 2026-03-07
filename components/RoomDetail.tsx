@@ -225,7 +225,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   return (
     <motion.div 
-      className="fixed inset-0 z-50 bg-black text-white overflow-hidden font-sans"
+      className="absolute inset-0 z-40 bg-black text-white overflow-hidden font-sans"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
