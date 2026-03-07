@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import TopBar from './components/TopBar';
@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms } from './lib/db';
 
 // Main App Component - Operating Rooms Management System
 // Last updated: 2026-02-22T12:00:00Z
@@ -22,33 +23,77 @@ const App: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
+  const [isDbConnected, setIsDbConnected] = useState(false);
+
+  // Load rooms from database on mount, fallback to MOCK_ROOMS
+  useEffect(() => {
+    const loadRooms = async () => {
+      const dbRooms = await fetchOperatingRooms();
+      if (dbRooms && dbRooms.length > 0) {
+        setRooms(dbRooms);
+        setIsDbConnected(true);
+      }
+    };
+    loadRooms();
+  }, []);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const unsubscribe = subscribeToOperatingRooms(async () => {
+      const dbRooms = await fetchOperatingRooms();
+      if (dbRooms && dbRooms.length > 0) {
+        setRooms(dbRooms);
+      }
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
-  const updateRoomStep = (roomId: string, newStepIndex: number) => {
+  const updateRoomStep = async (roomId: string, newStepIndex: number) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
     ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { current_step_index: newStepIndex });
+    }
   };
 
-  const toggleEmergency = (roomId: string) => {
-    setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, isEmergency: !room.isEmergency } : room
+  const toggleEmergency = async (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    const newValue = !room?.isEmergency;
+    setRooms(prev => prev.map(r =>
+      r.id === roomId ? { ...r, isEmergency: newValue } : r
     ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { is_emergency: newValue });
+    }
   };
 
-  const toggleLock = (roomId: string) => {
-    setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, isLocked: !room.isLocked } : room
+  const toggleLock = async (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    const newValue = !room?.isLocked;
+    setRooms(prev => prev.map(r =>
+      r.id === roomId ? { ...r, isLocked: newValue } : r
     ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { is_locked: newValue });
+    }
   };
 
-  const handleUpdateRoomEndTime = (roomId: string, newTime: Date | null) => {
+  const handleUpdateRoomEndTime = async (roomId: string, newTime: Date | null) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, estimatedEndTime: newTime ? newTime.toISOString() : undefined }
         : room
     ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { 
+        estimated_end_time: newTime ? newTime.toISOString() : null 
+      });
+    }
   };
 
   return (
