@@ -224,7 +224,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   };
 
   return (
-    <div className="relative w-full h-full bg-black text-white overflow-hidden font-sans">
+    <motion.div 
+      className="fixed inset-0 z-50 bg-black text-white overflow-hidden font-sans"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       {/* Status Overlay Effects */}
       {room.isEmergency && (
         <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-red-500/30" />
@@ -694,7 +700,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
