@@ -733,15 +733,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
         </div>
 
-        <div className="absolute right-12 bottom-[-40px] flex items-end justify-end gap-4 h-20">
-          {/* ARO lékař — vpravo dole pod pauzou */}
+        <div className="absolute left-12 bottom-[-40px] flex items-end justify-start gap-4 h-20">
+          {/* ARO lékař — vlevo dole pod pauzou */}
           {room.staff.anesthesiologist?.name && (
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO lékař</span>
               <span className="text-xl font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
             </div>
           )}
-          {/* ARO sestra — vpravo dole pod pauzou */}
+          {/* ARO sestra — vlevo dole pod pauzou */}
           <div>
             <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO sestra</span>
             <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
