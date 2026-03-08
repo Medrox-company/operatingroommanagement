@@ -344,8 +344,22 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <X className="w-8 h-8" />
       </button>
 
-      {/* Patient Actions - Center Right */}
+      {/* Right Column - Patient Actions with ARO Staff Names */}
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
+        {/* ARO Staff Names - Top of column */}
+        <div className="flex flex-col items-end gap-3 text-right mb-4 pb-4 border-b border-white/10">
+          {room.staff.anesthesiologist?.name && (
+            <div>
+              <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO lékař</span>
+              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+            </div>
+          )}
+          <div>
+            <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO sestra</span>
+            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+          </div>
+        </div>
+
         {/* Patient Call Button */}
         <motion.button
           onClick={async () => {
@@ -733,20 +747,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
         </div>
 
-        <div className="absolute left-12 bottom-[-40px] flex items-end justify-start gap-4 h-20">
-          {/* ARO lékař — vlevo dole pod pauzou */}
-          {room.staff.anesthesiologist?.name && (
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO lékař</span>
-              <span className="text-xl font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
-            </div>
-          )}
-          {/* ARO sestra — vlevo dole pod pauzou */}
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO sestra</span>
-            <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
-          </div>
-        </div>
+
 
         {/* Patient Status Indicators */}
         {/* Patient status info removed */}
