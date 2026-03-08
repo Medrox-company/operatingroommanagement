@@ -97,26 +97,22 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
   }
 
   try {
-    // Fetch all data in parallel
-    const [roomsRes, staffRes, patientsRes, proceduresRes] = await Promise.all([
+    // Fetch rooms and staff data in parallel
+    const [roomsRes, staffRes] = await Promise.all([
       supabase.from('operating_rooms').select('*').order('name'),
       supabase.from('staff').select('*'),
-      supabase.from('patients').select('*'),
-      supabase.from('procedures').select('*'),
     ]);
 
     if (roomsRes.error) throw roomsRes.error;
     if (!roomsRes.data || roomsRes.data.length === 0) return null;
 
-    // Create lookup maps
+    // Create staff lookup map
     const staffMap = new Map<string, DBStaff>();
     (staffRes.data || []).forEach((s: DBStaff) => staffMap.set(s.id, s));
 
+    // Empty maps for removed tables
     const patientMap = new Map<string, DBPatient>();
-    (patientsRes.data || []).forEach((p: DBPatient) => patientMap.set(p.id, p));
-
     const procedureMap = new Map<string, DBProcedure>();
-    (proceduresRes.data || []).forEach((p: DBProcedure) => procedureMap.set(p.id, p));
 
     // Transform rows
     return roomsRes.data.map((row: DBOperatingRoom) => 
