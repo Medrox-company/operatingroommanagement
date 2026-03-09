@@ -300,7 +300,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       />
 
       {/* Header */}
-      <header className="absolute top-12 left-40 right-24 flex justify-between items-start z-50">
+      <header className="absolute top-12 left-40 right-48 flex justify-between items-start z-50">
         <div className="flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div 
