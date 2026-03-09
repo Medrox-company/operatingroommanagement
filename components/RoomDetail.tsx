@@ -345,16 +345,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       </button>
 
       {/* ARO Staff Names - Top Right Corner */}
-      <div className="absolute top-8 right-8 pt-20 flex flex-col items-end gap-4 text-right z-40">
+      <div className="absolute top-8 right-8 pt-20 z-40">
         <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 backdrop-blur-md">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-row gap-6 items-start">
             {room.staff.anesthesiologist?.name && (
-              <div>
+              <div className="text-right">
                 <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO lékař</span>
                 <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
               </div>
             )}
-            <div>
+            <div className="text-right">
               <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO sestra</span>
               <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
             </div>
@@ -722,7 +722,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 color: activeColor 
               }}
             >
-              {room.isEmergency ? 'EMERGENCY AKTIVNÍ' : (room.isLocked ? (isFinalStep ? 'SÁL UZAMČEN' : 'DOKONČOVÁNÍ PŘED UZAMČENÍM') : (isPaused ? 'POZASTAVENO' : currentStep.status))}
+              {room.isEmergency ? 'EMERGENCY AKTIVNÍ' : (room.isLocked ? (isFinalStep ? 'SÁL UZAM��EN' : 'DOKONČOVÁNÍ PŘED UZAMČENÍM') : (isPaused ? 'POZASTAVENO' : currentStep.status))}
             </motion.div>
           </AnimatePresence>
           
