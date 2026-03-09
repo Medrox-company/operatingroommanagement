@@ -344,23 +344,26 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <X className="w-8 h-8" />
       </button>
 
-      {/* Right Column - Patient Actions with ARO Staff Names */}
-      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
-        {/* ARO Staff Names - Top of column */}
-        <div className="flex flex-col items-end gap-3 text-right mb-4 pb-4 border-b border-white/10">
-          {room.staff.anesthesiologist?.name && (
+      {/* ARO Staff Names - Top Right Corner */}
+      <div className="absolute top-8 right-8 pt-20 flex flex-col items-end gap-4 text-right z-40">
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+          <div className="flex flex-col gap-3">
+            {room.staff.anesthesiologist?.name && (
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO lékař</span>
+                <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+              </div>
+            )}
             <div>
-              <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO lékař</span>
-              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO sestra</span>
+              <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
             </div>
-          )}
-          <div>
-            <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO sestra</span>
-            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
           </div>
         </div>
+      </div>
 
-        {/* Patient Call Button */}
+      {/* Right Column - Patient Actions */}
+      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
         <motion.button
           onClick={async () => {
             if (!patientCalledTime) {
