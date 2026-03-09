@@ -333,6 +333,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
           <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
+
+        {/* ARO Staff - Top Right in Header Row */}
+        <div className="flex flex-row gap-3 items-start">
+          {room.staff.anesthesiologist?.name && (
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md">
+              <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO lékař</span>
+              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+            </div>
+          )}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md">
+            <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO sestra</span>
+            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+          </div>
+        </div>
       </header>
 
       {/* Right Column Action Buttons - Absolute Positioning */}
@@ -362,7 +376,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
       </div>
 
-      {/* Right Column - Patient Actions */}
+
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
         <motion.button
           onClick={async () => {
