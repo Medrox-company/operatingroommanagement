@@ -300,7 +300,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       />
 
       {/* Header */}
-      <header className="absolute top-12 left-40 right-16 flex justify-between items-start z-50">
+      <header className="absolute top-6 sm:top-8 md:top-12 left-6 sm:left-20 md:left-40 right-32 sm:right-44 md:right-16 flex justify-between items-start z-50">
         <div className="flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div 
@@ -308,30 +308,30 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="flex items-center gap-6"
+              className="flex items-center gap-2 sm:gap-4 md:gap-6 flex-wrap"
             >
-              <h1 className={`text-6xl font-bold tracking-tight uppercase leading-none 
+              <h1 className={`text-2xl sm:text-4xl md:text-6xl font-bold tracking-tight uppercase leading-none 
                 ${room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')}
               `}>
                 {room.name}
               </h1>
               
               {room.isEmergency && (
-                <div className="bg-red-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(239,68,68,0.5)]">
-                  <AlertTriangle className="w-8 h-8" />
-                  <span className="text-2xl font-black uppercase tracking-widest">EMERGENCY</span>
+                <div className="bg-red-500 text-white px-3 sm:px-4 md:px-6 py-1 sm:py-2 rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-[0_0_30px_rgba(239,68,68,0.5)]">
+                  <AlertTriangle className="w-4 sm:w-6 md:w-8 h-4 sm:h-6 md:h-8" />
+                  <span className="text-xs sm:text-lg md:text-2xl font-black uppercase tracking-widest">EMERGENCY</span>
                 </div>
               )}
               
               {room.isLocked && !room.isEmergency && (
-                <div className="bg-amber-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                  <Lock className="w-7 h-7" />
-                  <span className="text-2xl font-black uppercase tracking-widest">SÁL UZAMČEN</span>
+                <div className="bg-amber-500 text-white px-3 sm:px-4 md:px-6 py-1 sm:py-2 rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                  <Lock className="w-4 sm:w-6 md:w-7 h-4 sm:h-6 md:h-7" />
+                  <span className="text-xs sm:text-lg md:text-2xl font-black uppercase tracking-widest">SÁL UZAMČEN</span>
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
-          <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
+          <p className="text-[8px] sm:text-[9px] md:text-[11px] font-black text-white/30 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] uppercase mt-2 sm:mt-3 md:mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
       </header>
 
@@ -339,31 +339,31 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* Close Button - Top Right */}
       <button 
         onClick={onClose}
-        className="absolute top-8 right-8 p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24 z-50"
+        className="absolute top-6 sm:top-7 md:top-8 right-6 sm:right-7 md:right-8 p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-xl sm:rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-14 w-14 sm:h-20 sm:w-20 md:h-24 md:w-24 z-50"
       >
-        <X className="w-8 h-8" />
+        <X className="w-5 sm:w-6 md:w-8 h-5 sm:h-6 md:h-8" />
       </button>
 
       {/* ARO Staff Names - Top Right next to close button */}
-      <div className="absolute top-8 right-40 flex flex-row gap-3 h-24 z-40">
+      <div className="absolute top-6 sm:top-7 md:top-8 right-20 sm:right-28 md:right-40 flex flex-row gap-2 sm:gap-2.5 md:gap-3 h-14 sm:h-20 md:h-24 z-40">
         {room.staff.anesthesiologist?.name && (
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
-            <div className="flex items-center gap-2">
-              <Stethoscope className="w-5 h-5" style={{ color: activeColor }} />
-              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+          <div className="bg-white/[0.03] border border-white/10 rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-2.5 md:p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1">
+            <div className="flex items-center gap-1">
+              <Stethoscope className="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" style={{ color: activeColor }} />
+              <span className="text-xs sm:text-xs md:text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
             </div>
           </div>
         )}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
-          <div className="flex items-center gap-2">
-            <Heart className="w-5 h-5" style={{ color: '#c0bdb7' }} />
-            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+        <div className="bg-white/[0.03] border border-white/10 rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-2.5 md:p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1">
+          <div className="flex items-center gap-1">
+            <Heart className="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" style={{ color: '#c0bdb7' }} />
+            <span className="text-xs sm:text-xs md:text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
           </div>
         </div>
       </div>
 
 
-      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
+      <div className="absolute right-6 sm:right-7 md:right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-2 sm:gap-2.5 md:gap-3 z-50">
         <motion.button
           onClick={async () => {
             if (!patientCalledTime) {
@@ -379,41 +379,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             }
           }}
           disabled={!!patientCalledTime}
-          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 h-24 w-24 disabled:cursor-not-allowed border ${
-            patientCalledTime && !patientArrivedTime
-              ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
-              : patientArrivedTime
-              ? 'bg-white/5 border-white/10 opacity-60'
+          className={`rounded-lg sm:rounded-xl md:rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-14 w-14 sm:h-20 sm:w-20 md:h-24 md:w-24 z-40 ${
+            patientCalledTime
+              ? 'bg-amber-500/20 border-amber-500/40 opacity-100 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
               : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
           }`}
         >
-          <AnimatePresence mode="wait">
-            {patientCalledTime && !patientArrivedTime ? (
-              <motion.div
-                key="call-timer"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-1"
-              >
-                <Phone className="w-5 h-5 text-green-300" strokeWidth={2} />
-                <span className="text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
-                  {patientCallElapsedTime}
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="call-idle"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-2"
-              >
-                <Phone className={`w-8 h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <Phone className={`w-5 sm:w-6 md:w-8 h-5 sm:h-6 md:h-8 ${patientCalledTime ? 'text-amber-300' : 'text-white/60'}`} strokeWidth={2} />
+          <span className="text-[8px] sm:text-[9px] md:text-[10px] font-bold uppercase tracking-widest">{patientCalledTime ? 'Vol.' : 'Volat'}</span>
         </motion.button>
 
         {/* Patient Arrival Button */}
@@ -444,14 +417,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             }
           }}
           disabled={!patientCalledTime || !!patientArrivedTime}
-          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-60 disabled:cursor-not-allowed ${
+          className={`rounded-lg sm:rounded-xl md:rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-14 w-14 sm:h-20 sm:w-20 md:h-24 md:w-24 disabled:opacity-60 disabled:cursor-not-allowed ${
             patientArrivedTime
               ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
               : ''
           }`}
         >
-          <UserCheck className={`w-8 h-8 ${patientArrivedTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
+          <UserCheck className={`w-5 sm:w-6 md:w-8 h-5 sm:h-6 md:h-8 ${patientArrivedTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+          <span className="text-[8px] sm:text-[9px] md:text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
         </motion.button>
       </div>
 
@@ -468,24 +441,24 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute bottom-8 right-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+          className={`absolute bottom-6 sm:bottom-7 md:bottom-8 right-6 sm:right-7 md:right-8 rounded-lg sm:rounded-xl md:rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 border h-14 w-14 sm:h-20 sm:w-20 md:h-24 md:w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
           }`}
         >
           {isPaused ? (
-            <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
+            <Play className={`w-5 sm:w-6 md:w-8 h-5 sm:h-6 md:h-8 text-cyan-300`} strokeWidth={2} />
           ) : (
-            <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
+            <Pause className={`w-5 sm:w-6 md:w-8 h-5 sm:h-6 md:h-8 text-white/60`} strokeWidth={2} />
           )}
-          <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+          <span className="text-[8px] sm:text-[9px] md:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
         </motion.button>
       )}
 
       {/* Main Immersive Dial */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
-        <div className="relative w-[650px] h-[650px] flex items-center justify-center">
+        <div className="relative w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] md:w-[650px] md:h-[650px] flex items-center justify-center">
           
           {/* Static Rings */}
           <div className="absolute inset-0 border border-white/5 rounded-full" />
@@ -533,10 +506,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Navigation Controls */}
           {!isInteractionBlocked && (
             <>
-              <div className="absolute left-[-180px] top-1/2 -translate-y-1/2 z-50">
+              <div className="absolute left-[-80px] sm:left-[-120px] md:left-[-180px] top-1/2 -translate-y-1/2 z-50">
                 <motion.button 
                   onClick={handleDecreaseTime}
-                  className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
+                  className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
                   style={{
                     borderColor: `${activeColor}44`,
                     boxShadow: `0 0 20px ${activeColor}33`
@@ -545,14 +518,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   whileTap={{ scale: 0.95 }}
                 >
                   <div className="absolute inset-0 bg-white/5" />
-                  <Minus className="w-12 h-12 text-white relative z-10" strokeWidth={1.5} />
+                  <Minus className="w-6 sm:w-9 md:w-12 h-6 sm:h-9 md:h-12 text-white relative z-10" strokeWidth={1.5} />
                 </motion.button>
               </div>
 
-              <div className="absolute right-[-180px] top-1/2 -translate-y-1/2 z-50">
+              <div className="absolute right-[-80px] sm:right-[-120px] md:right-[-180px] top-1/2 -translate-y-1/2 z-50">
                 <motion.button 
                   onClick={handleIncreaseTime}
-                  className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
+                  className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
                   style={{
                     borderColor: `${activeColor}44`,
                     boxShadow: `0 0 20px ${activeColor}33`
@@ -561,7 +534,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   whileTap={{ scale: 0.95 }}
                 >
                   <div className="absolute inset-0 bg-white/5" />
-                  <Plus className="w-12 h-12 text-white relative z-10" strokeWidth={1.5} />
+                  <Plus className="w-6 sm:w-9 md:w-12 h-6 sm:h-9 md:h-12 text-white relative z-10" strokeWidth={1.5} />
                 </motion.button>
               </div>
             </>
@@ -571,7 +544,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <motion.button 
             onClick={handleNextStep}
             disabled={isInteractionBlocked}
-            className={`relative w-[480px] h-[480px] flex items-center justify-center rounded-full group transition-all focus:outline-none 
+            className={`relative w-[240px] h-[240px] sm:w-[360px] sm:h-[360px] md:w-[480px] md:h-[480px] flex items-center justify-center rounded-full group transition-all focus:outline-none 
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
             whileHover={isInteractionBlocked ? {} : { scale: 1.05 }}
@@ -617,8 +590,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     exit={{ opacity: 0, scale: 0.8 }}
                     className="flex flex-col items-center"
                   >
-                    <Lock className="w-24 h-24 text-white mb-6" />
-                    <h2 className="text-6xl font-black tracking-tighter text-white uppercase">
+                    <Lock className="w-12 sm:w-16 md:w-24 h-12 sm:h-16 md:h-24 text-white mb-2 sm:mb-4 md:mb-6" />
+                    <h2 className="text-xl sm:text-3xl md:text-6xl font-black tracking-tighter text-white uppercase">
                       UZAMČENO
                     </h2>
                   </motion.div>
