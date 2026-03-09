@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck
+  Phone, UserCheck, Stethoscope, Heart
 } from 'lucide-react';
 import { recordStatusEvent } from '../lib/db';
 
@@ -347,14 +347,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* ARO Staff Names - Top Right next to close button */}
       <div className="absolute top-8 right-40 flex flex-row gap-3 h-24 z-40">
         {room.staff.anesthesiologist?.name && (
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center">
-            <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO lékař</span>
-            <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
+            <div className="flex items-center gap-2">
+              <Stethoscope className="w-5 h-5" style={{ color: activeColor }} />
+              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+            </div>
           </div>
         )}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center">
-          <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#c0bdb7' }}>ARO sestra</span>
-          <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5" style={{ color: '#c0bdb7' }} />
+            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+          </div>
         </div>
       </div>
 
