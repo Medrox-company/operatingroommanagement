@@ -236,14 +236,12 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms, onRoomClick }) =
                     {/* Operation Box */}
                     {room.currentStepIndex < 6 && room.currentProcedure && (
                       <motion.div
-                        className="absolute top-1/2 -translate-y-1/2 rounded-lg border-2 px-3 py-1 whitespace-nowrap shadow-lg z-30 cursor-pointer"
+                        className="rounded-lg border-2 px-3 py-1 whitespace-nowrap shadow-lg z-30 cursor-pointer"
                         style={{
                           backgroundColor: colors.bg,
                           borderColor: colors.border,
                           color: colors.text,
-                          left: '8%',
-                          width: 'fit-content',
-                          minWidth: '250px',
+                          marginLeft: '24px',
                         }}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
