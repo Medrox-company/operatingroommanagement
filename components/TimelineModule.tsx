@@ -308,7 +308,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   </div>
 
                   {/* Timeline Area */}
-                  <div className="flex-1 flex items-center relative px-2 overflow-hidden">
+                  <div className="flex-1 flex items-center relative px-2">
                     {/* Hour Dividers */}
                     {TIME_MARKERS.map((hour, i) => {
                       const widthPct = 100 / HOURS_COUNT;
@@ -322,40 +322,40 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
                     {/* Operation Bar */}
                     {room.currentStepIndex < 6 && room.currentProcedure && (
-                      <motion.div
-                        className="absolute h-full rounded-lg border-2 flex items-center justify-between px-3 font-bold text-sm shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0"
-                        style={{
-                          backgroundColor: colors.bg,
-                          borderColor: colors.border,
-                          color: colors.text,
-                          left: '0%',
-                          width: '35%',
-                          minWidth: '180px',
-                          top: '0',
-                          zIndex: 30,
-                        }}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.05 + 0.2, duration: 0.4 }}
-                        whileHover={{ scale: 1.03, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
-                      >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className="text-xs font-black uppercase whitespace-nowrap flex-shrink-0 tracking-wider">{stepName}</span>
-                          <span className="text-xs opacity-90 truncate font-semibold">{room.currentProcedure.name}</span>
-                        </div>
-                        <div className="flex-shrink-0 ml-3 flex items-center">
-                          <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center font-bold text-xs" style={{ borderColor: colors.text, color: colors.text }}>
-                            {room.currentProcedure.progress}%
+                      <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
+                        <motion.div
+                          className="rounded-lg border-2 flex items-center justify-between px-4 py-2 font-bold text-xs shadow-lg pointer-events-auto"
+                          style={{
+                            backgroundColor: colors.bg,
+                            borderColor: colors.border,
+                            color: colors.text,
+                            width: 'fit-content',
+                            minWidth: '220px',
+                          }}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.05 + 0.1, duration: 0.4 }}
+                          whileHover={{ scale: 1.08, boxShadow: '0 15px 40px rgba(0,0,0,0.7)' }}
+                        >
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <span className="text-[10px] font-black uppercase tracking-wider">{stepName}</span>
+                            <span className="text-[10px] opacity-90 font-semibold max-w-[120px] truncate">{room.currentProcedure.name}</span>
+                            <span className="text-[10px] font-black ml-2">{room.currentProcedure.progress}%</span>
                           </div>
-                        </div>
-                      </motion.div>
+                        </motion.div>
+                      </div>
                     )}
 
                     {/* Free/Ready State */}
                     {room.currentStepIndex >= 6 && (
-                      <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                      <motion.div 
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                      >
                         <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">PŘIPRAVEN</span>
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 </motion.div>
