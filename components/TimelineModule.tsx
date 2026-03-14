@@ -320,8 +320,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       );
                     })}
 
-                    {/* Operation Bar */}
-                    {room.currentStepIndex < 6 && room.currentProcedure && (
+                    {/* Operation Bar - Show current step */}
+                    {room.currentStepIndex < WORKFLOW_STEPS.length && (
                       <motion.div
                         className="rounded-lg border-2 px-4 py-1.5 flex items-center gap-2 whitespace-nowrap shadow-lg cursor-pointer z-30 ml-3 flex-shrink-0"
                         style={{
@@ -339,8 +339,12 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         }}
                       >
                         <span className="text-[11px] font-black uppercase tracking-wider">{stepName}</span>
-                        <span className="text-[11px] opacity-90 font-semibold">{room.currentProcedure.name}</span>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-black/30">{room.currentProcedure.progress}%</span>
+                        {room.currentProcedure && (
+                          <>
+                            <span className="text-[11px] opacity-90 font-semibold">{room.currentProcedure.name}</span>
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-black/30">{room.currentProcedure.progress}%</span>
+                          </>
+                        )}
                       </motion.div>
                     )}
 
