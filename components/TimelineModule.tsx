@@ -19,7 +19,11 @@ const getMinutesFrom7 = (date: Date) => {
   return h >= 7 ? (h - 7) * 60 + m : (h + 17) * 60 + m;
 };
 
-const getTimePercent = (date: Date) => (getMinutesFrom7(date) / (HOURS_COUNT * 60)) * 100;
+const getTimePercent = (date: Date) => {
+  const mins = getMinutesFrom7(date);
+  const percent = (mins / (HOURS_COUNT * 60)) * 100;
+  return percent;
+};
 const hourLabel = (h: number) => `${h < 10 ? '0' : ''}${h}:00`;
 
 const STEP_COLORS: Record<number, { bg: string; text: string; border: string; light: string }> = {
@@ -256,9 +260,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           {/* Current Time Indicator Line */}
           <div className="absolute top-14 bottom-0 left-0 right-0 pointer-events-none z-20">
             <div 
-              className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-400 to-transparent"
+              className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-400 via-cyan-400 to-cyan-400/20"
               style={{ 
-                left: `calc(${ROOM_LABEL_WIDTH}px + ${nowPercent}% * (100% - ${ROOM_LABEL_WIDTH}px) / 100)`,
+                left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent} / 100)`,
               }}
             >
               <motion.div 
@@ -319,25 +323,31 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     {/* Operation Bar */}
                     {room.currentStepIndex < 6 && room.currentProcedure && (
                       <motion.div
-                        className="absolute h-full rounded-lg border-2 flex items-center justify-between px-3 font-bold text-sm shadow-lg group-hover:shadow-xl transition-shadow"
+                        className="absolute h-full rounded-lg border-2 flex items-center justify-between px-3 font-bold text-sm shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0"
                         style={{
                           backgroundColor: colors.bg,
                           borderColor: colors.border,
                           color: colors.text,
-                          left: '2%',
-                          width: '40%',
-                          minWidth: '150px',
+                          left: '0%',
+                          width: '35%',
+                          minWidth: '180px',
+                          top: '0',
+                          zIndex: 30,
                         }}
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.05 + 0.1, duration: 0.3 }}
-                        whileHover={{ scale: 1.02 }}
+                        transition={{ delay: idx * 0.05 + 0.2, duration: 0.4 }}
+                        whileHover={{ scale: 1.03, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className="text-xs font-black uppercase whitespace-nowrap flex-shrink-0">{stepName}</span>
-                          <span className="text-xs opacity-80 truncate">{room.currentProcedure.name}</span>
+                          <span className="text-xs font-black uppercase whitespace-nowrap flex-shrink-0 tracking-wider">{stepName}</span>
+                          <span className="text-xs opacity-90 truncate font-semibold">{room.currentProcedure.name}</span>
                         </div>
-                        <span className="text-xs font-black flex-shrink-0 ml-2">{room.currentProcedure.progress}%</span>
+                        <div className="flex-shrink-0 ml-3 flex items-center">
+                          <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center font-bold text-xs" style={{ borderColor: colors.text, color: colors.text }}>
+                            {room.currentProcedure.progress}%
+                          </div>
+                        </div>
                       </motion.div>
                     )}
 
