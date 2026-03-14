@@ -319,15 +319,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     {/* Operation Bar */}
                     {room.currentStepIndex < 6 && room.currentProcedure && (
                       <motion.div
-                        className="absolute h-10 rounded-lg border-2 flex items-center justify-between px-3 font-bold text-sm shadow-lg group-hover:shadow-xl transition-shadow"
+                        className="absolute h-full rounded-lg border-2 flex items-center justify-between px-3 font-bold text-sm shadow-lg group-hover:shadow-xl transition-shadow"
                         style={{
                           backgroundColor: colors.bg,
                           borderColor: colors.border,
                           color: colors.text,
-                          left: '0%',
-                          width: '100%',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
+                          left: '2%',
+                          width: '40%',
+                          minWidth: '150px',
                         }}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
