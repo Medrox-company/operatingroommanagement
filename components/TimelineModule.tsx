@@ -260,15 +260,15 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           {/* Current Time Indicator Line */}
           <div className="absolute top-14 bottom-0 left-0 right-0 pointer-events-none z-20">
             <div 
-              className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-400 via-cyan-400 to-cyan-400/20"
+              className="absolute top-0 bottom-0 w-0.5 bg-cyan-400"
               style={{ 
-                left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent} / 100)`,
+                left: `calc(${ROOM_LABEL_WIDTH}px + (calc(100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100}))`,
               }}
             >
               <motion.div 
-                className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full bg-cyan-400 border-2 border-cyan-300"
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-cyan-400 border-2 border-cyan-300 shadow-lg"
+                animate={{ scale: [1, 1.4, 1], boxShadow: ['0 0 0 rgba(34,211,238,0.5)', '0 0 12px rgba(34,211,238,0.8)', '0 0 0 rgba(34,211,238,0.5)'] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
               />
             </div>
           </div>
@@ -323,21 +323,24 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     {/* Operation Bar */}
                     {room.currentStepIndex < 6 && room.currentProcedure && (
                       <motion.div
-                        className="absolute top-1/2 -translate-y-1/2 rounded-lg border-2 px-3 py-1.5 flex items-center gap-2 whitespace-nowrap shadow-lg cursor-pointer z-30"
+                        className="rounded-lg border-2 px-4 py-1.5 flex items-center gap-2 whitespace-nowrap shadow-lg cursor-pointer z-30 ml-3 flex-shrink-0"
                         style={{
                           backgroundColor: colors.bg,
                           borderColor: colors.border,
                           color: colors.text,
-                          left: '12px',
                         }}
-                        initial={{ opacity: 0, scale: 0.8, x: -10 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: idx * 0.05 + 0.1, duration: 0.4 }}
                         whileHover={{ scale: 1.08, boxShadow: '0 15px 40px rgba(0,0,0,0.7)' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRoom(room);
+                        }}
                       >
                         <span className="text-[11px] font-black uppercase tracking-wider">{stepName}</span>
                         <span className="text-[11px] opacity-90 font-semibold">{room.currentProcedure.name}</span>
-                        <span className="text-[10px] font-black ml-1 px-2 py-0.5 rounded bg-black/30">{room.currentProcedure.progress}%</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-black/30">{room.currentProcedure.progress}%</span>
                       </motion.div>
                     )}
 
