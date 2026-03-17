@@ -111,7 +111,7 @@ export const WORKFLOW_STEPS = [
   { title: "Chirurgický výkon", organizer: "MUDr. Procházka", status: "Operační fáze", color: '#FF3B30', Icon: Scissors },
   { title: "Ukončení výkonu", organizer: "MUDr. Procházka", status: "Dokončování", color: '#FBBF24', Icon: Star },
   { title: "Ukončení anestezie", organizer: "Anest. sestra", status: "Monitoring", color: '#818CF8', Icon: Activity },
-  { title: "Úklid sálu", organizer: "Sanitární tým", status: "Sanitace", color: '#5B65DC', Icon: SprayCan },
+  { title: "Úklid sálu", organizer: "Sanitární tým", status: "Sanitace", color: '#F97316', Icon: SprayCan },
   { title: "Sál připraven", organizer: "Vedoucí sestra", status: "Volno", color: '#34C759', Icon: Sparkles },
 ];
 
