@@ -15,10 +15,13 @@ import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucid
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms } from './lib/db';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginPage from './components/LoginPage';
+import AdminModule from './components/AdminModule';
 
-// Main App Component - Operating Rooms Management System
-// Last updated: 2026-02-22T12:00:00Z
-const App: React.FC = () => {
+// Main App Content - Operating Rooms Management System
+const AppContent: React.FC = () => {
+  const { isAuthenticated, isAdmin, modules } = useAuth();
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -51,6 +54,17 @@ const App: React.FC = () => {
   }, []);
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
+
+  // Check if module is enabled
+  const isModuleEnabled = (moduleId: string) => {
+    const module = modules.find(m => m.id === moduleId);
+    return module?.is_enabled !== false;
+  };
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const updateRoomStep = async (roomId: string, newStepIndex: number) => {
     setRooms(prev => prev.map(room =>
@@ -210,7 +224,7 @@ const App: React.FC = () => {
             )}
 
             {/* Timeline */}
-            {currentView === 'timeline' && (
+            {currentView === 'timeline' && isModuleEnabled('timeline') && (
               <motion.div key="timeline"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -220,7 +234,7 @@ const App: React.FC = () => {
             )}
 
             {/* Statistics */}
-            {currentView === 'statistics' && (
+            {currentView === 'statistics' && isModuleEnabled('statistics') && (
               <motion.div key="statistics"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -232,7 +246,7 @@ const App: React.FC = () => {
             )}
 
             {/* Staff */}
-            {currentView === 'staff' && (
+            {currentView === 'staff' && isModuleEnabled('staff') && (
               <motion.div key="staff"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -246,7 +260,7 @@ const App: React.FC = () => {
             )}
 
             {/* Alerts */}
-            {currentView === 'alerts' && (
+            {currentView === 'alerts' && isModuleEnabled('alerts') && (
               <motion.div key="alerts"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -260,7 +274,7 @@ const App: React.FC = () => {
             )}
 
             {/* Settings */}
-            {currentView === 'settings' && (
+            {currentView === 'settings' && isModuleEnabled('settings') && (
               <motion.div key="settings"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -269,11 +283,30 @@ const App: React.FC = () => {
               </motion.div>
             )}
 
+            {/* Admin - only for admins */}
+            {currentView === 'admin' && isAdmin && (
+              <motion.div key="admin"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full overflow-y-auto hide-scrollbar">
+                <AdminModule onClose={() => setCurrentView('dashboard')} />
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </main>
       </div>
     </div>
     </ErrorBoundary>
+  );
+};
+
+// Wrap with AuthProvider
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
