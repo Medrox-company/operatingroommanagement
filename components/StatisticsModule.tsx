@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, TrendingDown, Minus, Activity,
-  AlertTriangle, Shield, Clock, Layers, Zap, X,
+  AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus } from '../types';
 import { WORKFLOW_STEPS, STEP_DURATIONS } from '../constants';
@@ -733,11 +733,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
       {/* ── Module header ── */}
       <div className="mb-8">
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-3" style={{color:C.muted}}>
-          / Statistiky
-        </p>
-        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none" style={{color:C.text}}>
-          Statistiky
+        <div className="flex items-center gap-3 mb-2 opacity-60">
+          <BarChart3 className="w-4 h-4 text-[#00D8C1]" />
+          <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+        </div>
+        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+          STATISTIKY
         </h1>
       </div>
 
