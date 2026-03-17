@@ -55,8 +55,9 @@ const AppContent: React.FC = () => {
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
-  // Check if module is enabled
+  // Check if module is enabled (admins always have access, users check module settings)
   const isModuleEnabled = (moduleId: string) => {
+    if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
     const module = modules.find(m => m.id === moduleId);
     return module?.is_enabled !== false;
   };

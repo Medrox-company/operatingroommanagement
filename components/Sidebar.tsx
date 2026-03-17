@@ -11,8 +11,9 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
   const { isAdmin, user, logout, modules } = useAuth();
 
-  // Filter sidebar items based on enabled modules
+  // Filter sidebar items based on enabled modules (admins see all, users see only enabled)
   const enabledItems = SIDEBAR_ITEMS.filter(item => {
+    if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
     const module = modules.find(m => m.id === item.id);
     return module?.is_enabled !== false;
   });

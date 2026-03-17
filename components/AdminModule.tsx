@@ -143,7 +143,7 @@ const AdminModule: React.FC<AdminModuleProps> = ({ onClose }) => {
             <h2 className="text-lg font-semibold text-white">Správa modulů</h2>
           </div>
           <p className="text-white/40 text-sm mb-6">
-            Zapněte nebo vypněte jednotlivé moduly aplikace. Vypnuté moduly nebudou dostupné pro žádné uživatele.
+            Zapněte nebo vypněte jednotlivé moduly aplikace pro uživatele. Administrátor má vždy přístup ke všem modulům.
           </p>
 
           <div className="space-y-3">
@@ -234,7 +234,7 @@ const AdminModule: React.FC<AdminModuleProps> = ({ onClose }) => {
           <div>
             <p className="text-amber-300 font-medium text-sm">Upozornění</p>
             <p className="text-amber-300/70 text-sm mt-1">
-              Změny v nastavení modulů se projeví okamžitě pro všechny uživatele systému.
+              Změny v nastavení modulů se projeví okamžitě pro všechny uživatele (kromě administrátorů, kteří mají vždy plný přístup).
             </p>
           </div>
         </motion.div>
