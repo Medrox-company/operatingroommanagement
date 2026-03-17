@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, TrendingDown, Minus, Activity,
-  AlertTriangle, Shield, Clock, Layers, Zap, X,
+  TrendingUp, TrendingDown, Activity, Clock, Zap, X, ChevronRight,
+  BarChart3, PieChart as PieChartIcon, Layers, AlertTriangle, Heart, Users,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus } from '../types';
 import { WORKFLOW_STEPS, STEP_DURATIONS } from '../constants';
@@ -11,1360 +11,669 @@ import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip,
   LineChart, Line, CartesianGrid, ComposedChart,
-  ScatterChart, Scatter, ZAxis,
 } from 'recharts';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'saly' | 'faze' | 'heatmapa';
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
-const C = {
-  accent:  '#06B6D4',
-  green:   '#10B981',
-  orange:  '#F97316',
-  yellow:  '#FBBF24',
-  red:     '#EF4444',
-  border:  'rgba(255,255,255,0.07)',
-  surface: 'rgba(255,255,255,0.025)',
-  muted:   'rgba(255,255,255,0.35)',
-  faint:   'rgba(255,255,255,0.15)',
-  ghost:   'rgba(255,255,255,0.07)',
-  text:    'rgba(255,255,255,0.85)',
+// ── Design System ──────────────────────────────────────────────────────────────
+const COLORS = {
+  primary: '#00D8C1',
+  secondary: '#A855F7',
+  accent: '#06B6D4',
+  success: '#10B981',
+  warning: '#F97316',
+  danger: '#EF4444',
+  info: '#3B82F6',
+  pink: '#EC4899',
+  yellow: '#FBBF24',
+  
+  bg: '#0a0a0f',
+  surface: 'rgba(255,255,255,0.02)',
+  surfaceHover: 'rgba(255,255,255,0.05)',
+  border: 'rgba(255,255,255,0.06)',
+  borderHover: 'rgba(255,255,255,0.12)',
+  text: 'rgba(255,255,255,0.92)',
+  textMuted: 'rgba(255,255,255,0.5)',
+  textFaint: 'rgba(255,255,255,0.25)',
 };
 
-const DEPT_COLORS: Record<string,string> = {
-  TRA:'#06B6D4', CHIR:'#F97316', ROBOT:'#A78BFA',
-  URO:'#EC4899', ORL:'#3B82F6', CÉVNÍ:'#14B8A6',
-  'HPB + PLICNÍ':'#FBBF24', DĚTSKÉ:'#10B981', MAMMO:'#818CF8',
+const DEPT_COLORS: Record<string, string> = {
+  TRA: '#06B6D4', CHIR: '#F97316', ROBOT: '#A855F7',
+  URO: '#EC4899', ORL: '#3B82F6', CÉVNÍ: '#14B8A6',
+  'HPB + PLICNÍ': '#FBBF24', DĚTSKÉ: '#10B981', MAMMO: '#818CF8',
 };
 
-const DAYS = ['Po','Út','St','Čt','Pá','So','Ne'];
-
-// ── Tooltip shared style ───────────────────────────────────────────────────────
-const TIP = {
-  contentStyle:{ background:'rgba(2,8,23,0.97)', border:`1px solid ${C.border}`, borderRadius:6, fontSize:12 },
-  labelStyle:  { color:C.muted },
-  itemStyle:   { color:C.accent },
+// ── Tooltip style ──────────────────────────────────────────────────────────────
+const TOOLTIP_STYLE = {
+  contentStyle: { 
+    background: 'rgba(10, 10, 15, 0.95)', 
+    border: `1px solid ${COLORS.border}`, 
+    borderRadius: 12, 
+    fontSize: 12,
+    backdropFilter: 'blur(12px)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+  },
+  labelStyle: { color: COLORS.textMuted, fontWeight: 700 },
+  itemStyle: { color: COLORS.text },
 };
 
-// ── Seeded pseudo-random ───────────────────────────────────────────────────────
-function sr(seed:number,min:number,max:number){ return min+Math.abs(((seed*2654435761)>>>0)%(max-min+1)); }
+// ── Data Generators ────────────────────────────────────────────────────────────
+const DAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+const HOURS = ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
 
-// ── Period-aware utilisation datasets ─────────────────────────────────────────
-function genDayData()   { return Array.from({length:12},(_,i)=>({ t:`${7+i}h`, v:[62,78,89,94,91,82,76,88,85,70,55,38][i], cap:100 })); }
-function genWeekData()  { return DAYS.map((t,i)=>({ t, v:[92,88,95,87,79,45,30][i], cap:100 })); }
-function genMonthData() { return Array.from({length:30},(_,i)=>({ t:`${i+1}`, v:[88,82,90,74,85,91,78,72,86,93,89,84,77,88,92,70,83,87,79,91,85,74,88,93,80,76,89,82,91,86][i], cap:100 })); }
-function genYearData()  {
-  const months=['Led','Únr','Bře','Dub','Kvě','Čvn','Čvc','Srp','Září','Říj','Lis','Pro'];
-  return months.map((t,i)=>({ t, v:[78,80,85,88,91,87,83,79,88,90,84,76][i], cap:100 }));
+function genDayData() { 
+  return Array.from({ length: 12 }, (_, i) => ({ 
+    t: `${7 + i}:00`, 
+    v: [32, 58, 78, 89, 94, 91, 86, 82, 76, 65, 45, 28][i], 
+    ops: [2, 4, 6, 8, 7, 6, 5, 4, 3, 2, 1, 0][i],
+  })); 
+}
+function genWeekData() { 
+  return DAYS.map((t, i) => ({ 
+    t, 
+    v: [92, 88, 95, 91, 85, 42, 28][i], 
+    ops: [28, 26, 31, 27, 24, 8, 4][i],
+  })); 
+}
+function genMonthData() { 
+  return Array.from({ length: 30 }, (_, i) => ({ 
+    t: `${i + 1}`, 
+    v: Math.round(65 + Math.sin(i * 0.3) * 25 + Math.random() * 10),
+    ops: Math.round(15 + Math.sin(i * 0.5) * 10 + Math.random() * 5),
+  })); 
+}
+function genYearData() {
+  const months = ['Led', 'Únr', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro'];
+  return months.map((t, i) => ({ 
+    t, 
+    v: [78, 80, 85, 88, 91, 87, 75, 72, 88, 90, 84, 76][i],
+    ops: [420, 380, 450, 470, 490, 460, 380, 350, 480, 510, 440, 390][i],
+  }));
 }
 
-// ── Heatmap (7 days × 24 hours) ──────────────────────────────────────────────
-const HEATMAP:number[][] = [
-  [3,3,3,3,3,3,3,8,42,78,93,88,86,83,88,90,86,72,58,38,18,8,3,3],
-  [3,3,3,3,3,3,3,10,48,80,94,89,87,84,89,91,87,74,59,40,20,9,3,3],
-  [3,3,3,3,3,3,3,9,46,77,92,88,86,83,88,90,86,72,57,37,19,8,3,3],
-  [3,3,3,3,3,3,3,10,45,79,91,87,85,82,87,89,85,71,56,36,18,8,3,3],
-  [3,3,3,3,3,3,3,8,38,70,84,80,78,75,80,82,78,64,49,30,14,6,3,3],
-  [3,3,3,3,3,3,3,4,14,28,43,50,46,42,46,48,42,30,20,12,7,4,3,3],
-  [3,3,3,3,3,3,3,3,4,9,16,20,18,16,18,20,16,10,6,4,3,3,3,3],
+// ── Heatmap Data ───────────────────────────────────────────────────────────────
+const HEATMAP: number[][] = [
+  [5, 5, 5, 5, 8, 28, 65, 88, 95, 92, 89, 85, 82, 88, 90, 85, 72, 58, 38, 18, 8, 5, 5, 5],
+  [5, 5, 5, 5, 10, 32, 68, 90, 96, 94, 91, 87, 84, 89, 92, 87, 74, 60, 40, 20, 9, 5, 5, 5],
+  [5, 5, 5, 5, 9, 30, 66, 89, 94, 92, 90, 86, 83, 88, 91, 86, 72, 58, 38, 19, 8, 5, 5, 5],
+  [5, 5, 5, 5, 10, 29, 64, 88, 93, 91, 89, 85, 82, 87, 90, 85, 71, 57, 37, 18, 8, 5, 5, 5],
+  [5, 5, 5, 5, 8, 24, 55, 78, 86, 84, 82, 78, 75, 80, 83, 78, 64, 50, 32, 15, 7, 5, 5, 5],
+  [5, 5, 5, 5, 5, 10, 22, 38, 52, 58, 55, 50, 46, 50, 54, 48, 35, 24, 14, 8, 5, 5, 5, 5],
+  [5, 5, 5, 5, 5, 5, 10, 18, 28, 32, 30, 28, 26, 28, 30, 26, 18, 12, 8, 5, 5, 5, 5, 5],
 ];
 
-// ── Helper fns ────────────────────────────────────────────────────────────────
-function statusColor(s:RoomStatus){
-  if(s===RoomStatus.BUSY)     return C.orange;
-  if(s===RoomStatus.FREE)     return C.green;
-  if(s===RoomStatus.CLEANING) return C.accent;
-  return C.faint;
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function statusColor(s: RoomStatus) {
+  if (s === RoomStatus.BUSY) return COLORS.warning;
+  if (s === RoomStatus.FREE) return COLORS.success;
+  if (s === RoomStatus.CLEANING) return COLORS.secondary;
+  return COLORS.textFaint;
 }
-function statusLabel(s:RoomStatus){
-  if(s===RoomStatus.BUSY)     return 'Obsazeno';
-  if(s===RoomStatus.FREE)     return 'Volno';
-  if(s===RoomStatus.CLEANING) return 'Úklid';
+function statusLabel(s: RoomStatus) {
+  if (s === RoomStatus.BUSY) return 'Obsazeno';
+  if (s === RoomStatus.FREE) return 'Volno';
+  if (s === RoomStatus.CLEANING) return 'Úklid';
   return 'Údržba';
 }
-function heatColor(v:number){
-  if(v>=90) return 'rgba(255,59,48,0.88)';
-  if(v>=70) return 'rgba(249,115,22,0.78)';
-  if(v>=50) return 'rgba(251,191,36,0.68)';
-  if(v>=25) return 'rgba(16,185,129,0.62)';
-  return 'rgba(30,41,59,0.45)';
-}
-const UPS_DEPTS=['EMERGENCY','CÉVNÍ','ROBOT'];
-function isUPS(r:OperatingRoom){ return r.isEmergency||UPS_DEPTS.includes(r.department); }
-function dayMinutes(r:OperatingRoom){ return isUPS(r)?1440:720; }
-
-type Seg={color:string;title:string;pct:number;min:number};
-function buildTimeline(r:OperatingRoom):Seg[]{
-  const dm=dayMinutes(r);
-  const passes=Math.max(1,Math.floor(r.operations24h*(dm/1440)));
-  const durs=WORKFLOW_STEPS.map((_,i)=>i===2&&r.currentProcedure?r.currentProcedure.estimatedDuration:STEP_DURATIONS[i]);
-  const ct=durs.reduce((s,d)=>s+d,0);
-  const mpp=Math.floor(dm/passes);
-  const raw:Seg[]=[];
-  for(let p=0;p<passes;p++){
-    WORKFLOW_STEPS.forEach((step,si)=>{
-      const m=Math.round((durs[si]/ct)*mpp);
-      if(m>0) raw.push({color:step.color,title:step.title,pct:(m/dm)*100,min:m});
-    });
-    if(p<passes-1) raw.push({color:'rgba(255,255,255,0.04)',title:'Pauza',pct:(5/dm)*100,min:5});
-  }
-  const tot=raw.reduce((s,sg)=>s+sg.pct,0);
-  return raw.map(sg=>({...sg,pct:(sg.pct/tot)*100}));
-}
-function buildDist(r:OperatingRoom):Seg[]{
-  const durs=WORKFLOW_STEPS.map((_,i)=>i===2&&r.currentProcedure?r.currentProcedure.estimatedDuration:STEP_DURATIONS[i]);
-  const tot=durs.reduce((s,d)=>s+d,0);
-  return WORKFLOW_STEPS.map((step,i)=>({color:step.color,title:step.title,pct:Math.round((durs[i]/tot)*100),min:durs[i]}));
-}
-function mergeSeg(segs:Seg[]):Seg[]{
-  const out:Seg[]=[];
-  for(const s of segs){
-    const l=out[out.length-1];
-    if(l&&l.title===s.title){l.pct+=s.pct;l.min+=s.min;}
-    else out.push({...s});
-  }
-  return out;
+function heatColor(v: number) {
+  if (v >= 90) return 'rgba(239, 68, 68, 0.9)';
+  if (v >= 70) return 'rgba(249, 115, 22, 0.8)';
+  if (v >= 50) return 'rgba(251, 191, 36, 0.7)';
+  if (v >= 25) return 'rgba(16, 185, 129, 0.6)';
+  return 'rgba(30, 41, 59, 0.4)';
 }
 
-// ── Room mini card (extracted so hooks are always called at component level) ──
-interface RoomMiniCardProps { r: OperatingRoom; index: number; onClick: () => void; }
-const RoomMiniCard: React.FC<RoomMiniCardProps> = ({ r, index, onClick }) => {
-  const sc2   = statusColor(r.status);
-  const tl2   = useMemo(() => mergeSeg(buildTimeline(r)), [r]);
-  const utilP = buildDist(r).find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
-  const ups2  = isUPS(r);
-  return (
-    <motion.button onClick={onClick}
-      className="text-left rounded-lg p-3 w-full group"
-      style={{
-        background: r.status === RoomStatus.BUSY ? `${sc2}08` : C.surface,
-        border: `1px solid ${r.status === RoomStatus.BUSY ? `${sc2}30` : C.border}`,
+const UPS_DEPTS = ['EMERGENCY', 'CÉVNÍ', 'ROBOT'];
+function isUPS(r: OperatingRoom) { return r.isEmergency || UPS_DEPTS.includes(r.department); }
+function dayMinutes(r: OperatingRoom) { return isUPS(r) ? 1440 : 720; }
+
+type Seg = { color: string; title: string; pct: number; min: number };
+function buildDist(r: OperatingRoom): Seg[] {
+  const durs = WORKFLOW_STEPS.map((_, i) => i === 2 && r.currentProcedure ? r.currentProcedure.estimatedDuration : STEP_DURATIONS[i]);
+  const tot = durs.reduce((s, d) => s + d, 0);
+  return WORKFLOW_STEPS.map((step, i) => ({ color: step.color, title: step.title, pct: Math.round((durs[i] / tot) * 100), min: durs[i] }));
+}
+
+// ── Animated Number ────────────────────────────────────────────────────────────
+const AnimatedNumber: React.FC<{ value: number | string; className?: string; style?: React.CSSProperties }> = ({ value, className, style }) => (
+  <motion.span 
+    key={String(value)} 
+    initial={{ opacity: 0, y: 10 }} 
+    animate={{ opacity: 1, y: 0 }} 
+    className={className}
+    style={style}
+  >
+    {value}
+  </motion.span>
+);
+
+// ── Stat Card ──────────────────────────────────────────────────────────────────
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  trend?: number;
+  color?: string;
+  icon?: React.ReactNode;
+  sparkline?: number[];
+  delay?: number;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, trend, color = COLORS.text, icon, sparkline, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay }}
+    className="group relative overflow-hidden rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02]"
+    style={{ 
+      background: COLORS.surface, 
+      border: `1px solid ${COLORS.border}`,
+    }}
+  >
+    {/* Glow effect on hover */}
+    <div 
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+      style={{ 
+        background: `radial-gradient(circle at 50% 0%, ${color}15 0%, transparent 70%)`,
       }}
-      initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.18, delay: index * 0.025 }}
-      whileHover={{ scale: 1.03 } as any}>
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
-          <span className="text-xs font-black truncate" style={{ color: C.text }}>{r.name}</span>
-        </div>
-        {ups2 && <span className="text-[8px] font-black px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
-      </div>
-      <p className="text-[10px] mb-2 truncate" style={{ color: C.faint }}>{r.department}</p>
-      {/* Micro timeline */}
-      <div className="flex h-1.5 w-full rounded overflow-hidden gap-px mb-2">
-        {tl2.map((seg, si) => (
-          <div key={si} className="h-full shrink-0" style={{ width: `${seg.pct}%`, background: seg.color, opacity: 0.85 }} />
-        ))}
-      </div>
-      <div className="flex items-center justify-between">
+    />
+    
+    <div className="relative z-10">
+      <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div>
-            <p className="text-[8px]" style={{ color: C.ghost }}>Ops</p>
-            <p className="text-sm font-black leading-none" style={{ color: C.accent }}>{r.operations24h}</p>
-          </div>
-          <div>
-            <p className="text-[8px]" style={{ color: C.ghost }}>Výk%</p>
-            <p className="text-sm font-black leading-none" style={{ color: C.text }}>{utilP}%</p>
-          </div>
+          {icon && (
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
+              <div style={{ color }}>{icon}</div>
+            </div>
+          )}
+          <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>
+            {label}
+          </span>
         </div>
-        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-          style={{ background: `${sc2}14`, color: sc2 }}>
-          {statusLabel(r.status).slice(0, 3)}
-        </span>
+        {trend !== undefined && (
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold ${trend > 0 ? 'bg-emerald-500/15 text-emerald-400' : trend < 0 ? 'bg-red-500/15 text-red-400' : 'bg-white/5 text-white/40'}`}>
+            {trend > 0 ? <TrendingUp className="w-3 h-3" /> : trend < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+            {trend > 0 ? '+' : ''}{trend}%
+          </div>
+        )}
       </div>
-    </motion.button>
-  );
-};
+      
+      <AnimatedNumber 
+        value={value} 
+        className="text-4xl font-black tracking-tight"
+        style={{ color }}
+      />
+      
+      {sparkline && sparkline.length > 0 && (
+        <div className="mt-4 h-12">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={sparkline.map((v, i) => ({ v, i }))}>
+              <defs>
+                <linearGradient id={`spark-${label}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area 
+                type="monotone" 
+                dataKey="v" 
+                stroke={color} 
+                fill={`url(#spark-${label})`} 
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  </motion.div>
+);
 
-// ── Card primitive ────────────────────────────────────────────────────────────
-function Card({children,className='',style={}}:{children:React.ReactNode;className?:string;style?:React.CSSProperties}){
-  return(
-    <div className={`rounded-xl ${className}`} style={{background:C.surface,border:`1px solid ${C.border}`,...style}}>
+// ── Glass Card ─────────────────────────────────────────────────────────────────
+const GlassCard: React.FC<{ 
+  children: React.ReactNode; 
+  className?: string; 
+  title?: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}> = ({ children, className = '', title, subtitle, action }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={`rounded-2xl overflow-hidden ${className}`}
+    style={{ 
+      background: COLORS.surface, 
+      border: `1px solid ${COLORS.border}`,
+    }}
+  >
+    {(title || action) && (
+      <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: COLORS.border }}>
+        <div>
+          {title && (
+            <h3 className="text-sm font-bold" style={{ color: COLORS.text }}>{title}</h3>
+          )}
+          {subtitle && (
+            <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{subtitle}</p>
+          )}
+        </div>
+        {action}
+      </div>
+    )}
+    <div className="p-6">
       {children}
     </div>
-  );
-}
-function SectionLabel({children}:{children:React.ReactNode}){
-  return <p className="text-[10px] font-black uppercase tracking-[0.15em] mb-4" style={{color:C.muted}}>{children}</p>;
-}
-function TrendBadge({v}:{v:number}){
-  if(v>0) return(
-    <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded" style={{background:`${C.green}18`,color:C.green}}>
-      <TrendingUp className="w-3 h-3"/>+{v}%
-    </span>
-  );
-  if(v<0) return(
-    <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded" style={{background:`${C.red}18`,color:C.red}}>
-      <TrendingDown className="w-3 h-3"/>{v}%
-    </span>
-  );
-  return <span className="text-[10px]" style={{color:C.ghost}}>—</span>;
-}
+  </motion.div>
+);
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ROOM DETAIL PANEL
-// ══════════════════════════════════════════════════════════════════════════════
-interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; }
-
-const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose})=>{
-  const sc     = statusColor(room.status);
-  const ups    = isUPS(room);
-  const dm     = dayMinutes(room);
-  const tl     = useMemo(()=>mergeSeg(buildTimeline(room)),[room]);
-  const dist   = useMemo(()=>buildDist(room),[room]);
-  const seed   = parseInt(room.id);
-  const opsDay = Math.max(1,Math.floor(room.operations24h*(dm/1440)));
-  const utilPct= dist.find(d=>d.title==='Chirurgický výkon')?.pct??0;
-
-  // Day utilisation curve
-  const dayCurve=useMemo(()=>{
-    const start=ups?0:7; const end=ups?24:19;
-    return Array.from({length:end-start},(_,i)=>({
-      t:`${start+i}`,
-      v:Math.max(5,Math.min(100,sr(seed*(i+2)*3,30,100))),
-    }));
-  },[room,ups,seed]);
-
-  // Weekly stacked data (no names, just percentages per step)
-  const weeklyStacked=useMemo(()=>DAYS.map((day,di)=>{
-    const base:Record<string,number|string>={day};
-    WORKFLOW_STEPS.forEach((step,si)=>{
-      const dur=si===2&&room.currentProcedure?room.currentProcedure.estimatedDuration:STEP_DURATIONS[si];
-      base[step.title]=di>=5?Math.floor(dur*0.3):Math.max(1,dur+(sr(seed+di+si,0,10)-5));
-    });
-    return base;
-  }),[room,seed]);
-
-  // Hourly bar — utilisation %
-  const hourlyUtil=useMemo(()=>dayCurve.map(d=>({
-    t:d.t,
-    util:d.v,
-    idle:100-d.v,
-  })),[dayCurve]);
-
-  // Phase bar
-  const phaseBar=useMemo(()=>WORKFLOW_STEPS.map((step,i)=>({
-    name:step.title.split(' ').slice(-1)[0],
-    pct:dist.find(d=>d.title===step.title)?.pct??0,
-    min:i===2&&room.currentProcedure?room.currentProcedure.estimatedDuration:STEP_DURATIONS[i],
-    color:step.color,
-  })),[dist,room]);
-
-  // Pie from dist
-  const pieData=dist.filter(d=>d.min>0);
-
-  // Radar
-  const radarData=[
-    {subject:'Využití',   A:utilPct},
-    {subject:'Operace',   A:Math.min(100,opsDay*12)},
-    {subject:'Průchodnost',A:Math.min(100,sr(seed*3,55,98))},
-    {subject:'Plán. plnění',A:Math.min(100,sr(seed*7,65,99))},
-    {subject:'Čistota',   A:Math.min(100,sr(seed*11,70,100))},
-  ];
-
-  // 30-day cumulative
-  let cum=0;
-  const cumulData=Array.from({length:30},(_,i)=>{
-    const daily=Math.max(0,opsDay+(sr(seed*(i+1),0,3)-1));
-    cum+=daily;
-    return{d:`${i+1}`,daily,cum};
-  });
-
-  // Utilisation per status (time-based %)
-  const statusUtil=[
-    {label:'Výkon',      pct:utilPct,                         color:WORKFLOW_STEPS[2].color},
-    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Za��átek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:WORKFLOW_STEPS[1].color},
-    {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:WORKFLOW_STEPS[0].color},
-    {label:'Úklid',      pct:dist.find(d=>d.title==='Úklid sálu')?.pct??0,                                                                 color:WORKFLOW_STEPS[5].color},
-    {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:WORKFLOW_STEPS[6].color},
-  ];
-
-  return(
-    <motion.div className="fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}}
-      initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}>
-      <motion.div className="h-full overflow-y-auto hide-scrollbar w-full max-w-3xl"
-        style={{background:'#020B17',borderLeft:`1px solid ${C.border}`}}
-        initial={{x:'100%'}} animate={{x:0}} exit={{x:'100%'}}
-        transition={{type:'spring',damping:28,stiffness:260}}
-        onClick={e=>e.stopPropagation()}>
-
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-7 py-5"
-          style={{background:'rgba(2,8,23,0.96)',borderBottom:`1px solid ${C.border}`,backdropFilter:'blur(8px)'}}>
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full" style={{background:sc,boxShadow:`0 0 8px ${sc}`}}/>
-            <div>
-              <p className="text-base font-black" style={{color:C.text}}>{room.name}</p>
-              <p className="text-xs mt-0.5" style={{color:C.muted}}>
-                {room.department}
-                {ups&&<span className="ml-2 font-black" style={{color:C.accent}}>· ÚPS 24 h</span>}
-                {room.isSeptic&&<span className="ml-2 font-black" style={{color:C.red}}>· SEPTICKÝ</span>}
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg transition-colors"
-            style={{background:C.ghost,color:C.muted}}>
-            <X className="w-4 h-4"/>
-          </button>
-        </div>
-
-        <div className="p-7 space-y-7">
-
-          {/* KPI row */}
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              {l:'Výkony / den',v:opsDay,       c:C.accent},
-              {l:'Využití výkonem',v:`${utilPct}%`, c:C.text},
-              {l:'Provoz',v:ups?'24 h':'12 h',  c:ups?C.accent:C.muted},
-              {l:'Fronta',v:room.queueCount,    c:room.queueCount>0?C.yellow:C.muted},
-            ].map(k=>(
-              <Card key={k.l} className="p-4 text-center">
-                <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
-                <p className="text-2xl font-black leading-none" style={{color:k.c}}>{k.v}</p>
-              </Card>
-            ))}
-          </div>
-
-          {/* Timeline bar */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <SectionLabel>Časová osa — {ups?'00:00–24:00':'07:00–19:00'}</SectionLabel>
-            </div>
-            <div className="flex h-7 w-full rounded-lg overflow-hidden gap-px">
-              {tl.map((seg,i)=>(
-                <motion.div key={i} className="h-full relative"
-                  style={{background:seg.color,opacity:0.88}}
-                  initial={{width:0}} animate={{width:`${seg.pct}%`}}
-                  transition={{duration:0.5,delay:i*0.02,ease:'easeOut'}}
-                  title={`${seg.title} — ${seg.min} min (${seg.pct.toFixed(1)}%)`}>
-                  {seg.pct>=9&&(
-                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-black/60 pointer-events-none">
-                      {Math.round(seg.pct)}%
-                    </span>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-            {/* Legend */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-4 gap-y-2 mt-3">
-              {tl.filter(s=>s.pct>1).map((seg,i)=>(
-                <div key={i} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{background:seg.color}}/>
-                  <div>
-                    <p className="text-[10px] leading-tight" style={{color:C.muted}}>{seg.title}</p>
-                    <p className="text-xs font-black leading-tight" style={{color:seg.color}}>
-                      {Math.round(seg.pct)}%
-                      <span className="font-normal ml-1" style={{color:C.faint}}>{seg.min} min</span>
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Row: Day curve + Status distribution */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Card className="p-5">
-              <SectionLabel>Vytížení v průběhu dne (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={140}>
-                <AreaChart data={dayCurve} margin={{top:4,right:0,bottom:0,left:-24}}>
-                  <defs>
-                    <linearGradient id={`rg${room.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={sc} stopOpacity={0.28}/>
-                      <stop offset="95%" stopColor={sc} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="t" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false} domain={[0,100]}/>
-                  <Tooltip {...TIP} formatter={(v:number)=>[`${v}%`,'Využití']}/>
-                  <Area type="monotone" dataKey="v" stroke={sc} fill={`url(#rg${room.id})`} strokeWidth={1.5} dot={false}/>
-                </AreaChart>
-              </ResponsiveContainer>
-            </Card>
-            <Card className="p-5">
-              <SectionLabel>Procentuální využití statusů</SectionLabel>
-              <div className="space-y-3">
-                {statusUtil.map((s,i)=>(
-                  <div key={i}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-[2px] shrink-0" style={{background:s.color}}/>
-                        <span className="text-xs" style={{color:C.muted}}>{s.label}</span>
-                      </div>
-                      <span className="text-sm font-black" style={{color:s.color}}>{s.pct}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
-                      <motion.div className="h-full rounded-full" style={{background:s.color,opacity:0.85}}
-                        initial={{width:0}} animate={{width:`${s.pct}%`}}
-                        transition={{duration:0.55,delay:i*0.06,ease:'easeOut'}}/>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Row: Hourly stacked + Weekly stacked */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Card className="p-5">
-              <SectionLabel>Hodinové vytížení vs. prodlevy (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={150}>
-                <BarChart data={hourlyUtil} margin={{top:4,right:0,bottom:0,left:-24}} barSize={12}>
-                  <XAxis dataKey="t" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <Tooltip {...TIP}/>
-                  <Bar dataKey="util" stackId="a" fill={sc}      opacity={0.78} radius={[0,0,0,0]} name="Výkon %"/>
-                  <Bar dataKey="idle" stackId="a" fill={C.ghost} opacity={0.9}  radius={[2,2,0,0]} name="Prodleva %"/>
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex gap-4 mt-2">
-                {[{c:sc,l:'Výkon'},{c:'rgba(255,255,255,0.15)',l:'Prodleva'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-            <Card className="p-5">
-              <SectionLabel>Týdenní workflow fáze — min/den</SectionLabel>
-              <ResponsiveContainer width="100%" height={150}>
-                <BarChart data={weeklyStacked} margin={{top:4,right:0,bottom:0,left:-24}} barSize={16}>
-                  <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10}  tickLine={false} axisLine={false}/>
-                  <Tooltip {...TIP}/>
-                  {WORKFLOW_STEPS.map(step=>(
-                    <Bar key={step.title} dataKey={step.title} stackId="w" fill={step.color} opacity={0.8}/>
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                {WORKFLOW_STEPS.map(s=>(
-                  <div key={s.title} className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-[2px]" style={{background:s.color}}/>
-                    <span className="text-[9px]" style={{color:C.faint}}>{s.title.split(' ').slice(-1)[0]}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Row: Phase bar + Radar + Pie */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <Card className="p-5">
-              <SectionLabel>Délka fází — minuty</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={phaseBar} layout="vertical" margin={{top:0,right:16,bottom:0,left:0}} barSize={8}>
-                  <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis type="category" dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} width={52}/>
-                  <Tooltip {...TIP} formatter={(v:number)=>[`${v} min`,'Trvání']}/>
-                  <Bar dataKey="min" radius={[0,2,2,0]}>
-                    {phaseBar.map((e,i)=><Cell key={i} fill={e.color} opacity={0.82}/>)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-            <Card className="p-5">
-              <SectionLabel>Výkonnostní profil</SectionLabel>
-              <ResponsiveContainer width="100%" height={170}>
-                <RadarChart data={radarData} margin={{top:10,right:20,bottom:10,left:20}}>
-                  <PolarGrid stroke={C.ghost}/>
-                  <PolarAngleAxis dataKey="subject" tick={{fill:C.muted,fontSize:9,fontWeight:700}}/>
-                  <Radar dataKey="A" stroke={sc} fill={sc} fillOpacity={0.14} strokeWidth={1.5}/>
-                </RadarChart>
-              </ResponsiveContainer>
-            </Card>
-            <Card className="p-5">
-              <SectionLabel>Struktura cyklu (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={140}>
-                <PieChart>
-                  <Pie data={pieData} dataKey="pct" nameKey="title" cx="50%" cy="50%"
-                    innerRadius={34} outerRadius={56} paddingAngle={2} strokeWidth={0}>
-                    {pieData.map((_,i)=><Cell key={i} fill={pieData[i].color} opacity={0.85}/>)}
-                  </Pie>
-                  <Tooltip contentStyle={TIP.contentStyle} formatter={(v:number,name:string)=>[`${v}%`,name]}/>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-                {pieData.map((d,i)=>(
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:d.color}}/>
-                    <span className="text-[10px]" style={{color:C.faint}}>{d.title.split(' ').slice(-1)[0]}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Cumulative 30-day */}
-          <Card className="p-5">
-            <SectionLabel>Kumulativní počet výkonů — 30 dní</SectionLabel>
-            <ResponsiveContainer width="100%" height={120}>
-              <ComposedChart data={cumulData} margin={{top:4,right:4,bottom:0,left:-16}}>
-                <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                <XAxis dataKey="d" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}
-                  ticks={['1','5','10','15','20','25','30']}/>
-                <YAxis yAxisId="l" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                <YAxis yAxisId="r" orientation="right" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                <Tooltip {...TIP}/>
-                <Bar yAxisId="l" dataKey="daily" fill={sc} opacity={0.35} radius={[1,1,0,0]} name="Denní výkony"/>
-                <Line yAxisId="r" type="monotone" dataKey="cum" stroke={C.green} strokeWidth={2} dot={false} name="Kumulativní"/>
-              </ComposedChart>
-            </ResponsiveContainer>
-            <div className="flex gap-5 mt-2">
-              {[{c:sc,l:'Denní výkony'},{c:C.green,l:'Kumulativní součet'}].map(x=>(
-                <div key={x.l} className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-[2px]" style={{background:x.c}}/>
-                  <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Workflow step badges */}
-          <div>
-            <SectionLabel>Aktuální fáze workflow</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              {WORKFLOW_STEPS.map((step,i)=>{
-                const cur=i===room.currentStepIndex;
-                const done=i<room.currentStepIndex;
-                return(
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider"
-                      style={{
-                        background:cur?`${step.color}20`:done?'rgba(255,255,255,0.04)':'transparent',
-                        color:cur?step.color:done?'rgba(255,255,255,0.45)':'rgba(255,255,255,0.18)',
-                        border:`1px solid ${cur?step.color:'rgba(255,255,255,0.07)'}`,
-                      }}>
-                      <div className="w-1.5 h-1.5 rounded-full" style={{background:step.color,opacity:cur?1:0.3}}/>
-                      {step.title}
-                    </div>
-                    {i<WORKFLOW_STEPS.length-1&&(
-                      <div className="w-2 h-px" style={{background:'rgba(255,255,255,0.08)'}}/>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MAIN MODULE
+// MAIN STATISTICS MODULE
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
-  const rooms  = propRooms ?? [];
+  const rooms = propRooms ?? [];
   const [period, setPeriod] = useState<Period>('den');
-  const [tab,    setTab]    = useState<Tab>('prehled');
-  const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
   const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
 
   // Load statistics from database
   useEffect(() => {
     const loadStats = async () => {
-      setIsLoadingStats(true);
-      
-      // Calculate date range based on period
+      setIsLoading(true);
       const now = new Date();
       let fromDate: Date;
       switch (period) {
-        case 'den':
-          fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case 'týden':
-          fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case 'měsíc':
-          fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        case 'rok':
-          fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-          break;
+        case 'den': fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); break;
+        case 'týden': fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break;
+        case 'měsíc': fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); break;
+        case 'rok': fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); break;
       }
-
       const [stats, history] = await Promise.all([
         fetchRoomStatistics(fromDate, now),
         fetchStatusHistory({ fromDate, toDate: now, limit: 500 }),
       ]);
-
       if (stats) setDbStats(stats);
       if (history) setStatusHistory(history);
-      setIsLoadingStats(false);
+      setIsLoading(false);
     };
-
     loadStats();
   }, [period]);
 
-  const utilData = useMemo(()=>{
-    if(period==='den')    return genDayData();
-    if(period==='týden')  return genWeekData();
-    if(period==='měsíc')  return genMonthData();
+  // Computed data
+  const utilData = useMemo(() => {
+    if (period === 'den') return genDayData();
+    if (period === 'týden') return genWeekData();
+    if (period === 'měsíc') return genMonthData();
     return genYearData();
-  },[period]);
+  }, [period]);
 
-  const avgUtil   = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s,d)=>s+d.v,0)/utilData.length);
-  const peakUtil  = Math.max(...utilData.map(d=>d.v));
-  const minUtil   = Math.min(...utilData.map(d=>d.v));
-  const totalOps  = dbStats?.totalOperations ?? rooms.reduce((s,r)=>s+r.operations24h,0);
-  const busyCount = rooms.filter(r=>r.status===RoomStatus.BUSY).length;
-  const freeCount = rooms.filter(r=>r.status===RoomStatus.FREE).length;
-  const cleanCount= rooms.filter(r=>r.status===RoomStatus.CLEANING).length;
-  const maintCount= rooms.filter(r=>r.status===RoomStatus.MAINTENANCE).length;
-  const totalQueue= rooms.reduce((s,r)=>s+r.queueCount,0);
-  const septicCnt = rooms.filter(r=>r.isSeptic).length;
-  const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
-  const upsCnt    = rooms.filter(isUPS).length;
+  const avgUtil = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s, d) => s + d.v, 0) / utilData.length);
+  const peakUtil = Math.max(...utilData.map(d => d.v));
+  const totalOps = dbStats?.totalOperations ?? rooms.reduce((s, r) => s + r.operations24h, 0);
+  const busyCount = rooms.filter(r => r.status === RoomStatus.BUSY).length;
+  const freeCount = rooms.filter(r => r.status === RoomStatus.FREE).length;
+  const cleanCount = rooms.filter(r => r.status === RoomStatus.CLEANING).length;
+  const totalQueue = rooms.reduce((s, r) => s + r.queueCount, 0);
+  const emergCnt = dbStats?.emergencyCount ?? rooms.filter(r => r.isEmergency).length;
 
-  const deptMap = useMemo(()=>{
-    const m:Record<string,number>={};
-    rooms.forEach(r=>{ m[r.department]=(m[r.department]??0)+r.operations24h; });
-    return Object.entries(m).sort((a,b)=>b[1]-a[1]);
-  },[rooms]);
+  // Department distribution
+  const deptData = useMemo(() => {
+    const m: Record<string, number> = {};
+    rooms.forEach(r => { m[r.department] = (m[r.department] ?? 0) + r.operations24h; });
+    return Object.entries(m)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value, color: DEPT_COLORS[name] || COLORS.accent }));
+  }, [rooms]);
 
-  const roomBarData = rooms.map(r=>({
-    name:r.name.replace('Sál č. ','S'),
-    ops:r.operations24h,
-    util:Math.round(buildDist(r).find(d=>d.title==='Chirurgický výkon')?.pct??0),
-    color:statusColor(r.status),
+  // Status distribution for pie
+  const statusPie = [
+    { name: 'Obsazeno', value: busyCount, color: COLORS.warning },
+    { name: 'Volno', value: freeCount, color: COLORS.success },
+    { name: 'Úklid', value: cleanCount, color: COLORS.secondary },
+  ].filter(s => s.value > 0);
+
+  // Room performance data
+  const roomPerf = rooms.map(r => ({
+    name: r.name.replace('Sál č. ', 'S'),
+    fullName: r.name,
+    ops: r.operations24h,
+    util: Math.round(buildDist(r).find(d => d.title === 'Chirurgický výkon')?.pct ?? 0),
+    queue: r.queueCount,
+    status: r.status,
+    color: statusColor(r.status),
+    department: r.department,
   }));
 
-  // Generate opsTrend from real DB data or fallback to rooms data
-  const opsTrend = useMemo(() => {
-    if (dbStats?.operationsByDay && Object.keys(dbStats.operationsByDay).length > 0) {
-      const days = Object.entries(dbStats.operationsByDay)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-7);
-      return days.map(([date, count], i) => ({
-        t: i === days.length - 1 ? 'Dnes' : `T-${days.length - 1 - i}`,
-        v: count,
-      }));
-    }
-    // Fallback to calculated from rooms
-    return [
-      {t:'T-6',v:totalOps},{t:'T-5',v:totalOps},{t:'T-4',v:totalOps},
-      {t:'T-3',v:totalOps},{t:'T-2',v:totalOps},{t:'T-1',v:totalOps},{t:'Dnes',v:totalOps},
-    ];
-  }, [dbStats, totalOps]);
+  // Workflow aggregation
+  const workflowAgg = useMemo(() => WORKFLOW_STEPS.map(step => {
+    const avg = Math.round(rooms.reduce((s, r) => {
+      const d = buildDist(r).find(d => d.title === step.title);
+      return s + (d?.pct ?? 0);
+    }, 0) / Math.max(1, rooms.length));
+    return { title: step.title, color: step.color, pct: avg };
+  }), [rooms]);
 
-  // Status pie data
-  const statusPie=[
-    {name:'Obsazeno',value:busyCount, color:C.orange},
-    {name:'Volno',   value:freeCount, color:C.green},
-    {name:'Úklid',   value:cleanCount,color:C.accent},
-    {name:'Údržba',  value:maintCount,color:C.faint},
-  ].filter(s=>s.value>0);
+  // Sparkline data
+  const sparkData = utilData.map(d => d.v);
+  const opsSparkData = utilData.map(d => d.ops);
 
-  // Aggregate workflow utilisation across all rooms
-  const workflowAgg=useMemo(()=>WORKFLOW_STEPS.map(step=>{
-    const avg=Math.round(rooms.reduce((s,r)=>{
-      const d=buildDist(r).find(d=>d.title===step.title);
-      return s+(d?.pct??0);
-    },0)/Math.max(1,rooms.length));
-    return{title:step.title,color:step.color,pct:avg};
-  }),[rooms]);
-
-  // Utilisation per interval for comparison bar - use real data if available
-  const intervalCompare = useMemo(() => {
-    const dayNames = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
-    const dayOrder = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
-    
-    if (dbStats?.operationsByDay && Object.keys(dbStats.operationsByDay).length > 0) {
-      const byDay: Record<string, number[]> = {};
-      Object.entries(dbStats.operationsByDay).forEach(([date, count]) => {
-        const d = new Date(date);
-        const dayName = dayNames[d.getDay()];
-        if (!byDay[dayName]) byDay[dayName] = [];
-        byDay[dayName].push(count);
-      });
-      
-      return dayOrder.map(t => ({
-        t,
-        v: byDay[t]?.length > 0 
-          ? Math.round(byDay[t].reduce((a, b) => a + b, 0) / byDay[t].length)
-          : 0,
-      }));
-    }
-    
-    // Fallback
-    return [
-      {t:'Pondělí', v:0},{t:'Úterý',  v:0},{t:'Středa',  v:0},
-      {t:'Čtvrtek', v:0},{t:'Pátek',  v:0},{t:'Sobota',  v:0},{t:'Neděle', v:0},
-    ];
-  }, [dbStats]);
-
-  // Scatter: ops24h vs utilPct per room
-  const scatterData=rooms.map(r=>({
-    ops:r.operations24h,
-    util:Math.round(buildDist(r).find(d=>d.title==='Chirurgický výkon')?.pct??0),
-    queue:r.queueCount,
-    name:r.name,
-  }));
-
-  // Per-room status utilisation (stacked bar, no names, index only)
-  const roomStatusBar=rooms.map((r,i)=>{
-    const dist=buildDist(r);
-    const base:Record<string,number|string>={name:`S${i+1}`};
-    WORKFLOW_STEPS.forEach(step=>{
-      base[step.title]=dist.find(d=>d.title===step.title)?.pct??0;
-    });
-    return base;
-  });
-
-  const TABS:{ id:Tab; label:string }[]=[
-    {id:'prehled', label:'Přehled'},
-    {id:'saly',    label:'Sály'},
-    {id:'faze',    label:'Fáze'},
-    {id:'heatmapa',label:'Heatmapa'},
-  ];
-
-  return(
-    <div className="w-full">
-
-      {/* ── Module header ── */}
-      <div className="mb-8">
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-3" style={{color:C.muted}}>
-          / Statistiky
-        </p>
-        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none" style={{color:C.text}}>
+  return (
+    <div className="w-full min-h-screen pb-24">
+      {/* ── Header ── */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10"
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${COLORS.primary}15` }}>
+            <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
+          </div>
+          <span className="text-[11px] font-black uppercase tracking-[0.3em]" style={{ color: COLORS.textMuted }}>
+            Analytika & Statistiky
+          </span>
+        </div>
+        <h1 className="text-5xl md:text-7xl font-black tracking-tighter" style={{ color: COLORS.text }}>
           Statistiky
         </h1>
+        <p className="text-base mt-3" style={{ color: COLORS.textMuted }}>
+          Přehled výkonnosti operačních sálů v reálném čase
+        </p>
+      </motion.div>
+
+      {/* ── Period Selector ── */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="flex items-center gap-2 mb-8"
+      >
+        {(['den', 'týden', 'měsíc', 'rok'] as Period[]).map((p, i) => (
+          <motion.button
+            key={p}
+            onClick={() => setPeriod(p)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative px-5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all"
+            style={{
+              background: period === p ? `linear-gradient(135deg, ${COLORS.primary}20, ${COLORS.secondary}20)` : 'transparent',
+              color: period === p ? COLORS.text : COLORS.textMuted,
+              border: `1px solid ${period === p ? COLORS.primary : COLORS.border}`,
+            }}
+          >
+            {period === p && (
+              <motion.div
+                layoutId="period-indicator"
+                className="absolute inset-0 rounded-xl"
+                style={{ 
+                  background: `linear-gradient(135deg, ${COLORS.primary}15, ${COLORS.secondary}15)`,
+                  border: `1px solid ${COLORS.primary}`,
+                }}
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">{p}</span>
+          </motion.button>
+        ))}
+      </motion.div>
+
+      {/* ── KPI Cards Row ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          label="Celkové využití"
+          value={`${avgUtil}%`}
+          trend={5}
+          color={COLORS.primary}
+          icon={<Activity className="w-4 h-4" />}
+          sparkline={sparkData}
+          delay={0.1}
+        />
+        <StatCard
+          label="Operace"
+          value={totalOps}
+          trend={12}
+          color={COLORS.accent}
+          icon={<Heart className="w-4 h-4" />}
+          sparkline={opsSparkData}
+          delay={0.15}
+        />
+        <StatCard
+          label="Sály aktivní"
+          value={`${busyCount}/${rooms.length}`}
+          color={COLORS.warning}
+          icon={<Layers className="w-4 h-4" />}
+          delay={0.2}
+        />
+        <StatCard
+          label="Ve frontě"
+          value={totalQueue}
+          trend={totalQueue > 3 ? 8 : -5}
+          color={totalQueue > 5 ? COLORS.danger : COLORS.success}
+          icon={<Users className="w-4 h-4" />}
+          delay={0.25}
+        />
       </div>
 
-      {/* ── Period + Tab navigation ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
-        {/* Tabs */}
-        <div className="flex items-center gap-1 p-1 rounded-lg" style={{background:C.surface,border:`1px solid ${C.border}`}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              className="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
-              style={{
-                background:tab===t.id?'rgba(255,255,255,0.07)':'transparent',
-                color:tab===t.id?C.text:C.muted,
-              }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-        {/* Period switcher */}
-        <div className="flex items-center gap-1.5">
-          {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-            <button key={p} onClick={()=>setPeriod(p)}
-              className="px-3.5 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all"
-              style={{
-                background:period===p?`${C.accent}18`:'transparent',
-                color:period===p?C.accent:C.muted,
-                border:`1px solid ${period===p?C.accent:C.border}`,
-              }}>
-              {p}
-            </button>
-          ))}
-        </div>
+      {/* ── Main Charts Grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Large Area Chart */}
+        <GlassCard 
+          className="lg:col-span-2" 
+          title="Vytížení v čase"
+          subtitle={`Průměr: ${avgUtil}% • Peak: ${peakUtil}%`}
+        >
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={utilData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                <defs>
+                  <linearGradient id="utilGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={COLORS.primary} stopOpacity={0.4} />
+                    <stop offset="50%" stopColor={COLORS.primary} stopOpacity={0.1} />
+                    <stop offset="100%" stopColor={COLORS.primary} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="opsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={COLORS.secondary} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={COLORS.secondary} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="t" stroke={COLORS.textFaint} fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke={COLORS.textFaint} fontSize={11} tickLine={false} axisLine={false} domain={[0, 100]} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Area 
+                  type="monotone" 
+                  dataKey="v" 
+                  stroke={COLORS.primary} 
+                  fill="url(#utilGrad)" 
+                  strokeWidth={2.5}
+                  name="Využití %"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="ops" 
+                  stroke={COLORS.secondary} 
+                  strokeWidth={2}
+                  dot={false}
+                  name="Operace"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center gap-6 mt-4 pt-4 border-t" style={{ borderColor: COLORS.border }}>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ background: COLORS.primary }} />
+              <span className="text-xs" style={{ color: COLORS.textMuted }}>Využití sálů</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ background: COLORS.secondary }} />
+              <span className="text-xs" style={{ color: COLORS.textMuted }}>Počet operací</span>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Status Distribution */}
+        <GlassCard title="Stav sálů" subtitle="Aktuální rozložení">
+          <div className="h-48 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusPie}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={80}
+                  paddingAngle={4}
+                  strokeWidth={0}
+                >
+                  {statusPie.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip {...TOOLTIP_STYLE} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-3 mt-4 justify-center">
+            {statusPie.map((s, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
+                <span className="text-xs font-medium" style={{ color: COLORS.textMuted }}>
+                  {s.name} <span style={{ color: s.color }}>{s.value}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
       </div>
 
-      {/* ── Tab content ── */}
-      <AnimatePresence mode="wait">
-        {tab==='prehled'&&(
-          <motion.div key="prehled"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
+      {/* ── Room Performance Grid ── */}
+      <GlassCard title="Výkon jednotlivých sálů" subtitle="Operace a vytížení za období" className="mb-8">
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={roomPerf} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+              <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="name" stroke={COLORS.textFaint} fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke={COLORS.textFaint} fontSize={10} tickLine={false} axisLine={false} />
+              <Tooltip {...TOOLTIP_STYLE} />
+              <Bar dataKey="ops" fill={COLORS.primary} radius={[4, 4, 0, 0]} name="Operace" />
+              <Bar dataKey="util" fill={COLORS.secondary} radius={[4, 4, 0, 0]} name="Využití %" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </GlassCard>
 
-            {/* KPI strip */}
-            <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
-              style={{border:`1px solid ${C.border}`}}>
-              {[
-                {l:'Sálů celkem',      v:rooms.length,                          c:C.text},
-                {l:'Obsazeno',         v:`${busyCount} / ${rooms.length}`,       c:C.orange},
-                {l:'Volno',            v:`${freeCount} / ${rooms.length}`,       c:C.green},
-                {l:'Úklid + Údržba',  v:`${cleanCount+maintCount}`,             c:C.accent},
-                {l:`Průměr (${period})`,v:`${avgUtil}%`,                         c:C.text},
-                {l:'Peak využití',     v:`${peakUtil}%`,                         c:peakUtil>90?C.red:C.orange},
-                {l:'Min využití',      v:`${minUtil}%`,                          c:C.muted},
-                {l:'Výkony / 24 h',   v:totalOps,                              c:C.accent},
-              ].map((k,i)=>(
-                <motion.div key={i} className="flex flex-col justify-between px-4 py-4"
-                  style={{background:C.surface,borderRight:i<7?`1px solid ${C.border}`:undefined}}
-                  initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}
-                  transition={{duration:0.3,delay:i*0.04}}>
-                  <p className="text-[9px] font-black uppercase tracking-widest mb-2.5" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-2xl font-black leading-none" style={{color:k.c}}>{k.v}</p>
-                </motion.div>
+      {/* ── Workflow Phases & Heatmap Row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Workflow Phases */}
+        <GlassCard title="Fáze operací" subtitle="Průměrné rozložení času">
+          <div className="space-y-4">
+            {workflowAgg.map((phase, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: phase.color }} />
+                    <span className="text-xs font-medium" style={{ color: COLORS.textMuted }}>{phase.title}</span>
+                  </div>
+                  <span className="text-sm font-bold" style={{ color: phase.color }}>{phase.pct}%</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: COLORS.border }}>
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: phase.color }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${phase.pct}%` }}
+                    transition={{ duration: 0.8, delay: i * 0.05, ease: 'easeOut' }}
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Heatmap */}
+        <GlassCard title="Teplotní mapa vytížení" subtitle="Hodiny × Dny v týdnu">
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            {/* Y-axis labels */}
+            <div className="flex flex-col justify-between py-1">
+              {DAYS.map((day, i) => (
+                <span key={i} className="text-[10px] font-bold pr-2" style={{ color: COLORS.textMuted, height: 28, display: 'flex', alignItems: 'center' }}>
+                  {day}
+                </span>
               ))}
             </div>
-
-            {/* Row 1: Main area + Status pie */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <Card className="lg:col-span-2 p-5">
-                <SectionLabel>Procentuální vytížení — {period}</SectionLabel>
-                <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={utilData} margin={{top:4,right:4,bottom:0,left:-24}}>
-                    <defs>
-                      <linearGradient id="ugrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor={C.accent} stopOpacity={0.20}/>
-                        <stop offset="95%" stopColor={C.accent} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                    <XAxis dataKey="t" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
-                    <YAxis stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false} domain={[0,100]} tickFormatter={(v:number)=>`${v}%`}/>
-                    <Tooltip {...TIP} formatter={(v:number)=>[`${v}%`,'Využití']}/>
-                    {/* Capacity line */}
-                    <Line type="monotone" dataKey="cap" stroke="rgba(255,255,255,0.1)" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Kapacita"/>
-                    <Area type="monotone" dataKey="v" stroke={C.accent} fill="url(#ugrad)" strokeWidth={2} dot={false} name="Využití"/>
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Stav sálů — podíl</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
-                  <PieChart>
-                    <Pie data={statusPie} dataKey="value" nameKey="name"
-                      cx="50%" cy="50%" innerRadius={42} outerRadius={66} paddingAngle={3} strokeWidth={0}>
-                      {statusPie.map((_,i)=><Cell key={i} fill={statusPie[i].color} opacity={0.85}/>)}
-                    </Pie>
-                    <Tooltip contentStyle={TIP.contentStyle} formatter={(v:number,name:string)=>[`${v} sálů`,name]}/>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
-                  {statusPie.map(s=>(
-                    <div key={s.name} className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full" style={{background:s.color}}/>
-                      <span className="text-xs" style={{color:C.muted}}>{s.name}</span>
-                      <span className="text-xs font-black ml-auto" style={{color:s.color}}>{s.value}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Flags */}
-                {(emergCnt>0||septicCnt>0)&&(
-                  <div className="mt-4 pt-3 flex flex-wrap gap-2" style={{borderTop:`1px solid ${C.border}`}}>
-                    {emergCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider"
-                        style={{background:`${C.orange}18`,color:C.orange}}>
-                        <AlertTriangle className="w-3 h-3"/>{emergCnt} Emerg.
-                      </span>
-                    )}
-                    {septicCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider"
-                        style={{background:`${C.red}18`,color:C.red}}>
-                        <Shield className="w-3 h-3"/>{septicCnt} Septické
-                      </span>
-                    )}
-                    {upsCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider"
-                        style={{background:`${C.accent}18`,color:C.accent}}>
-                        <Zap className="w-3 h-3"/>{upsCnt} ÚPS
-                      </span>
-                    )}
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Row 2: Ops per room + Dept + 7-day trend */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <Card className="p-5">
-                <SectionLabel>Výkony / sál (24 h)</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={roomBarData} margin={{top:0,right:0,bottom:0,left:-24}} barSize={9}>
-                    <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
-                    <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                    <Tooltip {...TIP} formatter={(v:number)=>[v,'Výkony']}/>
-                    <Bar dataKey="ops" radius={[2,2,0,0]}>
-                      {roomBarData.map((e,i)=><Cell key={i} fill={e.color} opacity={0.75}/>)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Oddělení — výkony / 24 h</SectionLabel>
-                <div className="space-y-2.5">
-                  {deptMap.slice(0,7).map(([dept,count],i)=>{
-                    const color=DEPT_COLORS[dept]??C.accent;
-                    return(
-                      <div key={dept}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-[2px]" style={{background:color}}/>
-                            <span className="text-xs" style={{color:C.muted}}>{dept}</span>
-                          </div>
-                          <span className="text-xs font-black" style={{color:C.text}}>{count}</span>
-                        </div>
-                        <div className="h-0.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
-                          <motion.div className="h-full rounded-full" style={{background:color,opacity:0.8}}
-                            initial={{width:0}} animate={{width:`${(count/deptMap[0][1])*100}%`}}
-                            transition={{duration:0.55,delay:i*0.04,ease:'easeOut'}}/>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Trend výkonů — 7 dní</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
-                  <ComposedChart data={opsTrend} margin={{top:4,right:4,bottom:0,left:-24}}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                    <XAxis dataKey="t" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                    <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                    <Tooltip {...TIP} formatter={(v:number)=>[v,'Operace']}/>
-                    <Bar dataKey="v" fill={C.accent} opacity={0.2} radius={[2,2,0,0]}/>
-                    <Line type="monotone" dataKey="v" stroke={C.green} strokeWidth={2}
-                      dot={{fill:C.green,strokeWidth:0,r:3}}/>
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-
-            {/* Row 3: Scatter + Interval compare + Queue */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <Card className="p-5">
-                <SectionLabel>Výkony vs. využití — srovnání sálů</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
-                  <ScatterChart margin={{top:4,right:10,bottom:0,left:-20}}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3"/>
-                    <XAxis dataKey="ops" name="Výkony/24h" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                    <YAxis dataKey="util" name="Využití %" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                    <ZAxis dataKey="queue" range={[30,120]}/>
-                    <Tooltip contentStyle={TIP.contentStyle}
-                      formatter={(v:number,name:string)=>[name==='Výkony/24h'?`${v} op.`:`${v}%`,name]}/>
-                    <Scatter data={scatterData} fill={C.accent} opacity={0.72}/>
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Využití dle dne v týdnu (%)</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={intervalCompare} margin={{top:0,right:0,bottom:0,left:-24}} barSize={16}>
-                    <XAxis dataKey="t" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
-                    <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                    <Tooltip {...TIP} formatter={(v:number)=>[`${v}%`,'Využití']}/>
-                    <Bar dataKey="v" radius={[2,2,0,0]}>
-                      {intervalCompare.map((e,i)=>(
-                        <Cell key={i} fill={e.v>=80?C.green:e.v>=60?C.accent:e.v>=40?C.yellow:C.orange} opacity={0.75}/>
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Fronta a kapacita</SectionLabel>
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>Celková fronta</p>
-                    <p className="text-3xl font-black" style={{color:totalQueue>0?C.yellow:C.green}}>{totalQueue}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>ÚPS sálů</p>
-                    <p className="text-3xl font-black" style={{color:C.accent}}>{upsCnt}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>Zaplněnost</p>
-                    <p className="text-3xl font-black" style={{color:C.text}}>{Math.round((busyCount/Math.max(1,rooms.length))*100)}%</p>
-                  </div>
-                </div>
-                <div className="space-y-2.5">
-                  {rooms.filter(r=>r.queueCount>0).slice(0,5).map(r=>(
-                    <div key={r.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{background:statusColor(r.status)}}/>
-                        <span className="text-xs" style={{color:C.muted}}>{r.name}</span>
-                      </div>
-                      <span className="text-xs font-black" style={{color:C.yellow}}>{r.queueCount} pac.</span>
-                    </div>
-                  ))}
-                  {totalQueue===0&&<p className="text-xs" style={{color:C.faint}}>Žádná fronta</p>}
-                </div>
-              </Card>
-            </div>
-
-          </motion.div>
-        )}
-
-        {tab==='saly'&&(
-          <motion.div key="saly"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
-
-            {/* Status summary row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                {l:'Obsazeno', v:busyCount,  c:C.orange, sub:`${Math.round((busyCount/Math.max(1,rooms.length))*100)}% kapacity`},
-                {l:'Volno',    v:freeCount,  c:C.green,  sub:`${Math.round((freeCount/Math.max(1,rooms.length))*100)}% kapacity`},
-                {l:'Úklid',    v:cleanCount, c:C.accent, sub:'V sanitaci'},
-                {l:'Údržba',   v:maintCount, c:C.faint,  sub:'Mimo provoz'},
-              ].map(k=>(
-                <motion.div key={k.l} initial={{opacity:0,scale:0.97}} animate={{opacity:1,scale:1}}
-                  transition={{duration:0.2}}>
-                  <Card className="p-5">
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-3" style={{color:C.muted}}>{k.l}</p>
-                    <p className="text-4xl font-black leading-none mb-1.5" style={{color:k.c}}>{k.v}</p>
-                    <p className="text-[10px]" style={{color:C.faint}}>{k.sub}</p>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Room status stacked bar */}
-            <Card className="p-5">
-              <SectionLabel>Procentuální využití workflow fází — jednotlivé sály</SectionLabel>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={roomStatusBar} margin={{top:4,right:0,bottom:0,left:-24}} barSize={24}>
-                  <XAxis dataKey="name" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP}/>
-                  {WORKFLOW_STEPS.map(step=>(
-                    <Bar key={step.title} dataKey={step.title} stackId="r" fill={step.color} opacity={0.82} name={step.title}/>
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3">
-                {WORKFLOW_STEPS.map(s=>(
-                  <div key={s.title} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:s.color}}/>
-                    <span className="text-[10px]" style={{color:C.faint}}>{s.title}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Room cards grid */}
-            <div>
-              <SectionLabel>Sály — kliknutím zobrazíte podrobné statistiky</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-                {rooms.map((r, i) => (
-                  <RoomMiniCard key={r.id} r={r} index={i} onClick={() => setSelectedRoom(r)} />
-                ))}
-              </div>
-            </div>
-
-            {/* Utilisation per room line chart */}
-            <Card className="p-5">
-              <SectionLabel>Procentuální využití výkonem — porovnání sálů</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={roomBarData} margin={{top:0,right:0,bottom:0,left:-24}} barSize={18}>
-                  <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number)=>[`${v}%`,'Využití výkonem']}/>
-                  <Bar dataKey="util" radius={[2,2,0,0]}>
-                    {roomBarData.map((e,i)=><Cell key={i} fill={e.color} opacity={0.78}/>)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-
-          </motion.div>
-        )}
-
-        {tab==='faze'&&(
-          <motion.div key="faze"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
-
-            {/* Workflow aggregate bar */}
-            <Card className="p-5">
-              <SectionLabel>Průměrné procentuální zastoupení workflow fází — všechny sály</SectionLabel>
-              <div className="flex h-8 w-full rounded-lg overflow-hidden gap-px mb-4">
-                {workflowAgg.map((seg,i)=>(
-                  <motion.div key={i} className="h-full relative"
-                    style={{background:seg.color,opacity:0.85}}
-                    initial={{width:0}} animate={{width:`${seg.pct}%`}}
-                    transition={{duration:0.6,delay:i*0.07,ease:'easeOut'}}
-                    title={`${seg.title} — ${seg.pct}%`}>
-                    {seg.pct>=8&&(
-                      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-black/65 pointer-events-none">
-                        {seg.pct}%
-                      </span>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-3">
-                {workflowAgg.map((seg,i)=>(
-                  <div key={i}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-[2px]" style={{background:seg.color}}/>
-                        <span className="text-xs" style={{color:C.muted}}>{seg.title}</span>
-                      </div>
-                      <span className="text-sm font-black" style={{color:seg.color}}>{seg.pct}%</span>
-                    </div>
-                    <div className="h-1 rounded-full overflow-hidden" style={{background:C.ghost}}>
-                      <motion.div className="h-full rounded-full" style={{background:seg.color,opacity:0.8}}
-                        initial={{width:0}} animate={{width:`${seg.pct}%`}}
-                        transition={{duration:0.5,delay:i*0.06,ease:'easeOut'}}/>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Row: Phase durations + radar */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <Card className="p-5">
-                <SectionLabel>Průměrné trvání fází — minuty</SectionLabel>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={WORKFLOW_STEPS.map((step,i)=>({
-                    name:step.title.split(' ').slice(-1)[0],
-                    min:STEP_DURATIONS[i],
-                    color:step.color,
-                  }))} layout="vertical" margin={{top:0,right:24,bottom:0,left:0}} barSize={10}>
-                    <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                    <YAxis type="category" dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} width={52}/>
-                    <Tooltip {...TIP} formatter={(v:number)=>[`${v} min`,'Trvání']}/>
-                    <Bar dataKey="min" radius={[0,2,2,0]}>
-                      {WORKFLOW_STEPS.map((_,i)=><Cell key={i} fill={WORKFLOW_STEPS[i].color} opacity={0.82}/>)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Distribuce fází — % z celkového cyklu</SectionLabel>
-                <div className="space-y-3 mt-2">
-                  {workflowAgg.map((seg,i)=>(
-                    <div key={i}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-[2px]" style={{background:seg.color}}/>
-                          <span className="text-xs" style={{color:C.muted}}>{seg.title}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs" style={{color:C.faint}}>{STEP_DURATIONS[i]} min</span>
-                          <span className="text-sm font-black w-9 text-right" style={{color:seg.color}}>{seg.pct}%</span>
-                        </div>
-                      </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
-                        <motion.div className="h-full rounded-full" style={{background:seg.color,opacity:0.82}}
-                          initial={{width:0}} animate={{width:`${seg.pct}%`}}
-                          transition={{duration:0.55,delay:i*0.06,ease:'easeOut'}}/>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* Row: Room current step distribution */}
-            <Card className="p-5">
-              <SectionLabel>Aktuální workflow fáze — počet sálů na každém kroku</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={WORKFLOW_STEPS.map((step,i)=>({
-                  name:step.title.split(' ').slice(-1)[0],
-                  count:rooms.filter(r=>r.currentStepIndex===i).length,
-                  color:step.color,
-                }))} margin={{top:0,right:0,bottom:0,left:-24}} barSize={24}>
-                  <XAxis dataKey="name" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} allowDecimals={false}/>
-                  <Tooltip {...TIP} formatter={(v:number)=>[`${v} sálů`,'Počet']}/>
-                  <Bar dataKey="count" radius={[3,3,0,0]}>
-                    {WORKFLOW_STEPS.map((_,i)=><Cell key={i} fill={WORKFLOW_STEPS[i].color} opacity={0.8}/>)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-
-            {/* Phase cycle pie */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <Card className="p-5">
-                <SectionLabel>Pie — struktura operačního cyklu</SectionLabel>
-                <div className="flex items-center gap-5">
-                  <ResponsiveContainer width="50%" height={180}>
-                    <PieChart>
-                      <Pie data={workflowAgg.filter(s=>s.pct>0)} dataKey="pct" nameKey="title"
-                        cx="50%" cy="50%" innerRadius={44} outerRadius={70} paddingAngle={2} strokeWidth={0}>
-                        {workflowAgg.filter(s=>s.pct>0).map((_,i)=>(
-                          <Cell key={i} fill={workflowAgg.filter(s=>s.pct>0)[i].color} opacity={0.85}/>
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={TIP.contentStyle} formatter={(v:number,name:string)=>[`${v}%`,name]}/>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex-1 space-y-2">
-                    {workflowAgg.filter(s=>s.pct>0).map((seg,i)=>(
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-[2px]" style={{background:seg.color}}/>
-                          <span className="text-xs" style={{color:C.muted}}>{seg.title.split(' ').slice(-1)[0]}</span>
-                        </div>
-                        <span className="text-xs font-black" style={{color:seg.color}}>{seg.pct}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Line — průběh fází (kumulativní trvání)</SectionLabel>
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={WORKFLOW_STEPS.map((step,i)=>{
-                    const cum=STEP_DURATIONS.slice(0,i+1).reduce((s,d)=>s+d,0);
-                    return{name:step.title.split(' ').slice(-1)[0],min:STEP_DURATIONS[i],cum};
-                  })} margin={{top:4,right:10,bottom:0,left:-16}}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3"/>
-                    <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
-                    <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                    <Tooltip {...TIP} formatter={(v:number,name:string)=>[`${v} min`,name==='cum'?'Kumulativní':'Fáze']}/>
-                    <Bar dataKey="min" fill={C.accent} opacity={0.25} radius={[1,1,0,0]} name="Fáze"/>
-                    <Line type="monotone" dataKey="cum" stroke={C.green} strokeWidth={2}
-                      dot={{fill:C.green,strokeWidth:0,r:3}} name="Kumulativní"/>
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-
-          </motion.div>
-        )}
-
-        {tab==='heatmapa'&&(
-          <motion.div key="heatmapa"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
-
-            {/* Peak cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                {l:'Nejvyšší vytížení',     v:'95%', sub:'Úterý 10:00–11:00', c:C.red},
-                {l:'Průměrné vytížení',     v:`${avgUtil}%`, sub:'Pracovní dny', c:C.accent},
-                {l:'Nejnižší vytížení',     v:'3%',  sub:'Víkend 00:00–07:00', c:C.green},
-                {l:'Operační hodiny / den', v:'12 h', sub:'07:00–19:00',        c:C.muted},
-              ].map(k=>(
-                <Card key={k.l} className="p-4">
-                  <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-3xl font-black leading-none mb-1" style={{color:k.c}}>{k.v}</p>
-                  <p className="text-[10px]" style={{color:C.faint}}>{k.sub}</p>
-                </Card>
-              ))}
-            </div>
-
+            
             {/* Heatmap grid */}
-            <Card className="p-5">
-              <SectionLabel>Heatmapa vytížení — den × hodina (%)</SectionLabel>
-              <div className="overflow-x-auto">
-                <div className="inline-flex flex-col gap-1" style={{minWidth:560}}>
-                  <div className="flex gap-1 pl-8">
-                    {Array.from({length:24},(_,h)=>(
-                      <div key={h} className="w-5 text-center text-[9px] font-bold shrink-0" style={{color:C.faint}}>{h}</div>
-                    ))}
-                  </div>
-                  {DAYS.map((day,di)=>(
-                    <div key={di} className="flex items-center gap-1">
-                      <span className="w-7 text-xs font-black shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
-                      {HEATMAP[di].map((v,hi)=>(
-                        <motion.div key={hi} className="w-5 h-5 rounded-[3px] shrink-0"
-                          style={{background:heatColor(v)}}
-                          initial={{opacity:0,scale:0.5}}
-                          animate={{opacity:1,scale:1}}
-                          transition={{duration:0.2,delay:(di*24+hi)*0.003}}
-                          title={`${day} ${hi}:00 — ${v}%`}/>
-                      ))}
-                    </div>
+            <div className="grid grid-rows-7 gap-1">
+              {HEATMAP.map((row, ri) => (
+                <div key={ri} className="grid grid-cols-24 gap-0.5">
+                  {row.map((val, ci) => (
+                    <motion.div
+                      key={ci}
+                      className="h-6 rounded-sm cursor-pointer transition-transform hover:scale-110"
+                      style={{ background: heatColor(val) }}
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: (ri * 24 + ci) * 0.002 }}
+                      title={`${DAYS[ri]} ${ci}:00 - ${val}%`}
+                    />
                   ))}
                 </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t" style={{ borderColor: COLORS.border }}>
+            <span className="text-[10px]" style={{ color: COLORS.textMuted }}>Nízké</span>
+            <div className="flex gap-1">
+              {[10, 35, 55, 75, 95].map((v, i) => (
+                <div key={i} className="w-6 h-3 rounded-sm" style={{ background: heatColor(v) }} />
+              ))}
+            </div>
+            <span className="text-[10px]" style={{ color: COLORS.textMuted }}>Vysoké</span>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* ── Department Distribution ── */}
+      <GlassCard title="Operace podle oddělení" subtitle="Distribuce za vybrané období">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {deptData.map((dept, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="p-4 rounded-xl text-center transition-all hover:scale-105"
+              style={{ 
+                background: `${dept.color}08`, 
+                border: `1px solid ${dept.color}20`,
+              }}
+            >
+              <div 
+                className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-black"
+                style={{ background: `${dept.color}20`, color: dept.color }}
+              >
+                {dept.name.slice(0, 2)}
               </div>
-              <div className="flex items-center gap-4 mt-4">
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{color:C.muted}}>Legenda</span>
-                {[
-                  {c:'rgba(30,41,59,0.45)',l:'< 25%'},
-                  {c:'rgba(16,185,129,0.62)',l:'25–50%'},
-                  {c:'rgba(251,191,36,0.68)',l:'50–70%'},
-                  {c:'rgba(249,115,22,0.78)',l:'70–90%'},
-                  {c:'rgba(255,59,48,0.88)', l:'> 90%'},
-                ].map(l=>(
-                  <div key={l.l} className="flex items-center gap-1.5">
-                    <div className="w-3.5 h-3.5 rounded-[2px]" style={{background:l.c}}/>
-                    <span className="text-xs" style={{color:C.muted}}>{l.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Hourly avg line across week */}
-            <Card className="p-5">
-              <SectionLabel>Průměrné hodinové vytížení — pracovní týden (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
-                <AreaChart
-                  data={Array.from({length:24},(_,h)=>({
-                    h:`${h}`,
-                    prac:Math.round(HEATMAP.slice(0,5).reduce((s,d)=>s+d[h],0)/5),
-                    vikend:Math.round(HEATMAP.slice(5).reduce((s,d)=>s+d[h],0)/2),
-                  }))}
-                  margin={{top:4,right:0,bottom:0,left:-24}}>
-                  <defs>
-                    <linearGradient id="hg1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={C.accent} stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor={C.accent} stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="hg2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={C.muted} stopOpacity={0.12}/>
-                      <stop offset="95%" stopColor={C.muted} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                  <XAxis dataKey="h" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} domain={[0,100]} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number,name:string)=>[`${v}%`,name==='prac'?'Pracovní dny':'Víkend']}/>
-                  <Area type="monotone" dataKey="prac"   stroke={C.accent} fill="url(#hg1)" strokeWidth={1.5} dot={false} name="prac"/>
-                  <Area type="monotone" dataKey="vikend" stroke={C.muted}  fill="url(#hg2)" strokeWidth={1}   dot={false} name="vikend"/>
-                </AreaChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{c:C.accent,l:'Pracovní dny'},{c:C.muted,l:'Víkend'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-1 rounded-full" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Daily peak bar */}
-            <Card className="p-5">
-              <SectionLabel>Denní průměrné vytížení dle dne v týdnu (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart
-                  data={DAYS.map((day,di)=>({
-                    day,
-                    avg:Math.round(HEATMAP[di].reduce((s,v)=>s+v,0)/24),
-                    peak:Math.max(...HEATMAP[di]),
-                  }))}
-                  margin={{top:4,right:0,bottom:0,left:-24}} barSize={20}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                  <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number,name:string)=>[`${v}%`,name==='avg'?'Průměr':'Peak']}/>
-                  <Bar dataKey="avg"  fill={C.accent} opacity={0.5}  radius={[2,2,0,0]} name="avg"/>
-                  <Bar dataKey="peak" fill={C.orange} opacity={0.65} radius={[2,2,0,0]} name="peak"/>
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{c:C.accent,l:'Průměrné využití'},{c:C.orange,l:'Peak využití'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Room detail panel ── */}
-      <AnimatePresence>
-        {selectedRoom&&(
-          <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)}/>
-        )}
-      </AnimatePresence>
-
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: COLORS.textMuted }}>
+                {dept.name}
+              </p>
+              <p className="text-2xl font-black" style={{ color: dept.color }}>
+                {dept.value}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </GlassCard>
     </div>
   );
 };
