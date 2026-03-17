@@ -47,10 +47,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #00D8C1 0%, transparent 70%)' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full opacity-8"
+        <div className="absolute top-[-200px] left-[-200px] w-[900px] h-[900px] rounded-full opacity-15"
           style={{ background: 'radial-gradient(circle, #A855F7 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-300px] right-[-300px] w-[1000px] h-[1000px] rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #00D8C1 0%, transparent 70%)' }} />
       </div>
 
       {/* Grid Pattern */}
