@@ -548,7 +548,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       <header className="relative z-10 flex items-center justify-between gap-4 px-8 md:pl-32 md:pr-10 pt-10 pb-6 flex-shrink-0">
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-3 mb-2 opacity-60">
-            <Calendar className="w-4 h-4 text-[#00D8C1]" />
+            <CalendarDays className="w-4 h-4 text-[#00D8C1]" />
             <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
           </div>
           <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">TIMELINE</h1>
