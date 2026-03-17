@@ -546,12 +546,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
       {/* ======== Header ======== */}
       <header className="relative z-10 flex items-center justify-between gap-4 px-4 md:pl-28 md:pr-6 pt-5 pb-3 flex-shrink-0">
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="flex items-center gap-2 opacity-50">
-            <Shield className="w-4 h-4 text-[#00D8C1]" />
-            <span className="text-[9px] font-black text-[#00D8C1] tracking-[0.3em] uppercase hidden lg:inline">OPERATINGROOM CONTROL</span>
-          </div>
-          <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">TIMELINE</h1>
+        <div className="flex flex-col min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-3 text-white/35">
+            / Timeline
+          </p>
+          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none text-white/85">Timeline</h1>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
           {[
