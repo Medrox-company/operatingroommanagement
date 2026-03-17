@@ -106,13 +106,13 @@ export const DEFAULT_DEPARTMENTS: Department[] = [
 
 
 export const WORKFLOW_STEPS = [
-  { title: "Příjezd na sál", organizer: "Příjmový tým", status: "Probíhá", color: '#A78BFA', Icon: UserCheck },
-  { title: "Začátek anestezie", organizer: "MUDr. Jelínek", status: "Kritické", color: '#2DD4BF', Icon: Syringe },
+  { title: "Příjezd na sál", organizer: "Příjmový tým", status: "Probíhá", color: '#2DD4BF', Icon: UserCheck },
+  { title: "Začátek anestezie", organizer: "MUDr. Jelínek", status: "Kritické", color: '#A78BFA', Icon: Syringe },
   { title: "Chirurgický výkon", organizer: "MUDr. Procházka", status: "Operační fáze", color: '#FF3B30', Icon: Scissors },
   { title: "Ukončení výkonu", organizer: "MUDr. Procházka", status: "Dokončování", color: '#FBBF24', Icon: Star },
   { title: "Ukončení anestezie", organizer: "Anest. sestra", status: "Monitoring", color: '#818CF8', Icon: Activity },
-  { title: "Úklid sálu", organizer: "Sanitární tým", status: "Sanitace", color: '#5B65DC', Icon: SprayCan },
-  { title: "Sál připraven", organizer: "Vedoucí sestra", status: "Volno", color: '#34C759', Icon: Sparkles },
+  { title: "Úklid sálu", organizer: "Sanitární tým", status: "Sanitace", color: '#D946EF', Icon: SprayCan },
+  { title: "Sál připraven", organizer: "Vedoucí sestra", status: "Volno", color: '#F97316', Icon: Sparkles },
 ];
 
 export const STEP_DURATIONS = [

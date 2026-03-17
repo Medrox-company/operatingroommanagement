@@ -7,8 +7,9 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck
+  Phone, UserCheck, Stethoscope, Heart
 } from 'lucide-react';
+import { recordStatusEvent } from '../lib/db';
 
 interface RoomDetailProps {
   room: OperatingRoom;
@@ -133,13 +134,51 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         ? '#FBBF24' 
         : (isPaused ? '#06b6d4' : currentStep.color));
 
-  const changeStep = (newIndex: number) => {
+  const changeStep = async (newIndex: number) => {
     if (isInteractionBlocked) return;
     
     // Additional security for locked state: only allow forward progression
     if (room.isLocked) {
       if (newIndex <= currentStepIndex && !isFinalStep) return;
       if (newIndex === 0) return; // Never allow starting over if locked
+    }
+
+    // Calculate duration of previous step
+    const now = new Date();
+    const durationSeconds = Math.floor((now.getTime() - phaseStartTime.getTime()) / 1000);
+    const previousStep = WORKFLOW_STEPS[currentStepIndex];
+    const newStep = WORKFLOW_STEPS[newIndex];
+
+    // Record step change to database
+    await recordStatusEvent({
+      operating_room_id: room.id,
+      event_type: 'step_change',
+      step_index: newIndex,
+      step_name: newStep.title,
+      duration_seconds: durationSeconds,
+      metadata: { 
+        previous_step: previousStep.title,
+        previous_step_index: currentStepIndex,
+      },
+    });
+
+    // Record operation start/end events
+    if (newIndex === 1 && currentStepIndex === 0) {
+      // Starting operation (moving from "Volný sál" to first active step)
+      await recordStatusEvent({
+        operating_room_id: room.id,
+        event_type: 'operation_start',
+        step_index: newIndex,
+        step_name: newStep.title,
+      });
+    } else if (newIndex === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1) {
+      // Ending operation (completing last step)
+      await recordStatusEvent({
+        operating_room_id: room.id,
+        event_type: 'operation_end',
+        duration_seconds: durationSeconds,
+        metadata: { completed_step: previousStep.title },
+      });
     }
 
     onStepChange(newIndex);
@@ -224,7 +263,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   };
 
   return (
-    <div className="relative w-full h-full bg-black text-white overflow-hidden font-sans">
+    <motion.div 
+      className="fixed inset-0 z-50 bg-black text-white overflow-hidden font-sans"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       {/* Status Overlay Effects */}
       {room.isEmergency && (
         <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-red-500/30" />
@@ -299,15 +344,38 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <X className="w-8 h-8" />
       </button>
 
-      {/* Patient Actions - Center Right */}
+      {/* ARO Staff Names - Top Right next to close button */}
+      <div className="absolute top-8 right-40 flex flex-row gap-3 h-24 z-40">
+        {room.staff.anesthesiologist?.name && (
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
+            <div className="flex items-center gap-2">
+              <Stethoscope className="w-5 h-5" style={{ color: activeColor }} />
+              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
+            </div>
+          </div>
+        )}
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5" style={{ color: '#c0bdb7' }} />
+            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+          </div>
+        </div>
+      </div>
+
+
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
-        {/* Patient Call Button */}
         <motion.button
-          onClick={() => {
+          onClick={async () => {
             if (!patientCalledTime) {
               setPatientCalledTime(new Date());
               setShowPatientCalledText(true);
               setTimeout(() => setShowPatientCalledText(false), 3000);
+              await recordStatusEvent({
+                operating_room_id: room.id,
+                event_type: 'patient_call',
+                step_index: currentStepIndex,
+                step_name: WORKFLOW_STEPS[currentStepIndex].title,
+              });
             }
           }}
           disabled={!!patientCalledTime}
@@ -350,10 +418,22 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
         {/* Patient Arrival Button */}
         <motion.button
-          onClick={() => {
+          onClick={async () => {
             if (patientCalledTime && !patientArrivedTime) {
-              setPatientArrivedTime(new Date());
+              const arrivalTime = new Date();
+              const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
+              setPatientArrivedTime(arrivalTime);
               setShowPatientArrivedText(true);
+              
+              await recordStatusEvent({
+                operating_room_id: room.id,
+                event_type: 'patient_arrival',
+                step_index: currentStepIndex,
+                step_name: WORKFLOW_STEPS[currentStepIndex].title,
+                duration_seconds: waitDuration,
+                metadata: { call_time: patientCalledTime.toISOString() },
+              });
+              
               setTimeout(() => {
                 setShowPatientArrivedText(false);
                 // Reset call state so Volat can be used again
@@ -378,7 +458,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* Pause Button - Bottom Right */}
       {!(room.isLocked && isFinalStep) && (
         <motion.button
-          onClick={() => setIsPaused(!isPaused)}
+          onClick={async () => {
+            const newPaused = !isPaused;
+            setIsPaused(newPaused);
+            await recordStatusEvent({
+              operating_room_id: room.id,
+              event_type: newPaused ? 'pause' : 'resume',
+              step_index: currentStepIndex,
+              step_name: WORKFLOW_STEPS[currentStepIndex].title,
+            });
+          }}
           className={`absolute bottom-8 right-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
@@ -633,7 +722,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 color: activeColor 
               }}
             >
-              {room.isEmergency ? 'EMERGENCY AKTIVNÍ' : (room.isLocked ? (isFinalStep ? 'SÁL UZAMČEN' : 'DOKONČOVÁNÍ PŘED UZAMČENÍM') : (isPaused ? 'POZASTAVENO' : currentStep.status))}
+              {room.isEmergency ? 'EMERGENCY AKTIVNÍ' : (room.isLocked ? (isFinalStep ? 'SÁL UZAM��EN' : 'DOKONČOVÁNÍ PŘED UZAMČENÍM') : (isPaused ? 'POZASTAVENO' : currentStep.status))}
             </motion.div>
           </AnimatePresence>
           
@@ -661,20 +750,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
         </div>
 
-        <div className="absolute right-12 bottom-16 flex items-end justify-end gap-4 h-20">
-          {/* ARO lékař — vpravo dole */}
-          {room.staff.anesthesiologist?.name && (
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO lékař</span>
-              <span className="text-xl font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
-            </div>
-          )}
-          {/* ARO sestra — vpravo dole */}
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#c0bdb7' }}>ARO sestra</span>
-            <span className="text-xl font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
-          </div>
-        </div>
+
 
         {/* Patient Status Indicators */}
         {/* Patient status info removed */}
@@ -694,7 +770,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

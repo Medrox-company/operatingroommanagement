@@ -1,303 +1,286 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, Clock, Users, ArrowLeft, Plus, Edit2, Trash2, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, AlertCircle, Check } from 'lucide-react';
 
 interface Shift {
   id: string;
-  name: string;
+  shiftType: string;
+  shiftDate: string;
   startTime: string;
   endTime: string;
-  staffCount: number;
-  description: string;
-  color: string;
+  staffName?: string;
 }
 
-const ShiftScheduleManager: React.FC = () => {
-  const [shifts, setShifts] = useState<Shift[]>([
-    {
-      id: '1',
-      name: 'Ranní směna',
-      startTime: '06:00',
-      endTime: '14:00',
-      staffCount: 8,
-      description: 'Hlavní ranní provoz',
-      color: '#818CF8',
-    },
-    {
-      id: '2',
-      name: 'Odpolední směna',
-      startTime: '14:00',
-      endTime: '22:00',
-      staffCount: 7,
-      description: 'Podvečerní provoz',
-      color: '#F97316',
-    },
-    {
-      id: '3',
-      name: 'Noční směna',
-      startTime: '22:00',
-      endTime: '06:00',
-      staffCount: 4,
-      description: 'Nočný provoz s pohotovostí',
-      color: '#06B6D4',
-    },
-  ]);
+const MOCK_SHIFTS: Shift[] = [
+  { id: '1', shiftType: 'morning', shiftDate: '2026-03-06', startTime: '06:00', endTime: '14:00', staffName: 'MUDr. Novak' },
+  { id: '2', shiftType: 'afternoon', shiftDate: '2026-03-06', startTime: '14:00', endTime: '22:00', staffName: 'Bc. Vesela' },
+  { id: '3', shiftType: 'night', shiftDate: '2026-03-06', startTime: '22:00', endTime: '06:00', staffName: 'MUDr. Jelinek' },
+];
 
+const ShiftScheduleManager: React.FC = () => {
+  const [shifts, setShifts] = useState<Shift[]>(MOCK_SHIFTS);
   const [isAddingShift, setIsAddingShift] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Shift>({
-    id: '',
-    name: '',
-    startTime: '',
-    endTime: '',
-    staffCount: 0,
-    description: '',
-    color: '#818CF8',
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    shiftType: 'morning',
+    shiftDate: new Date().toISOString().split('T')[0],
+    startTime: '06:00',
+    endTime: '14:00',
+    staffName: '',
   });
 
-  const handleAddShift = () => {
-    setIsAddingShift(true);
-    setEditingId(null);
+  const shiftTypes = [
+    { value: 'morning', label: 'Ranni smena', startTime: '06:00', endTime: '14:00' },
+    { value: 'afternoon', label: 'Odpoledni smena', startTime: '14:00', endTime: '22:00' },
+    { value: 'night', label: 'Nocni smena', startTime: '22:00', endTime: '06:00' },
+  ];
+
+  const handleShiftTypeChange = (type: string) => {
+    const shiftType = shiftTypes.find(s => s.value === type);
+    if (shiftType) {
+      setFormData({
+        ...formData,
+        shiftType: type,
+        startTime: shiftType.startTime,
+        endTime: shiftType.endTime,
+      });
+    }
+  };
+
+  const handleSubmit = () => {
+    if (editingId) {
+      setShifts(shifts.map(s =>
+        s.id === editingId ? { ...s, ...formData } : s
+      ));
+      setEditingId(null);
+    } else {
+      const newShift: Shift = {
+        id: `shift-${Date.now()}`,
+        ...formData,
+      };
+      setShifts([...shifts, newShift]);
+    }
+    setIsAddingShift(false);
     setFormData({
-      id: Date.now().toString(),
-      name: '',
-      startTime: '',
-      endTime: '',
-      staffCount: 0,
-      description: '',
-      color: '#818CF8',
+      shiftType: 'morning',
+      shiftDate: new Date().toISOString().split('T')[0],
+      startTime: '06:00',
+      endTime: '14:00',
+      staffName: '',
     });
   };
 
-  const handleEditShift = (shift: Shift) => {
+  const handleEdit = (shift: Shift) => {
+    setFormData({
+      shiftType: shift.shiftType,
+      shiftDate: shift.shiftDate,
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      staffName: shift.staffName || '',
+    });
     setEditingId(shift.id);
     setIsAddingShift(true);
-    setFormData(shift);
   };
 
-  const handleDeleteShift = (id: string) => {
+  const handleDelete = (id: string) => {
     setShifts(shifts.filter(s => s.id !== id));
+    setDeleteConfirm(null);
   };
 
-  const handleSaveShift = () => {
-    if (!formData.name || !formData.startTime || !formData.endTime) return;
+  const getShiftTypeLabel = (type: string) => {
+    return shiftTypes.find(s => s.value === type)?.label || type;
+  };
 
-    if (editingId) {
-      setShifts(shifts.map(s => s.id === editingId ? formData : s));
-    } else {
-      setShifts([...shifts, formData]);
+  const getShiftColor = (type: string) => {
+    switch (type) {
+      case 'morning': return '#00D8C1';
+      case 'afternoon': return '#F59E0B';
+      case 'night': return '#8B5CF6';
+      default: return '#64748B';
     }
-
-    setIsAddingShift(false);
-    setEditingId(null);
-    setFormData({
-      id: '',
-      name: '',
-      startTime: '',
-      endTime: '',
-      staffCount: 0,
-      description: '',
-      color: '#818CF8',
-    });
-  };
-
-  const handleCancel = () => {
-    setIsAddingShift(false);
-    setEditingId(null);
   };
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <motion.header
-        className="flex items-center justify-between mb-12"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div>
-          <div className="flex items-center gap-3 mb-2 opacity-60">
-            <Calendar className="w-4 h-4 text-[#F97316]" />
-            <p className="text-[10px] font-black text-[#F97316] tracking-[0.4em] uppercase">PRACOVNÍ PLÁN</p>
+      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
+        <div className="text-center lg:text-left">
+          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+            <Calendar className="w-4 h-4 text-[#00D8C1]" />
+            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">SHIFT SCHEDULE MANAGEMENT</p>
           </div>
-          <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">
-            Rozpis <span className="text-white/20">Služeb</span>
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
+            ROZVRH <span className="text-white/20">SMEN</span>
           </h1>
         </div>
+      </header>
 
-        {!isAddingShift && (
-          <motion.button
-            onClick={handleAddShift}
-            className="px-6 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 flex items-center gap-2 transition-all backdrop-blur-md"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+      <AnimatePresence>
+        {isAddingShift && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8 p-6 rounded-2xl border border-white/10 bg-white/[0.03]"
           >
-            <Plus className="w-5 h-5" />
-            <span className="font-bold">Přidat službu</span>
-          </motion.button>
-        )}
-      </motion.header>
-
-      {/* Add/Edit Form */}
-      {isAddingShift && (
-        <motion.div
-          className="mb-12 p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-xs font-bold text-white/60 mb-2 uppercase">Název služby</label>
+            <h3 className="text-lg font-semibold text-white mb-4">
+              {editingId ? 'Upravit smenu' : 'Nova smena'}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <select
+                value={formData.shiftType}
+                onChange={(e) => handleShiftTypeChange(e.target.value)}
+                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white focus:outline-none focus:border-white/20"
+              >
+                {shiftTypes.map(type => (
+                  <option key={type.value} value={type.value} className="bg-slate-900">
+                    {type.label}
+                  </option>
+                ))}
+              </select>
               <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="např. Ranní směna"
-                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
+                type="date"
+                value={formData.shiftDate}
+                onChange={(e) => setFormData({ ...formData, shiftDate: e.target.value })}
+                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white focus:outline-none focus:border-white/20"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-white/60 mb-2 uppercase">Počet personálu</label>
-              <input
-                type="number"
-                value={formData.staffCount}
-                onChange={(e) => setFormData({ ...formData, staffCount: parseInt(e.target.value) || 0 })}
-                placeholder="8"
-                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-white/60 mb-2 uppercase">Čas začátku</label>
               <input
                 type="time"
                 value={formData.startTime}
                 onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white focus:outline-none focus:border-white/20"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-white/60 mb-2 uppercase">Čas konce</label>
               <input
-                type="time"
-                value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                type="text"
+                placeholder="Jmeno personalu"
+                value={formData.staffName}
+                onChange={(e) => setFormData({ ...formData, staffName: e.target.value })}
+                className="px-4 py-3 rounded-lg border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
               />
             </div>
-          </div>
-          <div className="mb-4">
-            <label className="block text-xs font-bold text-white/60 mb-2 uppercase">Popis</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Podrobný popis služby..."
-              className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30 resize-none"
-              rows={3}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-xs font-bold text-white/60 mb-2 uppercase">Barva služby</label>
             <div className="flex gap-2">
-              {['#818CF8', '#F97316', '#06B6D4', '#10B981', '#EC4899', '#8B5CF6'].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setFormData({ ...formData, color })}
-                  className={`w-8 h-8 rounded-lg border-2 transition-all ${
-                    formData.color === color ? 'border-white' : 'border-white/20'
-                  }`}
-                  style={{ backgroundColor: color, opacity: 0.7 }}
-                />
-              ))}
+              <button
+                onClick={handleSubmit}
+                className="px-6 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-semibold hover:bg-blue-500/30 transition-all flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                {editingId ? 'Ulozit' : 'Pridat'}
+              </button>
+              <button
+                onClick={() => {
+                  setIsAddingShift(false);
+                  setEditingId(null);
+                }}
+                className="px-6 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
+              >
+                Zrusit
+              </button>
             </div>
-          </div>
-          <div className="flex gap-3">
-            <motion.button
-              onClick={handleSaveShift}
-              className="px-6 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 font-bold transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Uložit
-            </motion.button>
-            <motion.button
-              onClick={handleCancel}
-              className="px-6 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 font-bold transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Zrušit
-            </motion.button>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {!isAddingShift && (
+        <button
+          onClick={() => setIsAddingShift(true)}
+          className="mb-8 px-6 py-3 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 font-semibold hover:bg-green-500/30 transition-all flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Pridat novou smenu
+        </button>
       )}
 
-      {/* Shifts Grid */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ staggerChildren: 0.1, delayChildren: 0.2 }}
-      >
-        {shifts.map((shift, idx) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {shifts.map((shift) => (
           <motion.div
             key={shift.id}
-            className="p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-md transition-all"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            whileHover={{ y: -5 }}
+            className="p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-all"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
           >
-            {/* Color bar */}
-            <div
-              className="h-1 rounded-full mb-4"
-              style={{ backgroundColor: shift.color }}
-            />
-
-            <h3 className="text-lg font-bold text-white mb-2">{shift.name}</h3>
-            <p className="text-xs text-white/50 mb-4">{shift.description}</p>
-
-            {/* Info grid */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" style={{ color: shift.color }} />
-                <div>
-                  <p className="text-[10px] text-white/40 uppercase">Čas</p>
-                  <p className="text-sm font-bold">{shift.startTime} - {shift.endTime}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4" style={{ color: shift.color }} />
-                <div>
-                  <p className="text-[10px] text-white/40 uppercase">Personál</p>
-                  <p className="text-sm font-bold">{shift.staffCount} osob</p>
-                </div>
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: getShiftColor(shift.shiftType) }}
+                />
+                <span className="font-medium text-white">{getShiftTypeLabel(shift.shiftType)}</span>
               </div>
             </div>
 
-            {/* Action buttons */}
+            <div className="space-y-2 mb-4 text-sm text-white/60">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{shift.shiftDate}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{shift.startTime} - {shift.endTime}</span>
+              </div>
+              {shift.staffName && (
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  <span className="text-white">{shift.staffName}</span>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2">
-              <motion.button
-                onClick={() => handleEditShift(shift)}
-                className="flex-1 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center gap-2 text-xs font-bold transition-all"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
+                onClick={() => handleEdit(shift)}
+                className="flex-1 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-sm hover:bg-blue-500/30 transition-all flex items-center justify-center gap-1"
               >
-                <Edit2 className="w-3.5 h-3.5" />
+                <Edit2 className="w-3 h-3" />
                 Upravit
-              </motion.button>
-              <motion.button
-                onClick={() => handleDeleteShift(shift.id)}
-                className="px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-all"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(shift.id)}
+                className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-sm hover:bg-red-500/30 transition-all flex items-center justify-center gap-1"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-              </motion.button>
+                <Trash2 className="w-3 h-3" />
+                Smazat
+              </button>
             </div>
           </motion.div>
         ))}
-      </motion.div>
+      </div>
+
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-900 border border-white/10 rounded-lg p-6 max-w-md w-full mx-4"
+            >
+              <h2 className="text-xl font-bold text-white mb-4">Potvrdit smazani</h2>
+              <p className="text-white/70 mb-6">Opravdu chcete smazat tuto smenu?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleDelete(deleteConfirm)}
+                  className="flex-1 px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300 hover:bg-red-500/30 transition-all"
+                >
+                  Smazat
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
+                >
+                  Zrusit
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
