@@ -815,13 +815,22 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           boxShadow: `0 0 0 1px ${colors.text}20 inset`
                         }}
                       >
-                        {/* Background */}
+                        {/* Background - transparent with solid border color */}
                         <div 
                           className="absolute inset-0" 
                           style={{ 
-                            background: colors.solid,
+                            background: `${colors.solid}25`,
                             borderRadius: '11px',
                           }} 
+                        />
+
+                        {/* Crosshatch pattern */}
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            borderRadius: '11px',
+                            backgroundImage: `repeating-linear-gradient(45deg, ${colors.solid}18 0px, ${colors.solid}18 1px, transparent 1px, transparent 8px), repeating-linear-gradient(-45deg, ${colors.solid}18 0px, ${colors.solid}18 1px, transparent 1px, transparent 8px)`,
+                          }}
                         />
                         
                         {/* Animated progress fill */}
@@ -831,7 +840,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           animate={{ clipPath: `inset(0 ${100 - progressPct}% 0 0 round 11px)` }} 
                           transition={{ duration: 1.2, ease: [0.45, 0, 0.15, 1] }} 
                           style={{ 
-                            background: colors.solid,
+                            background: `${colors.solid}60`,
                             borderRadius: '11px',
                           }} 
                         />
