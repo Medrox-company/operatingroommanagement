@@ -697,25 +697,24 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     className="flex items-stretch flex-1 min-h-0 border-b border-red-500/30 cursor-pointer"
                     onClick={() => setSelectedRoom(room)}
                   >
-                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-red-500/40" style={{ width: ROOM_LABEL_WIDTH, background: 'linear-gradient(135deg, rgba(255,59,48,0.35) 0%, rgba(255,59,48,0.20) 100%)' }}>
+                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(0,0,0,0.2)' }}>
                       <div className="relative flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-red-500/40 flex items-center justify-center border-2 border-red-500/70 shadow-[0_0_20px_rgba(255,59,48,0.5)]">
-                          <AlertTriangle className="w-4 h-4 text-red-300" />
+                        <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center border-2 border-red-400 shadow-[0_0_25px_rgba(255,59,48,0.8),0_0_50px_rgba(255,59,48,0.4)]">
+                          <AlertTriangle className="w-5 h-5 text-white" />
                         </div>
-                        <motion.div className="absolute inset-0 rounded-full border-2 border-red-500/70" animate={{ scale: [1, 1.8, 1], opacity: [0.7, 0, 0.7] }} transition={{ duration: 1.2, repeat: Infinity }} />
+                        <motion.div className="absolute inset-0 rounded-full border-2 border-red-500" animate={{ scale: [1, 2, 1], opacity: [0.8, 0, 0.8] }} transition={{ duration: 1, repeat: Infinity }} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black tracking-wider uppercase text-red-300 leading-tight drop-shadow-[0_0_10px_rgba(255,59,48,0.8)]">EMERGENCY</p>
-                        <p className="text-[9px] font-medium text-red-300/60 truncate">{room.name}</p>
+                        <p className="text-sm font-black tracking-wider uppercase text-red-400 leading-tight">EMERGENCY</p>
+                        <p className="text-[9px] font-medium text-white/40 truncate">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
                       {TIME_MARKERS.slice(0, -1).map((_, i) => (
-                        <div key={i} className="absolute top-0 bottom-0 w-px bg-red-500/10" style={{ left: `${(i / HOURS_COUNT) * 100}%` }} />
+                        <div key={i} className="absolute top-0 bottom-0 w-px bg-white/5" style={{ left: `${(i / HOURS_COUNT) * 100}%` }} />
                       ))}
-                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center overflow-hidden shadow-[0_0_30px_rgba(255,59,48,0.3)]" style={{ background: 'linear-gradient(90deg, rgba(255,59,48,0.45) 0%, rgba(255,59,48,0.30) 50%, rgba(255,59,48,0.45) 100%)', border: '2px solid rgba(255,59,48,0.50)' }}>
-                        <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,59,48,1) 8px, rgba(255,59,48,1) 9px), repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,59,48,1) 8px, rgba(255,59,48,1) 9px)' }} />
-                        <span className="text-lg font-black tracking-[0.5em] text-white uppercase select-none relative z-10 drop-shadow-[0_0_15px_rgba(255,59,48,1)]">E M E R G E N C Y</span>
+                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span className="text-lg font-black tracking-[0.5em] text-red-400/60 uppercase select-none relative z-10">E M E R G E N C Y</span>
                       </div>
                     </div>
                   </div>
@@ -730,23 +729,23 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     className="flex items-stretch flex-1 min-h-0 border-b border-amber-500/25 cursor-pointer"
                     onClick={() => setSelectedRoom(room)}
                   >
-                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-amber-500/30" style={{ width: ROOM_LABEL_WIDTH, background: 'linear-gradient(135deg, rgba(251,191,36,0.28) 0%, rgba(251,191,36,0.12) 100%)' }}>
-                      <div className="w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center border-2 border-amber-500/50 shadow-[0_0_15px_rgba(251,191,36,0.4)]">
-                        <Lock className="w-4 h-4 text-amber-300" />
+                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(0,0,0,0.2)' }}>
+                      <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center border-2 border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.8),0_0_50px_rgba(251,191,36,0.4)]">
+                        <Lock className="w-5 h-5 text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black tracking-wider uppercase text-amber-300 leading-tight drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">UZAMČENO</p>
-                        <p className="text-[9px] font-medium text-amber-300/50 truncate">{room.name}</p>
+                        <p className="text-sm font-black tracking-wider uppercase text-amber-400 leading-tight">UZAMČENO</p>
+                        <p className="text-[9px] font-medium text-white/40 truncate">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
                       {TIME_MARKERS.slice(0, -1).map((_, i) => (
-                        <div key={i} className="absolute top-0 bottom-0 w-px bg-amber-500/[0.08]" style={{ left: `${(i / HOURS_COUNT) * 100}%` }} />
+                        <div key={i} className="absolute top-0 bottom-0 w-px bg-white/5" style={{ left: `${(i / HOURS_COUNT) * 100}%` }} />
                       ))}
-                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center gap-3 overflow-hidden shadow-[0_0_20px_rgba(251,191,36,0.2)]" style={{ background: 'linear-gradient(90deg, rgba(251,191,36,0.22) 0%, rgba(251,191,36,0.12) 50%, rgba(251,191,36,0.22) 100%)', border: '2px solid rgba(251,191,36,0.30)' }}>
-                        <Lock className="w-4 h-4 text-amber-400/60" />
-                        <span className="text-base font-black tracking-[0.35em] text-amber-300 uppercase select-none drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]">UZAMČENO</span>
-                        <Lock className="w-4 h-4 text-amber-400/60" />
+                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center gap-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <Lock className="w-4 h-4 text-amber-400/40" />
+                        <span className="text-base font-black tracking-[0.35em] text-amber-400/60 uppercase select-none">UZAMČENO</span>
+                        <Lock className="w-4 h-4 text-amber-400/40" />
                       </div>
                     </div>
                   </div>
@@ -765,26 +764,25 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   onClick={() => setSelectedRoom(room)}
                 >
                   <div 
-                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r group-hover:bg-white/[0.02] transition-colors" 
+                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10 group-hover:bg-white/[0.02] transition-colors" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
-                      background: isActive ? `linear-gradient(135deg, ${colors.text}18 0%, ${colors.text}08 100%)` : 'rgba(0,0,0,0.2)',
-                      borderColor: isActive ? `${colors.text}25` : 'rgba(255,255,255,0.06)'
+                      background: 'rgba(0,0,0,0.2)'
                     }}
                   >
                     <div className="relative flex-shrink-0">
                       <div 
-                        className="w-8 h-8 rounded-full flex items-center justify-center border-2" 
+                        className="w-10 h-10 rounded-full flex items-center justify-center border-2" 
                         style={{ 
-                          backgroundColor: isActive ? `${colors.text}25` : 'rgba(255,255,255,0.03)', 
-                          borderColor: isActive ? `${colors.text}50` : 'rgba(255,255,255,0.06)',
-                          boxShadow: isActive ? `0 0 12px ${colors.text}40` : 'none'
+                          backgroundColor: isActive ? colors.text : 'rgba(255,255,255,0.05)', 
+                          borderColor: isActive ? colors.text : 'rgba(255,255,255,0.1)',
+                          boxShadow: isActive ? `0 0 25px ${colors.text}80, 0 0 50px ${colors.text}40` : 'none'
                         }}
                       >
-                        {isActive ? <Activity className="w-3.5 h-3.5" style={{ color: colors.text }} /> : <div className="w-2 h-2 rounded-full bg-white/10" />}
+                        {isActive ? <Activity className="w-4 h-4 text-white" /> : <div className="w-2 h-2 rounded-full bg-white/20" />}
                       </div>
                       {isActive && (
-                        <motion.div className="absolute inset-0 rounded-full border-2" style={{ borderColor: `${colors.text}60` }} animate={{ scale: [1, 1.6, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2.5, repeat: Infinity }} />
+                        <motion.div className="absolute inset-0 rounded-full border-2" style={{ borderColor: colors.text }} animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 2, repeat: Infinity }} />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
