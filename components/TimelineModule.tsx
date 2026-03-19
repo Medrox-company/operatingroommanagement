@@ -227,15 +227,15 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="flex items-baseline justify-between gap-8 px-8 md:pl-32 md:pr-10 pt-10 pb-8">
+      <header className="px-8 md:pl-32 md:pr-10 pt-10 pb-8">
+        <div className="flex items-center gap-3 mb-2 opacity-60">
+          <CalendarDays className="w-4 h-4 text-[#00D8C1]" />
+          <span className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</span>
+        </div>
         <div className="flex items-baseline gap-6">
-          <div className="flex items-center gap-3 opacity-50">
-            <CalendarDays className="w-4 h-4 text-[#00D8C1]" />
-            <span className="text-[10px] font-bold text-[#00D8C1] tracking-[0.3em] uppercase">CONTROL</span>
-          </div>
-          <h1 className="text-5xl font-black tracking-tight uppercase text-white">Timeline</h1>
-          <div className="flex items-baseline gap-3 text-white/30">
-            <span className="text-lg font-medium">{dateStr}</span>
+          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">TIMELINE</h1>
+          <div className="flex items-baseline gap-4">
+            <span className="text-xl font-medium text-white/35">{dateStr}</span>
             <span className="text-2xl font-mono font-bold text-white/50">{timeStr}</span>
           </div>
         </div>
