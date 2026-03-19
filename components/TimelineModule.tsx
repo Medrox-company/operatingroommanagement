@@ -4,7 +4,7 @@ import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight
+  Settings, User, Sparkles, Info, ChevronRight, Loader2
 } from 'lucide-react';
 
 interface TimelineModuleProps {
@@ -13,18 +13,19 @@ interface TimelineModuleProps {
 
 /* --- Layout constants --- */
 const ROOM_LABEL_WIDTH = 200;
-const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 hours
+const TIME_MARKERS = Array.from({ length: 32 }, (_, i) => i); // 00:00 to 07:00 next day (32 hours total for display)
 const HOURS_COUNT = 24;
 const SHIFT_START_HOUR = 7;  // 7:00 AM
 const SHIFT_END_HOUR = 19;   // 7:00 PM
+const ROW_HEIGHT = 56;
 
 // Get minutes from midnight
 const getMinutesFromMidnight = (date: Date) => {
   return date.getHours() * 60 + date.getMinutes();
 };
 
-// Convert time to percentage of 24h timeline
-const getTimePercent = (date: Date) => (getMinutesFromMidnight(date) / (HOURS_COUNT * 60)) * 100;
+// Convert time to percentage of 24h timeline (extended to 32h for next day view)
+const getTimePercent = (date: Date, extendedHours = 32) => (getMinutesFromMidnight(date) / (extendedHours * 60)) * 100;
 
 // Parse time string "HH:MM" to Date object (today)
 const parseTimeToDate = (timeStr: string): Date => {
@@ -34,7 +35,10 @@ const parseTimeToDate = (timeStr: string): Date => {
   return date;
 };
 
-const hourLabel = (h: number) => `${h < 10 ? '0' : ''}${h}:00`;
+const hourLabel = (h: number) => {
+  const hour = h % 24;
+  return `${hour < 10 ? '0' : ''}${hour}:00`;
+};
 
 /* --- Room colors by priority/activity --- */
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
@@ -443,16 +447,21 @@ const StatusBadge: React.FC<{
   const isOutline = variant === 'outline';
   return (
     <div 
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+      className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-all ${
         isOutline ? 'bg-transparent' : 'bg-white/[0.04]'
       }`}
       style={{ borderColor: color ? `${color}40` : 'rgba(255,255,255,0.1)' }}
     >
-      <Icon className="w-3.5 h-3.5" style={{ color: color || 'rgba(255,255,255,0.5)' }} />
-      <span className="text-xs font-bold" style={{ color: color || 'rgba(255,255,255,0.7)' }}>
+      <div 
+        className="w-5 h-5 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: color ? `${color}20` : 'rgba(255,255,255,0.1)' }}
+      >
+        <Icon className="w-3 h-3" style={{ color: color || 'rgba(255,255,255,0.5)' }} />
+      </div>
+      <span className="text-sm font-bold" style={{ color: color || 'rgba(255,255,255,0.9)' }}>
         {value}
       </span>
-      <span className="text-[10px] font-medium text-white/40 uppercase tracking-wider">
+      <span className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
         {label}
       </span>
     </div>
@@ -468,22 +477,25 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
   const [showLegend, setShowLegend] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-scroll to current time position
+  // Auto-scroll to current time position on mount
   useEffect(() => {
-    if (timelineRef.current) {
-      const nowPercent = getTimePercent(currentTime);
-      const scrollPosition = (timelineRef.current.scrollWidth * nowPercent / 100) - (timelineRef.current.clientWidth / 2);
-      timelineRef.current.scrollLeft = Math.max(0, scrollPosition);
+    if (scrollContainerRef.current) {
+      const nowPercent = getTimePercent(currentTime, 32);
+      const scrollWidth = scrollContainerRef.current.scrollWidth - ROOM_LABEL_WIDTH;
+      const containerWidth = scrollContainerRef.current.clientWidth - ROOM_LABEL_WIDTH;
+      const scrollPosition = (scrollWidth * nowPercent / 100) - (containerWidth / 2);
+      scrollContainerRef.current.scrollLeft = Math.max(0, scrollPosition);
     }
   }, []);
 
-  const nowPercent = getTimePercent(currentTime);
+  const nowPercent = getTimePercent(currentTime, 32);
   const currentHour = currentTime.getHours();
   const currentMin = currentTime.getMinutes();
 
@@ -493,12 +505,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     const cleaning = rooms.filter(r => r.currentStepIndex === 5 && !r.isEmergency && !r.isLocked).length;
     const free = rooms.filter(r => r.currentStepIndex >= 6 && !r.isEmergency && !r.isLocked).length;
     const completed = rooms.reduce((acc, r) => r.currentStepIndex >= 6 ? acc + r.operations24h : acc, 0);
-    const emergency = rooms.filter(r => r.isEmergency).length;
     const doctorsWorking = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex < 6).length;
     const doctorsFree = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex >= 6).length;
     const nursesWorking = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex < 6).length;
     const nursesFree = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex >= 6).length;
-    return { operations, cleaning, free, completed, emergency, doctorsWorking, doctorsFree, nursesWorking, nursesFree };
+    return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree };
   }, [rooms]);
 
   /* --- Sorted rooms by activity --- */
@@ -520,9 +531,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     });
   }, [rooms]);
 
-  // Calculate shift line positions
-  const shiftStartPercent = (SHIFT_START_HOUR / 24) * 100;
-  const shiftEndPercent = (SHIFT_END_HOUR / 24) * 100;
+  // Calculate shift line positions (as percentage of 32-hour view)
+  const shiftStartPercent = (SHIFT_START_HOUR / 32) * 100;
+  const shiftEndPercent = (SHIFT_END_HOUR / 32) * 100;
 
   // Get remaining time for room
   const getRemainingTime = (room: OperatingRoom): string => {
@@ -545,11 +556,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
     
-    return `<${hours}h ${minutes}m`;
+    return `+${hours}h ${minutes < 10 ? '0' : ''}${minutes}m`;
   };
 
+  // Count active rooms for numbering
+  let activeRoomCounter = 0;
+
   return (
-    <div className="w-full h-full text-white overflow-hidden flex flex-col relative" style={{ background: '#0f172a' }}>
+    <div className="w-full h-full text-white overflow-hidden flex flex-col relative" style={{ background: '#0B1120' }}>
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -559,26 +573,26 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       </AnimatePresence>
 
       {/* ======== Status Bar ======== */}
-      <header className="relative z-10 flex items-center justify-between gap-4 px-6 py-4 border-b flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(15,23,42,0.8)' }}>
-        <div className="flex items-center gap-3 flex-wrap">
+      <header className="relative z-10 flex items-center justify-between gap-4 px-6 py-4 border-b flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}>
+        <div className="flex items-center gap-2 flex-wrap">
           <StatusBadge icon={Activity} label="OPERACE" value={stats.operations} color="#22C55E" />
-          <StatusBadge icon={Sparkles} label="UKLID" value={stats.cleaning} color="#F97316" />
+          <StatusBadge icon={Loader2} label="UKLID" value={stats.cleaning} color="#F97316" />
           <StatusBadge icon={Stethoscope} label="VOLNE" value={stats.free} />
           <StatusBadge icon={Shield} label="DOKONCENO" value={stats.completed} />
           
-          <div className="w-px h-6 bg-white/10 mx-2" />
+          <div className="w-px h-8 bg-white/10 mx-2" />
           
-          <StatusBadge icon={User} label="LEKARI PRACUJI" value={stats.doctorsWorking} color="#3B82F6" />
+          <StatusBadge icon={User} label="LEKARI PRACUJI" value={stats.doctorsWorking} color="#3B82F6" variant="outline" />
           <StatusBadge icon={User} label="LEKARI VOLNI" value={stats.doctorsFree} color="#06B6D4" variant="outline" />
-          <StatusBadge icon={Users} label="SESTRY PRACUJI" value={stats.nursesWorking} color="#EC4899" />
+          <StatusBadge icon={Users} label="SESTRY PRACUJI" value={stats.nursesWorking} color="#EC4899" variant="outline" />
           <StatusBadge icon={Users} label="SESTRY VOLNE" value={stats.nursesFree} color="#A855F7" variant="outline" />
         </div>
         
         <button 
           onClick={() => setShowLegend(!showLegend)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-all"
         >
-          <Settings className="w-3.5 h-3.5 text-white/50" />
+          <Settings className="w-4 h-4 text-white/50" />
           <span className="text-xs font-medium text-white/60">Legenda</span>
         </button>
       </header>
@@ -586,375 +600,396 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       {/* ======== Main Timeline ======== */}
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden">
         
-        {/* Time Axis Header */}
-        <div className="flex flex-shrink-0 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(15,23,42,0.6)' }}>
+        {/* Time Axis Header - Fixed */}
+        <div className="flex flex-shrink-0 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.9)' }}>
+          {/* Room label header - fixed */}
           <div 
             className="flex-shrink-0 flex items-center px-4 gap-2 border-r" 
-            style={{ width: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)' }}
+            style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)' }}
           >
-            <Stethoscope className="w-3.5 h-3.5 text-emerald-400/60" />
+            <Activity className="w-4 h-4 text-emerald-400/60" />
             <span className="text-[10px] font-bold tracking-wider uppercase text-white/40">OPERACNI SALY</span>
           </div>
-          <div className="flex-1 flex items-center h-12 relative overflow-hidden" ref={timelineRef}>
-            {TIME_MARKERS.map((hour, i) => {
-              const isLast = i === TIME_MARKERS.length - 1;
-              const widthPct = 100 / HOURS_COUNT;
-              const leftPct = i * widthPct;
-              const isNightHour = hour >= 19 || hour < 7;
-              const isCurrentHour = hour === currentHour && !isLast;
-              
-              return (
-                <div 
-                  key={`h-${hour}-${i}`} 
-                  className="absolute top-0 h-full flex items-center" 
-                  style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
+          
+          {/* Time markers - scrollable */}
+          <div className="flex-1 overflow-x-auto hide-scrollbar" ref={timelineRef}>
+            <div className="flex items-center h-12 relative" style={{ minWidth: '200%' }}>
+              {TIME_MARKERS.map((hour, i) => {
+                const isLast = i === TIME_MARKERS.length - 1;
+                const widthPct = 100 / 32;
+                const leftPct = i * widthPct;
+                const displayHour = hour % 24;
+                const isNightHour = displayHour >= 19 || displayHour < 7;
+                const isCurrentHour = displayHour === currentHour && !isLast && i < 24;
+                
+                return (
+                  <div 
+                    key={`h-${hour}-${i}`} 
+                    className="absolute top-0 h-full flex items-center" 
+                    style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
+                  >
+                    <div className={`w-px h-full ${isNightHour ? 'bg-white/[0.04]' : 'bg-white/[0.08]'}`} />
+                    {!isLast && (
+                      isCurrentHour ? (
+                        <div 
+                          className="ml-2 px-2.5 py-1 rounded-lg shadow-lg"
+                          style={{ 
+                            background: '#00D8C1', 
+                            boxShadow: '0 0 16px rgba(0,216,193,0.5)' 
+                          }}
+                        >
+                          <span className="text-[11px] font-mono font-black text-black tracking-wider">
+                            {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className={`ml-2 text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                          {hourLabel(hour)}
+                        </span>
+                      )
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Room Rows - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-auto hide-scrollbar" ref={scrollContainerRef}>
+          <div className="relative" style={{ minWidth: '200%' }}>
+            {/* Now indicator - cyan glow line */}
+            <AnimatePresence>
+              {nowPercent >= 0 && nowPercent <= 100 && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  className="absolute top-0 bottom-0 z-30 pointer-events-none" 
+                  style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  <div className={`w-px h-full ${isNightHour ? 'bg-white/[0.04]' : 'bg-white/[0.08]'}`} />
-                  {!isLast && (
-                    isCurrentHour ? (
+                  <div className="absolute -left-6 top-0 bottom-0 w-12 opacity-20 blur-xl" style={{ background: '#00D8C1' }} />
+                  <div 
+                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
+                    style={{ background: 'linear-gradient(to bottom, #00D8C1 0%, #00D8C180 50%, #00D8C140 100%)' }} 
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Shift start line (7:00) - blue dashed */}
+            <div 
+              className="absolute top-0 bottom-0 z-20 pointer-events-none" 
+              style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})` }}
+            >
+              <div 
+                className="absolute -left-px top-0 bottom-0 w-[2px]" 
+                style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #3B82F6 0px, #3B82F6 6px, transparent 6px, transparent 12px)' }} 
+              />
+            </div>
+
+            {/* Shift end line (19:00) - orange dashed */}
+            <div 
+              className="absolute top-0 bottom-0 z-20 pointer-events-none" 
+              style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})` }}
+            >
+              <div 
+                className="absolute -left-px top-0 bottom-0 w-[2px]" 
+                style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #F97316 0px, #F97316 6px, transparent 6px, transparent 12px)' }} 
+              />
+            </div>
+
+            {/* Night zone overlay (19:00-07:00) */}
+            <div 
+              className="absolute top-0 bottom-0 z-10 pointer-events-none" 
+              style={{ 
+                left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})`, 
+                width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${(100 - shiftEndPercent) / 100})`,
+                background: 'rgba(11, 17, 32, 0.6)'
+              }} 
+            />
+            <div 
+              className="absolute top-0 bottom-0 z-10 pointer-events-none" 
+              style={{ 
+                left: ROOM_LABEL_WIDTH, 
+                width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})`,
+                background: 'rgba(11, 17, 32, 0.6)'
+              }} 
+            />
+
+            {/* Room Rows */}
+            {sortedRooms.map((room, roomIndex) => {
+              const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
+              const isActive = stepIndex < 6;
+              const isCleaning = stepIndex === 5;
+              const isFree = stepIndex >= 6;
+              
+              // Only increment counter for active (non-free) rooms
+              if (isActive && !room.isEmergency && !room.isLocked) {
+                activeRoomCounter++;
+              }
+              const currentRoomNumber = isActive && !room.isEmergency && !room.isLocked ? activeRoomCounter : 0;
+              
+              const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
+              const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
+              const remainingTime = getRemainingTime(room);
+
+              // Calculate operation bar position
+              const startParts = room.currentProcedure?.startTime?.split(':');
+              let boxLeftPct = 0;
+              let boxWidthPct = 0;
+              let progressPct = 0;
+
+              if (startParts && startParts.length === 2 && isActive) {
+                const startDate = new Date();
+                startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+                boxLeftPct = getTimePercent(startDate, 32);
+                
+                let endDate: Date;
+                if (room.estimatedEndTime) {
+                  endDate = new Date(room.estimatedEndTime);
+                } else if (room.currentProcedure?.estimatedDuration) {
+                  endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                } else {
+                  endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default 2h
+                }
+                
+                const boxRightPct = getTimePercent(endDate, 32);
+                boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
+              }
+
+              /* Emergency row */
+              if (room.isEmergency) {
+                return (
+                  <div
+                    key={room.id}
+                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(239,68,68,0.3)' }}
+                    onClick={() => setSelectedRoom(room)}
+                  >
+                    <div 
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(239,68,68,0.15)' }}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold tracking-tight text-red-400 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
+                      </div>
+                    </div>
+                    <div className="relative flex-1 overflow-hidden">
                       <div 
-                        className="ml-2 px-2.5 py-1 rounded-lg shadow-lg"
+                        className="absolute inset-y-2 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
+                        style={{ background: 'linear-gradient(90deg, #DC2626, #EF4444)' }}
+                      >
+                        <div 
+                          className="absolute inset-0 opacity-30" 
+                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
+                        />
+                        <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">EMERGENCY</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              /* Locked row */
+              if (room.isLocked) {
+                return (
+                  <div
+                    key={room.id}
+                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(251,191,36,0.3)' }}
+                    onClick={() => setSelectedRoom(room)}
+                  >
+                    <div 
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(251,191,36,0.1)' }}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-500/50">
+                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold tracking-tight text-amber-400 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
+                      </div>
+                    </div>
+                    <div className="relative flex-1 overflow-hidden">
+                      <div 
+                        className="absolute inset-y-2 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
+                        style={{ background: 'linear-gradient(90deg, #D97706, #F59E0B)' }}
+                      >
+                        <div 
+                          className="absolute inset-0 opacity-30" 
+                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
+                        />
+                        <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">UZAMCENO</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              /* Active / Free row */
+              return (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
+                  className="flex items-stretch border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
+                  style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                  onClick={() => setSelectedRoom(room)}
+                >
+                  {/* Room Label - Sticky */}
+                  <div 
+                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
+                    style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                  >
+                    {/* Numbered badge for active rooms */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {isActive && (
+                        <div 
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg"
+                          style={{ background: roomColor.bg, boxShadow: `0 0 12px ${roomColor.glow}` }}
+                        >
+                          {currentRoomNumber}
+                        </div>
+                      )}
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center border" 
                         style={{ 
-                          background: '#00D8C1', 
-                          boxShadow: '0 0 16px rgba(0,216,193,0.5)' 
+                          background: isActive ? `${roomColor.bg}25` : 'rgba(255,255,255,0.05)',
+                          borderColor: isActive ? `${roomColor.border}40` : 'rgba(255,255,255,0.1)'
                         }}
                       >
-                        <span className="text-[11px] font-mono font-black text-black tracking-wider">
-                          {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
-                        </span>
+                        {isActive ? (
+                          <Activity className="w-4 h-4" style={{ color: roomColor.bg }} />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-white/20" />
+                        )}
                       </div>
-                    ) : (
-                      <span className={`ml-2 text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
-                        {hourLabel(hour)}
-                      </span>
-                    )
-                  )}
-                </div>
+                    </div>
+
+                    {/* Room info */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold tracking-tight text-white/80 truncate">
+                          {room.name}
+                        </p>
+                        {room.isSeptic && (
+                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 uppercase flex-shrink-0">SEPTIKA</span>
+                        )}
+                      </div>
+                      {isFree ? (
+                        <p className="text-[9px] font-medium text-white/30 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
+                          Volny
+                        </p>
+                      ) : remainingTime ? (
+                        <p 
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-md inline-block" 
+                          style={{ color: roomColor.bg, backgroundColor: `${roomColor.bg}15` }}
+                        >
+                          {remainingTime}
+                        </p>
+                      ) : (
+                        <p className="text-[9px] font-medium text-white/30">{room.department}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="relative flex-1 overflow-hidden">
+                    {/* Hour grid lines */}
+                    {TIME_MARKERS.slice(0, -1).map((hour, i) => {
+                      const displayHour = hour % 24;
+                      const isNight = displayHour >= 19 || displayHour < 7;
+                      return (
+                        <div 
+                          key={i} 
+                          className="absolute top-0 bottom-0 w-px" 
+                          style={{ 
+                            left: `${(i / 32) * 100}%`,
+                            background: isNight ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)'
+                          }} 
+                        />
+                      );
+                    })}
+
+                    {/* Active operation bar */}
+                    {isActive && boxWidthPct > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, scaleX: 0 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        transition={{ duration: 0.5, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute top-2 bottom-2 overflow-hidden rounded-lg"
+                        style={{ 
+                          left: `${Math.max(0, boxLeftPct)}%`, 
+                          width: `${boxWidthPct}%`,
+                          transformOrigin: 'left center'
+                        }}
+                      >
+                        {/* Background - solid color */}
+                        <div 
+                          className="absolute inset-0 rounded-lg" 
+                          style={{ 
+                            background: `linear-gradient(90deg, ${roomColor.bg}90, ${roomColor.bg}70)`,
+                            boxShadow: `0 2px 12px ${roomColor.glow}`
+                          }} 
+                        />
+
+                        {/* Completed section with vertical stripes */}
+                        <div 
+                          className="absolute inset-0 rounded-lg" 
+                          style={{ 
+                            clipPath: `inset(0 ${100 - progressPct}% 0 0)`,
+                            background: roomColor.bg
+                          }}
+                        >
+                          <div 
+                            className="absolute inset-0" 
+                            style={{ 
+                              backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.35) 3px, rgba(255,255,255,0.35) 6px)` 
+                            }} 
+                          />
+                        </div>
+
+                        {/* Current position indicator - white line */}
+                        {progressPct > 0 && progressPct < 100 && (
+                          <motion.div 
+                            className="absolute top-0 bottom-0 w-0.5 rounded-full"
+                            style={{ 
+                              left: `${progressPct}%`,
+                              background: '#FFF',
+                              boxShadow: '0 0 8px rgba(255,255,255,0.8)'
+                            }}
+                            animate={{ opacity: [1, 0.6, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          />
+                        )}
+                      </motion.div>
+                    )}
+
+                    {/* Free room indicator */}
+                    {isFree && (
+                      <div 
+                        className="absolute inset-y-3 left-2 right-2 rounded-lg flex items-center justify-center" 
+                        style={{ border: '1px dashed rgba(255,255,255,0.06)' }}
+                      />
+                    )}
+                  </div>
+                </motion.div>
               );
             })}
           </div>
         </div>
-
-        {/* Room Rows */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative">
-          {/* Now indicator */}
-          <AnimatePresence>
-            {nowPercent >= 0 && nowPercent <= 100 && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                className="absolute top-0 bottom-0 z-30 pointer-events-none" 
-                style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
-              >
-                <div className="absolute -left-4 top-0 bottom-0 w-8 opacity-10 blur-xl" style={{ background: '#00D8C1' }} />
-                <div 
-                  className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                  style={{ background: 'linear-gradient(to bottom, #00D8C1 0%, #00D8C180 50%, #00D8C140 100%)' }} 
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Shift start line (7:00) */}
-          <div 
-            className="absolute top-0 bottom-0 z-20 pointer-events-none" 
-            style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})` }}
-          >
-            <div 
-              className="absolute -left-px top-0 bottom-0 w-[2px]" 
-              style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #3B82F6 0px, #3B82F6 6px, transparent 6px, transparent 12px)' }} 
-            />
-          </div>
-
-          {/* Shift end line (19:00) */}
-          <div 
-            className="absolute top-0 bottom-0 z-20 pointer-events-none" 
-            style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})` }}
-          >
-            <div 
-              className="absolute -left-px top-0 bottom-0 w-[2px]" 
-              style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #F97316 0px, #F97316 6px, transparent 6px, transparent 12px)' }} 
-            />
-          </div>
-
-          {/* Night zone overlay (19:00-07:00) */}
-          <div 
-            className="absolute top-0 bottom-0 z-10 pointer-events-none" 
-            style={{ 
-              left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})`, 
-              right: 0,
-              background: 'rgba(15, 23, 42, 0.5)'
-            }} 
-          />
-          <div 
-            className="absolute top-0 bottom-0 z-10 pointer-events-none" 
-            style={{ 
-              left: ROOM_LABEL_WIDTH, 
-              width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})`,
-              background: 'rgba(15, 23, 42, 0.5)'
-            }} 
-          />
-
-          {/* Room Rows */}
-          {sortedRooms.map((room, roomIndex) => {
-            const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
-            const isActive = stepIndex < 6;
-            const isCleaning = stepIndex === 5;
-            const isFree = stepIndex >= 6;
-            const roomColorKey = ROOM_COLOR_ORDER[roomIndex % ROOM_COLOR_ORDER.length];
-            const roomColor = ROOM_COLORS[roomColorKey];
-            const remainingTime = getRemainingTime(room);
-
-            // Calculate operation bar position
-            const startParts = room.currentProcedure?.startTime?.split(':');
-            let boxLeftPct = 0;
-            let boxWidthPct = 0;
-            let progressPct = 0;
-
-            if (startParts && startParts.length === 2 && isActive) {
-              const startDate = new Date();
-              startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
-              boxLeftPct = getTimePercent(startDate);
-              
-              let endDate: Date;
-              if (room.estimatedEndTime) {
-                endDate = new Date(room.estimatedEndTime);
-              } else if (room.currentProcedure?.estimatedDuration) {
-                endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
-              } else {
-                endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default 2h
-              }
-              
-              const boxRightPct = getTimePercent(endDate);
-              boxWidthPct = Math.max(3, boxRightPct - boxLeftPct);
-              progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
-            }
-
-            /* Emergency row */
-            if (room.isEmergency) {
-              return (
-                <div
-                  key={room.id}
-                  className="flex items-stretch h-14 border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  style={{ borderColor: 'rgba(239,68,68,0.3)' }}
-                  onClick={() => setSelectedRoom(room)}
-                >
-                  <div 
-                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r" 
-                    style={{ width: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(239,68,68,0.1)' }}
-                  >
-                    <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50">
-                      <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold tracking-tight text-red-400 truncate">{room.name}</p>
-                      <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
-                    </div>
-                  </div>
-                  <div className="relative flex-1 overflow-hidden">
-                    <div 
-                      className="absolute inset-y-1 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
-                      style={{ background: 'linear-gradient(90deg, #DC2626, #EF4444)' }}
-                    >
-                      <div 
-                        className="absolute inset-0 opacity-30" 
-                        style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
-                      />
-                      <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">EMERGENCY</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            /* Locked row */
-            if (room.isLocked) {
-              return (
-                <div
-                  key={room.id}
-                  className="flex items-stretch h-14 border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  style={{ borderColor: 'rgba(251,191,36,0.3)' }}
-                  onClick={() => setSelectedRoom(room)}
-                >
-                  <div 
-                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r" 
-                    style={{ width: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(251,191,36,0.1)' }}
-                  >
-                    <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-500/50">
-                      <Lock className="w-3.5 h-3.5 text-amber-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold tracking-tight text-amber-400 truncate">{room.name}</p>
-                      <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
-                    </div>
-                  </div>
-                  <div className="relative flex-1 overflow-hidden">
-                    <div 
-                      className="absolute inset-y-1 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
-                      style={{ background: 'linear-gradient(90deg, #D97706, #F59E0B)' }}
-                    >
-                      <div 
-                        className="absolute inset-0 opacity-30" 
-                        style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
-                      />
-                      <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">UZAMCENO</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            /* Active / Free row */
-            return (
-              <motion.div
-                key={room.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
-                className="flex items-stretch h-14 border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
-                style={{ borderColor: 'rgba(255,255,255,0.04)' }}
-                onClick={() => setSelectedRoom(room)}
-              >
-                {/* Room Label */}
-                <div 
-                  className="flex-shrink-0 flex items-center gap-3 px-4 border-r transition-colors group-hover:bg-white/[0.02]" 
-                  style={{ width: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(15,23,42,0.4)' }}
-                >
-                  {/* Numbered badge */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {isActive && (
-                      <div 
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white"
-                        style={{ background: roomColor.bg }}
-                      >
-                        {roomIndex + 1}
-                      </div>
-                    )}
-                    <div 
-                      className="w-7 h-7 rounded-full flex items-center justify-center border" 
-                      style={{ 
-                        background: isActive ? `${roomColor.bg}30` : 'rgba(255,255,255,0.05)',
-                        borderColor: isActive ? `${roomColor.border}50` : 'rgba(255,255,255,0.1)'
-                      }}
-                    >
-                      {isActive ? (
-                        <Activity className="w-3.5 h-3.5" style={{ color: roomColor.bg }} />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-white/20" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Room info */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold tracking-tight text-white/70 truncate">
-                        {room.name}
-                      </p>
-                      {room.isSeptic && (
-                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 uppercase">SEPTIKA</span>
-                      )}
-                    </div>
-                    {isFree ? (
-                      <p className="text-[9px] font-medium text-white/30 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
-                        Volny
-                      </p>
-                    ) : remainingTime ? (
-                      <p className="text-[9px] font-bold" style={{ color: roomColor.bg }}>{remainingTime}</p>
-                    ) : (
-                      <p className="text-[9px] font-medium text-white/30">{room.department}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Timeline */}
-                <div className="relative flex-1 overflow-hidden">
-                  {/* Hour grid lines */}
-                  {TIME_MARKERS.slice(0, -1).map((hour, i) => {
-                    const isNight = hour >= 19 || hour < 7;
-                    return (
-                      <div 
-                        key={i} 
-                        className="absolute top-0 bottom-0 w-px" 
-                        style={{ 
-                          left: `${(i / HOURS_COUNT) * 100}%`,
-                          background: isNight ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)'
-                        }} 
-                      />
-                    );
-                  })}
-
-                  {/* Active operation bar */}
-                  {isActive && boxWidthPct > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, scaleX: 0 }}
-                      animate={{ opacity: 1, scaleX: 1 }}
-                      transition={{ duration: 0.5, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                      className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-lg"
-                      style={{ 
-                        left: `${Math.max(0, boxLeftPct)}%`, 
-                        width: `${boxWidthPct}%`,
-                        transformOrigin: 'left center'
-                      }}
-                    >
-                      {/* Background */}
-                      <div 
-                        className="absolute inset-0" 
-                        style={{ 
-                          background: `linear-gradient(90deg, ${roomColor.bg}80, ${roomColor.bg}60)`,
-                          boxShadow: `0 2px 12px ${roomColor.glow}`
-                        }} 
-                      />
-
-                      {/* Completed section (striped) */}
-                      <div 
-                        className="absolute inset-0" 
-                        style={{ 
-                          clipPath: `inset(0 ${100 - progressPct}% 0 0)`,
-                          background: roomColor.bg
-                        }}
-                      >
-                        <div 
-                          className="absolute inset-0" 
-                          style={{ 
-                            backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(255,255,255,0.3) 4px, rgba(255,255,255,0.3) 8px)` 
-                          }} 
-                        />
-                      </div>
-
-                      {/* Current position indicator */}
-                      {progressPct > 0 && progressPct < 100 && (
-                        <motion.div 
-                          className="absolute top-0 bottom-0 w-1 rounded-full"
-                          style={{ 
-                            left: `${progressPct}%`,
-                            background: '#FFF',
-                            boxShadow: '0 0 8px rgba(255,255,255,0.8)'
-                          }}
-                          animate={{ opacity: [1, 0.6, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        />
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* Free room indicator */}
-                  {isFree && (
-                    <div 
-                      className="absolute inset-y-2 left-2 right-2 rounded-lg flex items-center justify-center" 
-                      style={{ border: '1px dashed rgba(255,255,255,0.08)' }}
-                    />
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
       </div>
 
       {/* ======== Legend Footer ======== */}
-      <footer className="relative z-10 flex items-center justify-between gap-4 px-6 py-3 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(15,23,42,0.8)' }}>
+      <footer className="relative z-10 flex items-center justify-between gap-4 px-6 py-3 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-white/10" />
