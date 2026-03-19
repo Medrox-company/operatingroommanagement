@@ -740,15 +740,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p 
-                        className="text-sm font-bold tracking-tight uppercase truncate leading-tight"
-                        style={{ color: isActive ? colors.text : 'rgba(255,255,255,0.45)' }}
+                        className="text-sm font-bold tracking-tight uppercase truncate leading-tight text-white/40"
                       >
                         {room.name}
                       </p>
                       {isFree ? (
                         <p className="text-[9px] font-medium text-white/25 truncate">Volný</p>
                       ) : (
-                        <p className="text-[9px] font-bold truncate" style={{ color: `${colors.text}90` }}>{room.department}</p>
+                        <p className="text-[9px] font-bold truncate text-white/25">{room.department}</p>
                       )}
                     </div>
                   </div>
