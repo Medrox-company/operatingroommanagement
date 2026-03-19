@@ -470,6 +470,48 @@ const StatusBadge: React.FC<{
 
 
 /* ============================== */
+/* Stat Box Component             */
+/* ============================== */
+const StatBox: React.FC<{
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  color: string;
+  glow?: boolean;
+}> = ({ icon: Icon, label, value, color, glow }) => (
+  <div
+    className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'animate-pulse' : ''}`}
+    style={{
+      background: `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`,
+      border: `1px solid ${color}40`,
+      boxShadow: `0 0 20px ${color}15`,
+    }}
+  >
+    <div
+      className="absolute inset-0 opacity-40"
+      style={{
+        background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
+      }}
+    />
+    <div className="relative flex items-center gap-3 h-full">
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        style={{
+          background: `linear-gradient(135deg, ${color}40 0%, ${color}15 100%)`,
+          border: `1px solid ${color}50`,
+        }}
+      >
+        <Icon className="w-4 h-4" style={{ color }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[9px] text-zinc-500 uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-semibold leading-tight" style={{ color }}>{value}</p>
+      </div>
+    </div>
+  </div>
+);
+
+/* ============================== */
 /* Timeline Module                */
 /* ============================== */
 const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
@@ -509,7 +551,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     const doctorsFree = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex >= 6).length;
     const nursesWorking = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex < 6).length;
     const nursesFree = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex >= 6).length;
-    return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree };
+    const emergencyCount = rooms.filter(r => r.isEmergency).length;
+    return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
   }, [rooms]);
 
   /* --- Sorted rooms by activity --- */
@@ -559,11 +602,20 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return `+${hours}h ${minutes < 10 ? '0' : ''}${minutes}m`;
   };
 
+  // Format date
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("cs-CZ", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+  };
+
   // Count active rooms for numbering
   let activeRoomCounter = 0;
 
   return (
-    <div className="w-full h-full text-white overflow-hidden flex flex-col relative" style={{ background: '#0B1120' }}>
+    <div className="w-full h-full text-white overflow-hidden flex flex-col relative">
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -572,36 +624,142 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
         )}
       </AnimatePresence>
 
-      {/* ======== Status Bar ======== */}
-      <header className="relative z-10 flex items-center justify-between gap-4 px-6 py-4 border-b flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}>
-        <div className="flex items-center gap-2 flex-wrap">
-          <StatusBadge icon={Activity} label="OPERACE" value={stats.operations} color="#22C55E" />
-          <StatusBadge icon={Loader2} label="UKLID" value={stats.cleaning} color="#F97316" />
-          <StatusBadge icon={Stethoscope} label="VOLNE" value={stats.free} />
-          <StatusBadge icon={Shield} label="DOKONCENO" value={stats.completed} />
-          
-          <div className="w-px h-8 bg-white/10 mx-2" />
-          
-          <StatusBadge icon={User} label="LEKARI PRACUJI" value={stats.doctorsWorking} color="#3B82F6" variant="outline" />
-          <StatusBadge icon={User} label="LEKARI VOLNI" value={stats.doctorsFree} color="#06B6D4" variant="outline" />
-          <StatusBadge icon={Users} label="SESTRY PRACUJI" value={stats.nursesWorking} color="#EC4899" variant="outline" />
-          <StatusBadge icon={Users} label="SESTRY VOLNE" value={stats.nursesFree} color="#A855F7" variant="outline" />
+      {/* ======== Header with Title and Stats ======== */}
+      <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
+        <div className="px-8 md:pl-32 md:pr-10 py-6">
+          {/* Title Section - Matching Dashboard Style */}
+          <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 mb-6">
+            <div className="text-center lg:text-left">
+              <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+                <Clock className="w-4 h-4 text-[#00D8C1]" />
+                <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">TIMELINE OVERVIEW</p>
+              </div>
+              <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+                TIMELINE <span className="text-white/20">VIEW</span>
+              </h1>
+            </div>
+          </header>
+
+          {/* Stats Boxes Row */}
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
+            <StatBox 
+              icon={Activity} 
+              label="Aktivni" 
+              value={`${stats.operations} operaci`} 
+              color="#22C55E" 
+            />
+            <StatBox 
+              icon={Loader2} 
+              label="Uklid" 
+              value={`${stats.cleaning} salu`} 
+              color="#F97316" 
+            />
+            <StatBox 
+              icon={Stethoscope} 
+              label="Volne" 
+              value={`${stats.free} salu`} 
+              color="#22D3EE" 
+            />
+            <StatBox 
+              icon={Shield} 
+              label="Dokonceno" 
+              value={`${stats.completed} dnes`} 
+              color="#22D3EE" 
+            />
+
+            {stats.emergencyCount > 0 && (
+              <StatBox 
+                icon={AlertTriangle} 
+                label="Emergency" 
+                value={`${stats.emergencyCount} salu`} 
+                color="#EF4444" 
+                glow 
+              />
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1 min-w-4" />
+
+            {/* Date Box */}
+            <StatBox 
+              icon={CalendarDays} 
+              label="Datum" 
+              value={formatDate(currentTime)} 
+              color="#6366F1" 
+            />
+
+            {/* Time Box */}
+            <div
+              className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0.04) 100%)",
+                border: "1px solid rgba(168, 85, 247, 0.25)",
+                boxShadow: "0 0 20px rgba(168, 85, 247, 0.1)",
+              }}
+            >
+              <div
+                className="absolute inset-0 opacity-40"
+                style={{
+                  background: "radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.2) 0%, transparent 70%)",
+                }}
+              />
+              <div className="relative flex items-center gap-3 h-full">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(168, 85, 247, 0.1) 100%)",
+                    border: "1px solid rgba(168, 85, 247, 0.35)",
+                  }}
+                >
+                  <Clock className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Cas</p>
+                  <p className="text-sm font-semibold text-purple-400 leading-tight tabular-nums">
+                    {currentTime.toLocaleTimeString("cs-CZ", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Legend Button */}
+            <button 
+              onClick={() => setShowLegend(!showLegend)}
+              className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden hover:scale-[1.02] transition-transform"
+              style={{
+                background: "linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.03) 100%)",
+                border: "1px solid rgba(148, 163, 184, 0.2)",
+              }}
+            >
+              <div className="relative flex items-center gap-3 h-full">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    background: "rgba(148, 163, 184, 0.15)",
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                  }}
+                >
+                  <Settings className="w-4 h-4 text-slate-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Zobrazit</p>
+                  <p className="text-sm font-semibold text-slate-400 leading-tight">Legendu</p>
+                </div>
+              </div>
+            </button>
+          </div>
         </div>
-        
-        <button 
-          onClick={() => setShowLegend(!showLegend)}
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-all"
-        >
-          <Settings className="w-4 h-4 text-white/50" />
-          <span className="text-xs font-medium text-white/60">Legenda</span>
-        </button>
-      </header>
+      </div>
 
       {/* ======== Main Timeline ======== */}
-      <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
         {/* Time Axis Header - Fixed */}
-        <div className="flex flex-shrink-0 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.9)' }}>
+        <div className="flex flex-shrink-0 border-b rounded-t-2xl" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.9)' }}>
           {/* Room label header - fixed */}
           <div 
             className="flex-shrink-0 flex items-center px-4 gap-2 border-r" 
@@ -989,28 +1147,43 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       </div>
 
       {/* ======== Legend Footer ======== */}
-      <footer className="relative z-10 flex items-center justify-between gap-4 px-6 py-3 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
+      <footer className="relative z-10 flex items-center justify-between gap-4 px-8 md:pl-32 md:pr-10 py-4 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
             <div className="w-4 h-4 rounded bg-white/10" />
             <span className="text-[10px] font-medium text-white/40">Dokoncene</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
             <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #3B82F6 0px, #3B82F6 4px, transparent 4px, transparent 8px)' }} />
             <span className="text-[10px] font-medium text-white/40">Zacatek smeny</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
             <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #F97316 0px, #F97316 4px, transparent 4px, transparent 8px)' }} />
             <span className="text-[10px] font-medium text-white/40">Konec smeny</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
             <div className="w-4 h-4 rounded-full border-2 border-red-500/50" />
             <span className="text-[10px] font-medium text-white/40">Presah</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-white/30">
-          <Info className="w-3.5 h-3.5" />
-          <span className="text-[10px] font-medium">Kliknete na sal pro zobrazeni detailu</span>
+        <div 
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <Info className="w-3.5 h-3.5 text-white/30" />
+          <span className="text-[10px] font-medium text-white/30">Kliknete na sal pro zobrazeni detailu</span>
         </div>
       </footer>
     </div>
