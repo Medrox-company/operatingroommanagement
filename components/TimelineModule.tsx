@@ -669,7 +669,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black tracking-wider uppercase text-white/60 leading-tight">{room.name}</p>
+                        <p className="text-sm font-black tracking-wider uppercase text-white/40 leading-tight">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
@@ -697,7 +697,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black tracking-wider uppercase text-white/60 leading-tight">{room.name}</p>
+                        <p className="text-sm font-black tracking-wider uppercase text-white/40 leading-tight">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
