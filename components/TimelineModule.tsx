@@ -657,11 +657,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch flex-1 min-h-0 border-b cursor-pointer"
-                    style={{ borderColor: 'rgba(255,59,48,0.35)', background: 'linear-gradient(90deg, rgba(255,59,48,0.20) 0%, rgba(255,59,48,0.08) 100%)' }}
+                    className="flex items-stretch flex-1 min-h-0 border-b border-white/[0.04] cursor-pointer hover:bg-white/[0.02] transition-colors"
                     onClick={() => setSelectedRoom(room)}
                   >
-                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(255,59,48,0.15)', borderColor: 'rgba(255,59,48,0.25)' }}>
+                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(0,0,0,0.2)' }}>
                       <div className="flex-shrink-0">
                         <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center border-2 border-red-400 shadow-[0_0_20px_rgba(255,59,48,0.6)]">
                           <AlertTriangle className="w-5 h-5 text-white" />
@@ -669,7 +668,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-black tracking-wider uppercase text-red-400 leading-tight">EMERGENCY</p>
-                        <p className="text-[9px] font-medium text-red-300/50 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-white/40 truncate">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
@@ -689,11 +688,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch flex-1 min-h-0 border-b cursor-pointer"
-                    style={{ borderColor: 'rgba(251,191,36,0.35)', background: 'linear-gradient(90deg, rgba(251,191,36,0.20) 0%, rgba(251,191,36,0.08) 100%)' }}
+                    className="flex items-stretch flex-1 min-h-0 border-b border-white/[0.04] cursor-pointer hover:bg-white/[0.02] transition-colors"
                     onClick={() => setSelectedRoom(room)}
                   >
-                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(251,191,36,0.15)', borderColor: 'rgba(251,191,36,0.25)' }}>
+                    <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(0,0,0,0.2)' }}>
                       <div className="flex-shrink-0">
                         <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center border-2 border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]">
                           <Lock className="w-5 h-5 text-white" />
@@ -701,7 +699,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-black tracking-wider uppercase text-amber-400 leading-tight">UZAMČENO</p>
-                        <p className="text-[9px] font-medium text-amber-300/50 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-white/40 truncate">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
@@ -725,19 +723,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: roomIndex * 0.015, duration: 0.3 }}
-                  className="flex items-stretch flex-1 min-h-0 border-b group hover:bg-white/[0.02] transition-colors duration-200 cursor-pointer"
-                  style={{ 
-                    borderColor: isActive ? `${colors.text}30` : 'rgba(255,255,255,0.04)',
-                    background: isActive ? `linear-gradient(90deg, ${colors.text}15 0%, transparent 100%)` : 'transparent'
-                  }}
+                  className="flex items-stretch flex-1 min-h-0 border-b border-white/[0.04] group hover:bg-white/[0.02] transition-colors duration-200 cursor-pointer"
                   onClick={() => setSelectedRoom(room)}
                 >
                   <div 
-                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r group-hover:bg-white/[0.02] transition-colors" 
+                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10 group-hover:bg-white/[0.02] transition-colors" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
-                      background: isActive ? `${colors.text}15` : 'rgba(0,0,0,0.2)',
-                      borderColor: isActive ? `${colors.text}25` : 'rgba(255,255,255,0.1)'
+                      background: 'rgba(0,0,0,0.2)'
                     }}
                   >
                     <div className="flex-shrink-0">
