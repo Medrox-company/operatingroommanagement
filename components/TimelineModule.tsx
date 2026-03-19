@@ -551,13 +551,15 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             <CalendarDays className="w-4 h-4 text-[#00D8C1]" />
             <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
           </div>
-          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">TIMELINE</h1>
-        </div>
-        <div className="flex items-center gap-6 flex-shrink-0">
-          <span className="text-5xl font-black tracking-tight text-white/60">
-            {currentTime.toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric' })}
-          </span>
-          <span className="text-7xl font-mono font-black tracking-tighter text-white">{timeStr}</span>
+          <div className="flex items-baseline gap-8">
+            <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">TIMELINE</h1>
+            <div className="flex items-baseline gap-4">
+              <span className="text-3xl font-bold tracking-tight text-white/40">
+                {currentTime.toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric' })}
+              </span>
+              <span className="text-4xl font-mono font-black tracking-tight text-white/70">{timeStr}</span>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -657,26 +659,23 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch flex-1 min-h-0 border-b border-white/[0.04] cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="flex items-stretch flex-1 min-h-0 border-b border-red-500/30 cursor-pointer"
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(0,0,0,0.2)' }}>
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center border-2 border-red-400 shadow-[0_0_20px_rgba(255,59,48,0.6)]">
-                          <AlertTriangle className="w-5 h-5 text-white" />
+                        <div className="w-7 h-7 rounded-full bg-red-500/60 flex items-center justify-center border border-red-400/50">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-300" />
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black tracking-wider uppercase text-red-400 leading-tight">EMERGENCY</p>
-                        <p className="text-[9px] font-medium text-white/40 truncate">{room.name}</p>
+                        <p className="text-sm font-black tracking-wider uppercase text-white/60 leading-tight">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
-                      {TIME_MARKERS.slice(0, -1).map((_, i) => (
-                        <div key={i} className="absolute top-0 bottom-0 w-px bg-red-500/10" style={{ left: `${(i / HOURS_COUNT) * 100}%` }} />
-                      ))}
-                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.20)' }}>
-                        <span className="text-lg font-black tracking-[0.5em] text-red-400/70 uppercase select-none relative z-10">E M E R G E N C Y</span>
+                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: '#DC2626' }}>
+                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px)' }} />
+                        <span className="text-2xl font-black tracking-[0.4em] text-white uppercase select-none relative z-10">EMERGENCY</span>
                       </div>
                     </div>
                   </div>
@@ -688,28 +687,23 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch flex-1 min-h-0 border-b border-white/[0.04] cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="flex items-stretch flex-1 min-h-0 border-b border-amber-500/30 cursor-pointer"
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div className="flex-shrink-0 flex items-center gap-3 px-4 border-r border-white/10" style={{ width: ROOM_LABEL_WIDTH, background: 'rgba(0,0,0,0.2)' }}>
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center border-2 border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]">
-                          <Lock className="w-5 h-5 text-white" />
+                        <div className="w-7 h-7 rounded-full bg-amber-500/60 flex items-center justify-center border border-amber-400/50">
+                          <Lock className="w-3.5 h-3.5 text-amber-300" />
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black tracking-wider uppercase text-amber-400 leading-tight">UZAMČENO</p>
-                        <p className="text-[9px] font-medium text-white/40 truncate">{room.name}</p>
+                        <p className="text-sm font-black tracking-wider uppercase text-white/60 leading-tight">{room.name}</p>
                       </div>
                     </div>
                     <div className="relative flex-1 overflow-hidden">
-                      {TIME_MARKERS.slice(0, -1).map((_, i) => (
-                        <div key={i} className="absolute top-0 bottom-0 w-px bg-amber-500/10" style={{ left: `${(i / HOURS_COUNT) * 100}%` }} />
-                      ))}
-                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center gap-3 overflow-hidden" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.20)' }}>
-                        <Lock className="w-4 h-4 text-amber-400/50" />
-                        <span className="text-base font-black tracking-[0.35em] text-amber-400/70 uppercase select-none">UZAMČENO</span>
-                        <Lock className="w-4 h-4 text-amber-400/50" />
+                      <div className="absolute inset-y-[2px] left-0 right-0 rounded-lg flex items-center justify-center gap-3 overflow-hidden" style={{ background: '#D97706' }}>
+                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px)' }} />
+                        <span className="text-2xl font-black tracking-[0.4em] text-white uppercase select-none relative z-10">UZAMČENO</span>
                       </div>
                     </div>
                   </div>
@@ -735,14 +729,13 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   >
                     <div className="flex-shrink-0">
                       <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center border-2" 
+                        className="w-7 h-7 rounded-full flex items-center justify-center border" 
                         style={{ 
-                          backgroundColor: isActive ? colors.text : 'rgba(255,255,255,0.05)', 
-                          borderColor: isActive ? colors.text : 'rgba(255,255,255,0.1)',
-                          boxShadow: isActive ? `0 0 20px ${colors.text}60` : 'none'
+                          backgroundColor: isActive ? `${colors.text}50` : 'rgba(255,255,255,0.05)', 
+                          borderColor: isActive ? `${colors.text}60` : 'rgba(255,255,255,0.1)'
                         }}
                       >
-                        {isActive ? <Activity className="w-4 h-4 text-white" /> : <div className="w-2 h-2 rounded-full bg-white/20" />}
+                        {isActive ? <Activity className="w-3 h-3" style={{ color: colors.text }} /> : <div className="w-1.5 h-1.5 rounded-full bg-white/20" />}
                       </div>
                     </div>
                     <div className="min-w-0 flex-1">
