@@ -811,15 +811,15 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           width: `${boxWidthPct}%`, 
                           transformOrigin: 'left center',
                           borderRadius: '12px',
-                          borderColor: `${colors.text}30`,
-                          boxShadow: `0 4px 20px ${colors.glow}, 0 0 0 1px ${colors.border} inset`
+                          borderColor: `${colors.text}40`,
+                          boxShadow: `0 0 0 1px ${colors.text}20 inset`
                         }}
                       >
                         {/* Background */}
                         <div 
                           className="absolute inset-0" 
                           style={{ 
-                            background: `linear-gradient(135deg, ${colors.text}15 0%, ${colors.text}08 100%)`,
+                            background: colors.solid,
                             borderRadius: '11px',
                           }} 
                         />
@@ -831,7 +831,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           animate={{ clipPath: `inset(0 ${100 - progressPct}% 0 0 round 11px)` }} 
                           transition={{ duration: 1.2, ease: [0.45, 0, 0.15, 1] }} 
                           style={{ 
-                            background: `linear-gradient(90deg, ${colors.solid}, ${colors.text}90)`,
+                            background: colors.solid,
                             borderRadius: '11px',
                           }} 
                         />
