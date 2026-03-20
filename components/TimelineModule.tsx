@@ -932,21 +932,20 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Emergency row - status only in left column, timeline area separate */
+              /* Emergency row */
               if (room.isEmergency) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(239,68,68,0.3)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
-                    {/* Left column - clean, no colored background */}
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(239,68,68,0.15)' }}
                     >
-                      <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50 animate-pulse">
+                      <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50">
                         <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -954,25 +953,34 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
                       </div>
                     </div>
-                    {/* Timeline area - colored background only here */}
-                    <div className="relative flex-1 bg-red-500/[0.03] hover:bg-red-500/[0.05] transition-colors" />
+                    <div className="relative flex-1 overflow-hidden">
+                      <div 
+                        className="absolute inset-y-2 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
+                        style={{ background: 'linear-gradient(90deg, #DC2626, #EF4444)' }}
+                      >
+                        <div 
+                          className="absolute inset-0 opacity-30" 
+                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
+                        />
+                        <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">EMERGENCY</span>
+                      </div>
+                    </div>
                   </div>
                 );
               }
 
-              /* Locked row - status only in left column, timeline area separate */
+              /* Locked row */
               if (room.isLocked) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(251,191,36,0.3)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
-                    {/* Left column - clean, no colored background */}
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(251,191,36,0.1)' }}
                     >
                       <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-500/50">
                         <Lock className="w-3.5 h-3.5 text-amber-400" />
@@ -982,8 +990,18 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
                       </div>
                     </div>
-                    {/* Timeline area - colored background only here */}
-                    <div className="relative flex-1 bg-amber-500/[0.03] hover:bg-amber-500/[0.05] transition-colors" />
+                    <div className="relative flex-1 overflow-hidden">
+                      <div 
+                        className="absolute inset-y-2 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
+                        style={{ background: 'linear-gradient(90deg, #D97706, #F59E0B)' }}
+                      >
+                        <div 
+                          className="absolute inset-0 opacity-30" 
+                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
+                        />
+                        <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">UZAMCENO</span>
+                      </div>
+                    </div>
                   </div>
                 );
               }
