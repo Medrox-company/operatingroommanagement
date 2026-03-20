@@ -953,17 +953,69 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
                       </div>
                     </div>
+                    {/* Emergency timeline box - Premium pulsing design */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div 
-                        className="absolute inset-y-2 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
-                        style={{ background: 'linear-gradient(90deg, #DC2626, #EF4444)' }}
+                      <motion.div 
+                        className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden"
+                        animate={{ opacity: [1, 0.85, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
                       >
+                        {/* Outer glow */}
                         <div 
-                          className="absolute inset-0 opacity-30" 
-                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
+                          className="absolute -inset-2 blur-xl opacity-40"
+                          style={{ background: '#EF4444' }}
                         />
-                        <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">EMERGENCY</span>
-                      </div>
+                        
+                        {/* Main background with gradient */}
+                        <div 
+                          className="absolute inset-0 rounded-xl"
+                          style={{ 
+                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
+                            border: '1px solid rgba(239, 68, 68, 0.5)',
+                            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                          }}
+                        />
+                        
+                        {/* Top radial glow */}
+                        <div 
+                          className="absolute inset-0 opacity-70"
+                          style={{ 
+                            background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(239, 68, 68, 0.4) 0%, transparent 70%)'
+                          }}
+                        />
+                        
+                        {/* Animated diagonal stripes */}
+                        <motion.div 
+                          className="absolute inset-0 opacity-20"
+                          style={{ 
+                            backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)'
+                          }}
+                          animate={{ backgroundPosition: ['0px 0px', '28px 28px'] }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        />
+                        
+                        {/* Content */}
+                        <div className="absolute inset-0 flex items-center justify-center gap-3">
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          >
+                            <AlertTriangle className="w-5 h-5 text-red-400 drop-shadow-lg" />
+                          </motion.div>
+                          <span 
+                            className="text-base font-black tracking-[0.25em] text-red-300 uppercase select-none"
+                            style={{ textShadow: '0 2px 10px rgba(239, 68, 68, 0.5)' }}
+                          >
+                            EMERGENCY
+                          </span>
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}
+                          >
+                            <AlertTriangle className="w-5 h-5 text-red-400 drop-shadow-lg" />
+                          </motion.div>
+                        </div>
+                      </motion.div>
                     </div>
                   </div>
                 );
@@ -990,16 +1042,59 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
                       </div>
                     </div>
+                    {/* Locked timeline box - Premium design */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div 
-                        className="absolute inset-y-2 left-1 right-1 rounded-lg flex items-center justify-center overflow-hidden"
-                        style={{ background: 'linear-gradient(90deg, #D97706, #F59E0B)' }}
-                      >
+                      <div className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden">
+                        {/* Outer subtle glow */}
                         <div 
-                          className="absolute inset-0 opacity-30" 
-                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 16px)' }} 
+                          className="absolute -inset-1 blur-lg opacity-30"
+                          style={{ background: '#F59E0B' }}
                         />
-                        <span className="text-lg font-black tracking-[0.3em] text-white uppercase select-none relative z-10">UZAMCENO</span>
+                        
+                        {/* Main background with gradient */}
+                        <div 
+                          className="absolute inset-0 rounded-xl"
+                          style={{ 
+                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
+                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+                          }}
+                        />
+                        
+                        {/* Top radial glow */}
+                        <div 
+                          className="absolute inset-0 opacity-60"
+                          style={{ 
+                            background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245, 158, 11, 0.3) 0%, transparent 70%)'
+                          }}
+                        />
+                        
+                        {/* Diagonal stripes pattern */}
+                        <div 
+                          className="absolute inset-0 opacity-15"
+                          style={{ 
+                            backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)'
+                          }}
+                        />
+                        
+                        {/* Content */}
+                        <div className="absolute inset-0 flex items-center justify-center gap-3">
+                          <div
+                            className="w-6 h-6 rounded-lg flex items-center justify-center"
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.1) 100%)',
+                              border: '1px solid rgba(245, 158, 11, 0.4)'
+                            }}
+                          >
+                            <Lock className="w-3.5 h-3.5 text-amber-400" />
+                          </div>
+                          <span 
+                            className="text-base font-black tracking-[0.25em] text-amber-300 uppercase select-none"
+                            style={{ textShadow: '0 2px 10px rgba(245, 158, 11, 0.4)' }}
+                          >
+                            UZAMCENO
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1093,66 +1188,163 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       );
                     })}
 
-                    {/* Active operation bar */}
+                    {/* Active operation bar - Premium Design */}
                     {isActive && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.5, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-2 bottom-2 overflow-hidden rounded-lg"
+                        transition={{ duration: 0.6, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl group/bar"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
                           transformOrigin: 'left center'
                         }}
                       >
-                        {/* Background - solid color */}
+                        {/* Outer glow effect */}
                         <div 
-                          className="absolute inset-0 rounded-lg" 
-                          style={{ 
-                            background: `linear-gradient(90deg, ${roomColor.bg}90, ${roomColor.bg}70)`,
-                            boxShadow: `0 2px 12px ${roomColor.glow}`
-                          }} 
+                          className="absolute -inset-1 rounded-xl blur-md opacity-50"
+                          style={{ background: roomColor.bg }}
                         />
 
-                        {/* Completed section with vertical stripes */}
+                        {/* Main container with gradient border */}
                         <div 
-                          className="absolute inset-0 rounded-lg" 
+                          className="absolute inset-0 rounded-xl"
                           style={{ 
-                            clipPath: `inset(0 ${100 - progressPct}% 0 0)`,
-                            background: roomColor.bg
+                            background: `linear-gradient(135deg, ${roomColor.bg}30 0%, ${roomColor.bg}10 100%)`,
+                            border: `1px solid ${roomColor.bg}60`,
+                            boxShadow: `0 4px 20px ${roomColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`
                           }}
+                        />
+
+                        {/* Top highlight reflection */}
+                        <div 
+                          className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl opacity-30"
+                          style={{ 
+                            background: `linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)`
+                          }}
+                        />
+
+                        {/* Radial glow from top */}
+                        <div 
+                          className="absolute inset-0 opacity-60"
+                          style={{ 
+                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${roomColor.bg}40 0%, transparent 70%)`
+                          }}
+                        />
+
+                        {/* Completed section with animated shine */}
+                        <div 
+                          className="absolute inset-0 rounded-xl overflow-hidden" 
+                          style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
                         >
+                          {/* Solid progress fill */}
                           <div 
-                            className="absolute inset-0" 
+                            className="absolute inset-0"
                             style={{ 
-                              backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.35) 3px, rgba(255,255,255,0.35) 6px)` 
+                              background: `linear-gradient(135deg, ${roomColor.bg} 0%, ${roomColor.bg}CC 100%)`
+                            }}
+                          />
+                          
+                          {/* Diagonal stripes pattern */}
+                          <div 
+                            className="absolute inset-0 opacity-20" 
+                            style={{ 
+                              backgroundImage: `repeating-linear-gradient(
+                                -45deg,
+                                transparent,
+                                transparent 4px,
+                                rgba(255,255,255,0.4) 4px,
+                                rgba(255,255,255,0.4) 8px
+                              )`
                             }} 
+                          />
+                          
+                          {/* Animated shine sweep */}
+                          <motion.div
+                            className="absolute inset-0"
+                            style={{
+                              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                              width: '50%'
+                            }}
+                            animate={{ x: ['-100%', '300%'] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
                           />
                         </div>
 
-                        {/* Current position indicator - white line */}
+                        {/* Current position indicator - glowing line */}
                         {progressPct > 0 && progressPct < 100 && (
-                          <motion.div 
-                            className="absolute top-0 bottom-0 w-0.5 rounded-full"
-                            style={{ 
-                              left: `${progressPct}%`,
-                              background: '#FFF',
-                              boxShadow: '0 0 8px rgba(255,255,255,0.8)'
-                            }}
-                            animate={{ opacity: [1, 0.6, 1] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                          />
+                          <>
+                            {/* Glow behind the line */}
+                            <motion.div 
+                              className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
+                              style={{ 
+                                left: `${progressPct}%`,
+                                background: `linear-gradient(90deg, transparent, ${roomColor.bg}, transparent)`
+                              }}
+                              animate={{ opacity: [0.5, 1, 0.5] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                            {/* Main line */}
+                            <motion.div 
+                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
+                              style={{ 
+                                left: `${progressPct}%`,
+                                background: '#FFF',
+                                boxShadow: `0 0 10px #FFF, 0 0 20px ${roomColor.bg}`
+                              }}
+                              animate={{ opacity: [1, 0.7, 1] }}
+                              transition={{ duration: 1, repeat: Infinity }}
+                            />
+                            {/* Top dot */}
+                            <motion.div 
+                              className="absolute -top-0.5 w-2 h-2 rounded-full -translate-x-1/2"
+                              style={{ 
+                                left: `${progressPct}%`,
+                                background: '#FFF',
+                                boxShadow: `0 0 8px #FFF, 0 0 16px ${roomColor.bg}`
+                              }}
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                          </>
+                        )}
+
+                        {/* Content overlay - procedure name if space allows */}
+                        {boxWidthPct > 8 && (
+                          <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                            <span 
+                              className="text-[10px] font-bold text-white/90 truncate drop-shadow-lg"
+                              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                            >
+                              {room.currentProcedure?.name || STEPS[stepIndex] || 'Operace'}
+                            </span>
+                          </div>
                         )}
                       </motion.div>
                     )}
 
-                    {/* Free room indicator */}
+                    {/* Free room indicator - Subtle premium style */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-3 left-2 right-2 rounded-lg flex items-center justify-center" 
-                        style={{ border: '1px dashed rgba(255,255,255,0.06)' }}
-                      />
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center overflow-hidden"
+                        style={{ 
+                          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.03) 0%, rgba(34, 197, 94, 0.01) 100%)',
+                          border: '1px dashed rgba(34, 197, 94, 0.15)'
+                        }}
+                      >
+                        {/* Subtle pulsing dot */}
+                        <motion.div 
+                          className="w-2 h-2 rounded-full"
+                          style={{ 
+                            background: 'rgba(34, 197, 94, 0.4)',
+                            boxShadow: '0 0 10px rgba(34, 197, 94, 0.3)'
+                          }}
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                        <span className="ml-2 text-[9px] font-medium text-emerald-500/40 uppercase tracking-wider">Dostupny</span>
+                      </div>
                     )}
                   </div>
                 </motion.div>
