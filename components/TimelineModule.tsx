@@ -932,17 +932,18 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Emergency row - only shows status in left column, no timeline box */
+              /* Emergency row - status only in left column, timeline area separate */
               if (room.isEmergency) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(239,68,68,0.2)' }}
+                    className="flex items-stretch border-b cursor-pointer transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
+                    {/* Left column - clean, no colored background */}
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50 animate-pulse">
@@ -953,23 +954,24 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
                       </div>
                     </div>
-                    {/* Empty timeline area - no box for emergency status */}
-                    <div className="relative flex-1 bg-red-500/[0.03]" />
+                    {/* Timeline area - colored background only here */}
+                    <div className="relative flex-1 bg-red-500/[0.03] hover:bg-red-500/[0.05] transition-colors" />
                   </div>
                 );
               }
 
-              /* Locked row - only shows status in left column, no timeline box */
+              /* Locked row - status only in left column, timeline area separate */
               if (room.isLocked) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(251,191,36,0.2)' }}
+                    className="flex items-stretch border-b cursor-pointer transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
+                    {/* Left column - clean, no colored background */}
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-500/50">
@@ -980,8 +982,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
                       </div>
                     </div>
-                    {/* Empty timeline area - no box for locked status */}
-                    <div className="relative flex-1 bg-amber-500/[0.03]" />
+                    {/* Timeline area - colored background only here */}
+                    <div className="relative flex-1 bg-amber-500/[0.03] hover:bg-amber-500/[0.05] transition-colors" />
                   </div>
                 );
               }
