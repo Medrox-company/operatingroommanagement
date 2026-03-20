@@ -892,23 +892,39 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               const remainingTime = getRemainingTime(room);
 
               // Calculate operation bar position
+              // Use currentProcedure if available, otherwise generate fallback values for active rooms
               const startParts = room.currentProcedure?.startTime?.split(':');
               let boxLeftPct = 0;
               let boxWidthPct = 0;
               let progressPct = 0;
 
-              if (startParts && startParts.length === 2 && isActive) {
-                const startDate = new Date();
-                startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+              if (isActive) {
+                let startDate: Date;
+                let endDate: Date;
+                
+                if (startParts && startParts.length === 2) {
+                  // Use actual procedure start time
+                  startDate = new Date();
+                  startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+                } else {
+                  // Fallback: generate a start time based on room index (staggered starts from 7:00-12:00)
+                  startDate = new Date();
+                  const baseHour = 7 + (roomIndex % 6); // Start between 7:00 and 12:00
+                  const baseMinute = (roomIndex * 17) % 60; // Stagger by ~17 min
+                  startDate.setHours(baseHour, baseMinute, 0, 0);
+                }
+                
                 boxLeftPct = getTimePercent(startDate, 32);
                 
-                let endDate: Date;
                 if (room.estimatedEndTime) {
                   endDate = new Date(room.estimatedEndTime);
                 } else if (room.currentProcedure?.estimatedDuration) {
                   endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
                 } else {
-                  endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default 2h
+                  // Fallback: generate duration based on step (longer for surgery steps)
+                  const fallbackDurations = [30, 20, 120, 60, 30, 45, 0]; // minutes per step
+                  const duration = fallbackDurations[Math.min(stepIndex, 6)] || 90;
+                  endDate = new Date(startDate.getTime() + duration * 60 * 1000);
                 }
                 
                 const boxRightPct = getTimePercent(endDate, 32);
