@@ -937,13 +937,13 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(239,68,68,0.3)' }}
+                    className="flex items-stretch border-b cursor-pointer transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(239,68,68,0.15)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50">
                         <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
@@ -974,13 +974,13 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer hover:bg-white/[0.02] transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(251,191,36,0.3)' }}
+                    className="flex items-stretch border-b cursor-pointer transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(251,191,36,0.1)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-500/50">
                         <Lock className="w-3.5 h-3.5 text-amber-400" />
