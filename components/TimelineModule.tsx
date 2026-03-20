@@ -932,35 +932,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Emergency row - shows status indicator at current time position */
+              /* Emergency row - only shows status in left column, no timeline box */
               if (room.isEmergency) {
-                // Calculate box position based on actual times if available
-                let emergencyBoxLeft = 0;
-                let emergencyBoxWidth = 0;
-                
-                if (room.currentProcedure?.startTime) {
-                  const sParts = room.currentProcedure.startTime.split(':');
-                  if (sParts.length === 2) {
-                    const sDate = new Date();
-                    sDate.setHours(parseInt(sParts[0], 10), parseInt(sParts[1], 10), 0, 0);
-                    emergencyBoxLeft = getTimePercent(sDate, 32);
-                    
-                    let eDate: Date;
-                    if (room.estimatedEndTime) {
-                      eDate = new Date(room.estimatedEndTime);
-                    } else if (room.currentProcedure?.estimatedDuration) {
-                      eDate = new Date(sDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
-                    } else {
-                      eDate = new Date(sDate.getTime() + 120 * 60 * 1000); // Default 2h
-                    }
-                    emergencyBoxWidth = Math.max(3, getTimePercent(eDate, 32) - emergencyBoxLeft);
-                  }
-                } else {
-                  // Fallback: show box at current time extending 2h forward
-                  emergencyBoxLeft = Math.max(0, nowPercent - 2);
-                  emergencyBoxWidth = 8; // ~2.5h span
-                }
-                
                 return (
                   <div
                     key={room.id}
@@ -980,62 +953,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
                       </div>
                     </div>
-                    <div className="relative flex-1">
-                      {/* Emergency procedure box at timeline position */}
-                      <div 
-                        className="absolute top-2 bottom-2 rounded-lg flex items-center justify-center overflow-hidden z-30"
-                        style={{ 
-                          left: `${emergencyBoxLeft}%`,
-                          width: `${emergencyBoxWidth}%`,
-                          minWidth: '120px',
-                          background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
-                          border: '1px solid rgba(239,68,68,0.6)',
-                          boxShadow: '0 0 20px rgba(239,68,68,0.4), inset 0 1px 0 rgba(255,255,255,0.1)'
-                        }}
-                      >
-                        <div 
-                          className="absolute inset-0 opacity-20" 
-                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(0,0,0,0.3) 6px, rgba(0,0,0,0.3) 12px)' }} 
-                        />
-                        <div className="relative flex items-center gap-2 px-3">
-                          <AlertTriangle className="w-4 h-4 text-white" />
-                          <span className="text-xs font-black tracking-wider text-white uppercase">EMERGENCY</span>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Empty timeline area - no box for emergency status */}
+                    <div className="relative flex-1 bg-red-500/[0.03]" />
                   </div>
                 );
               }
 
-              /* Locked row - shows status indicator at timeline position */
+              /* Locked row - only shows status in left column, no timeline box */
               if (room.isLocked) {
-                // Calculate box position based on actual times if available
-                let lockedBoxLeft = 0;
-                let lockedBoxWidth = 0;
-                
-                if (room.currentProcedure?.startTime) {
-                  const sParts = room.currentProcedure.startTime.split(':');
-                  if (sParts.length === 2) {
-                    const sDate = new Date();
-                    sDate.setHours(parseInt(sParts[0], 10), parseInt(sParts[1], 10), 0, 0);
-                    lockedBoxLeft = getTimePercent(sDate, 32);
-                    
-                    let eDate: Date;
-                    if (room.estimatedEndTime) {
-                      eDate = new Date(room.estimatedEndTime);
-                    } else if (room.currentProcedure?.estimatedDuration) {
-                      eDate = new Date(sDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
-                    } else {
-                      eDate = new Date(sDate.getTime() + 60 * 60 * 1000); // Default 1h
-                    }
-                    lockedBoxWidth = Math.max(3, getTimePercent(eDate, 32) - lockedBoxLeft);
-                  }
-                } else {
-                  // Fallback: show box at current time
-                  lockedBoxLeft = Math.max(0, nowPercent - 1);
-                  lockedBoxWidth = 6; // ~2h span
-                }
-                
                 return (
                   <div
                     key={room.id}
@@ -1055,29 +980,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
                       </div>
                     </div>
-                    <div className="relative flex-1">
-                      {/* Locked status box at timeline position */}
-                      <div 
-                        className="absolute top-2 bottom-2 rounded-lg flex items-center justify-center overflow-hidden z-30"
-                        style={{ 
-                          left: `${lockedBoxLeft}%`,
-                          width: `${lockedBoxWidth}%`,
-                          minWidth: '100px',
-                          background: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
-                          border: '1px solid rgba(251,191,36,0.6)',
-                          boxShadow: '0 0 15px rgba(251,191,36,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
-                        }}
-                      >
-                        <div 
-                          className="absolute inset-0 opacity-20" 
-                          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(0,0,0,0.3) 6px, rgba(0,0,0,0.3) 12px)' }} 
-                        />
-                        <div className="relative flex items-center gap-2 px-3">
-                          <Lock className="w-4 h-4 text-white" />
-                          <span className="text-xs font-black tracking-wider text-white uppercase">UZAMCENO</span>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Empty timeline area - no box for locked status */}
+                    <div className="relative flex-1 bg-amber-500/[0.03]" />
                   </div>
                 );
               }
