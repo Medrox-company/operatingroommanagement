@@ -1317,7 +1317,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               className="text-[10px] font-bold text-white/90 truncate drop-shadow-lg"
                               style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                             >
-                              {room.currentProcedure?.name || STEPS[stepIndex] || 'Operace'}
+                              {room.currentProcedure?.name || WORKFLOW_STEPS[stepIndex]?.name || 'Operace'}
                             </span>
                           </div>
                         )}
