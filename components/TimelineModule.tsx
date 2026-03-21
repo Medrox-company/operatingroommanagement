@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OperatingRoom } from '../types';
+import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
@@ -1302,6 +1302,41 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <span className="ml-2 text-[9px] font-medium text-emerald-500/40 uppercase tracking-wider">Dostupny</span>
                       </div>
                     )}
+
+                    {/* Room-specific end of working hours indicator */}
+                    {(() => {
+                      const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+                      const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+                      const todayKey = dayKeys[currentTime.getDay()];
+                      const todaySchedule = schedule[todayKey];
+                      
+                      if (!todaySchedule.enabled) return null;
+                      
+                      const endMinutes = todaySchedule.endHour * 60 + todaySchedule.endMinute;
+                      const endPercent = (endMinutes / (32 * 60)) * 100;
+                      
+                      return (
+                        <div 
+                          className="absolute top-0 bottom-0 w-0.5 z-20"
+                          style={{ 
+                            left: `${endPercent}%`,
+                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
+                          }}
+                        >
+                          {/* End time label */}
+                          <div 
+                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap"
+                            style={{ 
+                              background: 'rgba(249, 115, 22, 0.2)',
+                              border: '1px solid rgba(249, 115, 22, 0.4)',
+                              color: '#F97316'
+                            }}
+                          >
+                            {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </motion.div>
               );
@@ -1333,6 +1368,13 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           >
             <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #F97316 0px, #F97316 4px, transparent 4px, transparent 8px)' }} />
             <span className="text-[10px] font-medium text-white/40">Konec smeny</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(249, 115, 22, 0.05)', border: '1px solid rgba(249, 115, 22, 0.15)' }}
+          >
+            <div className="w-0.5 h-4 rounded-full" style={{ background: '#F97316' }} />
+            <span className="text-[10px] font-medium text-orange-400/60">Konec prac. doby salu</span>
           </div>
           <div 
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
