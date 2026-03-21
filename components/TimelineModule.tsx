@@ -555,23 +555,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
   }, [rooms]);
 
-  /* --- Sorted rooms by activity --- */
+  /* --- Rooms in original order - emergency/locked stay on their position --- */
   const sortedRooms = useMemo(() => {
-    return [...rooms].sort((a, b) => {
-      // Emergency rooms first
-      if (a.isEmergency && !b.isEmergency) return -1;
-      if (!a.isEmergency && b.isEmergency) return 1;
-      // Locked rooms second
-      if (a.isLocked && !b.isLocked) return -1;
-      if (!a.isLocked && b.isLocked) return 1;
-      // Active rooms before free
-      const aActive = a.currentStepIndex < 6;
-      const bActive = b.currentStepIndex < 6;
-      if (aActive && !bActive) return -1;
-      if (!aActive && bActive) return 1;
-      // Then sort by step index (lower = more urgent)
-      return a.currentStepIndex - b.currentStepIndex;
-    });
+    return [...rooms];
   }, [rooms]);
 
   // Calculate shift line positions (as percentage of 32-hour view)
@@ -953,20 +939,15 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
                       </div>
                     </div>
-                    {/* Emergency timeline box - Premium pulsing design */}
+                    {/* Emergency timeline box */}
                     <div className="relative flex-1 overflow-hidden">
-                      <motion.div 
-                        className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden"
-                        animate={{ opacity: [1, 0.85, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
+                      <div className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden">
                         {/* Outer glow */}
                         <div 
                           className="absolute -inset-2 blur-xl opacity-40"
                           style={{ background: '#EF4444' }}
                         />
-                        
-                        {/* Main background with gradient */}
+                        {/* Main background */}
                         <div 
                           className="absolute inset-0 rounded-xl"
                           style={{ 
@@ -975,47 +956,25 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                             boxShadow: '0 4px 20px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
                           }}
                         />
-                        
                         {/* Top radial glow */}
                         <div 
                           className="absolute inset-0 opacity-70"
-                          style={{ 
-                            background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(239, 68, 68, 0.4) 0%, transparent 70%)'
-                          }}
+                          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(239, 68, 68, 0.4) 0%, transparent 70%)' }}
                         />
-                        
-                        {/* Animated diagonal stripes */}
-                        <motion.div 
+                        {/* Diagonal stripes */}
+                        <div 
                           className="absolute inset-0 opacity-20"
-                          style={{ 
-                            backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)'
-                          }}
-                          animate={{ backgroundPosition: ['0px 0px', '28px 28px'] }}
-                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          style={{ backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)' }}
                         />
-                        
                         {/* Content */}
                         <div className="absolute inset-0 flex items-center justify-center gap-3">
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 1, repeat: Infinity }}
-                          >
-                            <AlertTriangle className="w-5 h-5 text-red-400 drop-shadow-lg" />
-                          </motion.div>
-                          <span 
-                            className="text-base font-black tracking-[0.25em] text-red-300 uppercase select-none"
-                            style={{ textShadow: '0 2px 10px rgba(239, 68, 68, 0.5)' }}
-                          >
+                          <AlertTriangle className="w-4 h-4 text-white/80" />
+                          <span className="text-sm font-black tracking-[0.25em] text-white uppercase select-none">
                             EMERGENCY
                           </span>
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}
-                          >
-                            <AlertTriangle className="w-5 h-5 text-red-400 drop-shadow-lg" />
-                          </motion.div>
+                          <AlertTriangle className="w-4 h-4 text-white/80" />
                         </div>
-                      </motion.div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1086,12 +1045,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               border: '1px solid rgba(245, 158, 11, 0.4)'
                             }}
                           >
-                            <Lock className="w-3.5 h-3.5 text-amber-400" />
+                            <Lock className="w-3.5 h-3.5 text-white/80" />
                           </div>
-                          <span 
-                            className="text-base font-black tracking-[0.25em] text-amber-300 uppercase select-none"
-                            style={{ textShadow: '0 2px 10px rgba(245, 158, 11, 0.4)' }}
-                          >
+                          <span className="text-sm font-black tracking-[0.25em] text-white uppercase select-none">
                             UZAMCENO
                           </span>
                         </div>
