@@ -25,6 +25,45 @@ export interface Procedure {
   progress: number; // 0-100
 }
 
+// Working hours for a specific day
+export interface DayWorkingHours {
+  enabled: boolean;       // Whether the room operates this day
+  startHour: number;      // Start hour (0-23)
+  startMinute: number;    // Start minute (0-59)
+  endHour: number;        // End hour (0-23)
+  endMinute: number;      // End minute (0-59)
+}
+
+// Weekly schedule for a room
+export interface WeeklySchedule {
+  monday: DayWorkingHours;
+  tuesday: DayWorkingHours;
+  wednesday: DayWorkingHours;
+  thursday: DayWorkingHours;
+  friday: DayWorkingHours;
+  saturday: DayWorkingHours;
+  sunday: DayWorkingHours;
+}
+
+// Default working hours
+export const DEFAULT_WORKING_HOURS: DayWorkingHours = {
+  enabled: true,
+  startHour: 7,
+  startMinute: 0,
+  endHour: 15,
+  endMinute: 30,
+};
+
+export const DEFAULT_WEEKLY_SCHEDULE: WeeklySchedule = {
+  monday: { ...DEFAULT_WORKING_HOURS },
+  tuesday: { ...DEFAULT_WORKING_HOURS },
+  wednesday: { ...DEFAULT_WORKING_HOURS },
+  thursday: { ...DEFAULT_WORKING_HOURS },
+  friday: { ...DEFAULT_WORKING_HOURS },
+  saturday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0 },
+  sunday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0 },
+};
+
 export interface OperatingRoom {
   id: string;
   name: string;
@@ -41,6 +80,9 @@ export interface OperatingRoom {
   isEmergency?: boolean;
   isLocked?: boolean;
   currentStepIndex: number; // Index aktuální fáze workflow (0-7)
+  
+  // Working hours schedule
+  weeklySchedule?: WeeklySchedule;
   
   // Extended details for interactivity
   currentPatient?: Patient;
