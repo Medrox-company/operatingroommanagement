@@ -488,66 +488,97 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       <AnimatePresence>
         {room.isEnhancedHygiene && (
           <motion.div
-            initial={{ y: -100, opacity: 0 }}
+            initial={{ y: -120, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ y: -120, opacity: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="absolute top-0 left-0 right-0 z-50 overflow-hidden"
           >
-            {/* Wave background container */}
+            {/* Main banner container */}
             <div 
-              className="relative py-4 px-8"
+              className="relative py-5 px-8"
               style={{
-                background: 'linear-gradient(180deg, rgba(220, 38, 38, 0.95) 0%, rgba(185, 28, 28, 0.9) 100%)',
+                background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.95) 0%, rgba(185, 28, 28, 0.9) 50%, rgba(153, 27, 27, 0.95) 100%)',
+                boxShadow: '0 4px 30px rgba(220, 38, 38, 0.4)'
               }}
             >
-              {/* Animated wave SVG - bottom edge */}
-              <div className="absolute bottom-0 left-0 right-0 h-4 overflow-hidden">
+              {/* Animated shimmer overlay */}
+              <motion.div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                }}
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
+              />
+
+              {/* Triple wave SVG - bottom edge */}
+              <div className="absolute -bottom-1 left-0 right-0 h-6 overflow-hidden">
+                {/* Wave 1 - Background wave */}
                 <svg 
-                  className="absolute bottom-0 w-[200%] h-8"
-                  viewBox="0 0 1200 30" 
+                  className="absolute bottom-0 w-[300%] h-10"
+                  viewBox="0 0 1800 40" 
                   preserveAspectRatio="none"
                 >
                   <motion.path
-                    d="M0,15 C150,30 350,0 500,15 C650,30 850,0 1000,15 C1150,30 1200,15 1200,15 L1200,30 L0,30 Z"
+                    d="M0,20 Q150,35 300,20 T600,20 T900,20 T1200,20 T1500,20 T1800,20 L1800,40 L0,40 Z"
+                    fill="rgba(11, 17, 32, 0.3)"
+                    animate={{ x: [0, -600] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  />
+                </svg>
+                {/* Wave 2 - Middle wave */}
+                <svg 
+                  className="absolute bottom-0 w-[300%] h-8"
+                  viewBox="0 0 1800 35" 
+                  preserveAspectRatio="none"
+                >
+                  <motion.path
+                    d="M0,18 C100,30 200,5 350,18 C500,32 600,8 750,18 C900,28 1000,10 1150,18 C1300,26 1400,12 1550,18 C1700,24 1800,18 1800,18 L1800,35 L0,35 Z"
+                    fill="rgba(11, 17, 32, 0.6)"
+                    animate={{ x: [-200, -800] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                  />
+                </svg>
+                {/* Wave 3 - Front wave */}
+                <svg 
+                  className="absolute bottom-0 w-[300%] h-6"
+                  viewBox="0 0 1800 30" 
+                  preserveAspectRatio="none"
+                >
+                  <motion.path
+                    d="M0,15 C80,25 160,5 280,15 C400,25 480,8 600,15 C720,22 800,10 920,15 C1040,20 1120,12 1240,15 C1360,18 1440,14 1560,15 C1680,16 1800,15 1800,15 L1800,30 L0,30 Z"
                     fill="rgba(11, 17, 32, 1)"
                     animate={{ x: [0, -600] }}
                     transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                   />
                 </svg>
-                <svg 
-                  className="absolute bottom-0 w-[200%] h-8"
-                  viewBox="0 0 1200 30" 
-                  preserveAspectRatio="none"
-                >
-                  <motion.path
-                    d="M0,20 C100,5 300,25 450,10 C600,0 750,25 900,15 C1050,5 1200,20 1200,20 L1200,30 L0,30 Z"
-                    fill="rgba(11, 17, 32, 0.5)"
-                    animate={{ x: [-300, -900] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                  />
-                </svg>
               </div>
 
-              {/* Animated particles/dots */}
+              {/* Floating particles */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(8)].map((_, i) => (
+                {[...Array(12)].map((_, i) => (
                   <motion.div
                     key={i}
-                    className="absolute w-1 h-1 rounded-full bg-white/30"
+                    className="absolute rounded-full"
                     style={{
-                      left: `${10 + i * 12}%`,
-                      top: '50%',
+                      width: 2 + (i % 3) * 2,
+                      height: 2 + (i % 3) * 2,
+                      left: `${5 + i * 8}%`,
+                      top: '40%',
+                      background: 'rgba(255,255,255,0.4)',
+                      boxShadow: '0 0 6px rgba(255,255,255,0.3)'
                     }}
                     animate={{
-                      y: [-5, 5, -5],
-                      opacity: [0.2, 0.6, 0.2],
-                      scale: [1, 1.5, 1],
+                      y: [-8, 8, -8],
+                      x: [0, i % 2 === 0 ? 5 : -5, 0],
+                      opacity: [0.2, 0.7, 0.2],
+                      scale: [1, 1.3, 1],
                     }}
                     transition={{
-                      duration: 2,
+                      duration: 2 + (i % 3) * 0.5,
                       repeat: Infinity,
-                      delay: i * 0.2,
+                      delay: i * 0.15,
                       ease: "easeInOut"
                     }}
                   />
@@ -555,21 +586,39 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </div>
 
               {/* Content */}
-              <div className="relative flex items-center justify-center gap-4">
+              <div className="relative flex items-center justify-center gap-5">
                 <motion.div
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="p-2 rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.15)' }}
+                  animate={{ 
+                    rotate: [0, 8, -8, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <ShieldAlert className="w-6 h-6 text-white" />
+                  <ShieldAlert className="w-6 h-6 text-white drop-shadow-lg" />
                 </motion.div>
-                <span className="text-base font-black tracking-[0.3em] text-white uppercase">
-                  ZVYŠENÝ HYGIENICKÝ REŽIM
-                </span>
+                <div className="flex flex-col items-center">
+                  <span className="text-lg font-black tracking-[0.35em] text-white uppercase drop-shadow-lg">
+                    ZVÝŠENÝ HYGIENICKÝ REŽIM
+                  </span>
+                  <motion.div 
+                    className="h-0.5 bg-white/50 rounded-full mt-1"
+                    initial={{ width: 0 }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 1, delay: 0.3 }}
+                  />
+                </div>
                 <motion.div
-                  animate={{ rotate: [0, -10, 10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="p-2 rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.15)' }}
+                  animate={{ 
+                    rotate: [0, -8, 8, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1.25 }}
                 >
-                  <ShieldAlert className="w-6 h-6 text-white" />
+                  <ShieldAlert className="w-6 h-6 text-white drop-shadow-lg" />
                 </motion.div>
               </div>
             </div>
