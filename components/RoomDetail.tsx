@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldCheck
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert
 } from 'lucide-react';
 import { recordStatusEvent } from '../lib/db';
 
@@ -504,7 +504,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <ShieldCheck className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-red-300' : 'text-white/60'}`} strokeWidth={2} />
+        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-red-300' : 'text-white/60'}`} strokeWidth={2} />
         <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-red-300' : 'text-white/60'}`}>
           {room.isEnhancedHygiene ? 'Hygienický\nrežim' : 'Hygien.\nrežim'}
         </span>
@@ -697,7 +697,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <ShieldCheck className="w-5 h-5 text-red-400" />
+                    <ShieldAlert className="w-5 h-5 text-red-400" />
                     <span className="text-sm font-black tracking-[0.2em] text-red-300 uppercase">
                       ZVÝŠENÝ HYGIENICKÝ REŽIM
                     </span>
