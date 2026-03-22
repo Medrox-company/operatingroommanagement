@@ -336,34 +336,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
       </header>
 
-      {/* Enhanced Hygiene Mode Label - Top Center */}
-      <AnimatePresence>
-        {room.isEnhancedHygiene && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-            className="absolute top-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)'
-            }}
-          >
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <ShieldAlert className="w-5 h-5 text-red-400" />
-            </motion.div>
-            <span className="text-sm font-black tracking-[0.15em] text-red-300 uppercase">
-              ZVÝŠENÝ HYGIENICKÝ REŽIM
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Right Column Action Buttons - Absolute Positioning */}
       {/* Close Button - Top Right */}
       <button 
@@ -662,78 +634,74 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                />
             </svg>
 
-            {/* Enhanced Hygiene Mode - Wave Animation Ring (outside main circle) */}
+            {/* Enhanced Hygiene Mode Animated Ring */}
             <AnimatePresence>
               {room.isEnhancedHygiene && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.5 }}
                   className="absolute inset-0 pointer-events-none"
-                  style={{ transform: 'scale(1.35)' }}
                 >
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 480 480">
-                    {/* Wave ring 1 - expanding outward */}
+                  <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.2]">
+                    {/* Outer pulsing glow ring */}
                     <motion.circle 
-                      cx="240" cy="240" r="220" fill="none"
-                      stroke="rgba(239, 68, 68, 0.6)" strokeWidth="2"
-                      initial={{ r: 220, opacity: 0.8 }}
+                      cx="240" cy="240" r="230" fill="none"
+                      stroke="#EF4444" strokeWidth="3" strokeLinecap="round"
+                      strokeDasharray="1445"
+                      initial={{ strokeDashoffset: 1445 }}
                       animate={{ 
-                        r: [220, 235, 220],
-                        opacity: [0.8, 0.2, 0.8],
-                        strokeWidth: [2, 1, 2]
+                        strokeDashoffset: [1445, 0],
+                        opacity: [0.3, 0.8, 0.3]
                       }}
                       transition={{ 
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
+                        strokeDashoffset: { duration: 2, ease: [0.22, 1, 0.36, 1] },
+                        opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" }
                       }}
-                      style={{ filter: 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.5))' }}
+                      style={{ filter: 'drop-shadow(0 0 20px rgba(239, 68, 68, 0.6))' }}
                     />
-                    {/* Wave ring 2 - delayed */}
+                    {/* Inner animated ring with dots */}
                     <motion.circle 
-                      cx="240" cy="240" r="220" fill="none"
-                      stroke="rgba(239, 68, 68, 0.5)" strokeWidth="2"
-                      initial={{ r: 220, opacity: 0.6 }}
+                      cx="240" cy="240" r="225" fill="none"
+                      stroke="#EF4444" strokeWidth="2" strokeLinecap="round"
+                      strokeDasharray="8 12"
                       animate={{ 
-                        r: [220, 240, 220],
-                        opacity: [0.6, 0.1, 0.6],
-                        strokeWidth: [2, 0.5, 2]
+                        rotate: [0, 360],
                       }}
                       transition={{ 
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 0.5
+                        rotate: { duration: 20, repeat: Infinity, ease: "linear" }
                       }}
-                      style={{ filter: 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.4))' }}
-                    />
-                    {/* Wave ring 3 - more delayed */}
-                    <motion.circle 
-                      cx="240" cy="240" r="220" fill="none"
-                      stroke="rgba(239, 68, 68, 0.4)" strokeWidth="1.5"
-                      initial={{ r: 220, opacity: 0.4 }}
-                      animate={{ 
-                        r: [220, 245, 220],
-                        opacity: [0.4, 0, 0.4],
-                        strokeWidth: [1.5, 0.3, 1.5]
+                      style={{ 
+                        filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.5))',
+                        transformOrigin: 'center'
                       }}
-                      transition={{ 
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 1
-                      }}
-                      style={{ filter: 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.3))' }}
-                    />
-                    {/* Static base ring */}
-                    <circle 
-                      cx="240" cy="240" r="218" fill="none"
-                      stroke="rgba(239, 68, 68, 0.3)" strokeWidth="1"
-                      strokeDasharray="4 8"
+                      className="opacity-60"
                     />
                   </svg>
+                  
+                  {/* Hygiene Mode Label */}
+                  <motion.div
+                    className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-3 px-6 py-3 rounded-2xl"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)'
+                    }}
+                    animate={{
+                      boxShadow: [
+                        '0 0 20px rgba(239, 68, 68, 0.2)',
+                        '0 0 40px rgba(239, 68, 68, 0.4)',
+                        '0 0 20px rgba(239, 68, 68, 0.2)'
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ShieldAlert className="w-5 h-5 text-red-400" />
+                    <span className="text-sm font-black tracking-[0.2em] text-red-300 uppercase">
+                      ZVÝŠENÝ HYGIENICKÝ REŽIM
+                    </span>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
