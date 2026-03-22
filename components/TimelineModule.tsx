@@ -13,19 +13,31 @@ interface TimelineModuleProps {
 
 /* --- Layout constants --- */
 const ROOM_LABEL_WIDTH = 200;
-const TIME_MARKERS = Array.from({ length: 32 }, (_, i) => i); // 00:00 to 07:00 next day (32 hours total for display)
-const HOURS_COUNT = 24;
+const TIMELINE_START_HOUR = 7;  // Timeline starts at 7:00
+const TIMELINE_HOURS = 24;      // 24 hours displayed (7:00 to 7:00 next day)
+const TIME_MARKERS = Array.from({ length: TIMELINE_HOURS + 1 }, (_, i) => (TIMELINE_START_HOUR + i) % 24); // 7, 8, 9... 23, 0, 1, 2, 3, 4, 5, 6, 7
 const SHIFT_START_HOUR = 7;  // 7:00 AM
 const SHIFT_END_HOUR = 19;   // 7:00 PM
 const ROW_HEIGHT = 56;
 
-// Get minutes from midnight
-const getMinutesFromMidnight = (date: Date) => {
-  return date.getHours() * 60 + date.getMinutes();
+// Get minutes from timeline start (7:00)
+const getMinutesFromTimelineStart = (date: Date) => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  // Calculate minutes from 7:00
+  let totalMinutes = (hours * 60 + minutes) - (TIMELINE_START_HOUR * 60);
+  // If negative (before 7:00), it's next day portion
+  if (totalMinutes < 0) {
+    totalMinutes += 24 * 60;
+  }
+  return totalMinutes;
 };
 
-// Convert time to percentage of 24h timeline (extended to 32h for next day view)
-const getTimePercent = (date: Date, extendedHours = 32) => (getMinutesFromMidnight(date) / (extendedHours * 60)) * 100;
+// Convert time to percentage of 24h timeline (from 7:00 to 7:00)
+const getTimePercent = (date: Date) => {
+  const minutesFromStart = getMinutesFromTimelineStart(date);
+  return (minutesFromStart / (TIMELINE_HOURS * 60)) * 100;
+};
 
 // Parse time string "HH:MM" to Date object (today)
 const parseTimeToDate = (timeStr: string): Date => {
@@ -35,10 +47,19 @@ const parseTimeToDate = (timeStr: string): Date => {
   return date;
 };
 
-const hourLabel = (h: number) => {
+// Get hour label with next day indicator
+const hourLabel = (h: number, showNextDay = false) => {
   const hour = h % 24;
-  return `${hour < 10 ? '0' : ''}${hour}:00`;
+  const label = `${hour < 10 ? '0' : ''}${hour}:00`;
+  // Hours 0-6 are next day when timeline starts at 7:00
+  if (showNextDay && hour >= 0 && hour < TIMELINE_START_HOUR) {
+    return label + ' +1';
+  }
+  return label;
 };
+
+// Check if hour is in "next day" portion of timeline
+const isNextDayHour = (h: number) => h >= 0 && h < TIMELINE_START_HOUR;
 
 /* --- Room colors by priority/activity --- */
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
@@ -529,7 +550,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
   // Auto-scroll to current time position on mount
   useEffect(() => {
     if (scrollContainerRef.current) {
-      const nowPercent = getTimePercent(currentTime, 32);
+      const nowPercent = getTimePercent(currentTime);
       const scrollWidth = scrollContainerRef.current.scrollWidth - ROOM_LABEL_WIDTH;
       const containerWidth = scrollContainerRef.current.clientWidth - ROOM_LABEL_WIDTH;
       const scrollPosition = (scrollWidth * nowPercent / 100) - (containerWidth / 2);
@@ -537,7 +558,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     }
   }, []);
 
-  const nowPercent = getTimePercent(currentTime, 32);
+  const nowPercent = getTimePercent(currentTime);
   const currentHour = currentTime.getHours();
   const currentMin = currentTime.getMinutes();
 
@@ -560,9 +581,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return [...rooms];
   }, [rooms]);
 
-  // Calculate shift line positions (as percentage of 32-hour view)
-  const shiftStartPercent = (SHIFT_START_HOUR / 32) * 100;
-  const shiftEndPercent = (SHIFT_END_HOUR / 32) * 100;
+  // Calculate shift line positions (as percentage of 24-hour view from 7:00)
+  // Shift start (7:00) is at 0% of timeline
+  const shiftStartPercent = 0;
+  // Shift end (19:00) is 12 hours from start = 50%
+  const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
 
   // Get remaining time for room
   const getRemainingTime = (room: OperatingRoom): string => {
@@ -760,11 +783,12 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             <div className="flex items-center h-12 relative" style={{ minWidth: '200%' }}>
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
-                const widthPct = 100 / 32;
+                const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
                 const displayHour = hour % 24;
                 const isNightHour = displayHour >= 19 || displayHour < 7;
-                const isCurrentHour = displayHour === currentHour && !isLast && i < 24;
+                const isNextDay = isNextDayHour(hour);
+                const isCurrentHour = displayHour === currentHour && !isLast;
                 
                 return (
                   <div 
@@ -787,9 +811,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           </span>
                         </div>
                       ) : (
-                        <span className={`ml-2 text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
-                          {hourLabel(hour)}
-                        </span>
+                        <div className="ml-2 flex items-center gap-1">
+                          <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                            {hourLabel(hour)}
+                          </span>
+                          {isNextDay && (
+                            <span className="text-[8px] font-bold text-cyan-400/60 px-1 py-0.5 rounded bg-cyan-400/10">
+                              +1
+                            </span>
+                          )}
+                        </div>
                       )
                     )}
                   </div>
@@ -900,7 +931,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   startDate.setHours(baseHour, baseMinute, 0, 0);
                 }
                 
-                boxLeftPct = getTimePercent(startDate, 32);
+                boxLeftPct = getTimePercent(startDate);
                 
                 if (room.estimatedEndTime) {
                   endDate = new Date(room.estimatedEndTime);
@@ -913,8 +944,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   endDate = new Date(startDate.getTime() + duration * 60 * 1000);
                 }
                 
-                const boxRightPct = getTimePercent(endDate, 32);
-                boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                const boxRightPct = getTimePercent(endDate);
+                // Handle cases where operation spans past midnight (end is before start on timeline)
+                if (boxRightPct < boxLeftPct) {
+                  // Operation ends next day - extend to end of timeline
+                  boxWidthPct = Math.max(2, (100 - boxLeftPct) + boxRightPct);
+                } else {
+                  boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                }
                 progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
               }
 
@@ -1137,7 +1174,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           key={i} 
                           className="absolute top-0 bottom-0 w-px" 
                           style={{ 
-                            left: `${(i / 32) * 100}%`,
+                            left: `${(i / TIMELINE_HOURS) * 100}%`,
                             background: isNight ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)'
                           }} 
                         />
@@ -1312,8 +1349,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       
                       if (!todaySchedule.enabled) return null;
                       
-                      const endMinutes = todaySchedule.endHour * 60 + todaySchedule.endMinute;
-                      const endPercent = (endMinutes / (32 * 60)) * 100;
+                      // Calculate end time as minutes from timeline start (7:00)
+                      const endHour = todaySchedule.endHour;
+                      const endMinute = todaySchedule.endMinute;
+                      let minutesFromTimelineStart = (endHour * 60 + endMinute) - (TIMELINE_START_HOUR * 60);
+                      // If before 7:00, it's next day portion
+                      if (minutesFromTimelineStart < 0) {
+                        minutesFromTimelineStart += 24 * 60;
+                      }
+                      const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
+                      const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
                       return (
                         <div 
@@ -1325,7 +1370,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         >
                           {/* End time label */}
                           <div 
-                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap"
+                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
                             style={{ 
                               background: 'rgba(249, 115, 22, 0.2)',
                               border: '1px solid rgba(249, 115, 22, 0.4)',
@@ -1333,6 +1378,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
                           </div>
                         </div>
                       );
