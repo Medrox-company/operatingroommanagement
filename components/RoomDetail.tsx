@@ -634,7 +634,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                />
             </svg>
 
-            {/* Enhanced Hygiene Mode - Pulsing outer ring with circular text */}
+            {/* Enhanced Hygiene Mode - Pulsing outer ring with circular text around main circle */}
             <AnimatePresence>
               {room.isEnhancedHygiene && (
                 <motion.div
@@ -642,26 +642,25 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ transform: 'scale(1.25)' }}
+                  className="absolute inset-0 pointer-events-none -rotate-90 scale-[1.1]"
                 >
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 480 480">
                     <defs>
-                      {/* Path for circular text */}
+                      {/* Path for circular text - radius 230 (just outside main circle r=210) */}
                       <path 
                         id="textCirclePath" 
-                        d="M 240,240 m -200,0 a 200,200 0 1,1 400,0 a 200,200 0 1,1 -400,0"
+                        d="M 240,240 m -230,0 a 230,230 0 1,1 460,0 a 230,230 0 1,1 -460,0"
                         fill="none"
                       />
                     </defs>
                     
-                    {/* Pulsing wave ring 1 */}
+                    {/* Pulsing wave ring 1 - starts from main circle edge (r=210) */}
                     <motion.circle 
                       cx="240" cy="240" fill="none"
                       stroke="rgba(239, 68, 68, 0.6)" strokeWidth="2"
-                      initial={{ r: 175 }}
+                      initial={{ r: 210 }}
                       animate={{ 
-                        r: [175, 210, 175],
+                        r: [210, 235, 210],
                         opacity: [0.8, 0.1, 0.8],
                         strokeWidth: [2, 0.5, 2]
                       }}
@@ -677,9 +676,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     <motion.circle 
                       cx="240" cy="240" fill="none"
                       stroke="rgba(239, 68, 68, 0.5)" strokeWidth="1.5"
-                      initial={{ r: 175 }}
+                      initial={{ r: 210 }}
                       animate={{ 
-                        r: [175, 215, 175],
+                        r: [210, 240, 210],
                         opacity: [0.6, 0, 0.6],
                         strokeWidth: [1.5, 0.3, 1.5]
                       }}
@@ -696,9 +695,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     <motion.circle 
                       cx="240" cy="240" fill="none"
                       stroke="rgba(239, 68, 68, 0.4)" strokeWidth="1"
-                      initial={{ r: 175 }}
+                      initial={{ r: 210 }}
                       animate={{ 
-                        r: [175, 220, 175],
+                        r: [210, 245, 210],
                         opacity: [0.4, 0, 0.4],
                         strokeWidth: [1, 0.2, 1]
                       }}
@@ -711,17 +710,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                       style={{ filter: 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.3))' }}
                     />
                     
-                    {/* Outer text ring background */}
+                    {/* Outer text ring background - just outside main circle */}
                     <circle 
-                      cx="240" cy="240" r="200" fill="none"
-                      stroke="rgba(239, 68, 68, 0.15)" strokeWidth="24"
+                      cx="240" cy="240" r="230" fill="none"
+                      stroke="rgba(239, 68, 68, 0.12)" strokeWidth="20"
                     />
                     
                     {/* Rotating circular text */}
                     <motion.g
                       animate={{ rotate: 360 }}
                       transition={{ 
-                        duration: 30,
+                        duration: 25,
                         repeat: Infinity,
                         ease: "linear"
                       }}
@@ -730,9 +729,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                       <text 
                         fill="#EF4444" 
                         style={{ 
-                          fontSize: '11px', 
+                          fontSize: '10px', 
                           fontWeight: 900, 
-                          letterSpacing: '0.35em',
+                          letterSpacing: '0.4em',
                           textTransform: 'uppercase',
                           filter: 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.6))'
                         }}
