@@ -1279,7 +1279,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
                           Volny
                         </p>
-                      ) : remainingTime ? (
+                      ) : remainingTime && stepIndex !== 6 ? (
                         <p 
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded-md inline-block" 
                           style={{ color: roomColor.bg, backgroundColor: `${roomColor.bg}15` }}
@@ -1464,7 +1464,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           )}
                           
                           {/* Remaining time badge */}
-                          {boxWidthPct > 18 && remainingTime && (
+                          {boxWidthPct > 18 && remainingTime && stepIndex !== 6 && (
                             <div 
                               className="flex-shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold text-white"
                               style={{ 
