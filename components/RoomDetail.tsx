@@ -662,17 +662,111 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         }}
         className={`absolute bottom-8 right-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
           room.isEnhancedHygiene
-            ? 'bg-red-500/20 border-red-500/40 opacity-100 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
             : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
         }`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-red-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-red-300' : 'text-white/60'}`}>
+        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
           {room.isEnhancedHygiene ? 'Hygienický\nrežim' : 'Hygien.\nrežim'}
         </span>
       </motion.button>
+
+      {/* Enhanced Hygiene Mode - Top Alert Banner */}
+      <AnimatePresence>
+        {room.isEnhancedHygiene && (
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
+            className="absolute top-0 left-0 right-0 z-[60] overflow-hidden"
+          >
+            {/* Main banner container */}
+            <div 
+              className="relative py-4 backdrop-blur-xl"
+              style={{
+                background: 'linear-gradient(180deg, rgba(255,107,53,0.15) 0%, rgba(255,107,53,0.05) 100%)',
+                borderBottom: '1px solid rgba(255,107,53,0.3)'
+              }}
+            >
+              {/* Animated scan line */}
+              <motion.div
+                className="absolute inset-0 h-full"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,107,53,0.15) 50%, transparent 100%)',
+                  width: '30%'
+                }}
+                animate={{ x: ['-100%', '400%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+
+              {/* Content */}
+              <div className="relative flex items-center justify-center gap-6">
+                {/* Left icon cluster */}
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                  >
+                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="#FF6B35" strokeWidth="1.5">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10"/>
+                      <path d="M2 12h20"/>
+                      <path d="M12 2c2.5 0 5 4.5 5 10s-2.5 10-5 10"/>
+                    </svg>
+                  </motion.div>
+                  <div className="w-px h-8 bg-gradient-to-b from-transparent via-orange-500/50 to-transparent"/>
+                </div>
+
+                {/* Main text with typewriter effect */}
+                <div className="flex items-center gap-4">
+                  <motion.span
+                    className="text-xs font-black tracking-[0.4em] text-orange-400 uppercase"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    AKTIVNÍ
+                  </motion.span>
+                  <span className="text-sm font-black tracking-[0.25em] text-white/90 uppercase">
+                    ZVÝŠENÝ HYGIENICKÝ REŽIM
+                  </span>
+                  <motion.span
+                    className="text-xs font-black tracking-[0.4em] text-orange-400 uppercase"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                  >
+                    AKTIVNÍ
+                  </motion.span>
+                </div>
+
+                {/* Right icon cluster */}
+                <div className="flex items-center gap-3">
+                  <div className="w-px h-8 bg-gradient-to-b from-transparent via-orange-500/50 to-transparent"/>
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <ShieldAlert className="w-6 h-6 text-orange-400"/>
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Bottom progress indicator */}
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-orange-500/20">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-orange-600 via-orange-400 to-orange-600"
+                  animate={{ x: ['-100%', '100%'] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  style={{ width: '50%' }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Immersive Dial */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
@@ -797,6 +891,125 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   className="opacity-80"
                />
             </svg>
+
+            {/* ENHANCED HYGIENE MODE - Futuristic Decontamination Scanner */}
+            <AnimatePresence>
+              {room.isEnhancedHygiene && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.8 }}
+                  className="absolute inset-0 pointer-events-none"
+                >
+                  {/* Hexagonal Grid Overlay - subtle tech pattern */}
+                  <svg className="absolute inset-0 w-full h-full opacity-[0.03]" viewBox="0 0 480 480">
+                    <defs>
+                      <pattern id="hexGrid" width="30" height="52" patternUnits="userSpaceOnUse">
+                        <path d="M15 0 L30 8.66 L30 25.98 L15 34.64 L0 25.98 L0 8.66 Z" fill="none" stroke="#FF6B35" strokeWidth="0.5"/>
+                        <path d="M15 17.32 L30 25.98 L30 43.3 L15 51.96 L0 43.3 L0 25.98 Z" fill="none" stroke="#FF6B35" strokeWidth="0.5"/>
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#hexGrid)"/>
+                  </svg>
+
+                  {/* Outer rotating scanner ring - clockwise */}
+                  <motion.svg 
+                    className="absolute inset-0 w-full h-full scale-[1.25]" 
+                    viewBox="0 0 480 480"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                  >
+                    <defs>
+                      <linearGradient id="scanGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#FF6B35" stopOpacity="0"/>
+                        <stop offset="50%" stopColor="#FF6B35" stopOpacity="1"/>
+                        <stop offset="100%" stopColor="#F7C59F" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    {/* Segmented arc pieces */}
+                    {[0, 72, 144, 216, 288].map((angle, i) => (
+                      <motion.path
+                        key={i}
+                        d={`M 240 30 A 210 210 0 0 1 ${240 + 210 * Math.sin((60 * Math.PI) / 180)} ${240 - 210 * Math.cos((60 * Math.PI) / 180)}`}
+                        fill="none"
+                        stroke="url(#scanGrad1)"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        transform={`rotate(${angle} 240 240)`}
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: [0, 1, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
+                        style={{ filter: 'drop-shadow(0 0 6px rgba(255,107,53,0.6))' }}
+                      />
+                    ))}
+                  </motion.svg>
+
+                  {/* Inner counter-rotating ring - dashed */}
+                  <motion.svg 
+                    className="absolute inset-0 w-full h-full scale-[1.18]" 
+                    viewBox="0 0 480 480"
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
+                  >
+                    <circle 
+                      cx="240" cy="240" r="210" 
+                      fill="none" 
+                      stroke="rgba(255,107,53,0.2)" 
+                      strokeWidth="1"
+                      strokeDasharray="8 16"
+                    />
+                  </motion.svg>
+
+                  {/* Scanning beam effect - vertical sweep */}
+                  <motion.div
+                    className="absolute left-1/2 top-0 w-[2px] h-full -translate-x-1/2 origin-center"
+                    style={{
+                      background: 'linear-gradient(180deg, transparent 0%, rgba(255,107,53,0.1) 20%, rgba(255,107,53,0.4) 50%, rgba(255,107,53,0.1) 80%, transparent 100%)'
+                    }}
+                    animate={{ rotate: [0, 180, 360] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  />
+
+                  {/* Corner accent brackets */}
+                  {[0, 90, 180, 270].map((angle) => (
+                    <motion.div
+                      key={angle}
+                      className="absolute w-16 h-16"
+                      style={{
+                        top: angle === 0 || angle === 270 ? '5%' : 'auto',
+                        bottom: angle === 90 || angle === 180 ? '5%' : 'auto',
+                        left: angle === 0 || angle === 90 ? '5%' : 'auto',
+                        right: angle === 180 || angle === 270 ? '5%' : 'auto',
+                      }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0.3, 0.8, 0.3] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: angle / 180 }}
+                    >
+                      <svg viewBox="0 0 64 64" className="w-full h-full" style={{ transform: `rotate(${angle}deg)` }}>
+                        <path d="M 2 20 L 2 2 L 20 2" fill="none" stroke="#FF6B35" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </motion.div>
+                  ))}
+
+                  {/* Pulsing data points around the circle */}
+                  {[30, 75, 120, 165, 210, 255, 300, 345].map((angle, i) => (
+                    <motion.div
+                      key={angle}
+                      className="absolute w-2 h-2 rounded-full"
+                      style={{
+                        left: `calc(50% + ${Math.cos((angle - 90) * Math.PI / 180) * 260}px)`,
+                        top: `calc(50% + ${Math.sin((angle - 90) * Math.PI / 180) * 260}px)`,
+                        background: '#FF6B35',
+                        boxShadow: '0 0 10px rgba(255,107,53,0.8)'
+                      }}
+                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
 
 
