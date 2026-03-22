@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart
+  Phone, UserCheck, Stethoscope, Heart, ShieldCheck
 } from 'lucide-react';
 import { recordStatusEvent } from '../lib/db';
 
@@ -16,6 +16,7 @@ interface RoomDetailProps {
   onClose: () => void;
   onStepChange: (index: number) => void;
   onEndTimeChange: (newTime: Date | null) => void;
+  onEnhancedHygieneToggle?: (enabled: boolean) => void;
 }
 
 const usePrevious = (value: number) => {
@@ -26,7 +27,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(false);
@@ -483,6 +484,32 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </motion.button>
       )}
 
+      {/* Enhanced Hygiene Mode Toggle - Bottom Right, next to Pause */}
+      <motion.button
+        onClick={async () => {
+          const newHygieneState = !room.isEnhancedHygiene;
+          onEnhancedHygieneToggle?.(newHygieneState);
+          await recordStatusEvent({
+            operating_room_id: room.id,
+            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+            step_index: currentStepIndex,
+            step_name: WORKFLOW_STEPS[currentStepIndex].title,
+          });
+        }}
+        className={`absolute bottom-8 right-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+          room.isEnhancedHygiene
+            ? 'bg-red-500/20 border-red-500/40 opacity-100 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+        }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <ShieldCheck className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-red-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-red-300' : 'text-white/60'}`}>
+          {room.isEnhancedHygiene ? 'Hygienický\nrežim' : 'Hygien.\nrežim'}
+        </span>
+      </motion.button>
+
       {/* Main Immersive Dial */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
         <div className="relative w-[650px] h-[650px] flex items-center justify-center">
@@ -606,6 +633,78 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   className="opacity-80"
                />
             </svg>
+
+            {/* Enhanced Hygiene Mode Animated Ring */}
+            <AnimatePresence>
+              {room.isEnhancedHygiene && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 pointer-events-none"
+                >
+                  <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.2]">
+                    {/* Outer pulsing glow ring */}
+                    <motion.circle 
+                      cx="240" cy="240" r="230" fill="none"
+                      stroke="#EF4444" strokeWidth="3" strokeLinecap="round"
+                      strokeDasharray="1445"
+                      initial={{ strokeDashoffset: 1445 }}
+                      animate={{ 
+                        strokeDashoffset: [1445, 0],
+                        opacity: [0.3, 0.8, 0.3]
+                      }}
+                      transition={{ 
+                        strokeDashoffset: { duration: 2, ease: [0.22, 1, 0.36, 1] },
+                        opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                      }}
+                      style={{ filter: 'drop-shadow(0 0 20px rgba(239, 68, 68, 0.6))' }}
+                    />
+                    {/* Inner animated ring with dots */}
+                    <motion.circle 
+                      cx="240" cy="240" r="225" fill="none"
+                      stroke="#EF4444" strokeWidth="2" strokeLinecap="round"
+                      strokeDasharray="8 12"
+                      animate={{ 
+                        rotate: [0, 360],
+                      }}
+                      transition={{ 
+                        rotate: { duration: 20, repeat: Infinity, ease: "linear" }
+                      }}
+                      style={{ 
+                        filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.5))',
+                        transformOrigin: 'center'
+                      }}
+                      className="opacity-60"
+                    />
+                  </svg>
+                  
+                  {/* Hygiene Mode Label */}
+                  <motion.div
+                    className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-3 px-6 py-3 rounded-2xl"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)'
+                    }}
+                    animate={{
+                      boxShadow: [
+                        '0 0 20px rgba(239, 68, 68, 0.2)',
+                        '0 0 40px rgba(239, 68, 68, 0.4)',
+                        '0 0 20px rgba(239, 68, 68, 0.2)'
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ShieldCheck className="w-5 h-5 text-red-400" />
+                    <span className="text-sm font-black tracking-[0.2em] text-red-300 uppercase">
+                      ZVÝŠENÝ HYGIENICKÝ REŽIM
+                    </span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="text-center relative z-20 pointer-events-none">
               <AnimatePresence mode="wait">

@@ -111,6 +111,19 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleEnhancedHygieneToggle = async (roomId: string, enabled: boolean) => {
+    setRooms(prev => prev.map(room =>
+      room.id === roomId
+        ? { ...room, isEnhancedHygiene: enabled }
+        : room
+    ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { 
+        is_enhanced_hygiene: enabled 
+      });
+    }
+  };
+
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
@@ -171,6 +184,7 @@ const AppContent: React.FC = () => {
                   onClose={() => setSelectedRoomId(null)}
                   onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
+                  onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                 />
               </motion.div>
             )}

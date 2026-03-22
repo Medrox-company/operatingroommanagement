@@ -79,6 +79,7 @@ export interface OperatingRoom {
   isSeptic?: boolean;
   isEmergency?: boolean;
   isLocked?: boolean;
+  isEnhancedHygiene?: boolean; // Zvýšený hygienický režim
   currentStepIndex: number; // Index aktuální fáze workflow (0-7)
   
   // Working hours schedule

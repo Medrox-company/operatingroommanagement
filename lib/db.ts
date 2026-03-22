@@ -12,6 +12,7 @@ interface DBOperatingRoom {
   is_septic: boolean;
   is_emergency: boolean;
   is_locked: boolean;
+  is_enhanced_hygiene: boolean;
   current_step_index: number;
   estimated_end_time: string | null;
   doctor_id: string | null;
@@ -65,6 +66,7 @@ function transformRoom(
     operations24h: row.operations_24h,
     isSeptic: row.is_septic,
     isEmergency: row.is_emergency,
+    isEnhancedHygiene: row.is_enhanced_hygiene,
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
@@ -130,6 +132,7 @@ export async function updateOperatingRoom(
   updates: Partial<{
     status: string;
     is_emergency: boolean;
+    is_enhanced_hygiene: boolean;
     is_locked: boolean;
     current_step_index: number;
     estimated_end_time: string | null;
