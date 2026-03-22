@@ -484,120 +484,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </motion.button>
       )}
 
-      {/* Enhanced Hygiene Mode Banner - Top of screen with wave animation */}
-      <AnimatePresence>
-        {room.isEnhancedHygiene && (
-          <motion.div
-            initial={{ y: -150, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -150, opacity: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-0 left-0 right-0 z-50 pointer-events-none"
-          >
-            {/* Main banner container */}
-            <div 
-              className="relative py-4 px-8"
-              style={{
-                background: 'linear-gradient(180deg, rgba(220, 38, 38, 0.95) 0%, rgba(185, 28, 28, 0.85) 100%)',
-                boxShadow: '0 8px 40px rgba(220, 38, 38, 0.5)'
-              }}
-            >
-              {/* Animated wave lines inside banner */}
-              <div className="absolute inset-0 overflow-hidden opacity-30">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute h-[1px] w-full"
-                    style={{
-                      top: `${15 + i * 18}%`,
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 25%, rgba(255,255,255,0.6) 75%, transparent 100%)',
-                    }}
-                    animate={{
-                      scaleY: [1, 2, 1],
-                      opacity: [0.3, 0.7, 0.3],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                      ease: "easeInOut"
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* Content */}
-              <div className="relative flex items-center justify-center gap-4">
-                <motion.div
-                  className="p-2.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <ShieldAlert className="w-5 h-5 text-white" />
-                </motion.div>
-                <span className="text-base font-black tracking-[0.3em] text-white uppercase">
-                  ZVÝŠENÝ HYGIENICKÝ REŽIM
-                </span>
-                <motion.div
-                  className="p-2.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                >
-                  <ShieldAlert className="w-5 h-5 text-white" />
-                </motion.div>
-              </div>
-            </div>
-
-            {/* Multiple wave layers - below banner */}
-            <div className="relative h-12 overflow-hidden">
-              {/* Wave Layer 1 - Slowest, back */}
-              <svg 
-                className="absolute top-0 left-0 w-[400%] h-full"
-                viewBox="0 0 2400 50" 
-                preserveAspectRatio="none"
-              >
-                <motion.path
-                  d="M0,25 C150,40 300,10 450,25 C600,40 750,10 900,25 C1050,40 1200,10 1350,25 C1500,40 1650,10 1800,25 C1950,40 2100,10 2250,25 L2400,25 L2400,0 L0,0 Z"
-                  fill="rgba(220, 38, 38, 0.4)"
-                  animate={{ x: [0, -600] }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                />
-              </svg>
-              
-              {/* Wave Layer 2 - Medium speed */}
-              <svg 
-                className="absolute top-0 left-0 w-[400%] h-full"
-                viewBox="0 0 2400 50" 
-                preserveAspectRatio="none"
-              >
-                <motion.path
-                  d="M0,20 C100,32 200,8 350,20 C500,32 600,8 750,20 C900,32 1000,8 1150,20 C1300,32 1400,8 1550,20 C1700,32 1800,8 1950,20 C2100,32 2200,8 2350,20 L2400,20 L2400,0 L0,0 Z"
-                  fill="rgba(185, 28, 28, 0.6)"
-                  animate={{ x: [-200, -800] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                />
-              </svg>
-              
-              {/* Wave Layer 3 - Fastest, front */}
-              <svg 
-                className="absolute top-0 left-0 w-[400%] h-full"
-                viewBox="0 0 2400 50" 
-                preserveAspectRatio="none"
-              >
-                <motion.path
-                  d="M0,15 C80,25 160,5 280,15 C400,25 480,5 600,15 C720,25 800,5 920,15 C1040,25 1120,5 1240,15 C1360,25 1440,5 1560,15 C1680,25 1760,5 1880,15 C2000,25 2080,5 2200,15 L2400,15 L2400,0 L0,0 Z"
-                  fill="rgba(11, 17, 32, 1)"
-                  animate={{ x: [0, -600] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                />
-              </svg>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Enhanced Hygiene Mode Toggle - Bottom Right, next to Pause */}
       <motion.button
         onClick={async () => {
@@ -748,7 +634,77 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                />
             </svg>
 
-
+            {/* Enhanced Hygiene Mode Animated Ring */}
+            <AnimatePresence>
+              {room.isEnhancedHygiene && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 pointer-events-none"
+                >
+                  <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.2]">
+                    {/* Outer pulsing glow ring */}
+                    <motion.circle 
+                      cx="240" cy="240" r="230" fill="none"
+                      stroke="#EF4444" strokeWidth="3" strokeLinecap="round"
+                      strokeDasharray="1445"
+                      initial={{ strokeDashoffset: 1445 }}
+                      animate={{ 
+                        strokeDashoffset: [1445, 0],
+                        opacity: [0.3, 0.8, 0.3]
+                      }}
+                      transition={{ 
+                        strokeDashoffset: { duration: 2, ease: [0.22, 1, 0.36, 1] },
+                        opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                      }}
+                      style={{ filter: 'drop-shadow(0 0 20px rgba(239, 68, 68, 0.6))' }}
+                    />
+                    {/* Inner animated ring with dots */}
+                    <motion.circle 
+                      cx="240" cy="240" r="225" fill="none"
+                      stroke="#EF4444" strokeWidth="2" strokeLinecap="round"
+                      strokeDasharray="8 12"
+                      animate={{ 
+                        rotate: [0, 360],
+                      }}
+                      transition={{ 
+                        rotate: { duration: 20, repeat: Infinity, ease: "linear" }
+                      }}
+                      style={{ 
+                        filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.5))',
+                        transformOrigin: 'center'
+                      }}
+                      className="opacity-60"
+                    />
+                  </svg>
+                  
+                  {/* Hygiene Mode Label */}
+                  <motion.div
+                    className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-3 px-6 py-3 rounded-2xl"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)'
+                    }}
+                    animate={{
+                      boxShadow: [
+                        '0 0 20px rgba(239, 68, 68, 0.2)',
+                        '0 0 40px rgba(239, 68, 68, 0.4)',
+                        '0 0 20px rgba(239, 68, 68, 0.2)'
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ShieldAlert className="w-5 h-5 text-red-400" />
+                    <span className="text-sm font-black tracking-[0.2em] text-red-300 uppercase">
+                      ZVÝŠENÝ HYGIENICKÝ REŽIM
+                    </span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="text-center relative z-20 pointer-events-none">
               <AnimatePresence mode="wait">
