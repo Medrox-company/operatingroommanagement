@@ -171,7 +171,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                 </motion.svg>
             </div>
             
-            {room.estimatedEndTime && (
+            {room.estimatedEndTime && room.currentStepIndex !== 6 && (
                 <div className="-mt-1 text-center">
                     <div className="flex items-center gap-1.5 justify-center">
                       <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
