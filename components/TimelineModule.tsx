@@ -907,6 +907,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
+              
+              // Get current workflow step info for status display
+              const currentStep = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[6];
+              const stepColor = currentStep.color;
+              const StepIcon = currentStep.Icon;
 
               // Calculate operation bar position
               // Use currentProcedure if available, otherwise generate fallback values for active rooms
@@ -1181,7 +1186,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       );
                     })}
 
-                    {/* Active operation bar - Premium Design */}
+                    {/* Active operation bar - Premium Design with workflow step color */}
                     {isActive && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
@@ -1197,16 +1202,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         {/* Outer glow effect */}
                         <div 
                           className="absolute -inset-1 rounded-xl blur-md opacity-50"
-                          style={{ background: roomColor.bg }}
+                          style={{ background: stepColor }}
                         />
 
                         {/* Main container with gradient border */}
                         <div 
                           className="absolute inset-0 rounded-xl"
                           style={{ 
-                            background: `linear-gradient(135deg, ${roomColor.bg}30 0%, ${roomColor.bg}10 100%)`,
-                            border: `1px solid ${roomColor.bg}60`,
-                            boxShadow: `0 4px 20px ${roomColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`
+                            background: `linear-gradient(135deg, ${stepColor}30 0%, ${stepColor}10 100%)`,
+                            border: `1px solid ${stepColor}60`,
+                            boxShadow: `0 4px 20px ${stepColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`
                           }}
                         />
 
@@ -1222,7 +1227,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <div 
                           className="absolute inset-0 opacity-60"
                           style={{ 
-                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${roomColor.bg}40 0%, transparent 70%)`
+                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${stepColor}40 0%, transparent 70%)`
                           }}
                         />
 
@@ -1235,7 +1240,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           <div 
                             className="absolute inset-0"
                             style={{ 
-                              background: `linear-gradient(135deg, ${roomColor.bg} 0%, ${roomColor.bg}CC 100%)`
+                              background: `linear-gradient(135deg, ${stepColor} 0%, ${stepColor}CC 100%)`
                             }}
                           />
                           
@@ -1273,7 +1278,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: `linear-gradient(90deg, transparent, ${roomColor.bg}, transparent)`
+                                background: `linear-gradient(90deg, transparent, ${stepColor}, transparent)`
                               }}
                               animate={{ opacity: [0.5, 1, 0.5] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
@@ -1284,7 +1289,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               style={{ 
                                 left: `${progressPct}%`,
                                 background: '#FFF',
-                                boxShadow: `0 0 10px #FFF, 0 0 20px ${roomColor.bg}`
+                                boxShadow: `0 0 10px #FFF, 0 0 20px ${stepColor}`
                               }}
                               animate={{ opacity: [1, 0.7, 1] }}
                               transition={{ duration: 1, repeat: Infinity }}
@@ -1295,7 +1300,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               style={{ 
                                 left: `${progressPct}%`,
                                 background: '#FFF',
-                                boxShadow: `0 0 8px #FFF, 0 0 16px ${roomColor.bg}`
+                                boxShadow: `0 0 8px #FFF, 0 0 16px ${stepColor}`
                               }}
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
@@ -1303,40 +1308,76 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           </>
                         )}
 
-                        {/* Content overlay - procedure name if space allows */}
-                        {boxWidthPct > 8 && (
-                          <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
-                            <span 
-                              className="text-[10px] font-bold text-white/90 truncate drop-shadow-lg"
-                              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                            >
-                              {room.currentProcedure?.name || WORKFLOW_STEPS[stepIndex]?.name || 'Operace'}
-                            </span>
+                        {/* Content overlay - step icon, title and status */}
+                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
+                          {/* Step Icon */}
+                          <div 
+                            className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center"
+                            style={{ 
+                              background: `${stepColor}40`,
+                              border: `1px solid ${stepColor}60`
+                            }}
+                          >
+                            <StepIcon className="w-3.5 h-3.5 text-white" />
                           </div>
-                        )}
+                          
+                          {/* Step title and status */}
+                          {boxWidthPct > 12 && (
+                            <div className="min-w-0 flex-1">
+                              <p 
+                                className="text-[10px] font-bold text-white truncate"
+                                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                              >
+                                {currentStep.title}
+                              </p>
+                              <p 
+                                className="text-[8px] font-medium truncate"
+                                style={{ color: stepColor, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+                              >
+                                {currentStep.status}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Remaining time badge */}
+                          {boxWidthPct > 18 && remainingTime && (
+                            <div 
+                              className="flex-shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold text-white"
+                              style={{ 
+                                background: 'rgba(0,0,0,0.3)',
+                                backdropFilter: 'blur(4px)'
+                              }}
+                            >
+                              {remainingTime}
+                            </div>
+                          )}
+                        </div>
                       </motion.div>
                     )}
 
-                    {/* Free room indicator - Subtle premium style */}
+                    {/* Free room indicator - with workflow step styling */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center overflow-hidden"
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center gap-3 overflow-hidden"
                         style={{ 
-                          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.03) 0%, rgba(34, 197, 94, 0.01) 100%)',
-                          border: '1px dashed rgba(34, 197, 94, 0.15)'
+                          background: `linear-gradient(135deg, ${stepColor}08 0%, ${stepColor}03 100%)`,
+                          border: `1px dashed ${stepColor}30`
                         }}
                       >
-                        {/* Subtle pulsing dot */}
-                        <motion.div 
-                          className="w-2 h-2 rounded-full"
+                        {/* Step icon */}
+                        <div 
+                          className="w-6 h-6 rounded-lg flex items-center justify-center"
                           style={{ 
-                            background: 'rgba(34, 197, 94, 0.4)',
-                            boxShadow: '0 0 10px rgba(34, 197, 94, 0.3)'
+                            background: `${stepColor}20`,
+                            border: `1px solid ${stepColor}30`
                           }}
-                          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                        <span className="ml-2 text-[9px] font-medium text-emerald-500/40 uppercase tracking-wider">Dostupny</span>
+                        >
+                          <StepIcon className="w-3.5 h-3.5" style={{ color: stepColor }} />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold" style={{ color: stepColor }}>{currentStep.title}</p>
+                          <p className="text-[8px] font-medium text-white/30">{currentStep.status}</p>
+                        </div>
                       </div>
                     )}
 
