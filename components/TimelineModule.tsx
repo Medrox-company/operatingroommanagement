@@ -581,6 +581,72 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return [...rooms];
   }, [rooms]);
 
+  /* --- ARO Overtime Tracking - rooms that exceed working hours --- */
+  const aroOvertimeRooms = useMemo(() => {
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const todayKey = dayKeys[currentTime.getDay()];
+    
+    const overtimeList: Array<{
+      roomId: string;
+      roomName: string;
+      estimatedEndTime: Date;
+      workingEndTime: Date;
+      overtimeMinutes: number;
+    }> = [];
+    
+    rooms.forEach(room => {
+      // Skip non-active, emergency, or locked rooms
+      if (room.currentStepIndex >= 6 || room.isEmergency || room.isLocked) return;
+      
+      // Get estimated end time
+      let endTime: Date | null = null;
+      if (room.estimatedEndTime) {
+        endTime = new Date(room.estimatedEndTime);
+      } else if (room.currentProcedure?.startTime && room.currentProcedure?.estimatedDuration) {
+        const startDate = parseTimeToDate(room.currentProcedure.startTime);
+        endTime = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+      }
+      
+      if (!endTime) return;
+      
+      // Get room's working hours for today
+      const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+      const todaySchedule = schedule[todayKey];
+      
+      if (!todaySchedule.enabled) return;
+      
+      // Calculate working end time
+      const workingEndTime = new Date(currentTime);
+      workingEndTime.setHours(todaySchedule.endHour, todaySchedule.endMinute, 0, 0);
+      
+      // Check if estimated end exceeds working hours
+      if (endTime > workingEndTime) {
+        const overtimeMinutes = Math.round((endTime.getTime() - workingEndTime.getTime()) / (1000 * 60));
+        overtimeList.push({
+          roomId: room.id,
+          roomName: room.name,
+          estimatedEndTime: endTime,
+          workingEndTime,
+          overtimeMinutes
+        });
+      }
+    });
+    
+    // Sort by estimated end time (who finishes first has priority to be relieved first)
+    return overtimeList.sort((a, b) => a.estimatedEndTime.getTime() - b.estimatedEndTime.getTime());
+  }, [rooms, currentTime]);
+  
+  // Get ARO position for a room (returns position number or null if not in overtime)
+  const getAroPosition = (roomId: string): number | null => {
+    const index = aroOvertimeRooms.findIndex(r => r.roomId === roomId);
+    return index >= 0 ? index + 1 : null;
+  };
+  
+  // Get overtime info for a room
+  const getOvertimeInfo = (roomId: string) => {
+    return aroOvertimeRooms.find(r => r.roomId === roomId);
+  };
+
   // Calculate shift line positions (as percentage of 24-hour view from 7:00)
   // Shift start (7:00) is at 0% of timeline
   const shiftStartPercent = 0;
@@ -684,6 +750,40 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 color="#EF4444" 
                 glow 
               />
+            )}
+
+            {/* ARO Overtime indicator */}
+            {aroOvertimeRooms.length > 0 && (
+              <div
+                className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.08) 100%)",
+                  border: "1px solid rgba(239, 68, 68, 0.35)",
+                  boxShadow: "0 0 20px rgba(239, 68, 68, 0.15)",
+                }}
+              >
+                <div
+                  className="absolute inset-0 opacity-50"
+                  style={{
+                    background: "radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.25) 0%, transparent 70%)",
+                  }}
+                />
+                <div className="relative flex items-center gap-3 h-full">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.15) 100%)",
+                      border: "1px solid rgba(239, 68, 68, 0.4)",
+                    }}
+                  >
+                    <Clock className="w-4 h-4 text-red-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PRESAH</p>
+                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} salu</p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Spacer */}
@@ -1112,12 +1212,36 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 >
                   {/* Room Label - Sticky */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-center gap-2 px-3 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
                     style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                   >
+                    {/* ARO Overtime Badge - shows priority position for overtime rooms */}
+                    {(() => {
+                      const aroPosition = getAroPosition(room.id);
+                      const overtimeInfo = getOvertimeInfo(room.id);
+                      
+                      if (aroPosition && overtimeInfo) {
+                        return (
+                          <div 
+                            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
+                            style={{ 
+                              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)'
+                            }}
+                          >
+                            <span className="text-[8px] font-bold text-red-400 tracking-wider">ARO</span>
+                            <span className="text-sm font-black text-white">{aroPosition}</span>
+                            <span className="text-[7px] font-medium text-red-300">+{overtimeInfo.overtimeMinutes}m</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                    
                     {/* Numbered badge for active rooms */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {isActive && (
+                      {isActive && !getAroPosition(room.id) && (
                         <div 
                           className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg"
                           style={{ background: roomColor.bg, boxShadow: `0 0 12px ${roomColor.glow}` }}
@@ -1469,6 +1593,18 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           >
             <div className="w-4 h-4 rounded-full border-2 border-red-500/50" />
             <span className="text-[10px] font-medium text-white/40">Presah</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+          >
+            <div 
+              className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-red-400"
+              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+            >
+              1
+            </div>
+            <span className="text-[10px] font-medium text-red-400/70">ARO poradi stridani</span>
           </div>
         </div>
         <div 
