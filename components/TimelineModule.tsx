@@ -547,16 +547,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-scroll to current time position on mount
-  useEffect(() => {
-    if (scrollContainerRef.current) {
-      const nowPercent = getTimePercent(currentTime);
-      const scrollWidth = scrollContainerRef.current.scrollWidth - ROOM_LABEL_WIDTH;
-      const containerWidth = scrollContainerRef.current.clientWidth - ROOM_LABEL_WIDTH;
-      const scrollPosition = (scrollWidth * nowPercent / 100) - (containerWidth / 2);
-      scrollContainerRef.current.scrollLeft = Math.max(0, scrollPosition);
-    }
-  }, []);
+  // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
+  // useEffect(() => {
+  //   if (scrollContainerRef.current) {
+  //     const nowPercent = getTimePercent(currentTime);
+  //     const scrollWidth = scrollContainerRef.current.scrollWidth - ROOM_LABEL_WIDTH;
+  //     const containerWidth = scrollContainerRef.current.clientWidth - ROOM_LABEL_WIDTH;
+  //     const scrollPosition = (scrollWidth * nowPercent / 100) - (containerWidth / 2);
+  //     scrollContainerRef.current.scrollLeft = Math.max(0, scrollPosition);
+  //   }
+  // }, []);
 
   const nowPercent = getTimePercent(currentTime);
   const currentHour = currentTime.getHours();
@@ -778,9 +778,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             <span className="text-[10px] font-bold tracking-wider uppercase text-white/40">OPERACNI SALY</span>
           </div>
           
-          {/* Time markers - scrollable */}
-          <div className="flex-1 overflow-x-auto hide-scrollbar" ref={timelineRef}>
-            <div className="flex items-center h-12 relative" style={{ minWidth: '200%' }}>
+          {/* Time markers - no scroll, full width for 24h */}
+          <div className="flex-1 overflow-hidden" ref={timelineRef}>
+            <div className="flex items-center h-12 relative w-full">
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
@@ -830,9 +830,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           </div>
         </div>
 
-        {/* Room Rows - Scrollable */}
-        <div className="flex-1 min-h-0 overflow-auto hide-scrollbar" ref={scrollContainerRef}>
-          <div className="relative" style={{ minWidth: '200%' }}>
+        {/* Room Rows - No scroll, full width */}
+        <div className="flex-1 min-h-0 overflow-hidden" ref={scrollContainerRef}>
+          <div className="relative w-full h-full">
             {/* Now indicator - cyan glow line */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
