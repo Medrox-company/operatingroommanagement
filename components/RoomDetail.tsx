@@ -336,6 +336,170 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
       </header>
 
+      {/* ENHANCED HYGIENE MODE - Fullscreen Quarantine Overlay */}
+      <AnimatePresence>
+        {room.isEnhancedHygiene && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="fixed inset-0 pointer-events-none z-[100]"
+          >
+            {/* Animated corner brackets */}
+            <svg className="absolute inset-0 w-full h-full">
+              {/* Top-left corner */}
+              <motion.path 
+                d="M 40,80 L 40,40 L 80,40" 
+                fill="none" stroke="#EF4444" strokeWidth="3"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' }}
+              />
+              {/* Top-right corner */}
+              <motion.path 
+                d="M calc(100% - 80px),40 L calc(100% - 40px),40 L calc(100% - 40px),80" 
+                fill="none" stroke="#EF4444" strokeWidth="3"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+                style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' }}
+              />
+              {/* Bottom-left corner */}
+              <motion.path 
+                d="M 40,calc(100% - 80px) L 40,calc(100% - 40px) L 80,calc(100% - 40px)" 
+                fill="none" stroke="#EF4444" strokeWidth="3"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' }}
+              />
+              {/* Bottom-right corner */}
+              <motion.path 
+                d="M calc(100% - 80px),calc(100% - 40px) L calc(100% - 40px),calc(100% - 40px) L calc(100% - 40px),calc(100% - 80px)" 
+                fill="none" stroke="#EF4444" strokeWidth="3"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' }}
+              />
+            </svg>
+
+            {/* Horizontal scan line */}
+            <motion.div
+              className="absolute left-0 right-0 h-[2px]"
+              style={{ 
+                background: 'linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.8) 20%, rgba(239,68,68,1) 50%, rgba(239,68,68,0.8) 80%, transparent 100%)',
+                boxShadow: '0 0 20px rgba(239,68,68,0.8), 0 0 40px rgba(239,68,68,0.4)'
+              }}
+              animate={{ top: ['0%', '100%'] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            />
+
+            {/* Subtle grid overlay */}
+            <div 
+              className="absolute inset-0 opacity-[0.03]"
+              style={{
+                backgroundImage: `
+                  linear-gradient(rgba(239,68,68,1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(239,68,68,1) 1px, transparent 1px)
+                `,
+                backgroundSize: '50px 50px'
+              }}
+            />
+
+            {/* Red vignette glow at edges */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(ellipse at center, transparent 50%, rgba(239,68,68,0.15) 100%)',
+                boxShadow: 'inset 0 0 150px rgba(239,68,68,0.2)'
+              }}
+            />
+
+            {/* Top center status badge */}
+            <motion.div
+              className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4"
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <div 
+                className="flex items-center gap-4 px-8 py-4 rounded-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(185,28,28,0.1) 100%)',
+                  border: '1px solid rgba(239,68,68,0.5)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 0 40px rgba(239,68,68,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                }}
+              >
+                {/* Animated warning icon */}
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.8, 1, 0.8] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ShieldAlert className="w-7 h-7 text-red-400" style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.6))' }} />
+                </motion.div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-red-400/60 tracking-[0.3em] uppercase">AKTIVNÍ PROTOKOL</span>
+                  <span className="text-lg font-black text-red-300 tracking-[0.15em] uppercase">ZVÝŠENÁ HYGIENA</span>
+                </div>
+                {/* Blinking indicator */}
+                <motion.div
+                  className="w-3 h-3 rounded-full bg-red-500"
+                  animate={{ opacity: [1, 0.3, 1], scale: [1, 0.9, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  style={{ boxShadow: '0 0 10px rgba(239,68,68,0.8)' }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Bottom status bar */}
+            <motion.div
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              {/* Biohazard icon */}
+              <motion.svg
+                viewBox="0 0 64 64" className="w-12 h-12"
+                fill="none" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5"
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
+                <circle cx="32" cy="32" r="6" />
+                <path d="M32 26 Q24 12 14 18 Q4 24 10 36" strokeLinecap="round" />
+                <path d="M32 26 Q40 12 50 18 Q60 24 54 36" strokeLinecap="round" />
+                <path d="M26 36 Q26 52 32 52 Q38 52 38 36" strokeLinecap="round" />
+              </motion.svg>
+              
+              <div className="h-8 w-px bg-red-500/30" />
+              
+              <span className="text-xs font-mono text-red-400/50 tracking-wider">
+                DEZINFEKČNÍ PROTOKOL AKTIVOVÁN
+              </span>
+              
+              <div className="h-8 w-px bg-red-500/30" />
+              
+              {/* Animated bars */}
+              <div className="flex items-end gap-1 h-6">
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1.5 bg-red-500/70 rounded-sm"
+                    animate={{ height: ['30%', '100%', '30%'] }}
+                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
+                    style={{ filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.5))' }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Right Column Action Buttons - Absolute Positioning */}
       {/* Close Button - Top Right */}
       <button 
@@ -634,50 +798,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                />
             </svg>
 
-            {/* Enhanced Hygiene Mode - Strong pulsing rings outward from main circle edge */}
-            <AnimatePresence>
-              {room.isEnhancedHygiene && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="absolute inset-0 pointer-events-none"
-                >
-                  {/* Background red glow that pulses */}
-                  <motion.div
-                    className="absolute inset-0 rounded-full blur-[80px]"
-                    style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.35) 0%, transparent 70%)' }}
-                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.95, 1.05, 0.95] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                  />
 
-                  <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.1]" viewBox="0 0 480 480">
-                    {/* Wave 1 - bold, starts at r=210, expands to r=270 */}
-                    <motion.circle cx="240" cy="240" fill="none"
-                      stroke="rgba(239,68,68,0.9)" strokeWidth="4"
-                      animate={{ r: [210, 270], opacity: [0.9, 0], strokeWidth: [4, 0.5] }}
-                      transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-                      style={{ filter: 'drop-shadow(0 0 14px rgba(239,68,68,0.9))' }}
-                    />
-                    {/* Wave 2 - delayed 0.53s */}
-                    <motion.circle cx="240" cy="240" fill="none"
-                      stroke="rgba(239,68,68,0.75)" strokeWidth="3"
-                      animate={{ r: [210, 270], opacity: [0.75, 0], strokeWidth: [3, 0.5] }}
-                      transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 0.53 }}
-                      style={{ filter: 'drop-shadow(0 0 10px rgba(239,68,68,0.7))' }}
-                    />
-                    {/* Wave 3 - delayed 1.06s */}
-                    <motion.circle cx="240" cy="240" fill="none"
-                      stroke="rgba(239,68,68,0.55)" strokeWidth="2"
-                      animate={{ r: [210, 270], opacity: [0.55, 0], strokeWidth: [2, 0.3] }}
-                      transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 1.06 }}
-                      style={{ filter: 'drop-shadow(0 0 7px rgba(239,68,68,0.5))' }}
-                    />
-                  </svg>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             <div className="text-center relative z-20 pointer-events-none">
               <AnimatePresence mode="wait">
@@ -751,44 +872,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     <p className={`text-[12px] font-black tracking-[0.4em] mb-6 uppercase group-hover:text-white/40 transition-colors ${room.isEmergency ? 'text-red-400' : 'text-white/20'}`}>
                       {room.isLocked ? 'DOKONČIT DO FÁZE PŘIPRAVEN' : (currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'SPUSTIT FÁZI' : 'SPUSTIT DALŠÍ FÁZI')}
                     </p>
-                    
-                    {/* Biohazard icon - only when Enhanced Hygiene Mode is active, above next step text */}
-                    <AnimatePresence>
-                      {room.isEnhancedHygiene && (
-                        <motion.div
-                          key="biohazard"
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.5 }}
-                          transition={{ duration: 0.4, type: "spring", bounce: 0.4 }}
-                          className="flex justify-center mb-3"
-                        >
-                          <motion.svg
-                            viewBox="0 0 24 24" className="w-10 h-10"
-                            fill="none" stroke="rgba(239,68,68,0.9)" strokeWidth="1.5"
-                            strokeLinecap="round" strokeLinejoin="round"
-                            animate={{ 
-                              opacity: [0.7, 1, 0.7],
-                              filter: [
-                                'drop-shadow(0 0 4px rgba(239,68,68,0.4))',
-                                'drop-shadow(0 0 12px rgba(239,68,68,0.9))',
-                                'drop-shadow(0 0 4px rgba(239,68,68,0.4))'
-                              ]
-                            }}
-                            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-                          >
-                            {/* Biohazard symbol paths */}
-                            <circle cx="12" cy="11.9" r="2.4" />
-                            <path d="M 12 9.5 C 12 9.5 9.2 4.5 5 6.2 C 1.5 7.5 1.5 13 5 14.5" />
-                            <path d="M 12 9.5 C 12 9.5 14.8 4.5 19 6.2 C 22.5 7.5 22.5 13 19 14.5" />
-                            <path d="M 7 15.5 C 7 15.5 7 21 12 21 C 17 21 17 15.5 17 15.5" />
-                            <path d="M 5 14.5 C 5 14.5 8.5 13 10 15.5" />
-                            <path d="M 19 14.5 C 19 14.5 15.5 13 14 15.5" />
-                            <path d="M 10 15.5 C 10 15.5 11 18 12 18 C 13 18 14 15.5 14 15.5" />
-                          </motion.svg>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                     
                     <motion.div
                       key={nextStep.title}
