@@ -634,7 +634,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                />
             </svg>
 
-            {/* Enhanced Hygiene Mode - Pulsing outer ring with circular text around main circle */}
+            {/* Enhanced Hygiene Mode - Pulsing outward from circle edge with circular text */}
             <AnimatePresence>
               {room.isEnhancedHygiene && (
                 <motion.div
@@ -642,102 +642,109 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="absolute inset-0 pointer-events-none -rotate-90 scale-[1.1]"
+                  className="absolute pointer-events-none"
+                  style={{ 
+                    width: '600px', 
+                    height: '600px', 
+                    left: '50%', 
+                    top: '50%', 
+                    transform: 'translate(-50%, -50%)' 
+                  }}
                 >
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 480 480">
+                  <svg className="w-full h-full" viewBox="0 0 600 600">
                     <defs>
-                      {/* Path for circular text - radius 230 (just outside main circle r=210) */}
+                      {/* Path for circular text - radius 280 (outside pulsing area) */}
                       <path 
-                        id="textCirclePath" 
-                        d="M 240,240 m -230,0 a 230,230 0 1,1 460,0 a 230,230 0 1,1 -460,0"
+                        id="hygieneTextPath" 
+                        d="M 300,300 m -270,0 a 270,270 0 1,1 540,0 a 270,270 0 1,1 -540,0"
                         fill="none"
                       />
                     </defs>
                     
-                    {/* Pulsing wave ring 1 - starts from main circle edge (r=210) */}
+                    {/* Pulsing wave ring 1 - expands outward only */}
                     <motion.circle 
-                      cx="240" cy="240" fill="none"
-                      stroke="rgba(239, 68, 68, 0.6)" strokeWidth="2"
-                      initial={{ r: 210 }}
+                      cx="300" cy="300" fill="none"
+                      stroke="rgba(239, 68, 68, 0.7)" strokeWidth="2"
+                      initial={{ r: 232 }}
                       animate={{ 
-                        r: [210, 235, 210],
-                        opacity: [0.8, 0.1, 0.8],
-                        strokeWidth: [2, 0.5, 2]
+                        r: [232, 255],
+                        opacity: [0.7, 0],
+                        strokeWidth: [2, 0.5]
                       }}
                       transition={{ 
-                        duration: 2.5,
+                        duration: 1.8,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        ease: "easeOut"
                       }}
-                      style={{ filter: 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.5))' }}
+                      style={{ filter: 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.5))' }}
                     />
                     
                     {/* Pulsing wave ring 2 - delayed */}
                     <motion.circle 
-                      cx="240" cy="240" fill="none"
-                      stroke="rgba(239, 68, 68, 0.5)" strokeWidth="1.5"
-                      initial={{ r: 210 }}
+                      cx="300" cy="300" fill="none"
+                      stroke="rgba(239, 68, 68, 0.6)" strokeWidth="1.5"
+                      initial={{ r: 232 }}
                       animate={{ 
-                        r: [210, 240, 210],
-                        opacity: [0.6, 0, 0.6],
-                        strokeWidth: [1.5, 0.3, 1.5]
+                        r: [232, 258],
+                        opacity: [0.6, 0],
+                        strokeWidth: [1.5, 0.3]
                       }}
                       transition={{ 
-                        duration: 2.5,
+                        duration: 1.8,
                         repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 0.8
+                        ease: "easeOut",
+                        delay: 0.6
                       }}
-                      style={{ filter: 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.4))' }}
+                      style={{ filter: 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.4))' }}
                     />
                     
                     {/* Pulsing wave ring 3 - more delayed */}
                     <motion.circle 
-                      cx="240" cy="240" fill="none"
-                      stroke="rgba(239, 68, 68, 0.4)" strokeWidth="1"
-                      initial={{ r: 210 }}
+                      cx="300" cy="300" fill="none"
+                      stroke="rgba(239, 68, 68, 0.5)" strokeWidth="1"
+                      initial={{ r: 232 }}
                       animate={{ 
-                        r: [210, 245, 210],
-                        opacity: [0.4, 0, 0.4],
-                        strokeWidth: [1, 0.2, 1]
+                        r: [232, 260],
+                        opacity: [0.5, 0],
+                        strokeWidth: [1, 0.2]
                       }}
                       transition={{ 
-                        duration: 2.5,
+                        duration: 1.8,
                         repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 1.6
+                        ease: "easeOut",
+                        delay: 1.2
                       }}
                       style={{ filter: 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.3))' }}
                     />
                     
-                    {/* Outer text ring background - just outside main circle */}
+                    {/* Text track ring - subtle background */}
                     <circle 
-                      cx="240" cy="240" r="230" fill="none"
-                      stroke="rgba(239, 68, 68, 0.12)" strokeWidth="20"
+                      cx="300" cy="300" r="270" fill="none"
+                      stroke="rgba(239, 68, 68, 0.08)" strokeWidth="24"
                     />
                     
                     {/* Rotating circular text */}
                     <motion.g
                       animate={{ rotate: 360 }}
                       transition={{ 
-                        duration: 25,
+                        duration: 30,
                         repeat: Infinity,
                         ease: "linear"
                       }}
-                      style={{ transformOrigin: '240px 240px' }}
+                      style={{ transformOrigin: '300px 300px' }}
                     >
                       <text 
                         fill="#EF4444" 
                         style={{ 
-                          fontSize: '10px', 
+                          fontSize: '11px', 
                           fontWeight: 900, 
-                          letterSpacing: '0.4em',
+                          letterSpacing: '0.35em',
                           textTransform: 'uppercase',
-                          filter: 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.6))'
+                          filter: 'drop-shadow(0 0 3px rgba(239, 68, 68, 0.5))'
                         }}
                       >
-                        <textPath href="#textCirclePath" startOffset="0%">
-                          ZVÝŠENÝ HYGIENICKÝ REŽIM • ZVÝŠENÝ HYGIENICKÝ REŽIM • ZVÝŠENÝ HYGIENICKÝ REŽIM • 
+                        <textPath href="#hygieneTextPath" startOffset="0%">
+                          ZVÝŠENÝ HYGIENICKÝ REŽIM • ZVÝŠENÝ HYGIENICKÝ REŽIM • ZVÝŠENÝ HYGIENICKÝ REŽIM • ZVÝŠENÝ HYGIENICKÝ REŽIM • 
                         </textPath>
                       </text>
                     </motion.g>
