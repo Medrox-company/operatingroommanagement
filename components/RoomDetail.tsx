@@ -102,6 +102,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
   }, [patientArrivedTime]);
 
+  // Sync local state with room object (for real-time updates from other devices)
+  useEffect(() => {
+    setIsPaused(room.isPaused || false);
+  }, [room.isPaused]);
+
+  useEffect(() => {
+    setPatientCalledTime(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
+  }, [room.patientCalledAt]);
+
+  useEffect(() => {
+    setPatientArrivedTime(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
+  }, [room.patientArrivedAt]);
+
 
   const currentStepIndex = room.currentStepIndex;
   const prevStepIndex = usePrevious(currentStepIndex);
@@ -137,6 +150,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   const changeStep = async (newIndex: number) => {
     if (isInteractionBlocked) return;
+    
+    // SEQUENTIAL STEP RESTRICTION: Only allow next step (+1) or reset to 0 (from final step)
+    const isNextStep = newIndex === currentStepIndex + 1;
+    const isResetToStart = newIndex === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1;
+    
+    if (!isNextStep && !isResetToStart) {
+      return; // Block skipping steps
+    }
     
     // Additional security for locked state: only allow forward progression
     if (room.isLocked) {
@@ -310,27 +331,28 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </div>
           </div>
 
-          {/* Workflow steps grid */}
+          {/* Workflow steps grid - display only, no skipping allowed */}
           <div className="grid grid-cols-2 gap-2">
             {WORKFLOW_STEPS.map((step, index) => {
               const isActive = index === currentStepIndex;
               const isDone = index < currentStepIndex;
+              const isNext = index === currentStepIndex + 1;
               return (
-                <button
+                <div
                   key={step.title}
-                  onClick={() => !isInteractionBlocked && onStepChange(index)}
-                  disabled={isInteractionBlocked}
                   className={`rounded-2xl px-3 py-3 text-left border transition-all ${
                     isActive
                       ? 'border-white/20 bg-white/10'
                       : isDone
                       ? 'border-white/5 bg-white/[0.02] opacity-50'
+                      : isNext
+                      ? 'border-white/10 bg-white/[0.03] opacity-70'
                       : 'border-white/5 bg-white/[0.02] opacity-40'
                   }`}
                   style={isActive ? { borderColor: `${step.color}50`, backgroundColor: `${step.color}10` } : {}}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: isActive ? step.color : isDone ? '#4ade80' : '#ffffff30' }} />
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: isActive ? step.color : isDone ? '#4ade80' : isNext ? '#ffffff50' : '#ffffff30' }} />
                     <p className="text-[8px] font-black tracking-widest uppercase text-white/30">
                       {String(index + 1).padStart(2, '0')}
                     </p>
@@ -338,7 +360,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   <p className={`text-[11px] font-bold leading-tight ${isActive ? 'text-white' : 'text-white/50'}`}>
                     {step.title}
                   </p>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -713,8 +735,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               const angle = (index / WORKFLOW_STEPS.length) * 360;
               const isActive = index === currentStepIndex;
               
-              // In locked state, only allow clicking forward icons
-              const isSelectable = !isPaused && (!room.isLocked || (index > currentStepIndex && index !== 0));
+              // Only allow next step (+1) or reset to start (from final step)
+              const isNextStep = index === currentStepIndex + 1;
+              const isResetToStart = index === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1 && !room.isLocked;
+              const isSelectable = !isPaused && (isNextStep || isResetToStart);
               
               return (
                 <div key={index} className="absolute w-full h-full" style={{ transform: `rotate(${angle}deg)` }}>
