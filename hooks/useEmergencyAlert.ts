@@ -1,74 +1,121 @@
 import { useEffect, useRef, useCallback } from 'react';
 import type { OperatingRoom } from '../types';
 
-// Create emergency alert sound using Web Audio API
-function createEmergencySound(): () => void {
-  let audioContext: AudioContext | null = null;
-  let isPlaying = false;
+// Shared AudioContext - created once and reused
+let sharedAudioContext: AudioContext | null = null;
+let isAudioUnlocked = false;
 
-  return () => {
-    // Prevent multiple simultaneous plays
-    if (isPlaying) return;
-    
-    try {
-      // Create or resume AudioContext (needed for browsers that require user interaction)
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      }
-      
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-
-      isPlaying = true;
-
-      // Create a more urgent alarm sound pattern
-      const playTone = (startTime: number, frequency: number, duration: number) => {
-        const oscillator = audioContext!.createOscillator();
-        const gainNode = audioContext!.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext!.destination);
-        
-        oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(frequency, startTime);
-        
-        // Quick attack, sustain, quick release
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
-        gainNode.gain.setValueAtTime(0.3, startTime + duration - 0.02);
-        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
-        
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
-      };
-
-      const now = audioContext.currentTime;
-      
-      // Play alternating high-low emergency pattern (3 cycles)
-      for (let i = 0; i < 3; i++) {
-        const cycleStart = now + i * 0.4;
-        playTone(cycleStart, 880, 0.15);        // High tone (A5)
-        playTone(cycleStart + 0.2, 440, 0.15);  // Low tone (A4)
-      }
-
-      // Reset isPlaying after sound completes
-      setTimeout(() => {
-        isPlaying = false;
-      }, 1500);
-
-    } catch (error) {
-      console.error('[EmergencyAlert] Failed to play sound:', error);
-      isPlaying = false;
+// Unlock audio on mobile devices - must be called from user interaction
+function unlockAudio() {
+  if (isAudioUnlocked) return;
+  
+  try {
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     }
+    
+    if (sharedAudioContext.state === 'suspended') {
+      sharedAudioContext.resume();
+    }
+    
+    // Play a silent sound to unlock audio on iOS/mobile
+    const buffer = sharedAudioContext.createBuffer(1, 1, 22050);
+    const source = sharedAudioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(sharedAudioContext.destination);
+    source.start(0);
+    
+    isAudioUnlocked = true;
+    console.log('[EmergencyAlert] Audio unlocked for mobile');
+  } catch (e) {
+    console.error('[EmergencyAlert] Failed to unlock audio:', e);
+  }
+}
+
+// Setup global unlock listeners
+if (typeof window !== 'undefined') {
+  const unlockEvents = ['touchstart', 'touchend', 'mousedown', 'keydown', 'click'];
+  
+  const handleUnlock = () => {
+    unlockAudio();
+    // Remove listeners after unlock
+    unlockEvents.forEach(event => {
+      document.removeEventListener(event, handleUnlock, true);
+    });
   };
+  
+  unlockEvents.forEach(event => {
+    document.addEventListener(event, handleUnlock, true);
+  });
+}
+
+// Play emergency alert sound
+function playEmergencyAlert(): void {
+  try {
+    // Create AudioContext if not exists
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    }
+    
+    // Resume if suspended (mobile browsers)
+    if (sharedAudioContext.state === 'suspended') {
+      sharedAudioContext.resume();
+    }
+
+    const audioContext = sharedAudioContext;
+
+    // Create a more urgent alarm sound pattern
+    const playTone = (startTime: number, frequency: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(frequency, startTime);
+      
+      // Quick attack, sustain, quick release
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.4, startTime + 0.02);
+      gainNode.gain.setValueAtTime(0.4, startTime + duration - 0.02);
+      gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+      
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+
+    const now = audioContext.currentTime;
+    
+    // Play alternating high-low emergency pattern (5 cycles for more urgency)
+    for (let i = 0; i < 5; i++) {
+      const cycleStart = now + i * 0.35;
+      playTone(cycleStart, 880, 0.12);        // High tone (A5)
+      playTone(cycleStart + 0.17, 440, 0.12); // Low tone (A4)
+    }
+
+    console.log('[EmergencyAlert] Sound played');
+
+  } catch (error) {
+    console.error('[EmergencyAlert] Failed to play sound:', error);
+  }
 }
 
 export function useEmergencyAlert(rooms: OperatingRoom[], selectedRoomId: string | null) {
   const previousEmergencyStates = useRef<Map<string, boolean>>(new Map());
-  const playEmergencySound = useRef(createEmergencySound());
+  const isInitialized = useRef(false);
 
   const checkForNewEmergency = useCallback((updatedRooms: OperatingRoom[]) => {
+    // Skip first render to avoid playing sound on page load for existing emergencies
+    if (!isInitialized.current) {
+      // Initialize previous states without playing sound
+      for (const room of updatedRooms) {
+        previousEmergencyStates.current.set(room.id, room.isEmergency || false);
+      }
+      isInitialized.current = true;
+      return;
+    }
+
     for (const room of updatedRooms) {
       const wasEmergency = previousEmergencyStates.current.get(room.id) || false;
       const isNowEmergency = room.isEmergency || false;
@@ -77,8 +124,8 @@ export function useEmergencyAlert(rooms: OperatingRoom[], selectedRoomId: string
       if (!wasEmergency && isNowEmergency) {
         console.log('[EmergencyAlert] Emergency activated for room:', room.name);
         
-        // Play sound - especially if this room is currently selected/visible
-        playEmergencySound.current();
+        // Play sound on all devices where this room is visible
+        playEmergencyAlert();
       }
 
       // Update stored state
@@ -93,6 +140,6 @@ export function useEmergencyAlert(rooms: OperatingRoom[], selectedRoomId: string
 
   // Return function to manually trigger alert if needed
   return {
-    playEmergencySound: playEmergencySound.current
+    playEmergencyAlert
   };
 }
