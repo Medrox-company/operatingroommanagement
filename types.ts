@@ -80,6 +80,10 @@ export interface OperatingRoom {
   isEmergency?: boolean;
   isLocked?: boolean;
   isEnhancedHygiene?: boolean; // Zvýšený hygienický režim
+  isPaused?: boolean; // Pauza operace
+  patientCalledAt?: string | null; // ISO timestamp kdy byl pacient zavolán
+  patientArrivedAt?: string | null; // ISO timestamp kdy pacient přijel
+  phaseStartedAt?: string | null; // ISO timestamp začátku aktuální fáze
   currentStepIndex: number; // Index aktuální fáze workflow (0-7)
   
   // Working hours schedule
