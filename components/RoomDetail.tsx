@@ -334,11 +334,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Next phase button - prominent on mobile */}
           {!isInteractionBlocked && (
             <button
-              onClick={() => onStepChange(Math.min(currentStepIndex + 1, WORKFLOW_STEPS.length - 1))}
+              onClick={() => {
+                const isFinalStep = currentStepIndex === WORKFLOW_STEPS.length - 1;
+                const nextIndex = isFinalStep ? 0 : currentStepIndex + 1;
+                onStepChange(nextIndex);
+              }}
               className="w-full rounded-2xl py-6 font-black text-base tracking-[0.2em] uppercase border transition-all"
               style={{ backgroundColor: `${activeColor}20`, borderColor: `${activeColor}40`, color: activeColor }}
             >
-              {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'Spustit fázi' : 'Spustit další fázi'} →
+              {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'Nový cyklus' : 'Spustit další fázi'} →
             </button>
           )}
 
