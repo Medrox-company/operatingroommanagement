@@ -12,10 +12,11 @@ import { OperatingRoom } from '../types';
 interface SettingsPageProps {
   rooms?: OperatingRoom[];
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
+  onScheduleUpdate?: (roomId: string, schedule: Record<string, any>) => void;
   resetTrigger?: number;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, resetTrigger = 0 }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, onScheduleUpdate, resetTrigger = 0 }) => {
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   
   useEffect(() => {
@@ -104,9 +105,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           exit={{ opacity: 0 }}
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
-          <OperatingRoomsManager rooms={rooms} onRoomsChange={(updatedRooms) => {
-            onRoomsChange?.(updatedRooms);
-          }} />
+          <OperatingRoomsManager 
+            rooms={rooms} 
+            onRoomsChange={(updatedRooms) => {
+              onRoomsChange?.(updatedRooms);
+            }}
+            onScheduleUpdate={onScheduleUpdate}
+          />
         </motion.div>
       ) : selectedModule === 'shifts' ? (
         <motion.div

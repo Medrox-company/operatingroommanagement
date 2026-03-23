@@ -124,6 +124,19 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleUpdateWeeklySchedule = async (roomId: string, schedule: Record<string, any>) => {
+    setRooms(prev => prev.map(room =>
+      room.id === roomId
+        ? { ...room, weeklySchedule: schedule }
+        : room
+    ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { 
+        weekly_schedule: schedule
+      });
+    }
+  };
+
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
@@ -294,7 +307,12 @@ const AppContent: React.FC = () => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 className="w-full h-full overflow-y-auto hide-scrollbar">
-                <SettingsPage rooms={rooms} onRoomsChange={setRooms} resetTrigger={settingsResetTrigger} />
+                <SettingsPage 
+                  rooms={rooms} 
+                  onRoomsChange={setRooms} 
+                  onScheduleUpdate={handleUpdateWeeklySchedule}
+                  resetTrigger={settingsResetTrigger} 
+                />
               </motion.div>
             )}
 

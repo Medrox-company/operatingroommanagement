@@ -20,6 +20,7 @@ interface DBOperatingRoom {
   anesthesiologist_id: string | null;
   current_patient_id: string | null;
   current_procedure_id: string | null;
+  weekly_schedule: Record<string, any> | null;
 }
 
 interface DBStaff {
@@ -70,6 +71,7 @@ function transformRoom(
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
+    weeklySchedule: row.weekly_schedule || {},
     staff: {
       doctor: { name: doctor?.name || null, role: 'DOCTOR' },
       nurse: { name: nurse?.name || null, role: 'NURSE' },
@@ -136,6 +138,7 @@ export async function updateOperatingRoom(
     is_locked: boolean;
     current_step_index: number;
     estimated_end_time: string | null;
+    weekly_schedule: Record<string, any>;
   }>
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
