@@ -14,7 +14,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms } from './lib/db';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './components/LoginPage';
 import AdminModule from './components/AdminModule';
@@ -40,14 +40,24 @@ const AppContent: React.FC = () => {
     loadRooms();
   }, []);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates with granular room updates
   useEffect(() => {
-    const unsubscribe = subscribeToOperatingRooms(async () => {
-      const dbRooms = await fetchOperatingRooms();
-      if (dbRooms && dbRooms.length > 0) {
-        setRooms(dbRooms);
+    const unsubscribe = subscribeToOperatingRooms(
+      // Full refresh callback (for INSERT/DELETE)
+      async () => {
+        const dbRooms = await fetchOperatingRooms();
+        if (dbRooms && dbRooms.length > 0) {
+          setRooms(dbRooms);
+        }
+      },
+      // Granular update callback (for UPDATE - instant sync)
+      (roomId, dbChanges) => {
+        const appChanges = transformSingleRoom(dbChanges);
+        setRooms(prev => prev.map(room =>
+          room.id === roomId ? { ...room, ...appChanges } : room
+        ));
       }
-    });
+    );
     return () => {
       if (unsubscribe) unsubscribe();
     };
@@ -107,6 +117,32 @@ const AppContent: React.FC = () => {
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { 
         estimated_end_time: newTime ? newTime.toISOString() : null 
+      });
+    }
+  };
+
+  const handleEnhancedHygieneToggle = async (roomId: string, enabled: boolean) => {
+    setRooms(prev => prev.map(room =>
+      room.id === roomId
+        ? { ...room, isEnhancedHygiene: enabled }
+        : room
+    ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { 
+        is_enhanced_hygiene: enabled 
+      });
+    }
+  };
+
+  const handleUpdateWeeklySchedule = async (roomId: string, schedule: Record<string, any>) => {
+    setRooms(prev => prev.map(room =>
+      room.id === roomId
+        ? { ...room, weeklySchedule: schedule }
+        : room
+    ));
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, { 
+        weekly_schedule: schedule
       });
     }
   };
@@ -171,6 +207,7 @@ const AppContent: React.FC = () => {
                   onClose={() => setSelectedRoomId(null)}
                   onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
+                  onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                 />
               </motion.div>
             )}
@@ -280,7 +317,12 @@ const AppContent: React.FC = () => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 className="w-full h-full overflow-y-auto hide-scrollbar">
-                <SettingsPage rooms={rooms} onRoomsChange={setRooms} resetTrigger={settingsResetTrigger} />
+                <SettingsPage 
+                  rooms={rooms} 
+                  onRoomsChange={setRooms} 
+                  onScheduleUpdate={handleUpdateWeeklySchedule}
+                  resetTrigger={settingsResetTrigger} 
+                />
               </motion.div>
             )}
 

@@ -13,19 +13,31 @@ interface TimelineModuleProps {
 
 /* --- Layout constants --- */
 const ROOM_LABEL_WIDTH = 200;
-const TIME_MARKERS = Array.from({ length: 32 }, (_, i) => i); // 00:00 to 07:00 next day (32 hours total for display)
-const HOURS_COUNT = 24;
+const TIMELINE_START_HOUR = 7;  // Timeline starts at 7:00
+const TIMELINE_HOURS = 24;      // 24 hours displayed (7:00 to 7:00 next day)
+const TIME_MARKERS = Array.from({ length: TIMELINE_HOURS + 1 }, (_, i) => (TIMELINE_START_HOUR + i) % 24); // 7, 8, 9... 23, 0, 1, 2, 3, 4, 5, 6, 7
 const SHIFT_START_HOUR = 7;  // 7:00 AM
 const SHIFT_END_HOUR = 19;   // 7:00 PM
 const ROW_HEIGHT = 56;
 
-// Get minutes from midnight
-const getMinutesFromMidnight = (date: Date) => {
-  return date.getHours() * 60 + date.getMinutes();
+// Get minutes from timeline start (7:00)
+const getMinutesFromTimelineStart = (date: Date) => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  // Calculate minutes from 7:00
+  let totalMinutes = (hours * 60 + minutes) - (TIMELINE_START_HOUR * 60);
+  // If negative (before 7:00), it's next day portion
+  if (totalMinutes < 0) {
+    totalMinutes += 24 * 60;
+  }
+  return totalMinutes;
 };
 
-// Convert time to percentage of 24h timeline (extended to 32h for next day view)
-const getTimePercent = (date: Date, extendedHours = 32) => (getMinutesFromMidnight(date) / (extendedHours * 60)) * 100;
+// Convert time to percentage of 24h timeline (from 7:00 to 7:00)
+const getTimePercent = (date: Date) => {
+  const minutesFromStart = getMinutesFromTimelineStart(date);
+  return (minutesFromStart / (TIMELINE_HOURS * 60)) * 100;
+};
 
 // Parse time string "HH:MM" to Date object (today)
 const parseTimeToDate = (timeStr: string): Date => {
@@ -35,10 +47,19 @@ const parseTimeToDate = (timeStr: string): Date => {
   return date;
 };
 
-const hourLabel = (h: number) => {
+// Get hour label with next day indicator
+const hourLabel = (h: number, showNextDay = false) => {
   const hour = h % 24;
-  return `${hour < 10 ? '0' : ''}${hour}:00`;
+  const label = `${hour < 10 ? '0' : ''}${hour}:00`;
+  // Hours 0-6 are next day when timeline starts at 7:00
+  if (showNextDay && hour >= 0 && hour < TIMELINE_START_HOUR) {
+    return label + ' +1';
+  }
+  return label;
 };
+
+// Check if hour is in "next day" portion of timeline
+const isNextDayHour = (h: number) => h >= 0 && h < TIMELINE_START_HOUR;
 
 /* --- Room colors by priority/activity --- */
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
@@ -526,18 +547,18 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-scroll to current time position on mount
-  useEffect(() => {
-    if (scrollContainerRef.current) {
-      const nowPercent = getTimePercent(currentTime, 32);
-      const scrollWidth = scrollContainerRef.current.scrollWidth - ROOM_LABEL_WIDTH;
-      const containerWidth = scrollContainerRef.current.clientWidth - ROOM_LABEL_WIDTH;
-      const scrollPosition = (scrollWidth * nowPercent / 100) - (containerWidth / 2);
-      scrollContainerRef.current.scrollLeft = Math.max(0, scrollPosition);
-    }
-  }, []);
+  // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
+  // useEffect(() => {
+  //   if (scrollContainerRef.current) {
+  //     const nowPercent = getTimePercent(currentTime);
+  //     const scrollWidth = scrollContainerRef.current.scrollWidth - ROOM_LABEL_WIDTH;
+  //     const containerWidth = scrollContainerRef.current.clientWidth - ROOM_LABEL_WIDTH;
+  //     const scrollPosition = (scrollWidth * nowPercent / 100) - (containerWidth / 2);
+  //     scrollContainerRef.current.scrollLeft = Math.max(0, scrollPosition);
+  //   }
+  // }, []);
 
-  const nowPercent = getTimePercent(currentTime, 32);
+  const nowPercent = getTimePercent(currentTime);
   const currentHour = currentTime.getHours();
   const currentMin = currentTime.getMinutes();
 
@@ -560,9 +581,77 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     return [...rooms];
   }, [rooms]);
 
-  // Calculate shift line positions (as percentage of 32-hour view)
-  const shiftStartPercent = (SHIFT_START_HOUR / 32) * 100;
-  const shiftEndPercent = (SHIFT_END_HOUR / 32) * 100;
+  /* --- ARO Overtime Tracking - rooms that exceed working hours --- */
+  const aroOvertimeRooms = useMemo(() => {
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const todayKey = dayKeys[currentTime.getDay()];
+    
+    const overtimeList: Array<{
+      roomId: string;
+      roomName: string;
+      estimatedEndTime: Date;
+      workingEndTime: Date;
+      overtimeMinutes: number;
+    }> = [];
+    
+    rooms.forEach(room => {
+      // Skip non-active, emergency, or locked rooms
+      if (room.currentStepIndex >= 6 || room.isEmergency || room.isLocked) return;
+      
+      // Get estimated end time
+      let endTime: Date | null = null;
+      if (room.estimatedEndTime) {
+        endTime = new Date(room.estimatedEndTime);
+      } else if (room.currentProcedure?.startTime && room.currentProcedure?.estimatedDuration) {
+        const startDate = parseTimeToDate(room.currentProcedure.startTime);
+        endTime = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+      }
+      
+      if (!endTime) return;
+      
+      // Get room's working hours for today
+      const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+      const todaySchedule = schedule[todayKey];
+      
+      if (!todaySchedule.enabled) return;
+      
+      // Calculate working end time
+      const workingEndTime = new Date(currentTime);
+      workingEndTime.setHours(todaySchedule.endHour, todaySchedule.endMinute, 0, 0);
+      
+      // Check if estimated end exceeds working hours
+      if (endTime > workingEndTime) {
+        const overtimeMinutes = Math.round((endTime.getTime() - workingEndTime.getTime()) / (1000 * 60));
+        overtimeList.push({
+          roomId: room.id,
+          roomName: room.name,
+          estimatedEndTime: endTime,
+          workingEndTime,
+          overtimeMinutes
+        });
+      }
+    });
+    
+    // Sort by estimated end time (who finishes first has priority to be relieved first)
+    return overtimeList.sort((a, b) => a.estimatedEndTime.getTime() - b.estimatedEndTime.getTime());
+  }, [rooms, currentTime]);
+  
+  // Get ARO position for a room (returns position number or null if not in overtime)
+  const getAroPosition = (roomId: string): number | null => {
+    const index = aroOvertimeRooms.findIndex(r => r.roomId === roomId);
+    return index >= 0 ? index + 1 : null;
+  };
+  
+  // Get overtime info for a room
+  const getOvertimeInfo = (roomId: string) => {
+    return aroOvertimeRooms.find(r => r.roomId === roomId);
+  };
+
+  // Calculate shift line positions (as percentage of 24-hour view from 7:00)
+  // Shift start (7:00) is at 0% of timeline
+  const shiftStartPercent = 0;
+  // Shift end (19:00) is 12 hours from start = 50%
+  const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
 
   // Get remaining time for room
   const getRemainingTime = (room: OperatingRoom): string => {
@@ -663,6 +752,40 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               />
             )}
 
+            {/* ARO Overtime indicator */}
+            {aroOvertimeRooms.length > 0 && (
+              <div
+                className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.08) 100%)",
+                  border: "1px solid rgba(239, 68, 68, 0.35)",
+                  boxShadow: "0 0 20px rgba(239, 68, 68, 0.15)",
+                }}
+              >
+                <div
+                  className="absolute inset-0 opacity-50"
+                  style={{
+                    background: "radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.25) 0%, transparent 70%)",
+                  }}
+                />
+                <div className="relative flex items-center gap-3 h-full">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.15) 100%)",
+                      border: "1px solid rgba(239, 68, 68, 0.4)",
+                    }}
+                  >
+                    <Clock className="w-4 h-4 text-red-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PRESAH</p>
+                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} salu</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Spacer */}
             <div className="flex-1 min-w-4" />
 
@@ -755,16 +878,17 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             <span className="text-[10px] font-bold tracking-wider uppercase text-white/40">OPERACNI SALY</span>
           </div>
           
-          {/* Time markers - scrollable */}
-          <div className="flex-1 overflow-x-auto hide-scrollbar" ref={timelineRef}>
-            <div className="flex items-center h-12 relative" style={{ minWidth: '200%' }}>
+          {/* Time markers - no scroll, full width for 24h */}
+          <div className="flex-1 overflow-hidden" ref={timelineRef}>
+            <div className="flex items-center h-12 relative w-full">
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
-                const widthPct = 100 / 32;
+                const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
                 const displayHour = hour % 24;
                 const isNightHour = displayHour >= 19 || displayHour < 7;
-                const isCurrentHour = displayHour === currentHour && !isLast && i < 24;
+                const isNextDay = isNextDayHour(hour);
+                const isCurrentHour = displayHour === currentHour && !isLast;
                 
                 return (
                   <div 
@@ -787,9 +911,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           </span>
                         </div>
                       ) : (
-                        <span className={`ml-2 text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
-                          {hourLabel(hour)}
-                        </span>
+                        <div className="ml-2 flex items-center gap-1">
+                          <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                            {hourLabel(hour)}
+                          </span>
+                          {isNextDay && (
+                            <span className="text-[8px] font-bold text-cyan-400/60 px-1 py-0.5 rounded bg-cyan-400/10">
+                              +1
+                            </span>
+                          )}
+                        </div>
                       )
                     )}
                   </div>
@@ -799,9 +930,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           </div>
         </div>
 
-        {/* Room Rows - Scrollable */}
-        <div className="flex-1 min-h-0 overflow-auto hide-scrollbar" ref={scrollContainerRef}>
-          <div className="relative" style={{ minWidth: '200%' }}>
+        {/* Room Rows - No scroll, full width */}
+        <div className="flex-1 min-h-0 overflow-hidden" ref={scrollContainerRef}>
+          <div className="relative w-full h-full">
             {/* Now indicator - cyan glow line */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
@@ -876,6 +1007,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
+              
+              // Get current workflow step info for status display
+              const currentStep = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[6];
+              const stepColor = currentStep.color;
+              const StepIcon = currentStep.Icon;
 
               // Calculate operation bar position
               // Use currentProcedure if available, otherwise generate fallback values for active rooms
@@ -900,7 +1036,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   startDate.setHours(baseHour, baseMinute, 0, 0);
                 }
                 
-                boxLeftPct = getTimePercent(startDate, 32);
+                boxLeftPct = getTimePercent(startDate);
                 
                 if (room.estimatedEndTime) {
                   endDate = new Date(room.estimatedEndTime);
@@ -913,8 +1049,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   endDate = new Date(startDate.getTime() + duration * 60 * 1000);
                 }
                 
-                const boxRightPct = getTimePercent(endDate, 32);
-                boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                const boxRightPct = getTimePercent(endDate);
+                // Handle cases where operation spans past midnight (end is before start on timeline)
+                if (boxRightPct < boxLeftPct) {
+                  // Operation ends next day - extend to end of timeline
+                  boxWidthPct = Math.max(2, (100 - boxLeftPct) + boxRightPct);
+                } else {
+                  boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                }
                 progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
               }
 
@@ -1070,12 +1212,36 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 >
                   {/* Room Label - Sticky */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-3 px-4 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-center gap-2 px-3 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
                     style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                   >
+                    {/* ARO Overtime Badge - shows priority position for overtime rooms */}
+                    {(() => {
+                      const aroPosition = getAroPosition(room.id);
+                      const overtimeInfo = getOvertimeInfo(room.id);
+                      
+                      if (aroPosition && overtimeInfo) {
+                        return (
+                          <div 
+                            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
+                            style={{ 
+                              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)'
+                            }}
+                          >
+                            <span className="text-[8px] font-bold text-red-400 tracking-wider">ARO</span>
+                            <span className="text-sm font-black text-white">{aroPosition}</span>
+                            <span className="text-[7px] font-medium text-red-300">+{overtimeInfo.overtimeMinutes}m</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                    
                     {/* Numbered badge for active rooms */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {isActive && (
+                      {isActive && !getAroPosition(room.id) && (
                         <div 
                           className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg"
                           style={{ background: roomColor.bg, boxShadow: `0 0 12px ${roomColor.glow}` }}
@@ -1113,7 +1279,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
                           Volny
                         </p>
-                      ) : remainingTime ? (
+                      ) : remainingTime && stepIndex !== 6 ? (
                         <p 
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded-md inline-block" 
                           style={{ color: roomColor.bg, backgroundColor: `${roomColor.bg}15` }}
@@ -1137,14 +1303,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           key={i} 
                           className="absolute top-0 bottom-0 w-px" 
                           style={{ 
-                            left: `${(i / 32) * 100}%`,
+                            left: `${(i / TIMELINE_HOURS) * 100}%`,
                             background: isNight ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)'
                           }} 
                         />
                       );
                     })}
 
-                    {/* Active operation bar - Premium Design */}
+                    {/* Active operation bar - Premium Design with workflow step color */}
                     {isActive && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
@@ -1160,16 +1326,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         {/* Outer glow effect */}
                         <div 
                           className="absolute -inset-1 rounded-xl blur-md opacity-50"
-                          style={{ background: roomColor.bg }}
+                          style={{ background: stepColor }}
                         />
 
                         {/* Main container with gradient border */}
                         <div 
                           className="absolute inset-0 rounded-xl"
                           style={{ 
-                            background: `linear-gradient(135deg, ${roomColor.bg}30 0%, ${roomColor.bg}10 100%)`,
-                            border: `1px solid ${roomColor.bg}60`,
-                            boxShadow: `0 4px 20px ${roomColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`
+                            background: `linear-gradient(135deg, ${stepColor}30 0%, ${stepColor}10 100%)`,
+                            border: `1px solid ${stepColor}60`,
+                            boxShadow: `0 4px 20px ${stepColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`
                           }}
                         />
 
@@ -1185,7 +1351,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         <div 
                           className="absolute inset-0 opacity-60"
                           style={{ 
-                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${roomColor.bg}40 0%, transparent 70%)`
+                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${stepColor}40 0%, transparent 70%)`
                           }}
                         />
 
@@ -1198,7 +1364,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           <div 
                             className="absolute inset-0"
                             style={{ 
-                              background: `linear-gradient(135deg, ${roomColor.bg} 0%, ${roomColor.bg}CC 100%)`
+                              background: `linear-gradient(135deg, ${stepColor} 0%, ${stepColor}CC 100%)`
                             }}
                           />
                           
@@ -1236,7 +1402,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: `linear-gradient(90deg, transparent, ${roomColor.bg}, transparent)`
+                                background: `linear-gradient(90deg, transparent, ${stepColor}, transparent)`
                               }}
                               animate={{ opacity: [0.5, 1, 0.5] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
@@ -1247,7 +1413,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               style={{ 
                                 left: `${progressPct}%`,
                                 background: '#FFF',
-                                boxShadow: `0 0 10px #FFF, 0 0 20px ${roomColor.bg}`
+                                boxShadow: `0 0 10px #FFF, 0 0 20px ${stepColor}`
                               }}
                               animate={{ opacity: [1, 0.7, 1] }}
                               transition={{ duration: 1, repeat: Infinity }}
@@ -1258,7 +1424,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                               style={{ 
                                 left: `${progressPct}%`,
                                 background: '#FFF',
-                                boxShadow: `0 0 8px #FFF, 0 0 16px ${roomColor.bg}`
+                                boxShadow: `0 0 8px #FFF, 0 0 16px ${stepColor}`
                               }}
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
@@ -1266,40 +1432,76 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           </>
                         )}
 
-                        {/* Content overlay - procedure name if space allows */}
-                        {boxWidthPct > 8 && (
-                          <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
-                            <span 
-                              className="text-[10px] font-bold text-white/90 truncate drop-shadow-lg"
-                              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                            >
-                              {room.currentProcedure?.name || WORKFLOW_STEPS[stepIndex]?.name || 'Operace'}
-                            </span>
+                        {/* Content overlay - step icon, title and status */}
+                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
+                          {/* Step Icon */}
+                          <div 
+                            className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center"
+                            style={{ 
+                              background: `${stepColor}40`,
+                              border: `1px solid ${stepColor}60`
+                            }}
+                          >
+                            <StepIcon className="w-3.5 h-3.5 text-white" />
                           </div>
-                        )}
+                          
+                          {/* Step title and status */}
+                          {boxWidthPct > 12 && (
+                            <div className="min-w-0 flex-1">
+                              <p 
+                                className="text-[10px] font-bold text-white truncate"
+                                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                              >
+                                {currentStep.title}
+                              </p>
+                              <p 
+                                className="text-[8px] font-medium truncate"
+                                style={{ color: stepColor, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+                              >
+                                {currentStep.status}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Remaining time badge */}
+                          {boxWidthPct > 18 && remainingTime && stepIndex !== 6 && (
+                            <div 
+                              className="flex-shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold text-white"
+                              style={{ 
+                                background: 'rgba(0,0,0,0.3)',
+                                backdropFilter: 'blur(4px)'
+                              }}
+                            >
+                              {remainingTime}
+                            </div>
+                          )}
+                        </div>
                       </motion.div>
                     )}
 
-                    {/* Free room indicator - Subtle premium style */}
+                    {/* Free room indicator - with workflow step styling */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center overflow-hidden"
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center gap-3 overflow-hidden"
                         style={{ 
-                          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.03) 0%, rgba(34, 197, 94, 0.01) 100%)',
-                          border: '1px dashed rgba(34, 197, 94, 0.15)'
+                          background: `linear-gradient(135deg, ${stepColor}08 0%, ${stepColor}03 100%)`,
+                          border: `1px dashed ${stepColor}30`
                         }}
                       >
-                        {/* Subtle pulsing dot */}
-                        <motion.div 
-                          className="w-2 h-2 rounded-full"
+                        {/* Step icon */}
+                        <div 
+                          className="w-6 h-6 rounded-lg flex items-center justify-center"
                           style={{ 
-                            background: 'rgba(34, 197, 94, 0.4)',
-                            boxShadow: '0 0 10px rgba(34, 197, 94, 0.3)'
+                            background: `${stepColor}20`,
+                            border: `1px solid ${stepColor}30`
                           }}
-                          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                        <span className="ml-2 text-[9px] font-medium text-emerald-500/40 uppercase tracking-wider">Dostupny</span>
+                        >
+                          <StepIcon className="w-3.5 h-3.5" style={{ color: stepColor }} />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold" style={{ color: stepColor }}>{currentStep.title}</p>
+                          <p className="text-[8px] font-medium text-white/30">{currentStep.status}</p>
+                        </div>
                       </div>
                     )}
 
@@ -1312,8 +1514,16 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       
                       if (!todaySchedule.enabled) return null;
                       
-                      const endMinutes = todaySchedule.endHour * 60 + todaySchedule.endMinute;
-                      const endPercent = (endMinutes / (32 * 60)) * 100;
+                      // Calculate end time as minutes from timeline start (7:00)
+                      const endHour = todaySchedule.endHour;
+                      const endMinute = todaySchedule.endMinute;
+                      let minutesFromTimelineStart = (endHour * 60 + endMinute) - (TIMELINE_START_HOUR * 60);
+                      // If before 7:00, it's next day portion
+                      if (minutesFromTimelineStart < 0) {
+                        minutesFromTimelineStart += 24 * 60;
+                      }
+                      const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
+                      const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
                       return (
                         <div 
@@ -1325,7 +1535,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         >
                           {/* End time label */}
                           <div 
-                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap"
+                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
                             style={{ 
                               background: 'rgba(249, 115, 22, 0.2)',
                               border: '1px solid rgba(249, 115, 22, 0.4)',
@@ -1333,6 +1543,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
                           </div>
                         </div>
                       );
@@ -1382,6 +1593,18 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           >
             <div className="w-4 h-4 rounded-full border-2 border-red-500/50" />
             <span className="text-[10px] font-medium text-white/40">Presah</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+          >
+            <div 
+              className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-red-400"
+              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+            >
+              1
+            </div>
+            <span className="text-[10px] font-medium text-red-400/70">ARO poradi stridani</span>
           </div>
         </div>
         <div 

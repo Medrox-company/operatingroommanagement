@@ -10,6 +10,7 @@ import {
 interface OperatingRoomsManagerProps {
   rooms?: OperatingRoom[];
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
+  onScheduleUpdate?: (roomId: string, schedule: Record<string, any>) => void;
 }
 
 const DAYS = [
@@ -334,6 +335,7 @@ const RoomCard: React.FC<{
 const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   rooms: initialRooms,
   onRoomsChange,
+  onScheduleUpdate,
 }) => {
   const [roomsList, setRoomsList] = useState<OperatingRoom[]>(
     (initialRooms || MOCK_ROOMS).map(room => ({
@@ -405,6 +407,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     );
     setRoomsList(updatedRooms);
     onRoomsChange?.(updatedRooms);
+    // Notify parent of schedule update for database persistence
+    onScheduleUpdate?.(roomId, newSchedule);
   };
 
   return (

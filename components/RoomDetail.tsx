@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert
 } from 'lucide-react';
 import { recordStatusEvent } from '../lib/db';
 
@@ -16,6 +16,7 @@ interface RoomDetailProps {
   onClose: () => void;
   onStepChange: (index: number) => void;
   onEndTimeChange: (newTime: Date | null) => void;
+  onEnhancedHygieneToggle?: (enabled: boolean) => void;
 }
 
 const usePrevious = (value: number) => {
@@ -26,7 +27,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(false);
@@ -335,6 +336,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
       </header>
 
+      {/* ENHANCED HYGIENE MODE - subtle red vignette only */}
+      {room.isEnhancedHygiene && (
+        <div
+          className="fixed inset-0 pointer-events-none z-[100]"
+          style={{
+            background: 'radial-gradient(ellipse at center, transparent 55%, rgba(239,68,68,0.08) 80%, rgba(239,68,68,0.18) 100%)',
+            boxShadow: 'inset 0 0 120px rgba(239,68,68,0.15)'
+          }}
+        />
+      )}
+
       {/* Right Column Action Buttons - Absolute Positioning */}
       {/* Close Button - Top Right */}
       <button 
@@ -483,6 +495,32 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </motion.button>
       )}
 
+      {/* Enhanced Hygiene Mode Toggle - Bottom Right, next to Pause */}
+      <motion.button
+        onClick={async () => {
+          const newHygieneState = !room.isEnhancedHygiene;
+          onEnhancedHygieneToggle?.(newHygieneState);
+          await recordStatusEvent({
+            operating_room_id: room.id,
+            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+            step_index: currentStepIndex,
+            step_name: WORKFLOW_STEPS[currentStepIndex].title,
+          });
+        }}
+        className={`absolute bottom-8 right-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+          room.isEnhancedHygiene
+            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
+            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+        }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
+          {room.isEnhancedHygiene ? 'Hygienický\nrežim' : 'Hygien.\nrežim'}
+        </span>
+      </motion.button>
+
       {/* Main Immersive Dial */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
         <div className="relative w-[650px] h-[650px] flex items-center justify-center">
@@ -606,6 +644,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   className="opacity-80"
                />
             </svg>
+
+            {/* ENHANCED HYGIENE MODE - Only subtle glow */}
+            <AnimatePresence>
+              {room.isEnhancedHygiene && (
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-full"
+                  style={{
+                    background: 'radial-gradient(circle at center, transparent 40%, rgba(16, 185, 129, 0.04) 50%, rgba(16, 185, 129, 0.02) 65%, transparent 75%)',
+                  }}
+                />
+              )}
+            </AnimatePresence>
+
+
 
             <div className="text-center relative z-20 pointer-events-none">
               <AnimatePresence mode="wait">
