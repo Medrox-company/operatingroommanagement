@@ -268,12 +268,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const handleDecreaseTime = () => {
     if (isInteractionBlocked || estimatedEndTime === null) return;
   
-    // Snap current time to 15-min floor, then subtract 15 minutes
-    const snapped = snapTo15Min(estimatedEndTime);
-    const potentialNewTime = new Date(snapped.getTime() - 15 * 60 * 1000);
-    if (potentialNewTime < new Date()) return;
+    // Simple: subtract 15 minutes, allow down to current time
+    const newTime = new Date(estimatedEndTime.getTime() - 15 * 60 * 1000);
+    const now = new Date();
+    
+    // Only block if new time would be in the past
+    if (newTime <= now) return;
   
-    onEndTimeChange(potentialNewTime);
+    onEndTimeChange(newTime);
   
     if (endTimeTimeoutRef.current) {
       clearTimeout(endTimeTimeoutRef.current);
@@ -331,39 +333,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </div>
           </div>
 
-          {/* Workflow steps grid - display only, no skipping allowed */}
-          <div className="grid grid-cols-2 gap-2">
-            {WORKFLOW_STEPS.map((step, index) => {
-              const isActive = index === currentStepIndex;
-              const isDone = index < currentStepIndex;
-              const isNext = index === currentStepIndex + 1;
-              return (
-                <div
-                  key={step.title}
-                  className={`rounded-2xl px-3 py-3 text-left border transition-all ${
-                    isActive
-                      ? 'border-white/20 bg-white/10'
-                      : isDone
-                      ? 'border-white/5 bg-white/[0.02] opacity-50'
-                      : isNext
-                      ? 'border-white/10 bg-white/[0.03] opacity-70'
-                      : 'border-white/5 bg-white/[0.02] opacity-40'
-                  }`}
-                  style={isActive ? { borderColor: `${step.color}50`, backgroundColor: `${step.color}10` } : {}}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: isActive ? step.color : isDone ? '#4ade80' : isNext ? '#ffffff50' : '#ffffff30' }} />
-                    <p className="text-[8px] font-black tracking-widest uppercase text-white/30">
-                      {String(index + 1).padStart(2, '0')}
-                    </p>
-                  </div>
-                  <p className={`text-[11px] font-bold leading-tight ${isActive ? 'text-white' : 'text-white/50'}`}>
-                    {step.title}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+          {/* Next phase button - prominent on mobile */}
+          {!isInteractionBlocked && (
+            <button
+              onClick={() => {
+                const isFinalStep = currentStepIndex === WORKFLOW_STEPS.length - 1;
+                const nextIndex = isFinalStep ? 0 : currentStepIndex + 1;
+                onStepChange(nextIndex);
+              }}
+              className="w-full rounded-2xl py-6 font-black text-base tracking-[0.2em] uppercase border transition-all"
+              style={{ backgroundColor: `${activeColor}20`, borderColor: `${activeColor}40`, color: activeColor }}
+            >
+              {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'Nový cyklus' : 'Spustit další fázi'} →
+            </button>
+          )}
 
           {/* Time + Staff row */}
           <div className="grid grid-cols-2 gap-2">
@@ -447,17 +430,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </span>
             </button>
           </div>
-
-          {/* Next phase button */}
-          {!isInteractionBlocked && (
-            <button
-              onClick={() => onStepChange(Math.min(currentStepIndex + 1, WORKFLOW_STEPS.length - 1))}
-              className="w-full rounded-2xl py-5 font-black text-sm tracking-[0.2em] uppercase border transition-all"
-              style={{ backgroundColor: `${activeColor}20`, borderColor: `${activeColor}40`, color: activeColor }}
-            >
-              {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'Spustit fázi' : 'Spustit další fázi'} →
-            </button>
-          )}
         </div>
       </div>
 
