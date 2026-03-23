@@ -159,28 +159,68 @@ export async function updateOperatingRoom(
   }
 }
 
-// Subscribe to real-time changes
+// Real-time change payload type
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new: DBOperatingRoom | null;
+  old: DBOperatingRoom | null;
+}
+
+// Subscribe to real-time changes with granular updates
 export function subscribeToOperatingRooms(
-  onUpdate: () => void
+  onFullRefresh: () => void,
+  onRoomUpdate?: (roomId: string, changes: Partial<DBOperatingRoom>) => void
 ): (() => void) | null {
   if (!isSupabaseConfigured || !supabase) {
     return null;
   }
 
   const channel = supabase
-    .channel('operating_rooms_changes')
+    .channel('operating_rooms_realtime')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'operating_rooms' },
-      () => {
-        onUpdate();
+      (payload) => {
+        const { eventType, new: newRecord, old: oldRecord } = payload as unknown as RealtimePayload;
+        
+        if (eventType === 'UPDATE' && newRecord && onRoomUpdate) {
+          // Granular update - only update the changed room
+          onRoomUpdate(newRecord.id, newRecord);
+        } else {
+          // Full refresh for INSERT/DELETE or if no granular handler
+          onFullRefresh();
+        }
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('[DB] Realtime subscription status:', status);
+    });
 
   return () => {
+    console.log('[DB] Unsubscribing from realtime');
     channel.unsubscribe();
   };
+}
+
+// Transform a single DB row to app type (for real-time updates)
+export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<OperatingRoom> {
+  const result: Partial<OperatingRoom> = {};
+  
+  if (row.id !== undefined) result.id = row.id;
+  if (row.name !== undefined) result.name = row.name;
+  if (row.department !== undefined) result.department = row.department;
+  if (row.status !== undefined) result.status = row.status as RoomStatus;
+  if (row.queue_count !== undefined) result.queueCount = row.queue_count;
+  if (row.operations_24h !== undefined) result.operations24h = row.operations_24h;
+  if (row.is_septic !== undefined) result.isSeptic = row.is_septic;
+  if (row.is_emergency !== undefined) result.isEmergency = row.is_emergency;
+  if (row.is_enhanced_hygiene !== undefined) result.isEnhancedHygiene = row.is_enhanced_hygiene;
+  if (row.is_locked !== undefined) result.isLocked = row.is_locked;
+  if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
+  if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
+  if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule || {};
+  
+  return result;
 }
 
 // ============= ROOM STATUS HISTORY =============

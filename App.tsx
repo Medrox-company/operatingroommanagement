@@ -14,7 +14,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms } from './lib/db';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './components/LoginPage';
 import AdminModule from './components/AdminModule';
@@ -40,14 +40,24 @@ const AppContent: React.FC = () => {
     loadRooms();
   }, []);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates with granular room updates
   useEffect(() => {
-    const unsubscribe = subscribeToOperatingRooms(async () => {
-      const dbRooms = await fetchOperatingRooms();
-      if (dbRooms && dbRooms.length > 0) {
-        setRooms(dbRooms);
+    const unsubscribe = subscribeToOperatingRooms(
+      // Full refresh callback (for INSERT/DELETE)
+      async () => {
+        const dbRooms = await fetchOperatingRooms();
+        if (dbRooms && dbRooms.length > 0) {
+          setRooms(dbRooms);
+        }
+      },
+      // Granular update callback (for UPDATE - instant sync)
+      (roomId, dbChanges) => {
+        const appChanges = transformSingleRoom(dbChanges);
+        setRooms(prev => prev.map(room =>
+          room.id === roomId ? { ...room, ...appChanges } : room
+        ));
       }
-    });
+    );
     return () => {
       if (unsubscribe) unsubscribe();
     };
