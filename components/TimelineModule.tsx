@@ -699,6 +699,94 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
         )}
       </AnimatePresence>
 
+      {/* ======== MOBILE VIEW (md:hidden) ======== */}
+      <div className="md:hidden w-full h-full overflow-y-auto flex flex-col">
+        {/* Mobile header */}
+        <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 px-4 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-[9px] font-black tracking-[0.3em] uppercase text-[#00D8C1]/60">TIMELINE OVERVIEW</p>
+            <h1 className="text-2xl font-black tracking-tighter uppercase">Přehled sálů</h1>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] uppercase tracking-wider text-white/30">Čas</p>
+            <p className="text-lg font-mono font-black text-white tabular-nums">
+              {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        </div>
+
+        {/* Mobile stats row */}
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar flex-shrink-0">
+          {[
+            { label: 'Aktivní', value: stats.operations, color: '#22C55E' },
+            { label: 'Úklid', value: stats.cleaning, color: '#F97316' },
+            { label: 'Volné', value: stats.free, color: '#22D3EE' },
+            { label: 'Dnes', value: stats.completed, color: '#6366F1' },
+            ...(stats.emergencyCount > 0 ? [{ label: 'Emergency', value: stats.emergencyCount, color: '#EF4444' }] : []),
+          ].map(s => (
+            <div key={s.label} className="flex-shrink-0 rounded-xl px-3 py-2 border" style={{ background: `${s.color}10`, borderColor: `${s.color}30` }}>
+              <p className="text-[8px] font-black tracking-widest uppercase" style={{ color: s.color }}>{s.label}</p>
+              <p className="text-lg font-black text-white">{s.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile room cards list */}
+        <div className="flex flex-col gap-2 px-4 pb-6">
+          {sortedRooms.map((room) => {
+            const step = WORKFLOW_STEPS[room.currentStepIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : step.color;
+            const remaining = getRemainingTime(room);
+            const isFree = room.currentStepIndex >= 6;
+            return (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoom(room)}
+                className="w-full rounded-2xl p-4 border text-left transition-all active:scale-[0.99]"
+                style={{ background: `${color}08`, borderColor: `${color}25` }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}80` }} />
+                    <p className="text-base font-black text-white uppercase tracking-tight">{room.name}</p>
+                    {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
+                    {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
+                  </div>
+                  {remaining && !isFree && (
+                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
+                  )}
+                  {isFree && <span className="text-[10px] font-black text-emerald-400/70 uppercase tracking-wider">Volný</span>}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{step.title}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{room.staff.doctor.name}</p>
+                  </div>
+                  {room.estimatedEndTime && !isFree && (
+                    <div className="text-right">
+                      <p className="text-[8px] uppercase tracking-wider text-white/30">Ukončení</p>
+                      <p className="text-sm font-mono font-black text-white">
+                        {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {/* Mini progress bar */}
+                <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${((room.currentStepIndex + 1) / WORKFLOW_STEPS.length) * 100}%`, backgroundColor: color, opacity: 0.6 }}
+                  />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
+      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
+
       {/* ======== Header with Title and Stats ======== */}
       <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
         <div className="px-8 md:pl-32 md:pr-10 py-6">
@@ -1615,6 +1703,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           <span className="text-[10px] font-medium text-white/30">Kliknete na sal pro zobrazeni detailu</span>
         </div>
       </footer>
+      </div>{/* end desktop wrapper */}
     </div>
   );
 };
