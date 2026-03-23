@@ -892,74 +892,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                />
             </svg>
 
-            {/* ENHANCED HYGIENE MODE - Subtle elegant indicator */}
+            {/* ENHANCED HYGIENE MODE - Only subtle glow */}
             <AnimatePresence>
               {room.isEnhancedHygiene && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.8 }}
-                  className="absolute inset-0 pointer-events-none"
-                >
-                  {/* Subtle outer glow - very gentle */}
-                  <div 
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: 'radial-gradient(circle at center, transparent 45%, rgba(16, 185, 129, 0.03) 55%, transparent 70%)',
-                    }}
-                  />
-                  
-                  {/* Slowly rotating dashed ring */}
-                  <motion.svg 
-                    className="absolute inset-0 w-full h-full scale-[1.12]" 
-                    viewBox="0 0 480 480"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-                  >
-                    <circle 
-                      cx="240" cy="240" r="210" 
-                      fill="none" 
-                      stroke="rgba(16, 185, 129, 0.15)" 
-                      strokeWidth="1"
-                      strokeDasharray="3 12"
-                    />
-                  </motion.svg>
-
-                  {/* Floating particles around the circle - very subtle */}
-                  {[0, 60, 120, 180, 240, 300].map((angle, i) => (
-                    <motion.div
-                      key={angle}
-                      className="absolute w-1 h-1 rounded-full"
-                      style={{
-                        left: '50%',
-                        top: '50%',
-                        background: 'rgba(16, 185, 129, 0.4)',
-                        boxShadow: '0 0 4px rgba(16, 185, 129, 0.3)'
-                      }}
-                      animate={{
-                        x: [
-                          Math.cos((angle - 90) * Math.PI / 180) * 250,
-                          Math.cos((angle - 90 + 15) * Math.PI / 180) * 255,
-                          Math.cos((angle - 90) * Math.PI / 180) * 250,
-                        ],
-                        y: [
-                          Math.sin((angle - 90) * Math.PI / 180) * 250,
-                          Math.sin((angle - 90 + 15) * Math.PI / 180) * 255,
-                          Math.sin((angle - 90) * Math.PI / 180) * 250,
-                        ],
-                        opacity: [0.3, 0.6, 0.3],
-                        scale: [1, 1.5, 1],
-                      }}
-                      transition={{ 
-                        duration: 4, 
-                        repeat: Infinity, 
-                        ease: "easeInOut",
-                        delay: i * 0.5
-                      }}
-                    />
-                  ))}
-                </motion.div>
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-full"
+                  style={{
+                    background: 'radial-gradient(circle at center, transparent 40%, rgba(16, 185, 129, 0.04) 50%, rgba(16, 185, 129, 0.02) 65%, transparent 75%)',
+                  }}
+                />
               )}
             </AnimatePresence>
 
@@ -1034,23 +975,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    {/* Hygiene mode subtle text indicator */}
-                    <AnimatePresence>
-                      {room.isEnhancedHygiene && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          transition={{ duration: 0.4 }}
-                          className="flex justify-center mb-4"
-                        >
-                          <span className="text-[9px] font-medium tracking-[0.3em] uppercase text-emerald-400/60">
-                            hygienicky rezim
-                          </span>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
                     <p className={`text-[12px] font-black tracking-[0.4em] mb-6 uppercase group-hover:text-white/40 transition-colors ${room.isEmergency ? 'text-red-400' : 'text-white/20'}`}>
                       {room.isLocked ? 'DOKONČIT DO FÁZE PŘIPRAVEN' : (currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'SPUSTIT FÁZI' : 'SPUSTIT DALŠÍ FÁZI')}
                     </p>
