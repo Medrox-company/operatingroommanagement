@@ -268,15 +268,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const handleDecreaseTime = () => {
     if (isInteractionBlocked || estimatedEndTime === null) return;
   
-    // Calculate minimum allowed time (current time rounded up to next 15 min)
+    // Calculate minimum allowed time (current time snapped to 15-min floor)
     const now = new Date();
-    const minAllowedTime = roundUpTo15Min(now);
+    const minAllowedTime = snapTo15Min(now);
     
     // Snap current estimated end time to 15-min floor, then subtract 15 minutes
     const snapped = snapTo15Min(estimatedEndTime);
     const potentialNewTime = new Date(snapped.getTime() - 15 * 60 * 1000);
     
-    // Don't allow going below the minimum allowed time
+    // Don't allow going below the minimum allowed time (current time snapped down)
     if (potentialNewTime < minAllowedTime) return;
   
     onEndTimeChange(potentialNewTime);
