@@ -892,48 +892,73 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                />
             </svg>
 
-            {/* ENHANCED HYGIENE MODE - Pulse rings from circle edge outward only */}
+            {/* ENHANCED HYGIENE MODE - Subtle elegant indicator */}
             <AnimatePresence>
               {room.isEnhancedHygiene && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.6 }}
+                  transition={{ duration: 0.8 }}
                   className="absolute inset-0 pointer-events-none"
                 >
-                  {/* Wave 1 - strong, starts from r=240 (outside main circle r=210 * scale1.1 ≈ 231) */}
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 480 480">
-                    <motion.circle cx="240" cy="240" fill="none"
-                      stroke="rgba(239,68,68,0.9)" strokeWidth="4"
-                      initial={{ r: 240 }}
-                      animate={{ r: [240, 290], opacity: [0.9, 0], strokeWidth: [4, 1] }}
-                      transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-                      style={{ filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.8))' }}
+                  {/* Subtle outer glow - very gentle */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'radial-gradient(circle at center, transparent 45%, rgba(16, 185, 129, 0.03) 55%, transparent 70%)',
+                    }}
+                  />
+                  
+                  {/* Slowly rotating dashed ring */}
+                  <motion.svg 
+                    className="absolute inset-0 w-full h-full scale-[1.12]" 
+                    viewBox="0 0 480 480"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                  >
+                    <circle 
+                      cx="240" cy="240" r="210" 
+                      fill="none" 
+                      stroke="rgba(16, 185, 129, 0.15)" 
+                      strokeWidth="1"
+                      strokeDasharray="3 12"
                     />
-                    {/* Wave 2 - delayed */}
-                    <motion.circle cx="240" cy="240" fill="none"
-                      stroke="rgba(239,68,68,0.7)" strokeWidth="3"
-                      initial={{ r: 240 }}
-                      animate={{ r: [240, 295], opacity: [0.7, 0], strokeWidth: [3, 0.5] }}
-                      transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 0.53 }}
-                      style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.6))' }}
+                  </motion.svg>
+
+                  {/* Floating particles around the circle - very subtle */}
+                  {[0, 60, 120, 180, 240, 300].map((angle, i) => (
+                    <motion.div
+                      key={angle}
+                      className="absolute w-1 h-1 rounded-full"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                        background: 'rgba(16, 185, 129, 0.4)',
+                        boxShadow: '0 0 4px rgba(16, 185, 129, 0.3)'
+                      }}
+                      animate={{
+                        x: [
+                          Math.cos((angle - 90) * Math.PI / 180) * 250,
+                          Math.cos((angle - 90 + 15) * Math.PI / 180) * 255,
+                          Math.cos((angle - 90) * Math.PI / 180) * 250,
+                        ],
+                        y: [
+                          Math.sin((angle - 90) * Math.PI / 180) * 250,
+                          Math.sin((angle - 90 + 15) * Math.PI / 180) * 255,
+                          Math.sin((angle - 90) * Math.PI / 180) * 250,
+                        ],
+                        opacity: [0.3, 0.6, 0.3],
+                        scale: [1, 1.5, 1],
+                      }}
+                      transition={{ 
+                        duration: 4, 
+                        repeat: Infinity, 
+                        ease: "easeInOut",
+                        delay: i * 0.5
+                      }}
                     />
-                    {/* Wave 3 - more delayed */}
-                    <motion.circle cx="240" cy="240" fill="none"
-                      stroke="rgba(239,68,68,0.5)" strokeWidth="2"
-                      initial={{ r: 240 }}
-                      animate={{ r: [240, 300], opacity: [0.5, 0], strokeWidth: [2, 0.3] }}
-                      transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 1.06 }}
-                      style={{ filter: 'drop-shadow(0 0 6px rgba(239,68,68,0.4))' }}
-                    />
-                    {/* Static outer glow ring */}
-                    <motion.circle cx="240" cy="240" r="243" fill="none"
-                      stroke="rgba(239,68,68,0.25)" strokeWidth="1.5"
-                      animate={{ opacity: [0.25, 0.5, 0.25] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                  </svg>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1009,40 +1034,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    {/* Biohazard icon - only when enhanced hygiene active, above "SPUSTIT DALŠÍ FÁZI" */}
+                    {/* Hygiene mode subtle text indicator */}
                     <AnimatePresence>
                       {room.isEnhancedHygiene && (
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.6 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.6 }}
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
                           transition={{ duration: 0.4 }}
-                          className="flex justify-center mb-3"
+                          className="flex justify-center mb-4"
                         >
-                          <motion.div
-                            animate={{ scale: [1, 1.12, 1], opacity: [0.8, 1, 0.8] }}
-                            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                          >
-                            {/* Biohazard SVG symbol */}
-                            <svg viewBox="0 0 64 64" className="w-10 h-10" fill="none">
-                              <motion.g
-                                animate={{ rotate: [0, 10, -10, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                style={{ transformOrigin: '32px 32px' }}
-                              >
-                                {/* Center circle */}
-                                <circle cx="32" cy="32" r="5" fill="#EF4444" style={{ filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.8))' }} />
-                                {/* Three arcs of biohazard */}
-                                <path d="M32 27 C32 27 20 14 10 20 C4 24 4 34 10 38 C16 42 22 38 22 38" fill="none" stroke="#EF4444" strokeWidth="5" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.6))' }}/>
-                                <path d="M32 27 C32 27 44 14 54 20 C60 24 60 34 54 38 C48 42 42 38 42 38" fill="none" stroke="#EF4444" strokeWidth="5" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.6))' }}/>
-                                <path d="M22 38 C22 38 14 50 22 56 C28 60 36 58 40 54 C44 50 42 44 42 38" fill="none" stroke="#EF4444" strokeWidth="5" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.6))' }}/>
-                                {/* Connector circles */}
-                                <circle cx="16" cy="39" r="4" fill="#EF4444"/>
-                                <circle cx="48" cy="39" r="4" fill="#EF4444"/>
-                                <circle cx="32" cy="57" r="4" fill="#EF4444"/>
-                              </motion.g>
-                            </svg>
-                          </motion.div>
+                          <span className="text-[9px] font-medium tracking-[0.3em] uppercase text-emerald-400/60">
+                            hygienicky rezim
+                          </span>
                         </motion.div>
                       )}
                     </AnimatePresence>
