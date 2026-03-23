@@ -18,6 +18,7 @@ import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, tr
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './components/LoginPage';
 import AdminModule from './components/AdminModule';
+import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
 // Main App Content - Operating Rooms Management System
 const AppContent: React.FC = () => {
@@ -27,6 +28,9 @@ const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [isDbConnected, setIsDbConnected] = useState(false);
+
+  // Emergency alert sound - plays when any room's emergency status is activated
+  useEmergencyAlert(rooms, selectedRoomId);
 
   // Load rooms from database on mount, fallback to MOCK_ROOMS
   useEffect(() => {
