@@ -13,6 +13,10 @@ interface DBOperatingRoom {
   is_emergency: boolean;
   is_locked: boolean;
   is_enhanced_hygiene: boolean;
+  is_paused: boolean;
+  patient_called_at: string | null;
+  patient_arrived_at: string | null;
+  phase_started_at: string | null;
   current_step_index: number;
   estimated_end_time: string | null;
   doctor_id: string | null;
@@ -68,6 +72,10 @@ function transformRoom(
     isSeptic: row.is_septic,
     isEmergency: row.is_emergency,
     isEnhancedHygiene: row.is_enhanced_hygiene,
+    isPaused: row.is_paused,
+    patientCalledAt: row.patient_called_at,
+    patientArrivedAt: row.patient_arrived_at,
+    phaseStartedAt: row.phase_started_at,
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
@@ -135,7 +143,11 @@ export async function updateOperatingRoom(
     status: string;
     is_emergency: boolean;
     is_enhanced_hygiene: boolean;
+    is_paused: boolean;
     is_locked: boolean;
+    patient_called_at: string | null;
+    patient_arrived_at: string | null;
+    phase_started_at: string | null;
     current_step_index: number;
     estimated_end_time: string | null;
     weekly_schedule: Record<string, any>;
@@ -215,6 +227,10 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.is_septic !== undefined) result.isSeptic = row.is_septic;
   if (row.is_emergency !== undefined) result.isEmergency = row.is_emergency;
   if (row.is_enhanced_hygiene !== undefined) result.isEnhancedHygiene = row.is_enhanced_hygiene;
+  if (row.is_paused !== undefined) result.isPaused = row.is_paused;
+  if (row.patient_called_at !== undefined) result.patientCalledAt = row.patient_called_at;
+  if (row.patient_arrived_at !== undefined) result.patientArrivedAt = row.patient_arrived_at;
+  if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;
   if (row.is_locked !== undefined) result.isLocked = row.is_locked;
   if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
   if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
