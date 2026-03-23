@@ -171,13 +171,6 @@ export async function updateOperatingRoom(
   }
 }
 
-// Real-time change payload type
-interface RealtimePayload {
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  new: DBOperatingRoom | null;
-  old: DBOperatingRoom | null;
-}
-
 // Subscribe to real-time changes with granular updates
 export function subscribeToOperatingRooms(
   onFullRefresh: () => void,
@@ -192,11 +185,12 @@ export function subscribeToOperatingRooms(
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'operating_rooms' },
-      (payload) => {
-        const { eventType, new: newRecord, old: oldRecord } = payload as unknown as RealtimePayload;
+      (payload: { eventType: string; new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
+        console.log('[DB] Realtime payload received:', payload.eventType, payload.new);
         
-        if (eventType === 'UPDATE' && newRecord && onRoomUpdate) {
+        if (payload.eventType === 'UPDATE' && payload.new && onRoomUpdate) {
           // Granular update - only update the changed room
+          const newRecord = payload.new as unknown as DBOperatingRoom;
           onRoomUpdate(newRecord.id, newRecord);
         } else {
           // Full refresh for INSERT/DELETE or if no granular handler
