@@ -395,21 +395,21 @@ const StaffManager: React.FC = () => {
         </button>
       </div>
 
-      {/* 2-column staff card grid - RoomCard style */}
+      {/* Responsive staff card grid - RoomCard style */}
       {filteredData.length === 0 ? (
         <div className="py-16 text-center text-white/30 border border-white/5 rounded-xl">
           Žádní zaměstnanci nenalezeni
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {filteredData.map((item, index) => {
             const themeColor = activeCategory === 'doctors' ? '#3B82F6' : activeCategory === 'nurses' ? '#EC4899' : '#10B981';
             const progressPercent = item.workload / 100;
-            const radius = 38;
-            const strokeWidth = 4;
+            const radius = 30;
+            const strokeWidth = 3;
             const strokeDasharray = 2 * Math.PI * radius;
             const strokeDashoffset = strokeDasharray * (1 - progressPercent);
-            const center = 56;
+            const center = 48;
 
             return (
               <motion.div
@@ -417,31 +417,31 @@ const StaffManager: React.FC = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02 }}
-                className="relative group cursor-pointer h-[300px] w-full"
+                className="relative group cursor-pointer h-[220px] w-full"
               >
                 {/* Glow aura */}
                 <div
-                  className="absolute -inset-1 z-0 rounded-[2.5rem] blur-xl pointer-events-none transition-opacity duration-500"
-                  style={{ backgroundColor: themeColor, opacity: 0.15 }}
+                  className="absolute -inset-1 z-0 rounded-[1.5rem] blur-xl pointer-events-none transition-opacity duration-500"
+                  style={{ backgroundColor: themeColor, opacity: 0.12 }}
                 />
 
                 {/* Main Card */}
-                <div className="absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]">
+                <div className="absolute inset-0 z-0 rounded-[1.5rem] border shadow-[0_10px_25px_-8px_rgba(0,0,0,0.4)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.05]">
                   <div
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
-                    style={{ backgroundColor: themeColor, opacity: 0.15 }}
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none transition-opacity duration-1000"
+                    style={{ backgroundColor: themeColor, opacity: 0.12 }}
                   />
                 </div>
 
                 {/* Content */}
-                <div className="relative h-full w-full z-10 p-6 flex flex-col">
+                <div className="relative h-full w-full z-10 p-4 flex flex-col">
                   
                   {/* Header */}
-                  <div className="shrink-0 mb-4">
-                    <p className="text-[9px] font-black tracking-[0.3em] uppercase text-white/30 mb-1">
-                      {activeCategory === 'doctors' ? 'LÉKAŘ' : activeCategory === 'nurses' ? 'SESTRA' : 'SÁL. SESTRA'}
+                  <div className="shrink-0 mb-2">
+                    <p className="text-[7px] font-black tracking-[0.25em] uppercase text-white/25 mb-0.5">
+                      {activeCategory === 'doctors' ? 'LÉKAŘ' : activeCategory === 'nurses' ? 'SESTRA' : 'SÁL.'}
                     </p>
-                    <h3 className="text-lg font-bold text-white/90 group-hover:text-white truncate transition-colors">
+                    <h3 className="text-sm font-bold text-white/90 group-hover:text-white truncate transition-colors leading-tight">
                       {item.name}
                     </h3>
                   </div>
@@ -451,14 +451,14 @@ const StaffManager: React.FC = () => {
                     <div className="relative flex items-center justify-center">
                       {/* Animated glow behind circle */}
                       <motion.div
-                        className="absolute rounded-full blur-[40px]"
-                        style={{ width: 80, height: 80, backgroundColor: themeColor }}
+                        className="absolute rounded-full blur-[30px]"
+                        style={{ width: 60, height: 60, backgroundColor: themeColor }}
                         initial={{ opacity: 0, scale: 0.7 }}
-                        animate={{ opacity: 0.25, scale: 1 }}
+                        animate={{ opacity: 0.2, scale: 1 }}
                         transition={{ duration: 1.2, ease: 'easeOut' }}
                       />
                       <motion.svg
-                        className="w-28 h-28 overflow-visible select-none flex-shrink-0"
+                        className="w-20 h-20 overflow-visible select-none flex-shrink-0"
                         style={{ rotate: '-90deg' }}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -468,7 +468,7 @@ const StaffManager: React.FC = () => {
                           cx={center} cy={center} r={radius}
                           fill="none"
                           stroke="white"
-                          strokeWidth="1.5"
+                          strokeWidth="1"
                           className="opacity-[0.03]"
                         />
                         <motion.circle
@@ -481,14 +481,14 @@ const StaffManager: React.FC = () => {
                           initial={{ strokeDashoffset: strokeDasharray }}
                           animate={{ strokeDashoffset: strokeDashoffset }}
                           transition={{ duration: 1.2, ease: 'easeOut' }}
-                          style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
+                          style={{ filter: `drop-shadow(0 0 4px ${themeColor}80)` }}
                         />
                         <text
                           x={center}
                           y={center}
                           textAnchor="middle"
                           dominantBaseline="central"
-                          className="text-4xl font-black fill-white/90 group-hover:fill-white transition-colors"
+                          className="text-2xl font-black fill-white/90 group-hover:fill-white transition-colors"
                           style={{
                             transform: 'rotate(90deg)',
                             transformOrigin: `${center}px ${center}px`,
@@ -502,44 +502,32 @@ const StaffManager: React.FC = () => {
                   </div>
 
                   {/* Bottom Info */}
-                  <div className="w-full space-y-3 shrink-0">
+                  <div className="w-full space-y-1.5 shrink-0">
                     {/* Qualification & Skills */}
                     <div className="w-full text-center">
-                      <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+                      <div className="flex items-center justify-center gap-1 flex-wrap">
                         <QualBadge qual={item.qualification} category={activeCategory} />
-                        {activeCategory === 'or_nurses'
-                          ? <ORSkillTags skills={(item as ORNurse).skills} />
-                          : <SkillTags skills={(item as Doctor | Nurse).skills} />
-                        }
                       </div>
                     </div>
 
-                    {/* Employment type status bar */}
-                    <p className="text-[10px] font-black tracking-[0.2em] truncate uppercase py-2 px-4 rounded-full border transition-all inline-block w-full text-center"
+                    {/* Employment type status */}
+                    <p className="text-[8px] font-black tracking-[0.15em] truncate uppercase py-1 px-2 rounded-full border transition-all inline-block w-full text-center"
                       style={{
-                        backgroundColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.15)' : 'rgba(245,158,11,0.15)',
-                        borderColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.3)' : 'rgba(245,158,11,0.3)',
+                        backgroundColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.12)' : 'rgba(245,158,11,0.12)',
+                        borderColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.25)' : 'rgba(245,158,11,0.25)',
                         color: item.employmentType === 'I' ? '#00D8C1' : '#F59E0B'
                       }}
                     >
-                      {item.employmentType === 'I' ? 'INTERNÍ' : 'EXTERNÍ'}
+                      {item.employmentType === 'I' ? 'INT' : 'EXT'}
                     </p>
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2">
-                      <button
-                        onClick={() => startEditing(item)}
-                        className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/5 transition-all text-[10px] font-bold uppercase tracking-wider"
-                      >
-                        Upravit
-                      </button>
-                      <button
-                        onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
-                        className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 border border-red-500/20 transition-all text-[10px] font-bold uppercase tracking-wider"
-                      >
-                        Smazat
-                      </button>
-                    </div>
+                    {/* Actions - Edit button only */}
+                    <button
+                      onClick={() => startEditing(item)}
+                      className="w-full py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/5 transition-all text-[8px] font-bold uppercase tracking-wider"
+                    >
+                      Upravit
+                    </button>
                   </div>
                 </div>
               </motion.div>
