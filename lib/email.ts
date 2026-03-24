@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
 
 // Initialize Resend client
-const resendApiKey = import.meta.env.VITE_RESEND_API_KEY || '';
+// Support both VITE_ prefixed (client-side) and non-prefixed (server-side) env vars
+const resendApiKey = import.meta.env.VITE_RESEND_API_KEY || import.meta.env.RESEND_API_KEY || '';
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 export interface EmailNotification {
