@@ -305,46 +305,71 @@ const StaffManager: React.FC = () => {
         </h1>
       </header>
 
-      {/* Stats Bar - matching dashboard stats */}
-      <div className="flex gap-2 p-2 bg-white/[0.02] border border-white/5 rounded-[2rem] mb-10 w-fit">
-        {[
-          { label: 'CELKEM', value: stats.total, icon: Users },
-          { label: 'INTERNÍ', value: stats.internal, icon: Activity },
-          { label: 'EXTERNÍ', value: stats.external, icon: Clock },
-        ].map((stat) => (
-          <div key={stat.label} className="flex flex-col items-center justify-center px-8 py-3 rounded-2xl hover:bg-white/[0.03] transition-all">
-            <div className="flex items-center gap-2 mb-1 opacity-40">
-              <stat.icon className="w-3 h-3" />
-              <p className="text-[9px] font-bold uppercase tracking-wider">{stat.label}</p>
-            </div>
-            <p className="text-2xl font-black">{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Category Tabs - same design as stats bar */}
-      <div className="flex gap-2 p-2 bg-white/[0.02] border border-white/5 rounded-[2rem] mb-10 w-fit">
+      {/* Category Cards - RoomCard style but smaller */}
+      <div className="grid grid-cols-3 gap-4 mb-10 max-w-2xl">
         {categories.map(cat => {
           const isActive = activeCategory === cat.id;
+          const themeColor = cat.id === 'doctors' ? '#3B82F6' : cat.id === 'nurses' ? '#EC4899' : '#10B981';
           return (
-            <button
+            <motion.button
               key={cat.id}
               onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); setEditingId(null); setIsAddingNew(false); }}
-              className={`relative flex flex-col items-center justify-center px-8 py-3 rounded-2xl transition-all overflow-hidden ${
-                isActive ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]'
+              className={`relative group cursor-pointer h-[140px] rounded-[1.5rem] border overflow-hidden transition-all duration-300 ${
+                isActive
+                  ? 'bg-white/[0.06] border-white/20 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
+                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10'
               }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {isActive && (
-                <motion.div layoutId="activeCat" className="absolute inset-0 rounded-2xl bg-white/[0.04]" />
-              )}
-              <div className="relative flex items-center gap-2 mb-1 opacity-40">
-                <p className="text-[9px] font-bold uppercase tracking-wider">{cat.label}</p>
-                {isActive && <div className="w-1 h-1 rounded-full bg-[#00D8C1]" />}
+              {/* Glow effect */}
+              <div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full blur-[50px] pointer-events-none transition-opacity duration-500"
+                style={{ backgroundColor: themeColor, opacity: isActive ? 0.25 : 0.1 }}
+              />
+
+              {/* Content */}
+              <div className="relative h-full flex flex-col items-center justify-center p-4">
+                {/* Mini progress circle */}
+                <div className="relative mb-2">
+                  <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="22" fill="none" stroke="white" strokeWidth="1.5" className="opacity-[0.05]" />
+                    <circle
+                      cx="28" cy="28" r="22" fill="none"
+                      stroke={themeColor}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 22}`}
+                      strokeDashoffset={`${2 * Math.PI * 22 * (1 - (isActive ? 1 : 0.7))}`}
+                      style={{ filter: `drop-shadow(0 0 4px ${themeColor}80)`, transition: 'stroke-dashoffset 0.5s ease' }}
+                    />
+                  </svg>
+                  <span
+                    className="absolute inset-0 flex items-center justify-center text-lg font-black"
+                    style={{ color: isActive ? 'white' : 'rgba(255,255,255,0.6)' }}
+                  >
+                    {cat.count}
+                  </span>
+                </div>
+
+                {/* Label */}
+                <p
+                  className="text-[10px] font-black tracking-[0.15em] uppercase transition-colors"
+                  style={{ color: isActive ? themeColor : 'rgba(255,255,255,0.4)' }}
+                >
+                  {cat.label}
+                </p>
               </div>
-              <p className={`relative text-2xl font-black transition-all ${isActive ? 'text-white' : 'text-white/50'}`}>
-                {cat.count}
-              </p>
-            </button>
+
+              {/* Active indicator line */}
+              {isActive && (
+                <motion.div
+                  layoutId="activeCategoryIndicator"
+                  className="absolute bottom-0 left-4 right-4 h-[2px] rounded-full"
+                  style={{ backgroundColor: themeColor }}
+                />
+              )}
+            </motion.button>
           );
         })}
       </div>
