@@ -3,6 +3,14 @@
 
 const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY || import.meta.env.RESEND_API_KEY || '';
 
+// Debug: Check if API key is loaded
+if (!RESEND_API_KEY) {
+  console.warn('[v0] Resend API Key not found in environment variables');
+  console.log('[v0] Available env keys:', Object.keys(import.meta.env).filter(k => k.includes('RESEND')));
+} else {
+  console.log('[v0] Resend API Key loaded successfully (first 10 chars):', RESEND_API_KEY.substring(0, 10) + '...');
+}
+
 export interface EmailNotification {
   to: string;
   subject: string;
