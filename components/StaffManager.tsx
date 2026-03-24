@@ -322,23 +322,28 @@ const StaffManager: React.FC = () => {
         ))}
       </div>
 
-      {/* Category Tabs - clean minimal design */}
-      <div className="flex items-center gap-6 mb-8 border-b border-white/5 pb-4">
+      {/* Category Tabs - same design as stats bar */}
+      <div className="flex gap-2 p-2 bg-white/[0.02] border border-white/5 rounded-[2rem] mb-10 w-fit">
         {categories.map(cat => {
           const isActive = activeCategory === cat.id;
           return (
             <button
               key={cat.id}
               onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); setEditingId(null); setIsAddingNew(false); }}
-              className={`relative pb-4 -mb-4 transition-all ${isActive ? 'text-white' : 'text-white/40 hover:text-white/60'}`}
+              className={`relative flex flex-col items-center justify-center px-8 py-3 rounded-2xl transition-all overflow-hidden ${
+                isActive ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]'
+              }`}
             >
-              <span className="text-sm font-semibold">{cat.label}</span>
-              <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-white/10 text-white' : 'bg-white/5 text-white/40'}`}>
-                {cat.count}
-              </span>
               {isActive && (
-                <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00D8C1]" />
+                <motion.div layoutId="activeCat" className="absolute inset-0 rounded-2xl bg-white/[0.04]" />
               )}
+              <div className="relative flex items-center gap-2 mb-1 opacity-40">
+                <p className="text-[9px] font-bold uppercase tracking-wider">{cat.label}</p>
+                {isActive && <div className="w-1 h-1 rounded-full bg-[#00D8C1]" />}
+              </div>
+              <p className={`relative text-2xl font-black transition-all ${isActive ? 'text-white' : 'text-white/50'}`}>
+                {cat.count}
+              </p>
             </button>
           );
         })}
