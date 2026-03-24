@@ -1,5 +1,8 @@
-// Email utility - calls our serverless API endpoint to send emails via Resend
-// This avoids CORS issues by routing through our own API
+// Email utility - calls Supabase Edge Function to send emails via Resend
+// This avoids CORS issues by routing through Supabase Edge Functions
+
+// Supabase project URL
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '';
 
 export interface EmailNotification {
   to: string;
@@ -22,8 +25,13 @@ export interface EmailTemplateData {
 export async function sendEmailNotification(
   notification: EmailNotification
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  if (!SUPABASE_URL) {
+    console.error('[Email] Supabase URL not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
+
   try {
-    const response = await fetch('/api/send-email', {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
