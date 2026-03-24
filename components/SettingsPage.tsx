@@ -7,6 +7,7 @@ import DepartmentsManager from './DepartmentsManager';
 import ScheduleManager from './ScheduleManager';
 import ShiftScheduleManager from './ShiftScheduleManager';
 import StatisticsModule from './StatisticsModule';
+import StaffManager from './StaffManager';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -139,6 +140,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
           <StatisticsModule rooms={rooms} />
+        </motion.div>
+      ) : selectedModule === 'staff' ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full px-8 md:pl-32 md:pr-10 py-10"
+        >
+          <StaffManager />
         </motion.div>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
