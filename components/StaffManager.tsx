@@ -395,60 +395,156 @@ const StaffManager: React.FC = () => {
         </button>
       </div>
 
-      {/* 2-column card grid */}
+      {/* 2-column staff card grid - RoomCard style */}
       {filteredData.length === 0 ? (
         <div className="py-16 text-center text-white/30 border border-white/5 rounded-xl">
           Žádní zaměstnanci nenalezeni
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {filteredData.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.015 }}
-              className="group flex items-center gap-4 px-5 py-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all"
-            >
-              {/* Workload circle */}
-              <WorkloadBadge workload={item.workload} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {filteredData.map((item, index) => {
+            const themeColor = activeCategory === 'doctors' ? '#3B82F6' : activeCategory === 'nurses' ? '#EC4899' : '#10B981';
+            const progressPercent = item.workload / 100;
+            const radius = 38;
+            const strokeWidth = 4;
+            const strokeDasharray = 2 * Math.PI * radius;
+            const strokeDashoffset = strokeDasharray * (1 - progressPercent);
+            const center = 56;
 
-              {/* Main info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <p className="font-semibold text-white text-sm truncate">{item.name}</p>
-                  <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${
-                    item.employmentType === 'I'
-                      ? 'bg-[#00D8C1]/10 text-[#00D8C1] border border-[#00D8C1]/25'
-                      : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/25'
-                  }`}>{item.employmentType}</span>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <QualBadge qual={item.qualification} category={activeCategory} />
-                  {activeCategory === 'or_nurses'
-                    ? <ORSkillTags skills={(item as ORNurse).skills} />
-                    : <SkillTags skills={(item as Doctor | Nurse).skills} />
-                  }
-                </div>
-              </div>
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.02 }}
+                className="relative group cursor-pointer h-[300px] w-full"
+              >
+                {/* Glow aura */}
+                <div
+                  className="absolute -inset-1 z-0 rounded-[2.5rem] blur-xl pointer-events-none transition-opacity duration-500"
+                  style={{ backgroundColor: themeColor, opacity: 0.15 }}
+                />
 
-              {/* Actions – visible on hover */}
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <button
-                  onClick={() => startEditing(item)}
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/30 hover:text-white transition-all"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/30 hover:text-red-400 transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+                {/* Main Card */}
+                <div className="absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]">
+                  <div
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
+                    style={{ backgroundColor: themeColor, opacity: 0.15 }}
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="relative h-full w-full z-10 p-6 flex flex-col">
+                  
+                  {/* Header */}
+                  <div className="shrink-0 mb-4">
+                    <p className="text-[9px] font-black tracking-[0.3em] uppercase text-white/30 mb-1">
+                      {activeCategory === 'doctors' ? 'LÉKAŘ' : activeCategory === 'nurses' ? 'SESTRA' : 'SÁL. SESTRA'}
+                    </p>
+                    <h3 className="text-lg font-bold text-white/90 group-hover:text-white truncate transition-colors">
+                      {item.name}
+                    </h3>
+                  </div>
+
+                  {/* Central Progress Circle */}
+                  <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+                    <div className="relative flex items-center justify-center">
+                      {/* Animated glow behind circle */}
+                      <motion.div
+                        className="absolute rounded-full blur-[40px]"
+                        style={{ width: 80, height: 80, backgroundColor: themeColor }}
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 0.25, scale: 1 }}
+                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                      />
+                      <motion.svg
+                        className="w-28 h-28 overflow-visible select-none flex-shrink-0"
+                        style={{ rotate: '-90deg' }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.7, ease: 'easeOut' }}
+                      >
+                        <circle
+                          cx={center} cy={center} r={radius}
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="1.5"
+                          className="opacity-[0.03]"
+                        />
+                        <motion.circle
+                          cx={center} cy={center} r={radius}
+                          fill="none"
+                          stroke={themeColor}
+                          strokeWidth={strokeWidth}
+                          strokeLinecap="round"
+                          strokeDasharray={strokeDasharray}
+                          initial={{ strokeDashoffset: strokeDasharray }}
+                          animate={{ strokeDashoffset: strokeDashoffset }}
+                          transition={{ duration: 1.2, ease: 'easeOut' }}
+                          style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
+                        />
+                        <text
+                          x={center}
+                          y={center}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          className="text-4xl font-black fill-white/90 group-hover:fill-white transition-colors"
+                          style={{
+                            transform: 'rotate(90deg)',
+                            transformOrigin: `${center}px ${center}px`,
+                            letterSpacing: '-0.05em'
+                          }}
+                        >
+                          {item.workload}
+                        </text>
+                      </motion.svg>
+                    </div>
+                  </div>
+
+                  {/* Bottom Info */}
+                  <div className="w-full space-y-3 shrink-0">
+                    {/* Qualification & Skills */}
+                    <div className="w-full text-center">
+                      <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+                        <QualBadge qual={item.qualification} category={activeCategory} />
+                        {activeCategory === 'or_nurses'
+                          ? <ORSkillTags skills={(item as ORNurse).skills} />
+                          : <SkillTags skills={(item as Doctor | Nurse).skills} />
+                        }
+                      </div>
+                    </div>
+
+                    {/* Employment type status bar */}
+                    <p className="text-[10px] font-black tracking-[0.2em] truncate uppercase py-2 px-4 rounded-full border transition-all inline-block w-full text-center"
+                      style={{
+                        backgroundColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.15)' : 'rgba(245,158,11,0.15)',
+                        borderColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.3)' : 'rgba(245,158,11,0.3)',
+                        color: item.employmentType === 'I' ? '#00D8C1' : '#F59E0B'
+                      }}
+                    >
+                      {item.employmentType === 'I' ? 'INTERNÍ' : 'EXTERNÍ'}
+                    </p>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2">
+                      <button
+                        onClick={() => startEditing(item)}
+                        className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/5 transition-all text-[10px] font-bold uppercase tracking-wider"
+                      >
+                        Upravit
+                      </button>
+                      <button
+                        onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
+                        className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 border border-red-500/20 transition-all text-[10px] font-bold uppercase tracking-wider"
+                      >
+                        Smazat
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
