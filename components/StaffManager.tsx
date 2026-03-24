@@ -338,25 +338,47 @@ const StaffManager: React.FC = () => {
         </h1>
       </header>
 
-      {/* Centered Search */}
+      {/* Centered Search with Filter Icons */}
       <div className="flex justify-center mb-10">
-        <div className="relative w-full max-w-2xl">
+        <div className="relative w-full max-w-3xl">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#00D8C1]" />
           <input
             type="text"
             placeholder="Hledat podle jména, kvalifikace, typu, specializace..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-[#00D8C1]/50 focus:bg-white/[0.05] transition-all text-sm text-center"
+            className="w-full pl-14 pr-48 py-4 rounded-xl bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-[#00D8C1]/50 focus:bg-white/[0.05] transition-all text-sm text-center"
           />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+          
+          {/* Filter Icons */}
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <div className="flex items-center gap-1 text-[10px] text-white/40">
+              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
+                <Users className="w-3.5 h-3.5 text-white/30" />
+                <span>Jméno</span>
+              </div>
+              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
+                <Award className="w-3.5 h-3.5 text-white/30" />
+                <span>Kvalif.</span>
+              </div>
+              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
+                <Briefcase className="w-3.5 h-3.5 text-white/30" />
+                <span>Typ</span>
+              </div>
+              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
+                <Zap className="w-3.5 h-3.5 text-white/30" />
+                <span>Spec.</span>
+              </div>
+            </div>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-white/30 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -485,13 +507,21 @@ const StaffManager: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Edit button */}
-                  <button
-                    onClick={() => startEditing(item)}
-                    className="p-1.5 rounded-lg hover:bg-white/10 text-white/30 hover:text-white transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Edit + Delete buttons */}
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <button
+                      onClick={() => startEditing(item)}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/30 hover:text-white transition-all"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
+                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-white/30 hover:text-red-400 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Skills tags */}
