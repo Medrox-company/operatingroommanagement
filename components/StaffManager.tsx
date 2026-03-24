@@ -532,8 +532,8 @@ const StaffManager: React.FC = () => {
         </div>
       </header>
 
-      {/* Category Boxes - 3 čtvercové boxy */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      {/* Category Boxes - 3 menší čtvercové boxy */}
+      <div className="grid grid-cols-3 gap-3 mb-8">
         {categories.map(cat => {
           const Icon = cat.icon;
           const isActive = activeCategory === cat.id;
@@ -541,7 +541,7 @@ const StaffManager: React.FC = () => {
             <motion.button
               key={cat.id}
               onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); setEditingId(null); setIsAddingNew(false); }}
-              className={`relative flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl border transition-all overflow-hidden ${
+              className={`relative flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl border transition-all overflow-hidden ${
                 isActive
                   ? 'border-white/20 bg-white/10'
                   : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
@@ -549,36 +549,22 @@ const StaffManager: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
             >
-              {/* Accent glow when active */}
               {isActive && (
-                <div
-                  className="absolute inset-0 opacity-10 pointer-events-none"
-                  style={{ background: `radial-gradient(circle at 50% 40%, ${cat.color}, transparent 70%)` }}
-                />
+                <div className="absolute inset-0 opacity-10 pointer-events-none"
+                  style={{ background: `radial-gradient(circle at 50% 30%, ${cat.color}, transparent 70%)` }} />
               )}
-              {/* Accent top border when active */}
               {isActive && (
-                <div
-                  className="absolute top-0 left-0 right-0 h-[2px]"
-                  style={{ background: cat.color }}
-                />
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: cat.color }} />
               )}
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{
-                  backgroundColor: `${cat.color}20`,
-                  border: `1px solid ${cat.color}40`,
-                }}
-              >
-                <Icon className="w-6 h-6" style={{ color: cat.color }} />
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: `${cat.color}20`, border: `1px solid ${cat.color}40` }}>
+                <Icon className="w-5 h-5" style={{ color: cat.color }} />
               </div>
-              <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-white/60'}`}>
+              <span className={`text-xs font-bold leading-tight text-center ${isActive ? 'text-white' : 'text-white/60'}`}>
                 {cat.label}
               </span>
-              <span
-                className="px-3 py-1 rounded-full text-xs font-bold"
-                style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
-              >
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
                 {cat.count}
               </span>
             </motion.button>
@@ -790,11 +776,11 @@ const StaffManager: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Legend */}
-      <div className="mb-6 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
+      {/* Legend - modré pozadí */}
+      <div className="mb-6 p-4 rounded-xl border border-[#5B65DC]/30 bg-[#5B65DC]/10">
         <div className="flex flex-wrap gap-6 text-xs">
           <div>
-            <p className="text-white/40 mb-2 font-semibold uppercase tracking-wider">Kvalifikace {activeCategory === 'doctors' ? 'lékaři' : 'sestry'}:</p>
+            <p className="text-[#a0a8ff] mb-2 font-semibold uppercase tracking-wider">Kvalifikace {activeCategory === 'doctors' ? 'lékaři' : 'sestry'}:</p>
             <div className="flex flex-wrap gap-2">
               {activeCategory === 'doctors' ? (
                 <>
@@ -821,7 +807,7 @@ const StaffManager: React.FC = () => {
             </div>
           </div>
           <div>
-            <p className="text-white/40 mb-2 font-semibold uppercase tracking-wider">Typ úvazku:</p>
+            <p className="text-[#a0a8ff] mb-2 font-semibold uppercase tracking-wider">Typ úvazku:</p>
             <div className="flex gap-2">
               <span className="px-2 py-1 rounded bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40 flex items-center gap-1">
                 <span className="w-4 h-4 rounded-full bg-[#10B981]/30 flex items-center justify-center text-[10px] font-bold">I</span>
@@ -834,8 +820,8 @@ const StaffManager: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-white/5">
-          <p className="text-white/40 mb-2 font-semibold uppercase tracking-wider text-xs">Specializace:</p>
+        <div className="mt-4 pt-4 border-t border-[#5B65DC]/20">
+          <p className="text-[#a0a8ff] mb-2 font-semibold uppercase tracking-wider text-xs">Specializace:</p>
           <div className="flex flex-wrap gap-2 text-xs">
             {activeCategory === 'or_nurses' ? (
               <>
@@ -859,133 +845,123 @@ const StaffManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Staff Table */}
-      <div className="rounded-2xl border border-white/10 bg-[#0f0f0f] overflow-hidden">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/10 bg-white/[0.04] text-xs font-bold text-white/40 uppercase tracking-wider">
-          <div className="col-span-4">Jméno</div>
-          <div className="col-span-1 text-center">Kvalif.</div>
-          <div className="col-span-1 text-center">Úvazek</div>
-          <div className="col-span-4">Specializace</div>
-          <div className="col-span-1 text-center">Typ</div>
-          <div className="col-span-1"></div>
-        </div>
+      {/* Staff Table - 2 sloupce */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {filteredData.map((item, index) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ delay: index * 0.015 }}
+            className="rounded-xl border border-white/10 bg-[#0f0f0f] overflow-hidden"
+          >
+            {/* Card Header - modré pozadí */}
+            <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-[#5B65DC]/30 bg-[#5B65DC]/15">
+              <div className="col-span-5 text-[10px] font-bold text-[#a0a8ff] uppercase tracking-wider">Jméno</div>
+              <div className="col-span-2 text-center text-[10px] font-bold text-[#a0a8ff] uppercase tracking-wider">Kvalif.</div>
+              <div className="col-span-2 text-center text-[10px] font-bold text-[#a0a8ff] uppercase tracking-wider">Úvazek</div>
+              <div className="col-span-2 text-center text-[10px] font-bold text-[#a0a8ff] uppercase tracking-wider">Typ</div>
+              <div className="col-span-1"></div>
+            </div>
 
-        {/* Table Body */}
-        <div className="divide-y divide-white/5">
-          <AnimatePresence>
-            {filteredData.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: index * 0.02 }}
-                className={`transition-colors ${index % 2 === 0 ? 'bg-[#0f0f0f]' : 'bg-[#141414]'} hover:bg-white/[0.04]`}
-              >
-                <div 
-                  className="grid grid-cols-12 gap-4 p-4 items-center cursor-pointer"
-                  onClick={() => toggleRow(item.id)}
+            {/* Card Row */}
+            <div
+              className="grid grid-cols-12 gap-2 px-4 py-3 items-center cursor-pointer hover:bg-white/[0.03] transition-colors"
+              onClick={() => toggleRow(item.id)}
+            >
+              <div className="col-span-5 font-medium text-white text-sm truncate">{item.name}</div>
+              <div className="col-span-2 flex justify-center">
+                <QualificationBadge qual={item.qualification} category={activeCategory} />
+              </div>
+              <div className="col-span-2 flex justify-center">
+                <WorkloadBadge workload={item.workload} />
+              </div>
+              <div className="col-span-2 flex justify-center">
+                <EmploymentBadge type={item.employmentType} />
+              </div>
+              <div className="col-span-1 flex justify-center gap-0.5">
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); startEditing(item); }}
+                  className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-[#3B82F6] transition-all"
+                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                 >
-                  <div className="col-span-4 font-medium text-white truncate">{item.name}</div>
-                  <div className="col-span-1 flex justify-center">
-                    <QualificationBadge qual={item.qualification} category={activeCategory} />
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <WorkloadBadge workload={item.workload} />
-                  </div>
-                  <div className="col-span-4">
-                    {activeCategory === 'or_nurses' ? (
-                      <ORSkillIcons skills={(item as ORNurse).skills} />
-                    ) : (
-                      <SkillIcons skills={(item as Doctor | Nurse).skills} category={activeCategory as 'doctors' | 'nurses'} />
-                    )}
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <EmploymentBadge type={item.employmentType} />
-                  </div>
-                  <div className="col-span-1 flex justify-center gap-1">
-                    <motion.button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startEditing(item);
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-[#3B82F6] transition-all"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Upravit"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </motion.button>
-                    <motion.button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm('Opravdu chcete smazat tohoto zamestnance?')) {
-                          deleteItem(item.id);
-                        }
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-[#EF4444] transition-all"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Smazat"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
-                
-                {/* Expanded Details */}
-                <AnimatePresence>
-                  {expandedRows.has(item.id) && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 pb-4 pt-2 bg-white/[0.02] border-t border-white/5">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">ID zaměstnance</p>
-                            <p className="text-white font-mono">{item.id.toUpperCase()}</p>
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">Kvalifikace</p>
-                            <p className="text-white">
-                              {activeCategory === 'doctors' && (
-                                item.qualification === 'L3' ? 'Atestovaný lékař' :
-                                item.qualification === 'L2' ? 'Pokročilý lékař' :
-                                item.qualification === 'L1' ? 'Základní kvalifikace' :
-                                item.qualification === 'A' ? 'Absolvent' : 'Stážista'
-                              )}
-                              {activeCategory === 'nurses' && (
-                                item.qualification === 'K' ? 'Plně kvalifikovaná' :
-                                item.qualification === 'D' ? 'Pracuje pod dohledem' :
-                                item.qualification === 'A' ? 'Absolventka' : 'Stážistka'
-                              )}
-                              {activeCategory === 'or_nurses' && (
-                                item.qualification === 'K' ? 'Plně kvalifikovaná' :
-                                item.qualification === 'A' ? 'Absolventka' : 'Stážistka'
-                              )}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">Pracovní úvazek</p>
-                            <p className="text-white">{item.workload}% ({Math.round(item.workload * 0.4)} hodin/týden)</p>
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">Typ zaměstnance</p>
-                            <p className="text-white">{item.employmentType === 'I' ? 'Kmenový interní' : 'Externí spolupracovník'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
+                  <Edit2 className="w-3.5 h-3.5" />
+                </motion.button>
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) { deleteItem(item.id); } }}
+                  className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-[#EF4444] transition-all"
+                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Specializace - modré pozadí */}
+            <div className="px-4 py-2 border-t border-[#5B65DC]/20 bg-[#5B65DC]/8">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-[#a0a8ff] uppercase tracking-wider shrink-0">Specializace:</span>
+                <div className="flex flex-wrap gap-1">
+                  {activeCategory === 'or_nurses' ? (
+                    <ORSkillIcons skills={(item as ORNurse).skills} />
+                  ) : (
+                    <SkillIcons skills={(item as Doctor | Nurse).skills} category={activeCategory as 'doctors' | 'nurses'} />
                   )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expanded Details */}
+            <AnimatePresence>
+              {expandedRows.has(item.id) && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-4 py-3 bg-white/[0.02] border-t border-white/5">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-white/40 text-xs mb-0.5">ID zaměstnance</p>
+                        <p className="text-white font-mono text-xs">{item.id.toUpperCase()}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-xs mb-0.5">Pracovní úvazek</p>
+                        <p className="text-white text-xs">{item.workload}% ({Math.round(item.workload * 0.4)} h/týden)</p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-xs mb-0.5">Kvalifikace</p>
+                        <p className="text-white text-xs">
+                          {activeCategory === 'doctors' && (
+                            item.qualification === 'L3' ? 'Atestovaný lékař' :
+                            item.qualification === 'L2' ? 'Pokročilý lékař' :
+                            item.qualification === 'L1' ? 'Základní kvalifikace' :
+                            item.qualification === 'A' ? 'Absolvent' : 'Stážista'
+                          )}
+                          {activeCategory === 'nurses' && (
+                            item.qualification === 'K' ? 'Plně kvalifikovaná' :
+                            item.qualification === 'D' ? 'Pod dohledem' :
+                            item.qualification === 'A' ? 'Absolventka' : 'Stážistka'
+                          )}
+                          {activeCategory === 'or_nurses' && (
+                            item.qualification === 'K' ? 'Plně kvalifikovaná' :
+                            item.qualification === 'A' ? 'Absolventka' : 'Stážistka'
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-xs mb-0.5">Typ zaměstnance</p>
+                        <p className="text-white text-xs">{item.employmentType === 'I' ? 'Kmenový interní' : 'Externí spolupracovník'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        ))}
       </div>
 
       {/* Summary */}
