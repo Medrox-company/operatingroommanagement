@@ -532,27 +532,51 @@ const StaffManager: React.FC = () => {
         </div>
       </header>
 
-      {/* Category Tabs */}
-      <div className="flex flex-wrap gap-3 mb-8">
+      {/* Category Boxes - 3 čtvercové boxy */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
         {categories.map(cat => {
           const Icon = cat.icon;
           const isActive = activeCategory === cat.id;
           return (
             <motion.button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`px-5 py-3 rounded-xl border flex items-center gap-3 font-semibold transition-all ${
-                isActive 
-                  ? 'bg-white/10 border-white/20' 
-                  : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]'
+              onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); setEditingId(null); setIsAddingNew(false); }}
+              className={`relative flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl border transition-all overflow-hidden ${
+                isActive
+                  ? 'border-white/20 bg-white/10'
+                  : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
               }`}
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.97 }}
             >
-              <Icon className="w-5 h-5" style={{ color: cat.color }} />
-              <span className={isActive ? 'text-white' : 'text-white/60'}>{cat.label}</span>
-              <span 
-                className="px-2 py-0.5 rounded-full text-xs font-bold"
+              {/* Accent glow when active */}
+              {isActive && (
+                <div
+                  className="absolute inset-0 opacity-10 pointer-events-none"
+                  style={{ background: `radial-gradient(circle at 50% 40%, ${cat.color}, transparent 70%)` }}
+                />
+              )}
+              {/* Accent top border when active */}
+              {isActive && (
+                <div
+                  className="absolute top-0 left-0 right-0 h-[2px]"
+                  style={{ background: cat.color }}
+                />
+              )}
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{
+                  backgroundColor: `${cat.color}20`,
+                  border: `1px solid ${cat.color}40`,
+                }}
+              >
+                <Icon className="w-6 h-6" style={{ color: cat.color }} />
+              </div>
+              <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-white/60'}`}>
+                {cat.label}
+              </span>
+              <span
+                className="px-3 py-1 rounded-full text-xs font-bold"
                 style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
               >
                 {cat.count}
@@ -836,9 +860,9 @@ const StaffManager: React.FC = () => {
       </div>
 
       {/* Staff Table */}
-      <div className="rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden">
+      <div className="rounded-2xl border border-white/10 bg-[#0f0f0f] overflow-hidden">
         {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-white/[0.02] text-xs font-bold text-white/40 uppercase tracking-wider">
+        <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/10 bg-white/[0.04] text-xs font-bold text-white/40 uppercase tracking-wider">
           <div className="col-span-4">Jméno</div>
           <div className="col-span-1 text-center">Kvalif.</div>
           <div className="col-span-1 text-center">Úvazek</div>
@@ -857,7 +881,7 @@ const StaffManager: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ delay: index * 0.02 }}
-                className="hover:bg-white/[0.02] transition-colors"
+                className={`transition-colors ${index % 2 === 0 ? 'bg-[#0f0f0f]' : 'bg-[#141414]'} hover:bg-white/[0.04]`}
               >
                 <div 
                   className="grid grid-cols-12 gap-4 p-4 items-center cursor-pointer"
