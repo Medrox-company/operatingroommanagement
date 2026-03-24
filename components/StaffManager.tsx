@@ -567,22 +567,41 @@ const StaffManager: React.FC = () => {
         })}
       </div>
 
-      {/* Search and Add Button */}
-      <div className="mb-6 flex flex-wrap gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-          <input
-            type="text"
-            placeholder="Hledat podle jména..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
-          />
+      {/* Search - centered premium design */}
+      <div className="mb-8 flex flex-col items-center gap-4">
+        <div className="relative w-full max-w-xl group">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#5B65DC]/20 via-[#00D8C1]/20 to-[#5B65DC]/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-500" />
+          <div className="relative flex items-center">
+            <div className="absolute left-5 flex items-center pointer-events-none">
+              <Search className="w-5 h-5 text-[#5B65DC]" />
+            </div>
+            <input
+              type="text"
+              placeholder="Hledat podle jmena..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-14 pr-6 py-4 rounded-2xl border border-white/10 bg-[#0a0a0a] text-white placeholder-white/40 focus:outline-none focus:border-[#5B65DC]/50 focus:bg-[#0f0f0f] transition-all text-center font-medium"
+            />
+            {searchQuery && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 p-1 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </motion.button>
+            )}
+          </div>
+          <p className="text-center text-white/30 text-xs mt-2">
+            Nalezeno <span className="text-[#00D8C1] font-semibold">{filteredData.length}</span> zamestnancu
+          </p>
         </div>
+        
         <motion.button
           onClick={startAddNew}
-          className="px-5 py-3 rounded-xl bg-[#10B981]/20 border border-[#10B981]/30 text-[#10B981] font-semibold flex items-center gap-2 hover:bg-[#10B981]/30 transition-all"
-          whileHover={{ scale: 1.02 }}
+          className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#5B65DC] to-[#00D8C1] text-white font-semibold flex items-center gap-2 shadow-lg shadow-[#5B65DC]/20 hover:shadow-[#5B65DC]/40 transition-all"
+          whileHover={{ scale: 1.03, y: -2 }}
           whileTap={{ scale: 0.98 }}
         >
           <Plus className="w-5 h-5" />
@@ -590,64 +609,80 @@ const StaffManager: React.FC = () => {
         </motion.button>
       </div>
 
-      {/* Add/Edit Popup Modal */}
+      {/* Add/Edit Popup Modal - Premium Design */}
       <AnimatePresence>
         {(isAddingNew || editingId) && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop with blur */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/80 backdrop-blur-md z-50"
               onClick={cancelEditing}
             />
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg mx-4"
-            >
-              <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#5B65DC]/10">
-                  <h3 className="text-lg font-bold text-white">
-                    {isAddingNew ? 'Pridat noveho zamestnance' : 'Upravit zamestnance'}
-                  </h3>
-                  <motion.button
-                    onClick={cancelEditing}
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-all"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <X className="w-5 h-5" />
-                  </motion.button>
-                </div>
+            {/* Modal - perfectly centered */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="w-full max-w-lg pointer-events-auto"
+              >
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#5B65DC]/30 to-[#00D8C1]/30 rounded-3xl blur-2xl opacity-50" />
+                
+                <div className="relative bg-[#0a0a0a] border border-white/10 rounded-3xl shadow-2xl shadow-[#5B65DC]/10 overflow-hidden">
+                  {/* Modal Header with gradient */}
+                  <div className="relative px-8 py-6 border-b border-white/10">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#5B65DC]/10 via-transparent to-[#00D8C1]/10" />
+                    <div className="relative flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-[#00D8C1] uppercase tracking-[0.2em] mb-1">
+                          {activeCategory === 'doctors' ? 'Lekar' : activeCategory === 'nurses' ? 'Sestra' : 'Salova sestra'}
+                        </p>
+                        <h3 className="text-xl font-bold text-white">
+                          {isAddingNew ? 'Pridat noveho zamestnance' : 'Upravit udaje'}
+                        </h3>
+                      </div>
+                      <motion.button
+                        onClick={cancelEditing}
+                        className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5"
+                        whileHover={{ scale: 1.05, rotate: 90 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <X className="w-5 h-5" />
+                      </motion.button>
+                    </div>
+                  </div>
 
                 {/* Modal Body */}
-                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                  {/* Name */}
-                  <div>
-                    <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Jmeno</label>
-                    <input
-                      type="text"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-[#5B65DC]/50"
-                      placeholder="Cele jmeno"
-                      autoFocus
-                    />
+                <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
+                  {/* Name - Premium input */}
+                  <div className="group">
+                    <label className="block text-[11px] text-[#00D8C1] mb-2 uppercase tracking-[0.15em] font-semibold">Jmeno</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="w-full px-5 py-4 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-[#5B65DC]/50 focus:bg-white/[0.05] transition-all text-lg font-medium"
+                        placeholder="Zadejte cele jmeno..."
+                        autoFocus
+                      />
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#5B65DC]/20 to-[#00D8C1]/20 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none blur-xl" />
+                    </div>
                   </div>
                   
                   {/* Qualification & Workload */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Kvalifikace</label>
+                      <label className="block text-[11px] text-[#00D8C1] mb-2 uppercase tracking-[0.15em] font-semibold">Kvalifikace</label>
                       <select
                         value={editForm.qualification}
                         onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-[#5B65DC]/50"
+                        className="w-full px-5 py-4 rounded-xl border border-white/10 bg-white/[0.03] text-white focus:outline-none focus:border-[#5B65DC]/50 transition-all appearance-none cursor-pointer"
                       >
                         {activeCategory === 'doctors' ? (
                           <>
@@ -674,7 +709,7 @@ const StaffManager: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Uvazek (%)</label>
+                      <label className="block text-[11px] text-[#00D8C1] mb-2 uppercase tracking-[0.15em] font-semibold">Uvazek (%)</label>
                       <input
                         type="number"
                         min="10"
@@ -682,133 +717,162 @@ const StaffManager: React.FC = () => {
                         step="10"
                         value={editForm.workload}
                         onChange={(e) => setEditForm({ ...editForm, workload: parseInt(e.target.value) || 100 })}
-                        className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-[#5B65DC]/50"
+                        className="w-full px-5 py-4 rounded-xl border border-white/10 bg-white/[0.03] text-white focus:outline-none focus:border-[#5B65DC]/50 transition-all text-center text-lg font-bold"
                       />
                     </div>
                   </div>
                   
-                  {/* Employment Type */}
+                  {/* Employment Type - Premium toggle */}
                   <div>
-                    <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Typ zamestnance</label>
-                    <div className="flex gap-3">
-                      <button
+                    <label className="block text-[11px] text-[#00D8C1] mb-3 uppercase tracking-[0.15em] font-semibold">Typ zamestnance</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <motion.button
                         type="button"
                         onClick={() => setEditForm({ ...editForm, employmentType: 'I' })}
-                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                        className={`relative py-4 rounded-xl font-semibold transition-all overflow-hidden ${
                           editForm.employmentType === 'I'
-                            ? 'bg-[#10B981]/20 border border-[#10B981]/50 text-[#10B981]'
-                            : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                            ? 'bg-[#10B981]/20 border-2 border-[#10B981] text-[#10B981]'
+                            : 'bg-white/[0.02] border border-white/10 text-white/40 hover:bg-white/[0.05] hover:text-white/60'
                         }`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        Interni (I)
-                      </button>
-                      <button
+                        {editForm.employmentType === 'I' && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#10B981]/20 to-transparent" />
+                        )}
+                        <span className="relative">Interni (I)</span>
+                      </motion.button>
+                      <motion.button
                         type="button"
                         onClick={() => setEditForm({ ...editForm, employmentType: 'E' })}
-                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                        className={`relative py-4 rounded-xl font-semibold transition-all overflow-hidden ${
                           editForm.employmentType === 'E'
-                            ? 'bg-[#F59E0B]/20 border border-[#F59E0B]/50 text-[#F59E0B]'
-                            : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                            ? 'bg-[#F59E0B]/20 border-2 border-[#F59E0B] text-[#F59E0B]'
+                            : 'bg-white/[0.02] border border-white/10 text-white/40 hover:bg-white/[0.05] hover:text-white/60'
                         }`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        Externi (E)
-                      </button>
+                        {editForm.employmentType === 'E' && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#F59E0B]/20 to-transparent" />
+                        )}
+                        <span className="relative">Externi (E)</span>
+                      </motion.button>
                     </div>
                   </div>
                   
-                  {/* Skills */}
+                  {/* Skills - Premium pills */}
                   <div>
-                    <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Specializace</label>
+                    <label className="block text-[11px] text-[#00D8C1] mb-3 uppercase tracking-[0.15em] font-semibold">Specializace</label>
                     <div className="flex flex-wrap gap-2">
                       {activeCategory === 'or_nurses' ? (
                         <>
                           {[
-                            { key: 'surgery', label: 'CHI', full: 'Chirurgie' },
-                            { key: 'trauma', label: 'TRA', full: 'Traumatologie' },
-                            { key: 'ortho', label: 'ORT', full: 'Ortopedie' },
-                            { key: 'gyneco', label: 'GYN', full: 'Gynekologie' },
-                            { key: 'minor', label: 'MO', full: 'Male obory' },
-                            { key: 'davinci', label: 'DaV', full: 'DaVinci' },
-                            { key: 'neuro', label: 'NCH', full: 'Neurochirurgie' },
-                          ].map(skill => (
-                            <button
-                              key={skill.key}
-                              type="button"
-                              onClick={() => setEditForm({
-                                ...editForm,
-                                skills: {
-                                  ...(editForm.skills as ORNurseSkills),
-                                  [skill.key]: !(editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills],
-                                },
-                              })}
-                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                (editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills]
-                                  ? 'bg-[#5B65DC]/30 border border-[#5B65DC]/50 text-[#a0a8ff]'
-                                  : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
-                              }`}
-                              title={skill.full}
-                            >
-                              {skill.label}
-                            </button>
-                          ))}
+                            { key: 'surgery', label: 'CHI', full: 'Chirurgie', color: '#EF4444' },
+                            { key: 'trauma', label: 'TRA', full: 'Traumatologie', color: '#F59E0B' },
+                            { key: 'ortho', label: 'ORT', full: 'Ortopedie', color: '#10B981' },
+                            { key: 'gyneco', label: 'GYN', full: 'Gynekologie', color: '#EC4899' },
+                            { key: 'minor', label: 'MO', full: 'Male obory', color: '#8B5CF6' },
+                            { key: 'davinci', label: 'DaV', full: 'DaVinci', color: '#3B82F6' },
+                            { key: 'neuro', label: 'NCH', full: 'Neurochirurgie', color: '#06B6D4' },
+                          ].map(skill => {
+                            const isActive = (editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills];
+                            return (
+                              <motion.button
+                                key={skill.key}
+                                type="button"
+                                onClick={() => setEditForm({
+                                  ...editForm,
+                                  skills: {
+                                    ...(editForm.skills as ORNurseSkills),
+                                    [skill.key]: !isActive,
+                                  },
+                                })}
+                                className="relative px-4 py-2.5 rounded-xl text-sm font-semibold transition-all overflow-hidden"
+                                style={{
+                                  backgroundColor: isActive ? `${skill.color}20` : 'rgba(255,255,255,0.02)',
+                                  border: `2px solid ${isActive ? skill.color : 'rgba(255,255,255,0.1)'}`,
+                                  color: isActive ? skill.color : 'rgba(255,255,255,0.4)',
+                                }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                title={skill.full}
+                              >
+                                {isActive && (
+                                  <div className="absolute inset-0 opacity-30" style={{ background: `linear-gradient(135deg, ${skill.color}40, transparent)` }} />
+                                )}
+                                <span className="relative">{skill.label}</span>
+                              </motion.button>
+                            );
+                          })}
                         </>
                       ) : (
                         <>
                           {[
-                            { key: 'aro', label: 'ARO', full: 'ARO luzka' },
-                            { key: 'jip', label: 'JIP', full: 'JIP' },
-                            { key: 'emergency', label: 'UP', full: 'Urgentni prijem' },
-                            { key: 'or', label: 'OS', full: 'Operacni saly' },
-                          ].map(skill => (
-                            <button
-                              key={skill.key}
-                              type="button"
-                              onClick={() => setEditForm({
-                                ...editForm,
-                                skills: {
-                                  ...(editForm.skills as DoctorSkills | NurseSkills),
-                                  [skill.key]: !(editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)],
-                                },
-                              })}
-                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                (editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)]
-                                  ? 'bg-[#5B65DC]/30 border border-[#5B65DC]/50 text-[#a0a8ff]'
-                                  : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
-                              }`}
-                              title={skill.full}
-                            >
-                              {skill.label}
-                            </button>
-                          ))}
+                            { key: 'aro', label: 'ARO', full: 'ARO luzka', color: '#EF4444' },
+                            { key: 'jip', label: 'JIP', full: 'JIP', color: '#F59E0B' },
+                            { key: 'emergency', label: 'UP', full: 'Urgentni prijem', color: '#8B5CF6' },
+                            { key: 'or', label: 'OS', full: 'Operacni saly', color: '#3B82F6' },
+                          ].map(skill => {
+                            const isActive = (editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)];
+                            return (
+                              <motion.button
+                                key={skill.key}
+                                type="button"
+                                onClick={() => setEditForm({
+                                  ...editForm,
+                                  skills: {
+                                    ...(editForm.skills as DoctorSkills | NurseSkills),
+                                    [skill.key]: !isActive,
+                                  },
+                                })}
+                                className="relative px-4 py-2.5 rounded-xl text-sm font-semibold transition-all overflow-hidden"
+                                style={{
+                                  backgroundColor: isActive ? `${skill.color}20` : 'rgba(255,255,255,0.02)',
+                                  border: `2px solid ${isActive ? skill.color : 'rgba(255,255,255,0.1)'}`,
+                                  color: isActive ? skill.color : 'rgba(255,255,255,0.4)',
+                                }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                title={skill.full}
+                              >
+                                {isActive && (
+                                  <div className="absolute inset-0 opacity-30" style={{ background: `linear-gradient(135deg, ${skill.color}40, transparent)` }} />
+                                )}
+                                <span className="relative">{skill.label}</span>
+                              </motion.button>
+                            );
+                          })}
                         </>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Modal Footer */}
-                <div className="flex gap-3 px-6 py-4 border-t border-white/10 bg-white/[0.02]">
+                {/* Modal Footer - Premium */}
+                <div className="flex gap-4 px-8 py-6 border-t border-white/10 bg-gradient-to-r from-white/[0.02] to-transparent">
                   <motion.button
                     onClick={saveEdit}
                     disabled={!editForm.name.trim()}
-                    className="flex-1 py-3 rounded-lg bg-[#5B65DC] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5B65DC]/80 transition-all"
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
+                    className="flex-1 py-4 rounded-xl bg-gradient-to-r from-[#5B65DC] to-[#00D8C1] text-white font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-[#5B65DC]/20 hover:shadow-[#5B65DC]/40 transition-all"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    <Check className="w-4 h-4" />
-                    {isAddingNew ? 'Pridat' : 'Ulozit zmeny'}
+                    <Check className="w-5 h-5" />
+                    {isAddingNew ? 'Pridat zamestnance' : 'Ulozit zmeny'}
                   </motion.button>
                   <motion.button
                     onClick={cancelEditing}
-                    className="px-6 py-3 rounded-lg bg-white/10 text-white font-semibold hover:bg-white/20 transition-all"
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
+                    className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white/60 font-semibold hover:bg-white/10 hover:text-white transition-all"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     Zrusit
                   </motion.button>
                 </div>
               </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
