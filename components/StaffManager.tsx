@@ -395,60 +395,104 @@ const StaffManager: React.FC = () => {
         </button>
       </div>
 
-      {/* 2-column card grid */}
+      {/* 2-column card grid - Compact inspired by screenshot */}
       {filteredData.length === 0 ? (
         <div className="py-16 text-center text-white/30 border border-white/5 rounded-xl">
           Žádní zaměstnanci nenalezeni
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {filteredData.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.015 }}
-              className="group flex items-center gap-4 px-5 py-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all"
-            >
-              {/* Workload circle */}
-              <WorkloadBadge workload={item.workload} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {filteredData.map((item, index) => {
+            const avatarColor = (() => {
+              const colors = ['#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#F87171', '#06B6D4', '#84CC16'];
+              return colors[index % colors.length];
+            })();
+            
+            const getInitials = (name: string) => {
+              const parts = name.split(' ');
+              return parts.length >= 2 ? (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
+            };
 
-              {/* Main info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <p className="font-semibold text-white text-sm truncate">{item.name}</p>
-                  <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${
-                    item.employmentType === 'I'
-                      ? 'bg-[#00D8C1]/10 text-[#00D8C1] border border-[#00D8C1]/25'
-                      : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/25'
-                  }`}>{item.employmentType}</span>
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.02 }}
+                className="group relative rounded-lg border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.02] hover:from-white/[0.06] hover:to-white/[0.04] hover:border-white/15 transition-all overflow-hidden p-3"
+              >
+                {/* Top Row: Avatar + Name + Qual + Type + Actions */}
+                <div className="flex items-start gap-3 mb-2">
+                  {/* Avatar */}
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                    style={{ backgroundColor: avatarColor }}
+                  >
+                    {getInitials(item.name)}
+                  </div>
+
+                  {/* Info Column */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white truncate leading-tight">{item.name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <QualBadge qual={item.qualification} category={activeCategory} />
+                      <span
+                        className="text-[8px] font-black tracking-wide uppercase px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.15)' : 'rgba(245,158,11,0.15)',
+                          color: item.employmentType === 'I' ? '#00D8C1' : '#F59E0B',
+                          border: `1px solid ${item.employmentType === 'I' ? 'rgba(0,216,193,0.3)' : 'rgba(245,158,11,0.3)'}`
+                        }}
+                      >
+                        {item.employmentType}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Edit button */}
+                  <button
+                    onClick={() => startEditing(item)}
+                    className="p-1.5 rounded-lg hover:bg-white/10 text-white/30 hover:text-white transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <QualBadge qual={item.qualification} category={activeCategory} />
+
+                {/* Skills tags */}
+                <div className="flex flex-wrap gap-1 mb-2 pl-13">
                   {activeCategory === 'or_nurses'
                     ? <ORSkillTags skills={(item as ORNurse).skills} />
                     : <SkillTags skills={(item as Doctor | Nurse).skills} />
                   }
                 </div>
-              </div>
 
-              {/* Actions – visible on hover */}
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <button
-                  onClick={() => startEditing(item)}
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/30 hover:text-white transition-all"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/30 hover:text-red-400 transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+                {/* Workload progress bar */}
+                <div className="space-y-1.5 pl-13">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">Úvazek</span>
+                    <span className="text-[10px] font-bold text-white">{item.workload}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-white/[0.05] overflow-hidden border border-white/[0.1]">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{
+                        backgroundColor: item.workload === 100 ? '#10B981' : item.workload >= 80 ? '#84CC16' : item.workload >= 60 ? '#F59E0B' : item.workload >= 40 ? '#F97316' : '#EF4444',
+                      }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.workload}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Available status */}
+                <div className="flex items-center gap-1.5 mt-2 pl-13 text-[10px] text-white/60">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                  <span>K dispozici</span>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
