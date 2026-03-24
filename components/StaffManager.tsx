@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
-  Clock, Shield, Activity
+  Clock, Shield, Activity, Award, Briefcase, Zap
 } from 'lucide-react';
 
 // Types
