@@ -276,9 +276,42 @@ const StaffManager: React.FC = () => {
 
   const filteredData = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    if (activeCategory === 'doctors') return doctors.filter(d => d.name.toLowerCase().includes(query));
-    else if (activeCategory === 'nurses') return nurses.filter(n => n.name.toLowerCase().includes(query));
-    else return orNurses.filter(n => n.name.toLowerCase().includes(query));
+    let results: (Doctor | Nurse | ORNurse)[] = [];
+    
+    const data = activeCategory === 'doctors' ? doctors : activeCategory === 'nurses' ? nurses : orNurses;
+    
+    results = data.filter(item => {
+      // Search by name
+      if (item.name.toLowerCase().includes(query)) return true;
+      
+      // Search by qualification
+      if (item.qualification.toLowerCase().includes(query)) return true;
+      
+      // Search by employment type
+      const employmentText = item.employmentType === 'I' ? 'interní' : 'externí';
+      if (employmentText.includes(query)) return true;
+      
+      // Search by skills
+      const skills = item.skills;
+      for (const [key, value] of Object.entries(skills)) {
+        if (value && key.toLowerCase().includes(query)) return true;
+      }
+      
+      // Map skill keys to readable names
+      const skillNames: Record<string, string> = {
+        aro: 'aro', jip: 'jip', emergency: 'urgentní', or: 'operační',
+        surgery: 'chirurgie', trauma: 'traumatologie', ortho: 'ortopedie',
+        gyneco: 'gynekologie', minor: 'malé obory', davinci: 'davinci', neuro: 'neurochirurgie'
+      };
+      
+      for (const [key, value] of Object.entries(skills)) {
+        if (value && skillNames[key]?.includes(query)) return true;
+      }
+      
+      return false;
+    });
+    
+    return results;
   }, [activeCategory, searchQuery, doctors, nurses, orNurses]);
 
   // Stats
@@ -419,7 +452,10 @@ const StaffManager: React.FC = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02 }}
-                className="group relative rounded-lg border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.02] hover:from-white/[0.06] hover:to-white/[0.04] hover:border-white/15 transition-all overflow-hidden p-3"
+                className="group relative rounded-lg border border-white/[0.08] overflow-hidden p-3 transition-all hover:border-white/15"
+                style={{
+                  background: `linear-gradient(135deg, rgb(12, 13, 27) 0%, rgba(255, 255, 255, 0.02) 100%)`
+                }}
               >
                 {/* Top Row: Avatar + Name + Qual + Type + Actions */}
                 <div className="flex items-start gap-3 mb-2">
