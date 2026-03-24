@@ -79,7 +79,74 @@ const generateORNurses = (): ORNurse[] => {
   }));
 };
 
-// Skill tags for doctors/nurses
+// Workload circle badge – red→yellow→green by value
+const WorkloadBadge: React.FC<{ workload: number }> = ({ workload }) => {
+  const getColor = (w: number) => {
+    if (w <= 30) return { stroke: '#EF4444', text: '#EF4444', bg: 'rgba(239,68,68,0.08)' };
+    if (w <= 50) return { stroke: '#F97316', text: '#F97316', bg: 'rgba(249,115,22,0.08)' };
+    if (w <= 70) return { stroke: '#F59E0B', text: '#F59E0B', bg: 'rgba(245,158,11,0.08)' };
+    if (w <= 90) return { stroke: '#84CC16', text: '#84CC16', bg: 'rgba(132,204,22,0.08)' };
+    return { stroke: '#10B981', text: '#10B981', bg: 'rgba(16,185,129,0.08)' };
+  };
+  const c = getColor(workload);
+  const r = 14;
+  const circ = 2 * Math.PI * r;
+  const dash = (workload / 100) * circ;
+  return (
+    <div className="flex items-center justify-center w-10 h-10 relative" style={{ background: c.bg, borderRadius: '50%' }}>
+      <svg className="absolute inset-0 w-10 h-10 -rotate-90" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" />
+        <circle
+          cx="20" cy="20" r={r} fill="none"
+          stroke={c.stroke} strokeWidth="2.5"
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+        />
+      </svg>
+      <span className="text-[10px] font-black relative z-10" style={{ color: c.text }}>
+        {workload}
+      </span>
+    </div>
+  );
+};
+
+// Qualification badge – color by level
+const QualBadge: React.FC<{ qual: string; category: StaffCategory }> = ({ qual, category }) => {
+  const colors: Record<string, { bg: string; text: string; border: string }> = {
+    L3: { bg: 'rgba(16,185,129,0.12)', text: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    L2: { bg: 'rgba(59,130,246,0.12)', text: '#60A5FA', border: 'rgba(59,130,246,0.3)' },
+    L1: { bg: 'rgba(139,92,246,0.12)', text: '#A78BFA', border: 'rgba(139,92,246,0.3)' },
+    K:  { bg: 'rgba(16,185,129,0.12)', text: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    D:  { bg: 'rgba(59,130,246,0.12)', text: '#60A5FA', border: 'rgba(59,130,246,0.3)' },
+    A:  { bg: 'rgba(245,158,11,0.12)', text: '#FBBF24', border: 'rgba(245,158,11,0.3)' },
+    S:  { bg: 'rgba(107,114,128,0.12)', text: '#9CA3AF', border: 'rgba(107,114,128,0.3)' },
+  };
+  const c = colors[qual] ?? colors['S'];
+  return (
+    <span
+      className="px-2 py-1 rounded-md text-[11px] font-black tracking-wide"
+      style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
+    >
+      {qual}
+    </span>
+  );
+};
+
+// Skill tags for doctors/nurses – each tag its own color
+const SKILL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  aro:       { bg: 'rgba(239,68,68,0.10)',   text: '#F87171', border: 'rgba(239,68,68,0.25)' },
+  jip:       { bg: 'rgba(245,158,11,0.10)',  text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
+  emergency: { bg: 'rgba(139,92,246,0.10)',  text: '#A78BFA', border: 'rgba(139,92,246,0.25)' },
+  or:        { bg: 'rgba(59,130,246,0.10)',  text: '#60A5FA', border: 'rgba(59,130,246,0.25)' },
+  surgery:   { bg: 'rgba(239,68,68,0.10)',   text: '#F87171', border: 'rgba(239,68,68,0.25)' },
+  trauma:    { bg: 'rgba(245,158,11,0.10)',  text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
+  ortho:     { bg: 'rgba(16,185,129,0.10)',  text: '#34D399', border: 'rgba(16,185,129,0.25)' },
+  gyneco:    { bg: 'rgba(236,72,153,0.10)',  text: '#F472B6', border: 'rgba(236,72,153,0.25)' },
+  minor:     { bg: 'rgba(139,92,246,0.10)',  text: '#A78BFA', border: 'rgba(139,92,246,0.25)' },
+  davinci:   { bg: 'rgba(0,216,193,0.10)',   text: '#00D8C1', border: 'rgba(0,216,193,0.25)' },
+  neuro:     { bg: 'rgba(6,182,212,0.10)',   text: '#22D3EE', border: 'rgba(6,182,212,0.25)' },
+};
+
 const SkillTags: React.FC<{ skills: DoctorSkills | NurseSkills }> = ({ skills }) => {
   const skillList = [
     { key: 'aro', label: 'ARO' },
@@ -88,38 +155,42 @@ const SkillTags: React.FC<{ skills: DoctorSkills | NurseSkills }> = ({ skills })
     { key: 'or', label: 'OS' },
   ];
   const activeSkills = skillList.filter(s => skills[s.key as keyof typeof skills]);
-  if (activeSkills.length === 0) return <span className="text-white/20 text-xs">-</span>;
+  if (activeSkills.length === 0) return <span className="text-white/20 text-[10px]">—</span>;
   return (
     <div className="flex gap-1 flex-wrap">
-      {activeSkills.map(skill => (
-        <span key={skill.key} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/5 text-white/60 border border-white/10">
-          {skill.label}
-        </span>
-      ))}
+      {activeSkills.map(skill => {
+        const c = SKILL_COLORS[skill.key];
+        return (
+          <span key={skill.key}
+            className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+            style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
+          >{skill.label}</span>
+        );
+      })}
     </div>
   );
 };
 
-// Skill tags for OR nurses
 const ORSkillTags: React.FC<{ skills: ORNurseSkills }> = ({ skills }) => {
   const skillList = [
-    { key: 'surgery', label: 'CHI' },
-    { key: 'trauma', label: 'TRA' },
-    { key: 'ortho', label: 'ORT' },
-    { key: 'gyneco', label: 'GYN' },
-    { key: 'minor', label: 'MO' },
-    { key: 'davinci', label: 'DaV' },
+    { key: 'surgery', label: 'CHI' }, { key: 'trauma', label: 'TRA' },
+    { key: 'ortho', label: 'ORT' }, { key: 'gyneco', label: 'GYN' },
+    { key: 'minor', label: 'MO' }, { key: 'davinci', label: 'DaV' },
     { key: 'neuro', label: 'NCH' },
   ];
   const activeSkills = skillList.filter(s => skills[s.key as keyof ORNurseSkills]);
-  if (activeSkills.length === 0) return <span className="text-white/20 text-xs">-</span>;
+  if (activeSkills.length === 0) return <span className="text-white/20 text-[10px]">—</span>;
   return (
     <div className="flex gap-1 flex-wrap">
-      {activeSkills.map(skill => (
-        <span key={skill.key} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/5 text-white/60 border border-white/10">
-          {skill.label}
-        </span>
-      ))}
+      {activeSkills.map(skill => {
+        const c = SKILL_COLORS[skill.key];
+        return (
+          <span key={skill.key}
+            className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+            style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
+          >{skill.label}</span>
+        );
+      })}
     </div>
   );
 };
@@ -294,77 +365,62 @@ const StaffManager: React.FC = () => {
         </button>
       </div>
 
-      {/* Table - clean minimal design */}
-      <div className="rounded-xl border border-white/5 overflow-hidden">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-white/[0.02] border-b border-white/5 text-[11px] font-semibold text-white/40 uppercase tracking-wider">
-          <div className="col-span-4">Jméno</div>
-          <div className="col-span-1 text-center">Kvalifikace</div>
-          <div className="col-span-1 text-center">Úvazek</div>
-          <div className="col-span-1 text-center">Typ</div>
-          <div className="col-span-4">Specializace</div>
-          <div className="col-span-1"></div>
+      {/* 2-column card grid */}
+      {filteredData.length === 0 ? (
+        <div className="py-16 text-center text-white/30 border border-white/5 rounded-xl">
+          Žádní zaměstnanci nenalezeni
         </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {filteredData.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.015 }}
+              className="group flex items-center gap-4 px-5 py-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all"
+            >
+              {/* Workload circle */}
+              <WorkloadBadge workload={item.workload} />
 
-        {/* Table Body */}
-        <div className="divide-y divide-white/[0.03]">
-          {filteredData.length === 0 ? (
-            <div className="px-6 py-12 text-center text-white/30">
-              Žádní zaměstnanci nenalezeni
-            </div>
-          ) : (
-            filteredData.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.02 }}
-                className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-white/[0.02] transition-colors group"
-              >
-                <div className="col-span-4">
-                  <p className="font-medium text-white text-sm">{item.name}</p>
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <p className="font-semibold text-white text-sm truncate">{item.name}</p>
+                  <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${
+                    item.employmentType === 'I'
+                      ? 'bg-[#00D8C1]/10 text-[#00D8C1] border border-[#00D8C1]/25'
+                      : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/25'
+                  }`}>{item.employmentType}</span>
                 </div>
-                <div className="col-span-1 flex justify-center">
-                  <span className="px-2 py-1 rounded text-xs font-semibold bg-white/5 text-white/70 border border-white/10">
-                    {item.qualification}
-                  </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <QualBadge qual={item.qualification} category={activeCategory} />
+                  {activeCategory === 'or_nurses'
+                    ? <ORSkillTags skills={(item as ORNurse).skills} />
+                    : <SkillTags skills={(item as Doctor | Nurse).skills} />
+                  }
                 </div>
-                <div className="col-span-1 flex justify-center">
-                  <span className="text-sm text-white/60">{item.workload}%</span>
-                </div>
-                <div className="col-span-1 flex justify-center">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    item.employmentType === 'I' ? 'bg-[#00D8C1]/10 text-[#00D8C1] border border-[#00D8C1]/20' : 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20'
-                  }`}>
-                    {item.employmentType}
-                  </span>
-                </div>
-                <div className="col-span-4">
-                  {activeCategory === 'or_nurses' ? (
-                    <ORSkillTags skills={(item as ORNurse).skills} />
-                  ) : (
-                    <SkillTags skills={(item as Doctor | Nurse).skills} />
-                  )}
-                </div>
-                <div className="col-span-1 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => startEditing(item)}
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-red-400 transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            ))
-          )}
+              </div>
+
+              {/* Actions – visible on hover */}
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <button
+                  onClick={() => startEditing(item)}
+                  className="p-2 rounded-lg hover:bg-white/10 text-white/30 hover:text-white transition-all"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
+                  className="p-2 rounded-lg hover:bg-white/10 text-white/30 hover:text-red-400 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </div>
+      )}
 
       {/* Results count */}
       <div className="mt-4 text-xs text-white/30">
