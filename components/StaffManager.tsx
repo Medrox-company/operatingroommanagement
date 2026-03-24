@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Users, Stethoscope, Heart, Search, Filter, Plus, Edit2, Trash2, X, Check,
-  Building2, Clock, Award, UserCheck, UserX, ChevronDown, ChevronUp
+  Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
+  Clock, ChevronRight, User, Briefcase, Award, Building2
 } from 'lucide-react';
 
 // Types
@@ -169,169 +169,281 @@ const generateORNurses = (): ORNurse[] => {
   }));
 };
 
-// Qualification badge component
-const QualificationBadge: React.FC<{ qual: string; category: StaffCategory }> = ({ qual, category }) => {
-  const getColor = () => {
+// Staff Card Component
+const StaffCard: React.FC<{
+  item: Doctor | Nurse | ORNurse;
+  category: StaffCategory;
+  onEdit: () => void;
+  onDelete: () => void;
+}> = ({ item, category, onEdit, onDelete }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const getQualificationInfo = (qual: string) => {
     if (category === 'doctors') {
-      switch (qual) {
-        case 'L3': return { bg: '#10B981', text: '#D1FAE5' };
-        case 'L2': return { bg: '#3B82F6', text: '#DBEAFE' };
-        case 'L1': return { bg: '#8B5CF6', text: '#EDE9FE' };
-        case 'A': return { bg: '#F59E0B', text: '#FEF3C7' };
-        case 'S': return { bg: '#6B7280', text: '#F3F4F6' };
-        default: return { bg: '#64748B', text: '#F1F5F9' };
-      }
+      const info: Record<string, { label: string; color: string; desc: string }> = {
+        'L3': { label: 'L3', color: '#10B981', desc: 'Atestace' },
+        'L2': { label: 'L2', color: '#3B82F6', desc: 'Pokročilý' },
+        'L1': { label: 'L1', color: '#8B5CF6', desc: 'Základní' },
+        'A': { label: 'A', color: '#F59E0B', desc: 'Absolvent' },
+        'S': { label: 'S', color: '#6B7280', desc: 'Stážista' },
+      };
+      return info[qual] || { label: qual, color: '#64748B', desc: '' };
     } else if (category === 'nurses') {
-      switch (qual) {
-        case 'K': return { bg: '#10B981', text: '#D1FAE5' };
-        case 'D': return { bg: '#3B82F6', text: '#DBEAFE' };
-        case 'A': return { bg: '#F59E0B', text: '#FEF3C7' };
-        case 'S': return { bg: '#6B7280', text: '#F3F4F6' };
-        default: return { bg: '#64748B', text: '#F1F5F9' };
-      }
+      const info: Record<string, { label: string; color: string; desc: string }> = {
+        'K': { label: 'K', color: '#10B981', desc: 'Kvalifikovaná' },
+        'D': { label: 'D', color: '#3B82F6', desc: 'Pod dohledem' },
+        'A': { label: 'A', color: '#F59E0B', desc: 'Absolventka' },
+        'S': { label: 'S', color: '#6B7280', desc: 'Stážistka' },
+      };
+      return info[qual] || { label: qual, color: '#64748B', desc: '' };
     } else {
-      switch (qual) {
-        case 'K': return { bg: '#10B981', text: '#D1FAE5' };
-        case 'A': return { bg: '#F59E0B', text: '#FEF3C7' };
-        case 'S': return { bg: '#6B7280', text: '#F3F4F6' };
-        default: return { bg: '#64748B', text: '#F1F5F9' };
-      }
+      const info: Record<string, { label: string; color: string; desc: string }> = {
+        'K': { label: 'K', color: '#10B981', desc: 'Kvalifikovaná' },
+        'A': { label: 'A', color: '#F59E0B', desc: 'Absolventka' },
+        'S': { label: 'S', color: '#6B7280', desc: 'Stážistka' },
+      };
+      return info[qual] || { label: qual, color: '#64748B', desc: '' };
     }
   };
-  
-  const colors = getColor();
-  
-  return (
-    <span
-      className="px-2 py-1 rounded-md text-xs font-bold"
-      style={{ backgroundColor: `${colors.bg}30`, color: colors.bg, border: `1px solid ${colors.bg}50` }}
-    >
-      {qual}
-    </span>
-  );
-};
 
-// Workload badge
-const WorkloadBadge: React.FC<{ workload: number }> = ({ workload }) => {
-  const getColor = () => {
-    if (workload >= 100) return '#10B981';
-    if (workload >= 80) return '#3B82F6';
-    if (workload >= 50) return '#F59E0B';
-    return '#EF4444';
+  const qualInfo = getQualificationInfo(item.qualification);
+  const isInternal = item.employmentType === 'I';
+
+  const getSkillsList = () => {
+    if (category === 'or_nurses') {
+      const skills = item.skills as ORNurseSkills;
+      return [
+        { key: 'surgery', label: 'Chirurgie', short: 'CHI', active: skills.surgery, color: '#EF4444' },
+        { key: 'trauma', label: 'Traumatologie', short: 'TRA', active: skills.trauma, color: '#F59E0B' },
+        { key: 'ortho', label: 'Ortopedie', short: 'ORT', active: skills.ortho, color: '#10B981' },
+        { key: 'gyneco', label: 'Gynekologie', short: 'GYN', active: skills.gyneco, color: '#EC4899' },
+        { key: 'minor', label: 'Malé obory', short: 'MO', active: skills.minor, color: '#8B5CF6' },
+        { key: 'davinci', label: 'DaVinci', short: 'DaV', active: skills.davinci, color: '#3B82F6' },
+        { key: 'neuro', label: 'Neurochirurgie', short: 'NCH', active: skills.neuro, color: '#06B6D4' },
+      ];
+    } else {
+      const skills = item.skills as DoctorSkills | NurseSkills;
+      return [
+        { key: 'aro', label: 'ARO lůžka', short: 'ARO', active: skills.aro, color: '#EF4444' },
+        { key: 'jip', label: 'JIP', short: 'JIP', active: skills.jip, color: '#F59E0B' },
+        { key: 'emergency', label: 'Urgentní příjem', short: 'UP', active: skills.emergency, color: '#8B5CF6' },
+        { key: 'or', label: 'Operační sály', short: 'OS', active: skills.or, color: '#3B82F6' },
+      ];
+    }
   };
-  
+
+  const skillsList = getSkillsList();
+  const activeSkills = skillsList.filter(s => s.active);
+
   return (
-    <span
-      className="px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1"
-      style={{ backgroundColor: `${getColor()}20`, color: getColor(), border: `1px solid ${getColor()}40` }}
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="group"
     >
-      <Clock className="w-3 h-3" />
-      {workload}%
-    </span>
-  );
-};
+      <div 
+        className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all duration-300 overflow-hidden cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {/* Accent line */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{ background: `linear-gradient(90deg, ${qualInfo.color}80, transparent)` }}
+        />
 
-// Skill icons for doctors/nurses
-const SkillIcons: React.FC<{ skills: DoctorSkills | NurseSkills; category: 'doctors' | 'nurses' }> = ({ skills, category }) => {
-  const skillList = [
-    { key: 'aro', label: 'ARO', color: '#EF4444' },
-    { key: 'jip', label: 'JIP', color: '#F59E0B' },
-    { key: 'emergency', label: 'UP', color: '#8B5CF6' },
-    { key: 'or', label: 'OS', color: '#3B82F6' },
-  ];
-  
-  return (
-    <div className="flex gap-1 flex-wrap">
-      {skillList.map(skill => {
-        const hasSkill = skills[skill.key as keyof typeof skills];
-        return (
-          <span
-            key={skill.key}
-            className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
-              hasSkill ? 'opacity-100' : 'opacity-20'
-            }`}
-            style={{ 
-              backgroundColor: hasSkill ? `${skill.color}20` : 'transparent',
-              color: hasSkill ? skill.color : '#64748B',
-              border: `1px solid ${hasSkill ? `${skill.color}40` : '#64748B30'}`
-            }}
-            title={skill.label}
-          >
-            {skill.label}
-          </span>
-        );
-      })}
-    </div>
-  );
-};
+        <div className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            {/* Left: Avatar & Name */}
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              {/* Avatar */}
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${qualInfo.color}15`, border: `1px solid ${qualInfo.color}30` }}
+              >
+                <User className="w-5 h-5" style={{ color: qualInfo.color }} />
+              </div>
+              
+              {/* Name & Type */}
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-white truncate">{item.name}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span 
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ 
+                      backgroundColor: isInternal ? '#10B98115' : '#F59E0B15',
+                      color: isInternal ? '#10B981' : '#F59E0B',
+                      border: `1px solid ${isInternal ? '#10B98130' : '#F59E0B30'}`
+                    }}
+                  >
+                    {isInternal ? 'Interní' : 'Externí'}
+                  </span>
+                </div>
+              </div>
+            </div>
 
-// Skill icons for OR nurses
-const ORSkillIcons: React.FC<{ skills: ORNurseSkills }> = ({ skills }) => {
-  const skillList = [
-    { key: 'surgery', label: 'CHI', color: '#EF4444' },
-    { key: 'trauma', label: 'TRA', color: '#F59E0B' },
-    { key: 'ortho', label: 'ORT', color: '#10B981' },
-    { key: 'gyneco', label: 'GYN', color: '#EC4899' },
-    { key: 'minor', label: 'MO', color: '#8B5CF6' },
-    { key: 'davinci', label: 'DaV', color: '#3B82F6' },
-    { key: 'neuro', label: 'NCH', color: '#06B6D4' },
-  ];
-  
-  return (
-    <div className="flex gap-1 flex-wrap">
-      {skillList.map(skill => {
-        const hasSkill = skills[skill.key as keyof ORNurseSkills];
-        return (
-          <span
-            key={skill.key}
-            className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
-              hasSkill ? 'opacity-100' : 'opacity-20'
-            }`}
-            style={{ 
-              backgroundColor: hasSkill ? `${skill.color}20` : 'transparent',
-              color: hasSkill ? skill.color : '#64748B',
-              border: `1px solid ${hasSkill ? `${skill.color}40` : '#64748B30'}`
-            }}
-            title={skill.label}
-          >
-            {skill.label}
-          </span>
-        );
-      })}
-    </div>
-  );
-};
+            {/* Right: Badges */}
+            <div className="flex items-center gap-3">
+              {/* Qualification */}
+              <div 
+                className="px-3 py-1.5 rounded-lg text-sm font-bold"
+                style={{ 
+                  backgroundColor: `${qualInfo.color}15`,
+                  color: qualInfo.color,
+                  border: `1px solid ${qualInfo.color}30`
+                }}
+                title={qualInfo.desc}
+              >
+                {qualInfo.label}
+              </div>
 
-// Employment type badge
-const EmploymentBadge: React.FC<{ type: EmploymentType }> = ({ type }) => {
-  const isInternal = type === 'I';
-  return (
-    <span
-      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-      style={{ 
-        backgroundColor: isInternal ? '#10B98120' : '#F59E0B20',
-        color: isInternal ? '#10B981' : '#F59E0B',
-        border: `1px solid ${isInternal ? '#10B98140' : '#F59E0B40'}`
-      }}
-      title={isInternal ? 'Interní zaměstnanec' : 'Externí zaměstnanec'}
-    >
-      {type}
-    </span>
+              {/* Workload */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08]">
+                <Clock className="w-3.5 h-3.5 text-white/40" />
+                <span className="text-sm font-medium text-white/70">{item.workload}%</span>
+              </div>
+
+              {/* Expand Arrow */}
+              <motion.div
+                animate={{ rotate: isExpanded ? 90 : 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-white/30"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Skills Preview */}
+          <div className="flex flex-wrap gap-1.5 mt-4">
+            {skillsList.map(skill => (
+              <span
+                key={skill.key}
+                className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                  skill.active 
+                    ? 'opacity-100' 
+                    : 'opacity-30'
+                }`}
+                style={{ 
+                  backgroundColor: skill.active ? `${skill.color}15` : 'transparent',
+                  color: skill.active ? skill.color : '#64748B',
+                  border: `1px solid ${skill.active ? `${skill.color}30` : '#ffffff10'}`
+                }}
+              >
+                {skill.short}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Expanded Details */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="px-5 pb-5 pt-2 border-t border-white/[0.05]">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                    <div className="flex items-center gap-2 text-white/40 text-xs mb-1">
+                      <Award className="w-3.5 h-3.5" />
+                      <span>Kvalifikace</span>
+                    </div>
+                    <p className="text-sm font-medium text-white">{qualInfo.desc}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                    <div className="flex items-center gap-2 text-white/40 text-xs mb-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Úvazek</span>
+                    </div>
+                    <p className="text-sm font-medium text-white">{item.workload}%</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                    <div className="flex items-center gap-2 text-white/40 text-xs mb-1">
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span>Typ</span>
+                    </div>
+                    <p className="text-sm font-medium text-white">{isInternal ? 'Kmenový' : 'Externí'}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                    <div className="flex items-center gap-2 text-white/40 text-xs mb-1">
+                      <Briefcase className="w-3.5 h-3.5" />
+                      <span>Specializace</span>
+                    </div>
+                    <p className="text-sm font-medium text-white">{activeSkills.length} z {skillsList.length}</p>
+                  </div>
+                </div>
+
+                {/* Active Skills */}
+                <div className="mb-4">
+                  <p className="text-xs text-white/40 mb-2 uppercase tracking-wider">Aktivní specializace</p>
+                  <div className="flex flex-wrap gap-2">
+                    {activeSkills.length > 0 ? activeSkills.map(skill => (
+                      <span
+                        key={skill.key}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                        style={{ 
+                          backgroundColor: `${skill.color}15`,
+                          color: skill.color,
+                          border: `1px solid ${skill.color}30`
+                        }}
+                      >
+                        {skill.label}
+                      </span>
+                    )) : (
+                      <span className="text-sm text-white/30">Žádné specializace</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <motion.button
+                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15] text-white/70 hover:text-white text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Upravit
+                  </motion.button>
+                  <motion.button
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) onDelete(); 
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 hover:text-red-300 text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 };
 
 const StaffManager: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [editingItem, setEditingItem] = useState<Doctor | Nurse | ORNurse | null>(null);
   
   const [doctors, setDoctors] = useState<Doctor[]>(generateDoctors);
   const [nurses, setNurses] = useState<Nurse[]>(generateNurses);
   const [orNurses, setORNurses] = useState<ORNurse[]>(generateORNurses);
   
-  // Form state for editing/adding
+  // Form state
   const [editForm, setEditForm] = useState<{
     name: string;
     qualification: string;
@@ -375,7 +487,8 @@ const StaffManager: React.FC = () => {
   };
 
   const startEditing = (item: Doctor | Nurse | ORNurse) => {
-    setEditingId(item.id);
+    setEditingItem(item);
+    setIsAddingNew(false);
     setEditForm({
       name: item.name,
       qualification: item.qualification,
@@ -385,8 +498,14 @@ const StaffManager: React.FC = () => {
     });
   };
 
-  const cancelEditing = () => {
-    setEditingId(null);
+  const startAddNew = () => {
+    setIsAddingNew(true);
+    setEditingItem(null);
+    resetForm();
+  };
+
+  const cancelEdit = () => {
+    setEditingItem(null);
     setIsAddingNew(false);
     resetForm();
   };
@@ -396,7 +515,7 @@ const StaffManager: React.FC = () => {
     
     if (activeCategory === 'doctors') {
       if (isAddingNew) {
-        const newDoctor: Doctor = {
+        const newItem: Doctor = {
           id: `doc-${Date.now()}`,
           name: editForm.name,
           qualification: editForm.qualification as DoctorQualification,
@@ -404,22 +523,15 @@ const StaffManager: React.FC = () => {
           employmentType: editForm.employmentType,
           skills: editForm.skills as DoctorSkills,
         };
-        setDoctors(prev => [...prev, newDoctor]);
-      } else {
+        setDoctors(prev => [newItem, ...prev]);
+      } else if (editingItem) {
         setDoctors(prev => prev.map(d => 
-          d.id === editingId ? {
-            ...d,
-            name: editForm.name,
-            qualification: editForm.qualification as DoctorQualification,
-            workload: editForm.workload,
-            employmentType: editForm.employmentType,
-            skills: editForm.skills as DoctorSkills,
-          } : d
+          d.id === editingItem.id ? { ...d, ...editForm, qualification: editForm.qualification as DoctorQualification, skills: editForm.skills as DoctorSkills } : d
         ));
       }
     } else if (activeCategory === 'nurses') {
       if (isAddingNew) {
-        const newNurse: Nurse = {
+        const newItem: Nurse = {
           id: `nurse-${Date.now()}`,
           name: editForm.name,
           qualification: editForm.qualification as NurseQualification,
@@ -427,22 +539,15 @@ const StaffManager: React.FC = () => {
           employmentType: editForm.employmentType,
           skills: editForm.skills as NurseSkills,
         };
-        setNurses(prev => [...prev, newNurse]);
-      } else {
+        setNurses(prev => [newItem, ...prev]);
+      } else if (editingItem) {
         setNurses(prev => prev.map(n => 
-          n.id === editingId ? {
-            ...n,
-            name: editForm.name,
-            qualification: editForm.qualification as NurseQualification,
-            workload: editForm.workload,
-            employmentType: editForm.employmentType,
-            skills: editForm.skills as NurseSkills,
-          } : n
+          n.id === editingItem.id ? { ...n, ...editForm, qualification: editForm.qualification as NurseQualification, skills: editForm.skills as NurseSkills } : n
         ));
       }
     } else {
       if (isAddingNew) {
-        const newORNurse: ORNurse = {
+        const newItem: ORNurse = {
           id: `or-nurse-${Date.now()}`,
           name: editForm.name,
           qualification: editForm.qualification as ORNurseQualification,
@@ -450,24 +555,15 @@ const StaffManager: React.FC = () => {
           employmentType: editForm.employmentType,
           skills: editForm.skills as ORNurseSkills,
         };
-        setORNurses(prev => [...prev, newORNurse]);
-      } else {
+        setORNurses(prev => [newItem, ...prev]);
+      } else if (editingItem) {
         setORNurses(prev => prev.map(n => 
-          n.id === editingId ? {
-            ...n,
-            name: editForm.name,
-            qualification: editForm.qualification as ORNurseQualification,
-            workload: editForm.workload,
-            employmentType: editForm.employmentType,
-            skills: editForm.skills as ORNurseSkills,
-          } : n
+          n.id === editingItem.id ? { ...n, ...editForm, qualification: editForm.qualification as ORNurseQualification, skills: editForm.skills as ORNurseSkills } : n
         ));
       }
     }
     
-    setEditingId(null);
-    setIsAddingNew(false);
-    resetForm();
+    cancelEdit();
   };
 
   const deleteItem = (id: string) => {
@@ -478,12 +574,6 @@ const StaffManager: React.FC = () => {
     } else {
       setORNurses(prev => prev.filter(n => n.id !== id));
     }
-  };
-
-  const startAddNew = () => {
-    setIsAddingNew(true);
-    setEditingId(null);
-    resetForm();
   };
 
   const categories = [
@@ -503,57 +593,81 @@ const StaffManager: React.FC = () => {
     }
   }, [activeCategory, searchQuery, doctors, nurses, orNurses]);
 
-  const toggleRow = (id: string) => {
-    setExpandedRows(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
   const currentCategory = categories.find(c => c.id === activeCategory)!;
 
+  // Stats
+  const getStats = () => {
+    const data = activeCategory === 'doctors' ? doctors : activeCategory === 'nurses' ? nurses : orNurses;
+    const internal = data.filter(d => d.employmentType === 'I').length;
+    const fullTime = data.filter(d => d.workload === 100).length;
+    return { total: data.length, internal, external: data.length - internal, fullTime };
+  };
+  const stats = getStats();
+
   return (
-    <div className="w-full">
+    <div className="w-full max-w-6xl mx-auto">
       {/* Header */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-12 flex-shrink-0">
-        <div className="text-center lg:text-left">
-          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <Users className="w-4 h-4 text-[#10B981]" />
-            <p className="text-[10px] font-black text-[#10B981] tracking-[0.4em] uppercase">STAFF MANAGEMENT</p>
+      <header className="mb-10">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center">
+            <Users className="w-5 h-5 text-[#10B981]" />
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
-            PERSONÁL
-          </h1>
+          <div>
+            <p className="text-[10px] font-bold text-[#10B981] tracking-[0.3em] uppercase">Management</p>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Personál</h1>
+          </div>
         </div>
       </header>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: 'Celkem', value: stats.total, color: currentCategory.color },
+          { label: 'Interních', value: stats.internal, color: '#10B981' },
+          { label: 'Externích', value: stats.external, color: '#F59E0B' },
+          { label: 'Plný úvazek', value: stats.fullTime, color: '#3B82F6' },
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]"
+          >
+            <p className="text-xs text-white/40 mb-1">{stat.label}</p>
+            <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
+          </motion.div>
+        ))}
+      </div>
+
       {/* Category Tabs */}
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="flex flex-wrap gap-2 mb-6">
         {categories.map(cat => {
           const Icon = cat.icon;
           const isActive = activeCategory === cat.id;
           return (
             <motion.button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`px-5 py-3 rounded-xl border flex items-center gap-3 font-semibold transition-all ${
+              onClick={() => { setActiveCategory(cat.id); cancelEdit(); }}
+              className={`px-5 py-3 rounded-xl border flex items-center gap-3 font-medium transition-all ${
                 isActive 
-                  ? 'bg-white/10 border-white/20' 
-                  : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]'
+                  ? 'bg-white/[0.08] border-white/[0.15]' 
+                  : 'bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.04] hover:border-white/[0.08]'
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Icon className="w-5 h-5" style={{ color: cat.color }} />
+              <Icon 
+                className="w-5 h-5 transition-colors" 
+                style={{ color: isActive ? cat.color : 'rgba(255,255,255,0.4)' }} 
+              />
               <span className={isActive ? 'text-white' : 'text-white/60'}>{cat.label}</span>
               <span 
-                className="px-2 py-0.5 rounded-full text-xs font-bold"
-                style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                className="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                style={{ 
+                  backgroundColor: isActive ? `${cat.color}20` : 'rgba(255,255,255,0.05)',
+                  color: isActive ? cat.color : 'rgba(255,255,255,0.4)'
+                }}
               >
                 {cat.count}
               </span>
@@ -562,83 +676,95 @@ const StaffManager: React.FC = () => {
         })}
       </div>
 
-      {/* Search and Add Button */}
-      <div className="mb-6 flex flex-wrap gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
+      {/* Search & Add */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
           <input
             type="text"
             placeholder="Hledat podle jména..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+            className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/[0.15] focus:bg-white/[0.05] transition-all"
           />
         </div>
         <motion.button
           onClick={startAddNew}
-          className="px-5 py-3 rounded-xl bg-[#10B981]/20 border border-[#10B981]/30 text-[#10B981] font-semibold flex items-center gap-2 hover:bg-[#10B981]/30 transition-all"
-          whileHover={{ scale: 1.02 }}
+          className="px-6 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all"
+          style={{ 
+            backgroundColor: `${currentCategory.color}15`,
+            border: `1px solid ${currentCategory.color}30`,
+            color: currentCategory.color
+          }}
+          whileHover={{ scale: 1.02, backgroundColor: `${currentCategory.color}25` }}
           whileTap={{ scale: 0.98 }}
         >
           <Plus className="w-5 h-5" />
-          Pridat {activeCategory === 'doctors' ? 'lekare' : activeCategory === 'nurses' ? 'sestru' : 'salovou sestru'}
+          Přidat
         </motion.button>
       </div>
 
       {/* Add/Edit Form */}
       <AnimatePresence>
-        {(isAddingNew || editingId) && (
+        {(isAddingNew || editingItem) && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             className="mb-6 overflow-hidden"
           >
-            <div className="p-6 rounded-2xl border border-[#10B981]/30 bg-[#10B981]/5">
-              <h3 className="text-lg font-bold text-white mb-4">
-                {isAddingNew ? 'Pridat noveho zamestnance' : 'Upravit zamestnance'}
+            <div 
+              className="p-6 rounded-2xl border"
+              style={{ 
+                backgroundColor: `${currentCategory.color}08`,
+                borderColor: `${currentCategory.color}25`
+              }}
+            >
+              <h3 className="text-lg font-semibold text-white mb-5">
+                {isAddingNew ? 'Přidat nového zaměstnance' : 'Upravit zaměstnance'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
                 {/* Name */}
-                <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Jmeno</label>
+                <div className="lg:col-span-2">
+                  <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Jméno</label>
                   <input
                     type="text"
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
-                    placeholder="Cele jmeno"
+                    className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-white/[0.2] transition-all"
+                    placeholder="Celé jméno"
                   />
                 </div>
                 
                 {/* Qualification */}
                 <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Kvalifikace</label>
+                  <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Kvalifikace</label>
                   <select
                     value={editForm.qualification}
                     onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                    className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.05] text-white focus:outline-none focus:border-white/[0.2] transition-all"
                   >
                     {activeCategory === 'doctors' ? (
                       <>
                         <option value="L3">L3 - Atestace</option>
-                        <option value="L2">L2 - Pokrocily</option>
-                        <option value="L1">L1 - Zakladni</option>
+                        <option value="L2">L2 - Pokročilý</option>
+                        <option value="L1">L1 - Základní</option>
                         <option value="A">A - Absolvent</option>
-                        <option value="S">S - Stazista</option>
+                        <option value="S">S - Stážista</option>
                       </>
                     ) : activeCategory === 'nurses' ? (
                       <>
-                        <option value="K">K - Plne kvalifikovana</option>
+                        <option value="K">K - Kvalifikovaná</option>
                         <option value="D">D - Pod dohledem</option>
                         <option value="A">A - Absolventka</option>
-                        <option value="S">S - Stazistka</option>
+                        <option value="S">S - Stážistka</option>
                       </>
                     ) : (
                       <>
-                        <option value="K">K - Plne kvalifikovana</option>
+                        <option value="K">K - Kvalifikovaná</option>
                         <option value="A">A - Absolventka</option>
-                        <option value="S">S - Stazistka</option>
+                        <option value="S">S - Stážistka</option>
                       </>
                     )}
                   </select>
@@ -646,7 +772,7 @@ const StaffManager: React.FC = () => {
                 
                 {/* Workload */}
                 <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Uvazek (%)</label>
+                  <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Úvazek (%)</label>
                   <input
                     type="number"
                     min="10"
@@ -654,39 +780,56 @@ const StaffManager: React.FC = () => {
                     step="10"
                     value={editForm.workload}
                     onChange={(e) => setEditForm({ ...editForm, workload: parseInt(e.target.value) || 100 })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                    className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.05] text-white focus:outline-none focus:border-white/[0.2] transition-all"
                   />
                 </div>
-                
-                {/* Employment Type */}
-                <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Typ</label>
-                  <select
-                    value={editForm.employmentType}
-                    onChange={(e) => setEditForm({ ...editForm, employmentType: e.target.value as EmploymentType })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
-                  >
-                    <option value="I">Interni</option>
-                    <option value="E">Externi</option>
-                  </select>
+              </div>
+
+              {/* Employment Type */}
+              <div className="mb-5">
+                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Typ zaměstnance</label>
+                <div className="flex gap-3">
+                  {[
+                    { value: 'I', label: 'Interní', color: '#10B981' },
+                    { value: 'E', label: 'Externí', color: '#F59E0B' },
+                  ].map(type => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, employmentType: type.value as EmploymentType })}
+                      className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        editForm.employmentType === type.value
+                          ? ''
+                          : 'bg-white/[0.03] border border-white/[0.08] text-white/50 hover:bg-white/[0.05]'
+                      }`}
+                      style={editForm.employmentType === type.value ? {
+                        backgroundColor: `${type.color}15`,
+                        border: `1px solid ${type.color}40`,
+                        color: type.color
+                      } : {}}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
                 </div>
               </div>
               
               {/* Skills */}
-              <div className="mb-4">
-                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Specializace</label>
+              <div className="mb-6">
+                <label className="block text-xs text-white/50 mb-3 uppercase tracking-wider">Specializace</label>
                 <div className="flex flex-wrap gap-2">
                   {activeCategory === 'or_nurses' ? (
-                    <>
-                      {[
-                        { key: 'surgery', label: 'CHI - Chirurgie' },
-                        { key: 'trauma', label: 'TRA - Traumatologie' },
-                        { key: 'ortho', label: 'ORT - Ortopedie' },
-                        { key: 'gyneco', label: 'GYN - Gynekologie' },
-                        { key: 'minor', label: 'MO - Male obory' },
-                        { key: 'davinci', label: 'DaV - DaVinci' },
-                        { key: 'neuro', label: 'NCH - Neurochirurgie' },
-                      ].map(skill => (
+                    [
+                      { key: 'surgery', label: 'Chirurgie', color: '#EF4444' },
+                      { key: 'trauma', label: 'Traumatologie', color: '#F59E0B' },
+                      { key: 'ortho', label: 'Ortopedie', color: '#10B981' },
+                      { key: 'gyneco', label: 'Gynekologie', color: '#EC4899' },
+                      { key: 'minor', label: 'Malé obory', color: '#8B5CF6' },
+                      { key: 'davinci', label: 'DaVinci', color: '#3B82F6' },
+                      { key: 'neuro', label: 'Neurochirurgie', color: '#06B6D4' },
+                    ].map(skill => {
+                      const isActive = (editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills];
+                      return (
                         <button
                           key={skill.key}
                           type="button"
@@ -694,27 +837,33 @@ const StaffManager: React.FC = () => {
                             ...editForm,
                             skills: {
                               ...(editForm.skills as ORNurseSkills),
-                              [skill.key]: !(editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills],
+                              [skill.key]: !isActive,
                             },
                           })}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                            (editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills]
-                              ? 'bg-[#10B981]/30 border border-[#10B981]/50 text-[#10B981]'
-                              : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
-                          }`}
+                          className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
+                          style={isActive ? {
+                            backgroundColor: `${skill.color}15`,
+                            border: `1px solid ${skill.color}40`,
+                            color: skill.color
+                          } : {
+                            backgroundColor: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'rgba(255,255,255,0.4)'
+                          }}
                         >
                           {skill.label}
                         </button>
-                      ))}
-                    </>
+                      );
+                    })
                   ) : (
-                    <>
-                      {[
-                        { key: 'aro', label: 'ARO - ARO luzka' },
-                        { key: 'jip', label: 'JIP - JIP' },
-                        { key: 'emergency', label: 'UP - Urgentni prijem' },
-                        { key: 'or', label: 'OS - Operacni saly' },
-                      ].map(skill => (
+                    [
+                      { key: 'aro', label: 'ARO lůžka', color: '#EF4444' },
+                      { key: 'jip', label: 'JIP', color: '#F59E0B' },
+                      { key: 'emergency', label: 'Urgentní příjem', color: '#8B5CF6' },
+                      { key: 'or', label: 'Operační sály', color: '#3B82F6' },
+                    ].map(skill => {
+                      const isActive = (editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)];
+                      return (
                         <button
                           key={skill.key}
                           type="button"
@@ -722,19 +871,24 @@ const StaffManager: React.FC = () => {
                             ...editForm,
                             skills: {
                               ...(editForm.skills as DoctorSkills | NurseSkills),
-                              [skill.key]: !(editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)],
+                              [skill.key]: !isActive,
                             },
                           })}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                            (editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)]
-                              ? 'bg-[#10B981]/30 border border-[#10B981]/50 text-[#10B981]'
-                              : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
-                          }`}
+                          className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
+                          style={isActive ? {
+                            backgroundColor: `${skill.color}15`,
+                            border: `1px solid ${skill.color}40`,
+                            color: skill.color
+                          } : {
+                            backgroundColor: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'rgba(255,255,255,0.4)'
+                          }}
                         >
                           {skill.label}
                         </button>
-                      ))}
-                    </>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -744,21 +898,25 @@ const StaffManager: React.FC = () => {
                 <motion.button
                   onClick={saveEdit}
                   disabled={!editForm.name.trim()}
-                  className="px-5 py-2 rounded-lg bg-[#10B981] text-white font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#10B981]/80 transition-all"
+                  className="px-6 py-3 rounded-xl font-semibold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  style={{ 
+                    backgroundColor: currentCategory.color,
+                    color: '#000'
+                  }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <Check className="w-4 h-4" />
-                  {isAddingNew ? 'Pridat' : 'Ulozit'}
+                  {isAddingNew ? 'Přidat' : 'Uložit'}
                 </motion.button>
                 <motion.button
-                  onClick={cancelEditing}
-                  className="px-5 py-2 rounded-lg bg-white/10 text-white font-semibold flex items-center gap-2 hover:bg-white/20 transition-all"
+                  onClick={cancelEdit}
+                  className="px-6 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white/70 font-semibold flex items-center gap-2 hover:bg-white/[0.08] transition-all"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <X className="w-4 h-4" />
-                  Zrusit
+                  Zrušit
                 </motion.button>
               </div>
             </div>
@@ -766,231 +924,35 @@ const StaffManager: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Legend */}
-      <div className="mb-6 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
-        <div className="flex flex-wrap gap-6 text-xs">
-          <div>
-            <p className="text-white/40 mb-2 font-semibold uppercase tracking-wider">Kvalifikace {activeCategory === 'doctors' ? 'lékaři' : 'sestry'}:</p>
-            <div className="flex flex-wrap gap-2">
-              {activeCategory === 'doctors' ? (
-                <>
-                  <span className="px-2 py-1 rounded bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40">L3 = Atestace</span>
-                  <span className="px-2 py-1 rounded bg-[#3B82F6]/20 text-[#3B82F6] border border-[#3B82F6]/40">L2 = Pokročilý</span>
-                  <span className="px-2 py-1 rounded bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40">L1 = Základní</span>
-                  <span className="px-2 py-1 rounded bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40">A = Absolvent</span>
-                  <span className="px-2 py-1 rounded bg-[#6B7280]/20 text-[#6B7280] border border-[#6B7280]/40">S = Stážista</span>
-                </>
-              ) : activeCategory === 'nurses' ? (
-                <>
-                  <span className="px-2 py-1 rounded bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40">K = Plně kvalifikována</span>
-                  <span className="px-2 py-1 rounded bg-[#3B82F6]/20 text-[#3B82F6] border border-[#3B82F6]/40">D = Pod dohledem</span>
-                  <span className="px-2 py-1 rounded bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40">A = Absolventka</span>
-                  <span className="px-2 py-1 rounded bg-[#6B7280]/20 text-[#6B7280] border border-[#6B7280]/40">S = Stážistka</span>
-                </>
-              ) : (
-                <>
-                  <span className="px-2 py-1 rounded bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40">K = Plně kvalifikována</span>
-                  <span className="px-2 py-1 rounded bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40">A = Absolventka</span>
-                  <span className="px-2 py-1 rounded bg-[#6B7280]/20 text-[#6B7280] border border-[#6B7280]/40">S = Stážistka</span>
-                </>
-              )}
-            </div>
-          </div>
-          <div>
-            <p className="text-white/40 mb-2 font-semibold uppercase tracking-wider">Typ úvazku:</p>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 rounded bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40 flex items-center gap-1">
-                <span className="w-4 h-4 rounded-full bg-[#10B981]/30 flex items-center justify-center text-[10px] font-bold">I</span>
-                Interní
-              </span>
-              <span className="px-2 py-1 rounded bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 flex items-center gap-1">
-                <span className="w-4 h-4 rounded-full bg-[#F59E0B]/30 flex items-center justify-center text-[10px] font-bold">E</span>
-                Externí
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-white/5">
-          <p className="text-white/40 mb-2 font-semibold uppercase tracking-wider text-xs">Specializace:</p>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {activeCategory === 'or_nurses' ? (
-              <>
-                <span className="px-2 py-1 rounded bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/40">CHI = Chirurgie</span>
-                <span className="px-2 py-1 rounded bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40">TRA = Traumatologie</span>
-                <span className="px-2 py-1 rounded bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40">ORT = Ortopedie</span>
-                <span className="px-2 py-1 rounded bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40">GYN = Gynekologie</span>
-                <span className="px-2 py-1 rounded bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40">MO = Malé obory</span>
-                <span className="px-2 py-1 rounded bg-[#3B82F6]/20 text-[#3B82F6] border border-[#3B82F6]/40">DaV = DaVinci</span>
-                <span className="px-2 py-1 rounded bg-[#06B6D4]/20 text-[#06B6D4] border border-[#06B6D4]/40">NCH = Neurochirurgie</span>
-              </>
-            ) : (
-              <>
-                <span className="px-2 py-1 rounded bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/40">ARO = ARO lůžka</span>
-                <span className="px-2 py-1 rounded bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40">JIP = JIP</span>
-                <span className="px-2 py-1 rounded bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40">UP = Urgentní příjem</span>
-                <span className="px-2 py-1 rounded bg-[#3B82F6]/20 text-[#3B82F6] border border-[#3B82F6]/40">OS = Operační sály</span>
-              </>
-            )}
-          </div>
-        </div>
+      {/* Staff Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AnimatePresence mode="popLayout">
+          {filteredData.map((item) => (
+            <StaffCard
+              key={item.id}
+              item={item}
+              category={activeCategory}
+              onEdit={() => startEditing(item)}
+              onDelete={() => deleteItem(item.id)}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
-      {/* Staff Table */}
-      <div className="rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-white/[0.02] text-xs font-bold text-white/40 uppercase tracking-wider">
-          <div className="col-span-4">Jméno</div>
-          <div className="col-span-1 text-center">Kvalif.</div>
-          <div className="col-span-1 text-center">Úvazek</div>
-          <div className="col-span-4">Specializace</div>
-          <div className="col-span-1 text-center">Typ</div>
-          <div className="col-span-1"></div>
-        </div>
-
-        {/* Table Body */}
-        <div className="divide-y divide-white/5">
-          <AnimatePresence>
-            {filteredData.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: index * 0.02 }}
-                className="hover:bg-white/[0.02] transition-colors"
-              >
-                <div 
-                  className="grid grid-cols-12 gap-4 p-4 items-center cursor-pointer"
-                  onClick={() => toggleRow(item.id)}
-                >
-                  <div className="col-span-4 font-medium text-white truncate">{item.name}</div>
-                  <div className="col-span-1 flex justify-center">
-                    <QualificationBadge qual={item.qualification} category={activeCategory} />
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <WorkloadBadge workload={item.workload} />
-                  </div>
-                  <div className="col-span-4">
-                    {activeCategory === 'or_nurses' ? (
-                      <ORSkillIcons skills={(item as ORNurse).skills} />
-                    ) : (
-                      <SkillIcons skills={(item as Doctor | Nurse).skills} category={activeCategory as 'doctors' | 'nurses'} />
-                    )}
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <EmploymentBadge type={item.employmentType} />
-                  </div>
-                  <div className="col-span-1 flex justify-center gap-1">
-                    <motion.button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startEditing(item);
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-[#3B82F6] transition-all"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Upravit"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </motion.button>
-                    <motion.button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm('Opravdu chcete smazat tohoto zamestnance?')) {
-                          deleteItem(item.id);
-                        }
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-[#EF4444] transition-all"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Smazat"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
-                
-                {/* Expanded Details */}
-                <AnimatePresence>
-                  {expandedRows.has(item.id) && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 pb-4 pt-2 bg-white/[0.02] border-t border-white/5">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">ID zaměstnance</p>
-                            <p className="text-white font-mono">{item.id.toUpperCase()}</p>
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">Kvalifikace</p>
-                            <p className="text-white">
-                              {activeCategory === 'doctors' && (
-                                item.qualification === 'L3' ? 'Atestovaný lékař' :
-                                item.qualification === 'L2' ? 'Pokročilý lékař' :
-                                item.qualification === 'L1' ? 'Základní kvalifikace' :
-                                item.qualification === 'A' ? 'Absolvent' : 'Stážista'
-                              )}
-                              {activeCategory === 'nurses' && (
-                                item.qualification === 'K' ? 'Plně kvalifikovaná' :
-                                item.qualification === 'D' ? 'Pracuje pod dohledem' :
-                                item.qualification === 'A' ? 'Absolventka' : 'Stážistka'
-                              )}
-                              {activeCategory === 'or_nurses' && (
-                                item.qualification === 'K' ? 'Plně kvalifikovaná' :
-                                item.qualification === 'A' ? 'Absolventka' : 'Stážistka'
-                              )}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">Pracovní úvazek</p>
-                            <p className="text-white">{item.workload}% ({Math.round(item.workload * 0.4)} hodin/týden)</p>
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-xs mb-1">Typ zaměstnance</p>
-                            <p className="text-white">{item.employmentType === 'I' ? 'Kmenový interní' : 'Externí spolupracovník'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Summary */}
-      <div className="mt-6 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
-        <div className="flex flex-wrap gap-6 text-sm">
-          <div>
-            <p className="text-white/40 text-xs mb-1">Celkem zobrazeno</p>
-            <p className="text-white font-bold text-lg">{filteredData.length} zaměstnanců</p>
+      {/* Empty State */}
+      {filteredData.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-16"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
+            <Search className="w-7 h-7 text-white/20" />
           </div>
-          <div>
-            <p className="text-white/40 text-xs mb-1">Interních</p>
-            <p className="text-[#10B981] font-bold text-lg">
-              {filteredData.filter(i => i.employmentType === 'I').length}
-            </p>
-          </div>
-          <div>
-            <p className="text-white/40 text-xs mb-1">Externích</p>
-            <p className="text-[#F59E0B] font-bold text-lg">
-              {filteredData.filter(i => i.employmentType === 'E').length}
-            </p>
-          </div>
-          <div>
-            <p className="text-white/40 text-xs mb-1">Plný úvazek (100%)</p>
-            <p className="text-white font-bold text-lg">
-              {filteredData.filter(i => i.workload === 100).length}
-            </p>
-          </div>
-        </div>
-      </div>
+          <p className="text-white/40">Žádní zaměstnanci nenalezeni</p>
+          <p className="text-white/20 text-sm mt-1">Zkuste změnit vyhledávací dotaz</p>
+        </motion.div>
+      )}
     </div>
   );
 };
