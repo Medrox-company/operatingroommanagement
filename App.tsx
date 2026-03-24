@@ -5,6 +5,7 @@ import TopBar from './components/TopBar';
 import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
 import PlaceholderView from './components/PlaceholderView';
+import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -292,12 +293,10 @@ const AppContent: React.FC = () => {
               <motion.div key="staff"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="w-full h-full">
-                <PlaceholderView
-                  icon={User}
-                  title="Personál"
-                  description="Přehled personálu a přiřazení k sálům bude dostupný v nadcházející aktualizaci."
-                />
+                className="w-full h-full overflow-y-auto hide-scrollbar">
+                <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
+                  <StaffManager />
+                </div>
               </motion.div>
             )}
 

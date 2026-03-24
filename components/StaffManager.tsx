@@ -324,10 +324,167 @@ const StaffManager: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
   
-  const [doctors] = useState<Doctor[]>(generateDoctors);
-  const [nurses] = useState<Nurse[]>(generateNurses);
-  const [orNurses] = useState<ORNurse[]>(generateORNurses);
+  const [doctors, setDoctors] = useState<Doctor[]>(generateDoctors);
+  const [nurses, setNurses] = useState<Nurse[]>(generateNurses);
+  const [orNurses, setORNurses] = useState<ORNurse[]>(generateORNurses);
+  
+  // Form state for editing/adding
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    qualification: string;
+    workload: number;
+    employmentType: EmploymentType;
+    skills: DoctorSkills | NurseSkills | ORNurseSkills;
+  }>({
+    name: '',
+    qualification: '',
+    workload: 100,
+    employmentType: 'I',
+    skills: { aro: false, jip: false, emergency: false, or: false },
+  });
+
+  const resetForm = () => {
+    if (activeCategory === 'doctors') {
+      setEditForm({
+        name: '',
+        qualification: 'L1',
+        workload: 100,
+        employmentType: 'I',
+        skills: { aro: false, jip: false, emergency: false, or: false },
+      });
+    } else if (activeCategory === 'nurses') {
+      setEditForm({
+        name: '',
+        qualification: 'S',
+        workload: 100,
+        employmentType: 'I',
+        skills: { aro: false, jip: false, emergency: false, or: false },
+      });
+    } else {
+      setEditForm({
+        name: '',
+        qualification: 'S',
+        workload: 100,
+        employmentType: 'I',
+        skills: { surgery: false, trauma: false, ortho: false, gyneco: false, minor: false, davinci: false, neuro: false },
+      });
+    }
+  };
+
+  const startEditing = (item: Doctor | Nurse | ORNurse) => {
+    setEditingId(item.id);
+    setEditForm({
+      name: item.name,
+      qualification: item.qualification,
+      workload: item.workload,
+      employmentType: item.employmentType,
+      skills: { ...item.skills },
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setIsAddingNew(false);
+    resetForm();
+  };
+
+  const saveEdit = () => {
+    if (!editForm.name.trim()) return;
+    
+    if (activeCategory === 'doctors') {
+      if (isAddingNew) {
+        const newDoctor: Doctor = {
+          id: `doc-${Date.now()}`,
+          name: editForm.name,
+          qualification: editForm.qualification as DoctorQualification,
+          workload: editForm.workload,
+          employmentType: editForm.employmentType,
+          skills: editForm.skills as DoctorSkills,
+        };
+        setDoctors(prev => [...prev, newDoctor]);
+      } else {
+        setDoctors(prev => prev.map(d => 
+          d.id === editingId ? {
+            ...d,
+            name: editForm.name,
+            qualification: editForm.qualification as DoctorQualification,
+            workload: editForm.workload,
+            employmentType: editForm.employmentType,
+            skills: editForm.skills as DoctorSkills,
+          } : d
+        ));
+      }
+    } else if (activeCategory === 'nurses') {
+      if (isAddingNew) {
+        const newNurse: Nurse = {
+          id: `nurse-${Date.now()}`,
+          name: editForm.name,
+          qualification: editForm.qualification as NurseQualification,
+          workload: editForm.workload,
+          employmentType: editForm.employmentType,
+          skills: editForm.skills as NurseSkills,
+        };
+        setNurses(prev => [...prev, newNurse]);
+      } else {
+        setNurses(prev => prev.map(n => 
+          n.id === editingId ? {
+            ...n,
+            name: editForm.name,
+            qualification: editForm.qualification as NurseQualification,
+            workload: editForm.workload,
+            employmentType: editForm.employmentType,
+            skills: editForm.skills as NurseSkills,
+          } : n
+        ));
+      }
+    } else {
+      if (isAddingNew) {
+        const newORNurse: ORNurse = {
+          id: `or-nurse-${Date.now()}`,
+          name: editForm.name,
+          qualification: editForm.qualification as ORNurseQualification,
+          workload: editForm.workload,
+          employmentType: editForm.employmentType,
+          skills: editForm.skills as ORNurseSkills,
+        };
+        setORNurses(prev => [...prev, newORNurse]);
+      } else {
+        setORNurses(prev => prev.map(n => 
+          n.id === editingId ? {
+            ...n,
+            name: editForm.name,
+            qualification: editForm.qualification as ORNurseQualification,
+            workload: editForm.workload,
+            employmentType: editForm.employmentType,
+            skills: editForm.skills as ORNurseSkills,
+          } : n
+        ));
+      }
+    }
+    
+    setEditingId(null);
+    setIsAddingNew(false);
+    resetForm();
+  };
+
+  const deleteItem = (id: string) => {
+    if (activeCategory === 'doctors') {
+      setDoctors(prev => prev.filter(d => d.id !== id));
+    } else if (activeCategory === 'nurses') {
+      setNurses(prev => prev.filter(n => n.id !== id));
+    } else {
+      setORNurses(prev => prev.filter(n => n.id !== id));
+    }
+  };
+
+  const startAddNew = () => {
+    setIsAddingNew(true);
+    setEditingId(null);
+    resetForm();
+  };
 
   const categories = [
     { id: 'doctors' as StaffCategory, label: 'Lékaři', icon: Stethoscope, color: '#3B82F6', count: doctors.length },
@@ -367,10 +524,10 @@ const StaffManager: React.FC = () => {
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <Users className="w-4 h-4 text-[#10B981]" />
-            <p className="text-[10px] font-black text-[#10B981] tracking-[0.4em] uppercase">ARO / CARIM STAFF MANAGEMENT</p>
+            <p className="text-[10px] font-black text-[#10B981] tracking-[0.4em] uppercase">STAFF MANAGEMENT</p>
           </div>
           <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
-            PERSONÁL <span className="text-white/20">ARO</span>
+            PERSONÁL
           </h1>
         </div>
       </header>
@@ -405,9 +562,9 @@ const StaffManager: React.FC = () => {
         })}
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
+      {/* Search and Add Button */}
+      <div className="mb-6 flex flex-wrap gap-4 items-center">
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
           <input
             type="text"
@@ -417,7 +574,197 @@ const StaffManager: React.FC = () => {
             className="w-full pl-12 pr-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
           />
         </div>
+        <motion.button
+          onClick={startAddNew}
+          className="px-5 py-3 rounded-xl bg-[#10B981]/20 border border-[#10B981]/30 text-[#10B981] font-semibold flex items-center gap-2 hover:bg-[#10B981]/30 transition-all"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <Plus className="w-5 h-5" />
+          Pridat {activeCategory === 'doctors' ? 'lekare' : activeCategory === 'nurses' ? 'sestru' : 'salovou sestru'}
+        </motion.button>
       </div>
+
+      {/* Add/Edit Form */}
+      <AnimatePresence>
+        {(isAddingNew || editingId) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 overflow-hidden"
+          >
+            <div className="p-6 rounded-2xl border border-[#10B981]/30 bg-[#10B981]/5">
+              <h3 className="text-lg font-bold text-white mb-4">
+                {isAddingNew ? 'Pridat noveho zamestnance' : 'Upravit zamestnance'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Jmeno</label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
+                    placeholder="Cele jmeno"
+                  />
+                </div>
+                
+                {/* Qualification */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Kvalifikace</label>
+                  <select
+                    value={editForm.qualification}
+                    onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                  >
+                    {activeCategory === 'doctors' ? (
+                      <>
+                        <option value="L3">L3 - Atestace</option>
+                        <option value="L2">L2 - Pokrocily</option>
+                        <option value="L1">L1 - Zakladni</option>
+                        <option value="A">A - Absolvent</option>
+                        <option value="S">S - Stazista</option>
+                      </>
+                    ) : activeCategory === 'nurses' ? (
+                      <>
+                        <option value="K">K - Plne kvalifikovana</option>
+                        <option value="D">D - Pod dohledem</option>
+                        <option value="A">A - Absolventka</option>
+                        <option value="S">S - Stazistka</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="K">K - Plne kvalifikovana</option>
+                        <option value="A">A - Absolventka</option>
+                        <option value="S">S - Stazistka</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+                
+                {/* Workload */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Uvazek (%)</label>
+                  <input
+                    type="number"
+                    min="10"
+                    max="100"
+                    step="10"
+                    value={editForm.workload}
+                    onChange={(e) => setEditForm({ ...editForm, workload: parseInt(e.target.value) || 100 })}
+                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                  />
+                </div>
+                
+                {/* Employment Type */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Typ</label>
+                  <select
+                    value={editForm.employmentType}
+                    onChange={(e) => setEditForm({ ...editForm, employmentType: e.target.value as EmploymentType })}
+                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+                  >
+                    <option value="I">Interni</option>
+                    <option value="E">Externi</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Skills */}
+              <div className="mb-4">
+                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Specializace</label>
+                <div className="flex flex-wrap gap-2">
+                  {activeCategory === 'or_nurses' ? (
+                    <>
+                      {[
+                        { key: 'surgery', label: 'CHI - Chirurgie' },
+                        { key: 'trauma', label: 'TRA - Traumatologie' },
+                        { key: 'ortho', label: 'ORT - Ortopedie' },
+                        { key: 'gyneco', label: 'GYN - Gynekologie' },
+                        { key: 'minor', label: 'MO - Male obory' },
+                        { key: 'davinci', label: 'DaV - DaVinci' },
+                        { key: 'neuro', label: 'NCH - Neurochirurgie' },
+                      ].map(skill => (
+                        <button
+                          key={skill.key}
+                          type="button"
+                          onClick={() => setEditForm({
+                            ...editForm,
+                            skills: {
+                              ...(editForm.skills as ORNurseSkills),
+                              [skill.key]: !(editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills],
+                            },
+                          })}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                            (editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills]
+                              ? 'bg-[#10B981]/30 border border-[#10B981]/50 text-[#10B981]'
+                              : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                          }`}
+                        >
+                          {skill.label}
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {[
+                        { key: 'aro', label: 'ARO - ARO luzka' },
+                        { key: 'jip', label: 'JIP - JIP' },
+                        { key: 'emergency', label: 'UP - Urgentni prijem' },
+                        { key: 'or', label: 'OS - Operacni saly' },
+                      ].map(skill => (
+                        <button
+                          key={skill.key}
+                          type="button"
+                          onClick={() => setEditForm({
+                            ...editForm,
+                            skills: {
+                              ...(editForm.skills as DoctorSkills | NurseSkills),
+                              [skill.key]: !(editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)],
+                            },
+                          })}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                            (editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)]
+                              ? 'bg-[#10B981]/30 border border-[#10B981]/50 text-[#10B981]'
+                              : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                          }`}
+                        >
+                          {skill.label}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex gap-3">
+                <motion.button
+                  onClick={saveEdit}
+                  disabled={!editForm.name.trim()}
+                  className="px-5 py-2 rounded-lg bg-[#10B981] text-white font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#10B981]/80 transition-all"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Check className="w-4 h-4" />
+                  {isAddingNew ? 'Pridat' : 'Ulozit'}
+                </motion.button>
+                <motion.button
+                  onClick={cancelEditing}
+                  className="px-5 py-2 rounded-lg bg-white/10 text-white font-semibold flex items-center gap-2 hover:bg-white/20 transition-all"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <X className="w-4 h-4" />
+                  Zrusit
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Legend */}
       <div className="mb-6 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
@@ -533,13 +880,33 @@ const StaffManager: React.FC = () => {
                   <div className="col-span-1 flex justify-center">
                     <EmploymentBadge type={item.employmentType} />
                   </div>
-                  <div className="col-span-1 flex justify-center">
-                    <motion.div
-                      animate={{ rotate: expandedRows.has(item.id) ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
+                  <div className="col-span-1 flex justify-center gap-1">
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditing(item);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-[#3B82F6] transition-all"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="Upravit"
                     >
-                      <ChevronDown className="w-4 h-4 text-white/30" />
-                    </motion.div>
+                      <Edit2 className="w-4 h-4" />
+                    </motion.button>
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Opravdu chcete smazat tohoto zamestnance?')) {
+                          deleteItem(item.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-[#EF4444] transition-all"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="Smazat"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </motion.button>
                   </div>
                 </div>
                 
