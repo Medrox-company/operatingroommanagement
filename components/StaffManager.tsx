@@ -532,16 +532,15 @@ const StaffManager: React.FC = () => {
         </div>
       </header>
 
-      {/* Category Boxes - 3 menší čtvercové boxy */}
+      {/* Category Boxes - 3 kompaktní boxy bez ikon */}
       <div className="grid grid-cols-3 gap-3 mb-8">
         {categories.map(cat => {
-          const Icon = cat.icon;
           const isActive = activeCategory === cat.id;
           return (
             <motion.button
               key={cat.id}
               onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); setEditingId(null); setIsAddingNew(false); }}
-              className={`relative flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl border transition-all overflow-hidden ${
+              className={`relative flex flex-col items-center justify-center gap-1 py-3 px-3 rounded-xl border transition-all overflow-hidden ${
                 isActive
                   ? 'border-white/20 bg-white/10'
                   : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
@@ -556,11 +555,7 @@ const StaffManager: React.FC = () => {
               {isActive && (
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: cat.color }} />
               )}
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: `${cat.color}20`, border: `1px solid ${cat.color}40` }}>
-                <Icon className="w-5 h-5" style={{ color: cat.color }} />
-              </div>
-              <span className={`text-xs font-bold leading-tight text-center ${isActive ? 'text-white' : 'text-white/60'}`}>
+              <span className={`text-base font-bold leading-tight text-center ${isActive ? 'text-white' : 'text-white/60'}`}>
                 {cat.label}
               </span>
               <span className="px-2 py-0.5 rounded-full text-xs font-bold"
@@ -595,184 +590,226 @@ const StaffManager: React.FC = () => {
         </motion.button>
       </div>
 
-      {/* Add/Edit Form */}
+      {/* Add/Edit Popup Modal */}
       <AnimatePresence>
         {(isAddingNew || editingId) && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-6 overflow-hidden"
-          >
-            <div className="p-6 rounded-2xl border border-[#10B981]/30 bg-[#10B981]/5">
-              <h3 className="text-lg font-bold text-white mb-4">
-                {isAddingNew ? 'Pridat noveho zamestnance' : 'Upravit zamestnance'}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                {/* Name */}
-                <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Jmeno</label>
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-white/20"
-                    placeholder="Cele jmeno"
-                  />
-                </div>
-                
-                {/* Qualification */}
-                <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Kvalifikace</label>
-                  <select
-                    value={editForm.qualification}
-                    onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+              onClick={cancelEditing}
+            />
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg mx-4"
+            >
+              <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#5B65DC]/10">
+                  <h3 className="text-lg font-bold text-white">
+                    {isAddingNew ? 'Pridat noveho zamestnance' : 'Upravit zamestnance'}
+                  </h3>
+                  <motion.button
+                    onClick={cancelEditing}
+                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-all"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
-                    {activeCategory === 'doctors' ? (
-                      <>
-                        <option value="L3">L3 - Atestace</option>
-                        <option value="L2">L2 - Pokrocily</option>
-                        <option value="L1">L1 - Zakladni</option>
-                        <option value="A">A - Absolvent</option>
-                        <option value="S">S - Stazista</option>
-                      </>
-                    ) : activeCategory === 'nurses' ? (
-                      <>
-                        <option value="K">K - Plne kvalifikovana</option>
-                        <option value="D">D - Pod dohledem</option>
-                        <option value="A">A - Absolventka</option>
-                        <option value="S">S - Stazistka</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="K">K - Plne kvalifikovana</option>
-                        <option value="A">A - Absolventka</option>
-                        <option value="S">S - Stazistka</option>
-                      </>
-                    )}
-                  </select>
+                    <X className="w-5 h-5" />
+                  </motion.button>
                 </div>
-                
-                {/* Workload */}
-                <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Uvazek (%)</label>
-                  <input
-                    type="number"
-                    min="10"
-                    max="100"
-                    step="10"
-                    value={editForm.workload}
-                    onChange={(e) => setEditForm({ ...editForm, workload: parseInt(e.target.value) || 100 })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
-                  />
+
+                {/* Modal Body */}
+                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Jmeno</label>
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-[#5B65DC]/50"
+                      placeholder="Cele jmeno"
+                      autoFocus
+                    />
+                  </div>
+                  
+                  {/* Qualification & Workload */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Kvalifikace</label>
+                      <select
+                        value={editForm.qualification}
+                        onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-[#5B65DC]/50"
+                      >
+                        {activeCategory === 'doctors' ? (
+                          <>
+                            <option value="L3">L3 - Atestace</option>
+                            <option value="L2">L2 - Pokrocily</option>
+                            <option value="L1">L1 - Zakladni</option>
+                            <option value="A">A - Absolvent</option>
+                            <option value="S">S - Stazista</option>
+                          </>
+                        ) : activeCategory === 'nurses' ? (
+                          <>
+                            <option value="K">K - Plne kvalifikovana</option>
+                            <option value="D">D - Pod dohledem</option>
+                            <option value="A">A - Absolventka</option>
+                            <option value="S">S - Stazistka</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="K">K - Plne kvalifikovana</option>
+                            <option value="A">A - Absolventka</option>
+                            <option value="S">S - Stazistka</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Uvazek (%)</label>
+                      <input
+                        type="number"
+                        min="10"
+                        max="100"
+                        step="10"
+                        value={editForm.workload}
+                        onChange={(e) => setEditForm({ ...editForm, workload: parseInt(e.target.value) || 100 })}
+                        className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-[#5B65DC]/50"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Employment Type */}
+                  <div>
+                    <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Typ zamestnance</label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, employmentType: 'I' })}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                          editForm.employmentType === 'I'
+                            ? 'bg-[#10B981]/20 border border-[#10B981]/50 text-[#10B981]'
+                            : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                        }`}
+                      >
+                        Interni (I)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, employmentType: 'E' })}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                          editForm.employmentType === 'E'
+                            ? 'bg-[#F59E0B]/20 border border-[#F59E0B]/50 text-[#F59E0B]'
+                            : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                        }`}
+                      >
+                        Externi (E)
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Skills */}
+                  <div>
+                    <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Specializace</label>
+                    <div className="flex flex-wrap gap-2">
+                      {activeCategory === 'or_nurses' ? (
+                        <>
+                          {[
+                            { key: 'surgery', label: 'CHI', full: 'Chirurgie' },
+                            { key: 'trauma', label: 'TRA', full: 'Traumatologie' },
+                            { key: 'ortho', label: 'ORT', full: 'Ortopedie' },
+                            { key: 'gyneco', label: 'GYN', full: 'Gynekologie' },
+                            { key: 'minor', label: 'MO', full: 'Male obory' },
+                            { key: 'davinci', label: 'DaV', full: 'DaVinci' },
+                            { key: 'neuro', label: 'NCH', full: 'Neurochirurgie' },
+                          ].map(skill => (
+                            <button
+                              key={skill.key}
+                              type="button"
+                              onClick={() => setEditForm({
+                                ...editForm,
+                                skills: {
+                                  ...(editForm.skills as ORNurseSkills),
+                                  [skill.key]: !(editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills],
+                                },
+                              })}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                (editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills]
+                                  ? 'bg-[#5B65DC]/30 border border-[#5B65DC]/50 text-[#a0a8ff]'
+                                  : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                              }`}
+                              title={skill.full}
+                            >
+                              {skill.label}
+                            </button>
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          {[
+                            { key: 'aro', label: 'ARO', full: 'ARO luzka' },
+                            { key: 'jip', label: 'JIP', full: 'JIP' },
+                            { key: 'emergency', label: 'UP', full: 'Urgentni prijem' },
+                            { key: 'or', label: 'OS', full: 'Operacni saly' },
+                          ].map(skill => (
+                            <button
+                              key={skill.key}
+                              type="button"
+                              onClick={() => setEditForm({
+                                ...editForm,
+                                skills: {
+                                  ...(editForm.skills as DoctorSkills | NurseSkills),
+                                  [skill.key]: !(editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)],
+                                },
+                              })}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                (editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)]
+                                  ? 'bg-[#5B65DC]/30 border border-[#5B65DC]/50 text-[#a0a8ff]'
+                                  : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
+                              }`}
+                              title={skill.full}
+                            >
+                              {skill.label}
+                            </button>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                
-                {/* Employment Type */}
-                <div>
-                  <label className="block text-xs text-white/50 mb-1 uppercase tracking-wider">Typ</label>
-                  <select
-                    value={editForm.employmentType}
-                    onChange={(e) => setEditForm({ ...editForm, employmentType: e.target.value as EmploymentType })}
-                    className="w-full px-4 py-2 rounded-lg border border-white/10 bg-white/[0.05] text-white focus:outline-none focus:border-white/20"
+
+                {/* Modal Footer */}
+                <div className="flex gap-3 px-6 py-4 border-t border-white/10 bg-white/[0.02]">
+                  <motion.button
+                    onClick={saveEdit}
+                    disabled={!editForm.name.trim()}
+                    className="flex-1 py-3 rounded-lg bg-[#5B65DC] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5B65DC]/80 transition-all"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                   >
-                    <option value="I">Interni</option>
-                    <option value="E">Externi</option>
-                  </select>
+                    <Check className="w-4 h-4" />
+                    {isAddingNew ? 'Pridat' : 'Ulozit zmeny'}
+                  </motion.button>
+                  <motion.button
+                    onClick={cancelEditing}
+                    className="px-6 py-3 rounded-lg bg-white/10 text-white font-semibold hover:bg-white/20 transition-all"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    Zrusit
+                  </motion.button>
                 </div>
               </div>
-              
-              {/* Skills */}
-              <div className="mb-4">
-                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Specializace</label>
-                <div className="flex flex-wrap gap-2">
-                  {activeCategory === 'or_nurses' ? (
-                    <>
-                      {[
-                        { key: 'surgery', label: 'CHI - Chirurgie' },
-                        { key: 'trauma', label: 'TRA - Traumatologie' },
-                        { key: 'ortho', label: 'ORT - Ortopedie' },
-                        { key: 'gyneco', label: 'GYN - Gynekologie' },
-                        { key: 'minor', label: 'MO - Male obory' },
-                        { key: 'davinci', label: 'DaV - DaVinci' },
-                        { key: 'neuro', label: 'NCH - Neurochirurgie' },
-                      ].map(skill => (
-                        <button
-                          key={skill.key}
-                          type="button"
-                          onClick={() => setEditForm({
-                            ...editForm,
-                            skills: {
-                              ...(editForm.skills as ORNurseSkills),
-                              [skill.key]: !(editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills],
-                            },
-                          })}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                            (editForm.skills as ORNurseSkills)[skill.key as keyof ORNurseSkills]
-                              ? 'bg-[#10B981]/30 border border-[#10B981]/50 text-[#10B981]'
-                              : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
-                          }`}
-                        >
-                          {skill.label}
-                        </button>
-                      ))}
-                    </>
-                  ) : (
-                    <>
-                      {[
-                        { key: 'aro', label: 'ARO - ARO luzka' },
-                        { key: 'jip', label: 'JIP - JIP' },
-                        { key: 'emergency', label: 'UP - Urgentni prijem' },
-                        { key: 'or', label: 'OS - Operacni saly' },
-                      ].map(skill => (
-                        <button
-                          key={skill.key}
-                          type="button"
-                          onClick={() => setEditForm({
-                            ...editForm,
-                            skills: {
-                              ...(editForm.skills as DoctorSkills | NurseSkills),
-                              [skill.key]: !(editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)],
-                            },
-                          })}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                            (editForm.skills as DoctorSkills | NurseSkills)[skill.key as keyof (DoctorSkills | NurseSkills)]
-                              ? 'bg-[#10B981]/30 border border-[#10B981]/50 text-[#10B981]'
-                              : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
-                          }`}
-                        >
-                          {skill.label}
-                        </button>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              {/* Actions */}
-              <div className="flex gap-3">
-                <motion.button
-                  onClick={saveEdit}
-                  disabled={!editForm.name.trim()}
-                  className="px-5 py-2 rounded-lg bg-[#10B981] text-white font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#10B981]/80 transition-all"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Check className="w-4 h-4" />
-                  {isAddingNew ? 'Pridat' : 'Ulozit'}
-                </motion.button>
-                <motion.button
-                  onClick={cancelEditing}
-                  className="px-5 py-2 rounded-lg bg-white/10 text-white font-semibold flex items-center gap-2 hover:bg-white/20 transition-all"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <X className="w-4 h-4" />
-                  Zrusit
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
