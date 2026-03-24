@@ -338,93 +338,93 @@ const StaffManager: React.FC = () => {
         </h1>
       </header>
 
-      {/* Category Cards - RoomCard style but smaller */}
-      <div className="grid grid-cols-3 gap-4 mb-10 max-w-2xl">
+      {/* Centered Search */}
+      <div className="flex justify-center mb-10">
+        <div className="relative w-full max-w-2xl">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#00D8C1]" />
+          <input
+            type="text"
+            placeholder="Hledat podle jména, kvalifikace, typu, specializace..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-[#00D8C1]/50 focus:bg-white/[0.05] transition-all text-sm text-center"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Category Cards - Active/Ready style */}
+      <div className="grid grid-cols-3 gap-3 mb-10">
         {categories.map(cat => {
           const isActive = activeCategory === cat.id;
           const themeColor = cat.id === 'doctors' ? '#3B82F6' : cat.id === 'nurses' ? '#EC4899' : '#10B981';
+          const Icon = cat.id === 'doctors' ? Stethoscope : cat.id === 'nurses' ? Heart : Users;
+          
           return (
             <motion.button
               key={cat.id}
-              onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); setEditingId(null); setIsAddingNew(false); }}
-              className={`relative group cursor-pointer h-[140px] rounded-[1.5rem] border overflow-hidden transition-all duration-300 ${
+              onClick={() => { setActiveCategory(cat.id); setEditingId(null); setIsAddingNew(false); }}
+              className={`relative group rounded-lg overflow-hidden transition-all duration-300 flex items-center gap-4 px-5 py-4 border ${
                 isActive
-                  ? 'bg-white/[0.06] border-white/20 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10'
+                  ? 'bg-white/[0.06] border-white/15 shadow-[0_10px_25px_-8px_rgba(0,0,0,0.4)]'
+                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
               }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
             >
-              {/* Glow effect */}
+              {/* Glow */}
               <div
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full blur-[50px] pointer-events-none transition-opacity duration-500"
-                style={{ backgroundColor: themeColor, opacity: isActive ? 0.25 : 0.1 }}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(600px at 50% 0%, ${themeColor}08, transparent 80%)`
+                }}
               />
 
-              {/* Content */}
-              <div className="relative h-full flex flex-col items-center justify-center p-4">
-                {/* Mini progress circle */}
-                <div className="relative mb-2">
-                  <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                    <circle cx="28" cy="28" r="22" fill="none" stroke="white" strokeWidth="1.5" className="opacity-[0.05]" />
-                    <circle
-                      cx="28" cy="28" r="22" fill="none"
-                      stroke={themeColor}
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 22}`}
-                      strokeDashoffset={`${2 * Math.PI * 22 * (1 - (isActive ? 1 : 0.7))}`}
-                      style={{ filter: `drop-shadow(0 0 4px ${themeColor}80)`, transition: 'stroke-dashoffset 0.5s ease' }}
-                    />
-                  </svg>
-                  <span
-                    className="absolute inset-0 flex items-center justify-center text-lg font-black"
-                    style={{ color: isActive ? 'white' : 'rgba(255,255,255,0.6)' }}
-                  >
-                    {cat.count}
-                  </span>
-                </div>
-
-                {/* Label */}
-                <p
-                  className="text-[10px] font-black tracking-[0.15em] uppercase transition-colors"
-                  style={{ color: isActive ? themeColor : 'rgba(255,255,255,0.4)' }}
+              {/* Icon */}
+              <div className="relative shrink-0">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{
+                    backgroundColor: `${themeColor}15`,
+                    border: `1px solid ${themeColor}30`
+                  }}
                 >
-                  {cat.label}
-                </p>
+                  <Icon className="w-6 h-6" style={{ color: themeColor }} />
+                </div>
               </div>
 
-              {/* Active indicator line */}
-              {isActive && (
-                <motion.div
-                  layoutId="activeCategoryIndicator"
-                  className="absolute bottom-0 left-4 right-4 h-[2px] rounded-full"
-                  style={{ backgroundColor: themeColor }}
-                />
-              )}
+              {/* Label + Count */}
+              <div className="relative flex-1 text-left">
+                <p className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-1">
+                  {cat.label}
+                </p>
+                <p
+                  className="text-3xl font-black"
+                  style={{ color: isActive ? 'white' : 'rgba(255,255,255,0.7)' }}
+                >
+                  {cat.count}
+                </p>
+              </div>
             </motion.button>
           );
         })}
       </div>
 
-      {/* Search & Add - centered clean design */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-          <input
-            type="text"
-            placeholder="Hledat podle jména..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-white/10 focus:bg-white/[0.05] transition-all text-sm"
-          />
-        </div>
+      {/* Add Staff Button */}
+      <div className="flex justify-center mb-8">
         <button
           onClick={startAddNew}
-          className="px-5 py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white font-medium flex items-center gap-2 hover:bg-white/[0.08] transition-all text-sm"
+          className="px-6 py-3 rounded-lg bg-[#00D8C1]/10 border border-[#00D8C1]/30 text-[#00D8C1] font-bold flex items-center gap-2 hover:bg-[#00D8C1]/20 transition-all text-sm"
         >
           <Plus className="w-4 h-4" />
-          Přidat
+          Přidat zaměstnance
         </button>
       </div>
 
@@ -495,7 +495,7 @@ const StaffManager: React.FC = () => {
                 </div>
 
                 {/* Skills tags */}
-                <div className="flex flex-wrap gap-1 mb-2 pl-13">
+                <div className="flex flex-wrap gap-1 mb-2 pl-14">
                   {activeCategory === 'or_nurses'
                     ? <ORSkillTags skills={(item as ORNurse).skills} />
                     : <SkillTags skills={(item as Doctor | Nurse).skills} />
@@ -503,7 +503,7 @@ const StaffManager: React.FC = () => {
                 </div>
 
                 {/* Workload progress bar */}
-                <div className="space-y-1.5 pl-13">
+                <div className="space-y-1.5 pl-14">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">Úvazek</span>
                     <span className="text-[10px] font-bold text-white">{item.workload}%</span>
@@ -522,7 +522,7 @@ const StaffManager: React.FC = () => {
                 </div>
 
                 {/* Available status */}
-                <div className="flex items-center gap-1.5 mt-2 pl-13 text-[10px] text-white/60">
+                <div className="flex items-center gap-1.5 mt-2 pl-14 text-[10px] text-white/60">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
                   <span>K dispozici</span>
                 </div>
