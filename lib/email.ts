@@ -1,9 +1,7 @@
-import { Resend } from 'resend';
+// Import removed - we'll use fetch API directly instead of Resend client
+// The Resend API will be called directly from the client using their REST API
 
-// Initialize Resend client
-// Support both VITE_ prefixed (client-side) and non-prefixed (server-side) env vars
-const resendApiKey = import.meta.env.VITE_RESEND_API_KEY || import.meta.env.RESEND_API_KEY || '';
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY || import.meta.env.RESEND_API_KEY || '';
 
 export interface EmailNotification {
   to: string;
@@ -21,31 +19,40 @@ export interface EmailTemplateData {
 }
 
 /**
- * Send an email notification using Resend
+ * Send an email notification using Resend REST API
  */
 export async function sendEmailNotification(
   notification: EmailNotification
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
-  if (!resend) {
+  if (!RESEND_API_KEY) {
     console.error('[Email] Resend API key not configured');
     return { success: false, error: 'Email service not configured' };
   }
 
   try {
-    const response = await resend.emails.send({
-      from: 'Operating Room System <onboarding@resend.dev>',
-      to: notification.to,
-      subject: notification.subject,
-      html: notification.html,
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Operating Room System <onboarding@resend.dev>',
+        to: notification.to,
+        subject: notification.subject,
+        html: notification.html,
+      }),
     });
 
-    if (response.error) {
-      console.error('[Email] Resend API error:', response.error);
-      return { success: false, error: response.error.message };
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('[Email] Resend API error:', errorData);
+      return { success: false, error: errorData.message || 'Failed to send email' };
     }
 
-    console.log('[Email] Email sent successfully:', response.data?.id);
-    return { success: true, messageId: response.data?.id };
+    const data = await response.json();
+    console.log('[Email] Email sent successfully:', data.id);
+    return { success: true, messageId: data.id };
   } catch (error) {
     console.error('[Email] Failed to send email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
