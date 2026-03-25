@@ -621,7 +621,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute right-8 top-[184px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-8 top-[304px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -648,7 +648,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             step_name: WORKFLOW_STEPS[currentStepIndex].title,
           });
         }}
-        className={`absolute right-8 top-[328px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+        className={`absolute right-8 top-[448px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
           room.isEnhancedHygiene
             ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
             : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
@@ -676,7 +676,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute right-8 top-[472px] rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+          className={`absolute right-8 top-[592px] rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
