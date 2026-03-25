@@ -270,7 +270,7 @@ export default function StaffManager() {
 
                   {/* Name + Type */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-2xl font-semibold truncate ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
+                    <p className={`text-base font-semibold truncate ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
                       {item.name}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
