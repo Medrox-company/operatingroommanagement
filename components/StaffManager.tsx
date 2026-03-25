@@ -270,7 +270,7 @@ export default function StaffManager() {
 
                   {/* Name + Type */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-2xl font-black truncate ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
+                    <p className={`text-2xl font-semibold truncate ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
                       {item.name}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -284,19 +284,40 @@ export default function StaffManager() {
                   </div>
                 </div>
 
-                {/* Specializace - inline */}
-                <div className="flex flex-wrap gap-1">
+                {/* Specializace - inline s barvami a větší */}
+                <div className="flex flex-wrap gap-2">
                   {activeCategory === 'or_nurses' 
-                    ? Object.entries((item as ORNurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => (
-                        <span key={k} className="text-[7px] bg-white/10 px-1.5 py-0.5 rounded text-white/60 uppercase font-bold">
-                          {k}
-                        </span>
-                      ))
-                    : Object.entries((item as Doctor | Nurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => (
-                        <span key={k} className="text-[7px] bg-white/10 px-1.5 py-0.5 rounded text-white/60 uppercase font-bold">
-                          {k}
-                        </span>
-                      ))
+                    ? Object.entries((item as ORNurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => {
+                        const skillColors: Record<string, { bg: string; text: string }> = {
+                          'davinci': { bg: 'bg-purple-500/20', text: 'text-purple-300' },
+                          'neuro': { bg: 'bg-blue-500/20', text: 'text-blue-300' },
+                          'emergency': { bg: 'bg-red-500/20', text: 'text-red-300' },
+                          'or': { bg: 'bg-cyan-500/20', text: 'text-cyan-300' }
+                        };
+                        const color = skillColors[k.toLowerCase()] || { bg: 'bg-white/10', text: 'text-white/60' };
+                        return (
+                          <span key={k} className={`text-xs px-2.5 py-1 rounded-lg uppercase font-semibold ${color.bg} ${color.text}`}>
+                            {k}
+                          </span>
+                        );
+                      })
+                    : Object.entries((item as Doctor | Nurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => {
+                        const skillColors: Record<string, { bg: string; text: string }> = {
+                          'aro': { bg: 'bg-green-500/20', text: 'text-green-300' },
+                          'jip': { bg: 'bg-blue-500/20', text: 'text-blue-300' },
+                          'emergency': { bg: 'bg-red-500/20', text: 'text-red-300' },
+                          'surgery': { bg: 'bg-orange-500/20', text: 'text-orange-300' },
+                          'trauma': { bg: 'bg-red-600/20', text: 'text-red-200' },
+                          'ortho': { bg: 'bg-yellow-500/20', text: 'text-yellow-300' },
+                          'gyneco': { bg: 'bg-pink-500/20', text: 'text-pink-300' }
+                        };
+                        const color = skillColors[k.toLowerCase()] || { bg: 'bg-white/10', text: 'text-white/60' };
+                        return (
+                          <span key={k} className={`text-xs px-2.5 py-1 rounded-lg uppercase font-semibold ${color.bg} ${color.text}`}>
+                            {k}
+                          </span>
+                        );
+                      })
                   }
                 </div>
               </div>
