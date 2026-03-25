@@ -169,6 +169,16 @@ export default function StaffManager() {
     return 'text-red-400';
   };
 
+  const startEditing = (staff: Doctor | Nurse | ORNurse) => {
+    console.log('[v0] Editing staff:', staff.name);
+    // TODO: Implement editing functionality
+  };
+
+  const deleteItem = (id: string) => {
+    console.log('[v0] Deleting staff with id:', id);
+    // TODO: Implement deletion functionality
+  };
+
   return (
     <div className="w-full space-y-12">
       {/* Header */}
