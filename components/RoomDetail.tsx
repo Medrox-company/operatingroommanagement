@@ -946,7 +946,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               className="w-32 h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: `${activeColor}20`
+                backgroundColor: 'rgba(255,255,255,0.03)'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -963,7 +963,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               className="w-32 h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: `${activeColor}20`
+                backgroundColor: 'rgba(255,255,255,0.03)'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
