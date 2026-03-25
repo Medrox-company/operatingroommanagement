@@ -954,8 +954,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               <Minus className="w-12 h-12 text-white" strokeWidth={1.5} />
             </motion.button>
 
-            <div className="px-6 py-3 rounded-full border backdrop-blur-md" style={{ borderColor: `${activeColor}44`, backgroundColor: `${activeColor}15` }}>
-              <p className="text-[9px] font-black tracking-[0.2em] uppercase text-white/50 text-center mb-1">MONITORING</p>
+            <div className="px-6 py-3 rounded-full border backdrop-blur-md flex flex-col items-center justify-center gap-2" style={{ borderColor: `${activeColor}44`, backgroundColor: `${activeColor}15` }}>
+              <span className={`text-6xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+                {isPaused ? pauseElapsedTime : elapsedTime}
+              </span>
             </div>
 
             <motion.button 
@@ -976,16 +978,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
       {/* Bottom Center - Phase Duration & Navigation */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
-        {/* Phase duration timer */}
-        <div className="text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-2">
-            {isPaused ? 'DOBA TRVÁNÍ PAUZY' : 'DOBA TRVÁNÍ FÁZE'}
-          </p>
-          <span className={`text-6xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-            {isPaused ? pauseElapsedTime : elapsedTime}
-          </span>
-        </div>
-
         {/* Navigation Indicators */}
         <div className="flex gap-3">
           {WORKFLOW_STEPS.map((_, i) => (
