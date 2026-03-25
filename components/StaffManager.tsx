@@ -234,49 +234,47 @@ export default function StaffManager() {
         />
       </div>
 
-      {/* Main Content - Horizontal cards + Right sidebar */}
+      {/* Main Content - Grid cards + Right sidebar */}
       <div className="flex gap-6">
-        {/* Horizontal Scroll Cards - inspired by meeting calendar */}
-        <div className="flex-1 flex gap-4 overflow-x-auto pb-4 scroll-smooth">
+        {/* Grid Cards - All visible on page */}
+        <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {filteredData.map((item, idx) => (
             <motion.button
               key={item.id}
               onClick={() => setSelectedStaffId(item.id)}
-              className={`shrink-0 w-[280px] p-6 rounded-2xl border transition-all cursor-pointer group ${
+              className={`p-4 rounded-xl border transition-all cursor-pointer group ${
                 selectedStaffId === item.id
                   ? 'bg-[#00D8C1]/15 border-[#00D8C1]/50 shadow-lg shadow-[#00D8C1]/20'
                   : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
               }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <div className="text-left space-y-4">
+              <div className="space-y-2 text-left">
                 {/* Number + Qual */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className={`text-4xl font-black ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
+                    <p className={`text-2xl font-black ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
                       {idx + 1}
                     </p>
-                    <p className={`text-xs font-black mt-1 ${selectedStaffId === item.id ? 'text-[#00D8C1]/80' : 'text-white/40'}`}>
+                    <p className={`text-[9px] font-black mt-0.5 ${selectedStaffId === item.id ? 'text-[#00D8C1]/80' : 'text-white/40'}`}>
                       {item.qualification}
                     </p>
                   </div>
-                  <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
+                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
                     {item.employmentType === 'I' ? 'INT' : 'EXT'}
                   </span>
                 </div>
 
                 {/* Name */}
-                <div>
-                  <p className={`text-sm font-bold truncate ${selectedStaffId === item.id ? 'text-white' : 'text-white/80'}`}>
-                    {item.name}
-                  </p>
-                </div>
+                <p className={`text-xs font-bold truncate ${selectedStaffId === item.id ? 'text-white' : 'text-white/80'}`}>
+                  {item.name}
+                </p>
 
                 {/* Workload */}
-                <div className="text-xs">
+                <div className="text-[10px]">
                   <span className={`font-black ${getWorkloadColor(item.workload)}`}>
-                    {item.workload}% úvazek
+                    {item.workload}%
                   </span>
                 </div>
               </div>
@@ -292,7 +290,7 @@ export default function StaffManager() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="w-[320px] space-y-6"
+              className="w-[320px] space-y-6 hidden lg:block"
             >
               {/* Detail Card */}
               <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
@@ -331,10 +329,10 @@ export default function StaffManager() {
 
                 {/* Actions */}
                 <div className="flex gap-2 border-t border-white/5 pt-4">
-                  <button className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-all">
+                  <button onClick={() => startEditing(selectedStaff)} className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-all">
                     <Edit2 className="w-3.5 h-3.5 mx-auto" />
                   </button>
-                  <button className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all">
+                  <button onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(selectedStaff.id); }} className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all">
                     <Trash2 className="w-3.5 h-3.5 mx-auto" />
                   </button>
                 </div>
