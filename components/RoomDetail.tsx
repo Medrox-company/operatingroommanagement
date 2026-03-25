@@ -726,14 +726,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 <div 
                   className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
                   style={{
-                    background: `radial-gradient(circle at center, ${activeColor}00 0%, ${activeColor}40 100%)`
+                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
                   }}
                 />
                 
                 {/* Ring */}
                 <div 
-                  className="absolute inset-0 rounded-full border-2 opacity-40 transition-colors duration-500"
-                  style={{ borderColor: activeColor }}
+                  className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+                  style={{ borderColor: 'rgba(255,255,255,0.3)' }}
                 />
                 
                 {/* Inner content */}
@@ -911,14 +911,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <div 
               className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
               style={{
-                background: `radial-gradient(circle at center, ${activeColor}00 0%, ${activeColor}40 100%)`
+                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
               }}
             />
             
             {/* Ring */}
             <div 
-              className="absolute inset-0 rounded-full border-2 opacity-40 transition-colors duration-500"
-              style={{ borderColor: activeColor }}
+              className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+              style={{ borderColor: 'rgba(255,255,255,0.3)' }}
             />
             
             {/* Inner content */}
