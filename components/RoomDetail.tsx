@@ -735,14 +735,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 />
                 
                 {/* Inner content */}
-                <div className="relative z-10 text-center px-6">
-                  <p className="text-[9px] font-black tracking-[0.3em] uppercase text-white/30 mb-3">
-                    PROBĚHLO
+                <div className="relative z-10 text-center px-4">
+                  <p className="text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-4">
+                    SPUSTIT DALŠÍ FÁZI
                   </p>
-                  <h3 className="text-2xl font-bold tracking-tight text-white/60 leading-tight">
+                  <h3 className="text-3xl font-bold tracking-tight text-white leading-tight mb-3">
                     {prevStep.title}
                   </h3>
-                  <p className="text-[10px] font-bold tracking-widest uppercase text-white/25 mt-3">
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-white/30">
                     {prevStep.status}
                   </p>
                 </div>
@@ -876,7 +876,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <p className={`text-[10px] font-black tracking-[0.3em] mb-4 uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/30'}`}>
+                    <p className={`text-[10px] font-black tracking-[0.2em] mb-6 uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
                       SPUSTIT DALŠÍ FÁZI
                     </p>
                     
@@ -884,7 +884,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                       key={currentStep.title}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`text-5xl font-black tracking-tight leading-tight mb-4 ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
+                      className={`text-6xl font-bold tracking-tight leading-tight mb-6 ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
                     >
                       {currentStep.title}
                     </motion.h2>
@@ -933,14 +933,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             />
             
             {/* Inner content */}
-            <div className="relative z-10 text-center px-6">
-              <p className="text-[9px] font-black tracking-[0.3em] uppercase text-white/30 mb-3">
+            <div className="relative z-10 text-center px-4">
+              <p className="text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-4">
                 {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'NOVÝ CYKLUS' : 'NÁSLEDUJE'}
               </p>
-              <h3 className="text-2xl font-bold tracking-tight text-white/80 leading-tight">
+              <h3 className="text-3xl font-bold tracking-tight text-white leading-tight mb-3">
                 {nextStep.title}
               </h3>
-              <p className="text-[10px] font-bold tracking-widest uppercase text-white/30 mt-3">
+              <p className="text-[10px] font-bold tracking-widest uppercase text-white/30">
                 {nextStep.status}
               </p>
             </div>
