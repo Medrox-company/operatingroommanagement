@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
-  Clock, Shield, Activity, Award, Briefcase, Zap, Filter, Activity as ActivityIcon
+  Clock, Shield, Activity, Award, Briefcase, Zap, Filter, TrendingUp
 } from 'lucide-react';
 
 // Types
@@ -188,7 +188,7 @@ export default function StaffManager() {
         {/* Stats Bar */}
         <div className="flex gap-2 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl overflow-hidden">
           {[
-            { label: 'DOSTUPNÍ', value: stats.available, icon: ActivityIcon, color: 'text-green-500' },
+            { label: 'DOSTUPNÍ', value: stats.available, icon: Activity, color: 'text-green-500' },
             { label: 'OBSAZENI', value: stats.busy, icon: Clock, color: 'text-yellow-500' },
             { label: 'AVG ÚVAZEK', value: `${stats.avgWorkload}%`, icon: TrendingUp, color: 'text-[#00D8C1]' },
           ].map((stat) => (
