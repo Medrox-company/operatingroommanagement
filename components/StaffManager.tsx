@@ -250,7 +250,7 @@ export default function StaffManager() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <div className="space-y-2 text-left">
+              <div className="space-y-2.5 text-left h-full flex flex-col">
                 {/* Number + Qual */}
                 <div className="flex items-start justify-between">
                   <div>
@@ -271,11 +271,44 @@ export default function StaffManager() {
                   {item.name}
                 </p>
 
-                {/* Workload */}
-                <div className="text-[10px]">
-                  <span className={`font-black ${getWorkloadColor(item.workload)}`}>
-                    {item.workload}%
-                  </span>
+                {/* Specializace */}
+                <div className="flex-1 min-h-0">
+                  <p className="text-[8px] text-white/40 uppercase font-bold mb-1">Spec.</p>
+                  <div className="text-[9px] space-y-0.5 max-h-12 overflow-y-auto">
+                    {activeCategory === 'or_nurses' 
+                      ? Object.entries((item as ORNurse).skills).filter(([, v]) => v).map(([k]) => (
+                          <span key={k} className="block bg-white/5 px-1.5 py-0.5 rounded text-white/70 truncate">
+                            {k.toUpperCase()}
+                          </span>
+                        ))
+                      : Object.entries((item as Doctor | Nurse).skills).filter(([, v]) => v).map(([k]) => (
+                          <span key={k} className="block bg-white/5 px-1.5 py-0.5 rounded text-white/70 truncate">
+                            {k.toUpperCase()}
+                          </span>
+                        ))
+                    }
+                  </div>
+                </div>
+
+                {/* Workload Progress Bar */}
+                <div className="space-y-1 mt-auto pt-2 border-t border-white/5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[8px] font-black text-white/40 uppercase">Úvazek</span>
+                    <span className={`text-xs font-black ${getWorkloadColor(item.workload)}`}>
+                      {item.workload}%
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-white/[0.05] overflow-hidden border border-white/10">
+                    <motion.div
+                      className="h-full rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.workload}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      style={{
+                        backgroundColor: item.workload === 100 ? '#10B981' : item.workload >= 80 ? '#84CC16' : item.workload >= 60 ? '#F59E0B' : item.workload >= 40 ? '#F97316' : '#EF4444'
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </motion.button>
