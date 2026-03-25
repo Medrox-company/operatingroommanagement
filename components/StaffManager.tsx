@@ -234,10 +234,10 @@ export default function StaffManager() {
         />
       </div>
 
-      {/* Main Content - Grid cards + Right sidebar */}
-      <div className="flex gap-6">
-        {/* Grid Cards - Horizontal rectangles (2 columns) */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+      {/* Main Content - 3 Column Grid */}
+      <div>
+        {/* Grid Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {filteredData.map((item, idx) => (
             <motion.button
               key={item.id}
@@ -343,62 +343,92 @@ export default function StaffManager() {
           ))}
         </div>
 
-        {/* Right Sidebar - Details */}
-        <AnimatePresence mode="wait">
+        {/* Modal Popup - Detail s editací */}
+        <AnimatePresence>
           {selectedStaff && (
-            <motion.div
-              key={selectedStaff.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="w-[320px] space-y-6 hidden lg:block"
-            >
-              {/* Detail Card */}
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
-                <div>
-                  <p className="text-xs text-white/40 font-black tracking-widest uppercase mb-2">Vybraný personál</p>
-                  <h2 className="text-lg font-black text-white">{selectedStaff.name}</h2>
-                </div>
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedStaffId(null)}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              />
 
-                <div className="space-y-3 border-t border-white/5 pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-white/40 uppercase font-bold">Kvalifikace</span>
-                    <span className={`px-3 py-1 rounded font-bold text-sm ${getQualColor(selectedStaff.qualification)}`}>
-                      {selectedStaff.qualification}
-                    </span>
+              {/* Modal */}
+              <motion.div
+                key={selectedStaff.id}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              >
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 space-y-6 max-w-md w-full backdrop-blur-xl">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-white/40 font-black tracking-widest uppercase mb-2">Detail personálu</p>
+                      <h2 className="text-2xl font-semibold text-white">{selectedStaff.name}</h2>
+                    </div>
+                    <button
+                      onClick={() => setSelectedStaffId(null)}
+                      className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-white/40 uppercase font-bold">Typ</span>
-                    <span className={`text-sm font-bold ${selectedStaff.employmentType === 'I' ? 'text-teal-300' : 'text-orange-300'}`}>
-                      {selectedStaff.employmentType === 'I' ? 'Interní' : 'Externí'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-white/40 uppercase font-bold">Úvazek</span>
-                    <span className={`text-sm font-black ${getWorkloadColor(selectedStaff.workload)}`}>
-                      {selectedStaff.workload}%
-                    </span>
-                  </div>
-                </div>
 
-                <div className="border-t border-white/5 pt-4">
-                  <p className="text-xs text-white/40 font-black tracking-widest uppercase mb-3">Specializace</p>
-                  <div className="text-[11px]">
-                    {activeCategory === 'or_nurses' ? <ORSkillTags skills={(selectedStaff as ORNurse).skills} /> : <SkillTags skills={(selectedStaff as Doctor | Nurse).skills} />}
+                  {/* Details Grid */}
+                  <div className="space-y-4 border-t border-white/5 pt-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 uppercase font-bold">Kvalifikace</span>
+                      <span className={`px-3 py-1 rounded font-semibold text-sm ${getQualColor(selectedStaff.qualification)}`}>
+                        {selectedStaff.qualification}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 uppercase font-bold">Typ</span>
+                      <span className={`text-sm font-semibold ${selectedStaff.employmentType === 'I' ? 'text-teal-300' : 'text-orange-300'}`}>
+                        {selectedStaff.employmentType === 'I' ? 'Interní' : 'Externí'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 uppercase font-bold">Úvazek</span>
+                      <span className={`text-sm font-black ${getWorkloadColor(selectedStaff.workload)}`}>
+                        {selectedStaff.workload}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Specializace */}
+                  <div className="border-t border-white/5 pt-4">
+                    <p className="text-sm text-white/40 font-black tracking-widest uppercase mb-3">Specializace</p>
+                    <div className="flex flex-wrap gap-2">
+                      {activeCategory === 'or_nurses' ? <ORSkillTags skills={(selectedStaff as ORNurse).skills} /> : <SkillTags skills={(selectedStaff as Doctor | Nurse).skills} />}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 border-t border-white/5 pt-6">
+                    <button
+                      onClick={() => { startEditing(selectedStaff); setSelectedStaffId(null); }}
+                      className="flex-1 py-3 rounded-lg bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Upravit
+                    </button>
+                    <button
+                      onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) { deleteItem(selectedStaff.id); setSelectedStaffId(null); } }}
+                      className="flex-1 py-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Smazat
+                    </button>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 border-t border-white/5 pt-4">
-                  <button onClick={() => startEditing(selectedStaff)} className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-all">
-                    <Edit2 className="w-3.5 h-3.5 mx-auto" />
-                  </button>
-                  <button onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(selectedStaff.id); }} className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all">
-                    <Trash2 className="w-3.5 h-3.5 mx-auto" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
