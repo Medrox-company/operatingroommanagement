@@ -697,19 +697,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
         <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
         
-        {/* Top center icon */}
-        <div className="absolute top-32 left-1/2 -translate-x-1/2 z-30">
-          <div 
-            className="w-14 h-14 rounded-2xl border flex items-center justify-center backdrop-blur-md"
-            style={{ 
-              borderColor: `${activeColor}40`,
-              backgroundColor: `${activeColor}10`
-            }}
-          >
-            <Activity className="w-6 h-6" style={{ color: activeColor }} />
-          </div>
-        </div>
-        
         <div className="flex items-center justify-center gap-20 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
@@ -795,6 +782,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 className="opacity-80"
               />
             </svg>
+
+            {/* Subtle Pulsing Animation Ring */}
+            <motion.div
+              className="absolute inset-0 rounded-full border-2"
+              style={{ borderColor: activeColor }}
+              animate={{ 
+                scale: [1, 1.08, 1],
+                opacity: [0.4, 0.1, 0.4]
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
 
             {/* Enhanced Hygiene subtle indicator */}
             <AnimatePresence>
