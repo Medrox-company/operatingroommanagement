@@ -539,104 +539,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       </div>
 
 
-      {/* Pause Button - Right Side, vertical stack */}
-      {!(room.isLocked && isFinalStep) && (
-        <motion.button
-          onClick={async () => {
-            const newPaused = !isPaused;
-            setIsPaused(newPaused);
-            await updateOperatingRoom(room.id, { is_paused: newPaused });
-            await recordStatusEvent({
-              operating_room_id: room.id,
-              event_type: newPaused ? 'pause' : 'resume',
-              step_index: currentStepIndex,
-              step_name: WORKFLOW_STEPS[currentStepIndex].title,
-            });
-          }}
-          className={`absolute right-8 top-1/2 -translate-y-1/2 translate-y-32 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
-            isPaused
-              ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-              : 'bg-white/5 border-white/10'
-          }`}
-        >
-          {isPaused ? (
-            <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
-          ) : (
-            <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
-          )}
-          <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
-        </motion.button>
-      )}
-
-      {/* Enhanced Hygiene Mode Toggle - Right Side, above Pause */}
-      <motion.button
-        onClick={async () => {
-          const newHygieneState = !room.isEnhancedHygiene;
-          onEnhancedHygieneToggle?.(newHygieneState);
-          await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
-          await recordStatusEvent({
-            operating_room_id: room.id,
-            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
-            step_index: currentStepIndex,
-            step_name: WORKFLOW_STEPS[currentStepIndex].title,
-          });
-        }}
-        className={`absolute right-8 top-1/2 -translate-y-1/2 translate-y-[116px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
-          room.isEnhancedHygiene
-            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
-            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-        }`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
-          Hygien.
-        </span>
-      </motion.button>
-
-      {/* Patient Arrival Button - Right Side */}
-      <motion.button
-        onClick={async () => {
-          if (patientCalledTime && !patientArrivedTime) {
-            const arrivalTime = new Date();
-            const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
-            setPatientArrivedTime(arrivalTime);
-            await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
-            setShowPatientArrivedText(true);
-            await recordStatusEvent({
-              operating_room_id: room.id,
-              event_type: 'patient_arrival',
-              step_index: currentStepIndex,
-              step_name: WORKFLOW_STEPS[currentStepIndex].title,
-              duration_seconds: waitDuration,
-              metadata: { call_time: patientCalledTime.toISOString() },
-            });
-            setTimeout(() => {
-              setShowPatientArrivedText(false);
-              setPatientCalledTime(null);
-              setPatientArrivedTime(null);
-              updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-              setPatientCallElapsedTime('00:00');
-            }, 3000);
-          }
-        }}
-        disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute right-8 top-1/2 -translate-y-1/2 -translate-y-4 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
-          patientArrivedTime
-            ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
-            : !patientCalledTime
-            ? 'bg-white/5 border-white/10 opacity-40'
-            : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
-        }`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <UserCheck className={`w-8 h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
-      </motion.button>
-
-      {/* Volat Button - Right Side, at top */}
+      {/* Volat Button - Right Side, top */}
       <motion.button
         onClick={async () => {
           if (!patientCalledTime) {
@@ -652,7 +555,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute right-8 top-1/2 -translate-y-1/2 -translate-y-[116px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-8 top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -690,6 +593,103 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           )}
         </AnimatePresence>
       </motion.button>
+
+      {/* Patient Arrival Button - Right Side */}
+      <motion.button
+        onClick={async () => {
+          if (patientCalledTime && !patientArrivedTime) {
+            const arrivalTime = new Date();
+            const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
+            setPatientArrivedTime(arrivalTime);
+            await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
+            setShowPatientArrivedText(true);
+            await recordStatusEvent({
+              operating_room_id: room.id,
+              event_type: 'patient_arrival',
+              step_index: currentStepIndex,
+              step_name: WORKFLOW_STEPS[currentStepIndex].title,
+              duration_seconds: waitDuration,
+              metadata: { call_time: patientCalledTime.toISOString() },
+            });
+            setTimeout(() => {
+              setShowPatientArrivedText(false);
+              setPatientCalledTime(null);
+              setPatientArrivedTime(null);
+              updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+              setPatientCallElapsedTime('00:00');
+            }, 3000);
+          }
+        }}
+        disabled={!patientCalledTime || !!patientArrivedTime}
+        className={`absolute right-8 top-[184px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
+          patientArrivedTime
+            ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+            : !patientCalledTime
+            ? 'bg-white/5 border-white/10 opacity-40'
+            : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
+        }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <UserCheck className={`w-8 h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
+      </motion.button>
+
+      {/* Enhanced Hygiene Mode Toggle - Right Side */}
+      <motion.button
+        onClick={async () => {
+          const newHygieneState = !room.isEnhancedHygiene;
+          onEnhancedHygieneToggle?.(newHygieneState);
+          await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
+          await recordStatusEvent({
+            operating_room_id: room.id,
+            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+            step_index: currentStepIndex,
+            step_name: WORKFLOW_STEPS[currentStepIndex].title,
+          });
+        }}
+        className={`absolute right-8 top-[328px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+          room.isEnhancedHygiene
+            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
+            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+        }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
+          Hygien.
+        </span>
+      </motion.button>
+
+      {/* Pause Button - Right Side, bottom */}
+      {!(room.isLocked && isFinalStep) && (
+        <motion.button
+          onClick={async () => {
+            const newPaused = !isPaused;
+            setIsPaused(newPaused);
+            await updateOperatingRoom(room.id, { is_paused: newPaused });
+            await recordStatusEvent({
+              operating_room_id: room.id,
+              event_type: newPaused ? 'pause' : 'resume',
+              step_index: currentStepIndex,
+              step_name: WORKFLOW_STEPS[currentStepIndex].title,
+            });
+          }}
+          className={`absolute right-8 top-[472px] rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+            isPaused
+              ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
+              : 'bg-white/5 border-white/10'
+          }`}
+        >
+          {isPaused ? (
+            <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
+          ) : (
+            <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
+          )}
+          <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+        </motion.button>
+      )}
 
       {/* Main Three-Circle Status Display */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
