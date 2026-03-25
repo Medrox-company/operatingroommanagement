@@ -758,26 +758,26 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             className={`relative w-[500px] h-[500px] flex items-center justify-center rounded-full group transition-all focus:outline-none z-10
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
-            whileHover={isInteractionBlocked ? {} : { scale: 1.03 }}
-            whileTap={isInteractionBlocked ? {} : { scale: 0.97 }}
+            whileHover={isInteractionBlocked ? {} : { scale: 1.05 }}
+            whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
-            {/* Primary Background Glow */}
+            {/* Primary Background Glow - subtle */}
             <div 
               className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
               style={{ 
                 backgroundColor: activeColor,
-                opacity: (room.isEmergency || room.isLocked) ? 0.5 : 0.35,
+                opacity: (room.isEmergency || room.isLocked) ? 0.45 : 0.25,
               }}
             />
 
-            {/* Inner Glow Core */}
+            {/* Inner Glow Core - subtle */}
             <div 
-              className="absolute inset-10 rounded-full blur-[60px] opacity-25 transition-colors duration-500"
+              className="absolute inset-10 rounded-full blur-[80px] opacity-20 transition-colors duration-500"
               style={{ backgroundColor: activeColor }}
             />
 
             {/* Animated Ring */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90">
+            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.0]">
               <circle cx="250" cy="250" r="230" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
               <motion.circle 
                 key={currentStepIndex}
@@ -787,38 +787,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 initial={{ strokeDashoffset: 1447 }}
                 animate={{ strokeDashoffset: 0 }}
                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                style={{ filter: `drop-shadow(0 0 20px ${activeColor}88)` }}
-                className="opacity-90"
-              />
-            </svg>
-            {/* Primary Background Glow */}
-            <div 
-              className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
-              style={{ 
-                backgroundColor: activeColor,
-                opacity: (room.isEmergency || room.isLocked) ? 0.5 : 0.35,
-              }}
-            />
-
-            {/* Inner Glow Core */}
-            <div 
-              className="absolute inset-8 rounded-full blur-[60px] opacity-25 transition-colors duration-500"
-              style={{ backgroundColor: activeColor }}
-            />
-
-            {/* Animated Ring */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90">
-              <circle cx="250" cy="250" r="230" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-              <motion.circle 
-                key={currentStepIndex}
-                cx="250" cy="250" r="230" fill="none"
-                stroke={activeColor} strokeWidth="8" strokeLinecap="round"
-                strokeDasharray="1447"
-                initial={{ strokeDashoffset: 1447 }}
-                animate={{ strokeDashoffset: 0 }}
-                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                style={{ filter: `drop-shadow(0 0 20px ${activeColor}88)` }}
-                className="opacity-90"
+                style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
+                className="opacity-80"
               />
             </svg>
 
