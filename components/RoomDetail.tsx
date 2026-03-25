@@ -954,11 +954,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               <Minus className="w-12 h-12 text-white" strokeWidth={2} />
             </motion.button>
 
-            <div className="px-6 py-3 rounded-full border backdrop-blur-md flex flex-col items-center justify-center gap-2" style={{ borderColor: `${activeColor}44`, backgroundColor: `${activeColor}15` }}>
-              <span className={`text-6xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-                {isPaused ? pauseElapsedTime : elapsedTime}
-              </span>
-            </div>
+            <span className={`text-6xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+              {isPaused ? pauseElapsedTime : elapsedTime}
+            </span>
 
             <motion.button 
               onClick={handleIncreaseTime}
