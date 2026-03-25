@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom } from '../lib/db';
 
@@ -539,101 +539,130 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       </div>
 
 
-      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
-        <motion.button
-          onClick={async () => {
-            if (!patientCalledTime) {
-              setPatientCalledTime(new Date());
-              setShowPatientCalledText(true);
-              setTimeout(() => setShowPatientCalledText(false), 3000);
-              await recordStatusEvent({
-                operating_room_id: room.id,
-                event_type: 'patient_call',
-                step_index: currentStepIndex,
-                step_name: WORKFLOW_STEPS[currentStepIndex].title,
-              });
-            }
-          }}
-          disabled={!!patientCalledTime}
-          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 h-24 w-24 disabled:cursor-not-allowed border ${
-            patientCalledTime && !patientArrivedTime
-              ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
-              : patientArrivedTime
-              ? 'bg-white/5 border-white/10 opacity-60'
-              : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-          }`}
-        >
-          <AnimatePresence mode="wait">
-            {patientCalledTime && !patientArrivedTime ? (
-              <motion.div
-                key="call-timer"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-1"
-              >
-                <Phone className="w-5 h-5 text-green-300" strokeWidth={2} />
-                <span className="text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
-                  {patientCallElapsedTime}
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="call-idle"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-2"
-              >
-                <Phone className={`w-8 h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
+      {/* Volat Button - Right Side, top */}
+      <motion.button
+        onClick={async () => {
+          if (!patientCalledTime) {
+            setPatientCalledTime(new Date());
+            setShowPatientCalledText(true);
+            setTimeout(() => setShowPatientCalledText(false), 3000);
+            await recordStatusEvent({
+              operating_room_id: room.id,
+              event_type: 'patient_call',
+              step_index: currentStepIndex,
+              step_name: WORKFLOW_STEPS[currentStepIndex].title,
+            });
+          }
+        }}
+        disabled={!!patientCalledTime}
+        className={`absolute right-2 md:right-4 lg:right-8 top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+          patientCalledTime && !patientArrivedTime
+            ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+            : patientArrivedTime
+            ? 'bg-white/5 border-white/10 opacity-60'
+            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+        }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <AnimatePresence mode="wait">
+          {patientCalledTime && !patientArrivedTime ? (
+            <motion.div
+              key="call-timer"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex flex-col items-center gap-1"
+            >
+              <Phone className="w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-green-300" strokeWidth={2} />
+              <span className="text-xs md:text-sm lg:text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
+                {patientCallElapsedTime}
+              </span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="call-idle"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex flex-col items-center gap-2"
+            >
+              <Phone className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
+              <span className="text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-widest">Volat</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
 
-        {/* Patient Arrival Button */}
-        <motion.button
-          onClick={async () => {
-            if (patientCalledTime && !patientArrivedTime) {
-              const arrivalTime = new Date();
-              const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
-              setPatientArrivedTime(arrivalTime);
-              await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
-              setShowPatientArrivedText(true);
-              
-              await recordStatusEvent({
-                operating_room_id: room.id,
-                event_type: 'patient_arrival',
-                step_index: currentStepIndex,
-                step_name: WORKFLOW_STEPS[currentStepIndex].title,
-                duration_seconds: waitDuration,
-                metadata: { call_time: patientCalledTime.toISOString() },
-              });
-              
-              setTimeout(() => {
-                setShowPatientArrivedText(false);
-                // Reset call state so Volat can be used again
-                setPatientCalledTime(null);
-                setPatientArrivedTime(null);
-                updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                setPatientCallElapsedTime('00:00');
-              }, 3000);
-            }
-          }}
-          disabled={!patientCalledTime || !!patientArrivedTime}
-          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-60 disabled:cursor-not-allowed ${
-            patientArrivedTime
-              ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
-              : ''
-          }`}
-        >
-          <UserCheck className={`w-8 h-8 ${patientArrivedTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
-        </motion.button>
-      </div>
+      {/* Patient Arrival Button - Right Side */}
+      <motion.button
+        onClick={async () => {
+          if (patientCalledTime && !patientArrivedTime) {
+            const arrivalTime = new Date();
+            const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
+            setPatientArrivedTime(arrivalTime);
+            await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
+            setShowPatientArrivedText(true);
+            await recordStatusEvent({
+              operating_room_id: room.id,
+              event_type: 'patient_arrival',
+              step_index: currentStepIndex,
+              step_name: WORKFLOW_STEPS[currentStepIndex].title,
+              duration_seconds: waitDuration,
+              metadata: { call_time: patientCalledTime.toISOString() },
+            });
+            setTimeout(() => {
+              setShowPatientArrivedText(false);
+              setPatientCalledTime(null);
+              setPatientArrivedTime(null);
+              updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+              setPatientCallElapsedTime('00:00');
+            }, 3000);
+          }
+        }}
+        disabled={!patientCalledTime || !!patientArrivedTime}
+        className={`absolute right-2 md:right-4 lg:right-8 top-[184px] md:top-[168px] lg:top-[304px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+          patientArrivedTime
+            ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+            : !patientCalledTime
+            ? 'bg-white/5 border-white/10 opacity-40'
+            : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
+        }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <UserCheck className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className="text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
+      </motion.button>
 
-      {/* Pause Button - Bottom Right */}
+      {/* Enhanced Hygiene Mode Toggle - Right Side */}
+      <motion.button
+        onClick={async () => {
+          const newHygieneState = !room.isEnhancedHygiene;
+          onEnhancedHygieneToggle?.(newHygieneState);
+          await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
+          await recordStatusEvent({
+            operating_room_id: room.id,
+            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+            step_index: currentStepIndex,
+            step_name: WORKFLOW_STEPS[currentStepIndex].title,
+          });
+        }}
+        className={`absolute right-2 md:right-4 lg:right-8 bottom-[200px] md:bottom-[160px] lg:bottom-[200px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+          room.isEnhancedHygiene
+            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
+            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+        }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <ShieldAlert className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className={`text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
+          Hygien.
+        </span>
+      </motion.button>
+
+      {/* Pause Button - Right Side, bottom */}
       {!(room.isLocked && isFinalStep) && (
         <motion.button
           onClick={async () => {
@@ -647,145 +676,82 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute bottom-8 right-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+          className={`absolute right-2 md:right-4 lg:right-8 bottom-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
           }`}
         >
           {isPaused ? (
-            <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
+            <Play className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
           ) : (
-            <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
+            <Pause className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
           )}
-          <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+          <span className="text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
         </motion.button>
       )}
 
-      {/* Enhanced Hygiene Mode Toggle - Bottom Right, next to Pause */}
-      <motion.button
-        onClick={async () => {
-          const newHygieneState = !room.isEnhancedHygiene;
-          onEnhancedHygieneToggle?.(newHygieneState);
-          await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
-          await recordStatusEvent({
-            operating_room_id: room.id,
-            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
-            step_index: currentStepIndex,
-            step_name: WORKFLOW_STEPS[currentStepIndex].title,
-          });
-        }}
-        className={`absolute bottom-8 right-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
-          room.isEnhancedHygiene
-            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
-            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-        }`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
-          {room.isEnhancedHygiene ? 'Hygienický\nrežim' : 'Hygien.\nrežim'}
-        </span>
-      </motion.button>
-
-      {/* Main Immersive Dial */}
+      {/* Main Three-Circle Status Display */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
-        <div className="relative w-[650px] h-[650px] flex items-center justify-center">
-          
-          {/* Static Rings */}
-          <div className="absolute inset-0 border border-white/5 rounded-full" />
-          <div className="absolute inset-10 border border-dashed border-white/5 rounded-full" />
-
-          {/* Workflow Icons Outer Ring */}
-          <motion.div 
-            className="absolute inset-0 z-30 pointer-events-none"
-            animate={{ rotate: rotation }}
-            transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-          >
-            {WORKFLOW_STEPS.map((step, index) => {
-              const angle = (index / WORKFLOW_STEPS.length) * 360;
-              const isActive = index === currentStepIndex;
-              
-              // Only allow next step (+1) or reset to start (from final step)
-              const isNextStep = index === currentStepIndex + 1;
-              const isResetToStart = index === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1 && !room.isLocked;
-              const isSelectable = !isPaused && (isNextStep || isResetToStart);
-              
-              return (
-                <div key={index} className="absolute w-full h-full" style={{ transform: `rotate(${angle}deg)` }}>
-                  <motion.div 
-                    className="absolute top-[-30px] left-1/2 -ml-6 w-12 h-12 flex items-center justify-center"
-                    animate={{ rotate: -angle - rotation }}
-                    transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                  >
-                    <button 
-                      onClick={() => isSelectable && changeStep(index)}
-                      disabled={!isSelectable}
-                      className={`w-full h-full rounded-2xl border flex items-center justify-center transition-all duration-500 backdrop-blur-md pointer-events-auto
-                        ${isActive ? 'bg-white/10 shadow-lg scale-125' : (isSelectable ? 'bg-white/5 opacity-40 hover:opacity-100' : 'bg-white/5 opacity-5 cursor-not-allowed')}
-                      `}
-                      style={{ 
-                        borderColor: isActive ? activeColor : 'rgba(255,255,255,0.1)',
-                        boxShadow: isActive ? `0 0 20px ${activeColor}44` : 'none'
-                      }}
-                    >
-                      <step.Icon className="w-5 h-5" style={{ color: isActive ? activeColor : 'white' }} />
-                    </button>
-                  </motion.div>
+        {/* Background decorative ring */}
+        <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
+        <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
+        
+        <div className="flex items-center justify-center gap-4 md:gap-8 lg:gap-20 relative">
+          {/* Previous Step - Left Circle (smaller) */}
+          {(() => {
+            const prevStepIdx = currentStepIndex === 0 ? WORKFLOW_STEPS.length - 1 : currentStepIndex - 1;
+            const prevStep = WORKFLOW_STEPS[prevStepIdx];
+            return (
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center"
+              >
+                {/* Gradient Glow - transparent from center */}
+                <div 
+                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+                  style={{
+                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                  }}
+                />
+                
+                {/* Ring */}
+                <div 
+                  className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+                  style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+                />
+                
+                {/* Inner content */}
+                <div className="relative z-10 text-center px-4">
+                  <p className="text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-2 md:mb-3 lg:mb-4">
+                    SPUSTIT DALŠÍ FÁZI
+                  </p>
+                  <h3 className="text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-2 md:mb-2 lg:mb-3">
+                    {prevStep.title}
+                  </h3>
+                  <p className="text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
+                    {prevStep.status}
+                  </p>
                 </div>
-              );
-            })}
-          </motion.div>
+              </motion.div>
+            );
+          })()}
 
-          {/* Navigation Controls */}
-          {!isInteractionBlocked && (
-            <>
-              <div className="absolute left-[-180px] top-1/2 -translate-y-1/2 z-50">
-                <motion.button 
-                  onClick={handleDecreaseTime}
-                  className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
-                  style={{
-                    borderColor: `${activeColor}44`,
-                    boxShadow: `0 0 20px ${activeColor}33`
-                  }}
-                  whileHover={{ scale: 1.1, x: -5 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div className="absolute inset-0 bg-white/5" />
-                  <Minus className="w-12 h-12 text-white relative z-10" strokeWidth={1.5} />
-                </motion.button>
-              </div>
-
-              <div className="absolute right-[-180px] top-1/2 -translate-y-1/2 z-50">
-                <motion.button 
-                  onClick={handleIncreaseTime}
-                  className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
-                  style={{
-                    borderColor: `${activeColor}44`,
-                    boxShadow: `0 0 20px ${activeColor}33`
-                  }}
-                  whileHover={{ scale: 1.1, x: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div className="absolute inset-0 bg-white/5" />
-                  <Plus className="w-12 h-12 text-white relative z-10" strokeWidth={1.5} />
-                </motion.button>
-              </div>
-            </>
-          )}
-
-          {/* Core Visual Elements - INTERACTIVE BUTTON CENTER */}
-          <motion.button 
+          {/* Current Step - Center Circle (large, interactive) */}
+          <motion.button
             onClick={handleNextStep}
             disabled={isInteractionBlocked}
-            className={`relative w-[480px] h-[480px] flex items-center justify-center rounded-full group transition-all focus:outline-none 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className={`relative w-[250px] h-[250px] md:w-[350px] md:h-[350px] lg:w-[500px] lg:h-[500px] flex items-center justify-center rounded-full group transition-all focus:outline-none z-10
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
-            whileHover={isInteractionBlocked ? {} : { scale: 1.05 }}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
-            {/* Primary Background Glow - static */}
+            {/* Primary Background Glow - subtle */}
             <div 
               className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
               style={{ 
@@ -794,28 +760,44 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               }}
             />
 
-            {/* Inner Glow Core */}
+            {/* Inner Glow Core - subtle */}
             <div 
               className="absolute inset-10 rounded-full blur-[80px] opacity-20 transition-colors duration-500"
               style={{ backgroundColor: activeColor }}
             />
 
-            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.1]">
-               <circle cx="240" cy="240" r="210" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-               <motion.circle 
-                  key={currentStepIndex}
-                  cx="240" cy="240" r="210" fill="none"
-                  stroke={activeColor} strokeWidth="8" strokeLinecap="round"
-                  strokeDasharray="1320"
-                  initial={{ strokeDashoffset: 1320 }}
-                  animate={{ strokeDashoffset: 0 }}
-                  transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
-                  className="opacity-80"
-               />
+            {/* Animated Ring */}
+            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.0]">
+              <circle cx="250" cy="250" r="230" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
+              <motion.circle 
+                key={currentStepIndex}
+                cx="250" cy="250" r="230" fill="none"
+                stroke={activeColor} strokeWidth="8" strokeLinecap="round"
+                strokeDasharray="1447"
+                initial={{ strokeDashoffset: 1447 }}
+                animate={{ strokeDashoffset: 0 }}
+                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
+                className="opacity-80"
+              />
             </svg>
 
-            {/* ENHANCED HYGIENE MODE - Only subtle glow */}
+            {/* Subtle Pulsing Animation Ring */}
+            <motion.div
+              className="absolute inset-0 rounded-full border-2"
+              style={{ borderColor: activeColor }}
+              animate={{ 
+                scale: [1, 1.08, 1],
+                opacity: [0.4, 0.1, 0.4]
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+
+            {/* Enhanced Hygiene subtle indicator */}
             <AnimatePresence>
               {room.isEnhancedHygiene && (
                 <div
@@ -827,9 +809,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               )}
             </AnimatePresence>
 
-
-
-            <div className="text-center relative z-20 pointer-events-none">
+            {/* Center Content */}
+            <div className="text-center relative z-20 pointer-events-none px-8">
               <AnimatePresence mode="wait">
                 {room.isLocked && isFinalStep ? (
                   <motion.div
@@ -839,8 +820,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     exit={{ opacity: 0, scale: 0.8 }}
                     className="flex flex-col items-center"
                   >
-                    <Lock className="w-24 h-24 text-white mb-6" />
-                    <h2 className="text-6xl font-black tracking-tighter text-white uppercase">
+                    <Lock className="w-20 h-20 text-white mb-4" />
+                    <h2 className="text-5xl font-black tracking-tighter text-white uppercase">
                       UZAMČENO
                     </h2>
                   </motion.div>
@@ -851,7 +832,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
-                    <h2 className="text-8xl font-black tracking-tighter text-white font-mono">
+                    <h2 className="text-7xl font-black tracking-tighter text-white font-mono">
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </h2>
                   </motion.div>
@@ -861,10 +842,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex flex-col items-center gap-4"
+                    className="flex flex-col items-center gap-3"
                   >
-                    <Phone className="w-16 h-16" strokeWidth={1.5} />
-                    <h2 className="text-5xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
+                    <Phone className="w-14 h-14" strokeWidth={1.5} />
+                    <h2 className="text-4xl font-bold tracking-tight leading-tight text-center">
                       Volání pacienta
                     </h2>
                   </motion.div>
@@ -874,9 +855,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="h-36 flex items-center justify-center"
+                    className="flex items-center justify-center"
                   >
-                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
+                    <h2 className="text-5xl font-bold tracking-tight leading-tight text-center">
                       Příjezd pacienta
                     </h2>
                   </motion.div>
@@ -887,110 +868,128 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
-                    <h2 className="text-8xl font-black tracking-tighter text-white uppercase">
+                    <h2 className="text-7xl font-black tracking-tighter text-white uppercase">
                       PAUZA
                     </h2>
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="run-text"
+                    key="current-status"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <p className={`text-[12px] font-black tracking-[0.4em] mb-6 uppercase group-hover:text-white/40 transition-colors ${room.isEmergency ? 'text-red-400' : 'text-white/20'}`}>
-                      {room.isLocked ? 'DOKONČIT DO FÁZE PŘIPRAVEN' : (currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'SPUSTIT FÁZI' : 'SPUSTIT DALŠÍ FÁZI')}
+                    <p className={`text-[10px] font-black tracking-[0.2em] mb-6 uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
+                      SPUSTIT DALŠÍ FÁZI
                     </p>
                     
-                    <motion.div
-                      key={nextStep.title}
-                      initial={{ opacity: 0, filter: 'blur(10px)', y: 10 }}
-                      animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-                      exit={{ opacity: 0, filter: 'blur(10px)', y: -10 }}
-                      transition={{ duration: 0.4 }}
-                      className="h-36 flex items-center justify-center mb-4"
+                    <motion.h2
+                      key={currentStep.title}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`text-6xl font-bold tracking-tight leading-tight mb-6 ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
                     >
-                      <h2 className={`text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl ${room.isEmergency ? 'text-red-400' : ''}`}>
-                        {nextStep.title}
-                      </h2>
-                    </motion.div>
-    
-                    <div className="flex items-center justify-center gap-3">
-                      <p className={`text-sm font-bold tracking-widest uppercase ${room.isEmergency ? 'text-red-300' : 'text-white/40'}`}>
-                        {currentStep.title}
-                      </p>
-                      <div className="group-hover:block hidden">
-                        <ChevronRight className="w-5 h-5" style={{ color: activeColor }} />
-                      </div>
-                    </div>
+                      {currentStep.title}
+                    </motion.h2>
+
+                    <p className={`text-[11px] font-bold tracking-widest uppercase ${room.isEmergency ? 'text-red-300/60' : 'text-white/30'}`}>
+                      {currentStep.status}
+                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </motion.button>
+
+          {/* Next Step - Right Circle */}
+          <motion.div
+            onClick={handleNextStep}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer"
+          >
+            {/* Glow - gradient transparent from center */}
+            <div 
+              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+              style={{
+                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+              }}
+            />
+            
+            {/* Ring */}
+            <div 
+              className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+              style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+            />
+            
+            {/* Inner content */}
+            <div className="relative z-10 text-center px-4">
+              <p className="text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-2 md:mb-3 lg:mb-4">
+                {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'NOVÝ CYKLUS' : 'NÁSLEDUJE'}
+              </p>
+              <h3 className="text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-2 md:mb-2 lg:mb-3">
+                {nextStep.title}
+              </h3>
+              <p className="text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
+                {nextStep.status}
+              </p>
+            </div>
+          </motion.div>
         </div>
+        
+        {/* Time adjustment buttons - positioned below circles */}
+        {!isInteractionBlocked && (
+          <div className="absolute bottom-16 md:bottom-20 lg:bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-2 md:gap-4 lg:gap-6 z-50">
+            <motion.button 
+              onClick={handleDecreaseTime}
+              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
+              style={{
+                borderColor: `${activeColor}66`,
+                backgroundColor: 'rgba(255,255,255,0.03)'
+              }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+            </motion.button>
+
+            <span className={`text-3xl md:text-5xl lg:text-6xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+              {isPaused ? pauseElapsedTime : elapsedTime}
+            </span>
+
+            <motion.button 
+              onClick={handleIncreaseTime}
+              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
+              style={{
+                borderColor: `${activeColor}66`,
+                backgroundColor: 'rgba(255,255,255,0.03)'
+              }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Plus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+            </motion.button>
+          </div>
+        )}
       </main>
 
-      {/* Left Info Panel */}
-      <div className="absolute left-32 bottom-16 space-y-10 z-50">
-        <div className="space-y-6">
-          <AnimatePresence mode="wait">
-            <motion.div 
-              key={`badge-${currentStepIndex}-${isPaused}-${room.isEmergency}-${room.isLocked}`}
-              className="px-6 py-2.5 rounded-full border inline-block text-[12px] font-black uppercase tracking-[0.2em] backdrop-blur-md"
-              style={{ 
-                borderColor: `${activeColor}66`, 
-                backgroundColor: `${activeColor}15`, 
-                color: activeColor 
+      {/* Bottom Center - Phase Duration & Navigation */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
+        {/* Navigation Indicators */}
+        <div className="flex gap-3">
+          {WORKFLOW_STEPS.map((_, i) => (
+            <div 
+              key={i} 
+              className="h-1.5 rounded-full transition-all duration-500"
+              style={{
+                width: i === currentStepIndex ? 32 : 8,
+                backgroundColor: i === currentStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
+                opacity: i === currentStepIndex ? 1 : 0.4
               }}
-            >
-              {room.isEmergency ? 'EMERGENCY AKTIVNÍ' : (room.isLocked ? (isFinalStep ? 'SÁL UZAM��EN' : 'DOKONČOVÁNÍ PŘED UZAMČENÍM') : (isPaused ? 'POZASTAVENO' : currentStep.status))}
-            </motion.div>
-          </AnimatePresence>
-          
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-widest mb-2" style={{ color: '#c0bdb7' }}>
-              {isPaused ? 'DOBA TRVÁNÍ PAUZY' : 'DOBA TRVÁNÍ FÁZE'}
-            </p>
-            <div className="flex items-center gap-5">
-                <span className={`text-5xl font-bold tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : '')}`}>
-                  {isPaused ? pauseElapsedTime : elapsedTime}
-                </span>
-            </div>
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.h3
-              key={`title-${currentStepIndex}-${isPaused}-${room.isLocked}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`text-6xl font-bold tracking-tight ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/95')}`}
-            >
-              {room.isEmergency ? 'Urgentní příjem' : (room.isLocked && isFinalStep ? 'Sál uzamčen' : (isPaused ? 'Probíhá pauza' : currentStep.title))}
-            </motion.h3>
-          </AnimatePresence>
+            />
+          ))}
         </div>
-
-
-
-        {/* Patient Status Indicators */}
-        {/* Patient status info removed */}
-      </div>
-
-      {/* Navigation Indicators */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-4">
-        {WORKFLOW_STEPS.map((_, i) => (
-          <div 
-            key={i} 
-            className="h-2 rounded-full transition-all duration-500"
-            style={{
-              width: i === currentStepIndex ? 36 : 10,
-              backgroundColor: i === currentStepIndex ? activeColor : 'rgba(255,255,255,0.1)',
-              opacity: i === currentStepIndex ? 1 : 0.3
-            }}
-          />
-        ))}
       </div>
       </div>{/* end desktop wrapper */}
     </motion.div>

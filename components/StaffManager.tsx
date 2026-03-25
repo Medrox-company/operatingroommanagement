@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
-  Clock, Shield, Activity, Award, Briefcase, Zap
+  Clock, Shield, Activity, Award, Briefcase, Zap, Filter, TrendingUp, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 // Types
@@ -22,138 +22,58 @@ interface ORNurse { id: string; name: string; qualification: ORNurseQualificatio
 
 // Mock data generators
 const generateDoctors = (): Doctor[] => {
-  const names = [
-    'MUDr. Jan Novák', 'MUDr. Petr Svoboda', 'MUDr. Martin Dvořák', 'MUDr. Tomáš Černý',
-    'MUDr. Pavel Procházka', 'MUDr. Jaroslav Kučera', 'MUDr. Miroslav Veselý', 'MUDr. František Horák',
-    'MUDr. Václav Němec', 'MUDr. Karel Marek', 'MUDr. Josef Pospíšil', 'MUDr. Jiří Hájek',
-    'MUDr. Anna Králová', 'MUDr. Eva Němcová', 'MUDr. Marie Pokorná', 'MUDr. Jana Růžičková',
-    'MUDr. Lucie Benešová', 'MUDr. Tereza Fialová', 'MUDr. Kateřina Sedláčková', 'MUDr. Monika Urbanová',
-  ];
+  const names = ['MUDr. Jan Novák', 'MUDr. Petr Svoboda', 'MUDr. Martin Dvořák', 'MUDr. Tomáš Černý', 'MUDr. Pavel Procházka', 'MUDr. Jaroslav Kučera', 'MUDr. Miroslav Veselý', 'MUDr. František Horák', 'MUDr. Václav Němec', 'MUDr. Karel Marek'];
   const qualifications: DoctorQualification[] = ['L1', 'L2', 'L3', 'S', 'A'];
-  const workloads = [100, 100, 100, 80, 80, 60, 50, 40, 30, 20];
+  const workloads = [100, 100, 80, 80, 60, 50, 40, 30, 20];
   return names.map((name, i) => ({
-    id: `doc-${i}`,
-    name,
-    qualification: qualifications[Math.floor(Math.random() * qualifications.length)],
+    id: `doc-${i}`, name, qualification: qualifications[Math.floor(Math.random() * qualifications.length)],
     workload: workloads[Math.floor(Math.random() * workloads.length)],
     skills: { aro: Math.random() > 0.3, jip: Math.random() > 0.4, emergency: Math.random() > 0.5, or: Math.random() > 0.4 },
-    employmentType: Math.random() > 0.2 ? 'I' : 'E',
+    employmentType: Math.random() > 0.2 ? 'I' : 'E'
   }));
 };
 
 const generateNurses = (): Nurse[] => {
-  const names = [
-    'Bc. Marie Nováková', 'Bc. Jana Svobodová', 'Bc. Eva Dvořáková', 'Bc. Anna Černá',
-    'Bc. Petra Procházková', 'Bc. Lucie Kučerová', 'Bc. Tereza Veselá', 'Bc. Hana Horáková',
-    'Bc. Kateřina Němcová', 'Bc. Monika Marková', 'Bc. Lenka Pospíšilová', 'Bc. Alena Hájková',
-    'Bc. Zuzana Králová', 'Bc. Markéta Pokorná', 'Bc. Simona Růžičková', 'Bc. Denisa Benešová',
-  ];
+  const names = ['Bc. Marie Nováková', 'Bc. Jana Svobodová', 'Bc. Eva Dvořáková', 'Bc. Anna Černá', 'Bc. Petra Procházková', 'Bc. Lucie Kučerová', 'Bc. Tereza Veselá', 'Bc. Hana Horáková', 'Bc. Kateřina Němcová', 'Bc. Monika Marková'];
   const qualifications: NurseQualification[] = ['S', 'A', 'D', 'K'];
-  const workloads = [100, 100, 100, 80, 80, 60, 50, 40];
+  const workloads = [100, 100, 80, 80, 60, 50, 40, 30, 20];
   return names.map((name, i) => ({
-    id: `nurse-${i}`,
-    name,
-    qualification: qualifications[Math.floor(Math.random() * qualifications.length)],
+    id: `nurse-${i}`, name, qualification: qualifications[Math.floor(Math.random() * qualifications.length)],
     workload: workloads[Math.floor(Math.random() * workloads.length)],
-    skills: { aro: Math.random() > 0.3, jip: Math.random() > 0.4, emergency: Math.random() > 0.5, or: Math.random() > 0.6 },
-    employmentType: Math.random() > 0.15 ? 'I' : 'E',
+    skills: { aro: Math.random() > 0.4, jip: Math.random() > 0.3, emergency: Math.random() > 0.6, or: Math.random() > 0.3 },
+    employmentType: Math.random() > 0.15 ? 'I' : 'E'
   }));
 };
 
 const generateORNurses = (): ORNurse[] => {
-  const names = [
-    'Bc. Iveta Nová', 'Bc. Martina Svobodná', 'Bc. Božena Dvořáková', 'Bc. Jiřina Černá',
-    'Bc. Zdeňka Procházková', 'Bc. Vlasta Kučerová', 'Bc. Emilie Veselá', 'Bc. Libuše Horáková',
-    'Bc. Stanislava Němcová', 'Bc. Květa Marková', 'Bc. Drahomíra Pospíšilová', 'Bc. Miroslava Hájková',
-    'Bc. Jaroslava Králová', 'Bc. Ludmila Pokorná', 'Bc. Věra Růžičková', 'Bc. Danuše Benešová',
-  ];
+  const names = ['Sestra Alena', 'Sestra Marie', 'Sestra Lenka', 'Sestra Zuzana', 'Sestra Petra', 'Sestra Kristýna', 'Sestra Pavlína', 'Sestra Věra', 'Sestra Renáta', 'Sestra Milada'];
   const qualifications: ORNurseQualification[] = ['S', 'A', 'K'];
-  const workloads = [100, 100, 100, 80, 80, 60, 50];
+  const workloads = [100, 100, 100, 80, 80, 60, 50, 40];
   return names.map((name, i) => ({
-    id: `or-nurse-${i}`,
-    name,
-    qualification: qualifications[Math.floor(Math.random() * qualifications.length)],
+    id: `or-${i}`, name, qualification: qualifications[Math.floor(Math.random() * qualifications.length)],
     workload: workloads[Math.floor(Math.random() * workloads.length)],
-    skills: { surgery: Math.random() > 0.3, trauma: Math.random() > 0.4, ortho: Math.random() > 0.4, gyneco: Math.random() > 0.5, minor: Math.random() > 0.3, davinci: Math.random() > 0.7, neuro: Math.random() > 0.6 },
-    employmentType: Math.random() > 0.15 ? 'I' : 'E',
+    skills: { surgery: Math.random() > 0.3, trauma: Math.random() > 0.4, ortho: Math.random() > 0.5, gyneco: Math.random() > 0.5, minor: Math.random() > 0.3, davinci: Math.random() > 0.7, neuro: Math.random() > 0.6 },
+    employmentType: Math.random() > 0.1 ? 'I' : 'E'
   }));
 };
 
-// Workload circle badge – red→yellow→green by value
-const WorkloadBadge: React.FC<{ workload: number }> = ({ workload }) => {
-  const getColor = (w: number) => {
-    if (w <= 30) return { stroke: '#EF4444', text: '#EF4444', bg: 'rgba(239,68,68,0.08)' };
-    if (w <= 50) return { stroke: '#F97316', text: '#F97316', bg: 'rgba(249,115,22,0.08)' };
-    if (w <= 70) return { stroke: '#F59E0B', text: '#F59E0B', bg: 'rgba(245,158,11,0.08)' };
-    if (w <= 90) return { stroke: '#84CC16', text: '#84CC16', bg: 'rgba(132,204,22,0.08)' };
-    return { stroke: '#10B981', text: '#10B981', bg: 'rgba(16,185,129,0.08)' };
-  };
-  const c = getColor(workload);
-  const r = 14;
-  const circ = 2 * Math.PI * r;
-  const dash = (workload / 100) * circ;
-  return (
-    <div className="flex items-center justify-center w-10 h-10 relative" style={{ background: c.bg, borderRadius: '50%' }}>
-      <svg className="absolute inset-0 w-10 h-10 -rotate-90" viewBox="0 0 40 40">
-        <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" />
-        <circle
-          cx="20" cy="20" r={r} fill="none"
-          stroke={c.stroke} strokeWidth="2.5"
-          strokeDasharray={`${dash} ${circ}`}
-          strokeLinecap="round"
-        />
-      </svg>
-      <span className="text-[10px] font-black relative z-10" style={{ color: c.text }}>
-        {workload}
-      </span>
-    </div>
-  );
-};
-
-// Qualification badge – color by level
-const QualBadge: React.FC<{ qual: string; category: StaffCategory }> = ({ qual, category }) => {
-  const colors: Record<string, { bg: string; text: string; border: string }> = {
-    L3: { bg: 'rgba(16,185,129,0.12)', text: '#10B981', border: 'rgba(16,185,129,0.3)' },
-    L2: { bg: 'rgba(59,130,246,0.12)', text: '#60A5FA', border: 'rgba(59,130,246,0.3)' },
-    L1: { bg: 'rgba(139,92,246,0.12)', text: '#A78BFA', border: 'rgba(139,92,246,0.3)' },
-    K:  { bg: 'rgba(16,185,129,0.12)', text: '#10B981', border: 'rgba(16,185,129,0.3)' },
-    D:  { bg: 'rgba(59,130,246,0.12)', text: '#60A5FA', border: 'rgba(59,130,246,0.3)' },
-    A:  { bg: 'rgba(245,158,11,0.12)', text: '#FBBF24', border: 'rgba(245,158,11,0.3)' },
-    S:  { bg: 'rgba(107,114,128,0.12)', text: '#9CA3AF', border: 'rgba(107,114,128,0.3)' },
-  };
-  const c = colors[qual] ?? colors['S'];
-  return (
-    <span
-      className="px-2 py-1 rounded-md text-[11px] font-black tracking-wide"
-      style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
-    >
-      {qual}
-    </span>
-  );
-};
-
-// Skill tags for doctors/nurses – each tag its own color
+// Skill colors
 const SKILL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  aro:       { bg: 'rgba(239,68,68,0.10)',   text: '#F87171', border: 'rgba(239,68,68,0.25)' },
-  jip:       { bg: 'rgba(245,158,11,0.10)',  text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
-  emergency: { bg: 'rgba(139,92,246,0.10)',  text: '#A78BFA', border: 'rgba(139,92,246,0.25)' },
-  or:        { bg: 'rgba(59,130,246,0.10)',  text: '#60A5FA', border: 'rgba(59,130,246,0.25)' },
-  surgery:   { bg: 'rgba(239,68,68,0.10)',   text: '#F87171', border: 'rgba(239,68,68,0.25)' },
-  trauma:    { bg: 'rgba(245,158,11,0.10)',  text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
-  ortho:     { bg: 'rgba(16,185,129,0.10)',  text: '#34D399', border: 'rgba(16,185,129,0.25)' },
-  gyneco:    { bg: 'rgba(236,72,153,0.10)',  text: '#F472B6', border: 'rgba(236,72,153,0.25)' },
-  minor:     { bg: 'rgba(139,92,246,0.10)',  text: '#A78BFA', border: 'rgba(139,92,246,0.25)' },
-  davinci:   { bg: 'rgba(0,216,193,0.10)',   text: '#00D8C1', border: 'rgba(0,216,193,0.25)' },
-  neuro:     { bg: 'rgba(6,182,212,0.10)',   text: '#22D3EE', border: 'rgba(6,182,212,0.25)' },
+  aro: { bg: 'rgba(239,68,68,0.10)', text: '#F87171', border: 'rgba(239,68,68,0.25)' },
+  jip: { bg: 'rgba(245,158,11,0.10)', text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
+  emergency: { bg: 'rgba(139,92,246,0.10)', text: '#A78BFA', border: 'rgba(139,92,246,0.25)' },
+  or: { bg: 'rgba(59,130,246,0.10)', text: '#60A5FA', border: 'rgba(59,130,246,0.25)' },
+  surgery: { bg: 'rgba(239,68,68,0.10)', text: '#F87171', border: 'rgba(239,68,68,0.25)' },
+  trauma: { bg: 'rgba(245,158,11,0.10)', text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
+  ortho: { bg: 'rgba(16,185,129,0.10)', text: '#34D399', border: 'rgba(16,185,129,0.25)' },
+  gyneco: { bg: 'rgba(236,72,153,0.10)', text: '#F472B6', border: 'rgba(236,72,153,0.25)' },
+  minor: { bg: 'rgba(139,92,246,0.10)', text: '#A78BFA', border: 'rgba(139,92,246,0.25)' },
+  davinci: { bg: 'rgba(0,216,193,0.10)', text: '#00D8C1', border: 'rgba(0,216,193,0.25)' },
+  neuro: { bg: 'rgba(6,182,212,0.10)', text: '#22D3EE', border: 'rgba(6,182,212,0.25)' },
 };
 
 const SkillTags: React.FC<{ skills: DoctorSkills | NurseSkills }> = ({ skills }) => {
-  const skillList = [
-    { key: 'aro', label: 'ARO' },
-    { key: 'jip', label: 'JIP' },
-    { key: 'emergency', label: 'UP' },
-    { key: 'or', label: 'OS' },
-  ];
+  const skillList = [{ key: 'aro', label: 'ARO' }, { key: 'jip', label: 'JIP' }, { key: 'emergency', label: 'UP' }, { key: 'or', label: 'OS' }];
   const activeSkills = skillList.filter(s => skills[s.key as keyof typeof skills]);
   if (activeSkills.length === 0) return <span className="text-white/20 text-[10px]">—</span>;
   return (
@@ -161,10 +81,9 @@ const SkillTags: React.FC<{ skills: DoctorSkills | NurseSkills }> = ({ skills })
       {activeSkills.map(skill => {
         const c = SKILL_COLORS[skill.key];
         return (
-          <span key={skill.key}
-            className="px-1.5 py-0.5 rounded text-[10px] font-bold"
-            style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
-          >{skill.label}</span>
+          <span key={skill.key} className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
+            {skill.label}
+          </span>
         );
       })}
     </div>
@@ -172,12 +91,7 @@ const SkillTags: React.FC<{ skills: DoctorSkills | NurseSkills }> = ({ skills })
 };
 
 const ORSkillTags: React.FC<{ skills: ORNurseSkills }> = ({ skills }) => {
-  const skillList = [
-    { key: 'surgery', label: 'CHI' }, { key: 'trauma', label: 'TRA' },
-    { key: 'ortho', label: 'ORT' }, { key: 'gyneco', label: 'GYN' },
-    { key: 'minor', label: 'MO' }, { key: 'davinci', label: 'DaV' },
-    { key: 'neuro', label: 'NCH' },
-  ];
+  const skillList = [{ key: 'surgery', label: 'CHI' }, { key: 'trauma', label: 'TRA' }, { key: 'ortho', label: 'ORT' }, { key: 'gyneco', label: 'GYN' }, { key: 'minor', label: 'MO' }, { key: 'davinci', label: 'DaV' }, { key: 'neuro', label: 'NCH' }];
   const activeSkills = skillList.filter(s => skills[s.key as keyof ORNurseSkills]);
   if (activeSkills.length === 0) return <span className="text-white/20 text-[10px]">—</span>;
   return (
@@ -185,586 +99,551 @@ const ORSkillTags: React.FC<{ skills: ORNurseSkills }> = ({ skills }) => {
       {activeSkills.map(skill => {
         const c = SKILL_COLORS[skill.key];
         return (
-          <span key={skill.key}
-            className="px-1.5 py-0.5 rounded text-[10px] font-bold"
-            style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
-          >{skill.label}</span>
+          <span key={skill.key} className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
+            {skill.label}
+          </span>
         );
       })}
     </div>
   );
 };
 
-const StaffManager: React.FC = () => {
+export default function StaffManager() {
+  const [doctors, setDoctors] = useState<Doctor[]>(generateDoctors());
+  const [nurses, setNurses] = useState<Nurse[]>(generateNurses());
+  const [orNurses, setOrNurses] = useState<ORNurse[]>(generateORNurses());
+  
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isAddingNew, setIsAddingNew] = useState(false);
-  
-  const [doctors, setDoctors] = useState<Doctor[]>(generateDoctors);
-  const [nurses, setNurses] = useState<Nurse[]>(generateNurses);
-  const [orNurses, setORNurses] = useState<ORNurse[]>(generateORNurses);
-  
-  const [editForm, setEditForm] = useState<{
-    name: string;
-    qualification: string;
-    workload: number;
-    employmentType: EmploymentType;
-    skills: DoctorSkills | NurseSkills | ORNurseSkills;
-  }>({
-    name: '',
-    qualification: '',
-    workload: 100,
-    employmentType: 'I',
-    skills: { aro: false, jip: false, emergency: false, or: false },
-  });
-
-  const resetForm = () => {
-    if (activeCategory === 'doctors') {
-      setEditForm({ name: '', qualification: 'L1', workload: 100, employmentType: 'I', skills: { aro: false, jip: false, emergency: false, or: false } });
-    } else if (activeCategory === 'nurses') {
-      setEditForm({ name: '', qualification: 'S', workload: 100, employmentType: 'I', skills: { aro: false, jip: false, emergency: false, or: false } });
-    } else {
-      setEditForm({ name: '', qualification: 'S', workload: 100, employmentType: 'I', skills: { surgery: false, trauma: false, ortho: false, gyneco: false, minor: false, davinci: false, neuro: false } });
-    }
-  };
-
-  const startEditing = (item: Doctor | Nurse | ORNurse) => {
-    setEditingId(item.id);
-    setEditForm({ name: item.name, qualification: item.qualification, workload: item.workload, employmentType: item.employmentType, skills: { ...item.skills } });
-  };
-
-  const cancelEditing = () => { setEditingId(null); setIsAddingNew(false); resetForm(); };
-
-  const saveEdit = () => {
-    if (!editForm.name.trim()) return;
-    if (activeCategory === 'doctors') {
-      if (isAddingNew) {
-        setDoctors(prev => [...prev, { id: `doc-${Date.now()}`, name: editForm.name, qualification: editForm.qualification as DoctorQualification, workload: editForm.workload, employmentType: editForm.employmentType, skills: editForm.skills as DoctorSkills }]);
-      } else {
-        setDoctors(prev => prev.map(d => d.id === editingId ? { ...d, name: editForm.name, qualification: editForm.qualification as DoctorQualification, workload: editForm.workload, employmentType: editForm.employmentType, skills: editForm.skills as DoctorSkills } : d));
-      }
-    } else if (activeCategory === 'nurses') {
-      if (isAddingNew) {
-        setNurses(prev => [...prev, { id: `nurse-${Date.now()}`, name: editForm.name, qualification: editForm.qualification as NurseQualification, workload: editForm.workload, employmentType: editForm.employmentType, skills: editForm.skills as NurseSkills }]);
-      } else {
-        setNurses(prev => prev.map(n => n.id === editingId ? { ...n, name: editForm.name, qualification: editForm.qualification as NurseQualification, workload: editForm.workload, employmentType: editForm.employmentType, skills: editForm.skills as NurseSkills } : n));
-      }
-    } else {
-      if (isAddingNew) {
-        setORNurses(prev => [...prev, { id: `or-nurse-${Date.now()}`, name: editForm.name, qualification: editForm.qualification as ORNurseQualification, workload: editForm.workload, employmentType: editForm.employmentType, skills: editForm.skills as ORNurseSkills }]);
-      } else {
-        setORNurses(prev => prev.map(n => n.id === editingId ? { ...n, name: editForm.name, qualification: editForm.qualification as ORNurseQualification, workload: editForm.workload, employmentType: editForm.employmentType, skills: editForm.skills as ORNurseSkills } : n));
-      }
-    }
-    setEditingId(null); setIsAddingNew(false); resetForm();
-  };
-
-  const deleteItem = (id: string) => {
-    if (activeCategory === 'doctors') setDoctors(prev => prev.filter(d => d.id !== id));
-    else if (activeCategory === 'nurses') setNurses(prev => prev.filter(n => n.id !== id));
-    else setORNurses(prev => prev.filter(n => n.id !== id));
-  };
-
-  const startAddNew = () => { setIsAddingNew(true); setEditingId(null); resetForm(); };
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [editingStaff, setEditingStaff] = useState<Doctor | Nurse | ORNurse | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const categories = [
-    { id: 'doctors' as StaffCategory, label: 'Lékaři', count: doctors.length },
-    { id: 'nurses' as StaffCategory, label: 'Sestry', count: nurses.length },
-    { id: 'or_nurses' as StaffCategory, label: 'Sálové sestry', count: orNurses.length },
+    { id: 'doctors' as StaffCategory, label: 'Lékaři', count: doctors.length, icon: Stethoscope },
+    { id: 'nurses' as StaffCategory, label: 'Sestry', count: nurses.length, icon: Heart },
+    { id: 'or_nurses' as StaffCategory, label: 'Sálové sestry', count: orNurses.length, icon: Users },
   ];
 
   const filteredData = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    let results: (Doctor | Nurse | ORNurse)[] = [];
-    
     const data = activeCategory === 'doctors' ? doctors : activeCategory === 'nurses' ? nurses : orNurses;
     
-    results = data.filter(item => {
-      // Search by name
+    return data.filter(item => {
       if (item.name.toLowerCase().includes(query)) return true;
-      
-      // Search by qualification
       if (item.qualification.toLowerCase().includes(query)) return true;
-      
-      // Search by employment type
       const employmentText = item.employmentType === 'I' ? 'interní' : 'externí';
       if (employmentText.includes(query)) return true;
-      
-      // Search by skills
-      const skills = item.skills;
-      for (const [key, value] of Object.entries(skills)) {
+      for (const [key, value] of Object.entries(item.skills)) {
         if (value && key.toLowerCase().includes(query)) return true;
       }
-      
-      // Map skill keys to readable names
-      const skillNames: Record<string, string> = {
-        aro: 'aro', jip: 'jip', emergency: 'urgentní', or: 'operační',
-        surgery: 'chirurgie', trauma: 'traumatologie', ortho: 'ortopedie',
-        gyneco: 'gynekologie', minor: 'malé obory', davinci: 'davinci', neuro: 'neurochirurgie'
-      };
-      
-      for (const [key, value] of Object.entries(skills)) {
-        if (value && skillNames[key]?.includes(query)) return true;
-      }
-      
       return false;
     });
-    
-    return results;
   }, [activeCategory, searchQuery, doctors, nurses, orNurses]);
 
-  // Stats
-  const stats = useMemo(() => {
-    const data = activeCategory === 'doctors' ? doctors : activeCategory === 'nurses' ? nurses : orNurses;
-    return {
-      total: data.length,
-      internal: data.filter(d => d.employmentType === 'I').length,
-      external: data.filter(d => d.employmentType === 'E').length,
-      fullTime: data.filter(d => d.workload === 100).length,
+  const selectedStaff = selectedStaffId ? filteredData.find(s => s.id === selectedStaffId) : null;
+
+  const stats = {
+    available: filteredData.filter(s => s.workload === 100).length,
+    busy: filteredData.filter(s => s.workload > 50 && s.workload < 100).length,
+    avgWorkload: Math.round(filteredData.reduce((sum, s) => sum + s.workload, 0) / filteredData.length || 0)
+  };
+
+  const getQualColor = (qual: string) => {
+    const colors: Record<string, string> = {
+      L3: 'bg-green-500/15 text-green-300 border-green-500/30',
+      L2: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+      L1: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+      K: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+      D: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+      A: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30',
+      S: 'bg-gray-500/15 text-gray-300 border-gray-500/30',
     };
-  }, [activeCategory, doctors, nurses, orNurses]);
+    return colors[qual] || 'bg-white/5 text-white/50 border-white/10';
+  };
+
+  const getWorkloadColor = (workload: number) => {
+    if (workload === 100) return 'text-green-400';
+    if (workload >= 80) return 'text-lime-400';
+    if (workload >= 60) return 'text-yellow-400';
+    if (workload >= 40) return 'text-orange-400';
+    return 'text-red-400';
+  };
+
+  const startEditing = (staff: Doctor | Nurse | ORNurse) => {
+    setEditingStaff({ ...staff });
+    setIsEditing(true);
+    setSelectedStaffId(null);
+  };
+
+  const deleteItem = (id: string) => {
+    if (activeCategory === 'doctors') {
+      setDoctors(prev => prev.filter(d => d.id !== id));
+    } else if (activeCategory === 'nurses') {
+      setNurses(prev => prev.filter(n => n.id !== id));
+    } else {
+      setOrNurses(prev => prev.filter(n => n.id !== id));
+    }
+    setSelectedStaffId(null);
+  };
+
+  const saveEditing = () => {
+    if (!editingStaff) return;
+    
+    if (activeCategory === 'doctors') {
+      setDoctors(prev => prev.map(d => d.id === editingStaff.id ? editingStaff as Doctor : d));
+    } else if (activeCategory === 'nurses') {
+      setNurses(prev => prev.map(n => n.id === editingStaff.id ? editingStaff as Nurse : n));
+    } else {
+      setOrNurses(prev => prev.map(n => n.id === editingStaff.id ? editingStaff as ORNurse : n));
+    }
+    setIsEditing(false);
+    setEditingStaff(null);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditingStaff(null);
+  };
+
+  const toggleSkill = (skillKey: string) => {
+    if (!editingStaff) return;
+    setEditingStaff({
+      ...editingStaff,
+      skills: {
+        ...editingStaff.skills,
+        [skillKey]: !editingStaff.skills[skillKey as keyof typeof editingStaff.skills]
+      }
+    });
+  };
 
   return (
-    <div className="w-full max-w-[2000px] mx-auto">
-      {/* Header - matching dashboard style */}
-      <header className="mb-16">
-        <div className="flex items-center gap-3 mb-3 opacity-60">
-          <Shield className="w-4 h-4 text-[#00D8C1]" />
-          <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">STAFF MANAGEMENT</p>
+    <div className="w-full space-y-12">
+      {/* Header */}
+      <header className="space-y-8">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Shield className="w-4 h-4 text-[#00D8C1]" />
+            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">PERSONÁL CONTROL</p>
+          </div>
+          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+            PERSONÁL <span className="text-white/20">MANAGEMENT</span>
+          </h1>
         </div>
-        <h1 className="text-6xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
-          PERSONÁL <span className="text-white/20">CONTROL</span>
-        </h1>
+
+        {/* Stats Bar */}
+        <div className="flex gap-2 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl overflow-hidden">
+          {[
+            { label: 'DOSTUPNÍ', value: stats.available, icon: Activity, color: 'text-green-500' },
+            { label: 'OBSAZENI', value: stats.busy, icon: Clock, color: 'text-yellow-500' },
+            { label: 'AVG ÚVAZEK', value: `${stats.avgWorkload}%`, icon: TrendingUp, color: 'text-[#00D8C1]' },
+          ].map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center justify-center px-10 py-4 rounded-3xl hover:bg-white/5 transition-all min-w-[140px] z-10">
+              <div className="flex items-center gap-2.5 mb-2 opacity-40">
+                <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                <p className="text-[9px] font-black uppercase tracking-[0.2em]">{stat.label}</p>
+              </div>
+              <p className="text-2xl font-black text-white">{stat.value}</p>
+            </div>
+          ))}
+        </div>
       </header>
 
-      {/* Centered Search with Filter Icons */}
-      <div className="flex justify-center mb-10">
-        <div className="relative w-full max-w-3xl">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#00D8C1]" />
-          <input
-            type="text"
-            placeholder="Hledat podle jména, kvalifikace, typu, specializace..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-14 pr-48 py-4 rounded-xl bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-[#00D8C1]/50 focus:bg-white/[0.05] transition-all text-sm text-center"
-          />
-          
-          {/* Filter Icons */}
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <div className="flex items-center gap-1 text-[10px] text-white/40">
-              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
-                <Users className="w-3.5 h-3.5 text-white/30" />
-                <span>Jméno</span>
-              </div>
-              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
-                <Award className="w-3.5 h-3.5 text-white/30" />
-                <span>Kvalif.</span>
-              </div>
-              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
-                <Briefcase className="w-3.5 h-3.5 text-white/30" />
-                <span>Typ</span>
-              </div>
-              <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-white/5 border border-white/10">
-                <Zap className="w-3.5 h-3.5 text-white/30" />
-                <span>Spec.</span>
-              </div>
-            </div>
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-white/30 hover:text-white transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Category Cards - Active/Ready style */}
-      <div className="grid grid-cols-3 gap-3 mb-10">
+      {/* Category Tabs */}
+      <div className="flex gap-2 border-b border-white/5 pb-4">
         {categories.map(cat => {
           const isActive = activeCategory === cat.id;
-          const themeColor = cat.id === 'doctors' ? '#3B82F6' : cat.id === 'nurses' ? '#EC4899' : '#10B981';
-          const Icon = cat.id === 'doctors' ? Stethoscope : cat.id === 'nurses' ? Heart : Users;
-          
+          const Icon = cat.icon;
           return (
-            <motion.button
+            <button
               key={cat.id}
-              onClick={() => { setActiveCategory(cat.id); setEditingId(null); setIsAddingNew(false); }}
-              className={`relative group rounded-lg overflow-hidden transition-all duration-300 flex items-center gap-4 px-5 py-4 border ${
-                isActive
-                  ? 'bg-white/[0.06] border-white/15 shadow-[0_10px_25px_-8px_rgba(0,0,0,0.4)]'
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
-              }`}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+              onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
+              className={`flex items-center gap-2 pb-4 px-4 -mb-4 transition-all ${isActive ? 'text-white border-b-2 border-[#00D8C1]' : 'text-white/40 hover:text-white/60'}`}
             >
-              {/* Glow */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `radial-gradient(600px at 50% 0%, ${themeColor}08, transparent 80%)`
-                }}
-              />
-
-              {/* Icon */}
-              <div className="relative shrink-0">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{
-                    backgroundColor: `${themeColor}15`,
-                    border: `1px solid ${themeColor}30`
-                  }}
-                >
-                  <Icon className="w-6 h-6" style={{ color: themeColor }} />
-                </div>
-              </div>
-
-              {/* Label + Count */}
-              <div className="relative flex-1 text-left">
-                <p className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-1">
-                  {cat.label}
-                </p>
-                <p
-                  className="text-3xl font-black"
-                  style={{ color: isActive ? 'white' : 'rgba(255,255,255,0.7)' }}
-                >
-                  {cat.count}
-                </p>
-              </div>
-            </motion.button>
+              <Icon className="w-4 h-4" />
+              <span className="font-semibold">{cat.label}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-white/10 text-white' : 'bg-white/5 text-white/40'}`}>
+                {cat.count}
+              </span>
+            </button>
           );
         })}
       </div>
 
-      {/* Add Staff Button */}
-      <div className="flex justify-center mb-8">
-        <button
-          onClick={startAddNew}
-          className="px-6 py-3 rounded-lg bg-[#00D8C1]/10 border border-[#00D8C1]/30 text-[#00D8C1] font-bold flex items-center gap-2 hover:bg-[#00D8C1]/20 transition-all text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Přidat zaměstnance
-        </button>
+      {/* Search */}
+      <div className="relative w-full max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+        <input
+          type="text"
+          placeholder="Hledat..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 rounded-lg bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-white/10 focus:bg-white/[0.05] transition-all text-sm"
+        />
       </div>
 
-      {/* 2-column card grid - Compact inspired by screenshot */}
-      {filteredData.length === 0 ? (
-        <div className="py-16 text-center text-white/30 border border-white/5 rounded-xl">
-          Žádní zaměstnanci nenalezeni
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filteredData.map((item, index) => {
-            const avatarColor = (() => {
-              const colors = ['#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#F87171', '#06B6D4', '#84CC16'];
-              return colors[index % colors.length];
-            })();
-            
-            const getInitials = (name: string) => {
-              const parts = name.split(' ');
-              return parts.length >= 2 ? (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
-            };
-
-            return (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.02 }}
-                className="group relative rounded-lg border border-white/[0.08] overflow-hidden p-3 transition-all hover:border-white/15"
-                style={{
-                  background: `linear-gradient(135deg, rgb(12, 13, 27) 0%, rgba(255, 255, 255, 0.02) 100%)`
-                }}
-              >
-                {/* Top Row: Avatar + Name + Qual + Type + Actions */}
-                <div className="flex items-start gap-3 mb-2">
-                  {/* Avatar */}
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0"
-                    style={{ backgroundColor: avatarColor }}
-                  >
-                    {getInitials(item.name)}
+      {/* Main Content - 3 Column Grid */}
+      <div>
+        {/* Grid Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {filteredData.map((item, idx) => (
+            <motion.button
+              key={item.id}
+              onClick={() => setSelectedStaffId(item.id)}
+              className={`p-4 rounded-xl border transition-all cursor-pointer group flex items-center gap-4 h-32 ${
+                selectedStaffId === item.id
+                  ? 'bg-[#00D8C1]/15 border-[#00D8C1]/50 shadow-lg shadow-[#00D8C1]/20'
+                  : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {/* Left - Qual Icon + Name + Type */}
+              <div className="flex-1 text-left flex flex-col justify-between h-full min-w-0">
+                <div className="flex items-start gap-3">
+                  {/* Qualification Icon */}
+                  <div className={`p-2 rounded-lg shrink-0 ${
+                    item.qualification === 'S' ? 'bg-blue-500/20' :
+                    item.qualification === 'A' ? 'bg-purple-500/20' :
+                    item.qualification === 'K' ? 'bg-green-500/20' :
+                    item.qualification === 'D' ? 'bg-red-500/20' :
+                    'bg-white/10'
+                  }`}>
+                    {item.qualification === 'S' ? <Award className="w-6 h-6 text-blue-400" /> :
+                     item.qualification === 'A' ? <Shield className="w-6 h-6 text-purple-400" /> :
+                     item.qualification === 'K' ? <Stethoscope className="w-6 h-6 text-green-400" /> :
+                     item.qualification === 'D' ? <Users className="w-6 h-6 text-red-400" /> :
+                     <Award className="w-6 h-6 text-white/40" />}
                   </div>
 
-                  {/* Info Column */}
+                  {/* Name + Type */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate leading-tight">{item.name}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <QualBadge qual={item.qualification} category={activeCategory} />
-                      <span
-                        className="text-[8px] font-black tracking-wide uppercase px-1.5 py-0.5 rounded"
-                        style={{
-                          backgroundColor: item.employmentType === 'I' ? 'rgba(0,216,193,0.15)' : 'rgba(245,158,11,0.15)',
-                          color: item.employmentType === 'I' ? '#00D8C1' : '#F59E0B',
-                          border: `1px solid ${item.employmentType === 'I' ? 'rgba(0,216,193,0.3)' : 'rgba(245,158,11,0.3)'}`
-                        }}
-                      >
-                        {item.employmentType}
+                    <p className={`text-base font-semibold truncate ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
+                      {item.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
+                        {item.employmentType === 'I' ? 'INT' : 'EXT'}
+                      </span>
+                      <span className="text-[9px] font-black text-white/40">
+                        {item.qualification}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Specializace - inline s barvami a větší */}
+                <div className="flex flex-wrap gap-2">
+                  {activeCategory === 'or_nurses' 
+                    ? Object.entries((item as ORNurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => {
+                        const skillColors: Record<string, { bg: string; text: string }> = {
+                          'davinci': { bg: 'bg-purple-500/20', text: 'text-purple-300' },
+                          'neuro': { bg: 'bg-blue-500/20', text: 'text-blue-300' },
+                          'emergency': { bg: 'bg-red-500/20', text: 'text-red-300' },
+                          'or': { bg: 'bg-cyan-500/20', text: 'text-cyan-300' }
+                        };
+                        const color = skillColors[k.toLowerCase()] || { bg: 'bg-white/10', text: 'text-white/60' };
+                        return (
+                          <span key={k} className={`text-xs px-2.5 py-1 rounded-lg uppercase font-semibold ${color.bg} ${color.text}`}>
+                            {k}
+                          </span>
+                        );
+                      })
+                    : Object.entries((item as Doctor | Nurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => {
+                        const skillColors: Record<string, { bg: string; text: string }> = {
+                          'aro': { bg: 'bg-green-500/20', text: 'text-green-300' },
+                          'jip': { bg: 'bg-blue-500/20', text: 'text-blue-300' },
+                          'emergency': { bg: 'bg-red-500/20', text: 'text-red-300' },
+                          'surgery': { bg: 'bg-orange-500/20', text: 'text-orange-300' },
+                          'trauma': { bg: 'bg-red-600/20', text: 'text-red-200' },
+                          'ortho': { bg: 'bg-yellow-500/20', text: 'text-yellow-300' },
+                          'gyneco': { bg: 'bg-pink-500/20', text: 'text-pink-300' }
+                        };
+                        const color = skillColors[k.toLowerCase()] || { bg: 'bg-white/10', text: 'text-white/60' };
+                        return (
+                          <span key={k} className={`text-xs px-2.5 py-1 rounded-lg uppercase font-semibold ${color.bg} ${color.text}`}>
+                            {k}
+                          </span>
+                        );
+                      })
+                  }
+                </div>
+              </div>
+
+              {/* Right - Workload vertical progress */}
+              <div className="flex flex-col items-center justify-between h-full">
+                <span className={`text-lg font-black ${getWorkloadColor(item.workload)}`}>
+                  {item.workload}%
+                </span>
+                <div className="h-20 w-1.5 rounded-full bg-white/[0.05] overflow-hidden border border-white/10">
+                  <motion.div
+                    className="w-full rounded-full"
+                    initial={{ height: 0 }}
+                    animate={{ height: `${item.workload}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    style={{
+                      backgroundColor: item.workload === 100 ? '#10B981' : item.workload >= 80 ? '#84CC16' : item.workload >= 60 ? '#F59E0B' : item.workload >= 40 ? '#F97316' : '#EF4444'
+                    }}
+                  />
+                </div>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Modal Popup - Detail s editací */}
+        <AnimatePresence>
+          {selectedStaff && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedStaffId(null)}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              />
+
+              {/* Modal */}
+              <motion.div
+                key={selectedStaff.id}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              >
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 space-y-6 max-w-md w-full backdrop-blur-xl">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-white/40 font-black tracking-widest uppercase mb-2">Detail personálu</p>
+                      <h2 className="text-2xl font-semibold text-white">{selectedStaff.name}</h2>
+                    </div>
+                    <button
+                      onClick={() => setSelectedStaffId(null)}
+                      className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="space-y-4 border-t border-white/5 pt-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 uppercase font-bold">Kvalifikace</span>
+                      <span className={`px-3 py-1 rounded font-semibold text-sm ${getQualColor(selectedStaff.qualification)}`}>
+                        {selectedStaff.qualification}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 uppercase font-bold">Typ</span>
+                      <span className={`text-sm font-semibold ${selectedStaff.employmentType === 'I' ? 'text-teal-300' : 'text-orange-300'}`}>
+                        {selectedStaff.employmentType === 'I' ? 'Interní' : 'Externí'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 uppercase font-bold">Úvazek</span>
+                      <span className={`text-sm font-black ${getWorkloadColor(selectedStaff.workload)}`}>
+                        {selectedStaff.workload}%
                       </span>
                     </div>
                   </div>
 
-                  {/* Edit + Delete buttons */}
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                    <button
-                      onClick={() => startEditing(item)}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/30 hover:text-white transition-all"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) deleteItem(item.id); }}
-                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-white/30 hover:text-red-400 transition-all"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Skills tags */}
-                <div className="flex flex-wrap gap-1 mb-2 pl-14">
-                  {activeCategory === 'or_nurses'
-                    ? <ORSkillTags skills={(item as ORNurse).skills} />
-                    : <SkillTags skills={(item as Doctor | Nurse).skills} />
-                  }
-                </div>
-
-                {/* Workload progress bar */}
-                <div className="space-y-1.5 pl-14">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">Úvazek</span>
-                    <span className="text-[10px] font-bold text-white">{item.workload}%</span>
-                  </div>
-                  <div className="w-full h-1.5 rounded-full bg-white/[0.05] overflow-hidden border border-white/[0.1]">
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{
-                        backgroundColor: item.workload === 100 ? '#10B981' : item.workload >= 80 ? '#84CC16' : item.workload >= 60 ? '#F59E0B' : item.workload >= 40 ? '#F97316' : '#EF4444',
-                      }}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.workload}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Available status */}
-                <div className="flex items-center gap-1.5 mt-2 pl-14 text-[10px] text-white/60">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                  <span>K dispozici</span>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Results count */}
-      <div className="mt-4 text-xs text-white/30">
-        Zobrazeno {filteredData.length} z {activeCategory === 'doctors' ? doctors.length : activeCategory === 'nurses' ? nurses.length : orNurses.length} záznamů
-      </div>
-
-      {/* Modal for Add/Edit */}
-      <AnimatePresence>
-        {(isAddingNew || editingId) && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
-              onClick={cancelEditing}
-            />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden"
-              >
-                {/* Modal Header */}
-                <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold text-[#00D8C1] uppercase tracking-wider mb-1">
-                      {activeCategory === 'doctors' ? 'Lékař' : activeCategory === 'nurses' ? 'Sestra' : 'Sálová sestra'}
-                    </p>
-                    <h3 className="text-lg font-bold text-white">
-                      {isAddingNew ? 'Nový záznam' : 'Upravit záznam'}
-                    </h3>
-                  </div>
-                  <button onClick={cancelEditing} className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Modal Body */}
-                <div className="p-6 space-y-5">
-                  {/* Name */}
-                  <div>
-                    <label className="block text-[11px] text-white/40 mb-2 uppercase tracking-wider font-medium">Jméno</label>
-                    <input
-                      type="text"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/20 transition-all"
-                      placeholder="Celé jméno..."
-                      autoFocus
-                    />
-                  </div>
-
-                  {/* Qualification & Workload */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[11px] text-white/40 mb-2 uppercase tracking-wider font-medium">Kvalifikace</label>
-                      <select
-                        value={editForm.qualification}
-                        onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-white/20 transition-all"
-                      >
-                        {activeCategory === 'doctors' ? (
-                          <>
-                            <option value="L3">L3 - Atestace</option>
-                            <option value="L2">L2 - Pokročilý</option>
-                            <option value="L1">L1 - Základní</option>
-                            <option value="A">A - Absolvent</option>
-                            <option value="S">S - Stážista</option>
-                          </>
-                        ) : activeCategory === 'nurses' ? (
-                          <>
-                            <option value="K">K - Kvalifikovaná</option>
-                            <option value="D">D - Pod dohledem</option>
-                            <option value="A">A - Absolventka</option>
-                            <option value="S">S - Stážistka</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="K">K - Kvalifikovaná</option>
-                            <option value="A">A - Absolventka</option>
-                            <option value="S">S - Stážistka</option>
-                          </>
-                        )}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-white/40 mb-2 uppercase tracking-wider font-medium">Úvazek (%)</label>
-                      <input
-                        type="number"
-                        min="10"
-                        max="100"
-                        step="10"
-                        value={editForm.workload}
-                        onChange={(e) => setEditForm({ ...editForm, workload: parseInt(e.target.value) || 100 })}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-white/20 transition-all text-center"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Employment Type */}
-                  <div>
-                    <label className="block text-[11px] text-white/40 mb-2 uppercase tracking-wider font-medium">Typ zaměstnance</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setEditForm({ ...editForm, employmentType: 'I' })}
-                        className={`py-3 rounded-xl font-medium transition-all text-sm ${
-                          editForm.employmentType === 'I'
-                            ? 'bg-[#00D8C1]/10 border-2 border-[#00D8C1]/50 text-[#00D8C1]'
-                            : 'bg-white/[0.02] border border-white/10 text-white/40 hover:bg-white/[0.05]'
-                        }`}
-                      >
-                        Interní (I)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditForm({ ...editForm, employmentType: 'E' })}
-                        className={`py-3 rounded-xl font-medium transition-all text-sm ${
-                          editForm.employmentType === 'E'
-                            ? 'bg-[#F59E0B]/10 border-2 border-[#F59E0B]/50 text-[#F59E0B]'
-                            : 'bg-white/[0.02] border border-white/10 text-white/40 hover:bg-white/[0.05]'
-                        }`}
-                      >
-                        Externí (E)
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Skills */}
-                  <div>
-                    <label className="block text-[11px] text-white/40 mb-2 uppercase tracking-wider font-medium">Specializace</label>
+                  {/* Specializace */}
+                  <div className="border-t border-white/5 pt-4">
+                    <p className="text-sm text-white/40 font-black tracking-widest uppercase mb-3">Specializace</p>
                     <div className="flex flex-wrap gap-2">
-                      {activeCategory === 'or_nurses' ? (
-                        ['surgery', 'trauma', 'ortho', 'gyneco', 'minor', 'davinci', 'neuro'].map(key => {
-                          const labels: Record<string, string> = { surgery: 'CHI', trauma: 'TRA', ortho: 'ORT', gyneco: 'GYN', minor: 'MO', davinci: 'DaV', neuro: 'NCH' };
-                          const isActive = (editForm.skills as ORNurseSkills)[key as keyof ORNurseSkills];
-                          return (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => setEditForm({
-                                ...editForm,
-                                skills: { ...(editForm.skills as ORNurseSkills), [key]: !isActive },
-                              })}
-                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                                isActive ? 'bg-white/10 border border-white/20 text-white' : 'bg-white/[0.02] border border-white/5 text-white/40 hover:bg-white/[0.05]'
-                              }`}
-                            >
-                              {labels[key]}
-                            </button>
-                          );
-                        })
-                      ) : (
-                        ['aro', 'jip', 'emergency', 'or'].map(key => {
-                          const labels: Record<string, string> = { aro: 'ARO', jip: 'JIP', emergency: 'UP', or: 'OS' };
-                          const isActive = (editForm.skills as DoctorSkills | NurseSkills)[key as keyof (DoctorSkills | NurseSkills)];
-                          return (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => setEditForm({
-                                ...editForm,
-                                skills: { ...(editForm.skills as DoctorSkills | NurseSkills), [key]: !isActive },
-                              })}
-                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                                isActive ? 'bg-white/10 border border-white/20 text-white' : 'bg-white/[0.02] border border-white/5 text-white/40 hover:bg-white/[0.05]'
-                              }`}
-                            >
-                              {labels[key]}
-                            </button>
-                          );
-                        })
-                      )}
+                      {activeCategory === 'or_nurses' ? <ORSkillTags skills={(selectedStaff as ORNurse).skills} /> : <SkillTags skills={(selectedStaff as Doctor | Nurse).skills} />}
                     </div>
                   </div>
-                </div>
 
-                {/* Modal Footer */}
-                <div className="px-6 py-4 border-t border-white/5 flex gap-3">
-                  <button
-                    onClick={saveEdit}
-                    disabled={!editForm.name.trim()}
-                    className="flex-1 py-3 rounded-xl bg-white text-black font-semibold flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/90 transition-all text-sm"
-                  >
-                    <Check className="w-4 h-4" />
-                    {isAddingNew ? 'Přidat' : 'Uložit'}
-                  </button>
-                  <button
-                    onClick={cancelEditing}
-                    className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 font-medium hover:bg-white/10 transition-all text-sm"
-                  >
-                    Zrušit
-                  </button>
+                  {/* Actions */}
+                  <div className="flex gap-2 border-t border-white/5 pt-6">
+                    <button
+                      onClick={() => { startEditing(selectedStaff); setSelectedStaffId(null); }}
+                      className="flex-1 py-3 rounded-lg bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Upravit
+                    </button>
+                    <button
+                      onClick={() => { if (confirm('Opravdu chcete smazat tohoto zaměstnance?')) { deleteItem(selectedStaff.id); setSelectedStaffId(null); } }}
+                      className="flex-1 py-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Smazat
+                    </button>
+                  </div>
                 </div>
               </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Edit Modal */}
+        <AnimatePresence>
+          {isEditing && editingStaff && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={cancelEditing}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              >
+                <div className="bg-[#0c0d1b] border border-white/10 rounded-2xl p-8 space-y-6 max-w-lg w-full backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-[#00D8C1] font-black tracking-widest uppercase mb-2">Editace personálu</p>
+                      <h2 className="text-2xl font-semibold text-white">{editingStaff.name}</h2>
+                    </div>
+                    <button onClick={cancelEditing} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Kvalifikace */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Kvalifikace</label>
+                    <div className="flex flex-wrap gap-2">
+                      {(activeCategory === 'doctors' ? ['L1', 'L2', 'L3', 'S', 'A'] : activeCategory === 'nurses' ? ['S', 'A', 'D', 'K'] : ['S', 'A', 'K']).map(qual => (
+                        <button
+                          key={qual}
+                          onClick={() => setEditingStaff({ ...editingStaff, qualification: qual as any })}
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                            editingStaff.qualification === qual
+                              ? 'bg-[#00D8C1]/20 text-[#00D8C1] border border-[#00D8C1]/50'
+                              : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          {qual}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Typ úvazku */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Typ úvazku</label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingStaff({ ...editingStaff, employmentType: 'I' })}
+                        className={`flex-1 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                          editingStaff.employmentType === 'I'
+                            ? 'bg-teal-500/20 text-teal-300 border border-teal-500/50'
+                            : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        Interní
+                      </button>
+                      <button
+                        onClick={() => setEditingStaff({ ...editingStaff, employmentType: 'E' })}
+                        className={`flex-1 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                          editingStaff.employmentType === 'E'
+                            ? 'bg-orange-500/20 text-orange-300 border border-orange-500/50'
+                            : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        Externí
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Úvazek slider */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Úvazek: <span className={`${getWorkloadColor(editingStaff.workload)}`}>{editingStaff.workload}%</span></label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="10"
+                      value={editingStaff.workload}
+                      onChange={(e) => setEditingStaff({ ...editingStaff, workload: parseInt(e.target.value) })}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00D8C1]"
+                    />
+                    <div className="flex justify-between text-xs text-white/30">
+                      <span>0%</span>
+                      <span>50%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+
+                  {/* Specializace */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Specializace</label>
+                    <div className="flex flex-wrap gap-2">
+                      {activeCategory === 'or_nurses' 
+                        ? ['surgery', 'trauma', 'ortho', 'gyneco', 'minor', 'davinci', 'neuro'].map(skill => {
+                            const labels: Record<string, string> = { surgery: 'Chirurgie', trauma: 'Traumatologie', ortho: 'Ortopedie', gyneco: 'Gynekologie', minor: 'Malé obory', davinci: 'DaVinci', neuro: 'Neurochirurgie' };
+                            const isActive = (editingStaff as ORNurse).skills[skill as keyof ORNurseSkills];
+                            const c = SKILL_COLORS[skill];
+                            return (
+                              <button
+                                key={skill}
+                                onClick={() => toggleSkill(skill)}
+                                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                                  isActive
+                                    ? ''
+                                    : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'
+                                }`}
+                                style={isActive ? { background: c.bg, color: c.text, borderColor: c.border } : {}}
+                              >
+                                {labels[skill]}
+                              </button>
+                            );
+                          })
+                        : ['aro', 'jip', 'emergency', 'or'].map(skill => {
+                            const labels: Record<string, string> = { aro: 'ARO', jip: 'JIP', emergency: 'Urgentní příjem', or: 'Operační sál' };
+                            const isActive = (editingStaff as Doctor | Nurse).skills[skill as keyof DoctorSkills];
+                            const c = SKILL_COLORS[skill];
+                            return (
+                              <button
+                                key={skill}
+                                onClick={() => toggleSkill(skill)}
+                                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                                  isActive
+                                    ? ''
+                                    : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'
+                                }`}
+                                style={isActive ? { background: c.bg, color: c.text, borderColor: c.border } : {}}
+                              >
+                                {labels[skill]}
+                              </button>
+                            );
+                          })
+                      }
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-4 border-t border-white/10">
+                    <button
+                      onClick={cancelEditing}
+                      className="flex-1 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-sm font-bold uppercase tracking-wider transition-all"
+                    >
+                      Zrušit
+                    </button>
+                    <button
+                      onClick={saveEditing}
+                      className="flex-1 py-3 rounded-lg bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Uložit
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
-};
-
-export default StaffManager;
+}
