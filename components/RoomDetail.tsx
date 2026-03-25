@@ -622,7 +622,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute bottom-8 left-[140px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute bottom-8 left-[360px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -652,7 +652,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute bottom-8 left-8 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute bottom-8 left-[240px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -709,89 +709,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <Activity className="w-6 h-6" style={{ color: activeColor }} />
           </div>
         </div>
-        
-        {/* Animated Flow Lines (Lemniscata/Infinity Pattern) */}
-        <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
-          <defs>
-            <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={activeColor} stopOpacity="0.1" />
-              <stop offset="50%" stopColor={activeColor} stopOpacity="0.4" />
-              <stop offset="100%" stopColor={activeColor} stopOpacity="0.1" />
-            </linearGradient>
-          </defs>
-          
-          {/* Main flowing curve from left to center to right (lemniscata pattern) */}
-          <motion.path
-            d="M 140 400 Q 280 280 400 340 Q 520 280 660 400"
-            fill="none"
-            stroke={activeColor}
-            strokeWidth="2"
-            strokeLinecap="round"
-            opacity="0.3"
-            strokeDasharray="200"
-            initial={{ strokeDashoffset: 200 }}
-            animate={{ strokeDashoffset: 0 }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          />
-          
-          {/* Return flow from right to center to left */}
-          <motion.path
-            d="M 660 400 Q 520 520 400 460 Q 280 520 140 400"
-            fill="none"
-            stroke={activeColor}
-            strokeWidth="2"
-            strokeLinecap="round"
-            opacity="0.2"
-            strokeDasharray="200"
-            initial={{ strokeDashoffset: 200 }}
-            animate={{ strokeDashoffset: 0 }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "linear",
-              delay: 1
-            }}
-          />
-          
-          {/* Flowing particle indicators */}
-          <motion.circle
-            cx="140"
-            cy="400"
-            r="4"
-            fill={activeColor}
-            initial={{ cx: 140, opacity: 0 }}
-            animate={{ 
-              cx: 660,
-              opacity: [0, 0.8, 0.8, 0]
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          <motion.circle
-            cx="660"
-            cy="400"
-            r="4"
-            fill={activeColor}
-            initial={{ cx: 660, opacity: 0 }}
-            animate={{ 
-              cx: 140,
-              opacity: [0, 0.8, 0.8, 0]
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1.5
-            }}
-          />
-        </svg>
         
         <div className="flex items-center justify-center gap-20 relative">
           {/* Previous Step - Left Circle (smaller) */}
@@ -990,19 +907,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             transition={{ duration: 0.5, delay: 0.1 }}
             className="relative w-[280px] h-[280px] flex items-center justify-center"
           >
-            {/* QR Code icon positioned at top-right of this circle */}
-            <div className="absolute -top-2 -right-2 z-20">
-              <div 
-                className="w-10 h-10 rounded-xl border flex items-center justify-center backdrop-blur-md"
-                style={{ 
-                  borderColor: `${nextStep.color}40`,
-                  backgroundColor: 'rgba(255,255,255,0.05)'
-                }}
-              >
-                <QrCode className="w-5 h-5 text-white/50" />
-              </div>
-            </div>
-            
             {/* Glow - gradient transparent from center */}
             <div 
               className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
