@@ -539,7 +539,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       </div>
 
 
-      {/* Pause Button - Bottom Right */}
+      {/* Pause Button - Right Side, vertical stack */}
       {!(room.isLocked && isFinalStep) && (
         <motion.button
           onClick={async () => {
@@ -553,7 +553,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute bottom-8 right-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+          className={`absolute right-8 top-1/2 -translate-y-1/2 translate-y-32 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
@@ -568,7 +568,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </motion.button>
       )}
 
-      {/* Enhanced Hygiene Mode Toggle - Bottom Right, next to Pause */}
+      {/* Enhanced Hygiene Mode Toggle - Right Side, above Pause */}
       <motion.button
         onClick={async () => {
           const newHygieneState = !room.isEnhancedHygiene;
@@ -581,7 +581,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             step_name: WORKFLOW_STEPS[currentStepIndex].title,
           });
         }}
-        className={`absolute bottom-8 right-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
+        className={`absolute right-8 top-1/2 -translate-y-1/2 translate-y-[116px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
           room.isEnhancedHygiene
             ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
             : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
@@ -591,11 +591,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       >
         <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
         <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
-          {room.isEnhancedHygiene ? 'Hygienický\nrežim' : 'Hygien.\nrežim'}
+          Hygien.
         </span>
       </motion.button>
 
-      {/* Patient Arrival Button - Bottom Right, next to Hygiene */}
+      {/* Patient Arrival Button - Right Side */}
       <motion.button
         onClick={async () => {
           if (patientCalledTime && !patientArrivedTime) {
@@ -622,7 +622,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute bottom-8 left-[360px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-8 top-1/2 -translate-y-1/2 -translate-y-4 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -636,7 +636,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
       </motion.button>
 
-      {/* Volat Button - Bottom Right, next to Příjezd */}
+      {/* Volat Button - Right Side, at top */}
       <motion.button
         onClick={async () => {
           if (!patientCalledTime) {
@@ -652,7 +652,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute bottom-8 left-[240px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-8 top-1/2 -translate-y-1/2 -translate-y-[116px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-24 w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -749,7 +749,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             className={`relative w-[500px] h-[500px] flex items-center justify-center rounded-full group transition-all focus:outline-none z-10
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
-            whileHover={isInteractionBlocked ? {} : { scale: 1.05 }}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
             {/* Primary Background Glow - subtle */}
@@ -904,10 +903,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
           {/* Next Step - Right Circle */}
           <motion.div
+            onClick={handleNextStep}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative w-[280px] h-[280px] flex items-center justify-center"
+            className="relative w-[280px] h-[280px] flex items-center justify-center cursor-pointer"
           >
             {/* Glow - gradient transparent from center */}
             <div 
@@ -943,7 +943,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50">
             <motion.button 
               onClick={handleDecreaseTime}
-              className="w-20 h-20 rounded-full border flex items-center justify-center opacity-60 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md"
+              className="w-32 h-32 rounded-full border flex items-center justify-center opacity-60 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md"
               style={{
                 borderColor: `${activeColor}44`,
                 backgroundColor: 'rgba(255,255,255,0.03)'
@@ -951,7 +951,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Minus className="w-8 h-8 text-white" strokeWidth={1.5} />
+              <Minus className="w-12 h-12 text-white" strokeWidth={1.5} />
             </motion.button>
 
             <div className="px-6 py-3 rounded-full border backdrop-blur-md" style={{ borderColor: `${activeColor}44`, backgroundColor: `${activeColor}15` }}>
@@ -960,7 +960,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
             <motion.button 
               onClick={handleIncreaseTime}
-              className="w-20 h-20 rounded-full border flex items-center justify-center opacity-60 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md"
+              className="w-32 h-32 rounded-full border flex items-center justify-center opacity-60 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md"
               style={{
                 borderColor: `${activeColor}44`,
                 backgroundColor: 'rgba(255,255,255,0.03)'
@@ -968,7 +968,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Plus className="w-8 h-8 text-white" strokeWidth={1.5} />
+              <Plus className="w-12 h-12 text-white" strokeWidth={1.5} />
             </motion.button>
           </div>
         )}
