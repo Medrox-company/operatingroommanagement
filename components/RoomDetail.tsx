@@ -710,7 +710,90 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </div>
         </div>
         
-        <div className="flex items-center justify-center gap-8 relative">
+        {/* Animated Flow Lines (Lemniscata/Infinity Pattern) */}
+        <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
+          <defs>
+            <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={activeColor} stopOpacity="0.1" />
+              <stop offset="50%" stopColor={activeColor} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={activeColor} stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+          
+          {/* Main flowing curve from left to center to right (lemniscata pattern) */}
+          <motion.path
+            d="M 140 400 Q 280 280 400 340 Q 520 280 660 400"
+            fill="none"
+            stroke={activeColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.3"
+            strokeDasharray="200"
+            initial={{ strokeDashoffset: 200 }}
+            animate={{ strokeDashoffset: 0 }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          />
+          
+          {/* Return flow from right to center to left */}
+          <motion.path
+            d="M 660 400 Q 520 520 400 460 Q 280 520 140 400"
+            fill="none"
+            stroke={activeColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.2"
+            strokeDasharray="200"
+            initial={{ strokeDashoffset: 200 }}
+            animate={{ strokeDashoffset: 0 }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "linear",
+              delay: 1
+            }}
+          />
+          
+          {/* Flowing particle indicators */}
+          <motion.circle
+            cx="140"
+            cy="400"
+            r="4"
+            fill={activeColor}
+            initial={{ cx: 140, opacity: 0 }}
+            animate={{ 
+              cx: 660,
+              opacity: [0, 0.8, 0.8, 0]
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.circle
+            cx="660"
+            cy="400"
+            r="4"
+            fill={activeColor}
+            initial={{ cx: 660, opacity: 0 }}
+            animate={{ 
+              cx: 140,
+              opacity: [0, 0.8, 0.8, 0]
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1.5
+            }}
+          />
+        </svg>
+        
+        <div className="flex items-center justify-center gap-20 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
             const prevStepIdx = currentStepIndex === 0 ? WORKFLOW_STEPS.length - 1 : currentStepIndex - 1;
