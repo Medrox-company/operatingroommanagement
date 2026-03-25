@@ -720,16 +720,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="relative w-[280px] h-[280px] flex items-center justify-center"
               >
-                {/* Glow */}
+                {/* Gradient Glow - transparent from center */}
                 <div 
-                  className="absolute inset-0 rounded-full blur-[60px] opacity-15 transition-colors duration-700"
-                  style={{ backgroundColor: prevStep.color }}
+                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+                  style={{
+                    background: `radial-gradient(circle at center, ${activeColor}00 0%, ${activeColor}40 100%)`
+                  }}
                 />
                 
                 {/* Ring */}
                 <div 
-                  className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
-                  style={{ borderColor: prevStep.color }}
+                  className="absolute inset-0 rounded-full border-2 opacity-40 transition-colors duration-500"
+                  style={{ borderColor: activeColor }}
                 />
                 
                 {/* Inner content */}
@@ -916,16 +918,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </div>
             </div>
             
-            {/* Glow */}
+            {/* Glow - gradient transparent from center */}
             <div 
-              className="absolute inset-0 rounded-full blur-[60px] opacity-20 transition-colors duration-700"
-              style={{ backgroundColor: nextStep.color }}
+              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+              style={{
+                background: `radial-gradient(circle at center, ${activeColor}00 0%, ${activeColor}40 100%)`
+              }}
             />
             
             {/* Ring */}
             <div 
               className="absolute inset-0 rounded-full border-2 opacity-40 transition-colors duration-500"
-              style={{ borderColor: nextStep.color }}
+              style={{ borderColor: activeColor }}
             />
             
             {/* Inner content */}
