@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
-  Clock, Shield, Activity, Award, Briefcase, Zap, Filter, TrendingUp
+  Clock, Shield, Activity, Award, Briefcase, Zap, Filter, TrendingUp, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 // Types
@@ -20,7 +20,7 @@ interface Doctor { id: string; name: string; qualification: DoctorQualification;
 interface Nurse { id: string; name: string; qualification: NurseQualification; workload: number; skills: NurseSkills; employmentType: EmploymentType; }
 interface ORNurse { id: string; name: string; qualification: ORNurseQualification; workload: number; skills: ORNurseSkills; employmentType: EmploymentType; }
 
-// Mock data
+// Mock data generators
 const generateDoctors = (): Doctor[] => {
   const names = ['MUDr. Jan Novák', 'MUDr. Petr Svoboda', 'MUDr. Martin Dvořák', 'MUDr. Tomáš Černý', 'MUDr. Pavel Procházka', 'MUDr. Jaroslav Kučera', 'MUDr. Miroslav Veselý', 'MUDr. František Horák', 'MUDr. Václav Němec', 'MUDr. Karel Marek'];
   const qualifications: DoctorQualification[] = ['L1', 'L2', 'L3', 'S', 'A'];
@@ -57,7 +57,7 @@ const generateORNurses = (): ORNurse[] => {
   }));
 };
 
-// Skill color mapping
+// Skill colors
 const SKILL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   aro: { bg: 'rgba(239,68,68,0.10)', text: '#F87171', border: 'rgba(239,68,68,0.25)' },
   jip: { bg: 'rgba(245,158,11,0.10)', text: '#FBBF24', border: 'rgba(245,158,11,0.25)' },
@@ -115,7 +115,8 @@ export default function StaffManager() {
   
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   const categories = [
     { id: 'doctors' as StaffCategory, label: 'Lékaři', count: doctors.length, icon: Stethoscope },
@@ -125,24 +126,21 @@ export default function StaffManager() {
 
   const filteredData = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    let results: (Doctor | Nurse | ORNurse)[] = [];
-    
     const data = activeCategory === 'doctors' ? doctors : activeCategory === 'nurses' ? nurses : orNurses;
     
-    results = data.filter(item => {
+    return data.filter(item => {
       if (item.name.toLowerCase().includes(query)) return true;
       if (item.qualification.toLowerCase().includes(query)) return true;
       const employmentText = item.employmentType === 'I' ? 'interní' : 'externí';
       if (employmentText.includes(query)) return true;
-      const skills = item.skills;
-      for (const [key, value] of Object.entries(skills)) {
+      for (const [key, value] of Object.entries(item.skills)) {
         if (value && key.toLowerCase().includes(query)) return true;
       }
       return false;
     });
-    
-    return results;
   }, [activeCategory, searchQuery, doctors, nurses, orNurses]);
+
+  const selectedStaff = selectedStaffId ? filteredData.find(s => s.id === selectedStaffId) : filteredData[0];
 
   const stats = {
     available: filteredData.filter(s => s.workload === 100).length,
@@ -164,11 +162,11 @@ export default function StaffManager() {
   };
 
   const getWorkloadColor = (workload: number) => {
-    if (workload === 100) return 'from-green-500 to-teal-500';
-    if (workload >= 80) return 'from-lime-500 to-green-500';
-    if (workload >= 60) return 'from-yellow-500 to-lime-500';
-    if (workload >= 40) return 'from-orange-500 to-yellow-500';
-    return 'from-red-500 to-orange-500';
+    if (workload === 100) return 'text-green-400';
+    if (workload >= 80) return 'text-lime-400';
+    if (workload >= 60) return 'text-yellow-400';
+    if (workload >= 40) return 'text-orange-400';
+    return 'text-red-400';
   };
 
   return (
@@ -203,117 +201,147 @@ export default function StaffManager() {
         </div>
       </header>
 
-      {/* Category & Search */}
-      <div className="flex flex-col gap-6">
-        {/* Filter Tags - inspired by dashboard design */}
-        <div className="flex items-center gap-3 flex-wrap">
-          {['Všichni', 'Dostupní', '100%', '80%+', 'Interní'].map((filter, idx) => (
+      {/* Category Tabs */}
+      <div className="flex gap-2 border-b border-white/5 pb-4">
+        {categories.map(cat => {
+          const isActive = activeCategory === cat.id;
+          const Icon = cat.icon;
+          return (
             <button
-              key={idx}
-              className={`px-4 py-2 rounded-full text-sm font-bold tracking-wider uppercase transition-all ${
-                idx === 0
-                  ? 'bg-[#00D8C1]/20 text-[#00D8C1] border border-[#00D8C1]/40'
-                  : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10 hover:text-white/70'
-              }`}
+              key={cat.id}
+              onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
+              className={`flex items-center gap-2 pb-4 px-4 -mb-4 transition-all ${isActive ? 'text-white border-b-2 border-[#00D8C1]' : 'text-white/40 hover:text-white/60'}`}
             >
-              {filter}
+              <Icon className="w-4 h-4" />
+              <span className="font-semibold">{cat.label}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-white/10 text-white' : 'bg-white/5 text-white/40'}`}>
+                {cat.count}
+              </span>
             </button>
+          );
+        })}
+      </div>
+
+      {/* Search */}
+      <div className="relative w-full max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+        <input
+          type="text"
+          placeholder="Hledat..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 rounded-lg bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-white/10 focus:bg-white/[0.05] transition-all text-sm"
+        />
+      </div>
+
+      {/* Main Content - Horizontal cards + Right sidebar */}
+      <div className="flex gap-6">
+        {/* Horizontal Scroll Cards - inspired by meeting calendar */}
+        <div className="flex-1 flex gap-4 overflow-x-auto pb-4 scroll-smooth">
+          {filteredData.map((item, idx) => (
+            <motion.button
+              key={item.id}
+              onClick={() => setSelectedStaffId(item.id)}
+              className={`shrink-0 w-[280px] p-6 rounded-2xl border transition-all cursor-pointer group ${
+                selectedStaffId === item.id
+                  ? 'bg-[#00D8C1]/15 border-[#00D8C1]/50 shadow-lg shadow-[#00D8C1]/20'
+                  : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="text-left space-y-4">
+                {/* Number + Qual */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className={`text-4xl font-black ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
+                      {idx + 1}
+                    </p>
+                    <p className={`text-xs font-black mt-1 ${selectedStaffId === item.id ? 'text-[#00D8C1]/80' : 'text-white/40'}`}>
+                      {item.qualification}
+                    </p>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
+                    {item.employmentType === 'I' ? 'INT' : 'EXT'}
+                  </span>
+                </div>
+
+                {/* Name */}
+                <div>
+                  <p className={`text-sm font-bold truncate ${selectedStaffId === item.id ? 'text-white' : 'text-white/80'}`}>
+                    {item.name}
+                  </p>
+                </div>
+
+                {/* Workload */}
+                <div className="text-xs">
+                  <span className={`font-black ${getWorkloadColor(item.workload)}`}>
+                    {item.workload}% úvazek
+                  </span>
+                </div>
+              </div>
+            </motion.button>
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-          <input
-            type="text"
-            placeholder="Hledat..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 rounded-lg bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-white/10 focus:bg-white/[0.05] transition-all text-sm"
-          />
-        </div>
-
-        {/* Category Tabs */}
-        <div className="flex gap-2 border-b border-white/5 pb-4">
-          {categories.map(cat => {
-            const isActive = activeCategory === cat.id;
-            const Icon = cat.icon;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); }}
-                className={`flex items-center gap-2 pb-4 px-4 -mb-4 transition-all ${isActive ? 'text-white border-b-2 border-[#00D8C1]' : 'text-white/40 hover:text-white/60'}`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="font-semibold">{cat.label}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-white/10 text-white' : 'bg-white/5 text-white/40'}`}>
-                  {cat.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2-Column Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredData.map((item, idx) => (
-          <motion.div
-            key={item.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="group relative rounded-xl border border-white/5 bg-gradient-to-br from-white/[0.03] to-white/[0.01] hover:border-white/15 hover:from-white/[0.05] hover:to-white/[0.02] transition-all overflow-hidden p-5"
-          >
-            {/* Workload Progress Bar Top */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
-              <motion.div
-                className={`h-full bg-gradient-to-r ${getWorkloadColor(item.workload)}`}
-                initial={{ width: 0 }}
-                animate={{ width: `${item.workload}%` }}
-                transition={{ duration: 0.8 }}
-              />
-            </div>
-
-            <div className="pt-2 space-y-3">
-              {/* Name + Qual */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <p className="font-bold text-white text-sm leading-tight">{item.name}</p>
-                  <p className={`text-xs px-2 py-1 rounded border w-fit mt-1 font-bold ${getQualColor(item.qualification)}`}>
-                    {item.qualification}
-                  </p>
+        {/* Right Sidebar - Details */}
+        <AnimatePresence mode="wait">
+          {selectedStaff && (
+            <motion.div
+              key={selectedStaff.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="w-[320px] space-y-6"
+            >
+              {/* Detail Card */}
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
+                <div>
+                  <p className="text-xs text-white/40 font-black tracking-widest uppercase mb-2">Vybraný personál</p>
+                  <h2 className="text-lg font-black text-white">{selectedStaff.name}</h2>
                 </div>
-                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'}`}>
-                  {item.employmentType === 'I' ? 'INT' : 'EXT'}
-                </span>
-              </div>
 
-              {/* Skills */}
-              <div className="text-[11px]">
-                {activeCategory === 'or_nurses' ? <ORSkillTags skills={(item as ORNurse).skills} /> : <SkillTags skills={(item as Doctor | Nurse).skills} />}
-              </div>
+                <div className="space-y-3 border-t border-white/5 pt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-white/40 uppercase font-bold">Kvalifikace</span>
+                    <span className={`px-3 py-1 rounded font-bold text-sm ${getQualColor(selectedStaff.qualification)}`}>
+                      {selectedStaff.qualification}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-white/40 uppercase font-bold">Typ</span>
+                    <span className={`text-sm font-bold ${selectedStaff.employmentType === 'I' ? 'text-teal-300' : 'text-orange-300'}`}>
+                      {selectedStaff.employmentType === 'I' ? 'Interní' : 'Externí'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-white/40 uppercase font-bold">Úvazek</span>
+                    <span className={`text-sm font-black ${getWorkloadColor(selectedStaff.workload)}`}>
+                      {selectedStaff.workload}%
+                    </span>
+                  </div>
+                </div>
 
-              {/* Workload Indicator */}
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/40 uppercase font-semibold tracking-wider">Úvazek</span>
-                <span className="font-black text-white">{item.workload}%</span>
-              </div>
+                <div className="border-t border-white/5 pt-4">
+                  <p className="text-xs text-white/40 font-black tracking-widest uppercase mb-3">Specializace</p>
+                  <div className="text-[11px]">
+                    {activeCategory === 'or_nurses' ? <ORSkillTags skills={(selectedStaff as ORNurse).skills} /> : <SkillTags skills={(selectedStaff as Doctor | Nurse).skills} />}
+                  </div>
+                </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-2 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-all">
-                <button className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1">
-                  <Edit2 className="w-3 h-3" />
-                  Upravit
-                </button>
-                <button className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1">
-                  <Trash2 className="w-3 h-3" />
-                  Smazat
-                </button>
+                {/* Actions */}
+                <div className="flex gap-2 border-t border-white/5 pt-4">
+                  <button className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-all">
+                    <Edit2 className="w-3.5 h-3.5 mx-auto" />
+                  </button>
+                  <button className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all">
+                    <Trash2 className="w-3.5 h-3.5 mx-auto" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
