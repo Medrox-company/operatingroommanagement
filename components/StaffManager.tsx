@@ -109,14 +109,15 @@ const ORSkillTags: React.FC<{ skills: ORNurseSkills }> = ({ skills }) => {
 };
 
 export default function StaffManager() {
-  const [doctors] = useState<Doctor[]>(generateDoctors());
-  const [nurses] = useState<Nurse[]>(generateNurses());
-  const [orNurses] = useState<ORNurse[]>(generateORNurses());
+  const [doctors, setDoctors] = useState<Doctor[]>(generateDoctors());
+  const [nurses, setNurses] = useState<Nurse[]>(generateNurses());
+  const [orNurses, setOrNurses] = useState<ORNurse[]>(generateORNurses());
   
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const [editingStaff, setEditingStaff] = useState<Doctor | Nurse | ORNurse | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const categories = [
     { id: 'doctors' as StaffCategory, label: 'Lékaři', count: doctors.length, icon: Stethoscope },
@@ -170,13 +171,50 @@ export default function StaffManager() {
   };
 
   const startEditing = (staff: Doctor | Nurse | ORNurse) => {
-    console.log('[v0] Editing staff:', staff.name);
-    // TODO: Implement editing functionality
+    setEditingStaff({ ...staff });
+    setIsEditing(true);
+    setSelectedStaffId(null);
   };
 
   const deleteItem = (id: string) => {
-    console.log('[v0] Deleting staff with id:', id);
-    // TODO: Implement deletion functionality
+    if (activeCategory === 'doctors') {
+      setDoctors(prev => prev.filter(d => d.id !== id));
+    } else if (activeCategory === 'nurses') {
+      setNurses(prev => prev.filter(n => n.id !== id));
+    } else {
+      setOrNurses(prev => prev.filter(n => n.id !== id));
+    }
+    setSelectedStaffId(null);
+  };
+
+  const saveEditing = () => {
+    if (!editingStaff) return;
+    
+    if (activeCategory === 'doctors') {
+      setDoctors(prev => prev.map(d => d.id === editingStaff.id ? editingStaff as Doctor : d));
+    } else if (activeCategory === 'nurses') {
+      setNurses(prev => prev.map(n => n.id === editingStaff.id ? editingStaff as Nurse : n));
+    } else {
+      setOrNurses(prev => prev.map(n => n.id === editingStaff.id ? editingStaff as ORNurse : n));
+    }
+    setIsEditing(false);
+    setEditingStaff(null);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditingStaff(null);
+  };
+
+  const toggleSkill = (skillKey: string) => {
+    if (!editingStaff) return;
+    setEditingStaff({
+      ...editingStaff,
+      skills: {
+        ...editingStaff.skills,
+        [skillKey]: !editingStaff.skills[skillKey as keyof typeof editingStaff.skills]
+      }
+    });
   };
 
   return (
@@ -434,6 +472,170 @@ export default function StaffManager() {
                     >
                       <Trash2 className="w-4 h-4" />
                       Smazat
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Edit Modal */}
+        <AnimatePresence>
+          {isEditing && editingStaff && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={cancelEditing}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              >
+                <div className="bg-[#0c0d1b] border border-white/10 rounded-2xl p-8 space-y-6 max-w-lg w-full backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-[#00D8C1] font-black tracking-widest uppercase mb-2">Editace personálu</p>
+                      <h2 className="text-2xl font-semibold text-white">{editingStaff.name}</h2>
+                    </div>
+                    <button onClick={cancelEditing} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Kvalifikace */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Kvalifikace</label>
+                    <div className="flex flex-wrap gap-2">
+                      {(activeCategory === 'doctors' ? ['L1', 'L2', 'L3', 'S', 'A'] : activeCategory === 'nurses' ? ['S', 'A', 'D', 'K'] : ['S', 'A', 'K']).map(qual => (
+                        <button
+                          key={qual}
+                          onClick={() => setEditingStaff({ ...editingStaff, qualification: qual as any })}
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                            editingStaff.qualification === qual
+                              ? 'bg-[#00D8C1]/20 text-[#00D8C1] border border-[#00D8C1]/50'
+                              : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          {qual}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Typ úvazku */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Typ úvazku</label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingStaff({ ...editingStaff, employmentType: 'I' })}
+                        className={`flex-1 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                          editingStaff.employmentType === 'I'
+                            ? 'bg-teal-500/20 text-teal-300 border border-teal-500/50'
+                            : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        Interní
+                      </button>
+                      <button
+                        onClick={() => setEditingStaff({ ...editingStaff, employmentType: 'E' })}
+                        className={`flex-1 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+                          editingStaff.employmentType === 'E'
+                            ? 'bg-orange-500/20 text-orange-300 border border-orange-500/50'
+                            : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        Externí
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Úvazek slider */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Úvazek: <span className={`${getWorkloadColor(editingStaff.workload)}`}>{editingStaff.workload}%</span></label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="10"
+                      value={editingStaff.workload}
+                      onChange={(e) => setEditingStaff({ ...editingStaff, workload: parseInt(e.target.value) })}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00D8C1]"
+                    />
+                    <div className="flex justify-between text-xs text-white/30">
+                      <span>0%</span>
+                      <span>50%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+
+                  {/* Specializace */}
+                  <div className="space-y-3">
+                    <label className="text-sm text-white/40 uppercase font-bold">Specializace</label>
+                    <div className="flex flex-wrap gap-2">
+                      {activeCategory === 'or_nurses' 
+                        ? ['surgery', 'trauma', 'ortho', 'gyneco', 'minor', 'davinci', 'neuro'].map(skill => {
+                            const labels: Record<string, string> = { surgery: 'Chirurgie', trauma: 'Traumatologie', ortho: 'Ortopedie', gyneco: 'Gynekologie', minor: 'Malé obory', davinci: 'DaVinci', neuro: 'Neurochirurgie' };
+                            const isActive = (editingStaff as ORNurse).skills[skill as keyof ORNurseSkills];
+                            const c = SKILL_COLORS[skill];
+                            return (
+                              <button
+                                key={skill}
+                                onClick={() => toggleSkill(skill)}
+                                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                                  isActive
+                                    ? ''
+                                    : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'
+                                }`}
+                                style={isActive ? { background: c.bg, color: c.text, borderColor: c.border } : {}}
+                              >
+                                {labels[skill]}
+                              </button>
+                            );
+                          })
+                        : ['aro', 'jip', 'emergency', 'or'].map(skill => {
+                            const labels: Record<string, string> = { aro: 'ARO', jip: 'JIP', emergency: 'Urgentní příjem', or: 'Operační sál' };
+                            const isActive = (editingStaff as Doctor | Nurse).skills[skill as keyof DoctorSkills];
+                            const c = SKILL_COLORS[skill];
+                            return (
+                              <button
+                                key={skill}
+                                onClick={() => toggleSkill(skill)}
+                                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                                  isActive
+                                    ? ''
+                                    : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'
+                                }`}
+                                style={isActive ? { background: c.bg, color: c.text, borderColor: c.border } : {}}
+                              >
+                                {labels[skill]}
+                              </button>
+                            );
+                          })
+                      }
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-4 border-t border-white/10">
+                    <button
+                      onClick={cancelEditing}
+                      className="flex-1 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white text-sm font-bold uppercase tracking-wider transition-all"
+                    >
+                      Zrušit
+                    </button>
+                    <button
+                      onClick={saveEditing}
+                      className="flex-1 py-3 rounded-lg bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Uložit
                     </button>
                   </div>
                 </div>
