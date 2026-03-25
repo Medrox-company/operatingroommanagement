@@ -239,8 +239,8 @@ export default function StaffManager() {
         </div>
       </div>
 
-      {/* 3-Column Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* 2-Column Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredData.map((item, idx) => (
           <motion.div
             key={item.id}
