@@ -250,25 +250,38 @@ export default function StaffManager() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {/* Left - Number + Qual + Name + Type */}
+              {/* Left - Qual Icon + Name + Type */}
               <div className="flex-1 text-left flex flex-col justify-between h-full min-w-0">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className={`text-2xl font-black ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
-                        {idx + 1}
-                      </p>
-                      <p className={`text-[9px] font-black mt-0.5 ${selectedStaffId === item.id ? 'text-[#00D8C1]/80' : 'text-white/40'}`}>
-                        {item.qualification}
-                      </p>
-                    </div>
-                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
-                      {item.employmentType === 'I' ? 'INT' : 'EXT'}
-                    </span>
+                <div className="flex items-start gap-3">
+                  {/* Qualification Icon */}
+                  <div className={`p-2 rounded-lg shrink-0 ${
+                    item.qualification === 'S' ? 'bg-blue-500/20' :
+                    item.qualification === 'A' ? 'bg-purple-500/20' :
+                    item.qualification === 'K' ? 'bg-green-500/20' :
+                    item.qualification === 'D' ? 'bg-red-500/20' :
+                    'bg-white/10'
+                  }`}>
+                    {item.qualification === 'S' ? <Award className="w-6 h-6 text-blue-400" /> :
+                     item.qualification === 'A' ? <Shield className="w-6 h-6 text-purple-400" /> :
+                     item.qualification === 'K' ? <Stethoscope className="w-6 h-6 text-green-400" /> :
+                     item.qualification === 'D' ? <Users className="w-6 h-6 text-red-400" /> :
+                     <Award className="w-6 h-6 text-white/40" />}
                   </div>
-                  <p className={`text-sm font-bold truncate mt-2 ${selectedStaffId === item.id ? 'text-white' : 'text-white/80'}`}>
-                    {item.name}
-                  </p>
+
+                  {/* Name + Type */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-2xl font-black truncate ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
+                      {item.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
+                        {item.employmentType === 'I' ? 'INT' : 'EXT'}
+                      </span>
+                      <span className="text-[9px] font-black text-white/40">
+                        {item.qualification}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Specializace - inline */}
