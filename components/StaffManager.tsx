@@ -205,6 +205,34 @@ export default function StaffManager() {
 
       {/* Category & Search */}
       <div className="flex flex-col gap-6">
+        {/* Filter Tags - inspired by dashboard design */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {['Všichni', 'Dostupní', '100%', '80%+', 'Interní'].map((filter, idx) => (
+            <button
+              key={idx}
+              className={`px-4 py-2 rounded-full text-sm font-bold tracking-wider uppercase transition-all ${
+                idx === 0
+                  ? 'bg-[#00D8C1]/20 text-[#00D8C1] border border-[#00D8C1]/40'
+                  : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10 hover:text-white/70'
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
+        {/* Search */}
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <input
+            type="text"
+            placeholder="Hledat..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 rounded-lg bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-white/10 focus:bg-white/[0.05] transition-all text-sm"
+          />
+        </div>
+
         {/* Category Tabs */}
         <div className="flex gap-2 border-b border-white/5 pb-4">
           {categories.map(cat => {
@@ -224,18 +252,6 @@ export default function StaffManager() {
               </button>
             );
           })}
-        </div>
-
-        {/* Search */}
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-          <input
-            type="text"
-            placeholder="Hledat..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 rounded-lg bg-white/[0.03] border border-white/5 text-white placeholder-white/30 focus:outline-none focus:border-white/10 focus:bg-white/[0.05] transition-all text-sm"
-          />
         </div>
       </div>
 
