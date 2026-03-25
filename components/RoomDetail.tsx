@@ -697,7 +697,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
         <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
         
-        <div className="flex items-center justify-center gap-4 md:gap-8 lg:gap-20 relative"
+        <div className="flex items-center justify-center gap-4 md:gap-8 lg:gap-20 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
             const prevStepIdx = currentStepIndex === 0 ? WORKFLOW_STEPS.length - 1 : currentStepIndex - 1;
