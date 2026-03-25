@@ -236,79 +236,73 @@ export default function StaffManager() {
 
       {/* Main Content - Grid cards + Right sidebar */}
       <div className="flex gap-6">
-        {/* Grid Cards - All visible on page */}
-        <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {/* Grid Cards - Horizontal rectangles (2 columns) */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
           {filteredData.map((item, idx) => (
             <motion.button
               key={item.id}
               onClick={() => setSelectedStaffId(item.id)}
-              className={`p-4 rounded-xl border transition-all cursor-pointer group ${
+              className={`p-4 rounded-xl border transition-all cursor-pointer group flex items-center gap-4 h-32 ${
                 selectedStaffId === item.id
                   ? 'bg-[#00D8C1]/15 border-[#00D8C1]/50 shadow-lg shadow-[#00D8C1]/20'
                   : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
               }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <div className="space-y-2.5 text-left h-full flex flex-col">
-                {/* Number + Qual */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className={`text-2xl font-black ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
-                      {idx + 1}
-                    </p>
-                    <p className={`text-[9px] font-black mt-0.5 ${selectedStaffId === item.id ? 'text-[#00D8C1]/80' : 'text-white/40'}`}>
-                      {item.qualification}
-                    </p>
-                  </div>
-                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
-                    {item.employmentType === 'I' ? 'INT' : 'EXT'}
-                  </span>
-                </div>
-
-                {/* Name */}
-                <p className={`text-xs font-bold truncate ${selectedStaffId === item.id ? 'text-white' : 'text-white/80'}`}>
-                  {item.name}
-                </p>
-
-                {/* Specializace */}
-                <div className="flex-1 min-h-0">
-                  <p className="text-[8px] text-white/40 uppercase font-bold mb-1">Spec.</p>
-                  <div className="text-[9px] space-y-0.5 max-h-12 overflow-y-auto">
-                    {activeCategory === 'or_nurses' 
-                      ? Object.entries((item as ORNurse).skills).filter(([, v]) => v).map(([k]) => (
-                          <span key={k} className="block bg-white/5 px-1.5 py-0.5 rounded text-white/70 truncate">
-                            {k.toUpperCase()}
-                          </span>
-                        ))
-                      : Object.entries((item as Doctor | Nurse).skills).filter(([, v]) => v).map(([k]) => (
-                          <span key={k} className="block bg-white/5 px-1.5 py-0.5 rounded text-white/70 truncate">
-                            {k.toUpperCase()}
-                          </span>
-                        ))
-                    }
-                  </div>
-                </div>
-
-                {/* Workload Progress Bar */}
-                <div className="space-y-1 mt-auto pt-2 border-t border-white/5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[8px] font-black text-white/40 uppercase">Úvazek</span>
-                    <span className={`text-xs font-black ${getWorkloadColor(item.workload)}`}>
-                      {item.workload}%
+              {/* Left - Number + Qual + Name + Type */}
+              <div className="flex-1 text-left flex flex-col justify-between h-full min-w-0">
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className={`text-2xl font-black ${selectedStaffId === item.id ? 'text-[#00D8C1]' : 'text-white'}`}>
+                        {idx + 1}
+                      </p>
+                      <p className={`text-[9px] font-black mt-0.5 ${selectedStaffId === item.id ? 'text-[#00D8C1]/80' : 'text-white/40'}`}>
+                        {item.qualification}
+                      </p>
+                    </div>
+                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${item.employmentType === 'I' ? 'bg-teal-500/20 text-teal-300' : 'bg-orange-500/20 text-orange-300'}`}>
+                      {item.employmentType === 'I' ? 'INT' : 'EXT'}
                     </span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-white/[0.05] overflow-hidden border border-white/10">
-                    <motion.div
-                      className="h-full rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.workload}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      style={{
-                        backgroundColor: item.workload === 100 ? '#10B981' : item.workload >= 80 ? '#84CC16' : item.workload >= 60 ? '#F59E0B' : item.workload >= 40 ? '#F97316' : '#EF4444'
-                      }}
-                    />
-                  </div>
+                  <p className={`text-sm font-bold truncate mt-2 ${selectedStaffId === item.id ? 'text-white' : 'text-white/80'}`}>
+                    {item.name}
+                  </p>
+                </div>
+
+                {/* Specializace - inline */}
+                <div className="flex flex-wrap gap-1">
+                  {activeCategory === 'or_nurses' 
+                    ? Object.entries((item as ORNurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => (
+                        <span key={k} className="text-[7px] bg-white/10 px-1.5 py-0.5 rounded text-white/60 uppercase font-bold">
+                          {k}
+                        </span>
+                      ))
+                    : Object.entries((item as Doctor | Nurse).skills).filter(([, v]) => v).slice(0, 3).map(([k]) => (
+                        <span key={k} className="text-[7px] bg-white/10 px-1.5 py-0.5 rounded text-white/60 uppercase font-bold">
+                          {k}
+                        </span>
+                      ))
+                  }
+                </div>
+              </div>
+
+              {/* Right - Workload vertical progress */}
+              <div className="flex flex-col items-center justify-between h-full">
+                <span className={`text-lg font-black ${getWorkloadColor(item.workload)}`}>
+                  {item.workload}%
+                </span>
+                <div className="h-20 w-1.5 rounded-full bg-white/[0.05] overflow-hidden border border-white/10">
+                  <motion.div
+                    className="w-full rounded-full"
+                    initial={{ height: 0 }}
+                    animate={{ height: `${item.workload}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    style={{
+                      backgroundColor: item.workload === 100 ? '#10B981' : item.workload >= 80 ? '#84CC16' : item.workload >= 60 ? '#F59E0B' : item.workload >= 40 ? '#F97316' : '#EF4444'
+                    }}
+                  />
                 </div>
               </div>
             </motion.button>
