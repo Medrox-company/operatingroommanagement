@@ -140,7 +140,7 @@ export default function StaffManager() {
     });
   }, [activeCategory, searchQuery, doctors, nurses, orNurses]);
 
-  const selectedStaff = selectedStaffId ? filteredData.find(s => s.id === selectedStaffId) : filteredData[0];
+  const selectedStaff = selectedStaffId ? filteredData.find(s => s.id === selectedStaffId) : null;
 
   const stats = {
     available: filteredData.filter(s => s.workload === 100).length,
