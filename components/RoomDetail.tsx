@@ -938,15 +938,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </motion.div>
         </div>
         
-        {/* Time adjustment buttons - positioned between small and center circles in vertical line */}
+        {/* Time adjustment buttons - positioned between small and center circles on sides */}
         {!isInteractionBlocked && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-10 md:gap-16 lg:gap-20 z-50" style={{ top: 'calc(50% + 260px)' }}>
+          <>
+            {/* Minus button - left side */}
             <motion.button 
               onClick={handleDecreaseTime}
-              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
+              className="absolute w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: 'rgba(255,255,255,0.03)'
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                left: '10%',
+                top: 'calc(50% + 200px)',
+                transform: 'translateY(-50%)'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -954,19 +958,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </motion.button>
 
+            {/* Plus button - right side */}
             <motion.button 
               onClick={handleIncreaseTime}
-              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
+              className="absolute w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: 'rgba(255,255,255,0.03)'
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                right: '10%',
+                top: 'calc(50% + 200px)',
+                transform: 'translateY(-50%)'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
               <Plus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </motion.button>
-          </div>
+          </>
         )}
       </main>
 
