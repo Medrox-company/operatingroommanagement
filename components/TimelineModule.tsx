@@ -1311,8 +1311,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
                           
                           // Only show hatching if bar extends past working hours
-                          if (boxEndPercent > endPercent) {
-                            const hatchStartPercent = Math.max(0, (endPercent - boxStartPercent) / (boxEndPercent - boxStartPercent) * 100);
+                          if (boxRightPct > endPercent) {
+                            const hatchStartPercent = Math.max(0, (endPercent - boxLeftPct) / boxWidthPct * 100);
                             return (
                               <div 
                                 className="absolute inset-y-0 rounded-xl pointer-events-none"
