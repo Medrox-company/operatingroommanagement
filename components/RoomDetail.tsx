@@ -555,7 +555,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute right-2 md:right-4 lg:right-8 top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 top-6 sm:top-8 md:top-12 lg:top-16 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -574,8 +574,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               exit={{ opacity: 0, scale: 0.8 }}
               className="flex flex-col items-center gap-1"
             >
-              <Phone className="w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-green-300" strokeWidth={2} />
-              <span className="text-xs md:text-sm lg:text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
+              <Phone className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-green-300" strokeWidth={2} />
+              <span className="text-xs sm:text-sm md:text-base lg:text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
                 {patientCallElapsedTime}
               </span>
             </motion.div>
@@ -587,8 +587,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               exit={{ opacity: 0, scale: 0.8 }}
               className="flex flex-col items-center gap-2"
             >
-              <Phone className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
-              <span className="text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-widest">Volat</span>
+              <Phone className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
+              <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">Volat</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -621,7 +621,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute right-2 md:right-4 lg:right-8 top-[184px] md:top-[168px] lg:top-[304px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 top-20 sm:top-24 md:top-32 lg:top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -631,8 +631,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <UserCheck className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className="text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
+        <UserCheck className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
       </motion.button>
 
       {/* Enhanced Hygiene Mode Toggle - Right Side */}
@@ -648,7 +648,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             step_name: WORKFLOW_STEPS[currentStepIndex].title,
           });
         }}
-        className={`absolute right-2 md:right-4 lg:right-8 bottom-[200px] md:bottom-[160px] lg:bottom-[200px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
           room.isEnhancedHygiene
             ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
             : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
@@ -656,8 +656,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <ShieldAlert className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className={`text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
+        <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+        <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
           Hygien.
         </span>
       </motion.button>
@@ -676,18 +676,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute right-2 md:right-4 lg:right-8 bottom-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+          className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
           }`}
         >
           {isPaused ? (
-            <Play className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
+            <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
           ) : (
-            <Pause className={`w-4 h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
+            <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
           )}
-          <span className="text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+          <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
         </motion.button>
       )}
 
@@ -697,7 +697,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
         <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
         
-        <div className="flex items-center justify-center gap-4 md:gap-8 lg:gap-20 relative">
+        <div className="flex items-center justify-center gap-1 sm:gap-3 md:gap-8 lg:gap-20 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
             const prevStepIdx = currentStepIndex === 0 ? WORKFLOW_STEPS.length - 1 : currentStepIndex - 1;
@@ -707,7 +707,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center"
+                className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center"
               >
                 {/* Gradient Glow - transparent from center */}
                 <div 
@@ -725,13 +725,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 
                 {/* Inner content */}
                 <div className="relative z-10 text-center px-4">
-                  <p className="text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-2 md:mb-3 lg:mb-4">
+                  <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                     SPUSTIT DALŠÍ FÁZI
                   </p>
-                  <h3 className="text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-2 md:mb-2 lg:mb-3">
+                  <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-1 sm:mb-2 md:mb-2 lg:mb-3">
                     {prevStep.title}
                   </h3>
-                  <p className="text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
+                  <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
                     {prevStep.status}
                   </p>
                 </div>
@@ -746,7 +746,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className={`relative w-[250px] h-[250px] md:w-[350px] md:h-[350px] lg:w-[500px] lg:h-[500px] flex items-center justify-center rounded-full group transition-all focus:outline-none z-10
+            className={`relative w-[180px] h-[180px] sm:w-[250px] sm:h-[250px] md:w-[350px] md:h-[350px] lg:w-[500px] lg:h-[500px] flex items-center justify-center rounded-full group transition-all focus:outline-none z-10
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
@@ -897,8 +897,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     </p>
                     
                     {/* Time display under status */}
-                    <div className="mt-6 md:mt-8 lg:mt-10">
-                      <span className={`text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+                    <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
+                      <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
                         {isPaused ? pauseElapsedTime : elapsedTime}
                       </span>
                     </div>
@@ -914,7 +914,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer"
+            className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer"
           >
             {/* Glow - gradient transparent from center */}
             <div 
@@ -932,13 +932,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             
             {/* Inner content */}
             <div className="relative z-10 text-center px-4">
-              <p className="text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-2 md:mb-3 lg:mb-4">
+              <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                 {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'NOVÝ CYKLUS' : 'NÁSLEDUJE'}
               </p>
-              <h3 className="text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-2 md:mb-2 lg:mb-3">
+              <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-1 sm:mb-2 md:mb-2 lg:mb-3">
                 {nextStep.title}
               </h3>
-              <p className="text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
+              <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
                 {nextStep.status}
               </p>
             </div>
@@ -951,7 +951,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             {/* Minus button - left side */}
             <motion.button 
               onClick={handleDecreaseTime}
-              className="absolute w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
@@ -962,13 +962,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Minus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </motion.button>
 
             {/* Plus button - right side */}
             <motion.button 
               onClick={handleIncreaseTime}
-              className="absolute w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
@@ -979,7 +979,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Plus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Plus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </motion.button>
           </>
         )}
