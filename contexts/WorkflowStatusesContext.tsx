@@ -98,6 +98,8 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   }, []);
 
   const updateStatus = async (id: string, updates: Partial<WorkflowStatus>) => {
+    console.log('[v0] updateStatus called with id:', id, 'updates:', updates);
+    
     try {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.color !== undefined) dbUpdates.accent_color = updates.color;
@@ -109,14 +111,24 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
 
-      const { error: updateError } = await supabase
+      console.log('[v0] Sending to Supabase - dbUpdates:', dbUpdates);
+
+      const { error: updateError, data } = await supabase
         .from('workflow_statuses')
         .update(dbUpdates)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
+
+      console.log('[v0] Supabase response - error:', updateError, 'data:', data);
 
       if (updateError) throw updateError;
       
-      setStatuses(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+      // Update local state
+      setStatuses(prev => {
+        const newStatuses = prev.map(s => s.id === id ? { ...s, ...updates } : s);
+        console.log('[v0] Updated local statuses:', newStatuses.find(s => s.id === id));
+        return newStatuses;
+      });
     } catch (err) {
       console.error('[v0] Error updating workflow status:', err);
       setError(err instanceof Error ? err.message : 'Neznama chyba');
