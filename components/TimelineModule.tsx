@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { WORKFLOW_STEPS, STEP_DURATIONS } from '../constants';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2
@@ -998,11 +998,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               let boxLeftPct = 0;
               let boxWidthPct = 0;
               let progressPct = 0;
+              let startDate: Date = new Date();
+              let endDate: Date = new Date();
 
               if (isActive) {
-                let startDate: Date;
-                let endDate: Date;
-                
                 if (startParts && startParts.length === 2) {
                   // Use actual procedure start time
                   startDate = new Date();
@@ -1291,6 +1290,71 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                             }} 
                           />
                         </div>
+
+                        {/* Status segments - colored bands for each workflow step duration */}
+                        {(() => {
+                          const STEP_DURATIONS = [15, 30, 60, 15, 30, 30, 0]; // minutes per step from constants
+                          const segments = [];
+                          let accumulatedPercent = 0;
+
+                          // Get the total operation time (end time - start time)
+                          if (startParts && startParts.length === 2 && endDate) {
+                            const totalDurationMs = endDate.getTime() - startDate.getTime();
+                            const totalDurationMinutes = totalDurationMs / (60 * 1000);
+
+                            // Create segments for steps currently completed and current step
+                            for (let i = 0; i <= stepIndex && i < WORKFLOW_STEPS.length; i++) {
+                              let stepDuration = STEP_DURATIONS[i] || 0;
+                              
+                              // If this is the surgery step, use actual procedure duration
+                              if (i === 2 && room.currentProcedure?.estimatedDuration) {
+                                stepDuration = room.currentProcedure.estimatedDuration;
+                              }
+
+                              const stepPercent = (stepDuration / totalDurationMinutes) * 100;
+                              const stepColors = STEP_COLORS[i] || STEP_COLORS[6];
+                              
+                              segments.push({
+                                startPercent: accumulatedPercent,
+                                width: stepPercent,
+                                color: stepColors.solid,
+                                stepIndex: i,
+                                stepTitle: WORKFLOW_STEPS[i]?.title
+                              });
+
+                              accumulatedPercent += stepPercent;
+                            }
+                          }
+
+                          return segments.map((segment, idx) => (
+                            <div
+                              key={idx}
+                              className="absolute inset-y-0 group/segment hover:brightness-110 transition-all"
+                              style={{
+                                left: `${segment.startPercent}%`,
+                                width: `${segment.width}%`,
+                                background: segment.color,
+                                opacity: 0.75
+                              }}
+                              title={segment.stepTitle}
+                            >
+                              {/* Thin vertical divider between segments */}
+                              {idx < segments.length - 1 && (
+                                <div 
+                                  className="absolute right-0 top-0 bottom-0 w-px"
+                                  style={{ background: 'rgba(255,255,255,0.2)' }}
+                                />
+                              )}
+                              
+                              {/* Step label on hover */}
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/segment:opacity-100 transition-opacity">
+                                <span className="text-[8px] font-bold text-white/90 text-center px-1 line-clamp-2">
+                                  {segment.stepTitle}
+                                </span>
+                              </div>
+                            </div>
+                          ));
+                        })()}
 
                         {/* Current position indicator - subtle line */}
                         {progressPct > 0 && progressPct < 100 && (
