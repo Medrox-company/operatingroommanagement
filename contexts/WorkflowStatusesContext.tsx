@@ -98,14 +98,8 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   }, []);
 
   const updateStatus = async (id: string, updates: Partial<WorkflowStatus>) => {
-    console.log('[v0] updateStatus called with id:', id, 'updates:', updates);
-    
     // IMMEDIATELY update local state for responsive UI
-    setStatuses(prev => {
-      const newStatuses = prev.map(s => s.id === id ? { ...s, ...updates } : s);
-      console.log('[v0] Immediately updated local statuses:', newStatuses.find(s => s.id === id));
-      return newStatuses;
-    });
+    setStatuses(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
 
     try {
       const dbUpdates: Record<string, unknown> = {};
@@ -118,15 +112,11 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
 
-      console.log('[v0] Sending to Supabase - dbUpdates:', dbUpdates);
-
-      const { error: updateError, data } = await supabase
+      const { error: updateError } = await supabase
         .from('workflow_statuses')
         .update(dbUpdates)
         .eq('id', id)
         .select();
-
-      console.log('[v0] Supabase response - error:', updateError, 'data:', data);
 
       if (updateError) throw updateError;
     } catch (err) {
@@ -170,18 +160,11 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'workflow_statuses' },
-        (payload) => {
-          console.log('[v0] Realtime event received:', payload);
-          // Refetch when any change occurs
-          fetchStatuses();
-        }
+        () => fetchStatuses()
       )
-      .subscribe((status) => {
-        console.log('[v0] Subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
-      console.log('[v0] Unsubscribing from realtime');
       supabase.removeChannel(channel);
     };
   }, [fetchStatuses]);

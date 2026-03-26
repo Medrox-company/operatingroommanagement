@@ -46,7 +46,6 @@ const StatusesManager: React.FC = () => {
   }
 
   const toggleActive = (id: string, currentValue: boolean) => {
-    console.log('[v0] StatusesManager toggleActive called:', { id, currentValue, newValue: !currentValue });
     updateStatus(id, { is_active: !currentValue });
   };
 
