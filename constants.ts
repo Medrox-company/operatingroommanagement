@@ -122,6 +122,16 @@ export const STEP_DURATIONS = [
   30, // Ukončení anestezie
 ];
 
+export const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
+  0: { bg: 'rgba(94,234,212,0.15)', fill: 'rgba(94,234,212,0.35)', border: 'rgba(94,234,212,0.25)', text: '#5EEAD4', glow: 'rgba(94,234,212,0.2)', solid: '#5EEAD4' },
+  1: { bg: 'rgba(196,181,253,0.15)', fill: 'rgba(196,181,253,0.35)', border: 'rgba(196,181,253,0.25)', text: '#C4B5FD', glow: 'rgba(196,181,253,0.2)', solid: '#C4B5FD' },
+  2: { bg: 'rgba(252,165,165,0.15)', fill: 'rgba(252,165,165,0.35)', border: 'rgba(252,165,165,0.25)', text: '#FCA5A5', glow: 'rgba(252,165,165,0.2)', solid: '#FCA5A5' },
+  3: { bg: 'rgba(253,224,71,0.15)', fill: 'rgba(253,224,71,0.35)', border: 'rgba(253,224,71,0.25)', text: '#FDE047', glow: 'rgba(253,224,71,0.2)', solid: '#FDE047' },
+  4: { bg: 'rgba(165,180,252,0.15)', fill: 'rgba(165,180,252,0.35)', border: 'rgba(165,180,252,0.25)', text: '#A5B4FC', glow: 'rgba(165,180,252,0.2)', solid: '#A5B4FC' },
+  5: { bg: 'rgba(240,171,252,0.15)', fill: 'rgba(240,171,252,0.35)', border: 'rgba(240,171,252,0.25)', text: '#F0ABFC', glow: 'rgba(240,171,252,0.2)', solid: '#F0ABFC' },
+  6: { bg: 'rgba(253,186,116,0.15)', fill: 'rgba(253,186,116,0.35)', border: 'rgba(253,186,116,0.25)', text: '#FDBA74', glow: 'rgba(253,186,116,0.2)', solid: '#FDBA74' },
+};
+
 export const SIDEBAR_ITEMS = [
   { icon: LayoutGrid, label: 'Přehled', id: 'dashboard' },
   { icon: CalendarDays, label: 'Timeline', id: 'timeline' },

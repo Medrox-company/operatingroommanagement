@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -241,3 +243,5 @@ const StatusesManager: React.FC = () => {
 };
 
 export default StatusesManager;
+</content>
+</invoke>
