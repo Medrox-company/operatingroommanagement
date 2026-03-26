@@ -737,14 +737,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 {/* Inner content */}
                 <div className="relative z-10 text-center px-4">
                   <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
-                    SPUSTIT DALŠÍ FÁZI
+                    DOKONČENÁ FÁZE
                   </p>
-                  <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-1 sm:mb-2 md:mb-2 lg:mb-3">
+                  <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
                     {prevStep.title}
                   </h3>
-                  <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
-                    {prevStep.status}
-                  </p>
                 </div>
               </motion.div>
             );
@@ -891,7 +888,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     exit={{ opacity: 0 }}
                   >
                     <p className={`text-[10px] font-black tracking-[0.2em] mb-6 uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
-                      SPUSTIT DALŠÍ FÁZI
+                      PROBÍHAJÍCÍ FÁZE
                     </p>
                     
                     <motion.h2
@@ -903,11 +900,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                       {currentStep.title}
                     </motion.h2>
 
-                    <p className={`text-[11px] font-bold tracking-widest uppercase ${room.isEmergency ? 'text-red-300/60' : 'text-white/30'}`}>
-                      {currentStep.status}
-                    </p>
-                    
-                    {/* Time display under status */}
+                    {/* Time display under title */}
                     <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
                       <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
                         {isPaused ? pauseElapsedTime : elapsedTime}
@@ -944,14 +937,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             {/* Inner content */}
             <div className="relative z-10 text-center px-4">
               <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
-                {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'NOVÝ CYKLUS' : 'NÁSLEDUJE'}
+                {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'}
               </p>
-              <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-1 sm:mb-2 md:mb-2 lg:mb-3">
+              <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
                 {nextStep.title}
               </h3>
-              <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[10px] font-bold tracking-widest uppercase text-white/30">
-                {nextStep.status}
-              </p>
             </div>
           </motion.div>
         </div>
