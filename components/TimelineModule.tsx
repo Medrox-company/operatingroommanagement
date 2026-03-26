@@ -1292,6 +1292,47 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           />
                         </div>
 
+                        {/* Hatching overlay for portion after working hours */}
+                        {(() => {
+                          const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+                          const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+                          const todayKey = dayKeys[currentTime.getDay()];
+                          const todaySchedule = schedule[todayKey];
+                          
+                          if (!todaySchedule.enabled) return null;
+                          
+                          // Calculate end time as percentage
+                          const endHour = todaySchedule.endHour;
+                          const endMinute = todaySchedule.endMinute;
+                          let minutesFromTimelineStart = (endHour * 60 + endMinute) - (TIMELINE_START_HOUR * 60);
+                          if (minutesFromTimelineStart < 0) {
+                            minutesFromTimelineStart += 24 * 60;
+                          }
+                          const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
+                          
+                          // Only show hatching if bar extends past working hours
+                          if (boxEndPercent > endPercent) {
+                            const hatchStartPercent = Math.max(0, (endPercent - boxStartPercent) / (boxEndPercent - boxStartPercent) * 100);
+                            return (
+                              <div 
+                                className="absolute inset-y-0 rounded-xl pointer-events-none"
+                                style={{ 
+                                  left: `${hatchStartPercent}%`,
+                                  right: 0,
+                                  backgroundImage: `repeating-linear-gradient(
+                                    45deg,
+                                    transparent 0px,
+                                    transparent 6px,
+                                    rgba(255,255,255,0.15) 6px,
+                                    rgba(255,255,255,0.15) 8px
+                                  )`
+                                }}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+
                         {/* Current position indicator - subtle line */}
                         {progressPct > 0 && progressPct < 100 && (
                           <>
