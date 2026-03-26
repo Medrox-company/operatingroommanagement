@@ -555,7 +555,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute right-[180px] md:right-[200px] lg:right-[220px] top-4 md:top-6 lg:top-8 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-4 md:right-6 lg:right-8 top-8 md:top-12 lg:top-16 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -621,7 +621,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute right-[76px] md:right-[90px] lg:right-[112px] top-4 md:top-6 lg:top-8 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-24 md:right-32 lg:right-40 top-8 md:top-12 lg:top-16 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -648,7 +648,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             step_name: WORKFLOW_STEPS[currentStepIndex].title,
           });
         }}
-        className={`absolute right-[112px] md:right-[130px] lg:right-[144px] bottom-4 md:bottom-6 lg:bottom-8 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+        className={`absolute right-4 md:right-6 lg:right-8 bottom-32 md:bottom-40 lg:bottom-48 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
           room.isEnhancedHygiene
             ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
             : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
@@ -676,7 +676,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute right-2 md:right-4 lg:right-8 bottom-4 md:bottom-6 lg:bottom-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+          className={`absolute right-4 md:right-6 lg:right-8 bottom-8 md:bottom-12 lg:bottom-16 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
@@ -697,7 +697,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
         <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
         
-        <div className="flex items-center justify-center gap-0 md:gap-2 lg:gap-4 relative">
+        <div className="flex items-center justify-center gap-8 md:gap-16 lg:gap-32 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
             const prevStepIdx = currentStepIndex === 0 ? WORKFLOW_STEPS.length - 1 : currentStepIndex - 1;
