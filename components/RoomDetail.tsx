@@ -515,9 +515,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* Close Button - Top Right */}
       <button 
         onClick={onClose}
-        className="absolute top-8 right-8 p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24 z-50"
+        className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50"
       >
-        <X className="w-8 h-8" />
+        <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
       </button>
 
       {/* ARO Staff Names - Top Right next to close button */}
@@ -555,7 +555,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 top-6 sm:top-8 md:top-12 lg:top-16 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 top-14 sm:top-20 md:top-28 lg:top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -621,7 +621,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 top-20 sm:top-24 md:top-32 lg:top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 top-28 sm:top-36 md:top-48 lg:top-56 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -767,7 +767,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             />
 
             {/* Animated Ring */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.0]">
+            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.0]" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
               <circle cx="250" cy="250" r="230" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
               <motion.circle 
                 key={currentStepIndex}
