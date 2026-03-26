@@ -14,7 +14,7 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
-  const { getStatusByIndex } = useWorkflowStatusesContext();
+  const { getStatusByIndex, activeStatuses } = useWorkflowStatusesContext();
   
   // Get step from database or fallback to constants
   const dbStatus = getStatusByIndex(room.currentStepIndex);
@@ -26,7 +26,9 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
   
   const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
   
-  const progressPercent = ((room.currentStepIndex + 1) / WORKFLOW_STEPS.length);
+  // Use active statuses count for progress calculation if available
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : WORKFLOW_STEPS.length;
+  const progressPercent = ((room.currentStepIndex + 1) / totalSteps);
   const radius = 38;
   const strokeWidth = 4;
   const strokeDasharray = 2 * Math.PI * radius;

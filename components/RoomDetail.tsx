@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
@@ -30,7 +30,13 @@ const usePrevious = (value: number) => {
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
   // Get workflow statuses from database context
-  const { activeStatuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
+  const { activeStatuses, statuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
+  
+  // Helper to check if a step index is active in database
+  const isStepActive = useCallback((stepIndex: number) => {
+    const dbStatus = getStatusByIndex(stepIndex);
+    return dbStatus ? dbStatus.is_active : true; // Default to active if not found
+  }, [getStatusByIndex]);
   
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
@@ -998,19 +1004,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
       {/* Bottom Center - Phase Duration & Navigation */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
-        {/* Navigation Indicators */}
+        {/* Navigation Indicators - only show active statuses */}
         <div className="flex gap-3">
-          {WORKFLOW_STEPS.map((_, i) => (
-            <div 
-              key={i} 
-              className="h-1.5 rounded-full transition-all duration-500"
-              style={{
-                width: i === currentStepIndex ? 32 : 8,
-                backgroundColor: i === currentStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
-                opacity: i === currentStepIndex ? 1 : 0.4
-              }}
-            />
-          ))}
+          {WORKFLOW_STEPS.map((_, i) => {
+            // Only render if status is active in database
+            if (!isStepActive(i)) return null;
+            return (
+              <div 
+                key={i} 
+                className="h-1.5 rounded-full transition-all duration-500"
+                style={{
+                  width: i === currentStepIndex ? 32 : 8,
+                  backgroundColor: i === currentStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
+                  opacity: i === currentStepIndex ? 1 : 0.4
+                }}
+              />
+            );
+          })}
         </div>
       </div>
       </div>{/* end desktop wrapper */}
