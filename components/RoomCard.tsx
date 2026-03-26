@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
 
 interface RoomCardProps {
@@ -13,7 +14,16 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
-  const currentStep = WORKFLOW_STEPS[room.currentStepIndex];
+  const { getStatusByIndex } = useWorkflowStatusesContext();
+  
+  // Get step from database or fallback to constants
+  const dbStatus = getStatusByIndex(room.currentStepIndex);
+  const currentStep = dbStatus ? {
+    ...WORKFLOW_STEPS[room.currentStepIndex],
+    color: dbStatus.color,
+    title: dbStatus.name
+  } : WORKFLOW_STEPS[room.currentStepIndex];
+  
   const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
   
   const progressPercent = ((room.currentStepIndex + 1) / WORKFLOW_STEPS.length);
