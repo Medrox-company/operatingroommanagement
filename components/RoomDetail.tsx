@@ -940,7 +940,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         
         {/* Time adjustment buttons - positioned between small and center circles in vertical line */}
         {!isInteractionBlocked && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-10 md:gap-16 lg:gap-20 z-50" style={{ top: 'calc(50% + 180px)' }}>
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-10 md:gap-16 lg:gap-20 z-50" style={{ top: 'calc(50% + 260px)' }}>
             <motion.button 
               onClick={handleDecreaseTime}
               className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
