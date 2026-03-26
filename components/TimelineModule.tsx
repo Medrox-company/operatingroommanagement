@@ -1269,19 +1269,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           {currentRoomNumber}
                         </div>
                       )}
-                      <div 
-                        className="w-8 h-8 rounded-full flex items-center justify-center border" 
-                        style={{ 
-                          background: isActive ? `${roomColor.bg}25` : 'rgba(255,255,255,0.05)',
-                          borderColor: isActive ? `${roomColor.border}40` : 'rgba(255,255,255,0.1)'
-                        }}
-                      >
-                        {isActive ? (
-                          <Activity className="w-4 h-4" style={{ color: roomColor.bg }} />
-                        ) : (
-                          <div className="w-2 h-2 rounded-full bg-white/20" />
-                        )}
-                      </div>
                     </div>
 
                     {/* Room info */}
@@ -1452,21 +1439,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           </>
                         )}
 
-                        {/* Content overlay - step icon, title and status */}
+                        {/* Content overlay - title and status */}
                         <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
-                          {/* Step Icon */}
-                          <div 
-                            className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center"
-                            style={{ 
-                              background: `${stepColor}40`,
-                              border: `1px solid ${stepColor}60`
-                            }}
-                          >
-                            <StepIcon className="w-3.5 h-3.5 text-white" />
-                          </div>
-                          
                           {/* Step title and status */}
-                          {boxWidthPct > 12 && (
+                          {boxWidthPct > 8 && (
                             <div className="min-w-0 flex-1">
                               <p 
                                 className="text-[10px] font-bold text-white truncate"
@@ -1508,16 +1484,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           border: `1px dashed ${stepColor}30`
                         }}
                       >
-                        {/* Step icon */}
-                        <div 
-                          className="w-6 h-6 rounded-lg flex items-center justify-center"
-                          style={{ 
-                            background: `${stepColor}20`,
-                            border: `1px solid ${stepColor}30`
-                          }}
-                        >
-                          <StepIcon className="w-3.5 h-3.5" style={{ color: stepColor }} />
-                        </div>
                         <div className="text-center">
                           <p className="text-[10px] font-bold" style={{ color: stepColor }}>{currentStep.title}</p>
                           <p className="text-[8px] font-medium text-white/30">{currentStep.status}</p>
