@@ -555,7 +555,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute right-4 md:right-6 lg:right-8 top-8 md:top-12 lg:top-16 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-2 md:right-4 lg:right-8 top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -621,7 +621,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute right-24 md:right-32 lg:right-40 top-8 md:top-12 lg:top-16 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-2 md:right-4 lg:right-8 top-[184px] md:top-[168px] lg:top-[304px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -648,7 +648,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             step_name: WORKFLOW_STEPS[currentStepIndex].title,
           });
         }}
-        className={`absolute right-4 md:right-6 lg:right-8 bottom-32 md:bottom-40 lg:bottom-48 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+        className={`absolute right-2 md:right-4 lg:right-8 bottom-[200px] md:bottom-[160px] lg:bottom-[200px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
           room.isEnhancedHygiene
             ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
             : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
@@ -676,7 +676,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute right-4 md:right-6 lg:right-8 bottom-8 md:bottom-12 lg:bottom-16 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+          className={`absolute right-2 md:right-4 lg:right-8 bottom-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
@@ -697,7 +697,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
         <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
         
-        <div className="flex items-center justify-center gap-8 md:gap-16 lg:gap-32 relative">
+        <div className="flex items-center justify-center gap-4 md:gap-8 lg:gap-20 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
             const prevStepIdx = currentStepIndex === 0 ? WORKFLOW_STEPS.length - 1 : currentStepIndex - 1;
@@ -709,12 +709,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center"
               >
-                {/* Matte fill background */}
+                {/* Gradient Glow - transparent from center */}
                 <div 
-                  className="absolute inset-0 rounded-full transition-colors duration-700"
+                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
                   style={{
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    backdropFilter: 'blur(10px)'
+                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
                   }}
                 />
                 
@@ -896,13 +895,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     <p className={`text-[11px] font-bold tracking-widest uppercase ${room.isEmergency ? 'text-red-300/60' : 'text-white/30'}`}>
                       {currentStep.status}
                     </p>
-                    
-                    {/* Time display under status */}
-                    <div className="mt-8">
-                      <span className={`text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-                        {isPaused ? pauseElapsedTime : elapsedTime}
-                      </span>
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -917,12 +909,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             transition={{ duration: 0.5, delay: 0.1 }}
             className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer"
           >
-            {/* Matte fill background */}
+            {/* Glow - gradient transparent from center */}
             <div 
-              className="absolute inset-0 rounded-full transition-colors duration-700"
+              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(10px)'
+                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
               }}
             />
             
@@ -947,41 +938,39 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </motion.div>
         </div>
         
-        {/* Time adjustment buttons - positioned below main circles in the gap between small and center circles */}
+        {/* Time adjustment buttons - positioned below circles */}
         {!isInteractionBlocked && (
-          <>
-            {/* Minus button - left side, below and between left circle and center */}
+          <div className="absolute bottom-16 md:bottom-20 lg:bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-2 md:gap-4 lg:gap-6 z-50">
             <motion.button 
               onClick={handleDecreaseTime}
-              className="absolute w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: 'rgba(30,30,40,0.9)',
-                left: 'calc(50% - 200px)',
-                bottom: '80px'
+                backgroundColor: 'rgba(255,255,255,0.03)'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white" strokeWidth={2} />
+              <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </motion.button>
 
-            {/* Plus button - right side, below and between right circle and center */}
+            <span className={`text-3xl md:text-5xl lg:text-6xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+              {isPaused ? pauseElapsedTime : elapsedTime}
+            </span>
+
             <motion.button 
               onClick={handleIncreaseTime}
-              className="absolute w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: 'rgba(30,30,40,0.9)',
-                right: 'calc(50% - 200px)',
-                bottom: '80px'
+                backgroundColor: 'rgba(255,255,255,0.03)'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Plus className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white" strokeWidth={2} />
+              <Plus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </motion.button>
-          </>
+          </div>
         )}
       </main>
 
