@@ -701,12 +701,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
       {/* ======== MOBILE VIEW (md:hidden) ======== */}
       <div className="md:hidden w-full h-full overflow-y-auto flex flex-col">
-        {/* Mobile header */}
-        <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 px-4 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-[9px] font-black tracking-[0.3em] uppercase text-[#00D8C1]/60">TIMELINE OVERVIEW</p>
-            <h1 className="text-2xl font-black tracking-tighter uppercase">Přehled sálů</h1>
-          </div>
+  {/* Mobile header */}
+  <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 px-4 py-4 flex items-center justify-between">
+  <div>
+  <h1 className="text-2xl font-black tracking-tighter uppercase">Přehled sálů</h1>
+  </div>
           <div className="text-right">
             <p className="text-[9px] uppercase tracking-wider text-white/30">Čas</p>
             <p className="text-lg font-mono font-black text-white tabular-nums">
@@ -790,18 +789,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       {/* ======== Header with Title and Stats ======== */}
       <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
         <div className="px-8 md:pl-32 md:pr-10 py-6">
-          {/* Title Section - Matching Dashboard Style */}
-          <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 mb-6">
-            <div className="text-center lg:text-left">
-              <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-                <Clock className="w-4 h-4 text-[#00D8C1]" />
-                <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">TIMELINE OVERVIEW</p>
-              </div>
-              <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-                TIMELINE <span className="text-white/20">VIEW</span>
-              </h1>
-            </div>
-          </header>
+
 
           {/* Stats Boxes Row */}
           <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
