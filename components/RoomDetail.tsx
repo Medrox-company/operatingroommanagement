@@ -35,6 +35,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   // Filter ONLY ACTIVE statuses from database
   const activeDbStatuses = statuses.filter(s => s.is_active).sort((a, b) => a.order_index - b.order_index);
   
+  console.log('[v0] RoomDetail - statuses from context:', statuses.length, 'active:', activeDbStatuses.length);
+  
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
