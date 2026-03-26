@@ -1000,19 +1000,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               let progressPct = 0;
               let startDate: Date = new Date();
               let endDate: Date = new Date();
+              
+              // Only show on timeline if there's a real procedure start time
+              const hasRealData = startParts && startParts.length === 2;
 
-              if (isActive) {
-                if (startParts && startParts.length === 2) {
-                  // Use actual procedure start time
-                  startDate = new Date();
-                  startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
-                } else {
-                  // Fallback: generate a start time based on room index (staggered starts from 7:00-12:00)
-                  startDate = new Date();
-                  const baseHour = 7 + (roomIndex % 6); // Start between 7:00 and 12:00
-                  const baseMinute = (roomIndex * 17) % 60; // Stagger by ~17 min
-                  startDate.setHours(baseHour, baseMinute, 0, 0);
-                }
+              if (isActive && hasRealData) {
+                // Use actual procedure start time
+                startDate = new Date();
+                startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
                 
                 boxLeftPct = getTimePercent(startDate);
                 
@@ -1225,7 +1220,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     })}
 
                     {/* Active operation bar - Premium Design with workflow step color */}
-                    {isActive && boxWidthPct > 0 && (
+                    {/* Active operation box - only shown if there's real procedure data */}
+              {isActive && hasRealData && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
