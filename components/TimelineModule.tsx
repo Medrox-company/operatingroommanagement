@@ -1382,56 +1382,32 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
                       const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
-                      // Get the current step color for hatching
-                      const currentStep = WORKFLOW_STEPS[stepIndex];
-                      const currentStepColor = STEP_COLORS[stepIndex];
-                      
                       return (
                         <>
-                          {/* Diagonal hatching overlay after working hours */}
+                          {/* Diagonal hatching overlay after working hours end */}
                           <div 
-                            className="absolute top-0 bottom-0 pointer-events-none"
+                            className="absolute inset-y-0 pointer-events-none"
                             style={{ 
                               left: `${endPercent}%`,
                               right: 0,
                               backgroundImage: `repeating-linear-gradient(
                                 45deg,
-                                transparent,
-                                transparent 10px,
-                                ${currentStepColor.solid}15 10px,
-                                ${currentStepColor.solid}15 12px
-                              ),
-                              repeating-linear-gradient(
-                                -45deg,
-                                transparent,
-                                transparent 10px,
-                                #0d1121 10px,
-                                #0d1121 12px
+                                transparent 0px,
+                                transparent 8px,
+                                rgba(255,255,255,0.06) 8px,
+                                rgba(255,255,255,0.06) 10px
                               )`
                             }}
                           />
                           
-                          {/* End of working hours indicator line */}
+                          {/* End of working hours indicator line - subtle */}
                           <div 
-                            className="absolute top-0 bottom-0 w-0.5 z-20"
+                            className="absolute top-0 bottom-0 w-0.5 z-20 pointer-events-none"
                             style={{ 
                               left: `${endPercent}%`,
-                              background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
+                              background: 'linear-gradient(180deg, transparent 0%, rgba(249, 115, 22, 0.4) 20%, rgba(249, 115, 22, 0.4) 80%, transparent 100%)'
                             }}
-                          >
-                            {/* End time label */}
-                            <div 
-                              className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
-                              style={{ 
-                                background: 'rgba(249, 115, 22, 0.2)',
-                                border: '1px solid rgba(249, 115, 22, 0.4)',
-                                color: '#F97316'
-                              }}
-                            >
-                              {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                              {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
-                            </div>
-                          </div>
+                          />
                         </>
                       );
                     })()}
@@ -1457,22 +1433,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
           >
-            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #3B82F6 0px, #3B82F6 4px, transparent 4px, transparent 8px)' }} />
-            <span className="text-[10px] font-medium text-white/40">Zacatek smeny</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #F97316 0px, #F97316 4px, transparent 4px, transparent 8px)' }} />
-            <span className="text-[10px] font-medium text-white/40">Konec smeny</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(249, 115, 22, 0.05)', border: '1px solid rgba(249, 115, 22, 0.15)' }}
-          >
-            <div className="w-0.5 h-4 rounded-full" style={{ background: '#F97316' }} />
-            <span className="text-[10px] font-medium text-orange-400/60">Konec prac. doby salu</span>
+            <div className="w-4 h-4 rounded" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(255,255,255,0.15) 8px, rgba(255,255,255,0.15) 10px)' }} />
+            <span className="text-[10px] font-medium text-white/40">Po konci prac. doby</span>
           </div>
           <div 
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
