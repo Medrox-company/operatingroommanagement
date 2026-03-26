@@ -948,7 +948,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                left: '10%',
+                left: '30%',
                 top: 'calc(50% + 200px)',
                 transform: 'translateY(-50%)'
               }}
@@ -965,7 +965,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                right: '10%',
+                right: '30%',
                 top: 'calc(50% + 200px)',
                 transform: 'translateY(-50%)'
               }}
