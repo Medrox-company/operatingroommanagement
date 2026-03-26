@@ -960,38 +960,34 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         {!isInteractionBlocked && (
           <>
             {/* Minus button - left side */}
-            <motion.button 
+            <button 
               onClick={handleDecreaseTime}
-              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
                 left: '30%',
-                top: 'calc(50% + 280px)',
+                top: 'calc(50% + 320px)',
                 transform: 'translateY(-50%)'
               }}
-              whileHover={{ boxShadow: `0 0 30px ${activeColor}88` }}
-              whileTap={{ scale: 0.95 }}
             >
               <Minus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
-            </motion.button>
+            </button>
 
             {/* Plus button - right side */}
-            <motion.button 
+            <button 
               onClick={handleIncreaseTime}
-              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
                 right: '30%',
-                top: 'calc(50% + 280px)',
+                top: 'calc(50% + 320px)',
                 transform: 'translateY(-50%)'
               }}
-              whileHover={{ boxShadow: `0 0 30px ${activeColor}88` }}
-              whileTap={{ scale: 0.95 }}
             >
               <Plus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
-            </motion.button>
+            </button>
           </>
         )}
       </main>
