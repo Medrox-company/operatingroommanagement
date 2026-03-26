@@ -555,7 +555,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!!patientCalledTime}
-        className={`absolute right-2 md:right-4 lg:right-8 top-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-[180px] md:right-[200px] lg:right-[220px] top-4 md:top-6 lg:top-8 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientCalledTime && !patientArrivedTime
             ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             : patientArrivedTime
@@ -621,7 +621,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           }
         }}
         disabled={!patientCalledTime || !!patientArrivedTime}
-        className={`absolute right-2 md:right-4 lg:right-8 top-[184px] md:top-[168px] lg:top-[304px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
+        className={`absolute right-[76px] md:right-[90px] lg:right-[112px] top-4 md:top-6 lg:top-8 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 disabled:cursor-not-allowed ${
           patientArrivedTime
             ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
             : !patientCalledTime
@@ -648,7 +648,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             step_name: WORKFLOW_STEPS[currentStepIndex].title,
           });
         }}
-        className={`absolute right-2 md:right-4 lg:right-8 bottom-[200px] md:bottom-[160px] lg:bottom-[200px] rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+        className={`absolute right-[112px] md:right-[130px] lg:right-[144px] bottom-4 md:bottom-6 lg:bottom-8 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
           room.isEnhancedHygiene
             ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
             : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
@@ -676,7 +676,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               step_name: WORKFLOW_STEPS[currentStepIndex].title,
             });
           }}
-          className={`absolute right-2 md:right-4 lg:right-8 bottom-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
+          className={`absolute right-2 md:right-4 lg:right-8 bottom-4 md:bottom-6 lg:bottom-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
             isPaused
               ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
               : 'bg-white/5 border-white/10'
@@ -697,7 +697,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
         <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
         
-        <div className="flex items-center justify-center gap-4 md:gap-8 lg:gap-20 relative">
+        <div className="flex items-center justify-center gap-0 md:gap-2 lg:gap-4 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
             const prevStepIdx = currentStepIndex === 0 ? WORKFLOW_STEPS.length - 1 : currentStepIndex - 1;
@@ -947,35 +947,41 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </motion.div>
         </div>
         
-        {/* Time adjustment buttons - positioned between small and center circles in vertical line */}
+        {/* Time adjustment buttons - positioned below main circles in the gap between small and center circles */}
         {!isInteractionBlocked && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-6 md:gap-10 lg:gap-16 z-50" style={{ top: 'calc(50% + 240px)' }}>
+          <>
+            {/* Minus button - left side, below and between left circle and center */}
             <motion.button 
               onClick={handleDecreaseTime}
-              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
+              className="absolute w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: 'rgba(255,255,255,0.03)'
+                backgroundColor: 'rgba(30,30,40,0.9)',
+                left: 'calc(50% - 200px)',
+                bottom: '80px'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white" strokeWidth={2} />
             </motion.button>
 
+            {/* Plus button - right side, below and between right circle and center */}
             <motion.button 
               onClick={handleIncreaseTime}
-              className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
+              className="absolute w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
-                backgroundColor: 'rgba(255,255,255,0.03)'
+                backgroundColor: 'rgba(30,30,40,0.9)',
+                right: 'calc(50% - 200px)',
+                bottom: '80px'
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Plus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Plus className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white" strokeWidth={2} />
             </motion.button>
-          </div>
+          </>
         )}
       </main>
 
