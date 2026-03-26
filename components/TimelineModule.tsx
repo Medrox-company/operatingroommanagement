@@ -170,37 +170,6 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
           transition={{ delay: 0.1, duration: 0.4 }}
         >
           <div className="flex items-center gap-5">
-            <motion.div 
-              className="relative w-16 h-16 flex-shrink-0"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.2, duration: 0.6, type: 'spring', bounce: 0.4 }}
-            >
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-                <motion.circle 
-                  cx="32" cy="32" r="26" fill="none"
-                  stroke={themeColor}
-                  strokeWidth="3" strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 26}`}
-                  initial={{ strokeDashoffset: `${2 * Math.PI * 26}` }}
-                  animate={{ strokeDashoffset: `${2 * Math.PI * 26 * (1 - progress / 100)}` }}
-                  transition={{ delay: 0.3, duration: 1.2, ease: 'easeOut' }}
-                  style={{ filter: `drop-shadow(0 0 6px ${themeColor}60)` }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.span 
-                  className="text-sm font-black text-white"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5, duration: 0.3 }}
-                >
-                  {progress}%
-                </motion.span>
-              </div>
-            </motion.div>
-
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <motion.h2 
@@ -315,64 +284,39 @@ const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; curr
                       Krok {stepIndex + 1}/{WORKFLOW_STEPS.length}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center border"
-                      style={{ backgroundColor: `${themeColor}15`, borderColor: `${themeColor}30` }}
-                    >
-                      <step.Icon className="w-5 h-5" style={{ color: themeColor }} />
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-white">{step.title}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Clock className="w-3 h-3 text-white/20" />
-                        <span className="text-[10px] text-white/30">{room.currentProcedure?.startTime || '--:--'}</span>
-                        <span className="text-[10px] font-bold" style={{ color: themeColor }}>{elapsedStr.slice(0, 5)}</span>
-                      </div>
+                  <div>
+                    <p className="text-base font-bold text-white">{step.title}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Clock className="w-3 h-3 text-white/20" />
+                      <span className="text-[10px] text-white/30">{room.currentProcedure?.startTime || '--:--'}</span>
+                      <span className="text-[10px] font-bold" style={{ color: themeColor }}>{elapsedStr.slice(0, 5)}</span>
                     </div>
                   </div>
                 </motion.div>
 
                 {nextStep && nextColors && (
-                  <>
-                    <div className="flex items-center flex-shrink-0">
-                      <motion.div 
-                        className="w-9 h-9 rounded-full flex items-center justify-center border"
-                        style={{ backgroundColor: `${nextColors.text}12`, borderColor: `${nextColors.text}25` }}
-                        animate={{ x: [0, 5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                      >
-                        <ChevronRight className="w-4 h-4" style={{ color: nextColors.text }} />
-                      </motion.div>
+                  <motion.div
+                    className="flex-1 rounded-2xl p-4 border"
+                    style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4, duration: 0.4 }}
+                    whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,255,0.15)' }}
+                  >
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-white/15" />
+                        <span className="text-[9px] font-black tracking-[0.12em] uppercase text-white/35">NASLEDUJICI</span>
+                      </div>
+                      <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-white/25 bg-white/[0.05]">
+                        Krok {stepIndex + 2}/{WORKFLOW_STEPS.length}
+                      </span>
                     </div>
-                    <motion.div
-                      className="flex-1 rounded-2xl p-4 border"
-                      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4, duration: 0.4 }}
-                      whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,255,0.15)' }}
-                    >
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-white/15" />
-                          <span className="text-[9px] font-black tracking-[0.12em] uppercase text-white/35">NASLEDUJICI</span>
-                        </div>
-                        <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-white/25 bg-white/[0.05]">
-                          Krok {stepIndex + 2}/{WORKFLOW_STEPS.length}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center border bg-white/[0.04] border-white/[0.08]">
-                          <nextStep.Icon className="w-5 h-5 text-white/30" />
-                        </div>
-                        <div>
-                          <p className="text-base font-bold text-white/50">{nextStep.title}</p>
-                          <p className="text-[10px] text-white/20 mt-1">Ceka na zahajeni</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </>
+                    <div>
+                      <p className="text-base font-bold text-white/50">{nextStep.title}</p>
+                      <p className="text-[10px] text-white/20 mt-1">Ceka na zahajeni</p>
+                    </div>
+                  </motion.div>
                 )}
               </div>
             </motion.div>
