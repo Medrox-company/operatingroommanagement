@@ -8,6 +8,48 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2
 } from 'lucide-react';
 
+// ========== CONSTANTS ==========
+const TIMELINE_START_HOUR = 7;
+const TIMELINE_END_HOUR = 19;
+const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR;
+const ROOM_LABEL_WIDTH = 200;
+const ROW_HEIGHT = 72;
+const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i);
+
+const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
+
+const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
+  orange: { bg: '#FB923C', border: '#FDBA74', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(251,146,60,0.2)' },
+  purple: { bg: '#C084FC', border: '#D8B4FE', stripe: '#E9D5FF', text: '#FFF', glow: 'rgba(192,132,252,0.2)' },
+  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.2)' },
+  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.2)' },
+  green: { bg: '#4ADE80', border: '#86EFAC', stripe: '#BBF7D0', text: '#FFF', glow: 'rgba(74,222,128,0.2)' },
+  red: { bg: '#F87171', border: '#FCA5A5', stripe: '#FECACA', text: '#FFF', glow: 'rgba(248,113,113,0.2)' },
+  cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
+};
+
+// ========== HELPER FUNCTIONS ==========
+const getTimePercent = (date: Date): number => {
+  const hours = date.getHours() + date.getMinutes() / 60;
+  let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
+  if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
+  return Math.max(0, Math.min(200, percent));
+};
+
+const parseTimeToDate = (timeString: string): Date => {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+};
+
+const hourLabel = (hour: number): string => {
+  const displayHour = hour % 24;
+  return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
+};
+
+const isNextDayHour = (hour: number): boolean => hour >= 24;
+
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
@@ -16,6 +58,9 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const { activeStatuses, loading: statusesLoading } = useWorkflowStatuses();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
+  const [showLegend, setShowLegend] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
   // Update current time every second
@@ -1028,6 +1073,149 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       </div>{/* end desktop wrapper */}
     </div>
   );
-};
+}
 
-export default TimelineModule;
+// Helper Component - Stat Box
+interface StatBoxProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  color: string;
+  glow?: boolean;
+}
+
+const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
+  <div
+    className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'shadow-lg' : ''}`}
+    style={{
+      background: glow
+        ? `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`
+        : `linear-gradient(135deg, ${color}12 0%, ${color}04 100%)`,
+      border: glow ? `2px solid ${color}50` : `1px solid ${color}25`,
+      boxShadow: glow ? `0 0 30px ${color}30` : 'none',
+    }}
+  >
+    {glow && (
+      <div
+        className="absolute inset-0 opacity-50"
+        style={{
+          background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
+        }}
+      />
+    )}
+    <div className="relative flex items-center gap-3 h-full">
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        style={{
+          background: `${color}20`,
+          border: `1px solid ${color}40`,
+        }}
+      >
+        <Icon className="w-4 h-4" style={{ color }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-semibold text-white leading-tight">{value}</p>
+      </div>
+    </div>
+  </div>
+);
+
+// Helper Component - Room Detail Popup
+interface RoomDetailPopupProps {
+  room: OperatingRoom;
+  onClose: () => void;
+  currentTime: Date;
+}
+
+const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
+  const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
+  const step = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[0];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 max-w-md w-full overflow-hidden"
+      >
+        {/* Header */}
+        <div
+          className="px-6 py-4 border-b border-white/10 flex items-center justify-between"
+          style={{
+            background: `linear-gradient(135deg, ${step.color}15 0%, ${step.color}05 100%)`,
+          }}
+        >
+          <div>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium">Sál</p>
+            <p className="text-xl font-bold text-white">{room.name}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+          >
+            <X className="w-4 h-4 text-white/60" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-4 space-y-4">
+          {/* Status */}
+          <div>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Status</p>
+            <div
+              className="px-3 py-2 rounded-lg flex items-center gap-2"
+              style={{
+                background: `${step.color}20`,
+                border: `1px solid ${step.color}40`,
+              }}
+            >
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{ background: step.color }}
+              />
+              <span style={{ color: step.color }} className="font-semibold text-sm">
+                {step.title}
+              </span>
+            </div>
+          </div>
+
+          {/* Doctor */}
+          {room.staff?.doctor && (
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Lékař</p>
+              <div className="flex items-center gap-2 text-white/80">
+                <User className="w-4 h-4" />
+                <span className="text-sm">{room.staff.doctor.name}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Time */}
+          {room.estimatedEndTime && (
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Ukončení</p>
+              <div className="flex items-center gap-2 text-white/80">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm font-mono">
+                  {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
