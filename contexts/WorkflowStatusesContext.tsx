@@ -100,6 +100,13 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   const updateStatus = async (id: string, updates: Partial<WorkflowStatus>) => {
     console.log('[v0] updateStatus called with id:', id, 'updates:', updates);
     
+    // IMMEDIATELY update local state for responsive UI
+    setStatuses(prev => {
+      const newStatuses = prev.map(s => s.id === id ? { ...s, ...updates } : s);
+      console.log('[v0] Immediately updated local statuses:', newStatuses.find(s => s.id === id));
+      return newStatuses;
+    });
+
     try {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.color !== undefined) dbUpdates.accent_color = updates.color;
@@ -122,16 +129,11 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       console.log('[v0] Supabase response - error:', updateError, 'data:', data);
 
       if (updateError) throw updateError;
-      
-      // Update local state
-      setStatuses(prev => {
-        const newStatuses = prev.map(s => s.id === id ? { ...s, ...updates } : s);
-        console.log('[v0] Updated local statuses:', newStatuses.find(s => s.id === id));
-        return newStatuses;
-      });
     } catch (err) {
       console.error('[v0] Error updating workflow status:', err);
       setError(err instanceof Error ? err.message : 'Neznama chyba');
+      // Revert on error
+      await fetchStatuses();
     }
   };
 
@@ -162,19 +164,25 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   useEffect(() => {
     fetchStatuses();
 
-    const subscription = supabase
+    // Subscribe na realtime změny
+    const channel = supabase
       .channel('workflow_statuses_changes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'workflow_statuses' },
-        () => {
+        (payload) => {
+          console.log('[v0] Realtime event received:', payload);
+          // Refetch when any change occurs
           fetchStatuses();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[v0] Subscription status:', status);
+      });
 
     return () => {
-      subscription.unsubscribe();
+      console.log('[v0] Unsubscribing from realtime');
+      supabase.removeChannel(channel);
     };
   }, [fetchStatuses]);
 
