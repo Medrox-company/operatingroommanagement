@@ -56,7 +56,9 @@ const mapDBToStatus = (db: WorkflowStatusDBRow): WorkflowStatus => ({
   name: db.name,
   title: db.name,
   description: db.description,
-  order_index: db.sort_order,
+  // DB sort_order starts from 1, but currentStepIndex starts from 0
+  // So we subtract 1 to align them
+  order_index: db.sort_order - 1,
   color: db.accent_color,
   is_active: db.is_active,
   count_in_statistics: db.include_in_statistics,
@@ -130,13 +132,20 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   }, [statuses]);
 
   const getStatusByIndex = useCallback((index: number) => {
-    return statuses.find(s => s.order_index === index);
+    // Find status by order_index matching the step index
+    // sort_order in DB starts from 0, same as currentStepIndex
+    const status = statuses.find(s => s.order_index === index);
+    if (!status && statuses.length > 0) {
+      // Fallback: try to get by position in array
+      return statuses[index];
+    }
+    return status;
   }, [statuses]);
 
   const getStatusColor = useCallback((index: number) => {
-    const status = statuses.find(s => s.order_index === index);
+    const status = getStatusByIndex(index);
     return status?.color || '#6B7280';
-  }, [statuses]);
+  }, [getStatusByIndex]);
 
   useEffect(() => {
     fetchStatuses();
