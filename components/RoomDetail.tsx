@@ -539,160 +539,168 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       </div>
 
 
-      {/* Top Right Buttons Container - VOLAT and PŘÍJEZD */}
-      <div className="absolute right-14 sm:right-20 md:right-28 lg:right-40 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-40 flex flex-row-reverse gap-2 sm:gap-3 md:gap-4 z-50">
-        {/* Volat Button */}
-        <motion.button
-          onClick={async () => {
-            if (!patientCalledTime) {
-              setPatientCalledTime(new Date());
-              setShowPatientCalledText(true);
-              setTimeout(() => setShowPatientCalledText(false), 3000);
+      {/* Right Side Buttons Container - All 4 buttons in one row */}
+      <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 flex flex-row gap-2 sm:gap-3 md:gap-4 z-50">
+        {/* VOLAT and PŘÍJEZD Container - Vertical */}
+        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
+          {/* Volat Button */}
+          <motion.button
+            onClick={async () => {
+              if (!patientCalledTime) {
+                setPatientCalledTime(new Date());
+                setShowPatientCalledText(true);
+                setTimeout(() => setShowPatientCalledText(false), 3000);
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: 'patient_call',
+                  step_index: currentStepIndex,
+                  step_name: WORKFLOW_STEPS[currentStepIndex].title,
+                });
+              }
+            }}
+            disabled={!!patientCalledTime}
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+              patientCalledTime && !patientArrivedTime
+                ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+                : patientArrivedTime
+                ? 'bg-white/5 border-white/10 opacity-60'
+                : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <AnimatePresence mode="wait">
+              {patientCalledTime && !patientArrivedTime ? (
+                <motion.div
+                  key="call-timer"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <Phone className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-green-300" strokeWidth={2} />
+                  <span className="text-xs sm:text-sm md:text-base lg:text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
+                    {patientCallElapsedTime}
+                  </span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="call-idle"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <Phone className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
+                  <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">Volat</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+
+          {/* Příjezd Button */}
+          <motion.button
+            onClick={async () => {
+              if (patientCalledTime && !patientArrivedTime) {
+                const arrivalTime = new Date();
+                const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
+                setPatientArrivedTime(arrivalTime);
+                await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
+                setShowPatientArrivedText(true);
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: 'patient_arrival',
+                  step_index: currentStepIndex,
+                  step_name: WORKFLOW_STEPS[currentStepIndex].title,
+                  duration_seconds: waitDuration,
+                  metadata: { call_time: patientCalledTime.toISOString() },
+                });
+                setTimeout(() => {
+                  setShowPatientArrivedText(false);
+                  setPatientCalledTime(null);
+                  setPatientArrivedTime(null);
+                  updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                  setPatientCallElapsedTime('00:00');
+                }, 3000);
+              }
+            }}
+            disabled={!patientCalledTime || !!patientArrivedTime}
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+              patientArrivedTime
+                ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+                : !patientCalledTime
+                ? 'bg-white/5 border-white/10 opacity-40'
+                : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <UserCheck className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+            <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
+          </motion.button>
+        </div>
+
+        {/* HYGIENA and PAUZA Container - Vertical */}
+        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
+          {/* Enhanced Hygiene Mode Toggle */}
+          <motion.button
+            onClick={async () => {
+              const newHygieneState = !room.isEnhancedHygiene;
+              onEnhancedHygieneToggle?.(newHygieneState);
+              await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
               await recordStatusEvent({
                 operating_room_id: room.id,
-                event_type: 'patient_call',
+                event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
                 step_index: currentStepIndex,
                 step_name: WORKFLOW_STEPS[currentStepIndex].title,
               });
-            }
-          }}
-          disabled={!!patientCalledTime}
-          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
-            patientCalledTime && !patientArrivedTime
-              ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
-              : patientArrivedTime
-              ? 'bg-white/5 border-white/10 opacity-60'
-              : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-          }`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <AnimatePresence mode="wait">
-            {patientCalledTime && !patientArrivedTime ? (
-              <motion.div
-                key="call-timer"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-1"
-              >
-                <Phone className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-green-300" strokeWidth={2} />
-                <span className="text-xs sm:text-sm md:text-base lg:text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
-                  {patientCallElapsedTime}
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="call-idle"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-2"
-              >
-                <Phone className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
-                <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">Volat</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
+            }}
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+              room.isEnhancedHygiene
+                ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
+                : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+            <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
+              Hygien.
+            </span>
+          </motion.button>
 
-        {/* Příjezd Button */}
-        <motion.button
-          onClick={async () => {
-            if (patientCalledTime && !patientArrivedTime) {
-              const arrivalTime = new Date();
-              const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
-              setPatientArrivedTime(arrivalTime);
-              await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
-              setShowPatientArrivedText(true);
-              await recordStatusEvent({
-                operating_room_id: room.id,
-                event_type: 'patient_arrival',
-                step_index: currentStepIndex,
-                step_name: WORKFLOW_STEPS[currentStepIndex].title,
-                duration_seconds: waitDuration,
-                metadata: { call_time: patientCalledTime.toISOString() },
-              });
-              setTimeout(() => {
-                setShowPatientArrivedText(false);
-                setPatientCalledTime(null);
-                setPatientArrivedTime(null);
-                updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                setPatientCallElapsedTime('00:00');
-              }, 3000);
-            }
-          }}
-          disabled={!patientCalledTime || !!patientArrivedTime}
-          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
-            patientArrivedTime
-              ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
-              : !patientCalledTime
-              ? 'bg-white/5 border-white/10 opacity-40'
-              : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
-          }`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <UserCheck className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-          <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
-        </motion.button>
-      </div>
-
-      {/* Enhanced Hygiene Mode Toggle - Right Side */}
-      <motion.button
-        onClick={async () => {
-          const newHygieneState = !room.isEnhancedHygiene;
-          onEnhancedHygieneToggle?.(newHygieneState);
-          await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
-          await recordStatusEvent({
-            operating_room_id: room.id,
-            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
-            step_index: currentStepIndex,
-            step_name: WORKFLOW_STEPS[currentStepIndex].title,
-          });
-        }}
-        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
-          room.isEnhancedHygiene
-            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
-            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-        }`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
-          Hygien.
-        </span>
-      </motion.button>
-
-      {/* Pause Button - Right Side, bottom */}
-      {!(room.isLocked && isFinalStep) && (
-        <motion.button
-          onClick={async () => {
-            const newPaused = !isPaused;
-            setIsPaused(newPaused);
-            await updateOperatingRoom(room.id, { is_paused: newPaused });
-            await recordStatusEvent({
-              operating_room_id: room.id,
-              event_type: newPaused ? 'pause' : 'resume',
-              step_index: currentStepIndex,
-              step_name: WORKFLOW_STEPS[currentStepIndex].title,
-            });
-          }}
-          className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
-            isPaused
-              ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-              : 'bg-white/5 border-white/10'
-          }`}
-        >
-          {isPaused ? (
-            <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
-          ) : (
-            <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
+          {/* Pause Button */}
+          {!(room.isLocked && isFinalStep) && (
+            <motion.button
+              onClick={async () => {
+                const newPaused = !isPaused;
+                setIsPaused(newPaused);
+                await updateOperatingRoom(room.id, { is_paused: newPaused });
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: newPaused ? 'pause' : 'resume',
+                  step_index: currentStepIndex,
+                  step_name: WORKFLOW_STEPS[currentStepIndex].title,
+                });
+              }}
+              className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+                isPaused
+                  ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
+                  : 'bg-white/5 border-white/10'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isPaused ? (
+                <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
+              ) : (
+                <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
+              )}
+              <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+            </motion.button>
           )}
-          <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
-        </motion.button>
-      )}
+        </div>
+      </div>
 
       {/* Main Three-Circle Status Display */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
