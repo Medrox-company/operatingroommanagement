@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3 } from 'lucide-react';
+import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
 import DepartmentsManager from './DepartmentsManager';
@@ -8,6 +8,7 @@ import ScheduleManager from './ScheduleManager';
 import ShiftScheduleManager from './ShiftScheduleManager';
 import StatisticsModule from './StatisticsModule';
 import StaffManager from './StaffManager';
+import StatusesManager from './StatusesManager';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -59,6 +60,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       description: 'Správa oddělení a jejich konfigurací',
       icon: Stethoscope,
       accentColor: '#F97316',
+    },
+    {
+      id: 'statuses',
+      title: 'Statusy',
+      description: 'Konfigurace workflow statusů operací',
+      icon: Activity,
+      accentColor: '#A78BFA',
     },
     {
       id: 'contacts',
@@ -149,6 +157,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           className="w-full px-8 md:pl-32 md:pr-10 py-10"
         >
           <StaffManager />
+        </motion.div>
+      ) : selectedModule === 'statuses' ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full px-8 md:pl-32 md:pr-10 py-10"
+        >
+          <StatusesManager />
         </motion.div>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
