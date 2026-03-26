@@ -1003,7 +1003,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           ))}
         </div>
       </div>
-      </div>{/* end desktop wrapper */}
     </motion.div>
   );
 };
