@@ -1362,7 +1362,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       </div>
                     )}
 
-                    {/* Room-specific end of working hours indicator */}
+                    {/* Room-specific end of working hours indicator and post-work hatching */}
                     {(() => {
                       const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
                       const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -1382,27 +1382,57 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
                       const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
+                      // Get the current step color for hatching
+                      const currentStep = WORKFLOW_STEPS[stepIndex];
+                      const currentStepColor = STEP_COLORS[stepIndex];
+                      
                       return (
-                        <div 
-                          className="absolute top-0 bottom-0 w-0.5 z-20"
-                          style={{ 
-                            left: `${endPercent}%`,
-                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
-                          }}
-                        >
-                          {/* End time label */}
+                        <>
+                          {/* Diagonal hatching overlay after working hours */}
                           <div 
-                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
+                            className="absolute top-0 bottom-0 pointer-events-none"
                             style={{ 
-                              background: 'rgba(249, 115, 22, 0.2)',
-                              border: '1px solid rgba(249, 115, 22, 0.4)',
-                              color: '#F97316'
+                              left: `${endPercent}%`,
+                              right: 0,
+                              backgroundImage: `repeating-linear-gradient(
+                                45deg,
+                                transparent,
+                                transparent 10px,
+                                ${currentStepColor.solid}15 10px,
+                                ${currentStepColor.solid}15 12px
+                              ),
+                              repeating-linear-gradient(
+                                -45deg,
+                                transparent,
+                                transparent 10px,
+                                #0d1121 10px,
+                                #0d1121 12px
+                              )`
+                            }}
+                          />
+                          
+                          {/* End of working hours indicator line */}
+                          <div 
+                            className="absolute top-0 bottom-0 w-0.5 z-20"
+                            style={{ 
+                              left: `${endPercent}%`,
+                              background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
                             }}
                           >
-                            {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
+                            {/* End time label */}
+                            <div 
+                              className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
+                              style={{ 
+                                background: 'rgba(249, 115, 22, 0.2)',
+                                border: '1px solid rgba(249, 115, 22, 0.4)',
+                                color: '#F97316'
+                              }}
+                            >
+                              {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                              {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
+                            </div>
                           </div>
-                        </div>
+                        </>
                       );
                     })()}
                   </div>
