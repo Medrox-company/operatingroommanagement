@@ -995,9 +995,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               // Calculate operation bar position
               // Use currentProcedure if available, otherwise generate fallback values for active rooms
               const startParts = room.currentProcedure?.startTime?.split(':');
-              let boxLeftPct = 0;
-              let boxWidthPct = 0;
-              let progressPct = 0;
+                let boxLeftPct = 0;
+                let boxRightPct = 0;
+                let boxWidthPct = 2;
+                let progressPct = 0;
 
               if (isActive) {
                 let startDate: Date;
@@ -1028,7 +1029,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   endDate = new Date(startDate.getTime() + duration * 60 * 1000);
                 }
                 
-                const boxRightPct = getTimePercent(endDate);
+                boxRightPct = getTimePercent(endDate);
                 // Handle cases where operation spans past midnight (end is before start on timeline)
                 if (boxRightPct < boxLeftPct) {
                   // Operation ends next day - extend to end of timeline
