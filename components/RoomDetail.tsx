@@ -539,9 +539,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       </div>
 
 
-      {/* VOLAT and PŘÍJEZD Container - vertically stacked next to HYGIENA and PAUZA */}
-      <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-16 sm:bottom-20 md:bottom-24 lg:bottom-28 flex flex-col gap-2 sm:gap-3 md:gap-4 z-50">
-        {/* Volat Button */}
+      {/* All Right Side Buttons Container - VOLAT, PŘÍJEZD, HYGIENA, PAUZA stacked vertically */}
+      <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 flex flex-col gap-2 sm:gap-3 md:gap-4 z-50">
+        {/* HYGIENA Button */}
         <motion.button
           onClick={async () => {
             if (!patientCalledTime) {
@@ -596,7 +596,60 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </AnimatePresence>
         </motion.button>
 
-        {/* Příjezd Button */}
+        <motion.button
+          onClick={async () => {
+            const newHygiene = !room.isEnhancedHygiene;
+            await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygiene });
+            await recordStatusEvent({
+              operating_room_id: room.id,
+              event_type: newHygiene ? 'hygiene_activated' : 'hygiene_deactivated',
+              step_index: currentStepIndex,
+              step_name: WORKFLOW_STEPS[currentStepIndex].title,
+            });
+          }}
+          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+            room.isEnhancedHygiene
+              ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
+              : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+          }`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+          <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
+            Hygien.
+          </span>
+        </motion.button>
+
+        {/* PAUZA Button */}
+        {!(room.isLocked && isFinalStep) && (
+          <motion.button
+            onClick={async () => {
+              const newPaused = !isPaused;
+              setIsPaused(newPaused);
+              await updateOperatingRoom(room.id, { is_paused: newPaused });
+              await recordStatusEvent({
+                operating_room_id: room.id,
+                event_type: newPaused ? 'pause' : 'resume',
+                step_index: currentStepIndex,
+                step_name: WORKFLOW_STEPS[currentStepIndex].title,
+              });
+            }}
+            className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+              isPaused
+                ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
+                : 'bg-white/5 border-white/10'
+            }`}
+          >
+            {isPaused ? (
+              <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
+            ) : (
+              <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
+            )}
+            <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+          </motion.button>
+        )}
+      </div>
         <motion.button
           onClick={async () => {
             if (patientCalledTime && !patientArrivedTime) {
@@ -638,61 +691,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </motion.button>
       </div>
 
-      {/* Enhanced Hygiene Mode Toggle - Right Side */}
-      <motion.button
-        onClick={async () => {
-          const newHygieneState = !room.isEnhancedHygiene;
-          onEnhancedHygieneToggle?.(newHygieneState);
-          await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
-          await recordStatusEvent({
-            operating_room_id: room.id,
-            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
-            step_index: currentStepIndex,
-            step_name: WORKFLOW_STEPS[currentStepIndex].title,
-          });
-        }}
-        className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
-          room.isEnhancedHygiene
-            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
-            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-        }`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
-          Hygien.
-        </span>
-      </motion.button>
-
-      {/* Pause Button - Right Side, bottom */}
-      {!(room.isLocked && isFinalStep) && (
-        <motion.button
-          onClick={async () => {
-            const newPaused = !isPaused;
-            setIsPaused(newPaused);
-            await updateOperatingRoom(room.id, { is_paused: newPaused });
-            await recordStatusEvent({
-              operating_room_id: room.id,
-              event_type: newPaused ? 'pause' : 'resume',
-              step_index: currentStepIndex,
-              step_name: WORKFLOW_STEPS[currentStepIndex].title,
-            });
-          }}
-          className={`absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50 ${
-            isPaused
-              ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-              : 'bg-white/5 border-white/10'
-          }`}
-        >
-          {isPaused ? (
-            <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
-          ) : (
-            <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
-          )}
-          <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
-        </motion.button>
-      )}
 
       {/* Main Three-Circle Status Display */}
       <main className="w-full h-full flex items-center justify-center relative z-20">
