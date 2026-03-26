@@ -995,10 +995,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               // Calculate operation bar position
               // Use currentProcedure if available, otherwise generate fallback values for active rooms
               const startParts = room.currentProcedure?.startTime?.split(':');
-                let boxLeftPct = 0;
-                let boxRightPct = 0;
-                let boxWidthPct = 2;
-                let progressPct = 0;
+              let boxLeftPct = 0;
+              let boxWidthPct = 0;
+              let progressPct = 0;
 
               if (isActive) {
                 let startDate: Date;
@@ -1029,7 +1028,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   endDate = new Date(startDate.getTime() + duration * 60 * 1000);
                 }
                 
-                boxRightPct = getTimePercent(endDate);
+                const boxRightPct = getTimePercent(endDate);
                 // Handle cases where operation spans past midnight (end is before start on timeline)
                 if (boxRightPct < boxLeftPct) {
                   // Operation ends next day - extend to end of timeline
@@ -1293,47 +1292,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           />
                         </div>
 
-                        {/* Hatching overlay for portion after working hours */}
-                        {(() => {
-                          const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
-                          const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
-                          const todayKey = dayKeys[currentTime.getDay()];
-                          const todaySchedule = schedule[todayKey];
-                          
-                          if (!todaySchedule.enabled) return null;
-                          
-                          // Calculate end time as percentage
-                          const endHour = todaySchedule.endHour;
-                          const endMinute = todaySchedule.endMinute;
-                          let minutesFromTimelineStart = (endHour * 60 + endMinute) - (TIMELINE_START_HOUR * 60);
-                          if (minutesFromTimelineStart < 0) {
-                            minutesFromTimelineStart += 24 * 60;
-                          }
-                          const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
-                          
-                          // Only show hatching if bar extends past working hours
-                          if (boxRightPct > endPercent) {
-                            const hatchStartPercent = Math.max(0, (endPercent - boxLeftPct) / boxWidthPct * 100);
-                            return (
-                              <div 
-                                className="absolute inset-y-0 rounded-xl pointer-events-none"
-                                style={{ 
-                                  left: `${hatchStartPercent}%`,
-                                  right: 0,
-                                  backgroundImage: `repeating-linear-gradient(
-                                    45deg,
-                                    transparent 0px,
-                                    transparent 6px,
-                                    rgba(255,255,255,0.15) 6px,
-                                    rgba(255,255,255,0.15) 8px
-                                  )`
-                                }}
-                              />
-                            );
-                          }
-                          return null;
-                        })()}
-
                         {/* Current position indicator - subtle line */}
                         {progressPct > 0 && progressPct < 100 && (
                           <>
@@ -1404,7 +1362,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       </div>
                     )}
 
-                    {/* Room-specific end of working hours indicator and post-work hatching */}
+                    {/* Room-specific end of working hours indicator */}
                     {(() => {
                       const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
                       const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -1425,32 +1383,26 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
                       return (
-                        <>
-                          {/* Diagonal hatching overlay after working hours end */}
+                        <div 
+                          className="absolute top-0 bottom-0 w-0.5 z-20"
+                          style={{ 
+                            left: `${endPercent}%`,
+                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
+                          }}
+                        >
+                          {/* End time label */}
                           <div 
-                            className="absolute inset-y-0 pointer-events-none"
+                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
                             style={{ 
-                              left: `${endPercent}%`,
-                              right: 0,
-                              backgroundImage: `repeating-linear-gradient(
-                                45deg,
-                                transparent 0px,
-                                transparent 8px,
-                                rgba(255,255,255,0.06) 8px,
-                                rgba(255,255,255,0.06) 10px
-                              )`
+                              background: 'rgba(249, 115, 22, 0.2)',
+                              border: '1px solid rgba(249, 115, 22, 0.4)',
+                              color: '#F97316'
                             }}
-                          />
-                          
-                          {/* End of working hours indicator line - subtle */}
-                          <div 
-                            className="absolute top-0 bottom-0 w-0.5 z-20 pointer-events-none"
-                            style={{ 
-                              left: `${endPercent}%`,
-                              background: 'linear-gradient(180deg, transparent 0%, rgba(249, 115, 22, 0.4) 20%, rgba(249, 115, 22, 0.4) 80%, transparent 100%)'
-                            }}
-                          />
-                        </>
+                          >
+                            {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
+                          </div>
+                        </div>
                       );
                     })()}
                   </div>
@@ -1475,8 +1427,22 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
           >
-            <div className="w-4 h-4 rounded" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(255,255,255,0.15) 8px, rgba(255,255,255,0.15) 10px)' }} />
-            <span className="text-[10px] font-medium text-white/40">Po konci prac. doby</span>
+            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #3B82F6 0px, #3B82F6 4px, transparent 4px, transparent 8px)' }} />
+            <span className="text-[10px] font-medium text-white/40">Zacatek smeny</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #F97316 0px, #F97316 4px, transparent 4px, transparent 8px)' }} />
+            <span className="text-[10px] font-medium text-white/40">Konec smeny</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(249, 115, 22, 0.05)', border: '1px solid rgba(249, 115, 22, 0.15)' }}
+          >
+            <div className="w-0.5 h-4 rounded-full" style={{ background: '#F97316' }} />
+            <span className="text-[10px] font-medium text-orange-400/60">Konec prac. doby salu</span>
           </div>
           <div 
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
