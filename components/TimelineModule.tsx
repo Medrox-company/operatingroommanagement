@@ -592,10 +592,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
   };
 
   // Calculate shift line positions (as percentage of 24-hour view from 7:00)
-  // Shift start (7:00) is at 0% of timeline
-  const shiftStartPercent = 0;
-  // Shift end (19:00) is 12 hours from start = 50%
-  const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
+  // These are no longer used but kept for reference
+  // const shiftStartPercent = 0;
+  // const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
 
   // Get remaining time for room
   const getRemainingTime = (room: OperatingRoom): string => {
@@ -970,46 +969,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Shift start line (7:00) - blue dashed */}
-            <div 
-              className="absolute top-0 bottom-0 z-20 pointer-events-none" 
-              style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})` }}
-            >
-              <div 
-                className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #3B82F6 0px, #3B82F6 6px, transparent 6px, transparent 12px)' }} 
-              />
-            </div>
-
-            {/* Shift end line (19:00) - orange dashed */}
-            <div 
-              className="absolute top-0 bottom-0 z-20 pointer-events-none" 
-              style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})` }}
-            >
-              <div 
-                className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #F97316 0px, #F97316 6px, transparent 6px, transparent 12px)' }} 
-              />
-            </div>
-
-            {/* Night zone overlay (19:00-07:00) */}
-            <div 
-              className="absolute top-0 bottom-0 z-10 pointer-events-none" 
-              style={{ 
-                left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})`, 
-                width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${(100 - shiftEndPercent) / 100})`,
-                background: 'rgba(11, 17, 32, 0.6)'
-              }} 
-            />
-            <div 
-              className="absolute top-0 bottom-0 z-10 pointer-events-none" 
-              style={{ 
-                left: ROOM_LABEL_WIDTH, 
-                width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})`,
-                background: 'rgba(11, 17, 32, 0.6)'
-              }} 
-            />
 
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
