@@ -27,7 +27,7 @@ const StatusesManager: React.FC = () => {
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div>
             <h3 className="font-semibold text-red-400 mb-1">Chyba</h3>
-            <p className="text-sm text-red-300">{error || 'Neznama chyba'}</p>
+            <p className="text-sm text-red-300">{error}</p>
           </div>
         </div>
       </div>
