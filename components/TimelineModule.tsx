@@ -61,28 +61,28 @@ const hourLabel = (h: number, showNextDay = false) => {
 // Check if hour is in "next day" portion of timeline
 const isNextDayHour = (h: number) => h >= 0 && h < TIMELINE_START_HOUR;
 
-/* --- Room colors by priority/activity --- */
+/* --- Room colors by priority/activity - softer palette --- */
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#F97316', border: '#FB923C', stripe: '#FDBA74', text: '#FFF', glow: 'rgba(249,115,22,0.4)' },
-  purple: { bg: '#A855F7', border: '#C084FC', stripe: '#D8B4FE', text: '#FFF', glow: 'rgba(168,85,247,0.4)' },
-  pink: { bg: '#EC4899', border: '#F472B6', stripe: '#F9A8D4', text: '#FFF', glow: 'rgba(236,72,153,0.4)' },
-  blue: { bg: '#3B82F6', border: '#60A5FA', stripe: '#93C5FD', text: '#FFF', glow: 'rgba(59,130,246,0.4)' },
-  green: { bg: '#22C55E', border: '#4ADE80', stripe: '#86EFAC', text: '#FFF', glow: 'rgba(34,197,94,0.4)' },
-  red: { bg: '#EF4444', border: '#F87171', stripe: '#FCA5A5', text: '#FFF', glow: 'rgba(239,68,68,0.4)' },
-  cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#67E8F9', text: '#FFF', glow: 'rgba(6,182,212,0.4)' },
+  orange: { bg: '#FB923C', border: '#FDBA74', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(251,146,60,0.2)' },
+  purple: { bg: '#C084FC', border: '#D8B4FE', stripe: '#E9D5FF', text: '#FFF', glow: 'rgba(192,132,252,0.2)' },
+  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.2)' },
+  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.2)' },
+  green: { bg: '#4ADE80', border: '#86EFAC', stripe: '#BBF7D0', text: '#FFF', glow: 'rgba(74,222,128,0.2)' },
+  red: { bg: '#F87171', border: '#FCA5A5', stripe: '#FECACA', text: '#FFF', glow: 'rgba(248,113,113,0.2)' },
+  cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'];
 
-/* --- Step colors matching WORKFLOW_STEPS --- */
+/* --- Step colors matching WORKFLOW_STEPS - softer palette --- */
 const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
-  0: { bg: 'rgba(45,212,191,0.25)', fill: 'rgba(45,212,191,0.50)', border: 'rgba(45,212,191,0.35)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.45)', solid: '#2DD4BF' },
-  1: { bg: 'rgba(167,139,250,0.25)', fill: 'rgba(167,139,250,0.50)', border: 'rgba(167,139,250,0.35)', text: '#A78BFA', glow: 'rgba(167,139,250,0.45)', solid: '#A78BFA' },
-  2: { bg: 'rgba(255,59,48,0.25)', fill: 'rgba(255,59,48,0.50)', border: 'rgba(255,59,48,0.35)', text: '#FF3B30', glow: 'rgba(255,59,48,0.45)', solid: '#FF3B30' },
-  3: { bg: 'rgba(251,191,36,0.25)', fill: 'rgba(251,191,36,0.50)', border: 'rgba(251,191,36,0.35)', text: '#FBBF24', glow: 'rgba(251,191,36,0.45)', solid: '#FBBF24' },
-  4: { bg: 'rgba(129,140,248,0.25)', fill: 'rgba(129,140,248,0.50)', border: 'rgba(129,140,248,0.35)', text: '#818CF8', glow: 'rgba(129,140,248,0.45)', solid: '#818CF8' },
-  5: { bg: 'rgba(217,70,239,0.25)', fill: 'rgba(217,70,239,0.50)', border: 'rgba(217,70,239,0.35)', text: '#D946EF', glow: 'rgba(217,70,239,0.45)', solid: '#D946EF' },
-  6: { bg: 'rgba(249,115,22,0.25)', fill: 'rgba(249,115,22,0.50)', border: 'rgba(249,115,22,0.35)', text: '#F97316', glow: 'rgba(249,115,22,0.45)', solid: '#F97316' },
+  0: { bg: 'rgba(94,234,212,0.15)', fill: 'rgba(94,234,212,0.35)', border: 'rgba(94,234,212,0.25)', text: '#5EEAD4', glow: 'rgba(94,234,212,0.2)', solid: '#5EEAD4' },
+  1: { bg: 'rgba(196,181,253,0.15)', fill: 'rgba(196,181,253,0.35)', border: 'rgba(196,181,253,0.25)', text: '#C4B5FD', glow: 'rgba(196,181,253,0.2)', solid: '#C4B5FD' },
+  2: { bg: 'rgba(252,165,165,0.15)', fill: 'rgba(252,165,165,0.35)', border: 'rgba(252,165,165,0.25)', text: '#FCA5A5', glow: 'rgba(252,165,165,0.2)', solid: '#FCA5A5' },
+  3: { bg: 'rgba(253,224,71,0.15)', fill: 'rgba(253,224,71,0.35)', border: 'rgba(253,224,71,0.25)', text: '#FDE047', glow: 'rgba(253,224,71,0.2)', solid: '#FDE047' },
+  4: { bg: 'rgba(165,180,252,0.15)', fill: 'rgba(165,180,252,0.35)', border: 'rgba(165,180,252,0.25)', text: '#A5B4FC', glow: 'rgba(165,180,252,0.2)', solid: '#A5B4FC' },
+  5: { bg: 'rgba(240,171,252,0.15)', fill: 'rgba(240,171,252,0.35)', border: 'rgba(240,171,252,0.25)', text: '#F0ABFC', glow: 'rgba(240,171,252,0.2)', solid: '#F0ABFC' },
+  6: { bg: 'rgba(253,186,116,0.15)', fill: 'rgba(253,186,116,0.35)', border: 'rgba(253,186,116,0.25)', text: '#FDBA74', glow: 'rgba(253,186,116,0.2)', solid: '#FDBA74' },
 };
 
 /* ============================== */
@@ -920,13 +920,13 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     {!isLast && (
                       isCurrentHour ? (
                         <div 
-                          className="ml-2 px-2.5 py-1 rounded-lg shadow-lg"
+                          className="ml-2 px-2 py-0.5 rounded-md"
                           style={{ 
-                            background: '#00D8C1', 
-                            boxShadow: '0 0 16px rgba(0,216,193,0.5)' 
+                            background: 'rgba(94,234,212,0.9)', 
+                            boxShadow: '0 1px 6px rgba(94,234,212,0.25)' 
                           }}
                         >
-                          <span className="text-[11px] font-mono font-black text-black tracking-wider">
+                          <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
                             {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
                           </span>
                         </div>
@@ -953,7 +953,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
         {/* Room Rows - No scroll, full width */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={scrollContainerRef}>
           <div className="relative w-full h-full">
-            {/* Now indicator - cyan glow line */}
+            {/* Now indicator - subtle cyan line */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <motion.div 
@@ -962,10 +962,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  <div className="absolute -left-6 top-0 bottom-0 w-12 opacity-20 blur-xl" style={{ background: '#00D8C1' }} />
+                  <div className="absolute -left-3 top-0 bottom-0 w-6 opacity-10 blur-md" style={{ background: '#5EEAD4' }} />
                   <div 
-                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ background: 'linear-gradient(to bottom, #00D8C1 0%, #00D8C180 50%, #00D8C140 100%)' }} 
+                    className="absolute -left-px top-0 bottom-0 w-[1.5px]" 
+                    style={{ background: 'linear-gradient(to bottom, #5EEAD4 0%, #5EEAD480 50%, #5EEAD430 100%)' }} 
                   />
                 </motion.div>
               )}
@@ -1093,48 +1093,31 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
-                      <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50">
-                        <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                      <div className="w-6 h-6 rounded-full bg-red-400/15 flex items-center justify-center border border-red-400/30">
+                        <AlertTriangle className="w-3 h-3 text-red-300/70" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold tracking-tight text-red-400 truncate">{room.name}</p>
-                        <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
+                        <p className="text-sm font-medium tracking-tight text-red-300/80 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-red-300/50">EMERGENCY</p>
                       </div>
                     </div>
-                    {/* Emergency timeline box */}
+                    {/* Emergency timeline box - softer */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden">
-                        {/* Outer glow */}
-                        <div 
-                          className="absolute -inset-2 blur-xl opacity-40"
-                          style={{ background: '#EF4444' }}
-                        />
-                        {/* Main background */}
+                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
+                        {/* Main background - softer */}
                         <div 
                           className="absolute inset-0 rounded-xl"
                           style={{ 
-                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
-                            border: '1px solid rgba(239, 68, 68, 0.5)',
-                            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                            background: 'linear-gradient(135deg, rgba(252, 165, 165, 0.15) 0%, rgba(252, 165, 165, 0.08) 100%)',
+                            border: '1px solid rgba(252, 165, 165, 0.3)'
                           }}
                         />
-                        {/* Top radial glow */}
-                        <div 
-                          className="absolute inset-0 opacity-70"
-                          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(239, 68, 68, 0.4) 0%, transparent 70%)' }}
-                        />
-                        {/* Diagonal stripes */}
-                        <div 
-                          className="absolute inset-0 opacity-20"
-                          style={{ backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)' }}
-                        />
                         {/* Content */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-3">
-                          <AlertTriangle className="w-4 h-4 text-white/80" />
-                          <span className="text-sm font-black tracking-[0.25em] text-white uppercase select-none">
+                        <div className="absolute inset-0 flex items-center justify-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-300/70" />
+                          <span className="text-xs font-bold tracking-[0.15em] text-red-300/80 uppercase select-none">
                             EMERGENCY
                           </span>
-                          <AlertTriangle className="w-4 h-4 text-white/80" />
                         </div>
                       </div>
                     </div>
@@ -1155,61 +1138,29 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
-                      <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-500/50">
-                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <div className="w-6 h-6 rounded-full bg-amber-400/15 flex items-center justify-center border border-amber-400/25">
+                        <Lock className="w-3 h-3 text-amber-300/60" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold tracking-tight text-amber-400 truncate">{room.name}</p>
-                        <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
+                        <p className="text-sm font-medium tracking-tight text-amber-300/70 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-amber-300/50">UZAMCENO</p>
                       </div>
                     </div>
-                    {/* Locked timeline box - Premium design */}
+                    {/* Locked timeline box - softer */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden">
-                        {/* Outer subtle glow */}
-                        <div 
-                          className="absolute -inset-1 blur-lg opacity-30"
-                          style={{ background: '#F59E0B' }}
-                        />
-                        
-                        {/* Main background with gradient */}
+                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
+                        {/* Main background - softer */}
                         <div 
                           className="absolute inset-0 rounded-xl"
                           style={{ 
-                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
-                            border: '1px solid rgba(245, 158, 11, 0.4)',
-                            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+                            background: 'linear-gradient(135deg, rgba(253, 224, 71, 0.12) 0%, rgba(253, 224, 71, 0.06) 100%)',
+                            border: '1px solid rgba(253, 224, 71, 0.25)'
                           }}
                         />
-                        
-                        {/* Top radial glow */}
-                        <div 
-                          className="absolute inset-0 opacity-60"
-                          style={{ 
-                            background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245, 158, 11, 0.3) 0%, transparent 70%)'
-                          }}
-                        />
-                        
-                        {/* Diagonal stripes pattern */}
-                        <div 
-                          className="absolute inset-0 opacity-15"
-                          style={{ 
-                            backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)'
-                          }}
-                        />
-                        
                         {/* Content */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-3">
-                          <div
-                            className="w-6 h-6 rounded-lg flex items-center justify-center"
-                            style={{
-                              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.1) 100%)',
-                              border: '1px solid rgba(245, 158, 11, 0.4)'
-                            }}
-                          >
-                            <Lock className="w-3.5 h-3.5 text-white/80" />
-                          </div>
-                          <span className="text-sm font-black tracking-[0.25em] text-white uppercase select-none">
+                        <div className="absolute inset-0 flex items-center justify-center gap-2">
+                          <Lock className="w-3.5 h-3.5 text-amber-300/60" />
+                          <span className="text-xs font-bold tracking-[0.15em] text-amber-300/70 uppercase select-none">
                             UZAMCENO
                           </span>
                         </div>
@@ -1235,7 +1186,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     className="flex-shrink-0 flex items-center gap-2 px-3 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
                     style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                   >
-                    {/* ARO Overtime Badge - shows priority position for overtime rooms */}
+                    {/* ARO Overtime Badge - softer */}
                     {(() => {
                       const aroPosition = getAroPosition(room.id);
                       const overtimeInfo = getOvertimeInfo(room.id);
@@ -1243,28 +1194,27 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       if (aroPosition && overtimeInfo) {
                         return (
                           <div 
-                            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
+                            className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
                             style={{ 
-                              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
-                              border: '1px solid rgba(239, 68, 68, 0.4)',
-                              boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)'
+                              background: 'rgba(252, 165, 165, 0.1)',
+                              border: '1px solid rgba(252, 165, 165, 0.2)'
                             }}
                           >
-                            <span className="text-[8px] font-bold text-red-400 tracking-wider">ARO</span>
-                            <span className="text-sm font-black text-white">{aroPosition}</span>
-                            <span className="text-[7px] font-medium text-red-300">+{overtimeInfo.overtimeMinutes}m</span>
+                            <span className="text-[7px] font-medium text-red-300/60 tracking-wider">ARO</span>
+                            <span className="text-xs font-bold text-white/80">{aroPosition}</span>
+                            <span className="text-[6px] font-normal text-red-300/50">+{overtimeInfo.overtimeMinutes}m</span>
                           </div>
                         );
                       }
                       return null;
                     })()}
                     
-                    {/* Numbered badge for active rooms */}
+                    {/* Numbered badge for active rooms - softer */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {isActive && !getAroPosition(room.id) && (
                         <div 
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg"
-                          style={{ background: roomColor.bg, boxShadow: `0 0 12px ${roomColor.glow}` }}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white/90"
+                          style={{ background: `${roomColor.bg}90`, boxShadow: `0 1px 4px ${roomColor.glow}` }}
                         >
                           {currentRoomNumber}
                         </div>
@@ -1274,27 +1224,26 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     {/* Room info */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold tracking-tight text-white/80 truncate">
+                        <p className="text-sm font-medium tracking-tight text-white/70 truncate">
                           {room.name}
                         </p>
                         {room.isSeptic && (
-                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 uppercase flex-shrink-0">SEPTIKA</span>
+                          <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-purple-400/10 text-purple-300/60 uppercase flex-shrink-0">SEPTIKA</span>
                         )}
                       </div>
                       {isFree ? (
-                        <p className="text-[9px] font-medium text-white/30 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
+                        <p className="text-[9px] font-medium text-white/25 flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
                           Volny
                         </p>
                       ) : remainingTime && stepIndex !== 6 ? (
                         <p 
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-md inline-block" 
-                          style={{ color: roomColor.bg, backgroundColor: `${roomColor.bg}15` }}
+                          className="text-[9px] font-medium text-white/50" 
                         >
                           {remainingTime}
                         </p>
                       ) : (
-                        <p className="text-[9px] font-medium text-white/30">{room.department}</p>
+                        <p className="text-[9px] font-medium text-white/25">{room.department}</p>
                       )}
                     </div>
                   </div>
@@ -1330,111 +1279,78 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           transformOrigin: 'left center'
                         }}
                       >
-                        {/* Outer glow effect */}
+                        {/* Outer glow effect - subtle */}
                         <div 
-                          className="absolute -inset-1 rounded-xl blur-md opacity-50"
+                          className="absolute -inset-0.5 rounded-xl blur-sm opacity-20"
                           style={{ background: stepColor }}
                         />
 
-                        {/* Main container with gradient border */}
+                        {/* Main container with gradient border - softer */}
                         <div 
                           className="absolute inset-0 rounded-xl"
                           style={{ 
-                            background: `linear-gradient(135deg, ${stepColor}30 0%, ${stepColor}10 100%)`,
-                            border: `1px solid ${stepColor}60`,
-                            boxShadow: `0 4px 20px ${stepColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`
+                            background: `linear-gradient(135deg, ${stepColor}18 0%, ${stepColor}08 100%)`,
+                            border: `1px solid ${stepColor}35`,
+                            boxShadow: `0 2px 8px ${stepColor}15`
                           }}
                         />
 
-                        {/* Top highlight reflection */}
+                        {/* Top highlight reflection - subtle */}
                         <div 
-                          className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl opacity-30"
+                          className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl opacity-15"
                           style={{ 
-                            background: `linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)`
+                            background: `linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)`
                           }}
                         />
 
-                        {/* Radial glow from top */}
+                        {/* Radial glow from top - subtle */}
                         <div 
-                          className="absolute inset-0 opacity-60"
+                          className="absolute inset-0 opacity-30"
                           style={{ 
-                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${stepColor}40 0%, transparent 70%)`
+                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${stepColor}25 0%, transparent 70%)`
                           }}
                         />
 
-                        {/* Completed section with animated shine */}
+                        {/* Completed section - cleaner, softer */}
                         <div 
                           className="absolute inset-0 rounded-xl overflow-hidden" 
                           style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
                         >
-                          {/* Solid progress fill */}
+                          {/* Solid progress fill - softer gradient */}
                           <div 
                             className="absolute inset-0"
                             style={{ 
-                              background: `linear-gradient(135deg, ${stepColor} 0%, ${stepColor}CC 100%)`
+                              background: `linear-gradient(135deg, ${stepColor}90 0%, ${stepColor}70 100%)`
                             }}
                           />
                           
-                          {/* Diagonal stripes pattern */}
+                          {/* Subtle top highlight only */}
                           <div 
-                            className="absolute inset-0 opacity-20" 
+                            className="absolute inset-x-0 top-0 h-1/3 opacity-20" 
                             style={{ 
-                              backgroundImage: `repeating-linear-gradient(
-                                -45deg,
-                                transparent,
-                                transparent 4px,
-                                rgba(255,255,255,0.4) 4px,
-                                rgba(255,255,255,0.4) 8px
-                              )`
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)'
                             }} 
-                          />
-                          
-                          {/* Animated shine sweep */}
-                          <motion.div
-                            className="absolute inset-0"
-                            style={{
-                              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
-                              width: '50%'
-                            }}
-                            animate={{ x: ['-100%', '300%'] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
                           />
                         </div>
 
-                        {/* Current position indicator - glowing line */}
+                        {/* Current position indicator - subtle line */}
                         {progressPct > 0 && progressPct < 100 && (
                           <>
-                            {/* Glow behind the line */}
-                            <motion.div 
-                              className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
+                            {/* Main line - simple */}
+                            <div 
+                              className="absolute top-0 bottom-0 w-[1.5px] -translate-x-1/2"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: `linear-gradient(90deg, transparent, ${stepColor}, transparent)`
+                                background: 'rgba(255,255,255,0.8)'
                               }}
-                              animate={{ opacity: [0.5, 1, 0.5] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
                             />
-                            {/* Main line */}
-                            <motion.div 
-                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
+                            {/* Small top indicator */}
+                            <div 
+                              className="absolute -top-0.5 w-1.5 h-1.5 rounded-full -translate-x-1/2"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: '#FFF',
-                                boxShadow: `0 0 10px #FFF, 0 0 20px ${stepColor}`
+                                background: 'rgba(255,255,255,0.9)'
                               }}
-                              animate={{ opacity: [1, 0.7, 1] }}
-                              transition={{ duration: 1, repeat: Infinity }}
-                            />
-                            {/* Top dot */}
-                            <motion.div 
-                              className="absolute -top-0.5 w-2 h-2 rounded-full -translate-x-1/2"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: '#FFF',
-                                boxShadow: `0 0 8px #FFF, 0 0 16px ${stepColor}`
-                              }}
-                              animate={{ scale: [1, 1.2, 1] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
                             />
                           </>
                         )}
@@ -1445,14 +1361,12 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           {boxWidthPct > 8 && (
                             <div className="min-w-0 flex-1">
                               <p 
-                                className="text-[10px] font-bold text-white truncate"
-                                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                                className="text-[10px] font-medium text-white/90 truncate"
                               >
                                 {currentStep.title}
                               </p>
                               <p 
-                                className="text-[8px] font-medium truncate"
-                                style={{ color: stepColor, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+                                className="text-[8px] font-normal text-white/50 truncate"
                               >
                                 {currentStep.status}
                               </p>
@@ -1462,10 +1376,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           {/* Remaining time badge */}
                           {boxWidthPct > 18 && remainingTime && stepIndex !== 6 && (
                             <div 
-                              className="flex-shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold text-white"
+                              className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
                               style={{ 
-                                background: 'rgba(0,0,0,0.3)',
-                                backdropFilter: 'blur(4px)'
+                                background: 'rgba(0,0,0,0.2)'
                               }}
                             >
                               {remainingTime}
@@ -1475,18 +1388,17 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       </motion.div>
                     )}
 
-                    {/* Free room indicator - with workflow step styling */}
+                    {/* Free room indicator - softer */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center gap-3 overflow-hidden"
+                        className="absolute inset-y-2 left-2 right-2 rounded-lg flex items-center justify-center overflow-hidden"
                         style={{ 
-                          background: `linear-gradient(135deg, ${stepColor}08 0%, ${stepColor}03 100%)`,
-                          border: `1px dashed ${stepColor}30`
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px dashed rgba(255,255,255,0.08)'
                         }}
                       >
                         <div className="text-center">
-                          <p className="text-[10px] font-bold" style={{ color: stepColor }}>{currentStep.title}</p>
-                          <p className="text-[8px] font-medium text-white/30">{currentStep.status}</p>
+                          <p className="text-[10px] font-medium text-white/30">{currentStep.title}</p>
                         </div>
                       </div>
                     )}
