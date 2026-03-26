@@ -895,6 +895,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     <p className={`text-[11px] font-bold tracking-widest uppercase ${room.isEmergency ? 'text-red-300/60' : 'text-white/30'}`}>
                       {currentStep.status}
                     </p>
+                    
+                    {/* Time display under status */}
+                    <div className="mt-6 md:mt-8 lg:mt-10">
+                      <span className={`text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+                        {isPaused ? pauseElapsedTime : elapsedTime}
+                      </span>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -949,7 +956,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
                 left: '30%',
-                top: 'calc(50% + 200px)',
+                top: 'calc(50% + 280px)',
                 transform: 'translateY(-50%)'
               }}
               whileHover={{ scale: 1.1 }}
@@ -966,7 +973,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
                 right: '30%',
-                top: 'calc(50% + 200px)',
+                top: 'calc(50% + 280px)',
                 transform: 'translateY(-50%)'
               }}
               whileHover={{ scale: 1.1 }}
