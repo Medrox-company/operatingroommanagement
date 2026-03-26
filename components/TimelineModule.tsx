@@ -74,15 +74,14 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'];
 
-/* --- Step colors matching WORKFLOW_STEPS - softer palette --- */
+/* --- Step colors matching WORKFLOW_STEPS (6 statuses) - softer palette --- */
 const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
-  0: { bg: 'rgba(94,234,212,0.15)', fill: 'rgba(94,234,212,0.35)', border: 'rgba(94,234,212,0.25)', text: '#5EEAD4', glow: 'rgba(94,234,212,0.2)', solid: '#5EEAD4' },
-  1: { bg: 'rgba(196,181,253,0.15)', fill: 'rgba(196,181,253,0.35)', border: 'rgba(196,181,253,0.25)', text: '#C4B5FD', glow: 'rgba(196,181,253,0.2)', solid: '#C4B5FD' },
-  2: { bg: 'rgba(252,165,165,0.15)', fill: 'rgba(252,165,165,0.35)', border: 'rgba(252,165,165,0.25)', text: '#FCA5A5', glow: 'rgba(252,165,165,0.2)', solid: '#FCA5A5' },
-  3: { bg: 'rgba(253,224,71,0.15)', fill: 'rgba(253,224,71,0.35)', border: 'rgba(253,224,71,0.25)', text: '#FDE047', glow: 'rgba(253,224,71,0.2)', solid: '#FDE047' },
-  4: { bg: 'rgba(165,180,252,0.15)', fill: 'rgba(165,180,252,0.35)', border: 'rgba(165,180,252,0.25)', text: '#A5B4FC', glow: 'rgba(165,180,252,0.2)', solid: '#A5B4FC' },
-  5: { bg: 'rgba(240,171,252,0.15)', fill: 'rgba(240,171,252,0.35)', border: 'rgba(240,171,252,0.25)', text: '#F0ABFC', glow: 'rgba(240,171,252,0.2)', solid: '#F0ABFC' },
-  6: { bg: 'rgba(253,186,116,0.15)', fill: 'rgba(253,186,116,0.35)', border: 'rgba(253,186,116,0.25)', text: '#FDBA74', glow: 'rgba(253,186,116,0.2)', solid: '#FDBA74' },
+  0: { bg: 'rgba(52,211,153,0.12)',  fill: 'rgba(52,211,153,0.30)',  border: 'rgba(52,211,153,0.20)',  text: '#34D399', glow: 'rgba(52,211,153,0.15)',  solid: '#34D399' }, // Sál připraven
+  1: { bg: 'rgba(94,234,212,0.12)',  fill: 'rgba(94,234,212,0.30)',  border: 'rgba(94,234,212,0.20)',  text: '#5EEAD4', glow: 'rgba(94,234,212,0.15)',  solid: '#5EEAD4' }, // Příjezd na sál
+  2: { bg: 'rgba(196,181,253,0.12)', fill: 'rgba(196,181,253,0.30)', border: 'rgba(196,181,253,0.20)', text: '#C4B5FD', glow: 'rgba(196,181,253,0.15)', solid: '#C4B5FD' }, // Začátek anestezie
+  3: { bg: 'rgba(252,165,165,0.12)', fill: 'rgba(252,165,165,0.30)', border: 'rgba(252,165,165,0.20)', text: '#FCA5A5', glow: 'rgba(252,165,165,0.15)', solid: '#FCA5A5' }, // Chirurgický výkon
+  4: { bg: 'rgba(253,224,71,0.12)',  fill: 'rgba(253,224,71,0.30)',  border: 'rgba(253,224,71,0.20)',  text: '#FDE047', glow: 'rgba(253,224,71,0.15)',  solid: '#FDE047' }, // Ukončení výkonu
+  5: { bg: 'rgba(165,180,252,0.12)', fill: 'rgba(165,180,252,0.30)', border: 'rgba(165,180,252,0.20)', text: '#A5B4FC', glow: 'rgba(165,180,252,0.15)', solid: '#A5B4FC' }, // Ukončení anestezie
 };
 
 /* ============================== */
@@ -91,10 +90,10 @@ const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; te
 const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; currentTime: Date }> = ({ room, onClose, currentTime }) => {
   const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
   const step = WORKFLOW_STEPS[stepIndex];
-  const colors = STEP_COLORS[stepIndex] || STEP_COLORS[6];
-  const isActive = stepIndex < 6;
+  const colors = STEP_COLORS[stepIndex] || STEP_COLORS[5];
+  const isActive = stepIndex > 0; // index 0 = Sál připraven = volný
   const nextStep = stepIndex < WORKFLOW_STEPS.length - 1 ? WORKFLOW_STEPS[stepIndex + 1] : null;
-  const nextColors = stepIndex < 6 ? (STEP_COLORS[stepIndex + 1] || STEP_COLORS[6]) : null;
+  const nextColors = stepIndex < 5 ? (STEP_COLORS[stepIndex + 1] || STEP_COLORS[5]) : null;
 
   const startParts = room.currentProcedure?.startTime?.split(':');
   let elapsedStr = '--:--:--';
@@ -512,9 +511,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     const cleaning = rooms.filter(r => r.currentStepIndex === 5 && !r.isEmergency && !r.isLocked).length;
     const free = rooms.filter(r => r.currentStepIndex >= 6 && !r.isEmergency && !r.isLocked).length;
     const completed = rooms.reduce((acc, r) => r.currentStepIndex >= 6 ? acc + r.operations24h : acc, 0);
-    const doctorsWorking = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex < 6).length;
+    const doctorsWorking = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex > 0).length;
     const doctorsFree = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex >= 6).length;
-    const nursesWorking = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex < 6).length;
+    const nursesWorking = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex > 0).length;
     const nursesFree = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex >= 6).length;
     const emergencyCount = rooms.filter(r => r.isEmergency).length;
     return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
@@ -973,9 +972,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
               const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
-              const isActive = stepIndex < 6;
+              const isActive = stepIndex > 0; // index 0 = "Sál připraven"
               const isCleaning = stepIndex === 5;
-              const isFree = stepIndex >= 6;
+              const isFree = stepIndex === 0;
               
               // Only increment counter for active (non-free) rooms
               if (isActive && !room.isEmergency && !room.isLocked) {
@@ -988,7 +987,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               const remainingTime = getRemainingTime(room);
               
               // Get current workflow step info for status display
-              const currentStep = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[6];
+              const currentStep = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[5];
               const stepColor = currentStep.color;
               const StepIcon = currentStep.Icon;
 
@@ -1018,7 +1017,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 } else {
                   // Fallback: generate duration based on step (longer for surgery steps)
                   const fallbackDurations = [30, 20, 120, 60, 30, 45, 0]; // minutes per step
-                  const duration = fallbackDurations[Math.min(stepIndex, 6)] || 90;
+                  const duration = fallbackDurations[Math.min(stepIndex, 5)] || 90;
                   endDate = new Date(startDate.getTime() + duration * 60 * 1000);
                 }
                 
@@ -1189,7 +1188,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
                           Volny
                         </p>
-                      ) : remainingTime && stepIndex !== 6 ? (
+                      ) : remainingTime && stepIndex !== 0 ? (
                         <p 
                           className="text-[9px] font-medium text-white/50" 
                         >
@@ -1290,7 +1289,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                         {/* Status segment - single colored bar that changes with current step */}
                         {(() => {
                           // Get the current step color
-                          const stepColors = STEP_COLORS[stepIndex] || STEP_COLORS[6];
+                          const stepColors = STEP_COLORS[stepIndex] || STEP_COLORS[5];
                           
                           return (
                             <motion.div
@@ -1353,7 +1352,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           )}
                           
                           {/* Remaining time badge */}
-                          {boxWidthPct > 18 && remainingTime && stepIndex !== 6 && (
+                          {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                             <div 
                               className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
                               style={{ 
