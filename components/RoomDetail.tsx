@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
@@ -28,6 +29,9 @@ const usePrevious = (value: number) => {
 };
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
+  // Get workflow statuses from database context
+  const { activeStatuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
+  
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
@@ -134,8 +138,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
   }, [currentStepIndex]);
 
-  const currentStep = WORKFLOW_STEPS[currentStepIndex];
-  const nextStep = WORKFLOW_STEPS[(currentStepIndex + 1) % WORKFLOW_STEPS.length];
+  // Use database statuses if available, fallback to constants
+  const dbStatus = getStatusByIndex ? getStatusByIndex(currentStepIndex) : null;
+  const currentStep = dbStatus ? {
+    ...WORKFLOW_STEPS[currentStepIndex],
+    color: dbStatus.color // Use color from database
+  } : WORKFLOW_STEPS[currentStepIndex];
+  
+  const dbNextStatus = getStatusByIndex ? getStatusByIndex((currentStepIndex + 1) % WORKFLOW_STEPS.length) : null;
+  const nextStep = dbNextStatus ? {
+    ...WORKFLOW_STEPS[(currentStepIndex + 1) % WORKFLOW_STEPS.length],
+    color: dbNextStatus.color
+  } : WORKFLOW_STEPS[(currentStepIndex + 1) % WORKFLOW_STEPS.length];
   
   // Logic to determine if actions are allowed even if locked
   const isFinalStep = currentStepIndex === WORKFLOW_STEPS.length - 1;
