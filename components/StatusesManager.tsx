@@ -259,5 +259,6 @@ const StatusesManager: React.FC = () => {
       </div>
     </div>
   );
+};
 
 export default StatusesManager;
