@@ -709,11 +709,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center"
               >
-                {/* Gradient Glow - transparent from center */}
+                {/* Matte fill background */}
                 <div 
-                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+                  className="absolute inset-0 rounded-full transition-colors duration-700"
                   style={{
-                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    backdropFilter: 'blur(10px)'
                   }}
                 />
                 
@@ -909,11 +910,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             transition={{ duration: 0.5, delay: 0.1 }}
             className="relative w-[140px] h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer"
           >
-            {/* Glow - gradient transparent from center */}
+            {/* Matte fill background */}
             <div 
-              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+              className="absolute inset-0 rounded-full transition-colors duration-700"
               style={{
-                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(10px)'
               }}
             />
             
@@ -940,7 +942,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         
         {/* Time adjustment buttons - positioned below circles */}
         {!isInteractionBlocked && (
-          <div className="absolute bottom-16 md:bottom-20 lg:bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-2 md:gap-4 lg:gap-6 z-50">
+          <div className="absolute bottom-16 md:bottom-20 lg:bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-6 md:gap-10 lg:gap-16 z-50">
             <motion.button 
               onClick={handleDecreaseTime}
               className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
