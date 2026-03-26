@@ -896,6 +896,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     <p className={`text-[11px] font-bold tracking-widest uppercase ${room.isEmergency ? 'text-red-300/60' : 'text-white/30'}`}>
                       {currentStep.status}
                     </p>
+                    
+                    {/* Time display under status */}
+                    <div className="mt-8">
+                      <span className={`text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+                        {isPaused ? pauseElapsedTime : elapsedTime}
+                      </span>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -940,9 +947,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </motion.div>
         </div>
         
-        {/* Time adjustment buttons - positioned below circles */}
+        {/* Time adjustment buttons - positioned between small and center circles */}
         {!isInteractionBlocked && (
-          <div className="absolute bottom-16 md:bottom-20 lg:bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-6 md:gap-10 lg:gap-16 z-50">
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-6 md:gap-10 lg:gap-16 z-50" style={{ top: 'calc(50% + 280px)' }}>
             <motion.button 
               onClick={handleDecreaseTime}
               className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-lg"
@@ -955,10 +962,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             >
               <Minus className="w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </motion.button>
-
-            <span className={`text-3xl md:text-5xl lg:text-6xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-              {isPaused ? pauseElapsedTime : elapsedTime}
-            </span>
 
             <motion.button 
               onClick={handleIncreaseTime}
