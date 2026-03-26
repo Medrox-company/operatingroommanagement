@@ -30,13 +30,10 @@ const usePrevious = (value: number) => {
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
   // Get workflow statuses from database context
-  const { activeStatuses, statuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
+  const { statuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
   
-  // Helper to check if a step index is active in database
-  const isStepActive = useCallback((stepIndex: number) => {
-    const dbStatus = getStatusByIndex(stepIndex);
-    return dbStatus ? dbStatus.is_active : true; // Default to active if not found
-  }, [getStatusByIndex]);
+  // Filter ONLY ACTIVE statuses from database
+  const activeDbStatuses = statuses.filter(s => s.is_active).sort((a, b) => a.order_index - b.order_index);
   
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
@@ -129,12 +126,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const currentStepIndex = room.currentStepIndex;
   const prevStepIndex = usePrevious(currentStepIndex);
   
-  const [rotation, setRotation] = useState(-currentStepIndex * (360 / WORKFLOW_STEPS.length));
+  // Use active statuses count for rotation calculation
+  const stepsCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
+  const [rotation, setRotation] = useState(-currentStepIndex * (360 / stepsCount));
 
   useEffect(() => {
     if (prevStepIndex === undefined) return;
 
-    const anglePerStep = 360 / WORKFLOW_STEPS.length;
+    const anglePerStep = 360 / stepsCount;
     const stepDiff = currentStepIndex - prevStepIndex;
 
     if (stepDiff === 1 || stepDiff < -1) {
@@ -142,23 +141,27 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     } else {
       setRotation(r => r + anglePerStep);
     }
-  }, [currentStepIndex]);
+  }, [currentStepIndex, stepsCount]);
 
   // Use database statuses if available, fallback to constants
-  const dbStatus = getStatusByIndex ? getStatusByIndex(currentStepIndex) : null;
+  const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[currentStepIndex] : getStatusByIndex(currentStepIndex);
   const currentStep = dbStatus ? {
-    ...WORKFLOW_STEPS[currentStepIndex],
-    color: dbStatus.color // Use color from database
+    title: dbStatus.name || WORKFLOW_STEPS[currentStepIndex]?.title,
+    color: dbStatus.color,
+    ...WORKFLOW_STEPS[currentStepIndex]
   } : WORKFLOW_STEPS[currentStepIndex];
   
-  const dbNextStatus = getStatusByIndex ? getStatusByIndex((currentStepIndex + 1) % WORKFLOW_STEPS.length) : null;
+  const nextStepIndex = (currentStepIndex + 1) % (activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length);
+  const dbNextStatus = activeDbStatuses.length > 0 ? activeDbStatuses[nextStepIndex] : getStatusByIndex((currentStepIndex + 1) % WORKFLOW_STEPS.length);
   const nextStep = dbNextStatus ? {
-    ...WORKFLOW_STEPS[(currentStepIndex + 1) % WORKFLOW_STEPS.length],
-    color: dbNextStatus.color
-  } : WORKFLOW_STEPS[(currentStepIndex + 1) % WORKFLOW_STEPS.length];
+    title: dbNextStatus.name || WORKFLOW_STEPS[nextStepIndex]?.title,
+    color: dbNextStatus.color,
+    ...WORKFLOW_STEPS[nextStepIndex]
+  } : WORKFLOW_STEPS[nextStepIndex];
   
   // Logic to determine if actions are allowed even if locked
-  const isFinalStep = currentStepIndex === WORKFLOW_STEPS.length - 1;
+  const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
+  const isFinalStep = currentStepIndex === validStepCount - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
 
   // Dynamic theme color based on status
@@ -171,9 +174,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const changeStep = async (newIndex: number) => {
     if (isInteractionBlocked) return;
     
+    // Use active statuses count instead of WORKFLOW_STEPS
+    const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
+    
     // SEQUENTIAL STEP RESTRICTION: Only allow next step (+1) or reset to 0 (from final step)
     const isNextStep = newIndex === currentStepIndex + 1;
-    const isResetToStart = newIndex === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1;
+    const isResetToStart = newIndex === 0 && currentStepIndex === validStepCount - 1;
     
     if (!isNextStep && !isResetToStart) {
       return; // Block skipping steps
@@ -213,7 +219,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         step_index: newIndex,
         step_name: newStep.title,
       });
-    } else if (newIndex === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1) {
+    } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
       // Ending operation (completing last step)
       await recordStatusEvent({
         operating_room_id: room.id,
@@ -230,7 +236,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const handleNextStep = () => {
     if (isInteractionBlocked) return;
     let nextIndex = currentStepIndex + 1;
-    if (nextIndex >= WORKFLOW_STEPS.length) {
+    if (nextIndex >= validStepCount) {
       nextIndex = 0;
     }
     
@@ -1006,21 +1012,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
         {/* Navigation Indicators - only show active statuses */}
         <div className="flex gap-3">
-          {WORKFLOW_STEPS.map((_, i) => {
-            // Only render if status is active in database
-            if (!isStepActive(i)) return null;
-            return (
-              <div 
-                key={i} 
-                className="h-1.5 rounded-full transition-all duration-500"
-                style={{
-                  width: i === currentStepIndex ? 32 : 8,
-                  backgroundColor: i === currentStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
-                  opacity: i === currentStepIndex ? 1 : 0.4
-                }}
-              />
-            );
-          })}
+          {activeDbStatuses.map((status, index) => (
+            <div 
+              key={status.id} 
+              className="h-1.5 rounded-full transition-all duration-500"
+              style={{
+                width: index === currentStepIndex ? 32 : 8,
+                backgroundColor: index === currentStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
+                opacity: index === currentStepIndex ? 1 : 0.4
+              }}
+            />
+          ))}
         </div>
       </div>
       </div>{/* end desktop wrapper */}
