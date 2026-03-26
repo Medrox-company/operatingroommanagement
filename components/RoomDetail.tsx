@@ -970,7 +970,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 top: 'calc(50% + 280px)',
                 transform: 'translateY(-50%)'
               }}
-              whileHover={{ scale: 1.1, originX: 0.5, originY: 0.5 }}
+              whileHover={{ boxShadow: `0 0 30px ${activeColor}88` }}
               whileTap={{ scale: 0.95 }}
             >
               <Minus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
@@ -987,7 +987,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 top: 'calc(50% + 280px)',
                 transform: 'translateY(-50%)'
               }}
-              whileHover={{ scale: 1.1, originX: 0.5, originY: 0.5 }}
+              whileHover={{ boxShadow: `0 0 30px ${activeColor}88` }}
               whileTap={{ scale: 0.95 }}
             >
               <Plus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
