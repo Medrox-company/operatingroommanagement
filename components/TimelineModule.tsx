@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
-import { useWorkflowStatuses } from '../hooks/useWorkflowStatuses';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2
@@ -55,7 +55,7 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
-  const { activeStatuses, loading: statusesLoading } = useWorkflowStatuses();
+  const { activeStatuses, statuses, loading: statusesLoading, getStatusColor } = useWorkflowStatusesContext();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
