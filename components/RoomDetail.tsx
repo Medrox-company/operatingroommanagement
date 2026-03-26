@@ -540,7 +540,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
 
       {/* Top Right Buttons Container - VOLAT and PŘÍJEZD */}
-      <div className="absolute right-14 sm:right-20 md:right-28 lg:right-40 top-2 sm:top-3 md:top-4 lg:top-6 flex flex-row-reverse gap-2 sm:gap-3 md:gap-4 z-50">
+      <div className="absolute right-14 sm:right-20 md:right-28 lg:right-40 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-40 flex flex-row-reverse gap-2 sm:gap-3 md:gap-4 z-50">
         {/* Volat Button */}
         <motion.button
           onClick={async () => {
