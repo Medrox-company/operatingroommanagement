@@ -895,9 +895,9 @@ const prevStep = activeDbStatuses.length > 0
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="text-6xl font-bold tracking-tight leading-tight text-center text-white"
+                      className="text-5xl font-bold tracking-tight leading-tight text-center text-white"
                     >
-                      Volání pacienta
+                      Volání<br/>pacienta
                     </motion.h2>
                   </motion.div>
                 ) : showPatientArrivedText ? (
@@ -932,9 +932,9 @@ const prevStep = activeDbStatuses.length > 0
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="text-6xl font-bold tracking-tight leading-tight text-center text-white"
+                      className="text-5xl font-bold tracking-tight leading-tight text-center text-white"
                     >
-                      Příjezd pacienta
+                      Příjezd<br/>pacienta
                     </motion.h2>
                   </motion.div>
                 ) : isPaused ? (
