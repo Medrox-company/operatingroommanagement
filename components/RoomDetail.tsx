@@ -414,13 +414,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 />
               </svg>
 
-              {/* Center content - fáze uvnitř kruhu, dvě řádky */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6">
-                <p className="text-xs font-semibold text-white/40 uppercase tracking-widest leading-tight">
-                  Fáze {safeStepIndex + 1}/{validStepCount}
-                </p>
-                <p className="text-xl font-black text-white text-center leading-snug" style={{ maxWidth: '90%' }}>
-                  {room.isEmergency ? 'Stav\nnouze' : room.isLocked ? 'Sál\nuzamčen' : (currentStep?.name || 'Status')}
+              {/* Center content - větší text ve dvou řádcích, bez čísla fáze */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-5">
+                <p className="text-3xl font-black text-white text-center leading-tight whitespace-pre-line">
+                  {room.isEmergency
+                    ? 'Stav\nnouze'
+                    : room.isLocked
+                    ? 'Sál\nuzamčen'
+                    : (currentStep?.name
+                        ? currentStep.name.includes(' ')
+                          ? currentStep.name.replace(/^(\S+)\s/, '$1\n')
+                          : currentStep.name
+                        : 'Status')}
                 </p>
               </div>
             </div>
@@ -450,13 +455,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Spacer */}
           <div className="flex-1 min-h-4" />
 
-          {/* Bottom section - padding pro spodní menu */}
+          {/* Bottom section */}
           <div className="px-5 pb-4 space-y-2.5">
-            {/* CTA tlačítko NAD boxy */}
+            {/* CTA tlačítko - větší */}
             {!isInteractionBlocked && (
               <motion.button
                 onClick={handleNextStep}
-                className="w-full rounded-2xl py-4 font-bold text-base tracking-wide"
+                className="w-full rounded-2xl py-5 font-bold text-lg tracking-wide"
                 style={{ backgroundColor: activeColor, color: '#000', boxShadow: `0 8px 32px ${activeColor}40` }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -464,31 +469,42 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </motion.button>
             )}
 
-            {/* Info cards row */}
-            <div className="grid grid-cols-2 gap-2.5">
-              {/* Estimated end time card */}
+            {/* Info cards row - Ukončení + Lékař + Sestra */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Estimated end time card - větší + a - */}
               <div className="rounded-2xl p-3.5 bg-[#1a1a24] border border-white/[0.06]">
                 <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Ukončení</p>
-                <div className="flex items-center justify-between">
-                  <button onClick={handleDecreaseTime} disabled={isInteractionBlocked || !estimatedEndTime} className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform">
-                    <Minus className="w-3.5 h-3.5 text-white/60" />
+                <div className="flex items-center justify-between gap-1">
+                  <button
+                    onClick={handleDecreaseTime}
+                    disabled={isInteractionBlocked || !estimatedEndTime}
+                    className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.10] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+                  >
+                    <Minus className="w-5 h-5 text-white/80" />
                   </button>
-                  <p className="text-lg font-mono font-bold text-white">
+                  <p className="text-base font-mono font-bold text-white leading-none">
                     {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                   </p>
-                  <button onClick={handleIncreaseTime} disabled={isInteractionBlocked} className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform">
-                    <Plus className="w-3.5 h-3.5 text-white/60" />
+                  <button
+                    onClick={handleIncreaseTime}
+                    disabled={isInteractionBlocked}
+                    className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.10] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+                  >
+                    <Plus className="w-5 h-5 text-white/80" />
                   </button>
                 </div>
               </div>
 
-              {/* Staff card */}
+              {/* Lékař */}
               <div className="rounded-2xl p-3.5 bg-[#1a1a24] border border-white/[0.06]">
-                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Personál</p>
-                <div className="space-y-0.5">
-                  <p className="text-sm font-semibold text-white/90 truncate">{room.staff.doctor.name}</p>
-                  <p className="text-xs text-white/50 truncate">{room.staff.nurse.name}</p>
-                </div>
+                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Lékař</p>
+                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.doctor.name}</p>
+              </div>
+
+              {/* Sestra */}
+              <div className="rounded-2xl p-3.5 bg-[#1a1a24] border border-white/[0.06]">
+                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Sestra</p>
+                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.nurse.name}</p>
               </div>
             </div>
 
