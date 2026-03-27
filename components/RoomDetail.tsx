@@ -367,132 +367,117 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         </div>
 
         <div className="relative z-10 flex flex-col h-full min-h-screen">
-          {/* Header - větší název sálu */}
+          {/* Header */}
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
             <button onClick={onClose} className="p-2 -ml-2">
               <ChevronLeft className="w-6 h-6 text-white/60" />
             </button>
-            <p className="text-xl font-bold text-white tracking-tight">{room.name}</p>
+            <p className="text-2xl font-bold text-white tracking-tight">{room.name}</p>
             <button onClick={onClose} className="p-2 -mr-2">
               <X className="w-5 h-5 text-white/40" />
             </button>
           </div>
 
           {/* Main circular progress area */}
-          <div className="flex flex-col items-center px-6 pt-2 pb-2">
-            {/* Large circular indicator - záře opravena na kruhový tvar */}
-            <div className="relative w-52 h-52 mb-2">
-              {/* Záře - správně kruhová pomocí box-shadow na pseudoprvku */}
-              <div 
-                className="absolute inset-4 rounded-full pointer-events-none"
-                style={{ boxShadow: `0 0 40px 20px ${activeColor}30` }}
+          <div className="flex flex-col items-center px-6 pt-3 pb-2">
+            {/* Velký kruh */}
+            <div className="relative w-64 h-64 mb-4">
+              {/* Pulzující kruhová záře - správně kulatá */}
+              <motion.div
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  inset: '10%',
+                  boxShadow: `0 0 60px 30px ${activeColor}25`,
+                }}
+                animate={{ boxShadow: [`0 0 40px 20px ${activeColor}15`, `0 0 70px 35px ${activeColor}30`, `0 0 40px 20px ${activeColor}15`] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
               />
 
               {/* SVG kruh */}
               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50" cy="50" r="44"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.06)"
-                  strokeWidth="6"
-                />
+                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
                 <motion.circle
                   cx="50" cy="50" r="44"
                   fill="none"
                   stroke={activeColor}
-                  strokeWidth="6"
+                  strokeWidth="5"
                   strokeLinecap="round"
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
                   initial={false}
                   animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  style={{ filter: `drop-shadow(0 0 6px ${activeColor}80)` }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  style={{ filter: `drop-shadow(0 0 8px ${activeColor}90)` }}
                 />
                 <motion.circle
-                  cx="50"
-                  cy="6"
-                  r="4"
+                  cx="50" cy="6" r="4"
                   fill={activeColor}
-                  style={{ 
-                    transformOrigin: '50px 50px',
-                    filter: `drop-shadow(0 0 4px ${activeColor})`
-                  }}
+                  style={{ transformOrigin: '50px 50px', filter: `drop-shadow(0 0 5px ${activeColor})` }}
                   animate={{ rotate: ((safeStepIndex + 1) / validStepCount) * 360 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
                 />
               </svg>
 
               {/* Center content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-[10px] font-medium text-white/40 mb-0.5 uppercase tracking-wider">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">
                   {room.isEmergency ? 'Nouze' : room.isLocked ? 'Uzamčeno' : 'Fáze'}
                 </p>
-                <p 
-                  className="text-4xl font-bold tracking-tight"
-                  style={{ color: activeColor }}
-                >
+                <p className="text-5xl font-bold tracking-tight leading-none" style={{ color: activeColor }}>
                   {safeStepIndex + 1}/{validStepCount}
                 </p>
-                <p className="text-xs font-mono font-bold text-white/70 mt-1">{elapsedTime}</p>
+                <p className="text-sm font-mono font-semibold text-white/60">{elapsedTime}</p>
               </div>
             </div>
 
-            {/* Aktuální fáze pod kruhem */}
-            <div className="text-center mb-2">
-              <p className="text-lg font-bold text-white tracking-tight">
-                {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
-              </p>
-            </div>
+            {/* Aktuální fáze pod kruhem - větší */}
+            <p className="text-xl font-bold text-white tracking-tight text-center mb-3">
+              {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
+            </p>
 
-            {/* Step indicators - dots */}
-            <div className="flex items-center gap-2 mb-1">
+            {/* Step indicator dots */}
+            <div className="flex items-center gap-2">
               {activeDbStatuses.map((status, idx) => (
                 <motion.div
                   key={status.id}
                   className="rounded-full"
-                  style={{
-                    width: idx === safeStepIndex ? 20 : 6,
-                    height: 6,
-                    backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
-                  }}
-                  animate={{ 
-                    width: idx === safeStepIndex ? 20 : 6,
-                    backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)'
-                  }}
+                  style={{ width: idx === safeStepIndex ? 22 : 7, height: 7, backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)' }}
+                  animate={{ width: idx === safeStepIndex ? 22 : 7, backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)' }}
                   transition={{ duration: 0.3 }}
                 />
               ))}
             </div>
           </div>
 
-          {/* Spacer - tlačí boxy dolů ke spodní nabídce */}
+          {/* Spacer */}
           <div className="flex-1" />
 
           {/* Bottom section */}
           <div className="px-5 pb-6 space-y-2.5">
+            {/* CTA tlačítko NAD boxy */}
+            {!isInteractionBlocked && (
+              <motion.button
+                onClick={handleNextStep}
+                className="w-full rounded-2xl py-4 font-bold text-base tracking-wide"
+                style={{ backgroundColor: activeColor, color: '#000', boxShadow: `0 8px 32px ${activeColor}40` }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}
+              </motion.button>
+            )}
+
             {/* Info cards row */}
             <div className="grid grid-cols-2 gap-2.5">
               {/* Estimated end time card */}
               <div className="rounded-2xl p-3.5 bg-[#1a1a24] border border-white/[0.06]">
                 <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Ukončení</p>
                 <div className="flex items-center justify-between">
-                  <button 
-                    onClick={handleDecreaseTime} 
-                    disabled={isInteractionBlocked || !estimatedEndTime} 
-                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
-                  >
+                  <button onClick={handleDecreaseTime} disabled={isInteractionBlocked || !estimatedEndTime} className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform">
                     <Minus className="w-3.5 h-3.5 text-white/60" />
                   </button>
                   <p className="text-lg font-mono font-bold text-white">
-                    {estimatedEndTime && !isFinalStep
-                      ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
-                      : '--:--'}
+                    {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                   </p>
-                  <button 
-                    onClick={handleIncreaseTime} 
-                    disabled={isInteractionBlocked} 
-                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
-                  >
+                  <button onClick={handleIncreaseTime} disabled={isInteractionBlocked} className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform">
                     <Plus className="w-3.5 h-3.5 text-white/60" />
                   </button>
                 </div>
@@ -508,7 +493,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </div>
             </div>
 
-            {/* Action buttons - 4 columns: Pauza, Hygiena, Volat, Příjezd */}
+            {/* Action buttons - 4 columns */}
             <div className="grid grid-cols-4 gap-2">
               {/* Pause */}
               <button
@@ -519,15 +504,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
                 className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
-                style={{ 
-                  backgroundColor: isPaused ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${isPaused ? 'rgba(6, 182, 212, 0.3)' : 'rgba(255,255,255,0.06)'}`
-                }}
+                style={{ backgroundColor: isPaused ? 'rgba(6,182,212,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${isPaused ? 'rgba(6,182,212,0.3)' : 'rgba(255,255,255,0.06)'}` }}
               >
                 {isPaused ? <Play className="w-5 h-5 text-cyan-400" /> : <Pause className="w-5 h-5 text-white/50" />}
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">
-                  {isPaused ? 'Play' : 'Pauza'}
-                </span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">{isPaused ? 'Play' : 'Pauza'}</span>
               </button>
 
               {/* Hygiene */}
@@ -539,10 +519,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
                 className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
-                style={{ 
-                  backgroundColor: room.isEnhancedHygiene ? 'rgba(249, 115, 22, 0.15)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${room.isEnhancedHygiene ? 'rgba(249, 115, 22, 0.3)' : 'rgba(255,255,255,0.06)'}`
-                }}
+                style={{ backgroundColor: room.isEnhancedHygiene ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${room.isEnhancedHygiene ? 'rgba(249,115,22,0.3)' : 'rgba(255,255,255,0.06)'}` }}
               >
                 <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/50'}`} />
                 <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">Hygiena</span>
@@ -562,15 +539,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 }}
                 disabled={!!patientCalledTime}
                 className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
-                style={{ 
-                  backgroundColor: patientCalledTime ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${patientCalledTime ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.06)'}`
-                }}
+                style={{ backgroundColor: patientCalledTime ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${patientCalledTime ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.06)'}` }}
               >
                 <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-400' : 'text-white/50'}`} />
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">
-                  {patientCalledTime ? patientCallElapsedTime : 'Volat'}
-                </span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
               </button>
 
               {/* Patient arrived */}
@@ -593,31 +565,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 }}
                 disabled={!patientCalledTime || !!patientArrivedTime}
                 className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-30"
-                style={{ 
-                  backgroundColor: patientArrivedTime ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${patientArrivedTime ? 'rgba(168, 85, 247, 0.3)' : 'rgba(255,255,255,0.06)'}`
-                }}
+                style={{ backgroundColor: patientArrivedTime ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${patientArrivedTime ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.06)'}` }}
               >
                 <BedDouble className={`w-5 h-5 ${patientArrivedTime ? 'text-purple-400' : 'text-white/50'}`} />
                 <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">Příjezd</span>
               </button>
             </div>
-
-            {/* Main CTA button */}
-            {!isInteractionBlocked && (
-              <motion.button
-                onClick={handleNextStep}
-                className="w-full rounded-2xl py-4 font-bold text-base tracking-wide transition-all active:scale-[0.98]"
-                style={{ 
-                  backgroundColor: activeColor,
-                  color: '#000',
-                  boxShadow: `0 8px 32px ${activeColor}40`
-                }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}
-              </motion.button>
-            )}
           </div>
         </div>
       </div>
