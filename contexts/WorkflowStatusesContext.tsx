@@ -24,6 +24,7 @@ export interface WorkflowStatus {
 interface WorkflowStatusesContextValue {
   statuses: WorkflowStatus[];
   activeStatuses: WorkflowStatus[];
+  workflowStatuses: WorkflowStatus[];
   statisticsStatuses: WorkflowStatus[];
   loading: boolean;
   error: string | null;
@@ -131,6 +132,11 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
     return statuses.filter(s => s.is_active);
   }, [statuses]);
 
+  // Workflow statuses jsou jen ty hlavní (bez speciálních) pro kruhový graf
+  const getWorkflowStatuses = useCallback(() => {
+    return statuses.filter(s => s.is_active && !s.is_special && s.order_index < 8);
+  }, [statuses]);
+
   const getStatisticsStatuses = useCallback(() => {
     return statuses.filter(s => s.is_active && s.count_in_statistics);
   }, [statuses]);
@@ -172,6 +178,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   const value: WorkflowStatusesContextValue = {
     statuses,
     activeStatuses: getActiveStatuses(),
+    workflowStatuses: getWorkflowStatuses(),
     statisticsStatuses: getStatisticsStatuses(),
     loading,
     error,

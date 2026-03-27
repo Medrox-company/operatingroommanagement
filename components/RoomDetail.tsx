@@ -29,12 +29,12 @@ const usePrevious = (value: number) => {
 };
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
-  // Get workflow statuses from database context
-  const { statuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
+  // Get workflow statuses from database context - ONLY main workflow, no special statuses
+  const { workflowStatuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
   
-  // Get ONLY ACTIVE statuses from database, sorted by order_index
-  const activeDbStatuses = statuses
-    .filter(s => s.is_active)
+  // Get ONLY main workflow statuses (bez speciálních), sorted by order_index
+  const activeDbStatuses = workflowStatuses
+    .filter(s => s.is_active && !s.is_special)
     .sort((a, b) => a.order_index - b.order_index);
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());

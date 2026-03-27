@@ -14,11 +14,17 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
-  const { activeStatuses } = useWorkflowStatusesContext();
+  const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Get ONLY active statuses from database
-  const safeIndex = Math.min(room.currentStepIndex, Math.max(activeStatuses.length - 1, 0));
-  const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
+  // Get ONLY main workflow statuses (bez speciálních)
+  const activeDbStatuses = workflowStatuses
+    .filter(s => s.is_active && !s.is_special)
+    .sort((a, b) => a.order_index - b.order_index);
+  
+  // Get step from database
+  const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+  const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+  const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
   
   const currentStep = {
     title: dbStatus?.name || 'Status',
@@ -26,11 +32,8 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
   };
   
   const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
-  
-  // Use active statuses count for progress calculation
-  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const progressPercent = ((safeIndex + 1) / totalSteps);
-  const isFinalStep = safeIndex === activeStatuses.length - 1;
+  const isFinalStep = safeIndex === activeDbStatuses.length - 1;
   const radius = 38;
   const strokeWidth = 4;
   const strokeDasharray = 2 * Math.PI * radius;

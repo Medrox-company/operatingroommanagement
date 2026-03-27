@@ -55,7 +55,12 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
-  const { activeStatuses, statuses, loading: statusesLoading, getStatusColor } = useWorkflowStatusesContext();
+  const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
+  
+  // Get ONLY main workflow statuses (bez speciálních)
+  const activeStatuses = workflowStatuses
+    .filter(s => s.is_active && !s.is_special)
+    .sort((a, b) => a.order_index - b.order_index);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
