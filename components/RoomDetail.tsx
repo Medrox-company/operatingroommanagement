@@ -32,9 +32,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   // Get workflow statuses from database context
   const { statuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
   
-  // Filter ONLY ACTIVE statuses from database
-  const activeDbStatuses = statuses.filter(s => s.is_active).sort((a, b) => a.order_index - b.order_index);
-  
+  // Get ONLY ACTIVE statuses from database, sorted by order_index
+  const activeDbStatuses = statuses
+    .filter(s => s.is_active)
+    .sort((a, b) => a.order_index - b.order_index);
+
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
@@ -127,8 +129,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const prevStepIndex = usePrevious(currentStepIndex);
   
   // Use active statuses count for rotation calculation
-  const stepsCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
-  const [rotation, setRotation] = useState(-currentStepIndex * (360 / stepsCount));
+  const stepsCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+  const [rotation, setRotation] = useState(-Math.min(currentStepIndex, stepsCount - 1) * (360 / stepsCount));
 
   useEffect(() => {
     if (prevStepIndex === undefined) return;
@@ -143,39 +145,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
   }, [currentStepIndex, stepsCount]);
 
-  // Use database statuses if available, fallback to constants
-  // Ensure currentStepIndex is within bounds of active statuses
+  // Use database statuses - don't fallback to WORKFLOW_STEPS
   const safeStepIndex = activeDbStatuses.length > 0 
-    ? Math.min(currentStepIndex, activeDbStatuses.length - 1)
-    : currentStepIndex;
+    ? Math.min(room.currentStepIndex, activeDbStatuses.length - 1)
+    : 0;
   
-  const dbStatus = activeDbStatuses.length > 0 
-    ? activeDbStatuses[safeStepIndex] 
-    : getStatusByIndex(currentStepIndex);
+  const currentStep = activeDbStatuses.length > 0
+    ? activeDbStatuses[safeStepIndex]
+    : { name: 'Čekání', color: '#6B7280', title: 'Čekání' };
   
-  const fallbackStep = WORKFLOW_STEPS[currentStepIndex] || WORKFLOW_STEPS[0];
-  const currentStep = {
-    title: dbStatus?.name || fallbackStep?.title || 'Status',
-    color: dbStatus?.color || fallbackStep?.color || '#6B7280',
-    ...fallbackStep
-  };
-  
-  const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
-  const nextStepIndex = (safeStepIndex + 1) % totalSteps;
-  const dbNextStatus = activeDbStatuses.length > 0 
-    ? activeDbStatuses[nextStepIndex] 
-    : getStatusByIndex((currentStepIndex + 1) % WORKFLOW_STEPS.length);
-  
-  const fallbackNextStep = WORKFLOW_STEPS[nextStepIndex] || WORKFLOW_STEPS[0];
-  const nextStep = {
-    title: dbNextStatus?.name || fallbackNextStep?.title || 'Status',
-    color: dbNextStatus?.color || fallbackNextStep?.color || '#6B7280',
-    ...fallbackNextStep
-  };
+  const nextStepIndex = (safeStepIndex + 1) % Math.max(activeDbStatuses.length, 1);
+  const nextStep = activeDbStatuses.length > 0
+    ? activeDbStatuses[nextStepIndex]
+    : currentStep;
   
   // Logic to determine if actions are allowed even if locked
-  const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
-  const isFinalStep = currentStepIndex === validStepCount - 1;
+  const validStepCount = activeDbStatuses.length;
+  const isFinalStep = activeDbStatuses.length > 0 && room.currentStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
 
   // Dynamic theme color based on status
@@ -183,13 +169,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     ? '#FF3B30' 
     : (room.isLocked 
         ? '#FBBF24' 
-        : (isPaused ? '#06b6d4' : currentStep.color));
+        : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280')));
 
   const changeStep = async (newIndex: number) => {
     if (isInteractionBlocked) return;
     
     // Use active statuses count instead of WORKFLOW_STEPS
-    const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
+    const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
     
     // SEQUENTIAL STEP RESTRICTION: Only allow next step (+1) or reset to 0 (from final step)
     const isNextStep = newIndex === currentStepIndex + 1;
@@ -208,30 +194,30 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     // Calculate duration of previous step
     const now = new Date();
     const durationSeconds = Math.floor((now.getTime() - phaseStartTime.getTime()) / 1000);
-    const previousStep = WORKFLOW_STEPS[Math.min(currentStepIndex, WORKFLOW_STEPS.length - 1)] || WORKFLOW_STEPS[0];
-    const newStep = WORKFLOW_STEPS[Math.min(newIndex, WORKFLOW_STEPS.length - 1)] || WORKFLOW_STEPS[0];
+    const previousStep = activeDbStatuses.length > 0 ? activeDbStatuses[Math.min(currentStepIndex, activeDbStatuses.length - 1)] : currentStep;
+    const newStep = activeDbStatuses.length > 0 ? activeDbStatuses[Math.min(newIndex, activeDbStatuses.length - 1)] : nextStep;
 
     // Record step change to database
     await recordStatusEvent({
       operating_room_id: room.id,
       event_type: 'step_change',
       step_index: newIndex,
-      step_name: newStep.title,
+      step_name: previousStep?.name || 'Status',
       duration_seconds: durationSeconds,
       metadata: { 
-        previous_step: previousStep.title,
+        previous_step: previousStep?.name || 'Status',
         previous_step_index: currentStepIndex,
       },
     });
 
     // Record operation start/end events
     if (newIndex === 1 && currentStepIndex === 0) {
-      // Starting operation (moving from "Volný sál" to first active step)
+      // Starting operation
       await recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_start',
         step_index: newIndex,
-        step_name: newStep.title,
+        step_name: newStep?.name || 'Status',
       });
     } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
       // Ending operation (completing last step)
@@ -239,7 +225,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         operating_room_id: room.id,
         event_type: 'operation_end',
         duration_seconds: durationSeconds,
-        metadata: { completed_step: previousStep.title },
+        metadata: { completed_step: previousStep?.name || 'Status' },
       });
     }
 
@@ -249,7 +235,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   const handleNextStep = () => {
     if (isInteractionBlocked) return;
-    let nextIndex = currentStepIndex + 1;
+    let nextIndex = room.currentStepIndex + 1;
     if (nextIndex >= validStepCount) {
       nextIndex = 0;
     }
@@ -364,7 +350,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <div>
               <p className="text-[9px] font-black tracking-[0.25em] uppercase text-white/40 mb-0.5">Aktivní fáze</p>
               <p className="text-base font-black uppercase tracking-wide" style={{ color: activeColor }}>
-                {room.isEmergency ? 'STAV NOUZE' : room.isLocked ? 'SÁL UZAM��EN' : currentStep.title}
+                {room.isEmergency ? 'STAV NOUZE' : room.isLocked ? 'SÁL UZAMČEN' : (currentStep?.name || 'Status')}
               </p>
             </div>
             <div className="text-right">
@@ -377,8 +363,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {!isInteractionBlocked && (
             <button
               onClick={() => {
-                const nextIndex = isFinalStep ? 0 : currentStepIndex + 1;
-                onStepChange(nextIndex);
+                const nextIdx = isFinalStep ? 0 : currentStepIndex + 1;
+                onStepChange(nextIdx);
               }}
               className="w-full rounded-2xl py-6 font-black text-base tracking-[0.2em] uppercase border transition-all"
               style={{ backgroundColor: `${activeColor}20`, borderColor: `${activeColor}40`, color: activeColor }}
@@ -397,7 +383,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   <Minus className="w-3 h-3" />
                 </button>
                 <p className="flex-1 text-center text-lg font-mono font-black text-white">
-                  {estimatedEndTime && currentStepIndex !== 6
+                  {estimatedEndTime && room.currentStepIndex !== (activeDbStatuses.length - 1)
                     ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                     : '--:--'}
                 </p>
@@ -428,7 +414,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 const newPaused = !isPaused;
                 setIsPaused(newPaused);
                 await updateOperatingRoom(room.id, { is_paused: newPaused });
-                await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep.title });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
               }}
               className={`rounded-2xl py-4 flex flex-col items-center gap-1.5 border transition-all ${isPaused ? 'bg-cyan-500/20 border-cyan-500/40' : 'bg-white/5 border-white/10'}`}
             >
@@ -442,7 +428,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 const newH = !room.isEnhancedHygiene;
                 onEnhancedHygieneToggle?.(newH);
                 await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
-                await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep.title });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
               }}
               className={`rounded-2xl py-4 flex flex-col items-center gap-1.5 border transition-all ${room.isEnhancedHygiene ? 'bg-orange-500/20 border-orange-500/40' : 'bg-white/5 border-white/10'}`}
             >
@@ -457,7 +443,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   const now = new Date();
                   setPatientCalledTime(now);
                   await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep.title });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }
               }}
               disabled={!!patientCalledTime}
@@ -750,8 +736,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="flex items-center justify-center gap-1 sm:gap-3 md:gap-8 lg:gap-20 relative">
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
-            const prevStepIdx = currentStepIndex === 0 ? validStepCount - 1 : currentStepIndex - 1;
-            const prevStep = WORKFLOW_STEPS[Math.min(prevStepIdx, WORKFLOW_STEPS.length - 1)] || WORKFLOW_STEPS[0];
+const prevStepIdx = currentStepIndex === 0 ? validStepCount - 1 : currentStepIndex - 1;
+const prevStep = activeDbStatuses.length > 0 
+  ? activeDbStatuses[Math.min(prevStepIdx, activeDbStatuses.length - 1)]
+  : currentStep;
             return (
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
@@ -1025,17 +1013,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
         {/* Navigation Indicators - only show active statuses */}
         <div className="flex gap-3">
-          {activeDbStatuses.map((status, index) => (
-            <div 
-              key={status.id} 
-              className="h-1.5 rounded-full transition-all duration-500"
-              style={{
-                width: index === currentStepIndex ? 32 : 8,
-                backgroundColor: index === currentStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
-                opacity: index === currentStepIndex ? 1 : 0.4
-              }}
-            />
-          ))}
+        {activeDbStatuses.map((status, index) => (
+          <div 
+            key={status.id} 
+            className="h-1.5 rounded-full transition-all duration-500"
+            style={{
+              width: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 32 : 8,
+              backgroundColor: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? activeColor : 'rgba(255,255,255,0.15)',
+              opacity: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 1 : 0.4
+            }}
+          />
+        ))}
         </div>
       </div>
       </div>{/* end desktop wrapper */}
