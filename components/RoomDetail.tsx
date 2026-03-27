@@ -414,13 +414,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 />
               </svg>
 
-              {/* Center content - fáze uvnitř kruhu, větší texty */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-6">
-                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">
-                  {safeStepIndex + 1} z {validStepCount}
+              {/* Center content - fáze uvnitř kruhu, dvě řádky */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6">
+                <p className="text-xs font-semibold text-white/40 uppercase tracking-widest leading-tight">
+                  Fáze {safeStepIndex + 1}/{validStepCount}
                 </p>
-                <p className="text-2xl font-black text-white text-center leading-tight">
-                  {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
+                <p className="text-xl font-black text-white text-center leading-snug" style={{ maxWidth: '90%' }}>
+                  {room.isEmergency ? 'Stav\nnouze' : room.isLocked ? 'Sál\nuzamčen' : (currentStep?.name || 'Status')}
                 </p>
               </div>
             </div>
