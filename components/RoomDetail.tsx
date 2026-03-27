@@ -409,15 +409,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </motion.button>
           </motion.div>
 
-          {/* Hlavní kruhová sekce */}
+          {/* Hlavní kruhová sekce - kompaktnější */}
           <motion.div 
-            className="flex flex-col items-center px-6 pt-4"
+            className="flex flex-col items-center px-5 pt-2"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
           >
-            {/* Velký progress kruh */}
-            <div className="relative w-80 h-80 mb-4">
+            {/* Velký progress kruh - zmenšen pro fit na obrazovku */}
+            <div className="relative w-64 h-64 mb-1">
               {/* SVG s kruhovým progressem */}
               <svg
                 className="absolute inset-0 w-full h-full"
@@ -437,7 +437,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   </filter>
                 </defs>
 
-                {/* Pozadí kruhu - jemný track */}
+                {/* Pozadí kruhu */}
                 <circle 
                   cx="50" cy="50" r="44" 
                   fill="none" 
@@ -446,7 +446,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   className="origin-center -rotate-90"
                 />
 
-                {/* Záře vrstva - pulzující */}
+                {/* Záře vrstva */}
                 <motion.circle
                   cx="50" cy="50" r="44"
                   fill="none"
@@ -483,9 +483,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </svg>
 
               {/* Obsah v kruhu */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-8">
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
                 <motion.p 
-                  className="text-[2rem] font-black text-white text-center leading-[1.1] tracking-tight"
+                  className="text-lg font-black text-white text-center leading-[1.1]"
                   key={currentStep?.name}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -502,15 +502,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </div>
             </div>
 
-            {/* Čas pod kruhem */}
+            {/* Čas pod kruhem - kompaktnější */}
             <motion.div 
-              className="text-center mb-4"
+              className="text-center mb-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
               <motion.p 
-                className="text-5xl font-mono font-black tracking-tighter"
+                className="text-3xl font-mono font-black tracking-tighter"
                 style={{ color: activeColor }}
                 key={elapsedTime}
                 initial={{ scale: 1.02 }}
@@ -519,21 +519,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               >
                 {elapsedTime}
               </motion.p>
-              <p className="text-[11px] font-semibold text-white/30 mt-1 uppercase tracking-[0.2em]">Čas ve fázi</p>
+              <p className="text-[10px] font-semibold text-white/30 mt-0.5 uppercase tracking-[0.1em]">Čas ve fázi</p>
             </motion.div>
 
-            {/* Elegantní step indikátory */}
-            <div className="flex items-center justify-center gap-2.5">
+            {/* Elegantní step indikátory - zmenšené */}
+            <div className="flex items-center justify-center gap-2">
               {activeDbStatuses.map((status, idx) => (
                 <motion.div
                   key={status.id}
                   className="rounded-full"
                   initial={false}
                   animate={{ 
-                    width: idx === safeStepIndex ? 28 : 10, 
-                    height: 10,
+                    width: idx === safeStepIndex ? 20 : 7, 
+                    height: 7,
                     backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.1)',
-                    boxShadow: idx === safeStepIndex ? `0 0 12px ${activeColor}60` : 'none'
+                    boxShadow: idx === safeStepIndex ? `0 0 10px ${activeColor}60` : 'none'
                   }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                 />
@@ -541,12 +541,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </div>
           </motion.div>
 
-          {/* Spacer */}
-          <div className="flex-1 min-h-6" />
+          {/* Spacer - minimální */}
+          <div className="flex-1 min-h-2" />
 
-          {/* Spodní sekce */}
+          {/* Spodní sekce - kompaktnější spacing */}
           <motion.div 
-            className="px-5 pb-5 space-y-3"
+            className="px-4 pb-3 space-y-2"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
@@ -555,7 +555,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             {!isInteractionBlocked && (
               <motion.button
                 onClick={handleNextStep}
-                className="w-full rounded-3xl py-7 font-bold text-xl tracking-wide relative overflow-hidden"
+                className="w-full rounded-2xl py-4 font-bold text-base tracking-wide relative overflow-hidden"
                 style={{ backgroundColor: activeColor, color: '#000' }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
@@ -571,62 +571,62 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </motion.button>
             )}
 
-            {/* Ukončení karta */}
+            {/* Ukončení karta - kompaktnější */}
             <motion.div 
-              className="rounded-3xl px-6 py-5 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06] flex items-center justify-between"
+              className="rounded-2xl px-4 py-3 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06] flex items-center justify-between gap-2"
               whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
             >
               <motion.button
                 onClick={handleDecreaseTime}
                 disabled={isInteractionBlocked || !estimatedEndTime}
-                className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30"
+                className="w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 flex-shrink-0"
                 whileTap={{ scale: 0.92 }}
               >
-                <Minus className="w-6 h-6 text-white/80" />
+                <Minus className="w-5 h-5 text-white/80" />
               </motion.button>
               <div className="flex flex-col items-center">
-                <p className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.15em] mb-1">Ukončení</p>
-                <p className="text-2xl font-mono font-bold text-white leading-none">
+                <p className="text-[9px] font-semibold text-white/30 uppercase tracking-[0.1em] mb-0.5">Ukončení</p>
+                <p className="text-lg font-mono font-bold text-white leading-none">
                   {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
               </div>
               <motion.button
                 onClick={handleIncreaseTime}
                 disabled={isInteractionBlocked}
-                className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30"
+                className="w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 flex-shrink-0"
                 whileTap={{ scale: 0.92 }}
               >
-                <Plus className="w-6 h-6 text-white/80" />
+                <Plus className="w-5 h-5 text-white/80" />
               </motion.button>
             </motion.div>
 
-            {/* Personál - Lékař a Sestra */}
-            <div className="grid grid-cols-2 gap-2.5">
+            {/* Personál - Lékař a Sestra - zmenšeno */}
+            <div className="grid grid-cols-2 gap-2">
               <motion.div 
-                className="rounded-2xl p-4 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
+                className="rounded-lg p-2.5 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
                 whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Stethoscope className="w-4 h-4 text-white/30" />
-                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Lékař</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Stethoscope className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                  <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider">Lékař</p>
                 </div>
-                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.doctor.name}</p>
+                <p className="text-xs font-bold text-white/90 leading-snug line-clamp-2">{room.staff.doctor.name}</p>
               </motion.div>
 
               <motion.div 
-                className="rounded-2xl p-4 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
+                className="rounded-lg p-2.5 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
                 whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Heart className="w-4 h-4 text-white/30" />
-                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Sestra</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Heart className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                  <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider">Sestra</p>
                 </div>
-                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.nurse.name}</p>
+                <p className="text-xs font-bold text-white/90 leading-snug line-clamp-2">{room.staff.nurse.name}</p>
               </motion.div>
             </div>
 
-            {/* Akční tlačítka */}
-            <div className="grid grid-cols-4 gap-2">
+            {/* Akční tlačítka - kompaktnější */}
+            <div className="grid grid-cols-4 gap-1.5">
               {/* Pauza */}
               <motion.button
                 onClick={async () => {
@@ -635,15 +635,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await updateOperatingRoom(room.id, { is_paused: newPaused });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm"
+                className="rounded-lg py-2.5 flex flex-col items-center gap-1 backdrop-blur-sm"
                 style={{ 
                   backgroundColor: isPaused ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)',
                   border: `1px solid ${isPaused ? 'rgba(6,182,212,0.25)' : 'rgba(255,255,255,0.05)'}`
                 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {isPaused ? <Play className="w-6 h-6 text-cyan-400" /> : <Pause className="w-6 h-6 text-white/40" />}
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">{isPaused ? 'Play' : 'Pauza'}</span>
+                {isPaused ? <Play className="w-5 h-5 text-cyan-400" /> : <Pause className="w-5 h-5 text-white/40" />}
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">{isPaused ? 'Play' : 'Pauza'}</span>
               </motion.button>
 
               {/* Hygiena */}
@@ -654,15 +654,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm"
+                className="rounded-lg py-2.5 flex flex-col items-center gap-1 backdrop-blur-sm"
                 style={{ 
                   backgroundColor: room.isEnhancedHygiene ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)',
                   border: `1px solid ${room.isEnhancedHygiene ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.05)'}`
                 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <ShieldAlert className={`w-6 h-6 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40'}`} />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Hygiena</span>
+                <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40'}`} />
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">Hygiena</span>
               </motion.button>
 
               {/* Volat */}
@@ -678,15 +678,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   }
                 }}
                 disabled={!!patientCalledTime}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm disabled:opacity-60"
+                className="rounded-lg py-2.5 flex flex-col items-center gap-1 backdrop-blur-sm disabled:opacity-60"
                 style={{ 
                   backgroundColor: patientCalledTime ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.03)',
                   border: `1px solid ${patientCalledTime ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.05)'}`
                 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Phone className={`w-6 h-6 ${patientCalledTime ? 'text-green-400' : 'text-white/40'}`} />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
+                <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-400' : 'text-white/40'}`} />
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
               </motion.button>
 
               {/* Příjezd */}
@@ -708,15 +708,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   }
                 }}
                 disabled={!patientCalledTime || !!patientArrivedTime}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm disabled:opacity-30"
+                className="rounded-lg py-2.5 flex flex-col items-center gap-1 backdrop-blur-sm disabled:opacity-30"
                 style={{ 
                   backgroundColor: patientArrivedTime ? 'rgba(168,85,247,0.12)' : 'rgba(255,255,255,0.03)',
                   border: `1px solid ${patientArrivedTime ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.05)'}`
                 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <BedDouble className={`w-6 h-6 ${patientArrivedTime ? 'text-purple-400' : 'text-white/40'}`} />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Příjezd</span>
+                <BedDouble className={`w-5 h-5 ${patientArrivedTime ? 'text-purple-400' : 'text-white/40'}`} />
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">Příjezd</span>
               </motion.button>
             </div>
           </motion.div>
