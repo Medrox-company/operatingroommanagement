@@ -380,19 +380,50 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
           {/* Main circular progress area */}
           <div className="flex flex-col items-center px-6 pt-2">
-            {/* Velký kruh - ještě větší */}
+            {/* Velký kruh */}
             <div className="relative w-72 h-72 mb-3">
-              {/* Pulzující kruhová záře */}
-              <motion.div
-                className="absolute rounded-full pointer-events-none"
-                style={{ inset: '8%', boxShadow: `0 0 70px 35px ${activeColor}25` }}
-                animate={{ boxShadow: [`0 0 50px 25px ${activeColor}15`, `0 0 80px 40px ${activeColor}30`, `0 0 50px 25px ${activeColor}15`] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-              />
+              {/* SVG kruh - overflow visible aby záře nebyla oříznutá */}
+              <svg
+                className="absolute inset-0 w-full h-full -rotate-90"
+                viewBox="0 0 100 100"
+                style={{ overflow: 'visible' }}
+              >
+                <defs>
+                  {/* SVG filter pro kruhovou záři - žádný čtvercový artefakt */}
+                  <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
 
-              {/* SVG kruh */}
-              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+                {/* Track kruh */}
                 <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4.5" />
+
+                {/* Záře vrstva - průhledný kruh s filtrem blur */}
+                <motion.circle
+                  cx="50" cy="50" r="44"
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
+                  initial={false}
+                  animate={{
+                    strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
+                    opacity: [0.25, 0.45, 0.25],
+                  }}
+                  transition={{
+                    strokeDasharray: { duration: 0.6, ease: 'easeOut' },
+                    opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
+                  }}
+                  style={{ filter: 'url(#glow-filter)' }}
+                />
+
+                {/* Hlavní progress kruh */}
                 <motion.circle
                   cx="50" cy="50" r="44"
                   fill="none"
@@ -402,15 +433,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
                   initial={false}
                   animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  style={{ filter: `drop-shadow(0 0 10px ${activeColor}90)` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
+
+                {/* Koncová tečka */}
                 <motion.circle
                   cx="50" cy="6" r="3.5"
                   fill={activeColor}
-                  style={{ transformOrigin: '50px 50px', filter: `drop-shadow(0 0 6px ${activeColor})` }}
+                  style={{ transformOrigin: '50px 50px' }}
                   animate={{ rotate: ((safeStepIndex + 1) / validStepCount) * 360 }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
               </svg>
 
