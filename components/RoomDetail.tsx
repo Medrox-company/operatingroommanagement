@@ -451,6 +451,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   stroke="rgba(255,255,255,0.04)" 
                   strokeWidth="5"
                   className="origin-center -rotate-90"
+                  style={{ transformOrigin: '50% 50%', transform: 'rotate(-90deg)' }}
                 />
 
                 {/* Záře vrstva - pulzující */}
@@ -461,7 +462,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   strokeWidth="12"
                   strokeLinecap="round"
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  className="origin-center -rotate-90"
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
                   initial={false}
                   animate={{
                     strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
@@ -482,7 +483,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   strokeWidth="5"
                   strokeLinecap="round"
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  className="origin-center -rotate-90"
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
                   initial={false}
                   animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
