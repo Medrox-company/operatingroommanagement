@@ -378,10 +378,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </button>
           </div>
 
-          {/* Main circular progress area */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
-            {/* Large circular indicator like reference */}
-            <div className="relative w-64 h-64 mb-6">
+          {/* Main circular progress area - kompaktnější */}
+          <div className="flex flex-col items-center justify-center px-6 pt-2 pb-3">
+            {/* Large circular indicator */}
+            <div className="relative w-48 h-48 mb-3">
               {/* Outer glow ring */}
               <div 
                 className="absolute inset-0 rounded-full blur-xl opacity-20"
@@ -426,40 +426,40 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
               {/* Center content */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-xs font-medium text-white/40 mb-1 uppercase tracking-wider">
+                <p className="text-[10px] font-medium text-white/40 mb-0.5 uppercase tracking-wider">
                   {room.isEmergency ? 'Nouze' : room.isLocked ? 'Uzamčeno' : 'Fáze'}
                 </p>
                 <p 
-                  className="text-5xl font-bold tracking-tight"
+                  className="text-4xl font-bold tracking-tight"
                   style={{ color: activeColor }}
                 >
                   {safeStepIndex + 1}/{validStepCount}
                 </p>
-                <p className="text-sm text-white/50 mt-1">
+                <p className="text-xs text-white/50 mt-0.5">
                   {currentStep?.name || 'Status'}
                 </p>
               </div>
             </div>
 
-            {/* Elapsed time display */}
-            <div className="text-center mb-6">
-              <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-1">Čas ve fázi</p>
-              <p className="text-4xl font-mono font-bold text-white">{elapsedTime}</p>
+            {/* Elapsed time display - kompaktnější */}
+            <div className="text-center mb-3">
+              <p className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-0.5">Čas ve fázi</p>
+              <p className="text-3xl font-mono font-bold text-white">{elapsedTime}</p>
             </div>
 
-            {/* Step indicators - dots like reference */}
-            <div className="flex items-center gap-2 mb-6">
+            {/* Step indicators - dots */}
+            <div className="flex items-center gap-2">
               {activeDbStatuses.map((status, idx) => (
                 <motion.div
                   key={status.id}
-                  className="rounded-full transition-all"
+                  className="rounded-full"
                   style={{
-                    width: idx === safeStepIndex ? 24 : 8,
-                    height: 8,
+                    width: idx === safeStepIndex ? 20 : 6,
+                    height: 6,
                     backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
                   }}
                   animate={{ 
-                    width: idx === safeStepIndex ? 24 : 8,
+                    width: idx === safeStepIndex ? 20 : 6,
                     backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)'
                   }}
                   transition={{ duration: 0.3 }}
@@ -469,21 +469,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </div>
 
           {/* Bottom section with cards and buttons */}
-          <div className="px-5 pb-8 space-y-3">
+          <div className="px-5 pb-6 space-y-2.5">
             {/* Info cards row */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               {/* Estimated end time card */}
-              <div className="rounded-2xl p-4 bg-[#1a1a24] border border-white/[0.06]">
+              <div className="rounded-2xl p-3.5 bg-[#1a1a24] border border-white/[0.06]">
                 <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Ukončení</p>
                 <div className="flex items-center justify-between">
                   <button 
                     onClick={handleDecreaseTime} 
                     disabled={isInteractionBlocked || !estimatedEndTime} 
-                    className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
                   >
-                    <Minus className="w-4 h-4 text-white/60" />
+                    <Minus className="w-3.5 h-3.5 text-white/60" />
                   </button>
-                  <p className="text-xl font-mono font-bold text-white">
+                  <p className="text-lg font-mono font-bold text-white">
                     {estimatedEndTime && !isFinalStep
                       ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                       : '--:--'}
@@ -491,25 +491,25 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   <button 
                     onClick={handleIncreaseTime} 
                     disabled={isInteractionBlocked} 
-                    className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
                   >
-                    <Plus className="w-4 h-4 text-white/60" />
+                    <Plus className="w-3.5 h-3.5 text-white/60" />
                   </button>
                 </div>
               </div>
 
               {/* Staff card */}
-              <div className="rounded-2xl p-4 bg-[#1a1a24] border border-white/[0.06]">
+              <div className="rounded-2xl p-3.5 bg-[#1a1a24] border border-white/[0.06]">
                 <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Personál</p>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <p className="text-sm font-semibold text-white/90 truncate">{room.staff.doctor.name}</p>
                   <p className="text-xs text-white/50 truncate">{room.staff.nurse.name}</p>
                 </div>
               </div>
             </div>
 
-            {/* Action buttons - pill style like reference */}
-            <div className="grid grid-cols-3 gap-2">
+            {/* Action buttons - 4 columns: Pauza, Hygiena, Volat, Příjezd */}
+            <div className="grid grid-cols-4 gap-2">
               {/* Pause */}
               <button
                 onClick={async () => {
@@ -518,15 +518,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await updateOperatingRoom(room.id, { is_paused: newPaused });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
+                className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
                 style={{ 
                   backgroundColor: isPaused ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${isPaused ? 'rgba(6, 182, 212, 0.3)' : 'rgba(255,255,255,0.06)'}`
                 }}
               >
                 {isPaused ? <Play className="w-5 h-5 text-cyan-400" /> : <Pause className="w-5 h-5 text-white/50" />}
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-white/50">
-                  {isPaused ? 'Pokračovat' : 'Pauza'}
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">
+                  {isPaused ? 'Play' : 'Pauza'}
                 </span>
               </button>
 
@@ -538,14 +538,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
+                className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
                 style={{ 
                   backgroundColor: room.isEnhancedHygiene ? 'rgba(249, 115, 22, 0.15)' : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${room.isEnhancedHygiene ? 'rgba(249, 115, 22, 0.3)' : 'rgba(255,255,255,0.06)'}`
                 }}
               >
                 <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/50'}`} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-white/50">Hygiena</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">Hygiena</span>
               </button>
 
               {/* Patient call */}
@@ -554,29 +554,60 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   if (!patientCalledTime) {
                     const now = new Date();
                     setPatientCalledTime(now);
+                    setShowPatientCalledText(true);
+                    setTimeout(() => setShowPatientCalledText(false), 5000);
                     await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
                     await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                   }
                 }}
                 disabled={!!patientCalledTime}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
+                className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
                 style={{ 
                   backgroundColor: patientCalledTime ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${patientCalledTime ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.06)'}`
                 }}
               >
                 <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-400' : 'text-white/50'}`} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-white/50">
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">
                   {patientCalledTime ? patientCallElapsedTime : 'Volat'}
                 </span>
               </button>
+
+              {/* Patient arrived */}
+              <button
+                onClick={async () => {
+                  if (patientCalledTime && !patientArrivedTime) {
+                    const now = new Date();
+                    setPatientArrivedTime(now);
+                    setShowPatientArrivedText(true);
+                    setTimeout(() => {
+                      setShowPatientArrivedText(false);
+                      setPatientCalledTime(null);
+                      setPatientArrivedTime(null);
+                      updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                      setPatientCallElapsedTime('00:00');
+                    }, 5000);
+                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
+                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  }
+                }}
+                disabled={!patientCalledTime || !!patientArrivedTime}
+                className="rounded-2xl py-3.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-30"
+                style={{ 
+                  backgroundColor: patientArrivedTime ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${patientArrivedTime ? 'rgba(168, 85, 247, 0.3)' : 'rgba(255,255,255,0.06)'}`
+                }}
+              >
+                <BedDouble className={`w-5 h-5 ${patientArrivedTime ? 'text-purple-400' : 'text-white/50'}`} />
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-white/50">Příjezd</span>
+              </button>
             </div>
 
-            {/* Main CTA button - solid accent color like reference */}
+            {/* Main CTA button */}
             {!isInteractionBlocked && (
               <motion.button
                 onClick={handleNextStep}
-                className="w-full rounded-2xl py-5 font-bold text-base tracking-wide transition-all active:scale-[0.98]"
+                className="w-full rounded-2xl py-4 font-bold text-base tracking-wide transition-all active:scale-[0.98]"
                 style={{ 
                   backgroundColor: activeColor,
                   color: '#000',
