@@ -470,14 +470,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               <p className="text-xs font-medium text-white/40 mt-0.5 uppercase tracking-wider">Čas ve fázi</p>
             </div>
 
-            {/* Step indicator dots */}
-            <div className="flex items-center gap-2">
+            {/* Step indicator dots - centrované */}
+            <div className="flex items-center justify-center gap-2">
               {activeDbStatuses.map((status, idx) => (
                 <motion.div
                   key={status.id}
                   className="rounded-full"
-                  style={{ width: idx === safeStepIndex ? 22 : 7, height: 7, backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)' }}
-                  animate={{ width: idx === safeStepIndex ? 22 : 7, backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)' }}
+                  style={{ width: idx === safeStepIndex ? 24 : 8, height: 8, backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)' }}
+                  animate={{ width: idx === safeStepIndex ? 24 : 8, backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)' }}
                   transition={{ duration: 0.3 }}
                 />
               ))}
@@ -493,7 +493,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             {!isInteractionBlocked && (
               <motion.button
                 onClick={handleNextStep}
-                className="w-full rounded-2xl py-5 font-bold text-lg tracking-wide"
+                className="w-full rounded-2xl py-6 font-bold text-lg tracking-wide"
                 style={{ backgroundColor: activeColor, color: '#000', boxShadow: `0 8px 32px ${activeColor}40` }}
                 whileTap={{ scale: 0.98 }}
               >
