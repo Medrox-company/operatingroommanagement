@@ -414,18 +414,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 />
               </svg>
 
-              {/* Center content - fáze uvnitř kruhu */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-4">
-                <p className="text-lg font-bold text-white text-center leading-tight">
-                  {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
-                </p>
-                <p className="text-4xl font-black tracking-tight leading-none mt-1" style={{ color: activeColor }}>
-                  {elapsedTime}
-                </p>
-                <p className="text-xs font-semibold text-white/40 mt-1 uppercase tracking-wider">
+              {/* Center content - fáze uvnitř kruhu, větší texty */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-6">
+                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">
                   {safeStepIndex + 1} z {validStepCount}
                 </p>
+                <p className="text-2xl font-black text-white text-center leading-tight">
+                  {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
+                </p>
               </div>
+            </div>
+
+            {/* Čas pod kruhem */}
+            <div className="text-center mb-2">
+              <p className="text-4xl font-mono font-black tracking-tight" style={{ color: activeColor }}>
+                {elapsedTime}
+              </p>
+              <p className="text-xs font-medium text-white/40 mt-0.5 uppercase tracking-wider">Čas ve fázi</p>
             </div>
 
             {/* Step indicator dots */}
