@@ -111,16 +111,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
   }, [patientArrivedTime]);
 
+  // Track if we're in the middle of a local reset to prevent sync overwriting
+  const isResettingRef = useRef(false);
+
   // Sync local state with room object (for real-time updates from other devices)
   useEffect(() => {
     setIsPaused(room.isPaused || false);
   }, [room.isPaused]);
 
   useEffect(() => {
+    // Don't sync if we're resetting locally
+    if (isResettingRef.current) return;
     setPatientCalledTime(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   }, [room.patientCalledAt]);
 
   useEffect(() => {
+    // Don't sync if we're resetting locally
+    if (isResettingRef.current) return;
     setPatientArrivedTime(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   }, [room.patientArrivedAt]);
 
@@ -696,15 +703,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     const now = new Date();
                     setPatientArrivedTime(now);
                     setShowPatientArrivedText(true);
-                    setTimeout(() => {
+                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
+                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                    setTimeout(async () => {
+                      isResettingRef.current = true;
                       setShowPatientArrivedText(false);
                       setPatientCalledTime(null);
                       setPatientArrivedTime(null);
-                      updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
                       setPatientCallElapsedTime('00:00');
+                      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                      // Allow sync again after DB update completes
+                      setTimeout(() => { isResettingRef.current = false; }, 500);
                     }, 5000);
-                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
-                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                   }
                 }}
                 disabled={!patientCalledTime || !!patientArrivedTime}
@@ -905,13 +915,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   duration_seconds: waitDuration,
                   metadata: { call_time: patientCalledTime.toISOString() },
                 });
-  setTimeout(() => {
-    setShowPatientArrivedText(false);
-    setPatientCalledTime(null);
-    setPatientArrivedTime(null);
-    updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-    setPatientCallElapsedTime('00:00');
-  }, 5000);
+                setTimeout(async () => {
+                  isResettingRef.current = true;
+                  setShowPatientArrivedText(false);
+                  setPatientCalledTime(null);
+                  setPatientArrivedTime(null);
+                  setPatientCallElapsedTime('00:00');
+                  await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                  // Allow sync again after DB update completes
+                  setTimeout(() => { isResettingRef.current = false; }, 500);
+                }, 5000);
               }
             }}
             disabled={!patientCalledTime || !!patientArrivedTime}
