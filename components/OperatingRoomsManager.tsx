@@ -418,10 +418,10 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <Building2 className="w-4 h-4 text-[#00D8C1]" />
-            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATING ROOMS MANAGEMENT</p>
+            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
-            OPERACNI <span className="text-white/20">SALY</span>
+          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+            OPERAČNÍ <span className="text-white/20">SÁLY</span>
           </h1>
         </div>
         <p className="text-white/40 text-sm max-w-xl">

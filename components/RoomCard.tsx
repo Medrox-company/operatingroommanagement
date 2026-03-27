@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
 
 interface RoomCardProps {
@@ -13,10 +14,26 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
-  const currentStep = WORKFLOW_STEPS[room.currentStepIndex];
-  const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
+  const { workflowStatuses } = useWorkflowStatusesContext();
   
-  const progressPercent = ((room.currentStepIndex + 1) / WORKFLOW_STEPS.length);
+  // Get ONLY main workflow statuses (bez speciálních)
+  const activeDbStatuses = workflowStatuses
+    .filter(s => s.is_active && !s.is_special)
+    .sort((a, b) => a.order_index - b.order_index);
+  
+  // Get step from database
+  const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+  const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+  const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
+  
+  const currentStep = {
+    title: dbStatus?.name || 'Status',
+    color: dbStatus?.color || '#6B7280',
+  };
+  
+  const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
+  const progressPercent = ((safeIndex + 1) / totalSteps);
+  const isFinalStep = safeIndex === activeDbStatuses.length - 1;
   const radius = 38;
   const strokeWidth = 4;
   const strokeDasharray = 2 * Math.PI * radius;
@@ -171,7 +188,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                 </motion.svg>
             </div>
             
-            {room.estimatedEndTime && room.currentStepIndex !== 6 && (
+            {room.estimatedEndTime && !isFinalStep && (
                 <div className="-mt-1 text-center">
                     <div className="flex items-center gap-1.5 justify-center">
                       <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />

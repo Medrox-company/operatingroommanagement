@@ -276,11 +276,11 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose})=>{
 
   // Utilisation per status (time-based %)
   const statusUtil=[
-    {label:'Výkon',      pct:utilPct,                         color:WORKFLOW_STEPS[2].color},
-    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Za��átek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:WORKFLOW_STEPS[1].color},
-    {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:WORKFLOW_STEPS[0].color},
-    {label:'Úklid',      pct:dist.find(d=>d.title==='Úklid sálu')?.pct??0,                                                                 color:WORKFLOW_STEPS[5].color},
-    {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:WORKFLOW_STEPS[6].color},
+    {label:'Výkon',      pct:utilPct,                         color:WORKFLOW_STEPS[3]?.color || '#FCA5A5'},
+    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Začátek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:WORKFLOW_STEPS[2]?.color || '#C4B5FD'},
+    {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:WORKFLOW_STEPS[1]?.color || '#5EEAD4'},
+    {label:'Úklid',      pct:dist.find(d=>d.title==='Ukončení anestezie')?.pct??0,                                                         color:WORKFLOW_STEPS[5]?.color || '#A5B4FC'},
+    {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:WORKFLOW_STEPS[0]?.color || '#34D399'},
   ];
 
   return(
