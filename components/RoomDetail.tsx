@@ -471,26 +471,26 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
             {/* Info cards row - Ukončení + Lékař + Sestra */}
             <div className="grid grid-cols-3 gap-2">
-              {/* Estimated end time card - větší + a - */}
+              {/* Estimated end time card - v jednom řádku */}
               <div className="rounded-2xl p-3.5 bg-[#1a1a24] border border-white/[0.06]">
-                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Ukončení</p>
-                <div className="flex items-center justify-between gap-1">
+                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1.5">Ukončení</p>
+                <div className="flex items-center justify-center gap-1.5">
                   <button
                     onClick={handleDecreaseTime}
                     disabled={isInteractionBlocked || !estimatedEndTime}
-                    className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.10] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+                    className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.10] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform flex-shrink-0"
                   >
-                    <Minus className="w-5 h-5 text-white/80" />
+                    <Minus className="w-4 h-4 text-white/80" />
                   </button>
-                  <p className="text-base font-mono font-bold text-white leading-none">
+                  <p className="text-sm font-mono font-bold text-white leading-none whitespace-nowrap">
                     {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                   </p>
                   <button
                     onClick={handleIncreaseTime}
                     disabled={isInteractionBlocked}
-                    className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.10] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+                    className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.10] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform flex-shrink-0"
                   >
-                    <Plus className="w-5 h-5 text-white/80" />
+                    <Plus className="w-4 h-4 text-white/80" />
                   </button>
                 </div>
               </div>
