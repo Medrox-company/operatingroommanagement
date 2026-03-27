@@ -554,9 +554,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
-              const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
+              // Get current workflow step info from database first
+              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+              const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
               const isActive = stepIndex > 0; // index 0 = "Sál připraven"
-              const isCleaning = stepIndex === 5;
+              const isCleaning = stepIndex === totalSteps - 2; // Second to last step
               const isFree = stepIndex === 0;
               
               // Only increment counter for active (non-free) rooms
@@ -569,10 +571,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get current workflow step info from database
-              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-              const safeStepIndex = Math.min(stepIndex, totalSteps - 1);
-              const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeStepIndex] : null;
+              // Get status from database
+              const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
               const stepColor = dbStatus?.color || '#6B7280';
               const stepName = dbStatus?.name || 'Status';
               const StepIcon = Activity; // Default icon
@@ -927,12 +927,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                               <p 
                                 className="text-[10px] font-medium text-white/90 truncate"
                               >
-                                {currentStep.title}
+                                {stepName}
                               </p>
                               <p 
                                 className="text-[8px] font-normal text-white/50 truncate"
                               >
-                                {currentStep.status}
+                                {room.staff?.doctor?.name || ''}
                               </p>
                             </div>
                           )}
@@ -962,7 +962,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         }}
                       >
                         <div className="text-center">
-                          <p className="text-[10px] font-medium text-white/30">{currentStep.title}</p>
+                          <p className="text-[10px] font-medium text-white/30">{stepName}</p>
                         </div>
                       </div>
                     )}
