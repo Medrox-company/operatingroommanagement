@@ -254,8 +254,9 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            const step = WORKFLOW_STEPS[room.currentStepIndex];
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : step.color;
+            const safeIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
+            const step = WORKFLOW_STEPS[safeIndex] || WORKFLOW_STEPS[0];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.color || '#6B7280');
             const remaining = getRemainingTime(room);
             const isFree = room.currentStepIndex >= 6;
             return (

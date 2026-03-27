@@ -208,8 +208,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     // Calculate duration of previous step
     const now = new Date();
     const durationSeconds = Math.floor((now.getTime() - phaseStartTime.getTime()) / 1000);
-    const previousStep = WORKFLOW_STEPS[currentStepIndex];
-    const newStep = WORKFLOW_STEPS[newIndex];
+    const previousStep = WORKFLOW_STEPS[Math.min(currentStepIndex, WORKFLOW_STEPS.length - 1)] || WORKFLOW_STEPS[0];
+    const newStep = WORKFLOW_STEPS[Math.min(newIndex, WORKFLOW_STEPS.length - 1)] || WORKFLOW_STEPS[0];
 
     // Record step change to database
     await recordStatusEvent({
@@ -751,7 +751,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
             const prevStepIdx = currentStepIndex === 0 ? validStepCount - 1 : currentStepIndex - 1;
-            const prevStep = WORKFLOW_STEPS[prevStepIdx];
+            const prevStep = WORKFLOW_STEPS[Math.min(prevStepIdx, WORKFLOW_STEPS.length - 1)] || WORKFLOW_STEPS[0];
             return (
               <motion.div
                 initial={{ opacity: 0, x: -50 }}

@@ -16,19 +16,22 @@ interface RoomCardProps {
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
   const { getStatusByIndex, activeStatuses } = useWorkflowStatusesContext();
   
-  // Get step from database or fallback to constants
+  // Get step from database or fallback to constants with safe bounds
+  const safeIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
   const dbStatus = getStatusByIndex(room.currentStepIndex);
-  const currentStep = dbStatus ? {
-    ...WORKFLOW_STEPS[room.currentStepIndex],
-    color: dbStatus.color,
-    title: dbStatus.name
-  } : WORKFLOW_STEPS[room.currentStepIndex];
+  const fallbackStep = WORKFLOW_STEPS[safeIndex] || WORKFLOW_STEPS[0];
+  
+  const currentStep = {
+    title: dbStatus?.name || fallbackStep?.title || 'Status',
+    color: dbStatus?.color || fallbackStep?.color || '#6B7280',
+    ...fallbackStep
+  };
   
   const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
   
   // Use active statuses count for progress calculation if available
   const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : WORKFLOW_STEPS.length;
-  const progressPercent = ((room.currentStepIndex + 1) / totalSteps);
+  const progressPercent = ((room.currentStepIndex + 1) / Math.max(totalSteps, 1));
   const radius = 38;
   const strokeWidth = 4;
   const strokeDasharray = 2 * Math.PI * radius;
