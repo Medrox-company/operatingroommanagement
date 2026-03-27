@@ -366,73 +366,67 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           )}
         </div>
 
-        <div className="relative z-10 flex flex-col h-full min-h-screen">
+        <div className="relative z-10 flex flex-col h-full min-h-screen pb-20">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <div className="flex items-center justify-between px-5 pt-4 pb-1">
             <button onClick={onClose} className="p-2 -ml-2">
               <ChevronLeft className="w-6 h-6 text-white/60" />
             </button>
-            <p className="text-2xl font-bold text-white tracking-tight">{room.name}</p>
+            <p className="text-3xl font-black text-white tracking-tight">{room.name}</p>
             <button onClick={onClose} className="p-2 -mr-2">
               <X className="w-5 h-5 text-white/40" />
             </button>
           </div>
 
           {/* Main circular progress area */}
-          <div className="flex flex-col items-center px-6 pt-3 pb-2">
-            {/* Velký kruh */}
-            <div className="relative w-64 h-64 mb-4">
-              {/* Pulzující kruhová záře - správně kulatá */}
+          <div className="flex flex-col items-center px-6 pt-2">
+            {/* Velký kruh - ještě větší */}
+            <div className="relative w-72 h-72 mb-3">
+              {/* Pulzující kruhová záře */}
               <motion.div
                 className="absolute rounded-full pointer-events-none"
-                style={{
-                  inset: '10%',
-                  boxShadow: `0 0 60px 30px ${activeColor}25`,
-                }}
-                animate={{ boxShadow: [`0 0 40px 20px ${activeColor}15`, `0 0 70px 35px ${activeColor}30`, `0 0 40px 20px ${activeColor}15`] }}
+                style={{ inset: '8%', boxShadow: `0 0 70px 35px ${activeColor}25` }}
+                animate={{ boxShadow: [`0 0 50px 25px ${activeColor}15`, `0 0 80px 40px ${activeColor}30`, `0 0 50px 25px ${activeColor}15`] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
               />
 
               {/* SVG kruh */}
               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
+                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4.5" />
                 <motion.circle
                   cx="50" cy="50" r="44"
                   fill="none"
                   stroke={activeColor}
-                  strokeWidth="5"
+                  strokeWidth="4.5"
                   strokeLinecap="round"
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
                   initial={false}
                   animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
-                  style={{ filter: `drop-shadow(0 0 8px ${activeColor}90)` }}
+                  style={{ filter: `drop-shadow(0 0 10px ${activeColor}90)` }}
                 />
                 <motion.circle
-                  cx="50" cy="6" r="4"
+                  cx="50" cy="6" r="3.5"
                   fill={activeColor}
-                  style={{ transformOrigin: '50px 50px', filter: `drop-shadow(0 0 5px ${activeColor})` }}
+                  style={{ transformOrigin: '50px 50px', filter: `drop-shadow(0 0 6px ${activeColor})` }}
                   animate={{ rotate: ((safeStepIndex + 1) / validStepCount) * 360 }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
                 />
               </svg>
 
-              {/* Center content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">
-                  {room.isEmergency ? 'Nouze' : room.isLocked ? 'Uzamčeno' : 'Fáze'}
+              {/* Center content - fáze uvnitř kruhu */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-4">
+                <p className="text-lg font-bold text-white text-center leading-tight">
+                  {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
                 </p>
-                <p className="text-5xl font-bold tracking-tight leading-none" style={{ color: activeColor }}>
-                  {safeStepIndex + 1}/{validStepCount}
+                <p className="text-4xl font-black tracking-tight leading-none mt-1" style={{ color: activeColor }}>
+                  {elapsedTime}
                 </p>
-                <p className="text-sm font-mono font-semibold text-white/60">{elapsedTime}</p>
+                <p className="text-xs font-semibold text-white/40 mt-1 uppercase tracking-wider">
+                  {safeStepIndex + 1} z {validStepCount}
+                </p>
               </div>
             </div>
-
-            {/* Aktuální fáze pod kruhem - větší */}
-            <p className="text-xl font-bold text-white tracking-tight text-center mb-3">
-              {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
-            </p>
 
             {/* Step indicator dots */}
             <div className="flex items-center gap-2">
@@ -449,10 +443,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </div>
 
           {/* Spacer */}
-          <div className="flex-1" />
+          <div className="flex-1 min-h-4" />
 
-          {/* Bottom section */}
-          <div className="px-5 pb-6 space-y-2.5">
+          {/* Bottom section - padding pro spodní menu */}
+          <div className="px-5 pb-4 space-y-2.5">
             {/* CTA tlačítko NAD boxy */}
             {!isInteractionBlocked && (
               <motion.button
