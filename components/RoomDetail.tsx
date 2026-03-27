@@ -436,16 +436,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
 
-                {/* Koncová tečka */}
-                <motion.circle
-                  cx="50" cy="6" r="3.5"
-                  fill={activeColor}
-                  style={{ transformOrigin: '50px 50px' }}
-                  animate={{ rotate: ((safeStepIndex + 1) / validStepCount) * 360 }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
-                />
-              </svg>
-
               {/* Center content - větší text ve dvou řádcích, bez čísla fáze */}
               <div className="absolute inset-0 flex flex-col items-center justify-center px-5">
                 <p className="text-3xl font-black text-white text-center leading-tight whitespace-pre-line">
