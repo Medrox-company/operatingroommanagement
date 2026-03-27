@@ -435,6 +435,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
                   transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
+              </svg>
 
               {/* Center content - větší text ve dvou řádcích, bez čísla fáze */}
               <div className="absolute inset-0 flex flex-col items-center justify-center px-5">
