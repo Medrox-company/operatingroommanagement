@@ -254,11 +254,14 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            const safeIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
-            const step = WORKFLOW_STEPS[safeIndex] || WORKFLOW_STEPS[0];
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.color || '#6B7280');
+            // Use active statuses from database
+            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+            const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+            const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
+            const statusName = dbStatus?.name || 'Status';
             const remaining = getRemainingTime(room);
-            const isFree = room.currentStepIndex >= 6;
+            const isFree = safeIndex === totalSteps - 1;
             return (
               <button
                 key={room.id}
@@ -280,7 +283,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{step.title}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{statusName}</p>
                     <p className="text-[10px] text-white/40 mt-0.5">{room.staff.doctor.name}</p>
                   </div>
                   {room.estimatedEndTime && !isFree && (
@@ -296,7 +299,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${((room.currentStepIndex + 1) / WORKFLOW_STEPS.length) * 100}%`, backgroundColor: color, opacity: 0.6 }}
+                    style={{ width: `${((safeIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
                   />
                 </div>
               </button>
@@ -566,10 +569,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get current workflow step info for status display
-              const currentStep = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[5];
-              const stepColor = currentStep.color;
-              const StepIcon = currentStep.Icon;
+              // Get current workflow step info from database
+              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+              const safeStepIndex = Math.min(stepIndex, totalSteps - 1);
+              const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeStepIndex] : null;
+              const stepColor = dbStatus?.color || '#6B7280';
+              const stepName = dbStatus?.name || 'Status';
+              const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
               // Use currentProcedure if available, otherwise generate fallback values for active rooms
@@ -886,7 +892,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                 opacity: 0.75
                               }}
                               transition={{ duration: 0.3 }}
-                              title={WORKFLOW_STEPS[stepIndex]?.title}
+                              title={stepName}
                             />
                           );
                         })()}
@@ -1130,8 +1136,14 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
-  const step = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[0];
+  const { activeStatuses } = useWorkflowStatusesContext();
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+  const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+  const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
+  const step = {
+    title: dbStatus?.name || 'Status',
+    color: dbStatus?.color || '#6B7280'
+  };
 
   return (
     <motion.div

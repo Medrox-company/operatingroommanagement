@@ -14,24 +14,23 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
-  const { getStatusByIndex, activeStatuses } = useWorkflowStatusesContext();
+  const { activeStatuses } = useWorkflowStatusesContext();
   
-  // Get step from database or fallback to constants with safe bounds
-  const safeIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
-  const dbStatus = getStatusByIndex(room.currentStepIndex);
-  const fallbackStep = WORKFLOW_STEPS[safeIndex] || WORKFLOW_STEPS[0];
+  // Get ONLY active statuses from database
+  const safeIndex = Math.min(room.currentStepIndex, Math.max(activeStatuses.length - 1, 0));
+  const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
   
   const currentStep = {
-    title: dbStatus?.name || fallbackStep?.title || 'Status',
-    color: dbStatus?.color || fallbackStep?.color || '#6B7280',
-    ...fallbackStep
+    title: dbStatus?.name || 'Status',
+    color: dbStatus?.color || '#6B7280',
   };
   
   const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
   
-  // Use active statuses count for progress calculation if available
-  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : WORKFLOW_STEPS.length;
-  const progressPercent = ((room.currentStepIndex + 1) / Math.max(totalSteps, 1));
+  // Use active statuses count for progress calculation
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+  const progressPercent = ((safeIndex + 1) / totalSteps);
+  const isFinalStep = safeIndex === activeStatuses.length - 1;
   const radius = 38;
   const strokeWidth = 4;
   const strokeDasharray = 2 * Math.PI * radius;
@@ -186,7 +185,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                 </motion.svg>
             </div>
             
-            {room.estimatedEndTime && room.currentStepIndex !== 6 && (
+            {room.estimatedEndTime && !isFinalStep && (
                 <div className="-mt-1 text-center">
                     <div className="flex items-center gap-1.5 justify-center">
                       <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
