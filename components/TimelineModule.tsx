@@ -44,7 +44,9 @@ const parseTimeToDate = (timeString: string): Date => {
 };
 
 const hourLabel = (hour: number): string => {
-  const displayHour = hour % 24;
+  // Convert timeline hour (0-24) to actual 24-hour format (7:00 to 7:00 next day)
+  const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+  const displayHour = actualHour % 24; // Display as 7-23, 0-6
   return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
 };
 
@@ -491,9 +493,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
-                const displayHour = hour % 24;
+                // Convert timeline hour (0-24) to actual 24-hour format (7-31 represents 7:00 to 7:00 next day)
+                const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+                const displayHour = actualHour % 24; // 7-23, 0-6 for next day hours
                 const isNightHour = displayHour >= 19 || displayHour < 7;
-                const isNextDay = isNextDayHour(hour);
+                const isNextDay = actualHour >= 24;
                 const isCurrentHour = displayHour === currentHour && !isLast;
                 
                 return (

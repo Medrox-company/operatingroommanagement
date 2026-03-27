@@ -462,7 +462,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   strokeWidth="12"
                   strokeLinecap="round"
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow)' }}
                   initial={false}
                   animate={{
                     strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
@@ -472,7 +472,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     strokeDasharray: { duration: 0.8, ease: 'easeOut' },
                     opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
                   }}
-                  style={{ filter: 'url(#mobile-glow)' }}
                 />
 
                 {/* Hlavní progress */}
