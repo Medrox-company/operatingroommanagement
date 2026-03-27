@@ -874,8 +874,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
                         {/* Status segment - single colored bar that changes with current step */}
                         {(() => {
-                          // Get the current step color
-                          const stepColors = STEP_COLORS[stepIndex] || STEP_COLORS[5];
+                          // Get the current step color from database or fallback
+                          const segmentColor = stepColor || '#6B7280';
                           
                           return (
                             <motion.div
@@ -884,11 +884,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                               style={{
                                 left: 0,
                                 width: '100%',
-                                background: stepColors.solid,
+                                background: segmentColor,
                                 opacity: 0.75
                               }}
                               animate={{ 
-                                background: stepColors.solid,
+                                background: segmentColor,
                                 opacity: 0.75
                               }}
                               transition={{ duration: 0.3 }}
