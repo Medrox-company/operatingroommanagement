@@ -366,29 +366,29 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           )}
         </div>
 
-        <div className="relative z-10 flex flex-col min-h-full">
-          {/* Header - minimalist like reference */}
+        <div className="relative z-10 flex flex-col h-full min-h-screen">
+          {/* Header - větší název sálu */}
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
             <button onClick={onClose} className="p-2 -ml-2">
               <ChevronLeft className="w-6 h-6 text-white/60" />
             </button>
-            <p className="text-sm font-semibold text-white/90">{room.name}</p>
+            <p className="text-xl font-bold text-white tracking-tight">{room.name}</p>
             <button onClick={onClose} className="p-2 -mr-2">
               <X className="w-5 h-5 text-white/40" />
             </button>
           </div>
 
-          {/* Main circular progress area - kompaktnější */}
-          <div className="flex flex-col items-center justify-center px-6 pt-2 pb-3">
-            {/* Large circular indicator */}
-            <div className="relative w-48 h-48 mb-3">
-              {/* Outer glow ring */}
+          {/* Main circular progress area */}
+          <div className="flex flex-col items-center px-6 pt-2 pb-2">
+            {/* Large circular indicator - záře opravena na kruhový tvar */}
+            <div className="relative w-52 h-52 mb-2">
+              {/* Záře - správně kruhová pomocí box-shadow na pseudoprvku */}
               <div 
-                className="absolute inset-0 rounded-full blur-xl opacity-20"
-                style={{ backgroundColor: activeColor }}
+                className="absolute inset-4 rounded-full pointer-events-none"
+                style={{ boxShadow: `0 0 40px 20px ${activeColor}30` }}
               />
-              
-              {/* Background circle */}
+
+              {/* SVG kruh */}
               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle
                   cx="50" cy="50" r="44"
@@ -396,7 +396,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   stroke="rgba(255,255,255,0.06)"
                   strokeWidth="6"
                 />
-                {/* Progress arc */}
                 <motion.circle
                   cx="50" cy="50" r="44"
                   fill="none"
@@ -407,9 +406,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   initial={false}
                   animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  style={{ filter: `drop-shadow(0 0 8px ${activeColor}60)` }}
+                  style={{ filter: `drop-shadow(0 0 6px ${activeColor}80)` }}
                 />
-                {/* Progress end dot */}
                 <motion.circle
                   cx="50"
                   cy="6"
@@ -417,7 +415,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   fill={activeColor}
                   style={{ 
                     transformOrigin: '50px 50px',
-                    filter: `drop-shadow(0 0 6px ${activeColor})`
+                    filter: `drop-shadow(0 0 4px ${activeColor})`
                   }}
                   animate={{ rotate: ((safeStepIndex + 1) / validStepCount) * 360 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
@@ -435,20 +433,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 >
                   {safeStepIndex + 1}/{validStepCount}
                 </p>
-                <p className="text-xs text-white/50 mt-0.5">
-                  {currentStep?.name || 'Status'}
-                </p>
+                <p className="text-xs font-mono font-bold text-white/70 mt-1">{elapsedTime}</p>
               </div>
             </div>
 
-            {/* Elapsed time display - kompaktnější */}
-            <div className="text-center mb-3">
-              <p className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-0.5">Čas ve fázi</p>
-              <p className="text-3xl font-mono font-bold text-white">{elapsedTime}</p>
+            {/* Aktuální fáze pod kruhem */}
+            <div className="text-center mb-2">
+              <p className="text-lg font-bold text-white tracking-tight">
+                {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : (currentStep?.name || 'Status')}
+              </p>
             </div>
 
             {/* Step indicators - dots */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-1">
               {activeDbStatuses.map((status, idx) => (
                 <motion.div
                   key={status.id}
@@ -468,7 +465,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </div>
           </div>
 
-          {/* Bottom section with cards and buttons */}
+          {/* Spacer - tlačí boxy dolů ke spodní nabídce */}
+          <div className="flex-1" />
+
+          {/* Bottom section */}
           <div className="px-5 pb-6 space-y-2.5">
             {/* Info cards row */}
             <div className="grid grid-cols-2 gap-2.5">
