@@ -144,20 +144,34 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   }, [currentStepIndex, stepsCount]);
 
   // Use database statuses if available, fallback to constants
-  const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[currentStepIndex] : getStatusByIndex(currentStepIndex);
-  const currentStep = dbStatus ? {
-    title: dbStatus.name || WORKFLOW_STEPS[currentStepIndex]?.title,
-    color: dbStatus.color,
-    ...WORKFLOW_STEPS[currentStepIndex]
-  } : WORKFLOW_STEPS[currentStepIndex];
+  // Ensure currentStepIndex is within bounds of active statuses
+  const safeStepIndex = activeDbStatuses.length > 0 
+    ? Math.min(currentStepIndex, activeDbStatuses.length - 1)
+    : currentStepIndex;
   
-  const nextStepIndex = (currentStepIndex + 1) % (activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length);
-  const dbNextStatus = activeDbStatuses.length > 0 ? activeDbStatuses[nextStepIndex] : getStatusByIndex((currentStepIndex + 1) % WORKFLOW_STEPS.length);
-  const nextStep = dbNextStatus ? {
-    title: dbNextStatus.name || WORKFLOW_STEPS[nextStepIndex]?.title,
-    color: dbNextStatus.color,
-    ...WORKFLOW_STEPS[nextStepIndex]
-  } : WORKFLOW_STEPS[nextStepIndex];
+  const dbStatus = activeDbStatuses.length > 0 
+    ? activeDbStatuses[safeStepIndex] 
+    : getStatusByIndex(currentStepIndex);
+  
+  const fallbackStep = WORKFLOW_STEPS[currentStepIndex] || WORKFLOW_STEPS[0];
+  const currentStep = {
+    title: dbStatus?.name || fallbackStep?.title || 'Status',
+    color: dbStatus?.color || fallbackStep?.color || '#6B7280',
+    ...fallbackStep
+  };
+  
+  const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
+  const nextStepIndex = (safeStepIndex + 1) % totalSteps;
+  const dbNextStatus = activeDbStatuses.length > 0 
+    ? activeDbStatuses[nextStepIndex] 
+    : getStatusByIndex((currentStepIndex + 1) % WORKFLOW_STEPS.length);
+  
+  const fallbackNextStep = WORKFLOW_STEPS[nextStepIndex] || WORKFLOW_STEPS[0];
+  const nextStep = {
+    title: dbNextStatus?.name || fallbackNextStep?.title || 'Status',
+    color: dbNextStatus?.color || fallbackNextStep?.color || '#6B7280',
+    ...fallbackNextStep
+  };
   
   // Logic to determine if actions are allowed even if locked
   const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : WORKFLOW_STEPS.length;
@@ -350,7 +364,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <div>
               <p className="text-[9px] font-black tracking-[0.25em] uppercase text-white/40 mb-0.5">Aktivní fáze</p>
               <p className="text-base font-black uppercase tracking-wide" style={{ color: activeColor }}>
-                {room.isEmergency ? 'STAV NOUZE' : room.isLocked ? 'SÁL UZAMČEN' : currentStep.title}
+                {room.isEmergency ? 'STAV NOUZE' : room.isLocked ? 'SÁL UZAM��EN' : currentStep.title}
               </p>
             </div>
             <div className="text-right">
