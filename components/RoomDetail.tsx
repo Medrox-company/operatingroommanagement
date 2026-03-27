@@ -573,8 +573,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             onClick={async () => {
               if (!patientCalledTime) {
                 setPatientCalledTime(new Date());
-                setShowPatientCalledText(true);
-                setTimeout(() => setShowPatientCalledText(false), 3000);
+    setShowPatientCalledText(true);
+    setTimeout(() => setShowPatientCalledText(false), 5000);
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_call',
@@ -640,13 +640,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   duration_seconds: waitDuration,
                   metadata: { call_time: patientCalledTime.toISOString() },
                 });
-                setTimeout(() => {
-                  setShowPatientArrivedText(false);
-                  setPatientCalledTime(null);
-                  setPatientArrivedTime(null);
-                  updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                  setPatientCallElapsedTime('00:00');
-                }, 3000);
+  setTimeout(() => {
+    setShowPatientArrivedText(false);
+    setPatientCalledTime(null);
+    setPatientArrivedTime(null);
+    updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+    setPatientCallElapsedTime('00:00');
+  }, 5000);
               }
             }}
             disabled={!patientCalledTime || !!patientArrivedTime}
@@ -874,27 +874,68 @@ const prevStep = activeDbStatuses.length > 0
                 ) : showPatientCalledText ? (
                   <motion.div
                     key="patient-called-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex flex-col items-center gap-3"
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col items-center gap-6"
                   >
-                    <Phone className="w-14 h-14" strokeWidth={1.5} />
-                    <h2 className="text-4xl font-bold tracking-tight leading-tight text-center">
+                    <p className="text-[10px] font-black tracking-[0.2em] uppercase text-white/25">
+                      SPECIÁLNÍ STAV
+                    </p>
+                    {/* Animované sluchátko */}
+                    <motion.div
+                      animate={{ rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.1, 1.1, 1.1, 1.1, 1] }}
+                      transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.8, ease: 'easeInOut' }}
+                      style={{ color: activeColor }}
+                    >
+                      <Phone className="w-20 h-20" strokeWidth={1.5} />
+                    </motion.div>
+                    <motion.h2
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-6xl font-bold tracking-tight leading-tight text-center text-white"
+                    >
                       Volání pacienta
-                    </h2>
+                    </motion.h2>
                   </motion.div>
                 ) : showPatientArrivedText ? (
                   <motion.div
                     key="patient-arrived-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center justify-center"
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col items-center gap-6"
                   >
-                    <h2 className="text-5xl font-bold tracking-tight leading-tight text-center">
+                    <p className="text-[10px] font-black tracking-[0.2em] uppercase text-white/25">
+                      SPECIÁLNÍ STAV
+                    </p>
+                    {/* Animovaný pacient na posteli */}
+                    <motion.div
+                      animate={{ x: [0, 12, 0, 12, 0] }}
+                      transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 0.6, ease: 'easeInOut' }}
+                      style={{ color: activeColor }}
+                    >
+                      <svg className="w-20 h-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        {/* Pacient na posteli */}
+                        <path d="M2 17h20" />
+                        <path d="M4 17V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8" />
+                        <path d="M8 8V7a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" />
+                        <circle cx="12" cy="5" r="1.5" />
+                        <path d="M9 11h6" />
+                        <path d="M2 20h20" />
+                      </svg>
+                    </motion.div>
+                    <motion.h2
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-6xl font-bold tracking-tight leading-tight text-center text-white"
+                    >
                       Příjezd pacienta
-                    </h2>
+                    </motion.h2>
                   </motion.div>
                 ) : isPaused ? (
                   <motion.div
