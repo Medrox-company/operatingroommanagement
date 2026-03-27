@@ -10,11 +10,11 @@ import {
 
 // ========== CONSTANTS ==========
 const TIMELINE_START_HOUR = 7;
-const TIMELINE_END_HOUR = 19;
-const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR;
+const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
+const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 200;
 const ROW_HEIGHT = 72;
-const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i);
+const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
@@ -583,7 +583,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
-              // Use currentProcedure if available, otherwise generate fallback values for active rooms
+              // Use currentProcedure if available, otherwise use phaseStartedAt or current time as fallback
               const startParts = room.currentProcedure?.startTime?.split(':');
               let boxLeftPct = 0;
               let boxWidthPct = 0;
@@ -591,13 +591,24 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               let startDate: Date = new Date();
               let endDate: Date = new Date();
               
-              // Only show on timeline if there's a real procedure start time
+              // Show status bar if active - use procedure time, phaseStartedAt, or fallback to current time
               const hasRealData = startParts && startParts.length === 2;
+              const hasPhaseStart = room.phaseStartedAt;
+              const shouldShowBar = isActive; // Always show for active rooms
 
-              if (isActive && hasRealData) {
-                // Use actual procedure start time
-                startDate = new Date();
-                startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+              if (isActive) {
+                // Determine start time
+                if (hasRealData) {
+                  // Use actual procedure start time
+                  startDate = new Date();
+                  startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+                } else if (hasPhaseStart) {
+                  // Use phase started time as fallback
+                  startDate = new Date(room.phaseStartedAt);
+                } else {
+                  // Ultimate fallback: use a time 30 minutes ago
+                  startDate = new Date(currentTime.getTime() - 30 * 60 * 1000);
+                }
                 
                 boxLeftPct = getTimePercent(startDate);
                 
@@ -810,8 +821,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     })}
 
                     {/* Active operation bar - Premium Design with workflow step color */}
-                    {/* Active operation box - only shown if there's real procedure data */}
-              {isActive && hasRealData && boxWidthPct > 0 && (
+                    {/* Active operation box - shown for all active rooms */}
+                    {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
