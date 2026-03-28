@@ -58,7 +58,9 @@ const AppContent: React.FC = () => {
       },
       // Granular update callback (for UPDATE - instant sync)
       (roomId, dbChanges) => {
+        console.log('[v0] REALTIME UPDATE received for room:', roomId, '| dbChanges:', JSON.stringify(dbChanges));
         const appChanges = transformSingleRoom(dbChanges);
+        console.log('[v0] REALTIME UPDATE transformed:', JSON.stringify(appChanges));
         setRooms(prev => prev.map(room =>
           room.id === roomId ? { ...room, ...appChanges } : room
         ));
@@ -86,10 +88,12 @@ const AppContent: React.FC = () => {
   const updateRoomStep = async (roomId: string, newStepIndex: number) => {
     const now = new Date();
     const phaseStartedAt = now.toISOString();
+    console.log('[v0] updateRoomStep called:', roomId, '| newStepIndex:', newStepIndex, '| phaseStartedAt:', phaseStartedAt);
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, currentStepIndex: newStepIndex, phaseStartedAt } : room
     ));
     if (isDbConnected) {
+      console.log('[v0] updateRoomStep saving to DB:', { current_step_index: newStepIndex, phase_started_at: phaseStartedAt });
       await updateOperatingRoom(roomId, { current_step_index: newStepIndex, phase_started_at: phaseStartedAt });
     }
   };

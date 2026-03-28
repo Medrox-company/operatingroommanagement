@@ -38,8 +38,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     .sort((a, b) => a.order_index - b.order_index);
 
   // Initialize from database phaseStartedAt for real-time sync across devices
+  const initialPhaseStartTime = room.phaseStartedAt ? new Date(room.phaseStartedAt) : null;
+  console.log('[v0] RoomDetail INIT:', room.name, '| room.phaseStartedAt:', room.phaseStartedAt, '| initialPhaseStartTime:', initialPhaseStartTime?.toISOString());
+  
   const [phaseStartTime, setPhaseStartTime] = useState(() => 
-    room.phaseStartedAt ? new Date(room.phaseStartedAt) : new Date()
+    initialPhaseStartTime || new Date()
   );
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
@@ -137,8 +140,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   // Sync phaseStartTime from database for real-time consistency across devices
   useEffect(() => {
+    console.log('[v0] RoomDetail SYNC effect:', room.name, '| room.phaseStartedAt changed to:', room.phaseStartedAt);
     if (room.phaseStartedAt) {
-      setPhaseStartTime(new Date(room.phaseStartedAt));
+      const newTime = new Date(room.phaseStartedAt);
+      console.log('[v0] RoomDetail SYNC: Setting phaseStartTime to:', newTime.toISOString());
+      setPhaseStartTime(newTime);
     }
   }, [room.phaseStartedAt]);
 
