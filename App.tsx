@@ -84,13 +84,11 @@ const AppContent: React.FC = () => {
   }
 
   const updateRoomStep = async (roomId: string, newStepIndex: number) => {
-    const now = new Date();
-    const phaseStartedAt = now.toISOString();
     setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, currentStepIndex: newStepIndex, phaseStartedAt } : room
+      room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
     ));
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { current_step_index: newStepIndex, phase_started_at: phaseStartedAt });
+      await updateOperatingRoom(roomId, { current_step_index: newStepIndex });
     }
   };
 
@@ -210,11 +208,10 @@ const AppContent: React.FC = () => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 className="absolute inset-0 z-50">
-<RoomDetail
-  key={`${selectedRoom.id}-${selectedRoom.phaseStartedAt}`}
-  room={selectedRoom}
-  onClose={() => setSelectedRoomId(null)}
-  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+                <RoomDetail
+                  room={selectedRoom}
+                  onClose={() => setSelectedRoomId(null)}
+                  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                 />

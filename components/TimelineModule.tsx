@@ -76,16 +76,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Sync selectedRoom with rooms array when rooms update (for real-time sync)
-  useEffect(() => {
-    if (selectedRoomId) {
-      const updatedRoom = rooms.find(r => r.id === selectedRoomId);
-      if (updatedRoom) {
-        setSelectedRoom(updatedRoom);
-      }
-    }
-  }, [rooms, selectedRoomId]);
-
   // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
   // useEffect(() => {
   //   if (scrollContainerRef.current) {
@@ -192,30 +182,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   // const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
 
   // Get remaining time for room
-  // Get elapsed time since phase started - real-time update across devices
-  const getElapsedTimeFromPhase = (room: OperatingRoom): string => {
-    if (room.currentStepIndex >= 6) return '';
-    if (!room.phaseStartedAt) return '';
-    
-    const phaseStartTime = new Date(room.phaseStartedAt);
-    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
-    
-    if (elapsedMs < 0) return '';
-    
-    const totalSeconds = Math.floor(elapsedMs / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    // Format: mm:ss if < 1 hour, else hh:mm
-    if (hours === 0) {
-      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    } else {
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    }
-  };
-
-  // Get remaining time for room (for future use, commented out)
   const getRemainingTime = (room: OperatingRoom): string => {
     if (room.currentStepIndex >= 6) return '';
     if (!room.estimatedEndTime && !room.currentProcedure?.estimatedDuration) return '';
@@ -257,7 +223,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       {/* Room Detail Popup */}
       <AnimatePresence>
         {selectedRoom && (
-          <RoomDetailPopup room={selectedRoom} onClose={() => { setSelectedRoom(null); setSelectedRoomId(null); }} currentTime={currentTime} />
+          <RoomDetailPopup room={selectedRoom} onClose={() => setSelectedRoom(null)} currentTime={currentTime} />
         )}
       </AnimatePresence>
 
@@ -301,12 +267,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
             const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
             const statusName = dbStatus?.name || 'Status';
-            const elapsedTime = getElapsedTimeFromPhase(room);
+            const remaining = getRemainingTime(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
               <button
                 key={room.id}
-                onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
+                onClick={() => setSelectedRoom(room)}
                 className="w-full rounded-2xl p-4 border text-left transition-all active:scale-[0.99]"
                 style={{ background: `${color}08`, borderColor: `${color}25` }}
               >
@@ -317,8 +283,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
                     {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
                   </div>
-                  {elapsedTime && !isFree && (
-                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{elapsedTime}</span>
+                  {remaining && !isFree && (
+                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
                   )}
                   {isFree && <span className="text-[10px] font-black text-emerald-400/70 uppercase tracking-wider">Volný</span>}
                 </div>
@@ -612,7 +578,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               
               const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
-              const elapsedTime = getElapsedTimeFromPhase(room);
+              const remainingTime = getRemainingTime(room);
               
               // Get status from database
               const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
@@ -679,7 +645,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
                     style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
-                    onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
+                    onClick={() => setSelectedRoom(room)}
                   >
                     <div 
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
@@ -724,7 +690,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
                     style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
-                    onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
+                    onClick={() => setSelectedRoom(room)}
                   >
                     <div 
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
@@ -771,7 +737,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
                   className="flex items-stretch border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
                   style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
-                  onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
+                  onClick={() => setSelectedRoom(room)}
                 >
                   {/* Room Label - Sticky */}
                   <div 
@@ -828,9 +794,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
                           Volny
                         </p>
-                      ) : elapsedTime && stepIndex !== 0 ? (
-                        <p className="text-[9px] font-mono font-bold" style={{ color: stepColor }}>
-                          {elapsedTime}
+                      ) : remainingTime && stepIndex !== 0 ? (
+                        <p 
+                          className="text-[9px] font-medium text-white/50" 
+                        >
+                          {remainingTime}
                         </p>
                       ) : (
                         <p className="text-[9px] font-medium text-white/25">{room.department}</p>
@@ -990,16 +958,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           )}
                           
                           {/* Remaining time badge */}
-                          {boxWidthPct > 18 && elapsedTime && stepIndex !== 0 && (
-                            <span 
-                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-white pointer-events-none"
+                          {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
+                            <div 
+                              className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
                               style={{ 
-                                textShadow: `0 0 8px ${stepColor}80`,
-                                whiteSpace: 'nowrap'
+                                background: 'rgba(0,0,0,0.2)'
                               }}
                             >
-                              {elapsedTime}
-                            </span>
+                              {remainingTime}
+                            </div>
                           )}
                         </div>
                       </motion.div>
@@ -1197,27 +1164,6 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     title: dbStatus?.name || 'Status',
     color: dbStatus?.color || '#6B7280'
   };
-  
-  // Calculate elapsed time from phaseStartedAt (synced from database)
-  const getElapsedTime = (): string => {
-    if (!room.phaseStartedAt) return '';
-    const phaseStartTime = new Date(room.phaseStartedAt);
-    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
-    if (elapsedMs < 0) return '';
-    
-    const totalSeconds = Math.floor(elapsedMs / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    if (hours === 0) {
-      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    } else {
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    }
-  };
-  
-  const elapsedTime = getElapsedTime();
 
   return (
     <motion.div
@@ -1259,26 +1205,19 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div>
             <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Status</p>
             <div
-              className="px-3 py-2 rounded-lg flex items-center justify-between"
+              className="px-3 py-2 rounded-lg flex items-center gap-2"
               style={{
                 background: `${step.color}20`,
                 border: `1px solid ${step.color}40`,
               }}
             >
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: step.color }}
-                />
-                <span style={{ color: step.color }} className="font-semibold text-sm">
-                  {step.title}
-                </span>
-              </div>
-              {elapsedTime && (
-                <span className="font-mono text-sm font-bold" style={{ color: step.color }}>
-                  {elapsedTime}
-                </span>
-              )}
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{ background: step.color }}
+              />
+              <span style={{ color: step.color }} className="font-semibold text-sm">
+                {step.title}
+              </span>
             </div>
           </div>
 
