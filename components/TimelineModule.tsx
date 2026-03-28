@@ -204,6 +204,9 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
   };
+
+  // Get remaining time for room (for future use, commented out)
+  const getRemainingTime = (room: OperatingRoom): string => {
     if (room.currentStepIndex >= 6) return '';
     if (!room.estimatedEndTime && !room.currentProcedure?.estimatedDuration) return '';
     
