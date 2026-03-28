@@ -323,143 +323,88 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT - Ultra Minimalist Medical Design ========== */}
-      <div className="md:hidden w-full h-full overflow-y-auto bg-gradient-to-b from-slate-50 to-white">
-        {/* Teal gradient header area */}
-        <div className="relative">
-          {/* Gradient header background */}
-          <div 
-            className="absolute inset-0 h-80"
-            style={{ 
-              background: room.isEmergency 
-                ? 'linear-gradient(180deg, #DC2626 0%, #EF4444 50%, #FCA5A5 100%)'
-                : room.isLocked
-                ? 'linear-gradient(180deg, #D97706 0%, #FBBF24 50%, #FDE68A 100%)'
-                : `linear-gradient(180deg, ${activeColor} 0%, ${activeColor}CC 50%, ${activeColor}40 100%)`
-            }}
-          />
+      {/* ========== MOBILE LAYOUT - Ultra Minimalist Dark Design ========== */}
+      <div className="md:hidden w-full h-full flex flex-col bg-black">
+        {/* Close button - top right */}
+        <motion.button 
+          onClick={onClose}
+          className="absolute top-6 right-6 z-50 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
+          whileTap={{ scale: 0.9 }}
+        >
+          <X className="w-5 h-5 text-white/60" />
+        </motion.button>
+
+        {/* Main content - centered */}
+        <div className="flex-1 flex flex-col items-center justify-center px-8">
+          {/* Room name */}
+          <p className="text-xs font-medium text-white/30 uppercase tracking-[0.3em] mb-6">{room.name}</p>
           
-          {/* Header navigation */}
-          <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-3">
-            <motion.button 
-              onClick={onClose}
-              className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center"
-              whileTap={{ scale: 0.95 }}
-            >
-              <ChevronLeft className="w-6 h-6 text-white" />
-            </motion.button>
-            
-            <h1 className="text-lg font-bold text-white tracking-wide">{room.name}</h1>
-            
-            <motion.button 
-              onClick={onClose}
-              className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center"
-              whileTap={{ scale: 0.95 }}
-            >
-              <X className="w-5 h-5 text-white" />
-            </motion.button>
+          {/* Status name */}
+          <motion.h1
+            key={currentStep?.name}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-2xl font-bold tracking-tight mb-8"
+            style={{ color: activeColor }}
+          >
+            {room.isEmergency ? 'EMERGENCY' : room.isLocked ? 'UZAMCENO' : currentStep?.name?.toUpperCase() || 'STATUS'}
+          </motion.h1>
+
+          {/* Giant timer */}
+          <motion.div 
+            className="text-[80px] font-mono font-bold text-white tracking-tighter leading-none mb-4"
+            key={elapsedTime}
+          >
+            {elapsedTime}
+          </motion.div>
+
+          {/* Step progress dots */}
+          <div className="flex items-center gap-2 mb-12">
+            {activeDbStatuses.map((_, idx) => (
+              <div
+                key={idx}
+                className="w-2 h-2 rounded-full transition-all"
+                style={{
+                  backgroundColor: idx <= safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
+                  boxShadow: idx === safeStepIndex ? `0 0 10px ${activeColor}` : 'none'
+                }}
+              />
+            ))}
           </div>
 
-          {/* Status display in header */}
-          <div className="relative z-10 px-6 pt-6 pb-16 text-center">
-            <motion.div
-              key={currentStep?.name}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-3"
+          {/* End time */}
+          <div className="flex items-center gap-6 mb-8">
+            <motion.button
+              onClick={handleDecreaseTime}
+              disabled={isInteractionBlocked || !estimatedEndTime}
+              className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
+              whileTap={{ scale: 0.9 }}
             >
-              <h2 className="text-3xl font-black text-white tracking-tight leading-tight">
-                {room.isEmergency ? 'EMERGENCY' : room.isLocked ? 'Uzamceno' : currentStep?.name || 'Status'}
-              </h2>
-            </motion.div>
+              <Minus className="w-5 h-5 text-white/50" />
+            </motion.button>
             
-            {/* Timer */}
-            <motion.p 
-              className="text-5xl font-mono font-black text-white/90 tracking-tighter"
-              key={elapsedTime}
+            <div className="text-center min-w-[100px]">
+              <p className="text-3xl font-mono font-bold text-white">
+                {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              </p>
+              <p className="text-[10px] text-white/30 uppercase tracking-widest mt-1">Konec</p>
+            </div>
+            
+            <motion.button
+              onClick={handleIncreaseTime}
+              disabled={isInteractionBlocked}
+              className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
+              whileTap={{ scale: 0.9 }}
             >
-              {elapsedTime}
-            </motion.p>
-            <p className="text-xs font-medium text-white/60 mt-1 uppercase tracking-widest">Cas ve fazi</p>
+              <Plus className="w-5 h-5 text-white/50" />
+            </motion.button>
           </div>
         </div>
 
-        {/* White content card overlapping header */}
-        <div className="relative z-20 -mt-8 mx-4 bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden">
-          {/* Stats row */}
-          <div className="grid grid-cols-3 divide-x divide-slate-100 px-2 py-5 border-b border-slate-100">
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${activeColor}15` }}>
-                <Activity className="w-5 h-5" style={{ color: activeColor }} />
-              </div>
-              <span className="text-lg font-bold text-slate-800">{safeStepIndex + 1}/{validStepCount}</span>
-              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Faze</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${activeColor}15` }}>
-                <Stethoscope className="w-5 h-5" style={{ color: activeColor }} />
-              </div>
-              <span className="text-sm font-bold text-slate-800 text-center leading-tight line-clamp-1 px-1">{room.staff.doctor.name.split(' ').pop()}</span>
-              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Lekar</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${activeColor}15` }}>
-                <Heart className="w-5 h-5" style={{ color: activeColor }} />
-              </div>
-              <span className="text-sm font-bold text-slate-800 text-center leading-tight line-clamp-1 px-1">{room.staff.nurse.name.split(' ').pop()}</span>
-              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Sestra</span>
-            </div>
-          </div>
-
-          {/* Step indicators */}
-          <div className="px-6 py-4 border-b border-slate-100">
-            <div className="flex items-center justify-center gap-2">
-              {activeDbStatuses.map((status, idx) => (
-                <motion.div
-                  key={status.id}
-                  className="rounded-full transition-all"
-                  style={{
-                    width: idx === safeStepIndex ? 24 : 8,
-                    height: 8,
-                    backgroundColor: idx <= safeStepIndex ? activeColor : '#E2E8F0',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* End time section */}
-          <div className="px-6 py-5 border-b border-slate-100">
-            <div className="flex items-center justify-between">
-              <motion.button
-                onClick={handleDecreaseTime}
-                disabled={isInteractionBlocked || !estimatedEndTime}
-                className="w-12 h-12 rounded-2xl border-2 border-slate-200 flex items-center justify-center disabled:opacity-30 active:bg-slate-50"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Minus className="w-5 h-5 text-slate-600" />
-              </motion.button>
-              
-              <div className="text-center">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Ocekavane ukonceni</p>
-                <p className="text-2xl font-mono font-bold text-slate-800">
-                  {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                </p>
-              </div>
-              
-              <motion.button
-                onClick={handleIncreaseTime}
-                disabled={isInteractionBlocked}
-                className="w-12 h-12 rounded-2xl border-2 border-slate-200 flex items-center justify-center disabled:opacity-30 active:bg-slate-50"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Plus className="w-5 h-5 text-slate-600" />
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Quick action buttons */}
-          <div className="grid grid-cols-4 gap-3 p-4">
+        {/* Bottom action buttons */}
+        <div className="px-6 pb-10">
+          {/* Quick actions row */}
+          <div className="flex items-center justify-center gap-4 mb-6">
             {/* Pause */}
             <motion.button
               onClick={async () => {
@@ -468,15 +413,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 await updateOperatingRoom(room.id, { is_paused: newPaused });
                 await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
               }}
-              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors"
+              className="w-14 h-14 rounded-full flex items-center justify-center"
               style={{ 
-                backgroundColor: isPaused ? `${activeColor}15` : '#F8FAFC',
-                border: `1.5px solid ${isPaused ? activeColor : '#E2E8F0'}`
+                backgroundColor: isPaused ? activeColor : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${isPaused ? activeColor : 'rgba(255,255,255,0.1)'}`
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.9 }}
             >
-              {isPaused ? <Play className="w-5 h-5" style={{ color: activeColor }} /> : <Pause className="w-5 h-5 text-slate-400" />}
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{isPaused ? 'Play' : 'Pauza'}</span>
+              {isPaused ? <Play className="w-6 h-6 text-white" /> : <Pause className="w-6 h-6 text-white/40" />}
             </motion.button>
 
             {/* Hygiene */}
@@ -487,15 +431,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
                 await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
               }}
-              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors"
+              className="w-14 h-14 rounded-full flex items-center justify-center"
               style={{ 
-                backgroundColor: room.isEnhancedHygiene ? '#FEF3C7' : '#F8FAFC',
-                border: `1.5px solid ${room.isEnhancedHygiene ? '#F59E0B' : '#E2E8F0'}`
+                backgroundColor: room.isEnhancedHygiene ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${room.isEnhancedHygiene ? '#F59E0B' : 'rgba(255,255,255,0.1)'}`
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.9 }}
             >
-              <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-amber-500' : 'text-slate-400'}`} />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Hygiena</span>
+              <ShieldAlert className={`w-6 h-6 ${room.isEnhancedHygiene ? 'text-amber-500' : 'text-white/40'}`} />
             </motion.button>
 
             {/* Call patient */}
@@ -511,15 +454,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 }
               }}
               disabled={!!patientCalledTime}
-              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors disabled:opacity-60"
+              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40"
               style={{ 
-                backgroundColor: patientCalledTime ? '#DCFCE7' : '#F8FAFC',
-                border: `1.5px solid ${patientCalledTime ? '#22C55E' : '#E2E8F0'}`
+                backgroundColor: patientCalledTime ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${patientCalledTime ? '#22C55E' : 'rgba(255,255,255,0.1)'}`
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.9 }}
             >
-              <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-500' : 'text-slate-400'}`} />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
+              <Phone className={`w-6 h-6 ${patientCalledTime ? 'text-green-500' : 'text-white/40'}`} />
             </motion.button>
 
             {/* Patient arrived */}
@@ -543,49 +485,56 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 }
               }}
               disabled={!patientCalledTime || !!patientArrivedTime}
-              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors disabled:opacity-30"
+              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-20"
               style={{ 
-                backgroundColor: patientArrivedTime ? '#F3E8FF' : '#F8FAFC',
-                border: `1.5px solid ${patientArrivedTime ? '#A855F7' : '#E2E8F0'}`
+                backgroundColor: patientArrivedTime ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${patientArrivedTime ? '#A855F7' : 'rgba(255,255,255,0.1)'}`
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.9 }}
             >
-              <BedDouble className={`w-5 h-5 ${patientArrivedTime ? 'text-purple-500' : 'text-slate-400'}`} />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Prijezd</span>
+              <BedDouble className={`w-6 h-6 ${patientArrivedTime ? 'text-purple-500' : 'text-white/40'}`} />
             </motion.button>
           </div>
-        </div>
 
-        {/* Main CTA Button */}
-        {!isInteractionBlocked && (
-          <div className="px-4 pt-5 pb-8">
+          {/* Main CTA Button */}
+          {!isInteractionBlocked && (
             <motion.button
               onClick={handleNextStep}
-              className="w-full rounded-2xl py-5 font-bold text-lg text-white shadow-lg relative overflow-hidden"
+              className="w-full rounded-full py-5 font-bold text-base text-white"
               style={{ 
                 backgroundColor: activeColor,
-                boxShadow: `0 10px 40px ${activeColor}40`
+                boxShadow: `0 0 40px ${activeColor}40`
               }}
-              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
-              {isFinalStep ? 'Novy cyklus' : 'Spustit dalsi fazi'}
+              {isFinalStep ? 'NOVY CYKLUS' : 'DALSI FAZE'}
             </motion.button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Pause indicator overlay */}
         {isPaused && (
           <motion.div 
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-lg"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-8 py-4 rounded-full"
             style={{ backgroundColor: activeColor }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
           >
             <div className="flex items-center gap-3">
-              <Pause className="w-4 h-4 text-white" />
-              <span className="text-sm font-bold text-white">{pauseElapsedTime}</span>
+              <Pause className="w-5 h-5 text-white" />
+              <span className="text-lg font-mono font-bold text-white">{pauseElapsedTime}</span>
             </div>
+          </motion.div>
+        )}
+
+        {/* Patient call timer badge */}
+        {patientCalledTime && !patientArrivedTime && (
+          <motion.div 
+            className="fixed top-6 left-6 px-4 py-2 rounded-full bg-green-500/20 border border-green-500/40"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <span className="text-sm font-mono font-bold text-green-400">{patientCallElapsedTime}</span>
           </motion.div>
         )}
       </div>
