@@ -185,15 +185,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   // Get elapsed time since phase started - real-time update across devices
   const getElapsedTimeFromPhase = (room: OperatingRoom): string => {
     if (room.currentStepIndex >= 6) return '';
-    if (!room.phaseStartedAt) {
-      console.log('[v0] Room', room.name, 'has no phaseStartedAt');
-      return '';
-    }
+    if (!room.phaseStartedAt) return '';
     
     const phaseStartTime = new Date(room.phaseStartedAt);
     const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
-    
-    console.log('[v0] Room', room.name, 'phaseStartedAt:', room.phaseStartedAt, 'elapsedMs:', elapsedMs, 'currentTime:', currentTime.toISOString());
     
     if (elapsedMs < 0) return '';
     
@@ -823,19 +818,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
                           Volny
                         </p>
-                ) : elapsedTime && stepIndex !== 0 ? (
-                  <span 
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-white pointer-events-none"
-                    style={{ 
-                      textShadow: `0 0 8px ${stepColor}80`,
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {elapsedTime}
-                  </span>
-                ) : (
-                  <p className="text-[9px] font-medium text-white/25">{room.department}</p>
-                )}
+                      ) : elapsedTime && stepIndex !== 0 ? (
+                        <p className="text-[9px] font-mono font-bold" style={{ color: stepColor }}>
+                          {elapsedTime}
+                        </p>
+                      ) : (
+                        <p className="text-[9px] font-medium text-white/25">{room.department}</p>
+                      )}
                     </div>
                   </div>
 
