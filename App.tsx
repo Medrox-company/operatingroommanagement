@@ -37,7 +37,9 @@ const AppContent: React.FC = () => {
   // Load rooms from database on mount, fallback to MOCK_ROOMS
   useEffect(() => {
     const loadRooms = async () => {
+      console.log('[v0] Loading rooms from database...');
       const dbRooms = await fetchOperatingRooms();
+      console.log('[v0] Loaded rooms:', dbRooms?.length, '| First room phaseStartedAt:', dbRooms?.[0]?.phaseStartedAt);
       if (dbRooms && dbRooms.length > 0) {
         setRooms(dbRooms);
         setIsDbConnected(true);
@@ -48,6 +50,7 @@ const AppContent: React.FC = () => {
 
   // Subscribe to real-time updates with granular room updates
   useEffect(() => {
+    console.log('[v0] Setting up realtime subscription...');
     const unsubscribe = subscribeToOperatingRooms(
       // Full refresh callback (for INSERT/DELETE)
       async () => {
@@ -214,10 +217,11 @@ const AppContent: React.FC = () => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 className="absolute inset-0 z-50">
-                <RoomDetail
-                  room={selectedRoom}
-                  onClose={() => setSelectedRoomId(null)}
-                  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+<RoomDetail
+  key={`${selectedRoom.id}-${selectedRoom.phaseStartedAt}`}
+  room={selectedRoom}
+  onClose={() => setSelectedRoomId(null)}
+  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                 />

@@ -1187,6 +1187,27 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     title: dbStatus?.name || 'Status',
     color: dbStatus?.color || '#6B7280'
   };
+  
+  // Calculate elapsed time from phaseStartedAt (synced from database)
+  const getElapsedTime = (): string => {
+    if (!room.phaseStartedAt) return '';
+    const phaseStartTime = new Date(room.phaseStartedAt);
+    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
+    if (elapsedMs < 0) return '';
+    
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours === 0) {
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  };
+  
+  const elapsedTime = getElapsedTime();
 
   return (
     <motion.div
@@ -1228,19 +1249,26 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div>
             <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Status</p>
             <div
-              className="px-3 py-2 rounded-lg flex items-center gap-2"
+              className="px-3 py-2 rounded-lg flex items-center justify-between"
               style={{
                 background: `${step.color}20`,
                 border: `1px solid ${step.color}40`,
               }}
             >
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ background: step.color }}
-              />
-              <span style={{ color: step.color }} className="font-semibold text-sm">
-                {step.title}
-              </span>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: step.color }}
+                />
+                <span style={{ color: step.color }} className="font-semibold text-sm">
+                  {step.title}
+                </span>
+              </div>
+              {elapsedTime && (
+                <span className="font-mono text-sm font-bold" style={{ color: step.color }}>
+                  {elapsedTime}
+                </span>
+              )}
             </div>
           </div>
 
