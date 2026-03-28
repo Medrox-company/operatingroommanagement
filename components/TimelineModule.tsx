@@ -190,18 +190,18 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     const phaseStartTime = new Date(room.phaseStartedAt);
     const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
     
-    if (elapsedMs <= 0) return '00:00';
+    if (elapsedMs < 0) return '';
     
     const totalSeconds = Math.floor(elapsedMs / 1000);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     
-    // Format: mm:ss if < 1 hour, else hh:mm:ss
+    // Format: mm:ss if < 1 hour, else hh:mm
     if (hours === 0) {
       return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     } else {
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
   };
 
@@ -986,17 +986,17 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           )}
                           
                           {/* Remaining time badge */}
-                {boxWidthPct > 18 && elapsedTime && stepIndex !== 0 && (
-                  <span 
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-white pointer-events-none"
-                    style={{ 
-                      textShadow: `0 0 8px ${stepColor}80`,
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {elapsedTime}
-                  </span>
-                )}
+                          {boxWidthPct > 18 && elapsedTime && stepIndex !== 0 && (
+                            <span 
+                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-white pointer-events-none"
+                              style={{ 
+                                textShadow: `0 0 8px ${stepColor}80`,
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {elapsedTime}
+                            </span>
+                          )}
                         </div>
                       </motion.div>
                     )}
