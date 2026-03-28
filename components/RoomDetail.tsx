@@ -37,7 +37,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     .filter(s => s.is_active && !s.is_special)
     .sort((a, b) => a.order_index - b.order_index);
 
-  const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
+  // Initialize from database phaseStartedAt for real-time sync across devices
+  const [phaseStartTime, setPhaseStartTime] = useState(() => 
+    room.phaseStartedAt ? new Date(room.phaseStartedAt) : new Date()
+  );
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
   const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
@@ -59,10 +62,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       const diff = now.getTime() - phaseStartTime.getTime();
       
       const totalSeconds = Math.floor(diff / 1000);
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
       
-      setElapsedTime(`${minutes}:${seconds}`);
+      // Format: mm:ss if < 1 hour, else hh:mm
+      if (hours === 0) {
+        setElapsedTime(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+      } else {
+        setElapsedTime(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+      }
     }, 1000);
     
     return () => clearInterval(timer);
@@ -79,9 +88,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
-      setPauseElapsedTime(`${minutes}:${seconds}`);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      // Format: mm:ss if < 1 hour, else hh:mm
+      if (hours === 0) {
+        setPauseElapsedTime(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+      } else {
+        setPauseElapsedTime(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+      }
     }, 1000);
 
     return () => clearInterval(timer);
@@ -111,16 +127,30 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
   }, [patientArrivedTime]);
 
+  // Track if we're in the middle of a local reset to prevent sync overwriting
+  const isResettingRef = useRef(false);
+
   // Sync local state with room object (for real-time updates from other devices)
   useEffect(() => {
     setIsPaused(room.isPaused || false);
   }, [room.isPaused]);
 
+  // Sync phaseStartTime from database for real-time consistency across devices
   useEffect(() => {
+    if (room.phaseStartedAt) {
+      setPhaseStartTime(new Date(room.phaseStartedAt));
+    }
+  }, [room.phaseStartedAt]);
+
+  useEffect(() => {
+    // Don't sync if we're resetting locally
+    if (isResettingRef.current) return;
     setPatientCalledTime(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   }, [room.patientCalledAt]);
 
   useEffect(() => {
+    // Don't sync if we're resetting locally
+    if (isResettingRef.current) return;
     setPatientArrivedTime(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   }, [room.patientArrivedAt]);
 
@@ -252,7 +282,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
 
     onStepChange(newIndex);
-    setPhaseStartTime(new Date());
+    // phaseStartTime will be synced via room.phaseStartedAt from database
   };
 
   const handleNextStep = () => {
@@ -444,6 +474,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   stroke="rgba(255,255,255,0.04)" 
                   strokeWidth="5"
                   className="origin-center -rotate-90"
+                  style={{ transformOrigin: '50% 50%', transform: 'rotate(-90deg)' }}
                 />
 
                 {/* Záře vrstva - pulzující */}
@@ -454,7 +485,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   strokeWidth="12"
                   strokeLinecap="round"
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  className="origin-center -rotate-90"
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow)' }}
                   initial={false}
                   animate={{
                     strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
@@ -464,7 +495,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     strokeDasharray: { duration: 0.8, ease: 'easeOut' },
                     opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
                   }}
-                  style={{ filter: 'url(#mobile-glow)' }}
                 />
 
                 {/* Hlavní progress */}
@@ -475,7 +505,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   strokeWidth="5"
                   strokeLinecap="round"
                   strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  className="origin-center -rotate-90"
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
                   initial={false}
                   animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -696,15 +726,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     const now = new Date();
                     setPatientArrivedTime(now);
                     setShowPatientArrivedText(true);
-                    setTimeout(() => {
+                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
+                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                    setTimeout(async () => {
+                      isResettingRef.current = true;
                       setShowPatientArrivedText(false);
                       setPatientCalledTime(null);
                       setPatientArrivedTime(null);
-                      updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
                       setPatientCallElapsedTime('00:00');
+                      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                      // Allow sync again after DB update completes
+                      setTimeout(() => { isResettingRef.current = false; }, 500);
                     }, 5000);
-                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
-                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                   }
                 }}
                 disabled={!patientCalledTime || !!patientArrivedTime}
@@ -905,13 +938,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   duration_seconds: waitDuration,
                   metadata: { call_time: patientCalledTime.toISOString() },
                 });
-  setTimeout(() => {
-    setShowPatientArrivedText(false);
-    setPatientCalledTime(null);
-    setPatientArrivedTime(null);
-    updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-    setPatientCallElapsedTime('00:00');
-  }, 5000);
+                setTimeout(async () => {
+                  isResettingRef.current = true;
+                  setShowPatientArrivedText(false);
+                  setPatientCalledTime(null);
+                  setPatientArrivedTime(null);
+                  setPatientCallElapsedTime('00:00');
+                  await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                  // Allow sync again after DB update completes
+                  setTimeout(() => { isResettingRef.current = false; }, 500);
+                }, 5000);
               }
             }}
             disabled={!patientCalledTime || !!patientArrivedTime}

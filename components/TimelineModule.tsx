@@ -10,11 +10,11 @@ import {
 
 // ========== CONSTANTS ==========
 const TIMELINE_START_HOUR = 7;
-const TIMELINE_END_HOUR = 19;
-const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR;
+const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
+const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 200;
 const ROW_HEIGHT = 72;
-const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i);
+const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
@@ -44,7 +44,9 @@ const parseTimeToDate = (timeString: string): Date => {
 };
 
 const hourLabel = (hour: number): string => {
-  const displayHour = hour % 24;
+  // Convert timeline hour (0-24) to actual 24-hour format (7:00 to 7:00 next day)
+  const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+  const displayHour = actualHour % 24; // Display as 7-23, 0-6
   return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
 };
 
@@ -180,6 +182,30 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   // const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
 
   // Get remaining time for room
+  // Get elapsed time since phase started - real-time update across devices
+  const getElapsedTimeFromPhase = (room: OperatingRoom): string => {
+    if (room.currentStepIndex >= 6) return '';
+    if (!room.phaseStartedAt) return '';
+    
+    const phaseStartTime = new Date(room.phaseStartedAt);
+    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
+    
+    if (elapsedMs < 0) return '';
+    
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    // Format: mm:ss if < 1 hour, else hh:mm
+    if (hours === 0) {
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  };
+
+  // Get remaining time for room (for future use, commented out)
   const getRemainingTime = (room: OperatingRoom): string => {
     if (room.currentStepIndex >= 6) return '';
     if (!room.estimatedEndTime && !room.currentProcedure?.estimatedDuration) return '';
@@ -265,7 +291,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
             const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
             const statusName = dbStatus?.name || 'Status';
-            const remaining = getRemainingTime(room);
+            const elapsedTime = getElapsedTimeFromPhase(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
               <button
@@ -281,8 +307,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
                     {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
                   </div>
-                  {remaining && !isFree && (
-                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
+                  {elapsedTime && !isFree && (
+                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{elapsedTime}</span>
                   )}
                   {isFree && <span className="text-[10px] font-black text-emerald-400/70 uppercase tracking-wider">Volný</span>}
                 </div>
@@ -491,9 +517,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
-                const displayHour = hour % 24;
+                // Convert timeline hour (0-24) to actual 24-hour format (7-31 represents 7:00 to 7:00 next day)
+                const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+                const displayHour = actualHour % 24; // 7-23, 0-6 for next day hours
                 const isNightHour = displayHour >= 19 || displayHour < 7;
-                const isNextDay = isNextDayHour(hour);
+                const isNextDay = actualHour >= 24;
                 const isCurrentHour = displayHour === currentHour && !isLast;
                 
                 return (
@@ -574,7 +602,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               
               const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
-              const remainingTime = getRemainingTime(room);
+              const elapsedTime = getElapsedTimeFromPhase(room);
               
               // Get status from database
               const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
@@ -583,7 +611,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
-              // Use currentProcedure if available, otherwise generate fallback values for active rooms
+              // Use currentProcedure if available, otherwise use phaseStartedAt or current time as fallback
               const startParts = room.currentProcedure?.startTime?.split(':');
               let boxLeftPct = 0;
               let boxWidthPct = 0;
@@ -591,13 +619,24 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               let startDate: Date = new Date();
               let endDate: Date = new Date();
               
-              // Only show on timeline if there's a real procedure start time
+              // Show status bar if active - use procedure time, phaseStartedAt, or fallback to current time
               const hasRealData = startParts && startParts.length === 2;
+              const hasPhaseStart = room.phaseStartedAt;
+              const shouldShowBar = isActive; // Always show for active rooms
 
-              if (isActive && hasRealData) {
-                // Use actual procedure start time
-                startDate = new Date();
-                startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+              if (isActive) {
+                // Determine start time
+                if (hasRealData) {
+                  // Use actual procedure start time
+                  startDate = new Date();
+                  startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+                } else if (hasPhaseStart) {
+                  // Use phase started time as fallback
+                  startDate = new Date(room.phaseStartedAt);
+                } else {
+                  // Ultimate fallback: use a time 30 minutes ago
+                  startDate = new Date(currentTime.getTime() - 30 * 60 * 1000);
+                }
                 
                 boxLeftPct = getTimePercent(startDate);
                 
@@ -779,11 +818,9 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
                           Volny
                         </p>
-                      ) : remainingTime && stepIndex !== 0 ? (
-                        <p 
-                          className="text-[9px] font-medium text-white/50" 
-                        >
-                          {remainingTime}
+                      ) : elapsedTime && stepIndex !== 0 ? (
+                        <p className="text-[9px] font-mono font-bold" style={{ color: stepColor }}>
+                          {elapsedTime}
                         </p>
                       ) : (
                         <p className="text-[9px] font-medium text-white/25">{room.department}</p>
@@ -810,8 +847,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     })}
 
                     {/* Active operation bar - Premium Design with workflow step color */}
-                    {/* Active operation box - only shown if there's real procedure data */}
-              {isActive && hasRealData && boxWidthPct > 0 && (
+                    {/* Active operation box - shown for all active rooms */}
+                    {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
@@ -943,15 +980,16 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           )}
                           
                           {/* Remaining time badge */}
-                          {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
-                            <div 
-                              className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
+                          {boxWidthPct > 18 && elapsedTime && stepIndex !== 0 && (
+                            <span 
+                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-white pointer-events-none"
                               style={{ 
-                                background: 'rgba(0,0,0,0.2)'
+                                textShadow: `0 0 8px ${stepColor}80`,
+                                whiteSpace: 'nowrap'
                               }}
                             >
-                              {remainingTime}
-                            </div>
+                              {elapsedTime}
+                            </span>
                           )}
                         </div>
                       </motion.div>
