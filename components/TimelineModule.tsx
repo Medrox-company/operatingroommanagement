@@ -995,8 +995,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     }}
                   >
                     {elapsedTime}
-                            </div>
-                          )}
+                  </span>
+                )}
                         </div>
                       </motion.div>
                     )}
