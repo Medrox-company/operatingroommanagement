@@ -37,10 +37,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     .filter(s => s.is_active && !s.is_special)
     .sort((a, b) => a.order_index - b.order_index);
 
-  const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
-  const [elapsedTime, setElapsedTime] = useState('00:00');
+  // Initialize from database phaseStartedAt for real-time sync across devices
+  const [phaseStartTime, setPhaseStartTime] = useState(() => 
+    room.phaseStartedAt ? new Date(room.phaseStartedAt) : new Date()
+  );
+  const [elapsedTime, setElapsedTime] = useState('00:00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
-  const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
+  const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00:00');
   const [showEndTime, setShowEndTime] = useState(false);
   const endTimeTimeoutRef = useRef<number | null>(null);
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
@@ -59,10 +62,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       const diff = now.getTime() - phaseStartTime.getTime();
       
       const totalSeconds = Math.floor(diff / 1000);
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       
-      setElapsedTime(`${minutes}:${seconds}`);
+      setElapsedTime(`${hours}:${minutes}:${seconds}`);
     }, 1000);
     
     return () => clearInterval(timer);
@@ -70,7 +74,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   useEffect(() => {
     if (!isPaused) {
-      setPauseElapsedTime('00:00');
+      setPauseElapsedTime('00:00:00');
       return;
     }
 
@@ -79,9 +83,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
-      setPauseElapsedTime(`${minutes}:${seconds}`);
+      setPauseElapsedTime(`${hours}:${minutes}:${seconds}`);
     }, 1000);
 
     return () => clearInterval(timer);
@@ -118,6 +123,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   useEffect(() => {
     setIsPaused(room.isPaused || false);
   }, [room.isPaused]);
+
+  // Sync phaseStartTime from database for real-time consistency across devices
+  useEffect(() => {
+    if (room.phaseStartedAt) {
+      setPhaseStartTime(new Date(room.phaseStartedAt));
+    }
+  }, [room.phaseStartedAt]);
 
   useEffect(() => {
     // Don't sync if we're resetting locally
@@ -259,7 +271,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
 
     onStepChange(newIndex);
-    setPhaseStartTime(new Date());
+    // phaseStartTime will be synced via room.phaseStartedAt from database
   };
 
   const handleNextStep = () => {
