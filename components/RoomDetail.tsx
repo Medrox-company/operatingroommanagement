@@ -38,12 +38,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     .sort((a, b) => a.order_index - b.order_index);
 
   // Initialize from database phaseStartedAt for real-time sync across devices
-  const [phaseStartTime, setPhaseStartTime] = useState(() => 
-    room.phaseStartedAt ? new Date(room.phaseStartedAt) : new Date()
-  );
-  const [elapsedTime, setElapsedTime] = useState('00:00:00');
+  console.log('[v0] RoomDetail mounted for', room.name, '| phaseStartedAt from room:', room.phaseStartedAt);
+  const [phaseStartTime, setPhaseStartTime] = useState(() => {
+    const startTime = room.phaseStartedAt ? new Date(room.phaseStartedAt) : new Date();
+    console.log('[v0] Initial phaseStartTime set to:', startTime.toISOString(), '| from room.phaseStartedAt:', room.phaseStartedAt);
+    return startTime;
+  });
+  const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
-  const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00:00');
+  const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
   const [showEndTime, setShowEndTime] = useState(false);
   const endTimeTimeoutRef = useRef<number | null>(null);
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
@@ -62,11 +65,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       const diff = now.getTime() - phaseStartTime.getTime();
       
       const totalSeconds = Math.floor(diff / 1000);
-      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
       
-      setElapsedTime(`${hours}:${minutes}:${seconds}`);
+      // Format: mm:ss if < 1 hour, else hh:mm
+      if (hours === 0) {
+        setElapsedTime(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+      } else {
+        setElapsedTime(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+      }
     }, 1000);
     
     return () => clearInterval(timer);
@@ -74,7 +82,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   useEffect(() => {
     if (!isPaused) {
-      setPauseElapsedTime('00:00:00');
+      setPauseElapsedTime('00:00');
       return;
     }
 
@@ -83,10 +91,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
-      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
-      setPauseElapsedTime(`${hours}:${minutes}:${seconds}`);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      // Format: mm:ss if < 1 hour, else hh:mm
+      if (hours === 0) {
+        setPauseElapsedTime(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+      } else {
+        setPauseElapsedTime(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+      }
     }, 1000);
 
     return () => clearInterval(timer);
@@ -126,8 +140,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   // Sync phaseStartTime from database for real-time consistency across devices
   useEffect(() => {
+    console.log('[v0] phaseStartedAt sync effect - room.phaseStartedAt:', room.phaseStartedAt);
     if (room.phaseStartedAt) {
-      setPhaseStartTime(new Date(room.phaseStartedAt));
+      const newStartTime = new Date(room.phaseStartedAt);
+      console.log('[v0] Syncing phaseStartTime to:', newStartTime.toISOString());
+      setPhaseStartTime(newStartTime);
     }
   }, [room.phaseStartedAt]);
 
