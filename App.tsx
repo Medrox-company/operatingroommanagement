@@ -58,7 +58,9 @@ const AppContent: React.FC = () => {
       },
       // Granular update callback (for UPDATE - instant sync)
       (roomId, dbChanges) => {
+        console.log('[v0] Room update received:', roomId, 'changes:', dbChanges);
         const appChanges = transformSingleRoom(dbChanges);
+        console.log('[v0] Transformed changes:', appChanges);
         setRooms(prev => prev.map(room =>
           room.id === roomId ? { ...room, ...appChanges } : room
         ));
