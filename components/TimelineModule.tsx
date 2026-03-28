@@ -5,27 +5,27 @@ import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Zap, Timer, Check, Play
+  Settings, User, Sparkles, Info, ChevronRight, Loader2
 } from 'lucide-react';
 
 // ========== CONSTANTS ==========
 const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
-const ROOM_LABEL_WIDTH = 220;
-const ROW_HEIGHT = 80;
+const ROOM_LABEL_WIDTH = 200;
+const ROW_HEIGHT = 72;
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
-const ROOM_COLOR_ORDER = ['cyan', 'purple', 'pink', 'orange', 'green', 'blue', 'red'] as const;
+const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
-const ROOM_COLORS: Record<string, { bg: string; border: string; glow: string }> = {
-  cyan: { bg: '#06B6D4', border: '#22D3EE', glow: 'rgba(6,182,212,0.4)' },
-  purple: { bg: '#A855F7', border: '#C084FC', glow: 'rgba(168,85,247,0.4)' },
-  pink: { bg: '#EC4899', border: '#F472B6', glow: 'rgba(236,72,153,0.4)' },
-  orange: { bg: '#F97316', border: '#FB923C', glow: 'rgba(249,115,22,0.4)' },
-  green: { bg: '#10B981', border: '#34D399', glow: 'rgba(16,185,129,0.4)' },
-  blue: { bg: '#3B82F6', border: '#60A5FA', glow: 'rgba(59,130,246,0.4)' },
-  red: { bg: '#EF4444', border: '#F87171', glow: 'rgba(239,68,68,0.4)' },
+const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
+  orange: { bg: '#FB923C', border: '#FDBA74', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(251,146,60,0.2)' },
+  purple: { bg: '#C084FC', border: '#D8B4FE', stripe: '#E9D5FF', text: '#FFF', glow: 'rgba(192,132,252,0.2)' },
+  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.2)' },
+  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.2)' },
+  green: { bg: '#4ADE80', border: '#86EFAC', stripe: '#BBF7D0', text: '#FFF', glow: 'rgba(74,222,128,0.2)' },
+  red: { bg: '#F87171', border: '#FCA5A5', stripe: '#FECACA', text: '#FFF', glow: 'rgba(248,113,113,0.2)' },
+  cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
 // ========== HELPER FUNCTIONS ==========
@@ -44,8 +44,9 @@ const parseTimeToDate = (timeString: string): Date => {
 };
 
 const hourLabel = (hour: number): string => {
-  const actualHour = TIMELINE_START_HOUR + hour;
-  const displayHour = actualHour % 24;
+  // Convert timeline hour (0-24) to actual 24-hour format (7:00 to 7:00 next day)
+  const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+  const displayHour = actualHour % 24; // Display as 7-23, 0-6
   return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
 };
 
@@ -58,19 +59,33 @@ interface TimelineModuleProps {
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
   
+  // Get ONLY main workflow statuses (bez speciálních)
   const activeStatuses = workflowStatuses
     .filter(s => s.is_active && !s.is_special)
     .sort((a, b) => a.order_index - b.order_index);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
+  const [showLegend, setShowLegend] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  // Update current time every second
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
+  // useEffect(() => {
+  //   if (scrollContainerRef.current) {
+  //     const nowPercent = getTimePercent(currentTime);
+  //     const scrollWidth = scrollContainerRef.current.scrollWidth - ROOM_LABEL_WIDTH;
+  //     const containerWidth = scrollContainerRef.current.clientWidth - ROOM_LABEL_WIDTH;
+  //     const scrollPosition = (scrollWidth * nowPercent / 100) - (containerWidth / 2);
+  //     scrollContainerRef.current.scrollLeft = Math.max(0, scrollPosition);
+  //   }
+  // }, []);
 
   const nowPercent = getTimePercent(currentTime);
   const currentHour = currentTime.getHours();
@@ -82,13 +97,20 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     const cleaning = rooms.filter(r => r.currentStepIndex === 5 && !r.isEmergency && !r.isLocked).length;
     const free = rooms.filter(r => r.currentStepIndex >= 6 && !r.isEmergency && !r.isLocked).length;
     const completed = rooms.reduce((acc, r) => r.currentStepIndex >= 6 ? acc + r.operations24h : acc, 0);
+    const doctorsWorking = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex > 0).length;
+    const doctorsFree = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex >= 6).length;
+    const nursesWorking = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex > 0).length;
+    const nursesFree = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex >= 6).length;
     const emergencyCount = rooms.filter(r => r.isEmergency).length;
-    return { operations, cleaning, free, completed, emergencyCount };
+    return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
   }, [rooms]);
 
-  const sortedRooms = useMemo(() => [...rooms], [rooms]);
+  /* --- Rooms in original order - emergency/locked stay on their position --- */
+  const sortedRooms = useMemo(() => {
+    return [...rooms];
+  }, [rooms]);
 
-  /* --- ARO Overtime Tracking --- */
+  /* --- ARO Overtime Tracking - rooms that exceed working hours --- */
   const aroOvertimeRooms = useMemo(() => {
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const todayKey = dayKeys[currentTime.getDay()];
@@ -102,8 +124,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     }> = [];
     
     rooms.forEach(room => {
+      // Skip non-active, emergency, or locked rooms
       if (room.currentStepIndex >= 6 || room.isEmergency || room.isLocked) return;
       
+      // Get estimated end time
       let endTime: Date | null = null;
       if (room.estimatedEndTime) {
         endTime = new Date(room.estimatedEndTime);
@@ -114,14 +138,17 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       
       if (!endTime) return;
       
+      // Get room's working hours for today
       const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
       const todaySchedule = schedule[todayKey];
       
       if (!todaySchedule.enabled) return;
       
+      // Calculate working end time
       const workingEndTime = new Date(currentTime);
       workingEndTime.setHours(todaySchedule.endHour, todaySchedule.endMinute, 0, 0);
       
+      // Check if estimated end exceeds working hours
       if (endTime > workingEndTime) {
         const overtimeMinutes = Math.round((endTime.getTime() - workingEndTime.getTime()) / (1000 * 60));
         overtimeList.push({
@@ -134,18 +161,27 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       }
     });
     
+    // Sort by estimated end time (who finishes first has priority to be relieved first)
     return overtimeList.sort((a, b) => a.estimatedEndTime.getTime() - b.estimatedEndTime.getTime());
   }, [rooms, currentTime]);
   
+  // Get ARO position for a room (returns position number or null if not in overtime)
   const getAroPosition = (roomId: string): number | null => {
     const index = aroOvertimeRooms.findIndex(r => r.roomId === roomId);
     return index >= 0 ? index + 1 : null;
   };
   
+  // Get overtime info for a room
   const getOvertimeInfo = (roomId: string) => {
     return aroOvertimeRooms.find(r => r.roomId === roomId);
   };
 
+  // Calculate shift line positions (as percentage of 24-hour view from 7:00)
+  // These are no longer used but kept for reference
+  // const shiftStartPercent = 0;
+  // const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
+
+  // Get remaining time for room
   const getRemainingTime = (room: OperatingRoom): string => {
     if (room.currentStepIndex >= 6) return '';
     if (!room.estimatedEndTime && !room.currentProcedure?.estimatedDuration) return '';
@@ -166,9 +202,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
     
-    return `${hours}h ${minutes < 10 ? '0' : ''}${minutes}m`;
+    return `+${hours}h ${minutes < 10 ? '0' : ''}${minutes}m`;
   };
 
+  // Format date
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("cs-CZ", {
       weekday: "short",
@@ -177,10 +214,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     });
   };
 
+  // Count active rooms for numbering
   let activeRoomCounter = 0;
 
   return (
-    <div className="w-full h-full text-white overflow-hidden flex flex-col relative bg-[#030712]">
+    <div className="w-full h-full text-white overflow-hidden flex flex-col relative">
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -189,42 +227,41 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         )}
       </AnimatePresence>
 
-      {/* ======== MOBILE VIEW ======== */}
-      <div className="md:hidden w-full h-full overflow-y-auto flex flex-col bg-[#030712]">
-        {/* Mobile header */}
-        <div className="sticky top-0 z-40 bg-[#030712] border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-white">Prehled salu</h1>
-          <p className="text-base font-mono font-bold text-cyan-400 tabular-nums">
-            {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-          </p>
+      {/* ======== MOBILE VIEW (md:hidden) ======== */}
+      <div className="md:hidden w-full h-full overflow-y-auto flex flex-col">
+  {/* Mobile header */}
+  <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 px-4 py-4 flex items-center justify-between">
+  <div>
+  <h1 className="text-2xl font-black tracking-tighter uppercase">Přehled sálů</h1>
+  </div>
+          <div className="text-right">
+            <p className="text-[9px] uppercase tracking-wider text-white/30">Čas</p>
+            <p className="text-lg font-mono font-black text-white tabular-nums">
+              {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
         </div>
 
-        {/* Mobile stats */}
+        {/* Mobile stats row */}
         <div className="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar flex-shrink-0">
           {[
-            { label: 'Aktivni', value: stats.operations, color: '#10B981', icon: Play },
-            { label: 'Uklid', value: stats.cleaning, color: '#F97316', icon: Loader2 },
-            { label: 'Volne', value: stats.free, color: '#06B6D4', icon: Check },
-            { label: 'Dnes', value: stats.completed, color: '#8B5CF6', icon: Zap },
-            ...(stats.emergencyCount > 0 ? [{ label: 'Emergency', value: stats.emergencyCount, color: '#EF4444', icon: AlertTriangle }] : []),
+            { label: 'Aktivní', value: stats.operations, color: '#22C55E' },
+            { label: 'Úklid', value: stats.cleaning, color: '#F97316' },
+            { label: 'Volné', value: stats.free, color: '#22D3EE' },
+            { label: 'Dnes', value: stats.completed, color: '#6366F1' },
+            ...(stats.emergencyCount > 0 ? [{ label: 'Emergency', value: stats.emergencyCount, color: '#EF4444' }] : []),
           ].map(s => (
-            <div 
-              key={s.label} 
-              className="flex-shrink-0 rounded-xl px-3 py-2"
-              style={{ background: `${s.color}10`, border: `1px solid ${s.color}20` }}
-            >
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <s.icon className="w-3 h-3" style={{ color: s.color }} />
-                <p className="text-[8px] font-bold tracking-wider uppercase text-white/40">{s.label}</p>
-              </div>
-              <p className="text-xl font-bold text-white">{s.value}</p>
+            <div key={s.label} className="flex-shrink-0 rounded-xl px-3 py-2 border" style={{ background: `${s.color}10`, borderColor: `${s.color}30` }}>
+              <p className="text-[8px] font-black tracking-widest uppercase" style={{ color: s.color }}>{s.label}</p>
+              <p className="text-lg font-black text-white">{s.value}</p>
             </div>
           ))}
         </div>
 
-        {/* Mobile room cards */}
+        {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
-          {sortedRooms.map((room, idx) => {
+          {sortedRooms.map((room) => {
+            // Use active statuses from database
             const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
             const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
@@ -232,45 +269,44 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             const statusName = dbStatus?.name || 'Status';
             const remaining = getRemainingTime(room);
             const isFree = safeIndex === totalSteps - 1;
-            
             return (
               <button
                 key={room.id}
                 onClick={() => setSelectedRoom(room)}
-                className="w-full rounded-xl p-3 text-left bg-white/[0.02] border border-white/[0.06] active:bg-white/[0.04]"
+                className="w-full rounded-2xl p-4 border text-left transition-all active:scale-[0.99]"
+                style={{ background: `${color}08`, borderColor: `${color}25` }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-                    <p className="text-base font-bold text-white">{room.name}</p>
-                    {room.isEmergency && <span className="text-[7px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 uppercase">EMG</span>}
-                    {room.isLocked && <span className="text-[7px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 uppercase">LOCK</span>}
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}80` }} />
+                    <p className="text-base font-black text-white uppercase tracking-tight">{room.name}</p>
+                    {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
+                    {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
                   </div>
                   {remaining && !isFree && (
-                    <span className="text-xs font-mono font-semibold" style={{ color }}>{remaining}</span>
+                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
                   )}
+                  {isFree && <span className="text-[10px] font-black text-emerald-400/70 uppercase tracking-wider">Volný</span>}
                 </div>
-                
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color }}>{statusName}</p>
-                    <p className="text-[10px] text-white/35">{room.staff.doctor.name}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{statusName}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{room.staff.doctor.name}</p>
                   </div>
                   {room.estimatedEndTime && !isFree && (
                     <div className="text-right">
-                      <p className="text-[8px] uppercase tracking-wider text-white/30">Ukonceni</p>
-                      <p className="text-sm font-mono font-bold text-white">
+                      <p className="text-[8px] uppercase tracking-wider text-white/30">Ukončení</p>
+                      <p className="text-sm font-mono font-black text-white">
                         {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   )}
                 </div>
-                
-                {/* Progress bar */}
-                <div className="mt-2 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                {/* Mini progress bar */}
+                <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ backgroundColor: color, width: `${((safeIndex + 1) / totalSteps) * 100}%` }}
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${((safeIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
                   />
                 </div>
               </button>
@@ -279,536 +315,840 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         </div>
       </div>
 
-      {/* ======== DESKTOP VIEW ======== */}
-      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden relative">
+      {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
+      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
 
-        {/* Header - clean minimal style */}
-        <div className="flex-shrink-0 border-b border-white/[0.06] bg-[#030712]">
-          <div className="px-6 py-4">
-            {/* Stats Row */}
-            <div className="flex items-center gap-3 overflow-x-auto pb-1 hide-scrollbar">
-              <StatBox icon={Play} label="Aktivni" value={stats.operations} color="#10B981" />
-              <StatBox icon={Loader2} label="Uklid" value={stats.cleaning} color="#F97316" />
-              <StatBox icon={Check} label="Volne" value={stats.free} color="#06B6D4" />
-              <StatBox icon={Zap} label="Dnes" value={stats.completed} color="#8B5CF6" />
-              
-              {stats.emergencyCount > 0 && (
-                <StatBox icon={AlertTriangle} label="Emergency" value={stats.emergencyCount} color="#EF4444" />
-              )}
-              
-              {aroOvertimeRooms.length > 0 && (
-                <StatBox icon={Timer} label="ARO" value={aroOvertimeRooms.length} color="#EF4444" />
-              )}
+      {/* ======== Header with Title and Stats ======== */}
+      <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
+        <div className="px-8 md:pl-32 md:pr-10 py-6">
 
-              <div className="flex-1 min-w-4" />
 
-              {/* Date & Time - simplified */}
-              <div className="flex items-center gap-2">
-                <div className="rounded-xl px-4 py-2.5 bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-[9px] text-white/35 uppercase tracking-wider mb-0.5">Datum</p>
-                  <p className="text-sm font-semibold text-white/80">{formatDate(currentTime)}</p>
+          {/* Stats Boxes Row */}
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
+            <StatBox 
+              icon={Activity} 
+              label="Aktivni" 
+              value={`${stats.operations} operaci`} 
+              color="#22C55E" 
+            />
+            <StatBox 
+              icon={Loader2} 
+              label="Uklid" 
+              value={`${stats.cleaning} salu`} 
+              color="#F97316" 
+            />
+            <StatBox 
+              icon={Stethoscope} 
+              label="Volne" 
+              value={`${stats.free} salu`} 
+              color="#22D3EE" 
+            />
+            <StatBox 
+              icon={Shield} 
+              label="Dokonceno" 
+              value={`${stats.completed} dnes`} 
+              color="#22D3EE" 
+            />
+
+            {stats.emergencyCount > 0 && (
+              <StatBox 
+                icon={AlertTriangle} 
+                label="Emergency" 
+                value={`${stats.emergencyCount} salu`} 
+                color="#EF4444" 
+                glow 
+              />
+            )}
+
+            {/* ARO Overtime indicator */}
+            {aroOvertimeRooms.length > 0 && (
+              <div
+                className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.08) 100%)",
+                  border: "1px solid rgba(239, 68, 68, 0.35)",
+                  boxShadow: "0 0 20px rgba(239, 68, 68, 0.15)",
+                }}
+              >
+                <div
+                  className="absolute inset-0 opacity-50"
+                  style={{
+                    background: "radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.25) 0%, transparent 70%)",
+                  }}
+                />
+                <div className="relative flex items-center gap-3 h-full">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.15) 100%)",
+                      border: "1px solid rgba(239, 68, 68, 0.4)",
+                    }}
+                  >
+                    <Clock className="w-4 h-4 text-red-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PRESAH</p>
+                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} salu</p>
+                  </div>
                 </div>
-                
-                <div className="rounded-xl px-4 py-2.5 bg-cyan-500/[0.08] border border-cyan-500/20">
-                  <p className="text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Cas</p>
-                  <p className="text-sm font-mono font-bold text-cyan-400 tabular-nums">
-                    {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              </div>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1 min-w-4" />
+
+            {/* Date Box */}
+            <StatBox 
+              icon={CalendarDays} 
+              label="Datum" 
+              value={formatDate(currentTime)} 
+              color="#6366F1" 
+            />
+
+            {/* Time Box */}
+            <div
+              className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0.04) 100%)",
+                border: "1px solid rgba(168, 85, 247, 0.25)",
+                boxShadow: "0 0 20px rgba(168, 85, 247, 0.1)",
+              }}
+            >
+              <div
+                className="absolute inset-0 opacity-40"
+                style={{
+                  background: "radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.2) 0%, transparent 70%)",
+                }}
+              />
+              <div className="relative flex items-center gap-3 h-full">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(168, 85, 247, 0.1) 100%)",
+                    border: "1px solid rgba(168, 85, 247, 0.35)",
+                  }}
+                >
+                  <Clock className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Cas</p>
+                  <p className="text-sm font-semibold text-purple-400 leading-tight tabular-nums">
+                    {currentTime.toLocaleTimeString("cs-CZ", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
                   </p>
                 </div>
               </div>
             </div>
+
+            {/* Legend Button */}
+            <button 
+              onClick={() => setShowLegend(!showLegend)}
+              className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden hover:scale-[1.02] transition-transform"
+              style={{
+                background: "linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.03) 100%)",
+                border: "1px solid rgba(148, 163, 184, 0.2)",
+              }}
+            >
+              <div className="relative flex items-center gap-3 h-full">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    background: "rgba(148, 163, 184, 0.15)",
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                  }}
+                >
+                  <Settings className="w-4 h-4 text-slate-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Zobrazit</p>
+                  <p className="text-sm font-semibold text-slate-400 leading-tight">Legendu</p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Main Timeline Area */}
-        <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden px-6">
-          
-          {/* Timeline Header */}
-          <div className="flex flex-shrink-0 border-b border-white/[0.06] bg-white/[0.02]">
-            {/* Room label header */}
-            <div 
-              className="flex-shrink-0 flex items-center px-4 gap-2 border-r border-white/[0.06]" 
-              style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH }}
-            >
-              <Activity className="w-4 h-4 text-white/40" />
-              <span className="text-xs font-semibold tracking-wide uppercase text-white/40">Saly</span>
-            </div>
-            
-            {/* Time markers - simple */}
-            <div className="flex-1 overflow-hidden" ref={timelineRef}>
-              <div className="flex items-center h-10 relative w-full">
-                {TIME_MARKERS.map((hour, i) => {
-                  const isLast = i === TIME_MARKERS.length - 1;
-                  const widthPct = 100 / TIMELINE_HOURS;
-                  const leftPct = i * widthPct;
-                  const actualHour = TIMELINE_START_HOUR + hour;
-                  const displayHour = actualHour % 24;
-                  const isNightHour = displayHour >= 20 || displayHour < 6;
-                  const isNextDay = actualHour >= 24;
-                  const isCurrentHour = displayHour === currentHour && !isLast;
-                  
-                  return (
-                    <div 
-                      key={`h-${hour}-${i}`} 
-                      className="absolute top-0 h-full flex items-center" 
-                      style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 w-px ${isNightHour ? 'bg-white/[0.03]' : 'bg-white/[0.05]'}`} />
-                      
-                      {!isLast && (
-                        <span className={`ml-2 text-[10px] font-mono ${isCurrentHour ? 'text-cyan-400 font-bold' : isNightHour ? 'text-white/20' : 'text-white/35'}`}>
-                          {hourLabel(hour)}
-                          {isNextDay && <span className="text-cyan-400/60 ml-1 text-[8px]">+1</span>}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+      {/* ======== Main Timeline ======== */}
+      <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
+        
+        {/* Time Axis Header - Fixed */}
+        <div className="flex flex-shrink-0 border-b rounded-t-2xl" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.9)' }}>
+          {/* Room label header - fixed */}
+          <div 
+            className="flex-shrink-0 flex items-center px-4 gap-2 border-r" 
+            style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)' }}
+          >
+            <Activity className="w-4 h-4 text-emerald-400/60" />
+            <span className="text-[10px] font-bold tracking-wider uppercase text-white/40">OPERACNI SALY</span>
           </div>
-
-          {/* Room Rows */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar" ref={scrollContainerRef}>
-            <div className="relative w-full">
-              {/* Now indicator */}
-              <AnimatePresence>
-                {nowPercent >= 0 && nowPercent <= 100 && (
-                  <motion.div 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    className="absolute top-0 bottom-0 z-30 pointer-events-none" 
-                    style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
-                  >
-                    {/* Glow */}
-                    <div className="absolute -left-4 top-0 bottom-0 w-8 opacity-20 blur-lg" style={{ background: '#06B6D4' }} />
-                    {/* Line */}
-                    <div 
-                      className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                      style={{ background: 'linear-gradient(to bottom, #06B6D4 0%, #06B6D480 50%, #06B6D430 100%)' }} 
-                    />
-                    {/* Top dot */}
-                    <div className="absolute -left-1.5 -top-1 w-3 h-3 rounded-full bg-cyan-400" style={{ boxShadow: '0 0 10px #06B6D4' }} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Room Rows */}
-              {sortedRooms.map((room, roomIndex) => {
-                const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-                const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-                const isActive = stepIndex > 0;
-                const isFree = stepIndex === 0;
+          
+          {/* Time markers - no scroll, full width for 24h */}
+          <div className="flex-1 overflow-hidden" ref={timelineRef}>
+            <div className="flex items-center h-12 relative w-full">
+              {TIME_MARKERS.map((hour, i) => {
+                const isLast = i === TIME_MARKERS.length - 1;
+                const widthPct = 100 / TIMELINE_HOURS;
+                const leftPct = i * widthPct;
+                // Convert timeline hour (0-24) to actual 24-hour format (7-31 represents 7:00 to 7:00 next day)
+                const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+                const displayHour = actualHour % 24; // 7-23, 0-6 for next day hours
+                const isNightHour = displayHour >= 19 || displayHour < 7;
+                const isNextDay = actualHour >= 24;
+                const isCurrentHour = displayHour === currentHour && !isLast;
                 
-                if (isActive && !room.isEmergency && !room.isLocked) {
-                  activeRoomCounter++;
-                }
-                const currentRoomNumber = isActive && !room.isEmergency && !room.isLocked ? activeRoomCounter : 0;
-                
-                const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
-                const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.cyan;
-                const remainingTime = getRemainingTime(room);
-                
-                const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-                const stepColor = dbStatus?.color || '#6B7280';
-                const stepName = dbStatus?.name || 'Status';
-
-                // Calculate bar position
-                const startParts = room.currentProcedure?.startTime?.split(':');
-                let boxLeftPct = 0;
-                let boxWidthPct = 0;
-                let progressPct = 0;
-                let startDate: Date = new Date();
-                let endDate: Date = new Date();
-                
-                const hasRealData = startParts && startParts.length === 2;
-                const hasPhaseStart = room.phaseStartedAt;
-                const shouldShowBar = isActive;
-
-                if (isActive) {
-                  if (hasRealData) {
-                    startDate = new Date();
-                    startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
-                  } else if (hasPhaseStart) {
-                    startDate = new Date(room.phaseStartedAt);
-                  } else {
-                    startDate = new Date(currentTime.getTime() - 30 * 60 * 1000);
-                  }
-                  
-                  boxLeftPct = getTimePercent(startDate);
-                  
-                  if (room.estimatedEndTime) {
-                    endDate = new Date(room.estimatedEndTime);
-                  } else if (room.currentProcedure?.estimatedDuration) {
-                    endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
-                  } else {
-                    const fallbackDurations = [30, 20, 120, 60, 30, 45, 0];
-                    const duration = fallbackDurations[Math.min(stepIndex, 5)] || 90;
-                    endDate = new Date(startDate.getTime() + duration * 60 * 1000);
-                  }
-                  
-                  const boxRightPct = getTimePercent(endDate);
-                  if (boxRightPct < boxLeftPct) {
-                    boxWidthPct = Math.max(2, (100 - boxLeftPct) + boxRightPct);
-                  } else {
-                    boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
-                  }
-                  progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
-                }
-
-                /* Emergency row */
-                if (room.isEmergency) {
-                  return (
-                    <motion.div
-                      key={room.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: roomIndex * 0.02 }}
-                      className="flex items-stretch border-b cursor-pointer group"
-                      style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.03)' }}
-                      onClick={() => setSelectedRoom(room)}
-                    >
-                      <div 
-                        className="flex-shrink-0 flex items-center gap-3 px-5 border-r backdrop-blur-sm transition-colors group-hover:bg-red-500/5" 
-                        style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.05)', background: 'rgba(239,68,68,0.05)' }}
-                      >
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center border border-red-500/30">
-                            <AlertTriangle className="w-5 h-5 text-red-400" />
-                          </div>
-                          <motion.div 
-                            className="absolute inset-0 rounded-xl bg-red-500/20"
-                            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold tracking-tight text-red-300 truncate">{room.name}</p>
-                          <p className="text-[10px] font-bold text-red-400/60 uppercase tracking-wider">Emergency</p>
-                        </div>
-                      </div>
-                      <div className="relative flex-1 overflow-hidden bg-red-500/[0.02]">
-                        <div className="absolute inset-y-3 left-3 right-3 rounded-xl overflow-hidden" style={{ 
-                          background: 'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%)',
-                          border: '1px solid rgba(239,68,68,0.2)'
-                        }}>
-                          <div className="absolute inset-0 flex items-center justify-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-red-400/70" />
-                            <span className="text-xs font-bold tracking-[0.2em] text-red-400/80 uppercase">EMERGENCY</span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                }
-
-                /* Locked row */
-                if (room.isLocked) {
-                  return (
-                    <motion.div
-                      key={room.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: roomIndex * 0.02 }}
-                      className="flex items-stretch border-b cursor-pointer group"
-                      style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.03)' }}
-                      onClick={() => setSelectedRoom(room)}
-                    >
-                      <div 
-                        className="flex-shrink-0 flex items-center gap-3 px-5 border-r backdrop-blur-sm transition-colors group-hover:bg-amber-500/5" 
-                        style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.05)', background: 'rgba(251,191,36,0.03)' }}
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center border border-amber-500/25">
-                          <Lock className="w-5 h-5 text-amber-400/80" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold tracking-tight text-amber-300/80 truncate">{room.name}</p>
-                          <p className="text-[10px] font-bold text-amber-400/50 uppercase tracking-wider">Uzamceno</p>
-                        </div>
-                      </div>
-                      <div className="relative flex-1 overflow-hidden bg-amber-500/[0.02]">
-                        <div className="absolute inset-y-3 left-3 right-3 rounded-xl overflow-hidden" style={{ 
-                          background: 'linear-gradient(135deg, rgba(251,191,36,0.1) 0%, rgba(251,191,36,0.03) 100%)',
-                          border: '1px solid rgba(251,191,36,0.15)'
-                        }}>
-                          <div className="absolute inset-0 flex items-center justify-center gap-2">
-                            <Lock className="w-4 h-4 text-amber-400/60" />
-                            <span className="text-xs font-bold tracking-[0.2em] text-amber-400/70 uppercase">UZAMCENO</span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                }
-
-                /* Active / Free row */
                 return (
-                  <motion.div
-                    key={room.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
-                    className="flex items-stretch border-b group cursor-pointer transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.03)' }}
-                    onClick={() => setSelectedRoom(room)}
+                  <div 
+                    key={`h-${hour}-${i}`} 
+                    className="absolute top-0 h-full flex items-center" 
+                    style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                   >
-                    {/* Room Label */}
-                    <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-5 border-r backdrop-blur-sm transition-all group-hover:bg-white/[0.02]" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}
-                    >
-                      {/* ARO Badge or Room Number */}
-                      {(() => {
-                        const aroPosition = getAroPosition(room.id);
-                        const overtimeInfo = getOvertimeInfo(room.id);
-                        
-                        if (aroPosition && overtimeInfo) {
-                          return (
-                            <div 
-                              className="flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center"
-                              style={{ 
-                                background: 'linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(239,68,68,0.1) 100%)',
-                                border: '1px solid rgba(239,68,68,0.3)'
-                              }}
-                            >
-                              <span className="text-[8px] font-bold text-red-400/70">ARO</span>
-                              <span className="text-sm font-black text-white">{aroPosition}</span>
-                            </div>
-                          );
-                        }
-                        
-                        if (isActive) {
-                          return (
-                            <div 
-                              className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white"
-                              style={{ 
-                                background: `linear-gradient(135deg, ${stepColor}40 0%, ${stepColor}20 100%)`,
-                                border: `1px solid ${stepColor}50`,
-                                boxShadow: `0 0 15px ${stepColor}20`
-                              }}
-                            >
-                              {currentRoomNumber}
-                            </div>
-                          );
-                        }
-                        
-                        return (
-                          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-white/30" />
-                          </div>
-                        );
-                      })()}
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold tracking-tight text-white/80 truncate">{room.name}</p>
-                          {room.isSeptic && (
-                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400/70 uppercase border border-purple-500/20">SEP</span>
-                          )}
-                        </div>
-                        {isFree ? (
-                          <p className="text-[10px] font-medium text-emerald-400/60 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60" />
-                            Volny
-                          </p>
-                        ) : remainingTime ? (
-                          <p className="text-[10px] font-mono font-medium text-white/40">{remainingTime}</p>
-                        ) : (
-                          <p className="text-[10px] font-medium text-white/30">{room.department}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Timeline */}
-                    <div className="relative flex-1 overflow-hidden group-hover:bg-white/[0.01] transition-colors">
-                      {/* Hour grid */}
-                      {TIME_MARKERS.slice(0, -1).map((hour, i) => {
-                        const displayHour = (TIMELINE_START_HOUR + hour) % 24;
-                        const isNight = displayHour >= 20 || displayHour < 6;
-                        return (
-                          <div 
-                            key={i} 
-                            className="absolute top-0 bottom-0 w-px" 
-                            style={{ 
-                              left: `${(i / TIMELINE_HOURS) * 100}%`,
-                              background: isNight ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)'
-                            }} 
-                          />
-                        );
-                      })}
-
-                      {/* Active operation bar */}
-                      {isActive && shouldShowBar && boxWidthPct > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, scaleX: 0 }}
-                          animate={{ opacity: 1, scaleX: 1 }}
-                          transition={{ duration: 0.6, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                          className="absolute top-2 bottom-2 overflow-hidden rounded-xl"
-                          style={{ 
-                            left: `${Math.max(0, boxLeftPct)}%`, 
-                            width: `${boxWidthPct}%`,
-                            transformOrigin: 'left center'
-                          }}
-                        >
-                          {/* Outer glow */}
-                          <div 
-                            className="absolute -inset-1 rounded-xl blur-md opacity-30"
-                            style={{ background: stepColor }}
-                          />
-
-                          {/* Main container */}
-                          <div 
-                            className="absolute inset-0 rounded-xl overflow-hidden"
-                            style={{ 
-                              background: `linear-gradient(135deg, ${stepColor}25 0%, ${stepColor}10 100%)`,
-                              border: `1px solid ${stepColor}40`
-                            }}
-                          >
-                            {/* Progress fill */}
-                            <div 
-                              className="absolute inset-0 rounded-xl transition-all duration-300"
-                              style={{ 
-                                clipPath: `inset(0 ${100 - progressPct}% 0 0)`,
-                                background: `linear-gradient(135deg, ${stepColor}80 0%, ${stepColor}60 100%)`
-                              }}
-                            />
-                            
-                            {/* Shine effect */}
-                            <div 
-                              className="absolute inset-x-0 top-0 h-1/3 opacity-30"
-                              style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)' }}
-                            />
-                          </div>
-
-                          {/* Progress indicator */}
-                          {progressPct > 0 && progressPct < 100 && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-0.5 -translate-x-1/2"
-                              style={{ left: `${progressPct}%`, background: 'rgba(255,255,255,0.8)' }}
-                            />
-                          )}
-
-                          {/* Content */}
-                          <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
-                            {boxWidthPct > 8 && (
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[11px] font-bold text-white/90 truncate">{stepName}</p>
-                                <p className="text-[9px] text-white/50 truncate">{room.staff?.doctor?.name}</p>
-                              </div>
-                            )}
-                            {boxWidthPct > 15 && remainingTime && (
-                              <div className="flex-shrink-0 px-2 py-1 rounded-md text-[9px] font-mono font-bold text-white/80 bg-black/30">
-                                {remainingTime}
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Free room */}
-                      {isFree && (
+                    <div className={`w-px h-full ${isNightHour ? 'bg-white/[0.04]' : 'bg-white/[0.08]'}`} />
+                    {!isLast && (
+                      isCurrentHour ? (
                         <div 
-                          className="absolute inset-y-3 left-3 right-3 rounded-xl flex items-center justify-center"
+                          className="ml-2 px-2 py-0.5 rounded-md"
                           style={{ 
-                            background: 'rgba(255,255,255,0.02)',
-                            border: '1px dashed rgba(255,255,255,0.08)'
+                            background: 'rgba(94,234,212,0.9)', 
+                            boxShadow: '0 1px 6px rgba(94,234,212,0.25)' 
                           }}
                         >
-                          <p className="text-[11px] font-medium text-white/25">{stepName}</p>
+                          <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
+                            {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
+                          </span>
                         </div>
-                      )}
-
-                      {/* Working hours end indicator */}
-                      {(() => {
-                        const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
-                        const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
-                        const todayKey = dayKeys[currentTime.getDay()];
-                        const todaySchedule = schedule[todayKey];
-                        
-                        if (!todaySchedule.enabled) return null;
-                        
-                        const endHour = todaySchedule.endHour;
-                        const endMinute = todaySchedule.endMinute;
-                        let minutesFromTimelineStart = (endHour * 60 + endMinute) - (TIMELINE_START_HOUR * 60);
-                        if (minutesFromTimelineStart < 0) minutesFromTimelineStart += 24 * 60;
-                        const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
-                        
-                        return (
-                          <div 
-                            className="absolute top-0 bottom-0 w-0.5 z-20"
-                            style={{ 
-                              left: `${endPercent}%`,
-                              background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
-                            }}
-                          >
-                            <div 
-                              className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap"
-                              style={{ 
-                                background: 'rgba(249,115,22,0.2)',
-                                border: '1px solid rgba(249,115,22,0.4)',
-                                color: '#F97316'
-                              }}
-                            >
-                              {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </motion.div>
+                      ) : (
+                        <div className="ml-2 flex items-center gap-1">
+                          <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                            {hourLabel(hour)}
+                          </span>
+                          {isNextDay && (
+                            <span className="text-[8px] font-bold text-cyan-400/60 px-1 py-0.5 rounded bg-cyan-400/10">
+                              +1
+                            </span>
+                          )}
+                        </div>
+                      )
+                    )}
+                  </div>
                 );
               })}
             </div>
           </div>
         </div>
 
-        {/* Footer Legend */}
-        <footer className="relative z-10 flex items-center justify-between gap-4 px-8 py-4 border-t flex-shrink-0 backdrop-blur-xl bg-black/20" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center gap-3 flex-wrap">
-            <LegendItem icon={<div className="w-3 h-3 rounded-full bg-cyan-400" style={{ boxShadow: '0 0 8px #06B6D4' }} />} label="Aktualni cas" />
-            <LegendItem icon={<div className="w-4 h-0.5 bg-orange-500" />} label="Konec smeny" />
-            <LegendItem icon={<div className="w-5 h-5 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center text-[8px] font-black text-red-400">1</div>} label="ARO poradi" />
+        {/* Room Rows - No scroll, full width */}
+        <div className="flex-1 min-h-0 overflow-hidden" ref={scrollContainerRef}>
+          <div className="relative w-full h-full">
+            {/* Now indicator - subtle cyan line */}
+            <AnimatePresence>
+              {nowPercent >= 0 && nowPercent <= 100 && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  className="absolute top-0 bottom-0 z-30 pointer-events-none" 
+                  style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
+                >
+                  <div className="absolute -left-3 top-0 bottom-0 w-6 opacity-10 blur-md" style={{ background: '#5EEAD4' }} />
+                  <div 
+                    className="absolute -left-px top-0 bottom-0 w-[1.5px]" 
+                    style={{ background: 'linear-gradient(to bottom, #5EEAD4 0%, #5EEAD480 50%, #5EEAD430 100%)' }} 
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Room Rows */}
+            {sortedRooms.map((room, roomIndex) => {
+              // Get current workflow step info from database first
+              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+              const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+              const isActive = stepIndex > 0; // index 0 = "Sál připraven"
+              const isCleaning = stepIndex === totalSteps - 2; // Second to last step
+              const isFree = stepIndex === 0;
+              
+              // Only increment counter for active (non-free) rooms
+              if (isActive && !room.isEmergency && !room.isLocked) {
+                activeRoomCounter++;
+              }
+              const currentRoomNumber = isActive && !room.isEmergency && !room.isLocked ? activeRoomCounter : 0;
+              
+              const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
+              const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
+              const remainingTime = getRemainingTime(room);
+              
+              // Get status from database
+              const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
+              const stepColor = dbStatus?.color || '#6B7280';
+              const stepName = dbStatus?.name || 'Status';
+              const StepIcon = Activity; // Default icon
+
+              // Calculate operation bar position
+              // Use currentProcedure if available, otherwise use phaseStartedAt or current time as fallback
+              const startParts = room.currentProcedure?.startTime?.split(':');
+              let boxLeftPct = 0;
+              let boxWidthPct = 0;
+              let progressPct = 0;
+              let startDate: Date = new Date();
+              let endDate: Date = new Date();
+              
+              // Show status bar if active - use procedure time, phaseStartedAt, or fallback to current time
+              const hasRealData = startParts && startParts.length === 2;
+              const hasPhaseStart = room.phaseStartedAt;
+              const shouldShowBar = isActive; // Always show for active rooms
+
+              if (isActive) {
+                // Determine start time
+                if (hasRealData) {
+                  // Use actual procedure start time
+                  startDate = new Date();
+                  startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+                } else if (hasPhaseStart) {
+                  // Use phase started time as fallback
+                  startDate = new Date(room.phaseStartedAt);
+                } else {
+                  // Ultimate fallback: use a time 30 minutes ago
+                  startDate = new Date(currentTime.getTime() - 30 * 60 * 1000);
+                }
+                
+                boxLeftPct = getTimePercent(startDate);
+                
+                if (room.estimatedEndTime) {
+                  endDate = new Date(room.estimatedEndTime);
+                } else if (room.currentProcedure?.estimatedDuration) {
+                  endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                } else {
+                  // Fallback: generate duration based on step (longer for surgery steps)
+                  const fallbackDurations = [30, 20, 120, 60, 30, 45, 0]; // minutes per step
+                  const duration = fallbackDurations[Math.min(stepIndex, 5)] || 90;
+                  endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+                }
+                
+                const boxRightPct = getTimePercent(endDate);
+                // Handle cases where operation spans past midnight (end is before start on timeline)
+                if (boxRightPct < boxLeftPct) {
+                  // Operation ends next day - extend to end of timeline
+                  boxWidthPct = Math.max(2, (100 - boxLeftPct) + boxRightPct);
+                } else {
+                  boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                }
+                progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
+              }
+
+              /* Emergency row */
+              if (room.isEmergency) {
+                return (
+                  <div
+                    key={room.id}
+                    className="flex items-stretch border-b cursor-pointer transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    onClick={() => setSelectedRoom(room)}
+                  >
+                    <div 
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                    >
+                      <div className="w-6 h-6 rounded-full bg-red-400/15 flex items-center justify-center border border-red-400/30">
+                        <AlertTriangle className="w-3 h-3 text-red-300/70" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium tracking-tight text-red-300/80 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-red-300/50">EMERGENCY</p>
+                      </div>
+                    </div>
+                    {/* Emergency timeline box - softer */}
+                    <div className="relative flex-1 overflow-hidden">
+                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
+                        {/* Main background - softer */}
+                        <div 
+                          className="absolute inset-0 rounded-xl"
+                          style={{ 
+                            background: 'linear-gradient(135deg, rgba(252, 165, 165, 0.15) 0%, rgba(252, 165, 165, 0.08) 100%)',
+                            border: '1px solid rgba(252, 165, 165, 0.3)'
+                          }}
+                        />
+                        {/* Content */}
+                        <div className="absolute inset-0 flex items-center justify-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-300/70" />
+                          <span className="text-xs font-bold tracking-[0.15em] text-red-300/80 uppercase select-none">
+                            EMERGENCY
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              /* Locked row */
+              if (room.isLocked) {
+                return (
+                  <div
+                    key={room.id}
+                    className="flex items-stretch border-b cursor-pointer transition-colors"
+                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    onClick={() => setSelectedRoom(room)}
+                  >
+                    <div 
+                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                    >
+                      <div className="w-6 h-6 rounded-full bg-amber-400/15 flex items-center justify-center border border-amber-400/25">
+                        <Lock className="w-3 h-3 text-amber-300/60" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium tracking-tight text-amber-300/70 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-amber-300/50">UZAMCENO</p>
+                      </div>
+                    </div>
+                    {/* Locked timeline box - softer */}
+                    <div className="relative flex-1 overflow-hidden">
+                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
+                        {/* Main background - softer */}
+                        <div 
+                          className="absolute inset-0 rounded-xl"
+                          style={{ 
+                            background: 'linear-gradient(135deg, rgba(253, 224, 71, 0.12) 0%, rgba(253, 224, 71, 0.06) 100%)',
+                            border: '1px solid rgba(253, 224, 71, 0.25)'
+                          }}
+                        />
+                        {/* Content */}
+                        <div className="absolute inset-0 flex items-center justify-center gap-2">
+                          <Lock className="w-3.5 h-3.5 text-amber-300/60" />
+                          <span className="text-xs font-bold tracking-[0.15em] text-amber-300/70 uppercase select-none">
+                            UZAMCENO
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              /* Active / Free row */
+              return (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
+                  className="flex items-stretch border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
+                  style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                  onClick={() => setSelectedRoom(room)}
+                >
+                  {/* Room Label - Sticky */}
+                  <div 
+                    className="flex-shrink-0 flex items-center gap-2 px-3 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
+                    style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                  >
+                    {/* ARO Overtime Badge - softer */}
+                    {(() => {
+                      const aroPosition = getAroPosition(room.id);
+                      const overtimeInfo = getOvertimeInfo(room.id);
+                      
+                      if (aroPosition && overtimeInfo) {
+                        return (
+                          <div 
+                            className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                            style={{ 
+                              background: 'rgba(252, 165, 165, 0.1)',
+                              border: '1px solid rgba(252, 165, 165, 0.2)'
+                            }}
+                          >
+                            <span className="text-[7px] font-medium text-red-300/60 tracking-wider">ARO</span>
+                            <span className="text-xs font-bold text-white/80">{aroPosition}</span>
+                            <span className="text-[6px] font-normal text-red-300/50">+{overtimeInfo.overtimeMinutes}m</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                    
+                    {/* Numbered badge for active rooms - softer */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {isActive && !getAroPosition(room.id) && (
+                        <div 
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white/90"
+                          style={{ background: `${roomColor.bg}90`, boxShadow: `0 1px 4px ${roomColor.glow}` }}
+                        >
+                          {currentRoomNumber}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Room info */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium tracking-tight text-white/70 truncate">
+                          {room.name}
+                        </p>
+                        {room.isSeptic && (
+                          <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-purple-400/10 text-purple-300/60 uppercase flex-shrink-0">SEPTIKA</span>
+                        )}
+                      </div>
+                      {isFree ? (
+                        <p className="text-[9px] font-medium text-white/25 flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
+                          Volny
+                        </p>
+                      ) : remainingTime && stepIndex !== 0 ? (
+                        <p 
+                          className="text-[9px] font-medium text-white/50" 
+                        >
+                          {remainingTime}
+                        </p>
+                      ) : (
+                        <p className="text-[9px] font-medium text-white/25">{room.department}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="relative flex-1 overflow-hidden">
+                    {/* Hour grid lines */}
+                    {TIME_MARKERS.slice(0, -1).map((hour, i) => {
+                      const displayHour = hour % 24;
+                      const isNight = displayHour >= 19 || displayHour < 7;
+                      return (
+                        <div 
+                          key={i} 
+                          className="absolute top-0 bottom-0 w-px" 
+                          style={{ 
+                            left: `${(i / TIMELINE_HOURS) * 100}%`,
+                            background: isNight ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)'
+                          }} 
+                        />
+                      );
+                    })}
+
+                    {/* Active operation bar - Premium Design with workflow step color */}
+                    {/* Active operation box - shown for all active rooms */}
+                    {isActive && shouldShowBar && boxWidthPct > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, scaleX: 0 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        transition={{ duration: 0.6, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl group/bar"
+                        style={{ 
+                          left: `${Math.max(0, boxLeftPct)}%`, 
+                          width: `${boxWidthPct}%`,
+                          transformOrigin: 'left center'
+                        }}
+                      >
+                        {/* Outer glow effect - subtle */}
+                        <div 
+                          className="absolute -inset-0.5 rounded-xl blur-sm opacity-20"
+                          style={{ background: stepColor }}
+                        />
+
+                        {/* Main container with gradient border - softer */}
+                        <div 
+                          className="absolute inset-0 rounded-xl"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${stepColor}18 0%, ${stepColor}08 100%)`,
+                            border: `1px solid ${stepColor}35`,
+                            boxShadow: `0 2px 8px ${stepColor}15`
+                          }}
+                        />
+
+                        {/* Top highlight reflection - subtle */}
+                        <div 
+                          className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl opacity-15"
+                          style={{ 
+                            background: `linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)`
+                          }}
+                        />
+
+                        {/* Radial glow from top - subtle */}
+                        <div 
+                          className="absolute inset-0 opacity-30"
+                          style={{ 
+                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${stepColor}25 0%, transparent 70%)`
+                          }}
+                        />
+
+                        {/* Completed section - cleaner, softer */}
+                        <div 
+                          className="absolute inset-0 rounded-xl overflow-hidden" 
+                          style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
+                        >
+                          {/* Solid progress fill - softer gradient */}
+                          <div 
+                            className="absolute inset-0"
+                            style={{ 
+                              background: `linear-gradient(135deg, ${stepColor}90 0%, ${stepColor}70 100%)`
+                            }}
+                          />
+                          
+                          {/* Subtle top highlight only */}
+                          <div 
+                            className="absolute inset-x-0 top-0 h-1/3 opacity-20" 
+                            style={{ 
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)'
+                            }} 
+                          />
+                        </div>
+
+                        {/* Status segment - single colored bar that changes with current step */}
+                        {(() => {
+                          // Get the current step color from database or fallback
+                          const segmentColor = stepColor || '#6B7280';
+                          
+                          return (
+                            <motion.div
+                              key={`segment-${stepIndex}`}
+                              className="absolute inset-y-0 rounded-xl transition-colors"
+                              style={{
+                                left: 0,
+                                width: '100%',
+                                background: segmentColor,
+                                opacity: 0.75
+                              }}
+                              animate={{ 
+                                background: segmentColor,
+                                opacity: 0.75
+                              }}
+                              transition={{ duration: 0.3 }}
+                              title={stepName}
+                            />
+                          );
+                        })()}
+
+                        {/* Current position indicator - subtle line */}
+                        {progressPct > 0 && progressPct < 100 && (
+                          <>
+                            {/* Main line - simple */}
+                            <div 
+                              className="absolute top-0 bottom-0 w-[1.5px] -translate-x-1/2"
+                              style={{ 
+                                left: `${progressPct}%`,
+                                background: 'rgba(255,255,255,0.8)'
+                              }}
+                            />
+                            {/* Small top indicator */}
+                            <div 
+                              className="absolute -top-0.5 w-1.5 h-1.5 rounded-full -translate-x-1/2"
+                              style={{ 
+                                left: `${progressPct}%`,
+                                background: 'rgba(255,255,255,0.9)'
+                              }}
+                            />
+                          </>
+                        )}
+
+                        {/* Content overlay - title and status */}
+                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
+                          {/* Step title and status */}
+                          {boxWidthPct > 8 && (
+                            <div className="min-w-0 flex-1">
+                              <p 
+                                className="text-[10px] font-medium text-white/90 truncate"
+                              >
+                                {stepName}
+                              </p>
+                              <p 
+                                className="text-[8px] font-normal text-white/50 truncate"
+                              >
+                                {room.staff?.doctor?.name || ''}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Remaining time badge */}
+                          {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
+                            <div 
+                              className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
+                              style={{ 
+                                background: 'rgba(0,0,0,0.2)'
+                              }}
+                            >
+                              {remainingTime}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Free room indicator - softer */}
+                    {isFree && (
+                      <div 
+                        className="absolute inset-y-2 left-2 right-2 rounded-lg flex items-center justify-center overflow-hidden"
+                        style={{ 
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px dashed rgba(255,255,255,0.08)'
+                        }}
+                      >
+                        <div className="text-center">
+                          <p className="text-[10px] font-medium text-white/30">{stepName}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Room-specific end of working hours indicator */}
+                    {(() => {
+                      const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+                      const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+                      const todayKey = dayKeys[currentTime.getDay()];
+                      const todaySchedule = schedule[todayKey];
+                      
+                      if (!todaySchedule.enabled) return null;
+                      
+                      // Calculate end time as minutes from timeline start (7:00)
+                      const endHour = todaySchedule.endHour;
+                      const endMinute = todaySchedule.endMinute;
+                      let minutesFromTimelineStart = (endHour * 60 + endMinute) - (TIMELINE_START_HOUR * 60);
+                      // If before 7:00, it's next day portion
+                      if (minutesFromTimelineStart < 0) {
+                        minutesFromTimelineStart += 24 * 60;
+                      }
+                      const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
+                      const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
+                      
+                      return (
+                        <div 
+                          className="absolute top-0 bottom-0 w-0.5 z-20"
+                          style={{ 
+                            left: `${endPercent}%`,
+                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
+                          }}
+                        >
+                          {/* End time label */}
+                          <div 
+                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
+                            style={{ 
+                              background: 'rgba(249, 115, 22, 0.2)',
+                              border: '1px solid rgba(249, 115, 22, 0.4)',
+                              color: '#F97316'
+                            }}
+                          >
+                            {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
-            <Info className="w-3.5 h-3.5 text-white/30" />
-            <span className="text-[10px] text-white/40">Kliknete pro detail</span>
-          </div>
-        </footer>
+        </div>
       </div>
+
+      {/* ======== Legend Footer ======== */}
+      <footer className="relative z-10 flex items-center justify-between gap-4 px-8 md:pl-32 md:pr-10 py-4 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="w-4 h-4 rounded bg-white/10" />
+            <span className="text-[10px] font-medium text-white/40">Dokoncene</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #3B82F6 0px, #3B82F6 4px, transparent 4px, transparent 8px)' }} />
+            <span className="text-[10px] font-medium text-white/40">Zacatek smeny</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #F97316 0px, #F97316 4px, transparent 4px, transparent 8px)' }} />
+            <span className="text-[10px] font-medium text-white/40">Konec smeny</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(249, 115, 22, 0.05)', border: '1px solid rgba(249, 115, 22, 0.15)' }}
+          >
+            <div className="w-0.5 h-4 rounded-full" style={{ background: '#F97316' }} />
+            <span className="text-[10px] font-medium text-orange-400/60">Konec prac. doby salu</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="w-4 h-4 rounded-full border-2 border-red-500/50" />
+            <span className="text-[10px] font-medium text-white/40">Presah</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+          >
+            <div 
+              className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-red-400"
+              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+            >
+              1
+            </div>
+            <span className="text-[10px] font-medium text-red-400/70">ARO poradi stridani</span>
+          </div>
+        </div>
+        <div 
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <Info className="w-3.5 h-3.5 text-white/30" />
+          <span className="text-[10px] font-medium text-white/30">Kliknete na sal pro zobrazeni detailu</span>
+        </div>
+      </footer>
+      </div>{/* end desktop wrapper */}
     </div>
   );
 }
 
-// Glass Stat Box Component
+// Helper Component - Stat Box
 interface StatBoxProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  value: string | number;
+  value: string;
   color: string;
+  glow?: boolean;
 }
 
-const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color }) => (
-  <div 
-    className="flex-shrink-0 rounded-xl px-3 py-2 flex items-center gap-2"
-    style={{ background: `${color}10`, border: `1px solid ${color}20` }}
+const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
+  <div
+    className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'shadow-lg' : ''}`}
+    style={{
+      background: glow
+        ? `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`
+        : `linear-gradient(135deg, ${color}12 0%, ${color}04 100%)`,
+      border: glow ? `2px solid ${color}50` : `1px solid ${color}25`,
+      boxShadow: glow ? `0 0 30px ${color}30` : 'none',
+    }}
   >
-    <Icon className="w-4 h-4" style={{ color }} />
-    <div>
-      <p className="text-[8px] text-white/35 uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-bold text-white">{value}</p>
+    {glow && (
+      <div
+        className="absolute inset-0 opacity-50"
+        style={{
+          background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
+        }}
+      />
+    )}
+    <div className="relative flex items-center gap-3 h-full">
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        style={{
+          background: `${color}20`,
+          border: `1px solid ${color}40`,
+        }}
+      >
+        <Icon className="w-4 h-4" style={{ color }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-semibold text-white leading-tight">{value}</p>
+      </div>
     </div>
   </div>
 );
 
-// Legend Item Component
-const LegendItem: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
-    {icon}
-    <span className="text-[10px] font-medium text-white/40">{label}</span>
-  </div>
-);
-
-// Room Detail Popup Component
+// Helper Component - Room Detail Popup
 interface RoomDetailPopupProps {
   room: OperatingRoom;
   onClose: () => void;
@@ -830,7 +1170,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
@@ -838,43 +1178,56 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-2xl max-w-sm w-full overflow-hidden bg-[#0a0a0f] border border-white/[0.08]"
+        className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 max-w-md w-full overflow-hidden"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+        <div
+          className="px-6 py-4 border-b border-white/10 flex items-center justify-between"
+          style={{
+            background: `linear-gradient(135deg, ${step.color}15 0%, ${step.color}05 100%)`,
+          }}
+        >
           <div>
-            <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Sal</p>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium">Sál</p>
             <p className="text-xl font-bold text-white">{room.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-lg bg-white/[0.05] flex items-center justify-center hover:bg-white/[0.1] transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
           >
-            <X className="w-4 h-4 text-white/50" />
+            <X className="w-4 h-4 text-white/60" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-6 py-4 space-y-4">
           {/* Status */}
           <div>
-            <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Status</p>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Status</p>
             <div
-              className="px-3 py-2.5 rounded-lg flex items-center gap-2.5"
-              style={{ background: `${step.color}15`, border: `1px solid ${step.color}30` }}
+              className="px-3 py-2 rounded-lg flex items-center gap-2"
+              style={{
+                background: `${step.color}20`,
+                border: `1px solid ${step.color}40`,
+              }}
             >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: step.color }} />
-              <span style={{ color: step.color }} className="font-semibold text-sm">{step.title}</span>
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{ background: step.color }}
+              />
+              <span style={{ color: step.color }} className="font-semibold text-sm">
+                {step.title}
+              </span>
             </div>
           </div>
 
           {/* Doctor */}
           {room.staff?.doctor && (
             <div>
-              <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Lekar</p>
+              <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Lékař</p>
               <div className="flex items-center gap-2 text-white/80">
-                <User className="w-4 h-4 text-white/40" />
-                <span className="text-sm font-medium">{room.staff.doctor.name}</span>
+                <User className="w-4 h-4" />
+                <span className="text-sm">{room.staff.doctor.name}</span>
               </div>
             </div>
           )}
@@ -882,11 +1235,14 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           {/* Time */}
           {room.estimatedEndTime && (
             <div>
-              <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Ukonceni</p>
+              <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Ukončení</p>
               <div className="flex items-center gap-2 text-white/80">
-                <Clock className="w-4 h-4 text-white/40" />
-                <span className="text-base font-mono font-bold">
-                  {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                <Clock className="w-4 h-4" />
+                <span className="text-sm font-mono">
+                  {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </span>
               </div>
             </div>
