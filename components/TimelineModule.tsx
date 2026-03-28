@@ -76,6 +76,16 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Sync selectedRoom with rooms array when rooms update (for real-time sync)
+  useEffect(() => {
+    if (selectedRoomId) {
+      const updatedRoom = rooms.find(r => r.id === selectedRoomId);
+      if (updatedRoom) {
+        setSelectedRoom(updatedRoom);
+      }
+    }
+  }, [rooms, selectedRoomId]);
+
   // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
   // useEffect(() => {
   //   if (scrollContainerRef.current) {
@@ -247,7 +257,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       {/* Room Detail Popup */}
       <AnimatePresence>
         {selectedRoom && (
-          <RoomDetailPopup room={selectedRoom} onClose={() => setSelectedRoom(null)} currentTime={currentTime} />
+          <RoomDetailPopup room={selectedRoom} onClose={() => { setSelectedRoom(null); setSelectedRoomId(null); }} currentTime={currentTime} />
         )}
       </AnimatePresence>
 
@@ -296,7 +306,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             return (
               <button
                 key={room.id}
-                onClick={() => setSelectedRoom(room)}
+                onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
                 className="w-full rounded-2xl p-4 border text-left transition-all active:scale-[0.99]"
                 style={{ background: `${color}08`, borderColor: `${color}25` }}
               >
@@ -669,7 +679,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
                     style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
-                    onClick={() => setSelectedRoom(room)}
+                    onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
                   >
                     <div 
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
@@ -714,7 +724,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
                     style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
-                    onClick={() => setSelectedRoom(room)}
+                    onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
                   >
                     <div 
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
@@ -761,7 +771,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
                   className="flex items-stretch border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
                   style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
-                  onClick={() => setSelectedRoom(room)}
+                  onClick={() => { setSelectedRoom(room); setSelectedRoomId(room.id); }}
                 >
                   {/* Room Label - Sticky */}
                   <div 

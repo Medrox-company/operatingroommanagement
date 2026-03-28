@@ -186,8 +186,6 @@ export function subscribeToOperatingRooms(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'operating_rooms' },
       (payload: { eventType: string; new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
-        console.log('[DB] Realtime payload received:', payload.eventType, payload.new);
-        
         if (payload.eventType === 'UPDATE' && payload.new && onRoomUpdate) {
           // Granular update - only update the changed room
           const newRecord = payload.new as unknown as DBOperatingRoom;
@@ -198,12 +196,9 @@ export function subscribeToOperatingRooms(
         }
       }
     )
-    .subscribe((status) => {
-      console.log('[DB] Realtime subscription status:', status);
-    });
+    .subscribe();
 
   return () => {
-    console.log('[DB] Unsubscribing from realtime');
     channel.unsubscribe();
   };
 }
