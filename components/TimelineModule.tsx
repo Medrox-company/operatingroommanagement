@@ -827,10 +827,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     }}
                   >
                     {elapsedTime}
-                        </p>
-                      ) : (
-                        <p className="text-[9px] font-medium text-white/25">{room.department}</p>
-                      )}
+                  </span>
+                ) : (
+                  <p className="text-[9px] font-medium text-white/25">{room.department}</p>
+                )}
                     </div>
                   </div>
 
