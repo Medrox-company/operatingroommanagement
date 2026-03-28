@@ -323,378 +323,271 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT (md:hidden) ========== */}
-      <div className="md:hidden w-full h-full overflow-y-auto">
-        {/* Elegantní tmavé pozadí s jemným gradientem */}
-        <div className="fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-[#08080c]" />
-          {/* Subtilní radiální gradient podle barvy statusu */}
-          <motion.div 
-            className="absolute inset-0"
-            animate={{ opacity: [0.06, 0.12, 0.06] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ background: `radial-gradient(ellipse at 50% 25%, ${activeColor}40, transparent 65%)` }} 
+      {/* ========== MOBILE LAYOUT - Ultra Minimalist Medical Design ========== */}
+      <div className="md:hidden w-full h-full overflow-y-auto bg-gradient-to-b from-slate-50 to-white">
+        {/* Teal gradient header area */}
+        <div className="relative">
+          {/* Gradient header background */}
+          <div 
+            className="absolute inset-0 h-80"
+            style={{ 
+              background: room.isEmergency 
+                ? 'linear-gradient(180deg, #DC2626 0%, #EF4444 50%, #FCA5A5 100%)'
+                : room.isLocked
+                ? 'linear-gradient(180deg, #D97706 0%, #FBBF24 50%, #FDE68A 100%)'
+                : `linear-gradient(180deg, ${activeColor} 0%, ${activeColor}CC 50%, ${activeColor}40 100%)`
+            }}
           />
-          {/* Hygiene overlay */}
-          {room.isEnhancedHygiene && (
-            <motion.div 
-              className="absolute inset-0 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(239,68,68,0.15) 100%)' }} 
-            />
-          )}
+          
+          {/* Header navigation */}
+          <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-3">
+            <motion.button 
+              onClick={onClose}
+              className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center"
+              whileTap={{ scale: 0.95 }}
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </motion.button>
+            
+            <h1 className="text-lg font-bold text-white tracking-wide">{room.name}</h1>
+            
+            <motion.button 
+              onClick={onClose}
+              className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center"
+              whileTap={{ scale: 0.95 }}
+            >
+              <X className="w-5 h-5 text-white" />
+            </motion.button>
+          </div>
+
+          {/* Status display in header */}
+          <div className="relative z-10 px-6 pt-6 pb-16 text-center">
+            <motion.div
+              key={currentStep?.name}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-3"
+            >
+              <h2 className="text-3xl font-black text-white tracking-tight leading-tight">
+                {room.isEmergency ? 'EMERGENCY' : room.isLocked ? 'Uzamceno' : currentStep?.name || 'Status'}
+              </h2>
+            </motion.div>
+            
+            {/* Timer */}
+            <motion.p 
+              className="text-5xl font-mono font-black text-white/90 tracking-tighter"
+              key={elapsedTime}
+            >
+              {elapsedTime}
+            </motion.p>
+            <p className="text-xs font-medium text-white/60 mt-1 uppercase tracking-widest">Cas ve fazi</p>
+          </div>
         </div>
 
-        <div className="relative z-10 flex flex-col h-full min-h-screen pb-20">
-          {/* Header s animací */}
-          <motion.div 
-            className="flex items-center justify-between px-5 pt-5 pb-2"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-          >
-            <motion.button 
-              onClick={onClose} 
-              className="p-2.5 -ml-2 rounded-full bg-white/[0.03] backdrop-blur-sm"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ChevronLeft className="w-6 h-6 text-white/70" />
-            </motion.button>
-            <motion.h1 
-              className="text-3xl font-black text-white tracking-tight"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              {room.name}
-            </motion.h1>
-            <motion.button 
-              onClick={onClose} 
-              className="p-2.5 -mr-2 rounded-full bg-white/[0.03] backdrop-blur-sm"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <X className="w-5 h-5 text-white/50" />
-            </motion.button>
-          </motion.div>
-
-          {/* Hlavní kruhová sekce */}
-          <motion.div 
-            className="flex flex-col items-center px-6 pt-4"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-          >
-            {/* Velký progress kruh */}
-            <div className="relative w-80 h-80 mb-4">
-              {/* SVG s kruhovým progressem */}
-              <svg
-                className="absolute inset-0 w-full h-full"
-                viewBox="0 0 100 100"
-                style={{ overflow: 'visible' }}
-              >
-                <defs>
-                  {/* Kruhová záře - SVG filter */}
-                  <filter id="mobile-glow" x="-100%" y="-100%" width="300%" height="300%">
-                    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur1" />
-                    <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur2" />
-                    <feMerge>
-                      <feMergeNode in="blur2" />
-                      <feMergeNode in="blur1" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                {/* Pozadí kruhu - jemný track */}
-                <circle 
-                  cx="50" cy="50" r="44" 
-                  fill="none" 
-                  stroke="rgba(255,255,255,0.04)" 
-                  strokeWidth="5"
-                  className="origin-center -rotate-90"
-                  style={{ transformOrigin: '50% 50%', transform: 'rotate(-90deg)' }}
-                />
-
-                {/* Záře vrstva - pulzující */}
-                <motion.circle
-                  cx="50" cy="50" r="44"
-                  fill="none"
-                  stroke={activeColor}
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow)' }}
-                  initial={false}
-                  animate={{
-                    strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
-                    opacity: [0.2, 0.4, 0.2],
-                  }}
-                  transition={{
-                    strokeDasharray: { duration: 0.8, ease: 'easeOut' },
-                    opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
-                  }}
-                />
-
-                {/* Hlavní progress */}
-                <motion.circle
-                  cx="50" cy="50" r="44"
-                  fill="none"
-                  stroke={activeColor}
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
-                  initial={false}
-                  animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                />
-              </svg>
-
-              {/* Obsah v kruhu */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-8">
-                <motion.p 
-                  className="text-[2rem] font-black text-white text-center leading-[1.1] tracking-tight"
-                  key={currentStep?.name}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  {room.isEmergency
-                    ? 'Stav\nnouze'
-                    : room.isLocked
-                    ? 'Sál\nuzamčen'
-                    : (currentStep?.name
-                        ? currentStep.name.split(' ').join('\n')
-                        : 'Status')}
-                </motion.p>
+        {/* White content card overlapping header */}
+        <div className="relative z-20 -mt-8 mx-4 bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden">
+          {/* Stats row */}
+          <div className="grid grid-cols-3 divide-x divide-slate-100 px-2 py-5 border-b border-slate-100">
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${activeColor}15` }}>
+                <Activity className="w-5 h-5" style={{ color: activeColor }} />
               </div>
+              <span className="text-lg font-bold text-slate-800">{safeStepIndex + 1}/{validStepCount}</span>
+              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Faze</span>
             </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${activeColor}15` }}>
+                <Stethoscope className="w-5 h-5" style={{ color: activeColor }} />
+              </div>
+              <span className="text-sm font-bold text-slate-800 text-center leading-tight line-clamp-1 px-1">{room.staff.doctor.name.split(' ').pop()}</span>
+              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Lekar</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${activeColor}15` }}>
+                <Heart className="w-5 h-5" style={{ color: activeColor }} />
+              </div>
+              <span className="text-sm font-bold text-slate-800 text-center leading-tight line-clamp-1 px-1">{room.staff.nurse.name.split(' ').pop()}</span>
+              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Sestra</span>
+            </div>
+          </div>
 
-            {/* Čas pod kruhem */}
-            <motion.div 
-              className="text-center mb-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <motion.p 
-                className="text-5xl font-mono font-black tracking-tighter"
-                style={{ color: activeColor }}
-                key={elapsedTime}
-                initial={{ scale: 1.02 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                {elapsedTime}
-              </motion.p>
-              <p className="text-[11px] font-semibold text-white/30 mt-1 uppercase tracking-[0.2em]">Čas ve fázi</p>
-            </motion.div>
-
-            {/* Elegantní step indikátory */}
-            <div className="flex items-center justify-center gap-2.5">
+          {/* Step indicators */}
+          <div className="px-6 py-4 border-b border-slate-100">
+            <div className="flex items-center justify-center gap-2">
               {activeDbStatuses.map((status, idx) => (
                 <motion.div
                   key={status.id}
-                  className="rounded-full"
-                  initial={false}
-                  animate={{ 
-                    width: idx === safeStepIndex ? 28 : 10, 
-                    height: 10,
-                    backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.1)',
-                    boxShadow: idx === safeStepIndex ? `0 0 12px ${activeColor}60` : 'none'
+                  className="rounded-full transition-all"
+                  style={{
+                    width: idx === safeStepIndex ? 24 : 8,
+                    height: 8,
+                    backgroundColor: idx <= safeStepIndex ? activeColor : '#E2E8F0',
                   }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
                 />
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Spacer */}
-          <div className="flex-1 min-h-6" />
-
-          {/* Spodní sekce */}
-          <motion.div 
-            className="px-5 pb-5 space-y-3"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            {/* Hlavní CTA tlačítko */}
-            {!isInteractionBlocked && (
-              <motion.button
-                onClick={handleNextStep}
-                className="w-full rounded-3xl py-7 font-bold text-xl tracking-wide relative overflow-hidden"
-                style={{ backgroundColor: activeColor, color: '#000' }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {/* Animated shine effect */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                  initial={{ x: '-100%' }}
-                  animate={{ x: '200%' }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, ease: 'easeInOut' }}
-                />
-                <span className="relative z-10">{isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}</span>
-              </motion.button>
-            )}
-
-            {/* Ukončení karta */}
-            <motion.div 
-              className="rounded-3xl px-6 py-5 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06] flex items-center justify-between"
-              whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-            >
+          {/* End time section */}
+          <div className="px-6 py-5 border-b border-slate-100">
+            <div className="flex items-center justify-between">
               <motion.button
                 onClick={handleDecreaseTime}
                 disabled={isInteractionBlocked || !estimatedEndTime}
-                className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30"
-                whileTap={{ scale: 0.92 }}
+                className="w-12 h-12 rounded-2xl border-2 border-slate-200 flex items-center justify-center disabled:opacity-30 active:bg-slate-50"
+                whileTap={{ scale: 0.95 }}
               >
-                <Minus className="w-6 h-6 text-white/80" />
+                <Minus className="w-5 h-5 text-slate-600" />
               </motion.button>
-              <div className="flex flex-col items-center">
-                <p className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.15em] mb-1">Ukončení</p>
-                <p className="text-2xl font-mono font-bold text-white leading-none">
+              
+              <div className="text-center">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Ocekavane ukonceni</p>
+                <p className="text-2xl font-mono font-bold text-slate-800">
                   {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
               </div>
+              
               <motion.button
                 onClick={handleIncreaseTime}
                 disabled={isInteractionBlocked}
-                className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30"
-                whileTap={{ scale: 0.92 }}
+                className="w-12 h-12 rounded-2xl border-2 border-slate-200 flex items-center justify-center disabled:opacity-30 active:bg-slate-50"
+                whileTap={{ scale: 0.95 }}
               >
-                <Plus className="w-6 h-6 text-white/80" />
+                <Plus className="w-5 h-5 text-slate-600" />
               </motion.button>
-            </motion.div>
-
-            {/* Personál - Lékař a Sestra */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <motion.div 
-                className="rounded-2xl p-4 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
-                whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Stethoscope className="w-4 h-4 text-white/30" />
-                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Lékař</p>
-                </div>
-                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.doctor.name}</p>
-              </motion.div>
-
-              <motion.div 
-                className="rounded-2xl p-4 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
-                whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Heart className="w-4 h-4 text-white/30" />
-                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Sestra</p>
-                </div>
-                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.nurse.name}</p>
-              </motion.div>
             </div>
+          </div>
 
-            {/* Akční tlačítka */}
-            <div className="grid grid-cols-4 gap-2">
-              {/* Pauza */}
-              <motion.button
-                onClick={async () => {
-                  const newPaused = !isPaused;
-                  setIsPaused(newPaused);
-                  await updateOperatingRoom(room.id, { is_paused: newPaused });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                }}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm"
-                style={{ 
-                  backgroundColor: isPaused ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${isPaused ? 'rgba(6,182,212,0.25)' : 'rgba(255,255,255,0.05)'}`
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isPaused ? <Play className="w-6 h-6 text-cyan-400" /> : <Pause className="w-6 h-6 text-white/40" />}
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">{isPaused ? 'Play' : 'Pauza'}</span>
-              </motion.button>
+          {/* Quick action buttons */}
+          <div className="grid grid-cols-4 gap-3 p-4">
+            {/* Pause */}
+            <motion.button
+              onClick={async () => {
+                const newPaused = !isPaused;
+                setIsPaused(newPaused);
+                await updateOperatingRoom(room.id, { is_paused: newPaused });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+              }}
+              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors"
+              style={{ 
+                backgroundColor: isPaused ? `${activeColor}15` : '#F8FAFC',
+                border: `1.5px solid ${isPaused ? activeColor : '#E2E8F0'}`
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isPaused ? <Play className="w-5 h-5" style={{ color: activeColor }} /> : <Pause className="w-5 h-5 text-slate-400" />}
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{isPaused ? 'Play' : 'Pauza'}</span>
+            </motion.button>
 
-              {/* Hygiena */}
-              <motion.button
-                onClick={async () => {
-                  const newH = !room.isEnhancedHygiene;
-                  onEnhancedHygieneToggle?.(newH);
-                  await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                }}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm"
-                style={{ 
-                  backgroundColor: room.isEnhancedHygiene ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${room.isEnhancedHygiene ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.05)'}`
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <ShieldAlert className={`w-6 h-6 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40'}`} />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Hygiena</span>
-              </motion.button>
+            {/* Hygiene */}
+            <motion.button
+              onClick={async () => {
+                const newH = !room.isEnhancedHygiene;
+                onEnhancedHygieneToggle?.(newH);
+                await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+              }}
+              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors"
+              style={{ 
+                backgroundColor: room.isEnhancedHygiene ? '#FEF3C7' : '#F8FAFC',
+                border: `1.5px solid ${room.isEnhancedHygiene ? '#F59E0B' : '#E2E8F0'}`
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-amber-500' : 'text-slate-400'}`} />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Hygiena</span>
+            </motion.button>
 
-              {/* Volat */}
-              <motion.button
-                onClick={async () => {
-                  if (!patientCalledTime) {
-                    const now = new Date();
-                    setPatientCalledTime(now);
-                    setShowPatientCalledText(true);
-                    setTimeout(() => setShowPatientCalledText(false), 5000);
-                    await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
-                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                  }
-                }}
-                disabled={!!patientCalledTime}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm disabled:opacity-60"
-                style={{ 
-                  backgroundColor: patientCalledTime ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${patientCalledTime ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.05)'}`
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Phone className={`w-6 h-6 ${patientCalledTime ? 'text-green-400' : 'text-white/40'}`} />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
-              </motion.button>
+            {/* Call patient */}
+            <motion.button
+              onClick={async () => {
+                if (!patientCalledTime) {
+                  const now = new Date();
+                  setPatientCalledTime(now);
+                  setShowPatientCalledText(true);
+                  setTimeout(() => setShowPatientCalledText(false), 5000);
+                  await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                }
+              }}
+              disabled={!!patientCalledTime}
+              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors disabled:opacity-60"
+              style={{ 
+                backgroundColor: patientCalledTime ? '#DCFCE7' : '#F8FAFC',
+                border: `1.5px solid ${patientCalledTime ? '#22C55E' : '#E2E8F0'}`
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-500' : 'text-slate-400'}`} />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
+            </motion.button>
 
-              {/* Příjezd */}
-              <motion.button
-                onClick={async () => {
-                  if (patientCalledTime && !patientArrivedTime) {
-                    const now = new Date();
-                    setPatientArrivedTime(now);
-                    setShowPatientArrivedText(true);
-                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
-                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                    setTimeout(async () => {
-                      isResettingRef.current = true;
-                      setShowPatientArrivedText(false);
-                      setPatientCalledTime(null);
-                      setPatientArrivedTime(null);
-                      setPatientCallElapsedTime('00:00');
-                      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                      // Allow sync again after DB update completes
-                      setTimeout(() => { isResettingRef.current = false; }, 500);
-                    }, 5000);
-                  }
-                }}
-                disabled={!patientCalledTime || !!patientArrivedTime}
-                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm disabled:opacity-30"
-                style={{ 
-                  backgroundColor: patientArrivedTime ? 'rgba(168,85,247,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${patientArrivedTime ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.05)'}`
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <BedDouble className={`w-6 h-6 ${patientArrivedTime ? 'text-purple-400' : 'text-white/40'}`} />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Příjezd</span>
-              </motion.button>
+            {/* Patient arrived */}
+            <motion.button
+              onClick={async () => {
+                if (patientCalledTime && !patientArrivedTime) {
+                  const now = new Date();
+                  setPatientArrivedTime(now);
+                  setShowPatientArrivedText(true);
+                  await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  setTimeout(async () => {
+                    isResettingRef.current = true;
+                    setShowPatientArrivedText(false);
+                    setPatientCalledTime(null);
+                    setPatientArrivedTime(null);
+                    setPatientCallElapsedTime('00:00');
+                    await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                    setTimeout(() => { isResettingRef.current = false; }, 500);
+                  }, 5000);
+                }
+              }}
+              disabled={!patientCalledTime || !!patientArrivedTime}
+              className="flex flex-col items-center gap-2 py-3 rounded-2xl transition-colors disabled:opacity-30"
+              style={{ 
+                backgroundColor: patientArrivedTime ? '#F3E8FF' : '#F8FAFC',
+                border: `1.5px solid ${patientArrivedTime ? '#A855F7' : '#E2E8F0'}`
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <BedDouble className={`w-5 h-5 ${patientArrivedTime ? 'text-purple-500' : 'text-slate-400'}`} />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Prijezd</span>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Main CTA Button */}
+        {!isInteractionBlocked && (
+          <div className="px-4 pt-5 pb-8">
+            <motion.button
+              onClick={handleNextStep}
+              className="w-full rounded-2xl py-5 font-bold text-lg text-white shadow-lg relative overflow-hidden"
+              style={{ 
+                backgroundColor: activeColor,
+                boxShadow: `0 10px 40px ${activeColor}40`
+              }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isFinalStep ? 'Novy cyklus' : 'Spustit dalsi fazi'}
+            </motion.button>
+          </div>
+        )}
+
+        {/* Pause indicator overlay */}
+        {isPaused && (
+          <motion.div 
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-lg"
+            style={{ backgroundColor: activeColor }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center gap-3">
+              <Pause className="w-4 h-4 text-white" />
+              <span className="text-sm font-bold text-white">{pauseElapsedTime}</span>
             </div>
           </motion.div>
-        </div>
+        )}
       </div>
 
       {/* ========== DESKTOP LAYOUT (hidden on mobile) ========== */}
