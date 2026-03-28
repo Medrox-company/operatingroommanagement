@@ -180,22 +180,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   let activeRoomCounter = 0;
 
   return (
-    <div className="w-full h-full text-white overflow-hidden flex flex-col relative">
-      {/* Cosmic background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0" style={{ 
-          background: 'linear-gradient(135deg, #0f0a1e 0%, #1a1333 25%, #0d1829 50%, #0a0f1a 75%, #0f0a1e 100%)'
-        }} />
-        {/* Nebula effect */}
-        <div className="absolute inset-0 opacity-30" style={{
-          background: 'radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.08) 0%, transparent 60%)'
-        }} />
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-          backgroundSize: '50px 50px'
-        }} />
-      </div>
+    <div className="w-full h-full text-white overflow-hidden flex flex-col relative bg-[#030712]">
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -205,17 +190,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       </AnimatePresence>
 
       {/* ======== MOBILE VIEW ======== */}
-      <div className="md:hidden w-full h-full overflow-y-auto flex flex-col relative z-10">
+      <div className="md:hidden w-full h-full overflow-y-auto flex flex-col bg-[#030712]">
         {/* Mobile header */}
-        <div className="sticky top-0 z-40 backdrop-blur-xl bg-black/40 border-b border-white/5 px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black tracking-tighter uppercase bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">Prehled salu</h1>
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-mono font-black text-cyan-400 tabular-nums">
-              {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
+        <div className="sticky top-0 z-40 bg-[#030712] border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-white">Prehled salu</h1>
+          <p className="text-base font-mono font-bold text-cyan-400 tabular-nums">
+            {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+          </p>
         </div>
 
         {/* Mobile stats */}
@@ -227,27 +208,22 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             { label: 'Dnes', value: stats.completed, color: '#8B5CF6', icon: Zap },
             ...(stats.emergencyCount > 0 ? [{ label: 'Emergency', value: stats.emergencyCount, color: '#EF4444', icon: AlertTriangle }] : []),
           ].map(s => (
-            <motion.div 
+            <div 
               key={s.label} 
-              className="flex-shrink-0 rounded-2xl px-4 py-3 backdrop-blur-xl"
-              style={{ 
-                background: `linear-gradient(135deg, ${s.color}15 0%, ${s.color}05 100%)`,
-                border: `1px solid ${s.color}30`,
-                boxShadow: `0 0 20px ${s.color}10`
-              }}
-              whileHover={{ scale: 1.02 }}
+              className="flex-shrink-0 rounded-xl px-3 py-2"
+              style={{ background: `${s.color}10`, border: `1px solid ${s.color}20` }}
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1.5 mb-0.5">
                 <s.icon className="w-3 h-3" style={{ color: s.color }} />
-                <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: `${s.color}90` }}>{s.label}</p>
+                <p className="text-[8px] font-bold tracking-wider uppercase text-white/40">{s.label}</p>
               </div>
-              <p className="text-2xl font-black text-white">{s.value}</p>
-            </motion.div>
+              <p className="text-xl font-bold text-white">{s.value}</p>
+            </div>
           ))}
         </div>
 
         {/* Mobile room cards */}
-        <div className="flex flex-col gap-3 px-4 pb-6">
+        <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room, idx) => {
             const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
@@ -258,122 +234,86 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             const isFree = safeIndex === totalSteps - 1;
             
             return (
-              <motion.button
+              <button
                 key={room.id}
                 onClick={() => setSelectedRoom(room)}
-                className="w-full rounded-2xl p-4 text-left backdrop-blur-xl relative overflow-hidden group"
-                style={{ 
-                  background: `linear-gradient(135deg, ${color}12 0%, ${color}05 100%)`,
-                  border: `1px solid ${color}25`
-                }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                whileTap={{ scale: 0.98 }}
+                className="w-full rounded-xl p-3 text-left bg-white/[0.02] border border-white/[0.06] active:bg-white/[0.04]"
               >
-                {/* Glow effect */}
-                <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" style={{
-                  background: `linear-gradient(135deg, ${color}20 0%, transparent 50%)`,
-                }} />
-                
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      {/* Status dot with glow */}
-                      <div className="relative">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 12px ${color}` }} />
-                        <motion.div 
-                          className="absolute inset-0 rounded-full"
-                          style={{ backgroundColor: color }}
-                          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                      </div>
-                      <p className="text-lg font-black text-white uppercase tracking-tight">{room.name}</p>
-                      {room.isEmergency && <span className="text-[8px] font-black px-2 py-1 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
-                      {room.isLocked && <span className="text-[8px] font-black px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMCEN</span>}
-                    </div>
-                    {remaining && !isFree && (
-                      <span className="text-sm font-mono font-bold" style={{ color }}>{remaining}</span>
-                    )}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                    <p className="text-base font-bold text-white">{room.name}</p>
+                    {room.isEmergency && <span className="text-[7px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 uppercase">EMG</span>}
+                    {room.isLocked && <span className="text-[7px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 uppercase">LOCK</span>}
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color }}>{statusName}</p>
-                      <p className="text-[11px] text-white/40">{room.staff.doctor.name}</p>
-                    </div>
-                    {room.estimatedEndTime && !isFree && (
-                      <div className="text-right">
-                        <p className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Ukonceni</p>
-                        <p className="text-base font-mono font-black text-white">
-                          {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Progress bar with glow */}
-                  <div className="mt-4 h-1.5 rounded-full bg-white/5 overflow-hidden relative">
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}` }}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${((safeIndex + 1) / totalSteps) * 100}%` }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                    />
-                  </div>
+                  {remaining && !isFree && (
+                    <span className="text-xs font-mono font-semibold" style={{ color }}>{remaining}</span>
+                  )}
                 </div>
-              </motion.button>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color }}>{statusName}</p>
+                    <p className="text-[10px] text-white/35">{room.staff.doctor.name}</p>
+                  </div>
+                  {room.estimatedEndTime && !isFree && (
+                    <div className="text-right">
+                      <p className="text-[8px] uppercase tracking-wider text-white/30">Ukonceni</p>
+                      <p className="text-sm font-mono font-bold text-white">
+                        {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Progress bar */}
+                <div className="mt-2 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ backgroundColor: color, width: `${((safeIndex + 1) / totalSteps) * 100}%` }}
+                  />
+                </div>
+              </button>
             );
           })}
         </div>
       </div>
 
       {/* ======== DESKTOP VIEW ======== */}
-      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden relative z-10">
+      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden relative">
 
-        {/* Header with glassmorphism */}
-        <div className="sticky top-0 z-40 backdrop-blur-2xl bg-black/30 border-b border-white/5 flex-shrink-0">
-          <div className="px-8 py-5">
-            {/* Stats Row - Glassmorphism cards */}
-            <div className="flex items-center gap-4 overflow-x-auto pb-1 hide-scrollbar">
-              <GlassStatBox icon={Play} label="Aktivni operace" value={stats.operations} color="#10B981" />
-              <GlassStatBox icon={Loader2} label="Uklid" value={stats.cleaning} color="#F97316" />
-              <GlassStatBox icon={Check} label="Volne saly" value={stats.free} color="#06B6D4" />
-              <GlassStatBox icon={Zap} label="Dokonceno dnes" value={stats.completed} color="#8B5CF6" />
+        {/* Header - clean minimal style */}
+        <div className="flex-shrink-0 border-b border-white/[0.06] bg-[#030712]">
+          <div className="px-6 py-4">
+            {/* Stats Row */}
+            <div className="flex items-center gap-3 overflow-x-auto pb-1 hide-scrollbar">
+              <StatBox icon={Play} label="Aktivni" value={stats.operations} color="#10B981" />
+              <StatBox icon={Loader2} label="Uklid" value={stats.cleaning} color="#F97316" />
+              <StatBox icon={Check} label="Volne" value={stats.free} color="#06B6D4" />
+              <StatBox icon={Zap} label="Dnes" value={stats.completed} color="#8B5CF6" />
               
               {stats.emergencyCount > 0 && (
-                <GlassStatBox icon={AlertTriangle} label="Emergency" value={stats.emergencyCount} color="#EF4444" glow />
+                <StatBox icon={AlertTriangle} label="Emergency" value={stats.emergencyCount} color="#EF4444" />
               )}
               
               {aroOvertimeRooms.length > 0 && (
-                <GlassStatBox icon={Timer} label="ARO presah" value={aroOvertimeRooms.length} color="#EF4444" glow />
+                <StatBox icon={Timer} label="ARO" value={aroOvertimeRooms.length} color="#EF4444" />
               )}
 
-              <div className="flex-1 min-w-8" />
+              <div className="flex-1 min-w-4" />
 
-              {/* Date & Time */}
-              <div className="flex items-center gap-3">
-                <GlassStatBox icon={CalendarDays} label="Datum" value={formatDate(currentTime)} color="#8B5CF6" isText />
+              {/* Date & Time - simplified */}
+              <div className="flex items-center gap-2">
+                <div className="rounded-xl px-4 py-2.5 bg-white/[0.03] border border-white/[0.06]">
+                  <p className="text-[9px] text-white/35 uppercase tracking-wider mb-0.5">Datum</p>
+                  <p className="text-sm font-semibold text-white/80">{formatDate(currentTime)}</p>
+                </div>
                 
-                {/* Current time with animated glow */}
-                <div className="relative">
-                  <motion.div 
-                    className="absolute -inset-1 rounded-2xl blur-md"
-                    style={{ background: 'linear-gradient(135deg, #06B6D4, #8B5CF6)' }}
-                    animate={{ opacity: [0.3, 0.5, 0.3] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <div className="relative rounded-2xl px-5 py-3 backdrop-blur-xl" style={{
-                    background: 'linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(139,92,246,0.15) 100%)',
-                    border: '1px solid rgba(255,255,255,0.1)'
-                  }}>
-                    <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Aktualni cas</p>
-                    <p className="text-xl font-mono font-black text-white tabular-nums">
-                      {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                    </p>
-                  </div>
+                <div className="rounded-xl px-4 py-2.5 bg-cyan-500/[0.08] border border-cyan-500/20">
+                  <p className="text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Cas</p>
+                  <p className="text-sm font-mono font-bold text-cyan-400 tabular-nums">
+                    {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  </p>
                 </div>
               </div>
             </div>
@@ -381,24 +321,22 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         </div>
 
         {/* Main Timeline Area */}
-        <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8">
+        <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden px-6">
           
-          {/* Timeline Header with dot markers */}
-          <div className="flex flex-shrink-0 rounded-t-2xl overflow-hidden" style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          {/* Timeline Header */}
+          <div className="flex flex-shrink-0 border-b border-white/[0.06] bg-white/[0.02]">
             {/* Room label header */}
             <div 
-              className="flex-shrink-0 flex items-center px-5 gap-3 border-r backdrop-blur-xl" 
-              style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}
+              className="flex-shrink-0 flex items-center px-4 gap-2 border-r border-white/[0.06]" 
+              style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH }}
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center border border-white/10">
-                <Activity className="w-4 h-4 text-cyan-400" />
-              </div>
-              <span className="text-xs font-bold tracking-wider uppercase text-white/50">Operacni saly</span>
+              <Activity className="w-4 h-4 text-white/40" />
+              <span className="text-xs font-semibold tracking-wide uppercase text-white/40">Saly</span>
             </div>
             
-            {/* Time markers with dots */}
+            {/* Time markers - simple */}
             <div className="flex-1 overflow-hidden" ref={timelineRef}>
-              <div className="flex items-center h-14 relative w-full">
+              <div className="flex items-center h-10 relative w-full">
                 {TIME_MARKERS.map((hour, i) => {
                   const isLast = i === TIME_MARKERS.length - 1;
                   const widthPct = 100 / TIMELINE_HOURS;
@@ -412,48 +350,16 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   return (
                     <div 
                       key={`h-${hour}-${i}`} 
-                      className="absolute top-0 h-full flex flex-col items-start justify-center" 
+                      className="absolute top-0 h-full flex items-center" 
                       style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                     >
-                      {/* Vertical line */}
-                      <div className={`absolute left-0 top-0 bottom-0 w-px ${isNightHour ? 'bg-white/[0.03]' : 'bg-white/[0.06]'}`} />
+                      <div className={`absolute left-0 top-0 bottom-0 w-px ${isNightHour ? 'bg-white/[0.03]' : 'bg-white/[0.05]'}`} />
                       
                       {!isLast && (
-                        <div className="flex items-center gap-2 ml-2">
-                          {/* Dot marker */}
-                          <div 
-                            className="w-2 h-2 rounded-full transition-all"
-                            style={{ 
-                              background: isCurrentHour ? '#06B6D4' : isNightHour ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)',
-                              boxShadow: isCurrentHour ? '0 0 10px #06B6D4' : 'none'
-                            }}
-                          />
-                          
-                          {isCurrentHour ? (
-                            <div 
-                              className="px-2.5 py-1 rounded-lg"
-                              style={{ 
-                                background: 'linear-gradient(135deg, rgba(6,182,212,0.9) 0%, rgba(6,182,212,0.7) 100%)',
-                                boxShadow: '0 0 15px rgba(6,182,212,0.4)' 
-                              }}
-                            >
-                              <span className="text-[11px] font-mono font-bold text-slate-900">
-                                {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1.5">
-                              <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
-                                {hourLabel(hour)}
-                              </span>
-                              {isNextDay && (
-                                <span className="text-[8px] font-bold text-cyan-400/80 px-1.5 py-0.5 rounded-md bg-cyan-400/10 border border-cyan-400/20">
-                                  +1
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <span className={`ml-2 text-[10px] font-mono ${isCurrentHour ? 'text-cyan-400 font-bold' : isNightHour ? 'text-white/20' : 'text-white/35'}`}>
+                          {hourLabel(hour)}
+                          {isNextDay && <span className="text-cyan-400/60 ml-1 text-[8px]">+1</span>}
+                        </span>
                       )}
                     </div>
                   );
@@ -463,7 +369,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
           </div>
 
           {/* Room Rows */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-b-2xl" ref={scrollContainerRef} style={{ background: 'rgba(0,0,0,0.2)' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar" ref={scrollContainerRef}>
             <div className="relative w-full">
               {/* Now indicator */}
               <AnimatePresence>
@@ -874,49 +780,24 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 }
 
 // Glass Stat Box Component
-interface GlassStatBoxProps {
+interface StatBoxProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string | number;
   color: string;
-  glow?: boolean;
-  isText?: boolean;
 }
 
-const GlassStatBox: React.FC<GlassStatBoxProps> = ({ icon: Icon, label, value, color, glow, isText }) => (
-  <motion.div
-    className="relative flex-shrink-0 rounded-2xl px-4 py-3 backdrop-blur-xl overflow-hidden"
-    style={{
-      background: `linear-gradient(135deg, ${color}15 0%, ${color}05 100%)`,
-      border: `1px solid ${color}${glow ? '40' : '20'}`,
-      boxShadow: glow ? `0 0 25px ${color}25` : 'none',
-    }}
-    whileHover={{ scale: 1.02 }}
+const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color }) => (
+  <div 
+    className="flex-shrink-0 rounded-xl px-3 py-2 flex items-center gap-2"
+    style={{ background: `${color}10`, border: `1px solid ${color}20` }}
   >
-    {glow && (
-      <motion.div
-        className="absolute inset-0 opacity-50"
-        style={{ background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)` }}
-        animate={{ opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      />
-    )}
-    <div className="relative flex items-center gap-3">
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center"
-        style={{
-          background: `linear-gradient(135deg, ${color}30 0%, ${color}15 100%)`,
-          border: `1px solid ${color}40`,
-        }}
-      >
-        <Icon className="w-5 h-5" style={{ color }} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[9px] text-white/40 uppercase tracking-wider font-medium">{label}</p>
-        <p className={`font-bold text-white leading-tight ${isText ? 'text-sm' : 'text-lg'}`}>{value}</p>
-      </div>
+    <Icon className="w-4 h-4" style={{ color }} />
+    <div>
+      <p className="text-[8px] text-white/35 uppercase tracking-wider">{label}</p>
+      <p className="text-sm font-bold text-white">{value}</p>
     </div>
-  </motion.div>
+  </div>
 );
 
 // Legend Item Component
@@ -949,74 +830,51 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
+        exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-3xl max-w-md w-full overflow-hidden backdrop-blur-2xl"
-        style={{
-          background: 'linear-gradient(135deg, rgba(15,10,30,0.95) 0%, rgba(26,19,51,0.95) 100%)',
-          border: '1px solid rgba(255,255,255,0.1)'
-        }}
+        className="rounded-2xl max-w-sm w-full overflow-hidden bg-[#0a0a0f] border border-white/[0.08]"
       >
         {/* Header */}
-        <div
-          className="px-6 py-5 border-b flex items-center justify-between"
-          style={{
-            background: `linear-gradient(135deg, ${step.color}20 0%, ${step.color}05 100%)`,
-            borderColor: 'rgba(255,255,255,0.1)'
-          }}
-        >
+        <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <div>
-            <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-1">Sal</p>
-            <p className="text-2xl font-black text-white">{room.name}</p>
+            <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Sal</p>
+            <p className="text-xl font-bold text-white">{room.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            className="w-9 h-9 rounded-lg bg-white/[0.05] flex items-center justify-center hover:bg-white/[0.1] transition-colors"
           >
-            <X className="w-5 h-5 text-white/60" />
+            <X className="w-4 h-4 text-white/50" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-5 py-4 space-y-4">
           {/* Status */}
           <div>
-            <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Status</p>
+            <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Status</p>
             <div
-              className="px-4 py-3 rounded-xl flex items-center gap-3"
-              style={{
-                background: `linear-gradient(135deg, ${step.color}20 0%, ${step.color}10 100%)`,
-                border: `1px solid ${step.color}40`,
-              }}
+              className="px-3 py-2.5 rounded-lg flex items-center gap-2.5"
+              style={{ background: `${step.color}15`, border: `1px solid ${step.color}30` }}
             >
-              <div className="relative">
-                <div className="w-3 h-3 rounded-full" style={{ background: step.color, boxShadow: `0 0 10px ${step.color}` }} />
-                <motion.div 
-                  className="absolute inset-0 rounded-full"
-                  style={{ background: step.color }}
-                  animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </div>
-              <span style={{ color: step.color }} className="font-bold text-base">{step.title}</span>
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: step.color }} />
+              <span style={{ color: step.color }} className="font-semibold text-sm">{step.title}</span>
             </div>
           </div>
 
           {/* Doctor */}
           {room.staff?.doctor && (
             <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Lekar</p>
-              <div className="flex items-center gap-3 text-white/80">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                  <User className="w-5 h-5" />
-                </div>
-                <span className="text-base font-medium">{room.staff.doctor.name}</span>
+              <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Lekar</p>
+              <div className="flex items-center gap-2 text-white/80">
+                <User className="w-4 h-4 text-white/40" />
+                <span className="text-sm font-medium">{room.staff.doctor.name}</span>
               </div>
             </div>
           )}
@@ -1024,12 +882,10 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           {/* Time */}
           {room.estimatedEndTime && (
             <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wider font-medium mb-2">Ukonceni</p>
-              <div className="flex items-center gap-3 text-white/80">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <span className="text-lg font-mono font-bold">
+              <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Ukonceni</p>
+              <div className="flex items-center gap-2 text-white/80">
+                <Clock className="w-4 h-4 text-white/40" />
+                <span className="text-base font-mono font-bold">
                   {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
