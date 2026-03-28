@@ -323,213 +323,378 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT - Ultra Minimalist Dark Design ========== */}
-      <div className="md:hidden w-full h-full flex flex-col bg-black" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {/* Close button - top right */}
-        <motion.button 
-          onClick={onClose}
-          className="absolute z-50 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
-          style={{ top: 'calc(env(safe-area-inset-top) + 16px)', right: '16px' }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <X className="w-5 h-5 text-white/60" />
-        </motion.button>
-
-        {/* Main content - centered */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8">
-          {/* Room name */}
-          <p className="text-xs font-medium text-white/30 uppercase tracking-[0.3em] mb-8">{room.name}</p>
-          
-          {/* Status name - large */}
-          <motion.h1
-            key={currentStep?.name}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-bold tracking-tight text-center"
-            style={{ color: activeColor }}
-          >
-            {room.isEmergency ? 'EMERGENCY' : room.isLocked ? 'UZAMCENO' : currentStep?.name?.toUpperCase() || 'STATUS'}
-          </motion.h1>
-        </div>
-
-        {/* Action buttons section */}
-        <div className="px-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}>
-          {/* Step progress dots */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            {activeDbStatuses.map((_, idx) => (
-              <div
-                key={idx}
-                className="w-2.5 h-2.5 rounded-full transition-all"
-                style={{
-                  backgroundColor: idx <= safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
-                  boxShadow: idx === safeStepIndex ? `0 0 12px ${activeColor}` : 'none'
-                }}
-              />
-            ))}
-          </div>
-
-          {/* End time adjustment */}
-          <div className="flex items-center justify-center gap-8 mb-8">
-            <motion.button
-              onClick={handleDecreaseTime}
-              disabled={isInteractionBlocked || !estimatedEndTime}
-              className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Minus className="w-5 h-5 text-white/50" />
-            </motion.button>
-            
-            <div className="text-center min-w-[100px]">
-              <p className="text-3xl font-mono font-bold text-white">
-                {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-              </p>
-              <p className="text-[10px] text-white/30 uppercase tracking-widest mt-1">Konec</p>
-            </div>
-            
-            <motion.button
-              onClick={handleIncreaseTime}
-              disabled={isInteractionBlocked}
-              className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Plus className="w-5 h-5 text-white/50" />
-            </motion.button>
-          </div>
-
-          {/* Quick actions row */}
-          <div className="flex items-center justify-center gap-4 mb-6">
-            {/* Pause */}
-            <motion.button
-              onClick={async () => {
-                const newPaused = !isPaused;
-                setIsPaused(newPaused);
-                await updateOperatingRoom(room.id, { is_paused: newPaused });
-                await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-              }}
-              className="w-14 h-14 rounded-full flex items-center justify-center"
-              style={{ 
-                backgroundColor: isPaused ? activeColor : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${isPaused ? activeColor : 'rgba(255,255,255,0.1)'}`
-              }}
-              whileTap={{ scale: 0.9 }}
-            >
-              {isPaused ? <Play className="w-6 h-6 text-white" /> : <Pause className="w-6 h-6 text-white/40" />}
-            </motion.button>
-
-            {/* Hygiene */}
-            <motion.button
-              onClick={async () => {
-                const newH = !room.isEnhancedHygiene;
-                onEnhancedHygieneToggle?.(newH);
-                await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
-                await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-              }}
-              className="w-14 h-14 rounded-full flex items-center justify-center"
-              style={{ 
-                backgroundColor: room.isEnhancedHygiene ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${room.isEnhancedHygiene ? '#F59E0B' : 'rgba(255,255,255,0.1)'}`
-              }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ShieldAlert className={`w-6 h-6 ${room.isEnhancedHygiene ? 'text-amber-500' : 'text-white/40'}`} />
-            </motion.button>
-
-            {/* Call patient */}
-            <motion.button
-              onClick={async () => {
-                if (!patientCalledTime) {
-                  const now = new Date();
-                  setPatientCalledTime(now);
-                  setShowPatientCalledText(true);
-                  setTimeout(() => setShowPatientCalledText(false), 5000);
-                  await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                }
-              }}
-              disabled={!!patientCalledTime}
-              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40"
-              style={{ 
-                backgroundColor: patientCalledTime ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${patientCalledTime ? '#22C55E' : 'rgba(255,255,255,0.1)'}`
-              }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Phone className={`w-6 h-6 ${patientCalledTime ? 'text-green-500' : 'text-white/40'}`} />
-            </motion.button>
-
-            {/* Patient arrived */}
-            <motion.button
-              onClick={async () => {
-                if (patientCalledTime && !patientArrivedTime) {
-                  const now = new Date();
-                  setPatientArrivedTime(now);
-                  setShowPatientArrivedText(true);
-                  await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                  setTimeout(async () => {
-                    isResettingRef.current = true;
-                    setShowPatientArrivedText(false);
-                    setPatientCalledTime(null);
-                    setPatientArrivedTime(null);
-                    setPatientCallElapsedTime('00:00');
-                    await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                    setTimeout(() => { isResettingRef.current = false; }, 500);
-                  }, 5000);
-                }
-              }}
-              disabled={!patientCalledTime || !!patientArrivedTime}
-              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-20"
-              style={{ 
-                backgroundColor: patientArrivedTime ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${patientArrivedTime ? '#A855F7' : 'rgba(255,255,255,0.1)'}`
-              }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <BedDouble className={`w-6 h-6 ${patientArrivedTime ? 'text-purple-500' : 'text-white/40'}`} />
-            </motion.button>
-          </div>
-
-          {/* Main CTA Button */}
-          {!isInteractionBlocked && (
-            <motion.button
-              onClick={handleNextStep}
-              className="w-full rounded-full py-5 font-bold text-base text-white"
-              style={{ 
-                backgroundColor: activeColor,
-                boxShadow: `0 0 40px ${activeColor}40`
-              }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {isFinalStep ? 'NOVY CYKLUS' : 'DALSI FAZE'}
-            </motion.button>
+      {/* ========== MOBILE LAYOUT (md:hidden) ========== */}
+      <div className="md:hidden w-full h-full overflow-y-auto">
+        {/* Elegantní tmavé pozadí s jemným gradientem */}
+        <div className="fixed inset-0 z-0">
+          <div className="absolute inset-0 bg-[#08080c]" />
+          {/* Subtilní radiální gradient podle barvy statusu */}
+          <motion.div 
+            className="absolute inset-0"
+            animate={{ opacity: [0.06, 0.12, 0.06] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ background: `radial-gradient(ellipse at 50% 25%, ${activeColor}40, transparent 65%)` }} 
+          />
+          {/* Hygiene overlay */}
+          {room.isEnhancedHygiene && (
+            <motion.div 
+              className="absolute inset-0 pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(239,68,68,0.15) 100%)' }} 
+            />
           )}
         </div>
 
-        {/* Pause indicator overlay */}
-        {isPaused && (
+        <div className="relative z-10 flex flex-col h-full min-h-screen pb-20">
+          {/* Header s animací */}
           <motion.div 
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-8 py-4 rounded-full"
-            style={{ backgroundColor: activeColor }}
+            className="flex items-center justify-between px-5 pt-5 pb-2"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <motion.button 
+              onClick={onClose} 
+              className="p-2.5 -ml-2 rounded-full bg-white/[0.03] backdrop-blur-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ChevronLeft className="w-6 h-6 text-white/70" />
+            </motion.button>
+            <motion.h1 
+              className="text-3xl font-black text-white tracking-tight"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              {room.name}
+            </motion.h1>
+            <motion.button 
+              onClick={onClose} 
+              className="p-2.5 -mr-2 rounded-full bg-white/[0.03] backdrop-blur-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <X className="w-5 h-5 text-white/50" />
+            </motion.button>
+          </motion.div>
+
+          {/* Hlavní kruhová sekce */}
+          <motion.div 
+            className="flex flex-col items-center px-6 pt-4"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
           >
-            <div className="flex items-center gap-3">
-              <Pause className="w-5 h-5 text-white" />
-              <span className="text-lg font-mono font-bold text-white">{pauseElapsedTime}</span>
+            {/* Velký progress kruh */}
+            <div className="relative w-80 h-80 mb-4">
+              {/* SVG s kruhovým progressem */}
+              <svg
+                className="absolute inset-0 w-full h-full"
+                viewBox="0 0 100 100"
+                style={{ overflow: 'visible' }}
+              >
+                <defs>
+                  {/* Kruhová záře - SVG filter */}
+                  <filter id="mobile-glow" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur1" />
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur2" />
+                    <feMerge>
+                      <feMergeNode in="blur2" />
+                      <feMergeNode in="blur1" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                {/* Pozadí kruhu - jemný track */}
+                <circle 
+                  cx="50" cy="50" r="44" 
+                  fill="none" 
+                  stroke="rgba(255,255,255,0.04)" 
+                  strokeWidth="5"
+                  className="origin-center -rotate-90"
+                  style={{ transformOrigin: '50% 50%', transform: 'rotate(-90deg)' }}
+                />
+
+                {/* Záře vrstva - pulzující */}
+                <motion.circle
+                  cx="50" cy="50" r="44"
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow)' }}
+                  initial={false}
+                  animate={{
+                    strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
+                    opacity: [0.2, 0.4, 0.2],
+                  }}
+                  transition={{
+                    strokeDasharray: { duration: 0.8, ease: 'easeOut' },
+                    opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+                  }}
+                />
+
+                {/* Hlavní progress */}
+                <motion.circle
+                  cx="50" cy="50" r="44"
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
+                  initial={false}
+                  animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                />
+              </svg>
+
+              {/* Obsah v kruhu */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-8">
+                <motion.p 
+                  className="text-[2rem] font-black text-white text-center leading-[1.1] tracking-tight"
+                  key={currentStep?.name}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {room.isEmergency
+                    ? 'Stav\nnouze'
+                    : room.isLocked
+                    ? 'Sál\nuzamčen'
+                    : (currentStep?.name
+                        ? currentStep.name.split(' ').join('\n')
+                        : 'Status')}
+                </motion.p>
+              </div>
+            </div>
+
+            {/* Čas pod kruhem */}
+            <motion.div 
+              className="text-center mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <motion.p 
+                className="text-5xl font-mono font-black tracking-tighter"
+                style={{ color: activeColor }}
+                key={elapsedTime}
+                initial={{ scale: 1.02 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {elapsedTime}
+              </motion.p>
+              <p className="text-[11px] font-semibold text-white/30 mt-1 uppercase tracking-[0.2em]">Čas ve fázi</p>
+            </motion.div>
+
+            {/* Elegantní step indikátory */}
+            <div className="flex items-center justify-center gap-2.5">
+              {activeDbStatuses.map((status, idx) => (
+                <motion.div
+                  key={status.id}
+                  className="rounded-full"
+                  initial={false}
+                  animate={{ 
+                    width: idx === safeStepIndex ? 28 : 10, 
+                    height: 10,
+                    backgroundColor: idx === safeStepIndex ? activeColor : 'rgba(255,255,255,0.1)',
+                    boxShadow: idx === safeStepIndex ? `0 0 12px ${activeColor}60` : 'none'
+                  }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                />
+              ))}
             </div>
           </motion.div>
-        )}
 
-        {/* Patient call timer badge */}
-        {patientCalledTime && !patientArrivedTime && (
+          {/* Spacer */}
+          <div className="flex-1 min-h-6" />
+
+          {/* Spodní sekce */}
           <motion.div 
-            className="fixed top-6 left-6 px-4 py-2 rounded-full bg-green-500/20 border border-green-500/40"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            className="px-5 pb-5 space-y-3"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <span className="text-sm font-mono font-bold text-green-400">{patientCallElapsedTime}</span>
+            {/* Hlavní CTA tlačítko */}
+            {!isInteractionBlocked && (
+              <motion.button
+                onClick={handleNextStep}
+                className="w-full rounded-3xl py-7 font-bold text-xl tracking-wide relative overflow-hidden"
+                style={{ backgroundColor: activeColor, color: '#000' }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {/* Animated shine effect */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '200%' }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, ease: 'easeInOut' }}
+                />
+                <span className="relative z-10">{isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}</span>
+              </motion.button>
+            )}
+
+            {/* Ukončení karta */}
+            <motion.div 
+              className="rounded-3xl px-6 py-5 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06] flex items-center justify-between"
+              whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+            >
+              <motion.button
+                onClick={handleDecreaseTime}
+                disabled={isInteractionBlocked || !estimatedEndTime}
+                className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30"
+                whileTap={{ scale: 0.92 }}
+              >
+                <Minus className="w-6 h-6 text-white/80" />
+              </motion.button>
+              <div className="flex flex-col items-center">
+                <p className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.15em] mb-1">Ukončení</p>
+                <p className="text-2xl font-mono font-bold text-white leading-none">
+                  {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                </p>
+              </div>
+              <motion.button
+                onClick={handleIncreaseTime}
+                disabled={isInteractionBlocked}
+                className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center disabled:opacity-30"
+                whileTap={{ scale: 0.92 }}
+              >
+                <Plus className="w-6 h-6 text-white/80" />
+              </motion.button>
+            </motion.div>
+
+            {/* Personál - Lékař a Sestra */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <motion.div 
+                className="rounded-2xl p-4 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
+                whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Stethoscope className="w-4 h-4 text-white/30" />
+                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Lékař</p>
+                </div>
+                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.doctor.name}</p>
+              </motion.div>
+
+              <motion.div 
+                className="rounded-2xl p-4 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06]"
+                whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="w-4 h-4 text-white/30" />
+                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">Sestra</p>
+                </div>
+                <p className="text-sm font-bold text-white/90 leading-snug line-clamp-2">{room.staff.nurse.name}</p>
+              </motion.div>
+            </div>
+
+            {/* Akční tlačítka */}
+            <div className="grid grid-cols-4 gap-2">
+              {/* Pauza */}
+              <motion.button
+                onClick={async () => {
+                  const newPaused = !isPaused;
+                  setIsPaused(newPaused);
+                  await updateOperatingRoom(room.id, { is_paused: newPaused });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                }}
+                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm"
+                style={{ 
+                  backgroundColor: isPaused ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isPaused ? 'rgba(6,182,212,0.25)' : 'rgba(255,255,255,0.05)'}`
+                }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isPaused ? <Play className="w-6 h-6 text-cyan-400" /> : <Pause className="w-6 h-6 text-white/40" />}
+                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">{isPaused ? 'Play' : 'Pauza'}</span>
+              </motion.button>
+
+              {/* Hygiena */}
+              <motion.button
+                onClick={async () => {
+                  const newH = !room.isEnhancedHygiene;
+                  onEnhancedHygieneToggle?.(newH);
+                  await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                }}
+                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm"
+                style={{ 
+                  backgroundColor: room.isEnhancedHygiene ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${room.isEnhancedHygiene ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.05)'}`
+                }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ShieldAlert className={`w-6 h-6 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40'}`} />
+                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Hygiena</span>
+              </motion.button>
+
+              {/* Volat */}
+              <motion.button
+                onClick={async () => {
+                  if (!patientCalledTime) {
+                    const now = new Date();
+                    setPatientCalledTime(now);
+                    setShowPatientCalledText(true);
+                    setTimeout(() => setShowPatientCalledText(false), 5000);
+                    await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
+                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  }
+                }}
+                disabled={!!patientCalledTime}
+                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm disabled:opacity-60"
+                style={{ 
+                  backgroundColor: patientCalledTime ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${patientCalledTime ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.05)'}`
+                }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Phone className={`w-6 h-6 ${patientCalledTime ? 'text-green-400' : 'text-white/40'}`} />
+                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
+              </motion.button>
+
+              {/* Příjezd */}
+              <motion.button
+                onClick={async () => {
+                  if (patientCalledTime && !patientArrivedTime) {
+                    const now = new Date();
+                    setPatientArrivedTime(now);
+                    setShowPatientArrivedText(true);
+                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
+                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                    setTimeout(async () => {
+                      isResettingRef.current = true;
+                      setShowPatientArrivedText(false);
+                      setPatientCalledTime(null);
+                      setPatientArrivedTime(null);
+                      setPatientCallElapsedTime('00:00');
+                      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+                      // Allow sync again after DB update completes
+                      setTimeout(() => { isResettingRef.current = false; }, 500);
+                    }, 5000);
+                  }
+                }}
+                disabled={!patientCalledTime || !!patientArrivedTime}
+                className="rounded-2xl py-4 flex flex-col items-center gap-2 backdrop-blur-sm disabled:opacity-30"
+                style={{ 
+                  backgroundColor: patientArrivedTime ? 'rgba(168,85,247,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${patientArrivedTime ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.05)'}`
+                }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <BedDouble className={`w-6 h-6 ${patientArrivedTime ? 'text-purple-400' : 'text-white/40'}`} />
+                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Příjezd</span>
+              </motion.button>
+            </div>
           </motion.div>
-        )}
+        </div>
       </div>
 
       {/* ========== DESKTOP LAYOUT (hidden on mobile) ========== */}
