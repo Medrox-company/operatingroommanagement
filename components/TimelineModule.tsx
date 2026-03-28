@@ -182,7 +182,28 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   // const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
 
   // Get remaining time for room
-  const getRemainingTime = (room: OperatingRoom): string => {
+  // Get elapsed time since phase started - real-time update across devices
+  const getElapsedTimeFromPhase = (room: OperatingRoom): string => {
+    if (room.currentStepIndex >= 6) return '';
+    if (!room.phaseStartedAt) return '';
+    
+    const phaseStartTime = new Date(room.phaseStartedAt);
+    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
+    
+    if (elapsedMs <= 0) return '00:00';
+    
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    // Format: mm:ss if < 1 hour, else hh:mm:ss
+    if (hours === 0) {
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+  };
     if (room.currentStepIndex >= 6) return '';
     if (!room.estimatedEndTime && !room.currentProcedure?.estimatedDuration) return '';
     
@@ -267,7 +288,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
             const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
             const statusName = dbStatus?.name || 'Status';
-            const remaining = getRemainingTime(room);
+            const elapsedTime = getElapsedTimeFromPhase(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
               <button
@@ -283,8 +304,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
                     {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
                   </div>
-                  {remaining && !isFree && (
-                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
+                  {elapsedTime && !isFree && (
+                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{elapsedTime}</span>
                   )}
                   {isFree && <span className="text-[10px] font-black text-emerald-400/70 uppercase tracking-wider">Volný</span>}
                 </div>
@@ -578,7 +599,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               
               const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
-              const remainingTime = getRemainingTime(room);
+              const elapsedTime = getElapsedTimeFromPhase(room);
               
               // Get status from database
               const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
@@ -794,11 +815,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
                           Volny
                         </p>
-                      ) : remainingTime && stepIndex !== 0 ? (
-                        <p 
-                          className="text-[9px] font-medium text-white/50" 
-                        >
-                          {remainingTime}
+                ) : elapsedTime && stepIndex !== 0 ? (
+                  <span 
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-white pointer-events-none"
+                    style={{ 
+                      textShadow: `0 0 8px ${stepColor}80`,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {elapsedTime}
                         </p>
                       ) : (
                         <p className="text-[9px] font-medium text-white/25">{room.department}</p>
@@ -958,14 +983,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           )}
                           
                           {/* Remaining time badge */}
-                          {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
-                            <div 
-                              className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
-                              style={{ 
-                                background: 'rgba(0,0,0,0.2)'
-                              }}
-                            >
-                              {remainingTime}
+                {boxWidthPct > 18 && elapsedTime && stepIndex !== 0 && (
+                  <span 
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-white pointer-events-none"
+                    style={{ 
+                      textShadow: `0 0 8px ${stepColor}80`,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {elapsedTime}
                             </div>
                           )}
                         </div>
