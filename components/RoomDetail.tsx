@@ -170,17 +170,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
   const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
-  
-  console.log('[v0] RoomDetail state:', { 
-    roomCurrentStepIndex: room.currentStepIndex, 
-    safeStepIndex, 
-    validStepCount, 
-    activeDbStatusesLength: activeDbStatuses.length,
-    isFinalStep,
-    isInteractionBlocked,
-    isPaused,
-    isLocked: room.isLocked
-  });
 
   // Dynamic theme color based on status
   const activeColor = room.isEmergency 
@@ -190,34 +179,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280')));
 
   const changeStep = async (newIndex: number) => {
-    console.log('[v0] changeStep called:', { newIndex, safeStepIndex, validStepCount, isInteractionBlocked });
-    
-    if (isInteractionBlocked) {
-      console.log('[v0] changeStep blocked - isInteractionBlocked');
-      return;
-    }
+    if (isInteractionBlocked) return;
     
     // SEQUENTIAL STEP RESTRICTION: Only allow next step (+1) or reset to 0 (from final step)
     const isNextStep = newIndex === safeStepIndex + 1;
     const isResetToStart = newIndex === 0 && safeStepIndex === validStepCount - 1;
     
-    console.log('[v0] changeStep validation:', { isNextStep, isResetToStart, expectedNext: safeStepIndex + 1 });
-    
-    if (!isNextStep && !isResetToStart) {
-      console.log('[v0] changeStep blocked - not next step or reset');
-      return; // Block skipping steps
-    }
+    if (!isNextStep && !isResetToStart) return; // Block skipping steps
     
     // Additional security for locked state: only allow forward progression
     if (room.isLocked) {
-      if (newIndex <= safeStepIndex && !isFinalStep) {
-        console.log('[v0] changeStep blocked - locked and going backwards');
-        return;
-      }
-      if (newIndex === 0) {
-        console.log('[v0] changeStep blocked - locked and trying to reset');
-        return; // Never allow starting over if locked
-      }
+      if (newIndex <= safeStepIndex && !isFinalStep) return;
+      if (newIndex === 0) return; // Never allow starting over if locked
     }
 
     // Calculate duration of previous step
@@ -263,12 +236,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   };
 
   const handleNextStep = () => {
-    console.log('[v0] handleNextStep called:', { safeStepIndex, validStepCount, isInteractionBlocked });
-    
-    if (isInteractionBlocked) {
-      console.log('[v0] handleNextStep blocked');
-      return;
-    }
+    if (isInteractionBlocked) return;
     
     let nextIndex = safeStepIndex + 1;
     if (nextIndex >= validStepCount) {
@@ -276,12 +244,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
     
     // Prevent loop back if locked
-    if (room.isLocked && nextIndex === 0) {
-      console.log('[v0] handleNextStep - locked, cannot reset');
-      return;
-    }
+    if (room.isLocked && nextIndex === 0) return;
 
-    console.log('[v0] handleNextStep - calling changeStep with:', nextIndex);
     changeStep(nextIndex);
   };
   
