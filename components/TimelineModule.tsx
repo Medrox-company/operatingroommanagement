@@ -185,10 +185,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   // Get elapsed time since phase started - real-time update across devices
   const getElapsedTimeFromPhase = (room: OperatingRoom): string => {
     if (room.currentStepIndex >= 6) return '';
-    if (!room.phaseStartedAt) return '';
+    if (!room.phaseStartedAt) {
+      console.log('[v0] Room', room.name, 'has no phaseStartedAt');
+      return '';
+    }
     
     const phaseStartTime = new Date(room.phaseStartedAt);
     const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
+    
+    console.log('[v0] Room', room.name, 'phaseStartedAt:', room.phaseStartedAt, 'elapsedMs:', elapsedMs, 'currentTime:', currentTime.toISOString());
     
     if (elapsedMs < 0) return '';
     
