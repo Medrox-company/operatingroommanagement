@@ -38,12 +38,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     .sort((a, b) => a.order_index - b.order_index);
 
   // Initialize from database phaseStartedAt for real-time sync across devices
-  console.log('[v0] RoomDetail mounted for', room.name, '| phaseStartedAt from room:', room.phaseStartedAt);
-  const [phaseStartTime, setPhaseStartTime] = useState(() => {
-    const startTime = room.phaseStartedAt ? new Date(room.phaseStartedAt) : new Date();
-    console.log('[v0] Initial phaseStartTime set to:', startTime.toISOString(), '| from room.phaseStartedAt:', room.phaseStartedAt);
-    return startTime;
-  });
+  const [phaseStartTime, setPhaseStartTime] = useState(() => 
+    room.phaseStartedAt ? new Date(room.phaseStartedAt) : new Date()
+  );
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
   const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
@@ -140,11 +137,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   // Sync phaseStartTime from database for real-time consistency across devices
   useEffect(() => {
-    console.log('[v0] phaseStartedAt sync effect - room.phaseStartedAt:', room.phaseStartedAt);
     if (room.phaseStartedAt) {
-      const newStartTime = new Date(room.phaseStartedAt);
-      console.log('[v0] Syncing phaseStartTime to:', newStartTime.toISOString());
-      setPhaseStartTime(newStartTime);
+      setPhaseStartTime(new Date(room.phaseStartedAt));
     }
   }, [room.phaseStartedAt]);
 

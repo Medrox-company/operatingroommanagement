@@ -185,20 +185,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   // Get elapsed time since phase started - real-time update across devices
   const getElapsedTimeFromPhase = (room: OperatingRoom): string => {
     if (room.currentStepIndex >= 6) return '';
-    if (!room.phaseStartedAt) {
-      console.log('[v0] Room', room.name, 'has no phaseStartedAt - step:', room.currentStepIndex);
-      return '';
-    }
+    if (!room.phaseStartedAt) return '';
     
     const phaseStartTime = new Date(room.phaseStartedAt);
     const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
     
-    console.log('[v0] Room:', room.name, '| phaseStartedAt:', room.phaseStartedAt, '| currentTime:', currentTime.toISOString(), '| elapsedMs:', elapsedMs);
-    
-    if (elapsedMs < 0) {
-      console.log('[v0] Room', room.name, 'phaseStartedAt is in future!');
-      return '';
-    }
+    if (elapsedMs < 0) return '';
     
     const totalSeconds = Math.floor(elapsedMs / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -206,11 +198,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     const seconds = totalSeconds % 60;
     
     // Format: mm:ss if < 1 hour, else hh:mm
-    const formatted = hours === 0 
-      ? `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-      : `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    
-    return formatted;
+    if (hours === 0) {
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
   };
 
   // Get remaining time for room (for future use, commented out)
