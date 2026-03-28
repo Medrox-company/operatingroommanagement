@@ -324,11 +324,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       transition={{ duration: 0.2 }}
     >
       {/* ========== MOBILE LAYOUT - Ultra Minimalist Dark Design ========== */}
-      <div className="md:hidden w-full h-full flex flex-col bg-black">
+      <div className="md:hidden w-full h-full flex flex-col bg-black" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Close button - top right */}
         <motion.button 
           onClick={onClose}
-          className="absolute top-6 right-6 z-50 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
+          className="absolute z-50 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
+          style={{ top: 'calc(env(safe-area-inset-top) + 16px)', right: '16px' }}
           whileTap={{ scale: 0.9 }}
         >
           <X className="w-5 h-5 text-white/60" />
@@ -337,72 +338,64 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         {/* Main content - centered */}
         <div className="flex-1 flex flex-col items-center justify-center px-8">
           {/* Room name */}
-          <p className="text-xs font-medium text-white/30 uppercase tracking-[0.3em] mb-6">{room.name}</p>
+          <p className="text-xs font-medium text-white/30 uppercase tracking-[0.3em] mb-8">{room.name}</p>
           
-          {/* Status name */}
+          {/* Status name - large */}
           <motion.h1
             key={currentStep?.name}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-bold tracking-tight mb-8"
+            className="text-4xl font-bold tracking-tight text-center mb-10"
             style={{ color: activeColor }}
           >
             {room.isEmergency ? 'EMERGENCY' : room.isLocked ? 'UZAMCENO' : currentStep?.name?.toUpperCase() || 'STATUS'}
           </motion.h1>
 
-          {/* Giant timer */}
-          <motion.div 
-            className="text-[80px] font-mono font-bold text-white tracking-tighter leading-none mb-4"
-            key={elapsedTime}
-          >
-            {elapsedTime}
-          </motion.div>
-
           {/* Step progress dots */}
-          <div className="flex items-center gap-2 mb-12">
+          <div className="flex items-center gap-3 mb-16">
             {activeDbStatuses.map((_, idx) => (
               <div
                 key={idx}
-                className="w-2 h-2 rounded-full transition-all"
+                className="w-2.5 h-2.5 rounded-full transition-all"
                 style={{
                   backgroundColor: idx <= safeStepIndex ? activeColor : 'rgba(255,255,255,0.15)',
-                  boxShadow: idx === safeStepIndex ? `0 0 10px ${activeColor}` : 'none'
+                  boxShadow: idx === safeStepIndex ? `0 0 12px ${activeColor}` : 'none'
                 }}
               />
             ))}
           </div>
 
           {/* End time */}
-          <div className="flex items-center gap-6 mb-8">
+          <div className="flex items-center gap-8">
             <motion.button
               onClick={handleDecreaseTime}
               disabled={isInteractionBlocked || !estimatedEndTime}
-              className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
+              className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
               whileTap={{ scale: 0.9 }}
             >
-              <Minus className="w-5 h-5 text-white/50" />
+              <Minus className="w-6 h-6 text-white/50" />
             </motion.button>
             
-            <div className="text-center min-w-[100px]">
-              <p className="text-3xl font-mono font-bold text-white">
+            <div className="text-center min-w-[120px]">
+              <p className="text-4xl font-mono font-bold text-white">
                 {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
               </p>
-              <p className="text-[10px] text-white/30 uppercase tracking-widest mt-1">Konec</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-widest mt-2">Konec</p>
             </div>
             
             <motion.button
               onClick={handleIncreaseTime}
               disabled={isInteractionBlocked}
-              className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
+              className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center disabled:opacity-20"
               whileTap={{ scale: 0.9 }}
             >
-              <Plus className="w-5 h-5 text-white/50" />
+              <Plus className="w-6 h-6 text-white/50" />
             </motion.button>
           </div>
         </div>
 
         {/* Bottom action buttons */}
-        <div className="px-6 pb-10">
+        <div className="px-6 pb-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
           {/* Quick actions row */}
           <div className="flex items-center justify-center gap-4 mb-6">
             {/* Pause */}
