@@ -353,14 +353,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <div className="flex items-center justify-between mb-6">
             <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95"
+              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
             >
               <ChevronLeft className="w-5 h-5 text-white/60" />
             </button>
             <h1 className="text-2xl font-bold text-white">{room.name}</h1>
             <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95"
+              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
             >
               <X className="w-5 h-5 text-white/60" />
             </button>
@@ -438,7 +438,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {!isInteractionBlocked && (
             <button
               onClick={handleNextStep}
-              className="w-full py-4 rounded-xl font-semibold text-white mb-4 active:scale-[0.98]"
+              className="w-full py-4 rounded-xl font-semibold text-white mb-4 active:scale-[0.98] outline-none select-none"
               style={{
                 background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}80 100%)`,
                 boxShadow: `0 0 30px ${activeColor}40`
@@ -454,20 +454,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 mb-3">
               <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 text-center">Ukončení</p>
               <div className="flex items-center justify-between">
-                <button
-                  onClick={handleDecreaseTime}
-                  disabled={isInteractionBlocked || !estimatedEndTime}
-                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95"
-                >
-                  <Minus className="w-4 h-4 text-white/60" />
-                </button>
+            <button
+              onClick={handleDecreaseTime}
+              disabled={isInteractionBlocked || !estimatedEndTime}
+              className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none"
+            >
+              <Minus className="w-4 h-4 text-white/60" />
+            </button>
                 <p className="text-2xl font-mono font-bold text-white">
                   {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
-                <button
+            <button
                   onClick={handleIncreaseTime}
                   disabled={isInteractionBlocked}
-                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95"
+                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none"
                 >
                   <Plus className="w-4 h-4 text-white/60" />
                 </button>
@@ -483,7 +483,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await updateOperatingRoom(room.id, { is_paused: newPaused });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 outline-none select-none ${
                   isPaused
                     ? 'bg-[#00D8C1]/20 border-[#00D8C1]/50'
                     : 'bg-white/[0.02] border-white/10'
@@ -500,7 +500,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 outline-none select-none ${
                   room.isEnhancedHygiene
                     ? 'bg-orange-500/20 border-orange-500/50'
                     : 'bg-white/[0.02] border-white/10'
@@ -522,7 +522,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   }
                 }}
                 disabled={!!patientCalledTime}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-50 ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-50 outline-none select-none ${
                   patientCalledTime
                     ? 'bg-green-500/20 border-green-500/50'
                     : 'bg-white/[0.02] border-white/10'
@@ -552,7 +552,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   }
                 }}
                 disabled={!patientCalledTime || !!patientArrivedTime}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-30 ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-30 outline-none select-none ${
                   patientArrivedTime
                     ? 'bg-purple-500/20 border-purple-500/50'
                     : 'bg-white/[0.02] border-white/10'
