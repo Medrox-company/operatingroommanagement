@@ -146,34 +146,35 @@ const BackgroundManager: React.FC = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2 opacity-60">
-            <Palette className="w-4 h-4 text-[#8B5CF6]" />
-            <p className="text-[10px] font-black text-[#8B5CF6] tracking-[0.4em] uppercase">VISUAL SETTINGS</p>
+      {/* Header - matching OperatingRoomsManager style */}
+      <header className="mb-8">
+        <div className="flex items-center justify-between">
+          <div className="mb-4">
+            <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+              NASTAVENÍ <span className="text-white/20">POZADÍ</span>
+            </h1>
           </div>
-          <h1 className="text-4xl font-black tracking-tight uppercase">
-            POZADÍ <span className="text-white/20">APLIKACE</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowPreview(!showPreview)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
+            >
+              {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              Náhled
+            </button>
+            <button
+              onClick={resetToDefaults}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
-          >
-            {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            Náhled
-          </button>
-          <button
-            onClick={resetToDefaults}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
-        </div>
-      </div>
+        <p className="text-white/40 text-sm max-w-xl">
+          Nastavte barevne pozadi, prechody a obrazky. Zmeny se projeví okamzite v cele aplikaci.
+        </p>
+      </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Controls */}

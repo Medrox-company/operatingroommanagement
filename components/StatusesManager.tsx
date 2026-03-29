@@ -66,10 +66,17 @@ const StatusesManager: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-white/90 mb-2">Sprava Statusu Workflow</h1>
-        <p className="text-white/50">Konfigurujte workflow statusy operacnich vykonu</p>
-      </div>
+      {/* Header - matching OperatingRoomsManager style */}
+      <header className="mb-8">
+        <div className="mb-4">
+          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+            SPRÁVA <span className="text-white/20">STATUSŮ</span>
+          </h1>
+        </div>
+        <p className="text-white/40 text-sm max-w-xl">
+          Konfigurujte workflow statusy operacnich vykonu. Aktivujte statusy, ktere chcete zobrazovat v aplikaci.
+        </p>
+      </header>
 
       <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
         <div className="flex items-start gap-3">
