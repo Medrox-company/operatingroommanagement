@@ -368,70 +368,67 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
           {/* Circular Progress with Status */}
           <div className="flex flex-col items-center flex-1 justify-center">
-            <div className="relative w-72 h-72">
-              {/* SVG Progress Circle */}
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-                <defs>
-                  <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                {/* Background track */}
-                <circle 
-                  cx="50" cy="50" r="44" 
-                  fill="none" 
-                  stroke="rgba(255,255,255,0.05)" 
-                  strokeWidth="2"
-                />
-                {/* Animated glow layer */}
-                <motion.circle
-                  cx="50" cy="50" r="44"
-                  fill="none"
-                  stroke={activeColor}
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow-ring)' }}
-                  animate={{ 
-                    strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
-                    opacity: [0.2, 0.4, 0.2]
-                  }}
-                  transition={{
-                    strokeDasharray: { duration: 0.8, ease: 'easeOut' },
-                    opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
-                  }}
-                />
-                {/* Main progress */}
-                <motion.circle
-                  cx="50" cy="50" r="44"
-                  fill="none"
-                  stroke={activeColor}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
-                  animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                />
-              </svg>
-              {/* Center content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <motion.p 
-                  className="text-2xl font-bold text-white text-center leading-tight px-6"
-                  key={currentStep?.name}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status'}
-                </motion.p>
-                <p className="text-white/40 text-sm mt-2">{safeStepIndex + 1}/{validStepCount}</p>
-              </div>
-            </div>
+            {/* Pure SVG circle - no box container */}
+            <svg width="288" height="288" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
+              <defs>
+                <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              {/* Background track */}
+              <circle
+                cx="50" cy="50" r="44"
+                fill="none"
+                stroke="rgba(255,255,255,0.05)"
+                strokeWidth="2"
+              />
+              {/* Animated glow layer */}
+              <motion.circle
+                cx="50" cy="50" r="44"
+                fill="none"
+                stroke={activeColor}
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
+                style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow-ring)' }}
+                animate={{
+                  strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
+                  opacity: [0.2, 0.45, 0.2]
+                }}
+                transition={{
+                  strokeDasharray: { duration: 0.8, ease: 'easeOut' },
+                  opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
+                }}
+              />
+              {/* Main progress */}
+              <motion.circle
+                cx="50" cy="50" r="44"
+                fill="none"
+                stroke={activeColor}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
+                style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
+                animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              />
+            </svg>
+            {/* Text below circle */}
+            <motion.p
+              className="text-3xl font-bold text-white text-center leading-snug mt-4 px-8"
+              key={currentStep?.name}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {(room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status')
+                .split(' ')
+                .map((word, i) => <span key={i} className="block">{word}</span>)}
+            </motion.p>
           </div>
 
           {/* Main CTA Button - moved up */}
