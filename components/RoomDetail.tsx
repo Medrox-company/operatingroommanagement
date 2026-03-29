@@ -351,21 +351,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="relative z-10 flex flex-col h-full p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <motion.button 
+            <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center"
-              whileTap={{ scale: 0.95 }}
+              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95"
             >
               <ChevronLeft className="w-5 h-5 text-white/60" />
-            </motion.button>
+            </button>
             <h1 className="text-2xl font-bold text-white">{room.name}</h1>
-            <motion.button 
+            <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center"
-              whileTap={{ scale: 0.95 }}
+              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95"
             >
               <X className="w-5 h-5 text-white/60" />
-            </motion.button>
+            </button>
           </div>
 
           {/* Circular Progress with Status */}
@@ -438,48 +436,41 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
           {/* Main CTA Button - moved up */}
           {!isInteractionBlocked && (
-            <motion.button
+            <button
               onClick={handleNextStep}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-4 rounded-xl font-semibold text-white mb-4"
+              className="w-full py-4 rounded-xl font-semibold text-white mb-4 active:scale-[0.98]"
               style={{
                 background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}80 100%)`,
                 boxShadow: `0 0 30px ${activeColor}40`
               }}
             >
               {isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}
-            </motion.button>
+            </button>
           )}
 
           {/* Main Card */}
-          <motion.div
-            className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-4 flex-1 flex flex-col"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-4 flex-1 flex flex-col">
             {/* End Time Control */}
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 mb-3">
               <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 text-center">Ukončení</p>
               <div className="flex items-center justify-between">
-                <motion.button
+                <button
                   onClick={handleDecreaseTime}
                   disabled={isInteractionBlocked || !estimatedEndTime}
-                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30"
-                  whileTap={{ scale: 0.95 }}
+                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95"
                 >
                   <Minus className="w-4 h-4 text-white/60" />
-                </motion.button>
+                </button>
                 <p className="text-2xl font-mono font-bold text-white">
                   {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
-                <motion.button
+                <button
                   onClick={handleIncreaseTime}
                   disabled={isInteractionBlocked}
-                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30"
-                  whileTap={{ scale: 0.95 }}
+                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95"
                 >
                   <Plus className="w-4 h-4 text-white/60" />
-                </motion.button>
+                </button>
               </div>
             </div>
 
@@ -594,7 +585,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </div>
             </div>
 
-          </motion.div>
+          </div>
         </div>
       </div>
 
