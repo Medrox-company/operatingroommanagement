@@ -1239,13 +1239,28 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </div>
           </div>
           
-          {/* Right side - Time display and close */}
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">DOBA OPERACE</p>
-              <p className="text-2xl font-mono font-bold" style={{ color: stepColor }}>
-                {getElapsedTime()}
-              </p>
+          {/* Right side - Step dots, time display and close */}
+          <div className="flex items-center gap-6">
+            {/* Step progress dots */}
+            <div>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
+              <div className="flex items-center gap-1">
+                {activeStatuses.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center gap-0.5"
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
+                    />
+                    <div
+                      className="w-0.5 h-2"
+                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             <button
               onClick={onClose}
