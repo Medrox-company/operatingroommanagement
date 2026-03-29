@@ -367,7 +367,22 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </div>
 
           {/* Circular Progress with Status */}
-          <div className="flex flex-col items-center flex-1 justify-center">
+          <div className="flex flex-col items-center flex-1 justify-center relative">
+            {/* Text in circle - absolute positioning */}
+            <motion.div
+              className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
+              key={currentStep?.name}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="text-center px-8">
+                {(room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status')
+                  .split(' ')
+                  .map((word, i) => <div key={i} className="text-2xl font-bold text-white leading-tight">{word}</div>)}
+              </div>
+            </motion.div>
+            
             {/* Pure SVG circle - no box container */}
             <svg width="288" height="288" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
               <defs>
@@ -417,18 +432,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 transition={{ duration: 0.8, ease: 'easeOut' }}
               />
             </svg>
-            {/* Text below circle */}
-            <motion.p
-              className="text-3xl font-bold text-white text-center leading-snug mt-4 px-8"
-              key={currentStep?.name}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {(room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status')
-                .split(' ')
-                .map((word, i) => <span key={i} className="block">{word}</span>)}
-            </motion.p>
           </div>
 
           {/* Main CTA Button - moved up */}
