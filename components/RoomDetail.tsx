@@ -367,7 +367,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </div>
 
           {/* Circular Progress with Status */}
-          <div className="flex flex-col items-center flex-1 justify-center relative">
+          <div className="flex flex-col items-center relative py-4">
             {/* Text in circle - absolute positioning */}
             <motion.div
               className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
