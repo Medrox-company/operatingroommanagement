@@ -181,7 +181,7 @@ export default function StaffPickerModal({
 
         {/* Modal panel */}
         <motion.div
-          className="relative w-full max-w-xl flex flex-col rounded-[2rem] overflow-hidden shadow-2xl"
+          className="relative w-full max-w-3xl flex flex-col rounded-[2rem] overflow-hidden shadow-2xl"
           style={{
             background: 'rgba(10, 10, 18, 0.85)',
             backdropFilter: 'blur(40px) saturate(180%)',
@@ -320,7 +320,7 @@ export default function StaffPickerModal({
           <div className="mx-7 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
 
           {/* ── Staff list ─────────────────────────── */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1.5">
+          <div className="flex-1 overflow-y-auto px-5 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="w-7 h-7 rounded-full border-2 border-white/10 border-t-[#00D8C1] animate-spin" />
@@ -333,70 +333,70 @@ export default function StaffPickerModal({
                 </p>
               </div>
             ) : (
-              filteredStaff.map((member) => {
-                const isSelected = member.id === currentStaffId;
-                const meta = ROLE_META[member.role] || ROLE_META['NURSE'];
+              <div className="grid grid-cols-2 gap-2">
+                {filteredStaff.map((member) => {
+                  const isSelected = member.id === currentStaffId;
+                  const meta = ROLE_META[member.role] || ROLE_META['NURSE'];
 
-                return (
-                  <motion.button
-                    key={member.id}
-                    onClick={() => handleSelect(member)}
-                    className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group"
-                    style={{
-                      background: isSelected
-                        ? 'rgba(0,216,193,0.08)'
-                        : 'rgba(255,255,255,0.02)',
-                      border: isSelected
-                        ? '1px solid rgba(0,216,193,0.35)'
-                        : '1px solid rgba(255,255,255,0.05)',
-                    }}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.985 }}
-                  >
-                    {/* Icon avatar */}
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${meta.iconBg}`}
+                  return (
+                    <motion.button
+                      key={member.id}
+                      onClick={() => handleSelect(member)}
+                      className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group text-left"
+                      style={{
+                        background: isSelected
+                          ? 'rgba(0,216,193,0.08)'
+                          : 'rgba(255,255,255,0.02)',
+                        border: isSelected
+                          ? '1px solid rgba(0,216,193,0.35)'
+                          : '1px solid rgba(255,255,255,0.05)',
+                      }}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.985 }}
                     >
-                      <RoleIcon role={member.role} size="md" />
-                    </div>
-
-                    {/* Name + badges */}
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-sm font-bold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
-                          {member.name}
-                        </span>
+                      {/* Icon avatar */}
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${meta.iconBg}`}
+                      >
+                        <RoleIcon role={member.role} size="md" />
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        {/* Specializace badge */}
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badgeClass}`}>
-                          {meta.badge}
-                        </span>
-                        {/* Role label */}
-                        <span className="text-[10px] text-white/30 font-medium tracking-wide">
-                          {meta.label}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Selected checkmark */}
-                    <AnimatePresence>
-                      {isSelected && (
-                        <motion.div
-                          className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                          style={{ background: 'rgba(0,216,193,0.15)', border: '1px solid rgba(0,216,193,0.4)' }}
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                        >
-                          <Check className="w-4 h-4 text-[#00D8C1]" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
-                );
-              })
+                      {/* Name + badges */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-bold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
+                            {member.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badgeClass}`}>
+                            {meta.badge}
+                          </span>
+                          <span className="text-[10px] text-white/30 font-medium tracking-wide">
+                            {meta.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Selected checkmark */}
+                      <AnimatePresence>
+                        {isSelected && (
+                          <motion.div
+                            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                            style={{ background: 'rgba(0,216,193,0.15)', border: '1px solid rgba(0,216,193,0.4)' }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                          >
+                            <Check className="w-4 h-4 text-[#00D8C1]" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
