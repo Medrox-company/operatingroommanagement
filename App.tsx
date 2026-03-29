@@ -84,13 +84,11 @@ const AppContent: React.FC = () => {
   }
 
   const updateRoomStep = async (roomId: string, newStepIndex: number) => {
-    const now = new Date();
-    const phaseStartedAt = now.toISOString();
     setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, currentStepIndex: newStepIndex, phaseStartedAt } : room
+      room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
     ));
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { current_step_index: newStepIndex, phase_started_at: phaseStartedAt });
+      await updateOperatingRoom(roomId, { current_step_index: newStepIndex });
     }
   };
 
