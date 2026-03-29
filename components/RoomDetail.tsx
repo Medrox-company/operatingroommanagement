@@ -692,15 +692,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
       </button>
 
-      {/* Staff Names - Top Right next to close button */}
-      <div className="absolute top-8 right-40 flex flex-row gap-3 h-24 z-40">
+      {/* Staff Names - Top Right next to close button (Desktop only) */}
+      <div className="hidden lg:flex absolute top-8 right-40 flex-row gap-3 h-24 z-50">
         {/* Doctor Button */}
         <button
           onClick={() => {
             setStaffPickerRole('doctor');
             setStaffPickerOpen(true);
           }}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer"
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95"
         >
           <div className="flex items-center gap-2">
             <Stethoscope className="w-5 h-5 text-violet-400" />
@@ -713,7 +713,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             setStaffPickerRole('nurse');
             setStaffPickerOpen(true);
           }}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer"
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95"
         >
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-emerald-400" />
