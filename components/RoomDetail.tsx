@@ -368,84 +368,117 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </motion.button>
           </div>
 
-          {/* Status Icon & Name */}
-          <div className="text-center mb-6">
-            <motion.div
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-4"
-              style={{ 
+          {/* Circular Progress with Status */}
+          <div className="flex flex-col items-center mb-4">
+            <div className="relative w-48 h-48">
+              {/* SVG Progress Circle */}
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                <defs>
+                  <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                {/* Background track */}
+                <circle 
+                  cx="50" cy="50" r="44" 
+                  fill="none" 
+                  stroke="rgba(255,255,255,0.05)" 
+                  strokeWidth="3"
+                />
+                {/* Animated glow layer */}
+                <motion.circle
+                  cx="50" cy="50" r="44"
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow-ring)' }}
+                  animate={{ 
+                    strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
+                    opacity: [0.3, 0.5, 0.3]
+                  }}
+                  transition={{
+                    strokeDasharray: { duration: 0.8, ease: 'easeOut' },
+                    opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+                  }}
+                />
+                {/* Main progress */}
+                <motion.circle
+                  cx="50" cy="50" r="44"
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
+                  style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
+                  animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                />
+              </svg>
+              {/* Center content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <motion.p 
+                  className="text-lg font-bold text-white text-center leading-tight px-4"
+                  key={currentStep?.name}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status'}
+                </motion.p>
+                <p className="text-white/40 text-xs mt-1">{safeStepIndex + 1}/{validStepCount}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Main CTA Button - moved up */}
+          {!isInteractionBlocked && (
+            <motion.button
+              onClick={handleNextStep}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-4 rounded-xl font-semibold text-white mb-4"
+              style={{
                 background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}80 100%)`,
-                boxShadow: `0 0 60px ${activeColor}40`
+                boxShadow: `0 0 30px ${activeColor}40`
               }}
             >
-              <Activity className="w-10 h-10 text-white" />
-            </motion.div>
-            <motion.h2 
-              className="text-xl font-bold text-white mb-1"
-              key={currentStep?.name}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : currentStep?.name || 'Status'}
-            </motion.h2>
-            <p className="text-white/40 text-sm tracking-wide">KROK {safeStepIndex + 1} Z {validStepCount}</p>
-          </div>
+              {isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}
+            </motion.button>
+          )}
 
           {/* Main Card */}
           <motion.div
-            className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-5 flex-1 flex flex-col"
+            className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-4 flex-1 flex flex-col"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {/* Timer Section */}
-            <div className="text-center mb-5">
-              <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2">Čas ve fázi</p>
-              <motion.p 
-                className="text-5xl font-mono font-bold"
-                style={{ color: activeColor }}
-                key={elapsedTime}
-              >
-                {elapsedTime}
-              </motion.p>
-            </div>
-
-            {/* Step Indicators */}
-            <div className="flex items-center justify-center gap-2 mb-5">
-              {activeDbStatuses.map((status, idx) => (
-                <div
-                  key={status.id}
-                  className="rounded-full transition-all duration-300"
-                  style={{ 
-                    width: idx === safeStepIndex ? 24 : 8, 
-                    height: 8,
-                    backgroundColor: idx <= safeStepIndex ? activeColor : 'rgba(255,255,255,0.1)',
-                    boxShadow: idx === safeStepIndex ? `0 0 10px ${activeColor}60` : 'none'
-                  }}
-                />
-              ))}
-            </div>
-
             {/* End Time Control */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 mb-4">
-              <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-3 text-center">Ukončení</p>
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 mb-3">
+              <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 text-center">Ukončení</p>
               <div className="flex items-center justify-between">
                 <motion.button
                   onClick={handleDecreaseTime}
                   disabled={isInteractionBlocked || !estimatedEndTime}
-                  className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30"
+                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30"
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Minus className="w-5 h-5 text-white/60" />
+                  <Minus className="w-4 h-4 text-white/60" />
                 </motion.button>
-                <p className="text-3xl font-mono font-bold text-white">
+                <p className="text-2xl font-mono font-bold text-white">
                   {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
                 <motion.button
                   onClick={handleIncreaseTime}
                   disabled={isInteractionBlocked}
-                  className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30"
+                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30"
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Plus className="w-5 h-5 text-white/60" />
+                  <Plus className="w-4 h-4 text-white/60" />
                 </motion.button>
               </div>
             </div>
@@ -543,23 +576,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               </motion.button>
             </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Main CTA Button */}
-            {!isInteractionBlocked && (
-              <motion.button
-                onClick={handleNextStep}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-4 rounded-xl font-semibold text-white"
-                style={{
-                  background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}80 100%)`,
-                  boxShadow: `0 0 30px ${activeColor}40`
-                }}
-              >
-                {isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}
-              </motion.button>
-            )}
           </motion.div>
 
           {/* Footer */}
