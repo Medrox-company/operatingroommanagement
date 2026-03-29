@@ -151,6 +151,9 @@ export async function updateOperatingRoom(
     current_step_index: number;
     estimated_end_time: string | null;
     weekly_schedule: Record<string, any>;
+    doctor_id: string | null;
+    nurse_id: string | null;
+    anesthesiologist_id: string | null;
   }>
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {

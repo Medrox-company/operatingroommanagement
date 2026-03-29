@@ -11,6 +11,7 @@ import {
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom } from '../lib/db';
+import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 
 interface RoomDetailProps {
   room: OperatingRoom;
@@ -18,6 +19,7 @@ interface RoomDetailProps {
   onStepChange: (index: number) => void;
   onEndTimeChange: (newTime: Date | null) => void;
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
+  onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
 }
 
 const usePrevious = (value: number) => {
@@ -28,7 +30,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange }) => {
   // Get workflow statuses from database context - ONLY main workflow, no special statuses
   const { workflowStatuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
   
@@ -45,6 +47,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const endTimeTimeoutRef = useRef<number | null>(null);
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
+  const [staffPickerOpen, setStaffPickerOpen] = useState(false);
+  const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
   const [patientCallElapsedTime, setPatientCallElapsedTime] = useState('00:00');
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
@@ -565,24 +569,36 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
             {/* Staff Section */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+              <button
+                onClick={() => {
+                  setStaffPickerRole('doctor');
+                  setStaffPickerOpen(true);
+                }}
+                className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left"
+              >
                 <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
                   <Stethoscope className="w-4 h-4 text-violet-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[9px] text-white/40 uppercase tracking-wide">Lékař</p>
-                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.doctor.name}</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.doctor.name || 'Nepřiřazen'}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+              </button>
+              <button
+                onClick={() => {
+                  setStaffPickerRole('nurse');
+                  setStaffPickerOpen(true);
+                }}
+                className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left"
+              >
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                   <Heart className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[9px] text-white/40 uppercase tracking-wide">Sestra</p>
-                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.nurse.name}</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.nurse.name || 'Nepřiřazena'}</p>
                 </div>
-              </div>
+              </button>
             </div>
 
           </div>
@@ -676,22 +692,34 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
       </button>
 
-      {/* ARO Staff Names - Top Right next to close button */}
+      {/* Staff Names - Top Right next to close button */}
       <div className="absolute top-8 right-40 flex flex-row gap-3 h-24 z-40">
-        {room.staff.anesthesiologist?.name && (
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
-            <div className="flex items-center gap-2">
-              <Stethoscope className="w-5 h-5" style={{ color: activeColor }} />
-              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
-            </div>
-          </div>
-        )}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
+        {/* Doctor Button */}
+        <button
+          onClick={() => {
+            setStaffPickerRole('doctor');
+            setStaffPickerOpen(true);
+          }}
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer"
+        >
           <div className="flex items-center gap-2">
-            <Heart className="w-5 h-5" style={{ color: '#c0bdb7' }} />
-            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+            <Stethoscope className="w-5 h-5 text-violet-400" />
+            <span className="text-sm font-bold text-violet-300">{room.staff.doctor.name || 'Vybrat lékaře'}</span>
           </div>
-        </div>
+        </button>
+        {/* Nurse Button */}
+        <button
+          onClick={() => {
+            setStaffPickerRole('nurse');
+            setStaffPickerOpen(true);
+          }}
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5 text-emerald-400" />
+            <span className="text-sm font-bold text-emerald-300">{room.staff.nurse.name || 'Vybrat sestru'}</span>
+          </div>
+        </button>
       </div>
 
 
@@ -1194,6 +1222,19 @@ const prevStep = activeDbStatuses.length > 0
         </div>
       </div>
       </div>{/* end desktop wrapper */}
+
+      {/* Staff Picker Modal */}
+      <StaffPickerModal
+        isOpen={staffPickerOpen}
+        onClose={() => setStaffPickerOpen(false)}
+        onSelect={(staffId, staffName) => {
+          if (onStaffChange) {
+            onStaffChange(staffPickerRole, staffId, staffName);
+          }
+        }}
+        filterRole={staffPickerRole === 'doctor' ? 'DOCTOR' : 'NURSE'}
+        title={staffPickerRole === 'doctor' ? 'Vybrat lékaře' : 'Vybrat sestru'}
+      />
     </motion.div>
   );
 };

@@ -153,6 +153,30 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleStaffChange = async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
+    // Update local state
+    setRooms(prev => prev.map(room => {
+      if (room.id !== roomId) return room;
+      
+      const updatedStaff = { ...room.staff };
+      if (role === 'doctor') {
+        updatedStaff.doctor = { name: staffName, role: 'DOCTOR' };
+      } else if (role === 'nurse') {
+        updatedStaff.nurse = { name: staffName, role: 'NURSE' };
+      } else if (role === 'anesthesiologist') {
+        updatedStaff.anesthesiologist = { name: staffName, role: 'ANESTHESIOLOGIST' };
+      }
+      
+      return { ...room, staff: updatedStaff };
+    }));
+
+    // Update database
+    if (isDbConnected) {
+      const dbField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
+      await updateOperatingRoom(roomId, { [dbField]: staffId } as any);
+    }
+  };
+
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
@@ -214,6 +238,7 @@ const AppContent: React.FC = () => {
                   onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
+                  onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
                 />
               </motion.div>
             )}
