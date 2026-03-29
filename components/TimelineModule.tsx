@@ -1148,7 +1148,7 @@ const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow
   </div>
 );
 
-// Helper Component - Room Detail Popup
+// Helper Component - Room Detail Popup (Design matching screenshot)
 interface RoomDetailPopupProps {
   room: OperatingRoom;
   onClose: () => void;
