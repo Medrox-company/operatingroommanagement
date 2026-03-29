@@ -484,16 +484,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </div>
 
             {/* Action Buttons Grid */}
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              <motion.button
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              <button
                 onClick={async () => {
                   const newPaused = !isPaused;
                   setIsPaused(newPaused);
                   await updateOperatingRoom(room.id, { is_paused: newPaused });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                whileTap={{ scale: 0.95 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 ${
                   isPaused
                     ? 'bg-[#00D8C1]/20 border-[#00D8C1]/50'
                     : 'bg-white/[0.02] border-white/10'
@@ -501,17 +500,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               >
                 {isPaused ? <Play className="w-5 h-5 text-[#00D8C1]" /> : <Pause className="w-5 h-5 text-white/40" />}
                 <span className="text-[8px] font-medium text-white/40 uppercase">{isPaused ? 'Play' : 'Pauza'}</span>
-              </motion.button>
+              </button>
 
-              <motion.button
+              <button
                 onClick={async () => {
                   const newH = !room.isEnhancedHygiene;
                   onEnhancedHygieneToggle?.(newH);
                   await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                 }}
-                whileTap={{ scale: 0.95 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 ${
                   room.isEnhancedHygiene
                     ? 'bg-orange-500/20 border-orange-500/50'
                     : 'bg-white/[0.02] border-white/10'
@@ -519,9 +517,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               >
                 <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40'}`} />
                 <span className="text-[8px] font-medium text-white/40 uppercase">Hygiena</span>
-              </motion.button>
+              </button>
 
-              <motion.button
+              <button
                 onClick={async () => {
                   if (!patientCalledTime) {
                     const now = new Date();
@@ -533,8 +531,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   }
                 }}
                 disabled={!!patientCalledTime}
-                whileTap={{ scale: 0.95 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all disabled:opacity-50 ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-50 ${
                   patientCalledTime
                     ? 'bg-green-500/20 border-green-500/50'
                     : 'bg-white/[0.02] border-white/10'
@@ -542,9 +539,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               >
                 <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-400' : 'text-white/40'}`} />
                 <span className="text-[8px] font-medium text-white/40 uppercase">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
-              </motion.button>
+              </button>
 
-              <motion.button
+              <button
                 onClick={async () => {
                   if (patientCalledTime && !patientArrivedTime) {
                     const now = new Date();
@@ -564,8 +561,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   }
                 }}
                 disabled={!patientCalledTime || !!patientArrivedTime}
-                whileTap={{ scale: 0.95 }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all disabled:opacity-30 ${
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-30 ${
                   patientArrivedTime
                     ? 'bg-purple-500/20 border-purple-500/50'
                     : 'bg-white/[0.02] border-white/10'
@@ -573,15 +569,32 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               >
                 <BedDouble className={`w-5 h-5 ${patientArrivedTime ? 'text-purple-400' : 'text-white/40'}`} />
                 <span className="text-[8px] font-medium text-white/40 uppercase">Příjezd</span>
-              </motion.button>
+              </button>
+            </div>
+
+            {/* Staff Section */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                  <Stethoscope className="w-4 h-4 text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wide">Lékař</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.doctor.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <Heart className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wide">Sestra</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.nurse.name}</p>
+                </div>
+              </div>
             </div>
 
           </motion.div>
-
-          {/* Footer */}
-          <p className="text-center text-white/20 text-xs mt-4">
-            {room.staff.doctor.name} • {room.staff.nurse.name}
-          </p>
         </div>
       </div>
 
