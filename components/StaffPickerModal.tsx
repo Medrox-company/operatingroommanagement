@@ -246,34 +246,62 @@ export default function StaffPickerModal({
               </button>
             </div>
 
-            {/* ── Big search input ────────────────── */}
-            <div className="relative">
-              {/* glow ring on focus handled via Tailwind ring */}
-              <div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
+            {/* ── Big search input - glassmorphism card style ────────────────── */}
+            <div 
+              className="relative rounded-2xl overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(88,28,135,0.12) 50%, rgba(59,7,100,0.08) 100%)',
+                border: '1px solid rgba(139,92,246,0.25)',
+                boxShadow: '0 0 40px rgba(139,92,246,0.08), inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}
+            >
+              {/* Top glow accent line */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-[1px]"
                 style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(167,139,250,0.5) 50%, transparent 100%)',
                 }}
               />
-              <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                <Search className="w-5 h-5 text-white/25" />
+              
+              {/* Search icon container */}
+              <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'rgba(139,92,246,0.15)',
+                    border: '1px solid rgba(139,92,246,0.2)',
+                  }}
+                >
+                  <Search className="w-5 h-5 text-violet-400" />
+                </div>
               </div>
+              
+              {/* Input field */}
               <input
                 ref={inputRef}
                 type="text"
                 placeholder="Hledat podle jména nebo specializace..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="relative w-full pl-14 pr-5 py-5 rounded-2xl bg-transparent text-white placeholder-white/25 focus:outline-none text-[15px] font-medium tracking-wide"
-                style={{ caretColor: '#00D8C1' }}
+                className="relative w-full pl-24 pr-14 py-6 bg-transparent text-white placeholder-white/30 focus:outline-none text-base font-medium tracking-wide"
+                style={{ caretColor: '#a78bfa' }}
               />
+              
+              {/* Clear button */}
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 right-0 pr-5 flex items-center text-white/30 hover:text-white/60 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-6 flex items-center"
                 >
-                  <X className="w-4 h-4" />
+                  <div 
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-105"
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    <X className="w-4 h-4 text-white/40" />
+                  </div>
                 </button>
               )}
             </div>
