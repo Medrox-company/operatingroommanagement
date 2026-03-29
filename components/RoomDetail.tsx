@@ -367,7 +367,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           </div>
 
           {/* Circular Progress with Status */}
-          <div className="flex flex-col items-center flex-1 justify-center relative">
+          <div className="flex flex-col items-center relative py-4">
             {/* Text in circle - absolute positioning */}
             <motion.div
               className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
@@ -384,7 +384,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </motion.div>
             
             {/* Pure SVG circle - no box container */}
-            <svg width="288" height="288" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
+            <svg width="240" height="240" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
               <defs>
                 <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
