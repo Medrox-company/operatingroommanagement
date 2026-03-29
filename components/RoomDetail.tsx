@@ -384,7 +384,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             </motion.div>
             
             {/* Pure SVG circle - no box container */}
-            <svg width="288" height="288" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
+            <svg width="240" height="240" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
               <defs>
                 <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
