@@ -1419,3 +1419,4 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     </motion.div>
   );
 };
+
