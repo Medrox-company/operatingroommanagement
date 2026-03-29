@@ -115,20 +115,20 @@ export default function StaffPickerModal({
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [isOpen]);
 
-  // Filtered list
+  // Filtered list — only show results when query is typed, max 6
   const filteredStaff = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    const effectiveRole = filterRole;
+    if (!q) return [];
 
-    return staff.filter((m) => {
-      if (effectiveRole) {
-        if (effectiveRole === 'DOCTOR') {
-          if (m.role !== 'DOCTOR' && m.role !== 'ANESTHESIOLOGIST') return false;
-        } else {
-          if (m.role !== effectiveRole) return false;
+    return staff
+      .filter((m) => {
+        if (filterRole) {
+          if (filterRole === 'DOCTOR') {
+            if (m.role !== 'DOCTOR' && m.role !== 'ANESTHESIOLOGIST') return false;
+          } else {
+            if (m.role !== filterRole) return false;
+          }
         }
-      }
-      if (q) {
         const meta = ROLE_META[m.role];
         const searchableText = [
           m.name,
@@ -137,9 +137,8 @@ export default function StaffPickerModal({
           m.role,
         ].join(' ').toLowerCase();
         return searchableText.includes(q);
-      }
-      return true;
-    });
+      })
+      .slice(0, 6);
   }, [staff, searchQuery, filterRole]);
 
   // Split counts for header chips
@@ -306,12 +305,12 @@ export default function StaffPickerModal({
               )}
             </div>
 
-            {/* Live count */}
-            {!loading && (
+            {/* Live count - only when searching */}
+            {!loading && searchQuery.trim() && (
               <p className="mt-3 text-[11px] text-white/25 tracking-wider uppercase">
                 {filteredStaff.length === 0
                   ? 'Žádné výsledky'
-                  : `${filteredStaff.length} ${filteredStaff.length === 1 ? 'výsledek' : filteredStaff.length < 5 ? 'výsledky' : 'výsledků'}`}
+                  : `${filteredStaff.length} z max. 6 výsledků`}
               </p>
             )}
           </div>
@@ -325,11 +324,27 @@ export default function StaffPickerModal({
               <div className="flex items-center justify-center py-16">
                 <div className="w-7 h-7 rounded-full border-2 border-white/10 border-t-[#00D8C1] animate-spin" />
               </div>
+            ) : !searchQuery.trim() ? (
+              /* Empty state — prompt to search */
+              <div className="flex flex-col items-center justify-center py-14 gap-4">
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{ background: 'rgba(139,92,246,0.10)', border: '1px solid rgba(139,92,246,0.18)' }}
+                >
+                  <Search className="w-7 h-7 text-violet-400/60" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-white/40 mb-1">Začněte psát pro vyhledání</p>
+                  <p className="text-[11px] text-white/20 tracking-wide">
+                    Zobrazí se max. 6 nejbližších shod
+                  </p>
+                </div>
+              </div>
             ) : filteredStaff.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="flex flex-col items-center justify-center py-14 gap-3">
                 <UserX className="w-10 h-10 text-white/15" />
                 <p className="text-sm text-white/30">
-                  {searchQuery ? `Žádný personál pro "${searchQuery}"` : 'Žádný personál v databázi'}
+                  {`Žádný personál pro "${searchQuery}"`}
                 </p>
               </div>
             ) : (
@@ -400,7 +415,7 @@ export default function StaffPickerModal({
             )}
           </div>
 
-          {/* ── Footer ─────────────────────────────── */}
+          {/* ── Footer ───────────────���─────────────── */}
           <div
             className="px-7 py-4 flex items-center justify-between"
             style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}
