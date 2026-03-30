@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette } from 'lucide-react';
+import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
 import DepartmentsManager from './DepartmentsManager';
@@ -10,6 +10,7 @@ import StatisticsModule from './StatisticsModule';
 import StaffManager from './StaffManager';
 import StatusesManager from './StatusesManager';
 import BackgroundManager from './BackgroundManager';
+import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -113,15 +114,48 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
     },
   ];
 
+  // Back button component for modules
+  const BackButton = () => (
+    <button
+      onClick={() => setSelectedModule(null)}
+      className="flex items-center gap-2 mb-6 text-white/50 hover:text-white transition-colors group"
+    >
+      <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+      <span className="text-sm font-medium">Zpět na nastavení</span>
+    </button>
+  );
+
+  // Module wrapper with error boundary and back button
+  const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="w-full px-8 md:pl-32 md:pr-10 py-10"
+    >
+      <BackButton />
+      <ErrorBoundary
+        fallback={
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <p className="text-white/50">Modul se nepodařilo načíst</p>
+            <button
+              onClick={() => setSelectedModule(null)}
+              className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+            >
+              Zpět na nastavení
+            </button>
+          </div>
+        }
+      >
+        {children}
+      </ErrorBoundary>
+    </motion.div>
+  );
+
   return (
     <div className="relative w-full min-h-screen">
       {selectedModule === 'rooms' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
+        <ModuleWrapper>
           <OperatingRoomsManager 
             rooms={rooms} 
             onRoomsChange={(updatedRooms) => {
@@ -129,61 +163,31 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             }}
             onScheduleUpdate={onScheduleUpdate}
           />
-        </motion.div>
+        </ModuleWrapper>
       ) : selectedModule === 'shifts' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
+        <ModuleWrapper>
           <ShiftScheduleManager />
-        </motion.div>
+        </ModuleWrapper>
       ) : selectedModule === 'notifications' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
+        <ModuleWrapper>
           <NotificationsManager />
-        </motion.div>
+        </ModuleWrapper>
       ) : selectedModule === 'statistics' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
+        <ModuleWrapper>
           <StatisticsModule rooms={rooms} />
-        </motion.div>
+        </ModuleWrapper>
       ) : selectedModule === 'staff' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
+        <ModuleWrapper>
           <StaffManager />
-        </motion.div>
+        </ModuleWrapper>
       ) : selectedModule === 'statuses' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
+        <ModuleWrapper>
           <StatusesManager />
-        </motion.div>
+        </ModuleWrapper>
       ) : selectedModule === 'background' ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full px-8 md:pl-32 md:pr-10 py-10"
-        >
+        <ModuleWrapper>
           <BackgroundManager />
-        </motion.div>
+        </ModuleWrapper>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
           <div className="max-w-[2400px] mx-auto w-full">
