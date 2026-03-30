@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Palette, Image as ImageIcon, RotateCcw, Plus, Trash2, 
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, ArrowDownRight, 
-  ArrowUpLeft, ArrowDownLeft, Upload, X, Eye, EyeOff, Loader
+  ArrowUpLeft, ArrowDownLeft, Eye, EyeOff, Loader
 } from 'lucide-react';
 import { saveBackgroundSettings, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 
@@ -47,6 +47,7 @@ const BackgroundManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'color' | 'image'>('color');
   const [showPreview, setShowPreview] = useState(true);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Load settings from database
   useEffect(() => {
@@ -60,29 +61,17 @@ const BackgroundManager: React.FC = () => {
     loadSettings();
   }, []);
 
-  const [hasChanges, setHasChanges] = useState(false);
-  const [originalSettings, setOriginalSettings] = useState<BackgroundSettings>(DEFAULT_SETTINGS);
-
-  // Track if settings changed
   const markChanged = () => setHasChanges(true);
 
-  // Apply changes - save to database and update app
   const applyChanges = useCallback(async () => {
     setSaving(true);
-    
-    // Try to save to database
     await saveBackgroundSettings(settings);
-    
-    // Always dispatch event to update App background immediately
     console.log('[v0] Dispatching backgroundSettingsChanged event:', settings);
     window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: settings }));
-    setOriginalSettings(settings);
     setHasChanges(false);
-    
     setSaving(false);
   }, [settings]);
 
-  // Add color stop
   const addColor = () => {
     if (settings.colors.length >= 4) return;
     const newColors = [...settings.colors];
@@ -92,7 +81,6 @@ const BackgroundManager: React.FC = () => {
     markChanged();
   };
 
-  // Remove color stop
   const removeColor = (index: number) => {
     if (settings.colors.length <= 1) return;
     const newColors = settings.colors.filter((_, i) => i !== index);
@@ -103,7 +91,6 @@ const BackgroundManager: React.FC = () => {
     }
   };
 
-  // Update color stop
   const updateColor = (index: number, updates: Partial<{ color: string; position: number }>) => {
     const newColors = settings.colors.map((c, i) => 
       i === index ? { ...c, ...updates } : c
@@ -112,22 +99,17 @@ const BackgroundManager: React.FC = () => {
     markChanged();
   };
 
-  // Update settings helper
   const updateSettings = (updates: Partial<BackgroundSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));
     markChanged();
   };
 
-  // Reset to defaults
   const resetToDefaults = async () => {
     setSettings(DEFAULT_SETTINGS);
     setSaving(true);
-    const success = await saveBackgroundSettings(DEFAULT_SETTINGS);
-    if (success) {
-      window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: DEFAULT_SETTINGS }));
-      setOriginalSettings(DEFAULT_SETTINGS);
-      setHasChanges(false);
-    }
+    await saveBackgroundSettings(DEFAULT_SETTINGS);
+    window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: DEFAULT_SETTINGS }));
+    setHasChanges(false);
     setSaving(false);
     setSelectedColorIndex(0);
   };
@@ -139,6 +121,20 @@ const BackgroundManager: React.FC = () => {
       </div>
     );
   }
+
+  const getGradientCSS = () => {
+    const colors = settings.colors || [];
+    if (settings.type === 'solid' || colors.length <= 1) {
+      return colors[0]?.color || '#0a0a12';
+    }
+    const sortedColors = [...colors].sort((a, b) => a.position - b.position);
+    const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
+    
+    if (settings.type === 'radial') {
+      return `radial-gradient(circle at center, ${colorStops})`;
+    }
+    return `linear-gradient(${settings.direction || 'to bottom'}, ${colorStops})`;
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto">
@@ -167,7 +163,6 @@ const BackgroundManager: React.FC = () => {
               <RotateCcw className="w-4 h-4" />
               Reset
             </button>
-            {/* Apply Changes Button */}
             <button
               onClick={applyChanges}
               disabled={saving || !hasChanges}
@@ -337,13 +332,7 @@ const BackgroundManager: React.FC = () => {
                       {/* Gradient Preview */}
                       <div 
                         className="h-8 rounded-xl mb-4 relative"
-                        style={{
-                          background: settings.colors.length === 1 
-                            ? settings.colors[0]?.color
-                            : settings.type === 'radial'
-                            ? `radial-gradient(circle at center, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`
-                            : `linear-gradient(${settings.direction}, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`
-                        }}
+                        style={{ background: getGradientCSS() }}
                       >
                         {settings.colors.map((c, i) => (
                           <button
@@ -403,47 +392,49 @@ const BackgroundManager: React.FC = () => {
 
                     {/* Direction - only for linear gradient */}
                     {settings.type === 'linear' && (
-                    <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Směr přechodu</p>
-                      <div className="grid grid-cols-4 gap-2">
-                        {GRADIENT_DIRECTIONS.map((dir) => {
-                          const DirIcon = dir.icon;
-                          return (
-                            <button
-                              key={dir.value}
-                              onClick={() => updateSettings({ direction: dir.value })}
-                              className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl transition-all ${
-                                settings.direction === dir.value
-                                  ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
-                                  : 'bg-white/5 text-white/40 border border-white/5 hover:border-white/10 hover:text-white/60'
-                              }`}
-                              disabled={saving}
-                            >
-                              <DirIcon className="w-5 h-5" />
-                              <span className="text-[10px] font-medium">{dir.label}</span>
-                            </button>
-                          );
-                        })}
+                      <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Směr přechodu</p>
+                        <div className="grid grid-cols-4 gap-2">
+                          {GRADIENT_DIRECTIONS.map((dir) => {
+                            const DirIcon = dir.icon;
+                            return (
+                              <button
+                                key={dir.value}
+                                onClick={() => updateSettings({ direction: dir.value })}
+                                className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl transition-all ${
+                                  settings.direction === dir.value
+                                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                                    : 'bg-white/5 text-white/40 border border-white/5 hover:border-white/10 hover:text-white/60'
+                                }`}
+                                disabled={saving}
+                              >
+                                <DirIcon className="w-5 h-5" />
+                                <span className="text-[10px] font-medium">{dir.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
                     )}
 
-                {/* Opacity */}
-                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Průhlednost</p>
-                    <span className="text-sm font-bold text-white/60">{settings.opacity}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={settings.opacity}
-                    onChange={(e) => updateSettings({ opacity: parseInt(e.target.value) })}
-                    className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-violet-500"
-                    disabled={saving}
-                  />
-                </div>
+                    {/* Opacity */}
+                    <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Průhlednost</p>
+                        <span className="text-sm font-bold text-white/60">{settings.opacity}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={settings.opacity}
+                        onChange={(e) => updateSettings({ opacity: parseInt(e.target.value) })}
+                        className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-violet-500"
+                        disabled={saving}
+                      />
+                    </div>
+                  </>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -453,7 +444,7 @@ const BackgroundManager: React.FC = () => {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                {/* Image Upload */}
+                {/* Image URL */}
                 <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">URL obrázku</p>
                   <input
@@ -507,38 +498,53 @@ const BackgroundManager: React.FC = () => {
         {/* Preview */}
         {showPreview && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl overflow-hidden sticky top-8"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="hidden lg:flex flex-col sticky top-20 h-fit"
           >
-            <div className="p-4">
-              <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Náhled</p>
-              <div className="relative h-64 rounded-xl overflow-hidden">
-                {settings.imageUrl && (
-                  <img
-                    src={settings.imageUrl}
-                    alt="Background"
-                    className="absolute inset-0 w-full h-full object-cover grayscale"
-                    style={{
-                      opacity: settings.imageOpacity / 100,
-                      filter: settings.imageBlur > 0 ? `blur(${settings.imageBlur}px)` : undefined,
-                    }}
-                  />
-                )}
-                <div
-                  className="absolute inset-0"
+            <div className="relative rounded-2xl overflow-hidden border border-white/10" style={{ aspectRatio: '9/12' }}>
+              {/* Background Image */}
+              {settings.imageUrl && (
+                <img
+                  src={settings.imageUrl}
+                  alt="Preview"
+                  className="absolute inset-0 w-full h-full object-cover grayscale"
                   style={{
-                    background: settings.type === 'solid' || settings.colors.length === 1
-                      ? settings.colors[0]?.color
-                      : settings.type === 'radial'
-                      ? `radial-gradient(circle at center, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`
-                      : `linear-gradient(${settings.direction}, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`,
-                    opacity: settings.opacity / 100,
+                    opacity: settings.imageOpacity / 100,
+                    filter: settings.imageBlur > 0 ? `blur(${settings.imageBlur}px)` : undefined,
                   }}
                 />
+              )}
+
+              {/* Color/Gradient Overlay */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: getGradientCSS(),
+                  opacity: settings.opacity / 100,
+                }}
+              />
+
+              {/* Vignette */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.6)_100%)]" />
+
+              {/* Card Preview */}
+              <div className="absolute inset-0 flex items-end p-6">
+                <motion.div
+                  className="w-full p-4 rounded-xl"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(40px)',
+                  }}
+                >
+                  <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Náhled</p>
+                  <p className="text-sm font-bold text-white">Barva a obrázek</p>
+                </motion.div>
               </div>
             </div>
+            <p className="text-xs text-white/30 mt-3 text-center">Živý náhled změn</p>
           </motion.div>
         )}
       </div>
