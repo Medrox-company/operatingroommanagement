@@ -721,16 +721,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 ? 'bg-white/5 border-white/10 opacity-60'
                 : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
             }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.1 }}
           >
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               {patientCalledTime && !patientArrivedTime ? (
                 <motion.div
                   key="call-timer"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.1 }}
                   className="flex flex-col items-center gap-1"
                 >
                   <Phone className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-green-300" strokeWidth={2} />
@@ -741,9 +743,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               ) : (
                 <motion.div
                   key="call-idle"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.1 }}
                   className="flex flex-col items-center gap-2"
                 >
                   <Phone className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
@@ -790,8 +793,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 ? 'bg-white/5 border-white/10 opacity-40'
                 : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
             }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.1 }}
           >
             <UserCheck className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
             <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
@@ -813,13 +817,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 step_name: currentStep.title,
               });
             }}
-            className={`rounded-2xl transition-all  flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+            className={`rounded-2xl flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
               room.isEnhancedHygiene
                 ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
                 : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
             }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.1 }}
           >
             <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
             <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
@@ -841,13 +846,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   step_name: currentStep.title,
                 });
               }}
-              className={`rounded-2xl transition-all  opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+              className={`rounded-2xl opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
                   : 'bg-white/5 border-white/10'
               }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.1 }}
             >
               {isPaused ? (
                 <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
@@ -875,16 +881,18 @@ const prevStep = activeDbStatuses.length > 0
   : currentStep;
             return (
               <motion.div
-                initial={{ opacity: 0, x: -50 }}
+                initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center"
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center will-change-transform"
+                style={{ transform: 'translateZ(0)' }}
               >
                 {/* Gradient Glow - transparent from center */}
                 <div 
-                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-200"
+                  className="absolute inset-0 rounded-full blur-[40px]"
                   style={{
-                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.12) 100%)`,
+                    willChange: 'opacity'
                   }}
                 />
                 
@@ -911,30 +919,33 @@ const prevStep = activeDbStatuses.length > 0
           <motion.button
             onClick={handleNextStep}
             disabled={isInteractionBlocked}
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className={`relative w-[180px] h-[180px] sm:w-[250px] sm:h-[250px] md:w-[350px] md:h-[350px] lg:w-[500px] lg:h-[500px] flex items-center justify-center rounded-full group transition-all focus:outline-none z-10
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className={`relative w-[180px] h-[180px] sm:w-[250px] sm:h-[250px] md:w-[350px] md:h-[350px] lg:w-[500px] lg:h-[500px] flex items-center justify-center rounded-full group focus:outline-none z-10 will-change-transform
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
-            whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
+            style={{ transform: 'translateZ(0)' }}
+            whileTap={isInteractionBlocked ? {} : { scale: 0.97 }}
           >
-            {/* Primary Background Glow - subtle */}
+            {/* Primary Background Glow - optimized */}
             <div 
-              className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-200"
+              className="absolute inset-0 rounded-full blur-[60px]"
               style={{ 
                 backgroundColor: activeColor,
-                opacity: (room.isEmergency || room.isLocked) ? 0.45 : 0.25,
+                opacity: (room.isEmergency || room.isLocked) ? 0.4 : 0.2,
+                willChange: 'opacity',
+                transform: 'translateZ(0)'
               }}
             />
 
-            {/* Inner Glow Core - simplified */}
+            {/* Inner Glow Core - optimized */}
             <div 
-              className="absolute inset-10 rounded-full opacity-15"
+              className="absolute inset-10 rounded-full opacity-12"
               style={{ 
                 backgroundColor: activeColor,
-                filter: 'blur(40px)',
-                transition: 'background-color 0.3s ease'
+                filter: 'blur(30px)',
+                transform: 'translateZ(0)'
               }}
             />
 
@@ -974,13 +985,14 @@ const prevStep = activeDbStatuses.length > 0
 
             {/* Center Content */}
             <div className="text-center relative z-20 pointer-events-none px-8">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="popLayout">
                 {room.isLocked && isFinalStep ? (
                   <motion.div
                     key="locked-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
                     className="flex flex-col items-center"
                   >
                     <Lock className="w-20 h-20 text-white mb-4" />
@@ -991,9 +1003,10 @@ const prevStep = activeDbStatuses.length > 0
                 ) : showEndTime && estimatedEndTime ? (
                   <motion.div
                     key="end-time-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
                   >
                     <h2 className="text-7xl font-black tracking-tighter text-white font-mono">
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
@@ -1002,20 +1015,20 @@ const prevStep = activeDbStatuses.length > 0
                 ) : showPatientCalledText ? (
                   <motion.div
                     key="patient-called-text"
-                    initial={{ opacity: 0, scale: 0.85 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ duration: 0.3 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
                     className="flex flex-col items-center gap-6"
                   >
                     <p className="text-[10px] font-black tracking-[0.2em] uppercase text-white/25">
                       SPECIÁLNÍ STAV
                     </p>
-                    {/* Animované sluchátko */}
+                    {/* Animované sluchátko - optimized */}
                     <motion.div
-                      animate={{ rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.1, 1.1, 1.1, 1.1, 1] }}
-                      transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.8, ease: 'easeInOut' }}
-                      style={{ color: activeColor }}
+                      animate={{ rotate: [0, -10, 10, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+                      style={{ color: activeColor, willChange: 'transform', transform: 'translateZ(0)' }}
                     >
                       <Phone className="w-20 h-20" strokeWidth={1.5} />
                     </motion.div>
@@ -1031,20 +1044,20 @@ const prevStep = activeDbStatuses.length > 0
                 ) : showPatientArrivedText ? (
                   <motion.div
                     key="patient-arrived-text"
-                    initial={{ opacity: 0, scale: 0.85 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ duration: 0.3 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
                     className="flex flex-col items-center gap-6"
                   >
                     <p className="text-[10px] font-black tracking-[0.2em] uppercase text-white/25">
                       SPECIÁLNÍ STAV
                     </p>
-                    {/* Animovaná postel s pojezdem */}
+                    {/* Animovaná postel s pojezdem - optimized */}
                     <motion.div
-                      animate={{ x: [0, 14, 0] }}
-                      transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.5, ease: 'easeInOut' }}
-                      style={{ color: activeColor }}
+                      animate={{ x: [0, 10, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 1.2, ease: 'easeInOut' }}
+                      style={{ color: activeColor, willChange: 'transform', transform: 'translateZ(0)' }}
                     >
                       <BedDouble className="w-20 h-20" strokeWidth={1.5} />
                     </motion.div>
@@ -1060,9 +1073,10 @@ const prevStep = activeDbStatuses.length > 0
                 ) : isPaused ? (
                   <motion.div
                     key="pause-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.12 }}
                   >
                     <h2 className="text-7xl font-black tracking-tighter text-white uppercase">
                       PAUZA
@@ -1074,6 +1088,7 @@ const prevStep = activeDbStatuses.length > 0
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    transition={{ duration: 0.12 }}
                   >
                     <p className={`text-[10px] font-black tracking-[0.2em] mb-6 uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
                       PROBÍHAJÍCÍ FÁZE
@@ -1081,8 +1096,9 @@ const prevStep = activeDbStatuses.length > 0
                     
                     <motion.h2
                       key={currentStep.title}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.12 }}
                       className={`text-6xl font-bold tracking-tight leading-tight mb-6 ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
                     >
                       {currentStep.title}
@@ -1103,16 +1119,18 @@ const prevStep = activeDbStatuses.length > 0
           {/* Next Step - Right Circle */}
           <motion.div
             onClick={handleNextStep}
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer will-change-transform"
+            style={{ transform: 'translateZ(0)' }}
           >
-            {/* Glow - gradient transparent from center */}
+            {/* Glow - gradient transparent from center - optimized */}
             <div 
-              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-200"
+              className="absolute inset-0 rounded-full blur-[40px]"
               style={{
-                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.12) 100%)`,
+                willChange: 'opacity'
               }}
             />
             
