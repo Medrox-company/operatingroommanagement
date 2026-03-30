@@ -23,17 +23,6 @@ import AdminModule from './components/AdminModule';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
 // Main App Content - Operating Rooms Management System
-// Background settings type
-interface BackgroundSettings {
-  type: 'solid' | 'gradient';
-  colors: { color: string; position: number }[];
-  direction: string;
-  opacity: number;
-  imageUrl: string;
-  imageOpacity: number;
-  imageBlur: number;
-}
-
 const DEFAULT_BG_SETTINGS: BackgroundSettings = {
   type: 'gradient',
   colors: [
@@ -70,6 +59,7 @@ const AppContent: React.FC = () => {
   // Listen for background settings changes
   useEffect(() => {
     const handleBgChange = (e: CustomEvent<BackgroundSettings>) => {
+      console.log('[v0] Background settings received:', e.detail);
       setBgSettings(e.detail);
     };
     window.addEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
@@ -254,10 +244,15 @@ const AppContent: React.FC = () => {
         <div
           className="absolute inset-0 transition-all duration-500"
           style={{
-            background: bgSettings.type === 'solid' || bgSettings.colors.length === 1 
-              ? bgSettings.colors[0]?.color || '#0a0a12'
-              : `linear-gradient(${bgSettings.direction}, ${[...bgSettings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`,
-            opacity: bgSettings.opacity / 100,
+            background: (() => {
+              const colors = bgSettings.colors || [];
+              if (bgSettings.type === 'solid' || colors.length <= 1) {
+                return colors[0]?.color || '#0a0a12';
+              }
+              const sortedColors = [...colors].sort((a, b) => a.position - b.position);
+              return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${sortedColors.map(c => `${c.color} ${c.position}%`).join(', ')})`;
+            })(),
+            opacity: (bgSettings.opacity ?? 100) / 100,
           }}
         />
         

@@ -7,17 +7,7 @@ import {
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, ArrowDownRight, 
   ArrowUpLeft, ArrowDownLeft, Upload, X, Eye, EyeOff, Loader
 } from 'lucide-react';
-import { saveBackgroundSettings, fetchBackgroundSettings } from '../lib/db';
-
-interface BackgroundSettings {
-  type: 'solid' | 'gradient';
-  colors: { color: string; position: number }[];
-  direction: string;
-  opacity: number;
-  imageUrl: string;
-  imageOpacity: number;
-  imageBlur: number;
-}
+import { saveBackgroundSettings, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 
 const GRADIENT_DIRECTIONS = [
   { value: 'to top', label: 'Nahoru', icon: ArrowUp },
@@ -80,14 +70,14 @@ const BackgroundManager: React.FC = () => {
   const applyChanges = useCallback(async () => {
     setSaving(true);
     
-    const success = await saveBackgroundSettings(settings);
+    // Try to save to database
+    await saveBackgroundSettings(settings);
     
-    if (success) {
-      // Dispatch event to update App background immediately
-      window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: settings }));
-      setOriginalSettings(settings);
-      setHasChanges(false);
-    }
+    // Always dispatch event to update App background immediately
+    console.log('[v0] Dispatching backgroundSettingsChanged event:', settings);
+    window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: settings }));
+    setOriginalSettings(settings);
+    setHasChanges(false);
     
     setSaving(false);
   }, [settings]);
