@@ -190,9 +190,36 @@ export function subscribeToOperatingRooms(
       { event: '*', schema: 'public', table: 'operating_rooms' },
       (payload: { eventType: string; new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
         if (payload.eventType === 'UPDATE' && payload.new && onRoomUpdate) {
-          // Granular update - only update the changed room
           const newRecord = payload.new as unknown as DBOperatingRoom;
-          onRoomUpdate(newRecord.id, newRecord);
+          const oldRecord = payload.old as unknown as DBOperatingRoom | null;
+          
+          // Check if staff changed - if so, do full refresh to get staff names
+          // If we don't have old record (REPLICA IDENTITY not FULL), check if staff IDs exist
+          let staffChanged = false;
+          
+          if (oldRecord) {
+            // Compare old and new staff IDs
+            staffChanged = (
+              newRecord.doctor_id !== oldRecord.doctor_id ||
+              newRecord.nurse_id !== oldRecord.nurse_id ||
+              newRecord.anesthesiologist_id !== oldRecord.anesthesiologist_id
+            );
+          } else {
+            // No old record available - check if any staff field is in the payload
+            // This happens when REPLICA IDENTITY is not FULL
+            const changedKeys = Object.keys(payload.new);
+            staffChanged = changedKeys.includes('doctor_id') || 
+                          changedKeys.includes('nurse_id') || 
+                          changedKeys.includes('anesthesiologist_id');
+          }
+          
+          if (staffChanged) {
+            // Staff changed - need full refresh to get updated staff names
+            onFullRefresh();
+          } else {
+            // Granular update - only update the changed room
+            onRoomUpdate(newRecord.id, newRecord);
+          }
         } else {
           // Full refresh for INSERT/DELETE or if no granular handler
           onFullRefresh();
