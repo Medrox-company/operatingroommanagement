@@ -286,14 +286,10 @@ const AppContent: React.FC = () => {
         {/* <TopBar /> */}
 
         <main className="flex-1 overflow-hidden relative pb-20 md:pb-0">
-          <AnimatePresence mode="wait">
 
             {/* Dashboard — room detail */}
             {currentView === 'dashboard' && selectedRoom && (
-              <motion.div key="detail"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0 z-50">
+              <div className="absolute inset-0 z-50">
                 <RoomDetail
                   room={selectedRoom}
                   onClose={() => setSelectedRoomId(null)}
@@ -302,15 +298,12 @@ const AppContent: React.FC = () => {
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                   onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
                 />
-              </motion.div>
+              </div>
             )}
 
             {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
-              <motion.div key="grid-container"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10">
                 <div className="max-w-[2400px] mx-auto w-full">
                   <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 mb-16 flex-shrink-0">
                     <div className="text-center lg:text-left">
@@ -351,83 +344,63 @@ const AppContent: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Timeline */}
             {currentView === 'timeline' && (
-              <motion.div key="timeline"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full overflow-hidden">
+              <div className="w-full h-full overflow-hidden">
                 <TimelineModule rooms={rooms} />
-              </motion.div>
+              </div>
             )}
 
             {/* Statistics */}
             {currentView === 'statistics' && (
-              <motion.div key="statistics"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full overflow-y-auto hide-scrollbar">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
                 <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
                   <StatisticsModule rooms={rooms} />
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Staff */}
             {currentView === 'staff' && (
-              <motion.div key="staff"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full overflow-y-auto hide-scrollbar">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
                 <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
                   <StaffManager />
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Alerts */}
             {currentView === 'alerts' && (
-              <motion.div key="alerts"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full">
+              <div className="w-full h-full">
                 <PlaceholderView
                   icon={AlertCircle}
                   title="Upozornění"
                   description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
                 />
-              </motion.div>
+              </div>
             )}
 
             {/* Settings */}
             {currentView === 'settings' && (
-              <motion.div key="settings"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full overflow-y-auto hide-scrollbar">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
                 <SettingsPage 
                   rooms={rooms} 
                   onRoomsChange={setRooms} 
                   onScheduleUpdate={handleUpdateWeeklySchedule}
                   resetTrigger={settingsResetTrigger} 
                 />
-              </motion.div>
+              </div>
             )}
 
             {/* Admin - only for admins */}
             {currentView === 'admin' && isAdmin && (
-              <motion.div key="admin"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full overflow-y-auto hide-scrollbar">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
                 <AdminModule onClose={() => setCurrentView('dashboard')} />
-              </motion.div>
+              </div>
             )}
-
-          </AnimatePresence>
         </main>
       </div>
     </div>

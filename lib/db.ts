@@ -463,16 +463,25 @@ export async function fetchBackgroundSettings(): Promise<BackgroundSettings | nu
   try {
     const { data, error } = await supabase
       .from('app_settings')
-      .select('background_settings')
-      .eq('key', 'background')
+      .select('*')
+      .eq('id', 'global')
       .single();
 
-    if (error) {
-      // Settings don't exist yet, return default
+    if (error || !data) {
+      // Settings don't exist yet, return null
       return null;
     }
 
-    return data?.background_settings as BackgroundSettings || null;
+    // Map database columns to BackgroundSettings interface
+    return {
+      type: (data.background_type as 'solid' | 'linear' | 'radial') || 'linear',
+      colors: (data.background_colors as { color: string; position: number }[]) || [{ color: '#0a0a12', position: 0 }, { color: '#1a1a2e', position: 100 }],
+      direction: data.background_direction || 'to bottom',
+      opacity: data.background_opacity ?? 100,
+      imageUrl: data.background_image_url || '',
+      imageOpacity: data.background_image_opacity ?? 15,
+      imageBlur: data.background_image_blur ?? 0,
+    };
   } catch (error) {
     console.error('[DB] Failed to fetch background settings:', error);
     return null;
@@ -486,37 +495,25 @@ export async function saveBackgroundSettings(settings: BackgroundSettings): Prom
   }
 
   try {
-    // Try to update first
-    const { data: existing } = await supabase
+    // Map BackgroundSettings to database columns
+    const dbData = {
+      id: 'global',
+      background_type: settings.type,
+      background_colors: settings.colors,
+      background_direction: settings.direction,
+      background_opacity: settings.opacity,
+      background_image_url: settings.imageUrl,
+      background_image_opacity: settings.imageOpacity,
+      background_image_blur: settings.imageBlur,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Upsert - insert or update
+    const { error } = await supabase
       .from('app_settings')
-      .select('id')
-      .eq('key', 'background')
-      .single();
+      .upsert(dbData, { onConflict: 'id' });
 
-    if (existing) {
-      // Update existing
-      const { error } = await supabase
-        .from('app_settings')
-        .update({
-          background_settings: settings,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('key', 'background');
-
-      if (error) throw error;
-    } else {
-      // Insert new
-      const { error } = await supabase
-        .from('app_settings')
-        .insert({
-          key: 'background',
-          background_settings: settings,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
-    }
-
+    if (error) throw error;
     return true;
   } catch (error) {
     console.error('[DB] Failed to save background settings:', error);
