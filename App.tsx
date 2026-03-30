@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import TopBar from './components/TopBar';
@@ -65,15 +65,19 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
   }, []);
 
-  // Generate CSS gradient from settings
-  const generateGradient = () => {
-    if (bgSettings.type === 'solid' || bgSettings.colors.length === 1) {
-      return bgSettings.colors[0]?.color || '#0a0a12';
+  // Generate CSS gradient from settings - memoized
+  const backgroundStyle = useMemo(() => {
+    const colors = bgSettings.colors || [];
+    if (bgSettings.type === 'solid' || colors.length <= 1) {
+      return colors[0]?.color || '#0a0a12';
     }
-    const sortedColors = [...bgSettings.colors].sort((a, b) => a.position - b.position);
+    const sortedColors = [...colors].sort((a, b) => a.position - b.position);
     const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
-    return `linear-gradient(${bgSettings.direction}, ${colorStops})`;
-  };
+    if (bgSettings.type === 'radial') {
+      return `radial-gradient(circle at center, ${colorStops})`;
+    }
+    return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${colorStops})`;
+  }, [bgSettings]);
 
   // Emergency alert sound - plays when any room's emergency status is activated
   useEmergencyAlert(rooms, selectedRoomId);
@@ -116,19 +120,19 @@ const AppContent: React.FC = () => {
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
   // Check if module is enabled (admins always have access, users check module settings)
-  const isModuleEnabled = (moduleId: string) => {
+  const isModuleEnabled = useCallback((moduleId: string) => {
     if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
     if (moduleId === 'dashboard') return true; // Dashboard je vždy přístupný
     const module = modules.find(m => m.id === moduleId);
     return module?.is_enabled !== false;
-  };
+  }, [isAdmin, modules]);
 
   // Guard: If current view is not enabled, redirect to dashboard
   useEffect(() => {
     if (currentView !== 'dashboard' && !isModuleEnabled(currentView)) {
       setCurrentView('dashboard');
     }
-  }, [currentView, modules, isAdmin]);
+  }, [currentView, isModuleEnabled]);
 
   // Show login if not authenticated
   if (!isAuthenticated) {
@@ -251,20 +255,7 @@ const AppContent: React.FC = () => {
         <div
           className="absolute inset-0 transition-all duration-500"
           style={{
-            background: (() => {
-              const colors = bgSettings.colors || [];
-              if (bgSettings.type === 'solid' || colors.length <= 1) {
-                return colors[0]?.color || '#0a0a12';
-              }
-              const sortedColors = [...colors].sort((a, b) => a.position - b.position);
-              const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
-              
-              if (bgSettings.type === 'radial') {
-                return `radial-gradient(circle at center, ${colorStops})`;
-              }
-              
-              return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${colorStops})`;
-            })(),
+            background: backgroundStyle,
             opacity: (bgSettings.opacity ?? 100) / 100,
           }}
         />
