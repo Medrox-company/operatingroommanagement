@@ -15,7 +15,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom } from './lib/db';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
@@ -56,14 +56,15 @@ const AppContent: React.FC = () => {
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
 
-  // Load background settings from localStorage
+  // Load background settings from database
   useEffect(() => {
-    const saved = localStorage.getItem('backgroundSettings');
-    if (saved) {
-      try {
-        setBgSettings(JSON.parse(saved));
-      } catch {}
-    }
+    const loadBgSettings = async () => {
+      const dbSettings = await fetchBackgroundSettings();
+      if (dbSettings) {
+        setBgSettings(dbSettings);
+      }
+    };
+    loadBgSettings();
   }, []);
 
   // Listen for background settings changes
@@ -253,7 +254,9 @@ const AppContent: React.FC = () => {
         <div
           className="absolute inset-0 transition-all duration-500"
           style={{
-            background: generateGradient(),
+            background: bgSettings.type === 'solid' || bgSettings.colors.length === 1 
+              ? bgSettings.colors[0]?.color || '#0a0a12'
+              : `linear-gradient(${bgSettings.direction}, ${[...bgSettings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`,
             opacity: bgSettings.opacity / 100,
           }}
         />
