@@ -66,7 +66,6 @@ const BackgroundManager: React.FC = () => {
   const applyChanges = useCallback(async () => {
     setSaving(true);
     await saveBackgroundSettings(settings);
-    console.log('[v0] Dispatching backgroundSettingsChanged event:', settings);
     window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: settings }));
     setHasChanges(false);
     setSaving(false);

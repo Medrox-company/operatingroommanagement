@@ -59,7 +59,6 @@ const AppContent: React.FC = () => {
   // Listen for background settings changes
   useEffect(() => {
     const handleBgChange = (e: CustomEvent<BackgroundSettings>) => {
-      console.log('[v0] Background settings received:', e.detail);
       setBgSettings(e.detail);
     };
     window.addEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
@@ -119,9 +118,17 @@ const AppContent: React.FC = () => {
   // Check if module is enabled (admins always have access, users check module settings)
   const isModuleEnabled = (moduleId: string) => {
     if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
+    if (moduleId === 'dashboard') return true; // Dashboard je vždy přístupný
     const module = modules.find(m => m.id === moduleId);
     return module?.is_enabled !== false;
   };
+
+  // Guard: If current view is not enabled, redirect to dashboard
+  useEffect(() => {
+    if (currentView !== 'dashboard' && !isModuleEnabled(currentView)) {
+      setCurrentView('dashboard');
+    }
+  }, [currentView, modules, isAdmin]);
 
   // Show login if not authenticated
   if (!isAuthenticated) {
@@ -262,28 +269,17 @@ const AppContent: React.FC = () => {
           }}
         />
         
-        {/* Vignette effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.85)_100%)]" />
-
-        {/* Subtle Texture Overlay */}
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
       </div>
 
-      {/* Atmospheric Edge Glows - Tuned Blue */}
-      <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
-        <div className="absolute -left-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
-        <div className="absolute -right-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
-      </div>
-
-      <Sidebar currentView={currentView} onNavigate={(view) => {
-        if (currentView === 'settings' && view === 'settings') {
-          // Reset settings module when clicking settings again
-          setSettingsResetTrigger(prev => prev + 1);
-        } else {
-          setCurrentView(view);
-          setSelectedRoomId(null);
-        }
-      }} />
+<Sidebar currentView={currentView} onNavigate={(view) => {
+            if (currentView === 'settings' && view === 'settings') {
+              // Reset settings module when clicking settings again
+              setSettingsResetTrigger(prev => prev + 1);
+            } else {
+              setCurrentView(view);
+              setSelectedRoomId(null);
+            }
+          }} />
       <MobileNav currentView={currentView} onNavigate={(view) => {
         if (currentView === 'settings' && view === 'settings') {
           // Reset settings module when clicking settings again
@@ -437,6 +433,24 @@ const AppContent: React.FC = () => {
                 transition={{ duration: 0.15 }}
                 className="w-full h-full overflow-y-auto hide-scrollbar">
                 <AdminModule onClose={() => setCurrentView('dashboard')} />
+              </motion.div>
+            )}
+
+            {/* Fallback - if no view matched, show dashboard grid */}
+            {currentView !== 'dashboard' && 
+             currentView !== 'timeline' && 
+             currentView !== 'statistics' && 
+             currentView !== 'staff' && 
+             currentView !== 'alerts' && 
+             currentView !== 'settings' && 
+             currentView !== 'admin' && (
+              <motion.div key="fallback"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full overflow-y-auto hide-scrollbar flex flex-col">
+                <div className="text-white/50 text-center py-10">
+                  Modul není dostupný. Přesměrování na dashboard...
+                </div>
               </motion.div>
             )}
 
