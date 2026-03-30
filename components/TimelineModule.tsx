@@ -899,27 +899,26 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           />
                         </div>
 
-                        {/* Status segment - single colored bar that changes with current step */}
+                        {/* Status segment - solid color bar, blue when paused */}
                         {(() => {
-                          // Get the current step color from database or fallback
-                          const segmentColor = stepColor || '#6B7280';
+                          const segmentColor = room.isPaused ? '#22D3EE' : (stepColor || '#6B7280');
                           
                           return (
                             <motion.div
-                              key={`segment-${stepIndex}`}
-                              className="absolute inset-y-0 rounded-xl transition-colors"
+                              key={`segment-${stepIndex}-${room.isPaused ? 'paused' : 'active'}`}
+                              className="absolute inset-y-0 rounded-xl"
                               style={{
                                 left: 0,
                                 width: '100%',
                                 background: segmentColor,
-                                opacity: 0.75
+                                opacity: room.isPaused ? 0.9 : 0.75
                               }}
                               animate={{ 
                                 background: segmentColor,
-                                opacity: 0.75
+                                opacity: room.isPaused ? 0.9 : 0.75
                               }}
                               transition={{ duration: 0.3 }}
-                              title={stepName}
+                              title={room.isPaused ? 'PAUZA' : stepName}
                             />
                           );
                         })()}
@@ -948,56 +947,40 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
                         {/* Content overlay - title and status */}
                         <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
-                          {/* Step title and status */}
-                          {boxWidthPct > 8 && (
-                            <div className="min-w-0 flex-1">
-                              <p 
-                                className="text-[10px] font-medium text-white/90 truncate"
-                              >
-                                {stepName}
-                              </p>
-                              <p 
-                                className="text-[8px] font-normal text-white/50 truncate"
-                              >
-                                {room.staff?.doctor?.name || ''}
-                              </p>
+                          {room.isPaused ? (
+                            /* Pause state - show PAUZA text */
+                            <div className="min-w-0 flex-1 flex items-center gap-2">
+                              {boxWidthPct > 5 && <Pause className="w-3 h-3 text-white flex-shrink-0" />}
+                              {boxWidthPct > 10 && (
+                                <p className="text-[10px] font-black text-white uppercase tracking-widest truncate">
+                                  PAUZA
+                                </p>
+                              )}
                             </div>
-                          )}
-                          
-                          {/* Remaining time badge */}
-                          {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
-                            <div 
-                              className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
-                              style={{ 
-                                background: 'rgba(0,0,0,0.2)'
-                              }}
-                            >
-                              {remainingTime}
-                            </div>
+                          ) : (
+                            /* Normal state - show step info */
+                            <>
+                              {boxWidthPct > 8 && (
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[10px] font-medium text-white/90 truncate">
+                                    {stepName}
+                                  </p>
+                                  <p className="text-[8px] font-normal text-white/50 truncate">
+                                    {room.staff?.doctor?.name || ''}
+                                  </p>
+                                </div>
+                              )}
+                              {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
+                                <div
+                                  className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
+                                  style={{ background: 'rgba(0,0,0,0.2)' }}
+                                >
+                                  {remainingTime}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
-
-                        {/* Pause overlay */}
-                        {room.isPaused && (
-                          <motion.div 
-                            className="absolute inset-0 rounded-xl flex items-center justify-center gap-2 z-10"
-                            style={{ 
-                              background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(34, 211, 238, 0.15) 100%)',
-                              border: '2px solid rgba(34, 211, 238, 0.5)',
-                            }}
-                            animate={{ 
-                              borderColor: ['rgba(34, 211, 238, 0.5)', 'rgba(34, 211, 238, 0.8)', 'rgba(34, 211, 238, 0.5)']
-                            }}
-                            transition={{ 
-                              duration: 2, 
-                              repeat: Infinity, 
-                              ease: 'easeInOut' 
-                            }}
-                          >
-                            <Pause className="w-4 h-4 text-cyan-300" />
-                            <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider">PAUZA</span>
-                          </motion.div>
-                        )}
                       </motion.div>
                     )}
 
