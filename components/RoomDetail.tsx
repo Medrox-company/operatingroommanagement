@@ -320,12 +320,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   };
 
   return (
-    <motion.div 
-      className="fixed inset-0 z-50 bg-black text-white font-sans overflow-hidden"
+    <motion.div
+      className="fixed inset-0 z-50 bg-black text-white font-sans overflow-hidden will-change-opacity"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.15 }}
     >
       {/* ========== MOBILE LAYOUT (md:hidden) - LoginPage Design ========== */}
       <div className="md:hidden w-full h-full flex flex-col bg-[#0a0a0f] relative overflow-hidden">
@@ -357,14 +357,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <div className="flex items-center justify-between mb-6">
             <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
+              className="w-10 h-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
             >
               <ChevronLeft className="w-5 h-5 text-white/60" />
             </button>
             <h1 className="text-2xl font-bold text-white">{room.name}</h1>
             <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
+              className="w-10 h-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
             >
               <X className="w-5 h-5 text-white/60" />
             </button>
@@ -373,31 +373,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           {/* Circular Progress with Status */}
           <div className="flex flex-col items-center relative py-4">
             {/* Text in circle - absolute positioning */}
-            <motion.div
-              className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
-              key={currentStep?.name}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
+                >
               <div className="text-center px-8">
                 {(room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status')
                   .split(' ')
                   .map((word, i) => <div key={i} className="text-2xl font-bold text-white leading-tight">{word}</div>)}
               </div>
-            </motion.div>
-            
-            {/* Pure SVG circle - no box container */}
-            <svg width="240" height="240" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
-              <defs>
-                <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
+                </div>
+                
+                {/* Pure SVG circle - optimized without blur filters */}
+            <svg width="240" height="240" viewBox="0 0 100 100" style={{ display: 'block' }}>
               {/* Background track */}
               <circle
                 cx="50" cy="50" r="44"
@@ -405,35 +392,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 stroke="rgba(255,255,255,0.05)"
                 strokeWidth="2"
               />
-              {/* Animated glow layer */}
-              <motion.circle
+              {/* Main progress - CSS transition instead of framer-motion */}
+              <circle
                 cx="50" cy="50" r="44"
                 fill="none"
                 stroke={activeColor}
-                strokeWidth="10"
+                strokeWidth="3"
                 strokeLinecap="round"
                 strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow-ring)' }}
-                animate={{
-                  strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
-                  opacity: [0.2, 0.45, 0.2]
+                style={{ 
+                  transformOrigin: '50px 50px', 
+                  transform: 'rotate(-90deg)',
+                  transition: 'stroke-dasharray 0.3s ease-out, stroke 0.2s ease'
                 }}
-                transition={{
-                  strokeDasharray: { duration: 0.8, ease: 'easeOut' },
-                  opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
-                }}
-              />
-              {/* Main progress */}
-              <motion.circle
-                cx="50" cy="50" r="44"
-                fill="none"
-                stroke={activeColor}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
-                animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
               />
             </svg>
           </div>
@@ -453,7 +424,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           )}
 
           {/* Main Card */}
-          <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-4 flex-1 flex flex-col">
+          <div className="bg-white/[0.03]  border border-white/10 rounded-3xl p-4 flex-1 flex flex-col">
             {/* End Time Control */}
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 mb-3">
               <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 text-center">Ukončení</p>
@@ -626,48 +597,48 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.9)_100%)]" />
       </div>
 
-      {/* Atmospheric Edge Glows - static, color via inline style */}
+      {/* Atmospheric Edge Glows - simplified for performance */}
       <div 
-        className="absolute -left-10 top-0 bottom-0 w-44 blur-[140px] z-10 opacity-30 transition-colors duration-700"
-        style={{ backgroundColor: activeColor }}
+        className="absolute -left-10 top-0 bottom-0 w-32 z-10 opacity-20"
+        style={{ 
+          backgroundColor: activeColor,
+          filter: 'blur(60px)',
+          transition: 'background-color 0.3s ease'
+        }}
       />
       <div 
-        className="absolute -right-10 top-0 bottom-0 w-44 blur-[140px] z-10 opacity-30 transition-colors duration-700"
-        style={{ backgroundColor: activeColor }}
+        className="absolute -right-10 top-0 bottom-0 w-32 z-10 opacity-20"
+        style={{ 
+          backgroundColor: activeColor,
+          filter: 'blur(60px)',
+          transition: 'background-color 0.3s ease'
+        }}
       />
 
       {/* Header */}
       <header className="absolute top-12 left-40 right-16 flex justify-between items-start z-50">
         <div className="flex flex-col">
-          <AnimatePresence mode="wait">
-            <motion.div 
-              key={room.name + room.isEmergency + room.isLocked}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex items-center gap-6"
-            >
-              <h1 className={`text-6xl font-bold tracking-tight uppercase leading-none 
-                ${room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')}
-              `}>
-                {room.name}
-              </h1>
-              
-              {room.isEmergency && (
-                <div className="bg-red-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(239,68,68,0.5)]">
-                  <AlertTriangle className="w-8 h-8" />
-                  <span className="text-2xl font-black uppercase tracking-widest">EMERGENCY</span>
-                </div>
-              )}
-              
-              {room.isLocked && !room.isEmergency && (
-                <div className="bg-amber-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                  <Lock className="w-7 h-7" />
-                  <span className="text-2xl font-black uppercase tracking-widest">SÁL UZAMČEN</span>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          <div className="flex items-center gap-6">
+            <h1 className={`text-6xl font-bold tracking-tight uppercase leading-none transition-colors duration-200
+              ${room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')}
+            `}>
+              {room.name}
+            </h1>
+            
+            {room.isEmergency && (
+              <div className="bg-red-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3">
+                <AlertTriangle className="w-8 h-8" />
+                <span className="text-2xl font-black uppercase tracking-widest">EMERGENCY</span>
+              </div>
+            )}
+            
+            {room.isLocked && !room.isEmergency && (
+              <div className="bg-amber-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3">
+                <Lock className="w-7 h-7" />
+                <span className="text-2xl font-black uppercase tracking-widest">SÁL UZAMČEN</span>
+              </div>
+            )}
+          </div>
           <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
       </header>
@@ -687,7 +658,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* Close Button - Top Right */}
       <button 
         onClick={onClose}
-        className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50"
+        className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10  opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50"
       >
         <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
       </button>
@@ -700,7 +671,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             setStaffPickerRole('doctor');
             setStaffPickerOpen(true);
           }}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95"
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3  whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95"
         >
           <div className="flex items-center gap-2">
             <Stethoscope className="w-5 h-5 text-violet-400" />
@@ -713,7 +684,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
             setStaffPickerRole('nurse');
             setStaffPickerOpen(true);
           }}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95"
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3  whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95"
         >
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-emerald-400" />
@@ -743,7 +714,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               }
             }}
             disabled={!!patientCalledTime}
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+            className={`rounded-2xl transition-all  flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
               patientCalledTime && !patientArrivedTime
                 ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
                 : patientArrivedTime
@@ -812,7 +783,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               }
             }}
             disabled={!patientCalledTime || !!patientArrivedTime}
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+            className={`rounded-2xl transition-all  flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
               patientArrivedTime
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
                 : !patientCalledTime
@@ -842,7 +813,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 step_name: currentStep.title,
               });
             }}
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+            className={`rounded-2xl transition-all  flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
               room.isEnhancedHygiene
                 ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
                 : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
@@ -870,7 +841,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   step_name: currentStep.title,
                 });
               }}
-              className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+              className={`rounded-2xl transition-all  opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
                   : 'bg-white/5 border-white/10'
@@ -911,7 +882,7 @@ const prevStep = activeDbStatuses.length > 0
               >
                 {/* Gradient Glow - transparent from center */}
                 <div 
-                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-200"
                   style={{
                     background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
                   }}
@@ -919,7 +890,7 @@ const prevStep = activeDbStatuses.length > 0
                 
                 {/* Ring */}
                 <div 
-                  className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+                  className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-150"
                   style={{ borderColor: 'rgba(255,255,255,0.3)' }}
                 />
                 
@@ -950,47 +921,42 @@ const prevStep = activeDbStatuses.length > 0
           >
             {/* Primary Background Glow - subtle */}
             <div 
-              className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
+              className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-200"
               style={{ 
                 backgroundColor: activeColor,
                 opacity: (room.isEmergency || room.isLocked) ? 0.45 : 0.25,
               }}
             />
 
-            {/* Inner Glow Core - subtle */}
+            {/* Inner Glow Core - simplified */}
             <div 
-              className="absolute inset-10 rounded-full blur-[80px] opacity-20 transition-colors duration-500"
-              style={{ backgroundColor: activeColor }}
+              className="absolute inset-10 rounded-full opacity-15"
+              style={{ 
+                backgroundColor: activeColor,
+                filter: 'blur(40px)',
+                transition: 'background-color 0.3s ease'
+              }}
             />
 
-            {/* Animated Ring */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.0]" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
+            {/* Static Ring - CSS transition instead of motion */}
+            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
               <circle cx="250" cy="250" r="230" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-              <motion.circle 
-                key={currentStepIndex}
+              <circle 
                 cx="250" cy="250" r="230" fill="none"
-                stroke={activeColor} strokeWidth="8" strokeLinecap="round"
+                stroke={activeColor} strokeWidth="6" strokeLinecap="round"
                 strokeDasharray="1447"
-                initial={{ strokeDashoffset: 1447 }}
-                animate={{ strokeDashoffset: 0 }}
-                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
-                className="opacity-80"
+                strokeDashoffset="0"
+                className="opacity-70"
+                style={{ transition: 'stroke 0.3s ease' }}
               />
             </svg>
 
-            {/* Subtle Pulsing Animation Ring */}
-            <motion.div
-              className="absolute inset-0 rounded-full border-2"
-              style={{ borderColor: activeColor }}
-              animate={{ 
-                scale: [1, 1.08, 1],
-                opacity: [0.4, 0.1, 0.4]
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: "easeInOut"
+            {/* Static border ring instead of pulsing */}
+            <div
+              className="absolute inset-0 rounded-full border opacity-20"
+              style={{ 
+                borderColor: activeColor,
+                transition: 'border-color 0.3s ease'
               }}
             />
 
@@ -1144,7 +1110,7 @@ const prevStep = activeDbStatuses.length > 0
           >
             {/* Glow - gradient transparent from center */}
             <div 
-              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-200"
               style={{
                 background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
               }}
@@ -1152,7 +1118,7 @@ const prevStep = activeDbStatuses.length > 0
             
             {/* Ring */}
             <div 
-              className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+              className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-150"
               style={{ borderColor: 'rgba(255,255,255,0.3)' }}
             />
             
@@ -1174,7 +1140,7 @@ const prevStep = activeDbStatuses.length > 0
             {/* Minus button - left side */}
             <button 
               onClick={handleDecreaseTime}
-              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer  shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
@@ -1189,7 +1155,7 @@ const prevStep = activeDbStatuses.length > 0
             {/* Plus button - right side */}
             <button 
               onClick={handleIncreaseTime}
-              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer  shadow-lg z-50"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
