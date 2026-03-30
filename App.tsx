@@ -24,7 +24,7 @@ import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
 // Main App Content - Operating Rooms Management System
 const DEFAULT_BG_SETTINGS: BackgroundSettings = {
-  type: 'gradient',
+  type: 'linear',
   colors: [
     { color: '#0a0a12', position: 0 },
     { color: '#1a1a2e', position: 100 },
@@ -250,7 +250,13 @@ const AppContent: React.FC = () => {
                 return colors[0]?.color || '#0a0a12';
               }
               const sortedColors = [...colors].sort((a, b) => a.position - b.position);
-              return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${sortedColors.map(c => `${c.color} ${c.position}%`).join(', ')})`;
+              const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
+              
+              if (bgSettings.type === 'radial') {
+                return `radial-gradient(circle at center, ${colorStops})`;
+              }
+              
+              return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${colorStops})`;
             })(),
             opacity: (bgSettings.opacity ?? 100) / 100,
           }}

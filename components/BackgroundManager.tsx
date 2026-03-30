@@ -28,7 +28,7 @@ const PRESET_COLORS = [
 ];
 
 const DEFAULT_SETTINGS: BackgroundSettings = {
-  type: 'gradient',
+  type: 'linear',
   colors: [
     { color: '#0a0a12', position: 0 },
     { color: '#1a1a2e', position: 100 },
@@ -254,15 +254,26 @@ const BackgroundManager: React.FC = () => {
                       Jednobarevné
                     </button>
                     <button
-                      onClick={() => updateSettings({ type: 'gradient' })}
+                      onClick={() => updateSettings({ type: 'linear' })}
                       className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
-                        settings.type === 'gradient'
+                        settings.type === 'linear'
                           ? 'bg-white/10 text-white border border-white/20'
                           : 'bg-white/5 text-white/40 border border-white/5 hover:border-white/10'
                       }`}
                       disabled={saving}
                     >
-                      Přechodové
+                      Lineární
+                    </button>
+                    <button
+                      onClick={() => updateSettings({ type: 'radial' })}
+                      className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
+                        settings.type === 'radial'
+                          ? 'bg-white/10 text-white border border-white/20'
+                          : 'bg-white/5 text-white/40 border border-white/5 hover:border-white/10'
+                      }`}
+                      disabled={saving}
+                    >
+                      Radiální
                     </button>
                   </div>
                 </div>
@@ -329,6 +340,8 @@ const BackgroundManager: React.FC = () => {
                         style={{
                           background: settings.colors.length === 1 
                             ? settings.colors[0]?.color
+                            : settings.type === 'radial'
+                            ? `radial-gradient(circle at center, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`
                             : `linear-gradient(${settings.direction}, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`
                         }}
                       >
@@ -388,7 +401,8 @@ const BackgroundManager: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Direction */}
+                    {/* Direction - only for linear gradient */}
+                    {settings.type === 'linear' && (
                     <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                       <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Směr přechodu</p>
                       <div className="grid grid-cols-4 gap-2">
@@ -414,6 +428,7 @@ const BackgroundManager: React.FC = () => {
                     </div>
                   </>
                 )}
+                    )}
 
                 {/* Opacity */}
                 <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -518,6 +533,8 @@ const BackgroundManager: React.FC = () => {
                   style={{
                     background: settings.type === 'solid' || settings.colors.length === 1
                       ? settings.colors[0]?.color
+                      : settings.type === 'radial'
+                      ? `radial-gradient(circle at center, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`
                       : `linear-gradient(${settings.direction}, ${[...settings.colors].sort((a, b) => a.position - b.position).map(c => `${c.color} ${c.position}%`).join(', ')})`,
                     opacity: settings.opacity / 100,
                   }}

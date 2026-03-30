@@ -445,7 +445,7 @@ export async function fetchRoomStatistics(
 // ============= BACKGROUND SETTINGS =============
 
 export interface BackgroundSettings {
-  type: 'solid' | 'gradient';
+  type: 'solid' | 'linear' | 'radial';
   colors: { color: string; position: number }[];
   direction: string;
   opacity: number;
