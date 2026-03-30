@@ -364,7 +364,7 @@ const AppContent: React.FC = () => {
             )}
 
             {/* Timeline */}
-            {currentView === 'timeline' && isModuleEnabled('timeline') && (
+            {currentView === 'timeline' && (
               <motion.div key="timeline"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -374,7 +374,7 @@ const AppContent: React.FC = () => {
             )}
 
             {/* Statistics */}
-            {currentView === 'statistics' && isModuleEnabled('statistics') && (
+            {currentView === 'statistics' && (
               <motion.div key="statistics"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -386,7 +386,7 @@ const AppContent: React.FC = () => {
             )}
 
             {/* Staff */}
-            {currentView === 'staff' && isModuleEnabled('staff') && (
+            {currentView === 'staff' && (
               <motion.div key="staff"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -398,7 +398,7 @@ const AppContent: React.FC = () => {
             )}
 
             {/* Alerts */}
-            {currentView === 'alerts' && isModuleEnabled('alerts') && (
+            {currentView === 'alerts' && (
               <motion.div key="alerts"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -412,7 +412,7 @@ const AppContent: React.FC = () => {
             )}
 
             {/* Settings */}
-            {currentView === 'settings' && isModuleEnabled('settings') && (
+            {currentView === 'settings' && (
               <motion.div key="settings"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
@@ -433,24 +433,6 @@ const AppContent: React.FC = () => {
                 transition={{ duration: 0.15 }}
                 className="w-full h-full overflow-y-auto hide-scrollbar">
                 <AdminModule onClose={() => setCurrentView('dashboard')} />
-              </motion.div>
-            )}
-
-            {/* Fallback - if no view matched, show dashboard grid */}
-            {currentView !== 'dashboard' && 
-             currentView !== 'timeline' && 
-             currentView !== 'statistics' && 
-             currentView !== 'staff' && 
-             currentView !== 'alerts' && 
-             currentView !== 'settings' && 
-             currentView !== 'admin' && (
-              <motion.div key="fallback"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full h-full overflow-y-auto hide-scrollbar flex flex-col">
-                <div className="text-white/50 text-center py-10">
-                  Modul není dostupný. Přesměrování na dashboard...
-                </div>
               </motion.div>
             )}
 
