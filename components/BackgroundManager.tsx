@@ -51,14 +51,22 @@ const BackgroundManager: React.FC = () => {
 
   // Load settings from database
   useEffect(() => {
+    let mounted = true;
     const loadSettings = async () => {
-      const dbSettings = await fetchBackgroundSettings();
-      if (dbSettings) {
-        setSettings(dbSettings);
+      try {
+        const dbSettings = await fetchBackgroundSettings();
+        if (mounted && dbSettings) {
+          setSettings(dbSettings);
+        }
+      } catch (error) {
+        console.error('Failed to load background settings:', error);
       }
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     };
     loadSettings();
+    return () => { mounted = false; };
   }, []);
 
   const markChanged = () => setHasChanges(true);

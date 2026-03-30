@@ -66,9 +66,11 @@ export default function StaffManager() {
 
   // Fetch staff from database
   useEffect(() => {
+    let mounted = true;
+    
     async function fetchStaff() {
       if (!isSupabaseConfigured || !supabase) {
-        setLoading(false);
+        if (mounted) setLoading(false);
         return;
       }
       
@@ -79,15 +81,16 @@ export default function StaffManager() {
           .order('name');
         
         if (error) throw error;
-        setStaff(data || []);
+        if (mounted) setStaff(data || []);
       } catch (err) {
         console.error('[StaffManager] fetch error:', err);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
     
     fetchStaff();
+    return () => { mounted = false; };
   }, []);
 
   // Filter staff by category
