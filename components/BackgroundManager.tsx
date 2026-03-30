@@ -426,8 +426,6 @@ const BackgroundManager: React.FC = () => {
                         })}
                       </div>
                     </div>
-                  </>
-                )}
                     )}
 
                 {/* Opacity */}
