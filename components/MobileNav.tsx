@@ -12,7 +12,9 @@ const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate }) => {
   const { isAdmin, logout, modules } = useAuth();
 
   // Filter sidebar items based on enabled modules (admins see all, users see only enabled)
+  // Dashboard is always accessible for everyone
   const enabledItems = SIDEBAR_ITEMS.filter(item => {
+    if (item.id === 'dashboard') return true; // Dashboard je vždy přístupný
     if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
     const module = modules.find(m => m.id === item.id);
     return module?.is_enabled !== false;
