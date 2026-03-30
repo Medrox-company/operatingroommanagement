@@ -23,6 +23,30 @@ import AdminModule from './components/AdminModule';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
 // Main App Content - Operating Rooms Management System
+// Background settings type
+interface BackgroundSettings {
+  type: 'solid' | 'gradient';
+  colors: { color: string; position: number }[];
+  direction: string;
+  opacity: number;
+  imageUrl: string;
+  imageOpacity: number;
+  imageBlur: number;
+}
+
+const DEFAULT_BG_SETTINGS: BackgroundSettings = {
+  type: 'gradient',
+  colors: [
+    { color: '#0a0a12', position: 0 },
+    { color: '#1a1a2e', position: 100 },
+  ],
+  direction: 'to bottom',
+  opacity: 100,
+  imageUrl: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000',
+  imageOpacity: 15,
+  imageBlur: 0,
+};
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules } = useAuth();
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
@@ -30,6 +54,36 @@ const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [isDbConnected, setIsDbConnected] = useState(false);
+  const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
+
+  // Load background settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('backgroundSettings');
+    if (saved) {
+      try {
+        setBgSettings(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
+
+  // Listen for background settings changes
+  useEffect(() => {
+    const handleBgChange = (e: CustomEvent<BackgroundSettings>) => {
+      setBgSettings(e.detail);
+    };
+    window.addEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
+    return () => window.removeEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
+  }, []);
+
+  // Generate CSS gradient from settings
+  const generateGradient = () => {
+    if (bgSettings.type === 'solid' || bgSettings.colors.length === 1) {
+      return bgSettings.colors[0]?.color || '#0a0a12';
+    }
+    const sortedColors = [...bgSettings.colors].sort((a, b) => a.position - b.position);
+    const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
+    return `linear-gradient(${bgSettings.direction}, ${colorStops})`;
+  };
 
   // Emergency alert sound - plays when any room's emergency status is activated
   useEmergencyAlert(rooms, selectedRoomId);
@@ -180,15 +234,32 @@ const AppContent: React.FC = () => {
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
-      {/* Immersive Global Background Layer */}
+      {/* Dynamic Background Layer - Controlled by BackgroundManager settings */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <img
-          src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000"
-          alt="Operating Environment"
-          className="w-full h-full object-cover opacity-15 grayscale scale-105"
+        {/* Background Image Layer */}
+        {bgSettings.imageUrl && (
+          <img
+            src={bgSettings.imageUrl}
+            alt="Background"
+            className="w-full h-full object-cover grayscale scale-105 transition-all duration-500"
+            style={{
+              opacity: bgSettings.imageOpacity / 100,
+              filter: bgSettings.imageBlur > 0 ? `blur(${bgSettings.imageBlur}px)` : undefined,
+            }}
+          />
+        )}
+        
+        {/* Color/Gradient Overlay */}
+        <div
+          className="absolute inset-0 transition-all duration-500"
+          style={{
+            background: generateGradient(),
+            opacity: bgSettings.opacity / 100,
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/90" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.95)_100%)]" />
+        
+        {/* Vignette effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.85)_100%)]" />
 
         {/* Subtle Texture Overlay */}
         <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
