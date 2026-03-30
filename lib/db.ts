@@ -151,6 +151,9 @@ export async function updateOperatingRoom(
     current_step_index: number;
     estimated_end_time: string | null;
     weekly_schedule: Record<string, any>;
+    doctor_id: string | null;
+    nurse_id: string | null;
+    anesthesiologist_id: string | null;
   }>
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
@@ -436,5 +439,87 @@ export async function fetchRoomStatistics(
   } catch (error) {
     console.error('[DB] Failed to fetch room statistics:', error);
     return null;
+  }
+}
+
+// ============= BACKGROUND SETTINGS =============
+
+export interface BackgroundSettings {
+  type: 'solid' | 'linear' | 'radial';
+  colors: { color: string; position: number }[];
+  direction: string;
+  opacity: number;
+  imageUrl: string;
+  imageOpacity: number;
+  imageBlur: number;
+}
+
+// Fetch background settings for all users
+export async function fetchBackgroundSettings(): Promise<BackgroundSettings | null> {
+  if (!isSupabaseConfigured || !supabase) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('background_settings')
+      .eq('key', 'background')
+      .single();
+
+    if (error) {
+      // Settings don't exist yet, return default
+      return null;
+    }
+
+    return data?.background_settings as BackgroundSettings || null;
+  } catch (error) {
+    console.error('[DB] Failed to fetch background settings:', error);
+    return null;
+  }
+}
+
+// Save background settings for all users
+export async function saveBackgroundSettings(settings: BackgroundSettings): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    return false;
+  }
+
+  try {
+    // Try to update first
+    const { data: existing } = await supabase
+      .from('app_settings')
+      .select('id')
+      .eq('key', 'background')
+      .single();
+
+    if (existing) {
+      // Update existing
+      const { error } = await supabase
+        .from('app_settings')
+        .update({
+          background_settings: settings,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('key', 'background');
+
+      if (error) throw error;
+    } else {
+      // Insert new
+      const { error } = await supabase
+        .from('app_settings')
+        .insert({
+          key: 'background',
+          background_settings: settings,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[DB] Failed to save background settings:', error);
+    return false;
   }
 }

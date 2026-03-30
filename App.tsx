@@ -15,7 +15,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom } from './lib/db';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
@@ -23,6 +23,19 @@ import AdminModule from './components/AdminModule';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
 // Main App Content - Operating Rooms Management System
+const DEFAULT_BG_SETTINGS: BackgroundSettings = {
+  type: 'linear',
+  colors: [
+    { color: '#0a0a12', position: 0 },
+    { color: '#1a1a2e', position: 100 },
+  ],
+  direction: 'to bottom',
+  opacity: 100,
+  imageUrl: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000',
+  imageOpacity: 15,
+  imageBlur: 0,
+};
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules } = useAuth();
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
@@ -30,6 +43,38 @@ const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [isDbConnected, setIsDbConnected] = useState(false);
+  const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
+
+  // Load background settings from database
+  useEffect(() => {
+    const loadBgSettings = async () => {
+      const dbSettings = await fetchBackgroundSettings();
+      if (dbSettings) {
+        setBgSettings(dbSettings);
+      }
+    };
+    loadBgSettings();
+  }, []);
+
+  // Listen for background settings changes
+  useEffect(() => {
+    const handleBgChange = (e: CustomEvent<BackgroundSettings>) => {
+      console.log('[v0] Background settings received:', e.detail);
+      setBgSettings(e.detail);
+    };
+    window.addEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
+    return () => window.removeEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
+  }, []);
+
+  // Generate CSS gradient from settings
+  const generateGradient = () => {
+    if (bgSettings.type === 'solid' || bgSettings.colors.length === 1) {
+      return bgSettings.colors[0]?.color || '#0a0a12';
+    }
+    const sortedColors = [...bgSettings.colors].sort((a, b) => a.position - b.position);
+    const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
+    return `linear-gradient(${bgSettings.direction}, ${colorStops})`;
+  };
 
   // Emergency alert sound - plays when any room's emergency status is activated
   useEmergencyAlert(rooms, selectedRoomId);
@@ -153,18 +198,72 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleStaffChange = async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
+    // Update local state
+    setRooms(prev => prev.map(room => {
+      if (room.id !== roomId) return room;
+      
+      const updatedStaff = { ...room.staff };
+      if (role === 'doctor') {
+        updatedStaff.doctor = { name: staffName, role: 'DOCTOR' };
+      } else if (role === 'nurse') {
+        updatedStaff.nurse = { name: staffName, role: 'NURSE' };
+      } else if (role === 'anesthesiologist') {
+        updatedStaff.anesthesiologist = { name: staffName, role: 'ANESTHESIOLOGIST' };
+      }
+      
+      return { ...room, staff: updatedStaff };
+    }));
+
+    // Update database
+    if (isDbConnected) {
+      const dbField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
+      await updateOperatingRoom(roomId, { [dbField]: staffId } as any);
+    }
+  };
+
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
-      {/* Immersive Global Background Layer */}
+      {/* Dynamic Background Layer - Controlled by BackgroundManager settings */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <img
-          src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000"
-          alt="Operating Environment"
-          className="w-full h-full object-cover opacity-15 grayscale scale-105"
+        {/* Background Image Layer */}
+        {bgSettings.imageUrl && (
+          <img
+            src={bgSettings.imageUrl}
+            alt="Background"
+            className="w-full h-full object-cover grayscale scale-105 transition-all duration-500"
+            style={{
+              opacity: bgSettings.imageOpacity / 100,
+              filter: bgSettings.imageBlur > 0 ? `blur(${bgSettings.imageBlur}px)` : undefined,
+            }}
+          />
+        )}
+        
+        {/* Color/Gradient Overlay */}
+        <div
+          className="absolute inset-0 transition-all duration-500"
+          style={{
+            background: (() => {
+              const colors = bgSettings.colors || [];
+              if (bgSettings.type === 'solid' || colors.length <= 1) {
+                return colors[0]?.color || '#0a0a12';
+              }
+              const sortedColors = [...colors].sort((a, b) => a.position - b.position);
+              const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
+              
+              if (bgSettings.type === 'radial') {
+                return `radial-gradient(circle at center, ${colorStops})`;
+              }
+              
+              return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${colorStops})`;
+            })(),
+            opacity: (bgSettings.opacity ?? 100) / 100,
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/90" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.95)_100%)]" />
+        
+        {/* Vignette effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.85)_100%)]" />
 
         {/* Subtle Texture Overlay */}
         <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
@@ -214,6 +313,7 @@ const AppContent: React.FC = () => {
                   onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
+                  onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
                 />
               </motion.div>
             )}
