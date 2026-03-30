@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock, Pause } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -31,7 +31,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
     color: dbStatus?.color || '#6B7280',
   };
   
-  const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
+  const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
   const progressPercent = ((safeIndex + 1) / totalSteps);
   const isFinalStep = safeIndex === activeDbStatuses.length - 1;
   const radius = 38;
@@ -167,24 +167,44 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
                       initial={{ strokeDashoffset: strokeDasharray }}
-                      animate={{ strokeDashoffset: strokeDashoffset }}
+                      animate={{ strokeDashoffset: room.isPaused ? 0 : strokeDashoffset }}
                       transition={{ duration: 1.2, ease: 'easeOut' }}
                       style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
                     />
-                    <text
-                      x={center}
-                      y={center}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      className={`text-4xl font-black transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
-                      style={{ 
+                    {room.isPaused ? (
+                      <text
+                        x={center}
+                        y={center}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill="#22D3EE"
+                        className="text-4xl font-black"
+                        style={{ 
                           transform: 'rotate(90deg)', 
                           transformOrigin: `${center}px ${center}px`,
+                          fontSize: '28px',
+                          fontWeight: 900,
                           letterSpacing: '-0.05em'
-                      }}
-                    >
-                      {room.operations24h}
-                    </text>
+                        }}
+                      >
+                        P
+                      </text>
+                    ) : (
+                      <text
+                        x={center}
+                        y={center}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        className={`text-4xl font-black transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
+                        style={{ 
+                            transform: 'rotate(90deg)', 
+                            transformOrigin: `${center}px ${center}px`,
+                            letterSpacing: '-0.05em'
+                        }}
+                      >
+                        {room.operations24h}
+                      </text>
+                    )}
                 </motion.svg>
             </div>
             
@@ -214,23 +234,39 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
             </p>
           </div>
           
-          <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : 'border-white/5')}
+            <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
+            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
           `}>
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className={`w-9 h-9 rounded-xl border overflow-hidden shrink-0 
-                ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : 'border-white/5')}
+                ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : (room.isPaused ? 'border-cyan-500/30' : 'border-white/5'))}
               `}>
                 <img src={`https://i.pravatar.cc/150?u=${room.staff.doctor.name}`} alt="Dr" className="w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity" />
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors
-                ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : 'text-white/40 group-hover:text-white/60')}
-              `}>
-                {room.staff.doctor.name?.split(' ').pop()}
-              </span>
+              <div className="min-w-0 flex flex-col gap-0.5">
+                <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors
+                  ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
+                `}>
+                  {room.staff.doctor.name?.split(' ').pop()}
+                </span>
+                {room.staff.nurse?.name && (
+                  <span className={`text-[9px] font-medium uppercase tracking-tight truncate transition-colors
+                    ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
+                  `}>
+                    {room.staff.nurse.name?.split(' ').pop()}
+                  </span>
+                )}
+              </div>
             </div>
             
-            {!room.estimatedEndTime && (
+            {room.isPaused && (
+              <div className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                <Pause className="w-3 h-3 text-cyan-400" />
+                <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-wider">Pauza</span>
+              </div>
+            )}
+            
+            {!room.isPaused && !room.estimatedEndTime && (
               <div className="flex items-center gap-1.5 opacity-40 group-hover:opacity-80 transition-opacity shrink-0">
                 <Clock className="w-3.5 h-3.5 text-white" />
                 <span className="text-[11px] font-mono font-bold text-white">

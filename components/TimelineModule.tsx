@@ -5,7 +5,7 @@ import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause
 } from 'lucide-react';
 
 // ========== CONSTANTS ==========
@@ -282,6 +282,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     <p className="text-base font-black text-white uppercase tracking-tight">{room.name}</p>
                     {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
                     {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
+                    {room.isPaused && !room.isEmergency && !room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 uppercase">PAUZA</span>}
                   </div>
                   {remaining && !isFree && (
                     <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
@@ -788,6 +789,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         {room.isSeptic && (
                           <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-purple-400/10 text-purple-300/60 uppercase flex-shrink-0">SEPTIKA</span>
                         )}
+                        {room.isPaused && !room.isEmergency && !room.isLocked && (
+                          <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-cyan-400/15 text-cyan-300/80 uppercase flex-shrink-0 flex items-center gap-1">
+                            <Pause className="w-2 h-2" />
+                            PAUZA
+                          </span>
+                        )}
                       </div>
                       {isFree ? (
                         <p className="text-[9px] font-medium text-white/25 flex items-center gap-1">
@@ -969,6 +976,28 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             </div>
                           )}
                         </div>
+
+                        {/* Pause overlay */}
+                        {room.isPaused && (
+                          <motion.div 
+                            className="absolute inset-0 rounded-xl flex items-center justify-center gap-2 z-10"
+                            style={{ 
+                              background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(34, 211, 238, 0.15) 100%)',
+                              border: '2px solid rgba(34, 211, 238, 0.5)',
+                            }}
+                            animate={{ 
+                              borderColor: ['rgba(34, 211, 238, 0.5)', 'rgba(34, 211, 238, 0.8)', 'rgba(34, 211, 238, 0.5)']
+                            }}
+                            transition={{ 
+                              duration: 2, 
+                              repeat: Infinity, 
+                              ease: 'easeInOut' 
+                            }}
+                          >
+                            <Pause className="w-4 h-4 text-cyan-300" />
+                            <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider">PAUZA</span>
+                          </motion.div>
+                        )}
                       </motion.div>
                     )}
 
