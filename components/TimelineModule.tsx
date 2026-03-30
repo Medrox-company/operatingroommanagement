@@ -846,11 +846,19 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         }}
                       >
                         {(() => {
-                          const baseColor = room.isPaused ? '#22D3EE' : (stepColor || '#6B7280');
+                          // Determine base color based on room status priority
+                          let baseColor = stepColor || '#6B7280';
+                          
+                          if (room.isEmergency) {
+                            baseColor = '#FF3B30'; // Red for emergency
+                          } else if (room.isLocked) {
+                            baseColor = '#FBBF24'; // Amber for locked
+                          } else if (room.isPaused) {
+                            baseColor = '#22D3EE'; // Cyan for paused
+                          }
 
-                          // Each bar gets a unique shifted hue for the gradient end-color
-                          // Shift: lighter + slightly desaturated for a classy two-tone look
-                          const toColor = room.isPaused ? '#67E8F9' : baseColor + 'BB';
+                          // Create lighter tone for gradient end
+                          const toColor = baseColor + '88';
 
                           return (
                             <>
