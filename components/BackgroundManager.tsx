@@ -70,19 +70,27 @@ const BackgroundManager: React.FC = () => {
     loadSettings();
   }, []);
 
-  // Save settings to database and dispatch event
-  const saveSettings = useCallback(async (newSettings: BackgroundSettings) => {
-    setSettings(newSettings);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [originalSettings, setOriginalSettings] = useState<BackgroundSettings>(DEFAULT_SETTINGS);
+
+  // Track if settings changed
+  const markChanged = () => setHasChanges(true);
+
+  // Apply changes - save to database and update app
+  const applyChanges = useCallback(async () => {
     setSaving(true);
     
-    const success = await saveBackgroundSettings(newSettings);
+    const success = await saveBackgroundSettings(settings);
     
     if (success) {
-      window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: newSettings }));
+      // Dispatch event to update App background immediately
+      window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: settings }));
+      setOriginalSettings(settings);
+      setHasChanges(false);
     }
     
     setSaving(false);
-  }, []);
+  }, [settings]);
 
   // Add color stop
   const addColor = () => {
@@ -90,14 +98,16 @@ const BackgroundManager: React.FC = () => {
     const newColors = [...settings.colors];
     newColors.push({ color: '#8B5CF6', position: 50 });
     newColors.sort((a, b) => a.position - b.position);
-    saveSettings({ ...settings, colors: newColors });
+    setSettings({ ...settings, colors: newColors });
+    markChanged();
   };
 
   // Remove color stop
   const removeColor = (index: number) => {
     if (settings.colors.length <= 1) return;
     const newColors = settings.colors.filter((_, i) => i !== index);
-    saveSettings({ ...settings, colors: newColors });
+    setSettings({ ...settings, colors: newColors });
+    markChanged();
     if (selectedColorIndex >= newColors.length) {
       setSelectedColorIndex(newColors.length - 1);
     }
@@ -108,12 +118,27 @@ const BackgroundManager: React.FC = () => {
     const newColors = settings.colors.map((c, i) => 
       i === index ? { ...c, ...updates } : c
     );
-    saveSettings({ ...settings, colors: newColors });
+    setSettings({ ...settings, colors: newColors });
+    markChanged();
+  };
+
+  // Update settings helper
+  const updateSettings = (updates: Partial<BackgroundSettings>) => {
+    setSettings(prev => ({ ...prev, ...updates }));
+    markChanged();
   };
 
   // Reset to defaults
-  const resetToDefaults = () => {
-    saveSettings(DEFAULT_SETTINGS);
+  const resetToDefaults = async () => {
+    setSettings(DEFAULT_SETTINGS);
+    setSaving(true);
+    const success = await saveBackgroundSettings(DEFAULT_SETTINGS);
+    if (success) {
+      window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: DEFAULT_SETTINGS }));
+      setOriginalSettings(DEFAULT_SETTINGS);
+      setHasChanges(false);
+    }
+    setSaving(false);
     setSelectedColorIndex(0);
   };
 
@@ -149,8 +174,32 @@ const BackgroundManager: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
               disabled={saving}
             >
-              {saving ? <Loader className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-              {saving ? 'Ukládám...' : 'Reset'}
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+            {/* Apply Changes Button */}
+            <button
+              onClick={applyChanges}
+              disabled={saving || !hasChanges}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                hasChanges
+                  ? 'bg-violet-500 text-white hover:bg-violet-400 shadow-lg shadow-violet-500/25'
+                  : 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed'
+              }`}
+            >
+              {saving ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Ukládám...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Aplikovat změny
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -204,7 +253,7 @@ const BackgroundManager: React.FC = () => {
                   <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Typ pozadí</p>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => saveSettings({ ...settings, type: 'solid' })}
+                      onClick={() => updateSettings({ type: 'solid' })}
                       className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                         settings.type === 'solid'
                           ? 'bg-white/10 text-white border border-white/20'
@@ -215,7 +264,7 @@ const BackgroundManager: React.FC = () => {
                       Jednobarevné
                     </button>
                     <button
-                      onClick={() => saveSettings({ ...settings, type: 'gradient' })}
+                      onClick={() => updateSettings({ type: 'gradient' })}
                       className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                         settings.type === 'gradient'
                           ? 'bg-white/10 text-white border border-white/20'
@@ -238,7 +287,8 @@ const BackgroundManager: React.FC = () => {
                         onChange={(e) => {
                           const newColors = [...settings.colors];
                           newColors[0] = { ...newColors[0], color: e.target.value };
-                          saveSettings({ ...settings, colors: newColors });
+                          setSettings({ ...settings, colors: newColors });
+                          markChanged();
                         }}
                         className="w-16 h-16 rounded-xl cursor-pointer border-2 border-white/10"
                         disabled={saving}
@@ -250,7 +300,8 @@ const BackgroundManager: React.FC = () => {
                             onClick={() => {
                               const newColors = [...settings.colors];
                               newColors[0] = { ...newColors[0], color };
-                              saveSettings({ ...settings, colors: newColors });
+                              setSettings({ ...settings, colors: newColors });
+                              markChanged();
                             }}
                             className={`w-8 h-8 rounded-lg transition-all hover:scale-110 ${
                               settings.colors[0]?.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0A0A12]' : ''
@@ -356,7 +407,7 @@ const BackgroundManager: React.FC = () => {
                           return (
                             <button
                               key={dir.value}
-                              onClick={() => saveSettings({ ...settings, direction: dir.value })}
+                              onClick={() => updateSettings({ direction: dir.value })}
                               className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl transition-all ${
                                 settings.direction === dir.value
                                   ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
@@ -385,7 +436,7 @@ const BackgroundManager: React.FC = () => {
                     min="0"
                     max="100"
                     value={settings.opacity}
-                    onChange={(e) => saveSettings({ ...settings, opacity: parseInt(e.target.value) })}
+                    onChange={(e) => updateSettings({ opacity: parseInt(e.target.value) })}
                     className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-violet-500"
                     disabled={saving}
                   />
@@ -405,7 +456,7 @@ const BackgroundManager: React.FC = () => {
                   <input
                     type="url"
                     value={settings.imageUrl}
-                    onChange={(e) => saveSettings({ ...settings, imageUrl: e.target.value })}
+                    onChange={(e) => updateSettings({ imageUrl: e.target.value })}
                     placeholder="https://..."
                     className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-violet-500/50"
                     disabled={saving}
@@ -423,7 +474,7 @@ const BackgroundManager: React.FC = () => {
                     min="0"
                     max="100"
                     value={settings.imageOpacity}
-                    onChange={(e) => saveSettings({ ...settings, imageOpacity: parseInt(e.target.value) })}
+                    onChange={(e) => updateSettings({ imageOpacity: parseInt(e.target.value) })}
                     className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-violet-500"
                     disabled={saving}
                   />
@@ -440,7 +491,7 @@ const BackgroundManager: React.FC = () => {
                     min="0"
                     max="20"
                     value={settings.imageBlur}
-                    onChange={(e) => saveSettings({ ...settings, imageBlur: parseInt(e.target.value) })}
+                    onChange={(e) => updateSettings({ imageBlur: parseInt(e.target.value) })}
                     className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-violet-500"
                     disabled={saving}
                   />
