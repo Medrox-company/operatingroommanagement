@@ -832,148 +832,188 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     })}
 
                     {/* Active operation bar - Premium Design with workflow step color */}
-                    {/* Active operation box - shown for all active rooms */}
+                    {/* Active operation box - premium glass morphism design */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.6, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl group/bar"
+                        transition={{ duration: 0.5, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-2xl group/bar"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
                           transformOrigin: 'left center'
                         }}
                       >
-                        {/* Outer glow effect - subtle */}
+                        {/* Outer glow effect - ambient lighting */}
                         <div 
-                          className="absolute -inset-0.5 rounded-xl blur-sm opacity-20"
-                          style={{ background: stepColor }}
+                          className="absolute -inset-1 rounded-2xl blur-md opacity-30"
+                          style={{ background: room.isPaused ? '#22D3EE' : stepColor }}
                         />
 
-                        {/* Main container with gradient border - softer */}
+                        {/* Glass container base */}
                         <div 
-                          className="absolute inset-0 rounded-xl"
+                          className="absolute inset-0 rounded-2xl backdrop-blur-sm"
                           style={{ 
-                            background: `linear-gradient(135deg, ${stepColor}18 0%, ${stepColor}08 100%)`,
-                            border: `1px solid ${stepColor}35`,
-                            boxShadow: `0 2px 8px ${stepColor}15`
+                            background: `linear-gradient(145deg, ${room.isPaused ? '#22D3EE' : stepColor}12 0%, ${room.isPaused ? '#22D3EE' : stepColor}06 100%)`,
+                            border: `1px solid ${room.isPaused ? '#22D3EE' : stepColor}25`,
+                            boxShadow: `
+                              0 4px 24px ${room.isPaused ? '#22D3EE' : stepColor}15,
+                              0 1px 0 rgba(255,255,255,0.05) inset,
+                              0 -1px 0 rgba(0,0,0,0.1) inset
+                            `
                           }}
                         />
 
-                        {/* Top highlight reflection - subtle */}
-                        <div 
-                          className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl opacity-15"
-                          style={{ 
-                            background: `linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)`
-                          }}
-                        />
-
-                        {/* Radial glow from top - subtle */}
-                        <div 
-                          className="absolute inset-0 opacity-30"
-                          style={{ 
-                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${stepColor}25 0%, transparent 70%)`
-                          }}
-                        />
-
-                        {/* Completed section - cleaner, softer */}
-                        <div 
-                          className="absolute inset-0 rounded-xl overflow-hidden" 
-                          style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
-                        >
-                          {/* Solid progress fill - softer gradient */}
+                        {/* Progress fill - elegant gradient */}
+                        {!room.isPaused && (
                           <div 
-                            className="absolute inset-0"
-                            style={{ 
-                              background: `linear-gradient(135deg, ${stepColor}90 0%, ${stepColor}70 100%)`
-                            }}
-                          />
-                          
-                          {/* Subtle top highlight only */}
-                          <div 
-                            className="absolute inset-x-0 top-0 h-1/3 opacity-20" 
-                            style={{ 
-                              background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)'
-                            }} 
-                          />
-                        </div>
+                            className="absolute inset-0 rounded-2xl overflow-hidden" 
+                            style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
+                          >
+                            <div 
+                              className="absolute inset-0"
+                              style={{ 
+                                background: `linear-gradient(145deg, ${stepColor}95 0%, ${stepColor}75 100%)`
+                              }}
+                            />
+                            {/* Glass shine on progress */}
+                            <div 
+                              className="absolute inset-x-0 top-0 h-1/2" 
+                              style={{ 
+                                background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 50%, transparent 100%)'
+                              }} 
+                            />
+                          </div>
+                        )}
 
-                        {/* Status segment - solid color bar, blue when paused */}
+                        {/* Status segment - glass morphism bar with gradient */}
                         {(() => {
-                          const segmentColor = room.isPaused ? '#22D3EE' : (stepColor || '#6B7280');
+                          const baseColor = room.isPaused ? '#22D3EE' : (stepColor || '#6B7280');
                           
                           return (
                             <motion.div
                               key={`segment-${stepIndex}-${room.isPaused ? 'paused' : 'active'}`}
-                              className="absolute inset-y-0 rounded-xl"
+                              className="absolute inset-y-0 rounded-xl overflow-hidden"
                               style={{
                                 left: 0,
                                 width: '100%',
-                                background: segmentColor,
-                                opacity: room.isPaused ? 0.9 : 0.75
                               }}
-                              animate={{ 
-                                background: segmentColor,
-                                opacity: room.isPaused ? 0.9 : 0.75
-                              }}
-                              transition={{ duration: 0.3 }}
+                              initial={{ opacity: 0, scale: 0.98 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.4, ease: 'easeOut' }}
                               title={room.isPaused ? 'PAUZA' : stepName}
-                            />
+                            >
+                              {/* Base gradient layer */}
+                              <div 
+                                className="absolute inset-0"
+                                style={{
+                                  background: `linear-gradient(135deg, ${baseColor}dd 0%, ${baseColor}99 50%, ${baseColor}77 100%)`,
+                                }}
+                              />
+                              
+                              {/* Glass overlay - top shine */}
+                              <div 
+                                className="absolute inset-x-0 top-0 h-1/2"
+                                style={{
+                                  background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
+                                }}
+                              />
+                              
+                              {/* Inner shadow for depth */}
+                              <div 
+                                className="absolute inset-0 rounded-xl"
+                                style={{
+                                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.1)`,
+                                }}
+                              />
+                              
+                              {/* Subtle border glow */}
+                              <div 
+                                className="absolute inset-0 rounded-xl"
+                                style={{
+                                  border: `1px solid ${baseColor}40`,
+                                  boxShadow: `0 0 20px ${baseColor}20, 0 4px 12px rgba(0,0,0,0.15)`,
+                                }}
+                              />
+                            </motion.div>
                           );
                         })()}
 
-                        {/* Current position indicator - subtle line */}
-                        {progressPct > 0 && progressPct < 100 && (
+                        {/* Current position indicator - elegant design */}
+                        {progressPct > 0 && progressPct < 100 && !room.isPaused && (
                           <>
-                            {/* Main line - simple */}
+                            {/* Glow behind line */}
                             <div 
-                              className="absolute top-0 bottom-0 w-[1.5px] -translate-x-1/2"
+                              className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: 'rgba(255,255,255,0.8)'
+                                background: 'rgba(255,255,255,0.3)'
                               }}
                             />
-                            {/* Small top indicator */}
+                            {/* Main line */}
                             <div 
-                              className="absolute -top-0.5 w-1.5 h-1.5 rounded-full -translate-x-1/2"
+                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: 'rgba(255,255,255,0.9)'
+                                background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.6) 100%)'
+                              }}
+                            />
+                            {/* Top diamond indicator */}
+                            <div 
+                              className="absolute -top-1 w-2 h-2 -translate-x-1/2 rotate-45"
+                              style={{ 
+                                left: `${progressPct}%`,
+                                background: 'white',
+                                boxShadow: '0 0 8px rgba(255,255,255,0.8)'
                               }}
                             />
                           </>
                         )}
 
-                        {/* Content overlay - title and status */}
-                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
+                        {/* Content overlay - refined typography */}
+                        <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
                           {room.isPaused ? (
-                            /* Pause state - show PAUZA text */
+                            /* Pause state - elegant pause display */
                             <div className="min-w-0 flex-1 flex items-center gap-2">
-                              {boxWidthPct > 5 && <Pause className="w-3 h-3 text-white flex-shrink-0" />}
-                              {boxWidthPct > 10 && (
-                                <p className="text-[10px] font-black text-white uppercase tracking-widest truncate">
-                                  PAUZA
-                                </p>
+                              {boxWidthPct > 5 && (
+                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                  <Pause className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                              {boxWidthPct > 12 && (
+                                <div>
+                                  <p className="text-[11px] font-bold text-white uppercase tracking-wider">
+                                    PAUZA
+                                  </p>
+                                  {boxWidthPct > 20 && (
+                                    <p className="text-[8px] text-white/60">
+                                      Operace pozastavena
+                                    </p>
+                                  )}
+                                </div>
                               )}
                             </div>
                           ) : (
-                            /* Normal state - show step info */
+                            /* Normal state - refined step info */
                             <>
                               {boxWidthPct > 8 && (
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[10px] font-medium text-white/90 truncate">
+                                  <p className="text-[11px] font-semibold text-white truncate drop-shadow-sm">
                                     {stepName}
                                   </p>
-                                  <p className="text-[8px] font-normal text-white/50 truncate">
+                                  <p className="text-[9px] font-normal text-white/60 truncate">
                                     {room.staff?.doctor?.name || ''}
                                   </p>
                                 </div>
                               )}
                               {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                                 <div
-                                  className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-medium text-white/70"
-                                  style={{ background: 'rgba(0,0,0,0.2)' }}
+                                  className="flex-shrink-0 px-2 py-1 rounded-md text-[9px] font-semibold text-white/90 backdrop-blur-sm"
+                                  style={{ 
+                                    background: 'rgba(0,0,0,0.25)',
+                                    border: '1px solid rgba(255,255,255,0.1)'
+                                  }}
                                 >
                                   {remainingTime}
                                 </div>
@@ -984,17 +1024,18 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       </motion.div>
                     )}
 
-                    {/* Free room indicator - softer */}
+                    {/* Free room indicator - elegant glass style */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-lg flex items-center justify-center overflow-hidden"
+                        className="absolute inset-y-1.5 left-1.5 right-1.5 rounded-xl flex items-center justify-center overflow-hidden"
                         style={{ 
-                          background: 'rgba(255,255,255,0.02)',
-                          border: '1px dashed rgba(255,255,255,0.08)'
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                          border: '1px dashed rgba(255,255,255,0.1)',
+                          backdropFilter: 'blur(4px)'
                         }}
                       >
-                        <div className="text-center">
-                          <p className="text-[10px] font-medium text-white/30">{stepName}</p>
+                        <div className="text-center px-3">
+                          <p className="text-[10px] font-medium text-white/25 uppercase tracking-wide">{stepName}</p>
                         </div>
                       </div>
                     )}
