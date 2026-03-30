@@ -262,17 +262,6 @@ const AppContent: React.FC = () => {
           }}
         />
         
-        {/* Vignette effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.85)_100%)]" />
-
-        {/* Subtle Texture Overlay */}
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-      </div>
-
-      {/* Atmospheric Edge Glows - Tuned Blue */}
-      <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
-        <div className="absolute -left-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
-        <div className="absolute -right-40 top-0 bottom-0 w-[600px] bg-[#5B65DC] blur-[180px] opacity-25" />
       </div>
 
       <Sidebar currentView={currentView} onNavigate={(view) => {
