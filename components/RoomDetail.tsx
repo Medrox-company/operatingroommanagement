@@ -10,7 +10,7 @@ import {
   ChevronRight, Pause, Play, AlertTriangle, Lock,
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft
 } from 'lucide-react';
-import { recordStatusEvent, updateOperatingRoom } from '../lib/db';
+import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 
 interface RoomDetailProps {
@@ -48,6 +48,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   const [staffPickerOpen, setStaffPickerOpen] = useState(false);
+  const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings | null>(null);
   const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
   const [patientCallElapsedTime, setPatientCallElapsedTime] = useState('00:00');
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
@@ -90,6 +91,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
     return () => clearInterval(timer);
   }, [isPaused]);
+
+  // Load background settings and listen for changes
+  useEffect(() => {
+    const loadBackgroundSettings = async () => {
+      const settings = await fetchBackgroundSettings();
+      if (settings) setBackgroundSettings(settings);
+    };
+    loadBackgroundSettings();
+
+    const handleBackgroundChange = (e: CustomEvent<BackgroundSettings>) => {
+      setBackgroundSettings(e.detail);
+    };
+    window.addEventListener('backgroundSettingsChanged', handleBackgroundChange as EventListener);
+    return () => {
+      window.removeEventListener('backgroundSettingsChanged', handleBackgroundChange as EventListener);
+    };
+  }, []);
 
   // Patient call timer
   useEffect(() => {
@@ -618,9 +636,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* Background Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <img 
-          src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000" 
+          src={backgroundSettings?.imageUrl || "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000"} 
           alt="Operating Environment" 
-          className="w-full h-full object-cover opacity-20 grayscale scale-105"
+          className="w-full h-full object-cover grayscale scale-105"
+          style={{ 
+            opacity: (backgroundSettings?.imageOpacity ?? 20) / 100,
+            filter: `blur(${backgroundSettings?.imageBlur ?? 0}px) grayscale(1)`
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/80" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.9)_100%)]" />
