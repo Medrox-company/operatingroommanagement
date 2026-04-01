@@ -2,7 +2,7 @@
 // This avoids CORS issues by routing through Supabase Edge Functions
 
 // Supabase project URL
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 
 export interface EmailNotification {
   to: string;
