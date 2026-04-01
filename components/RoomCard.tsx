@@ -86,52 +86,18 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
       {/* Content Container */}
       <div className="relative h-full w-full z-10 p-6 flex flex-col">
         
-        {/* Header */}
-        <div className="w-full flex justify-between items-start min-w-0 gap-2 shrink-0">
-          <div className="flex flex-col min-w-0 flex-1">
-            <p className={`text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors
-              ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
-            `}>
-              UNIT {room.department}
-            </p>
-            <h3 className={`text-xl font-bold tracking-tight uppercase leading-none transition-colors truncate
-              ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
-            `}>
-              {room.name}
-            </h3>
-          </div>
-          
-          <div className="flex items-center gap-2 shrink-0">
-            {room.isSeptic && (
-              <div className="p-1.5 bg-red-500/10 rounded-xl border border-red-500/20 backdrop-blur-md">
-                <Biohazard className="w-3.5 h-3.5 text-red-500/70" />
-              </div>
-            )}
-            
-            {/* Emergency Action */}
-            <button
-              onClick={(e) => handleAction(e, onEmergency)}
-              className={`p-2.5 rounded-xl border transition-all backdrop-blur-md
-                ${room.isEmergency 
-                  ? 'bg-red-600 text-white border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]' 
-                  : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
-              `}
-            >
-              <AlertCircle className="w-5 h-5" />
-            </button>
-
-            {/* Lock Action */}
-            <button
-              onClick={(e) => handleAction(e, onLock)}
-              className={`p-2.5 rounded-xl border transition-all backdrop-blur-md
-                ${room.isLocked
-                  ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
-                  : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
-              `}
-            >
-              <Lock className="w-5 h-5" />
-            </button>
-          </div>
+        {/* Header — centered */}
+        <div className="w-full flex flex-col items-center text-center shrink-0">
+          <p className={`text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 transition-colors
+            ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
+          `}>
+            UNIT {room.department}
+          </p>
+          <h3 className={`text-xl font-bold tracking-tight uppercase leading-none transition-colors
+            ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
+          `}>
+            {room.name}
+          </h3>
         </div>
 
         {/* Central Content Wrapper */}
@@ -237,6 +203,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
             <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
             ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
           `}>
+            {/* Left: avatar + names */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className={`w-9 h-9 rounded-xl border overflow-hidden shrink-0 
                 ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : (room.isPaused ? 'border-cyan-500/30' : 'border-white/5'))}
@@ -258,22 +225,55 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                 )}
               </div>
             </div>
-            
-            {room.isPaused && (
-              <div className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                <Pause className="w-3 h-3 text-cyan-400" />
-                <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-wider">Pauza</span>
-              </div>
-            )}
-            
-            {!room.isPaused && !room.estimatedEndTime && (
-              <div className="flex items-center gap-1.5 opacity-40 group-hover:opacity-80 transition-opacity shrink-0">
-                <Clock className="w-3.5 h-3.5 text-white" />
-                <span className="text-[11px] font-mono font-bold text-white">
-                  {room.currentProcedure?.startTime || '--:--'}
-                </span>
-              </div>
-            )}
+
+            {/* Right: action buttons / status badges */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {room.isSeptic && (
+                <div className="p-1.5 bg-red-500/10 rounded-xl border border-red-500/20 backdrop-blur-md">
+                  <Biohazard className="w-3.5 h-3.5 text-red-500/70" />
+                </div>
+              )}
+
+              {room.isPaused && (
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                  <Pause className="w-3 h-3 text-cyan-400" />
+                  <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-wider">Pauza</span>
+                </div>
+              )}
+
+              {!room.isPaused && !room.estimatedEndTime && (
+                <div className="flex items-center gap-1 opacity-40 group-hover:opacity-80 transition-opacity">
+                  <Clock className="w-3.5 h-3.5 text-white" />
+                  <span className="text-[11px] font-mono font-bold text-white">
+                    {room.currentProcedure?.startTime || '--:--'}
+                  </span>
+                </div>
+              )}
+
+              {/* Emergency button */}
+              <button
+                onClick={(e) => handleAction(e, onEmergency)}
+                className={`p-2 rounded-xl border transition-all backdrop-blur-md
+                  ${room.isEmergency
+                    ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
+                    : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
+                `}
+              >
+                <AlertCircle className="w-4 h-4" />
+              </button>
+
+              {/* Lock button */}
+              <button
+                onClick={(e) => handleAction(e, onLock)}
+                className={`p-2 rounded-xl border transition-all backdrop-blur-md
+                  ${room.isLocked
+                    ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
+                    : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
+                `}
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
