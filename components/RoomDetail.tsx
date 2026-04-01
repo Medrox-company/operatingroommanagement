@@ -1122,12 +1122,14 @@ const prevStep = activeDbStatuses.length > 0
                       {currentStep.title}
                     </motion.h2>
 
-                    {/* Time display under title */}
-                    <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
-                      <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-                        {isPaused ? pauseElapsedTime : elapsedTime}
-                      </span>
-                    </div>
+                    {/* Time display under title — hidden on final step (Sál připraven) */}
+                    {!isFinalStep && (
+                      <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
+                        <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+                          {isPaused ? pauseElapsedTime : elapsedTime}
+                        </span>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
