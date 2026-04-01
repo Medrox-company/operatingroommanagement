@@ -234,13 +234,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                 </div>
               )}
 
-              {room.isPaused && (
-                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <Pause className="w-3 h-3 text-cyan-400" />
-                  <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-wider">Pauza</span>
-                </div>
-              )}
-
               {!room.isPaused && !room.estimatedEndTime && (
                 <div className="flex items-center gap-1 opacity-40 group-hover:opacity-80 transition-opacity">
                   <Clock className="w-3.5 h-3.5 text-white" />
