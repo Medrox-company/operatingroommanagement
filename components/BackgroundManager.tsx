@@ -147,6 +147,17 @@ const BackgroundManager: React.FC = () => {
     markChanged();
   };
 
+  // For gallery selection - apply immediately
+  const selectGalleryImage = async (imageUrl: string) => {
+    const newSettings = { ...settings, imageUrl };
+    setSettings(newSettings);
+    setSaving(true);
+    await saveBackgroundSettings(newSettings);
+    window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: newSettings }));
+    setHasChanges(false);
+    setSaving(false);
+  };
+
   const resetToDefaults = async () => {
     setSettings(DEFAULT_SETTINGS);
     setSaving(true);
@@ -494,7 +505,7 @@ const BackgroundManager: React.FC = () => {
                     {GALLERY_IMAGES.map((image, index) => (
                       <button
                         key={index}
-                        onClick={() => updateSettings({ imageUrl: image.url })}
+                        onClick={() => selectGalleryImage(image.url)}
                         disabled={saving}
                         className={`relative aspect-video rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
                           settings.imageUrl === image.url 
