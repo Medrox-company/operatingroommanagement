@@ -49,7 +49,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
   return (
     <div
       onClick={onClick}
-      className="relative group cursor-pointer h-[280px] sm:h-[320px] md:h-[340px] w-full"
+      className="relative group cursor-pointer h-[340px] w-full"
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
@@ -84,16 +84,16 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
       </div>
 
       {/* Content Container */}
-      <div className="relative h-full w-full z-10 p-4 sm:p-5 md:p-6 flex flex-col">
+      <div className="relative h-full w-full z-10 p-6 flex flex-col">
         
         {/* Header — centered */}
         <div className="w-full flex flex-col items-center text-center shrink-0">
-          <p className={`text-[8px] sm:text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-1.5 sm:mb-2 transition-colors
+          <p className={`text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 transition-colors
             ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
           `}>
             UNIT {room.department}
           </p>
-          <h3 className={`text-base sm:text-lg md:text-xl font-bold tracking-tight uppercase leading-none transition-colors
+          <h3 className={`text-xl font-bold tracking-tight uppercase leading-none transition-colors
             ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
           `}>
             {room.name}
@@ -112,7 +112,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                   transition={{ duration: 1.2, ease: 'easeOut' }}
                 />
                 <motion.svg
-                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 overflow-visible select-none flex-shrink-0"
+                  className="w-28 h-28 overflow-visible select-none flex-shrink-0"
                   style={{ rotate: '-90deg' }}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -176,9 +176,9 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
             
             {room.estimatedEndTime && !isFinalStep && (
                 <div className="-mt-1 text-center">
-                    <div className="flex items-center gap-1 sm:gap-1.5 justify-center">
-                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" style={{ color: themeColor }} />
-                      <span className="text-base sm:text-lg font-mono font-bold tracking-tight" style={{ color: themeColor }}>
+                    <div className="flex items-center gap-1.5 justify-center">
+                      <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
+                      <span className="text-lg font-mono font-bold tracking-tight" style={{ color: themeColor }}>
                           {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -200,24 +200,24 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
             </p>
           </div>
           
-          <div className={`flex items-center justify-between pt-2 sm:pt-3 border-t gap-1.5 sm:gap-2 transition-colors
+            <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
             ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
           `}>
             {/* Left: avatar + names */}
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-              <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border overflow-hidden shrink-0 
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className={`w-9 h-9 rounded-xl border overflow-hidden shrink-0 
                 ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : (room.isPaused ? 'border-cyan-500/30' : 'border-white/5'))}
               `}>
                 <img src={`https://i.pravatar.cc/150?u=${room.staff.doctor.name}`} alt="Dr" className="w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="min-w-0 flex flex-col gap-0.5">
-                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-tight truncate transition-colors
+                <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors
                   ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
                 `}>
                   {room.staff.doctor.name?.split(' ').pop()}
                 </span>
                 {room.staff.nurse?.name && (
-                  <span className={`text-[8px] sm:text-[9px] font-medium uppercase tracking-tight truncate transition-colors
+                  <span className={`text-[9px] font-medium uppercase tracking-tight truncate transition-colors
                     ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
                   `}>
                     {room.staff.nurse.name?.split(' ').pop()}
@@ -226,16 +226,16 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
               </div>
             </div>
 
-            {/* Right: action buttons */}
-            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Right: action buttons / status badges */}
+            <div className="flex items-center gap-1.5 shrink-0">
               {room.isSeptic && (
-                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/20">
-                  <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/70" />
+                <div className="p-1.5 bg-red-500/10 rounded-xl border border-red-500/20 backdrop-blur-md">
+                  <Biohazard className="w-3.5 h-3.5 text-red-500/70" />
                 </div>
               )}
 
               {!room.isPaused && !room.estimatedEndTime && (
-                <div className="hidden sm:flex items-center gap-1 opacity-40 group-hover:opacity-80 transition-opacity">
+                <div className="flex items-center gap-1 opacity-40 group-hover:opacity-80 transition-opacity">
                   <Clock className="w-3.5 h-3.5 text-white" />
                   <span className="text-[11px] font-mono font-bold text-white">
                     {room.currentProcedure?.startTime || '--:--'}
@@ -246,25 +246,25 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
               {/* Emergency button */}
               <button
                 onClick={(e) => handleAction(e, onEmergency)}
-                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all
+                className={`p-2 rounded-xl border transition-all backdrop-blur-md
                   ${room.isEmergency
                     ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
                     : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
                 `}
               >
-                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <AlertCircle className="w-4 h-4" />
               </button>
 
               {/* Lock button */}
               <button
                 onClick={(e) => handleAction(e, onLock)}
-                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all
+                className={`p-2 rounded-xl border transition-all backdrop-blur-md
                   ${room.isLocked
                     ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
                     : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
                 `}
               >
-                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Lock className="w-4 h-4" />
               </button>
             </div>
           </div>
