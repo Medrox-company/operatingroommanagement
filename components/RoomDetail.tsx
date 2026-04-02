@@ -204,10 +204,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
   
-  // Check if current status is "Sál připraven" - don't show time for this status
+  // Don't show time for "Sál připraven" and "Úklid sálu" statuses
   const statusName = currentStep?.name?.toLowerCase() || '';
   const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
-  const shouldShowTime = !isReadyStatus;
+  const isCleaningStatus = statusName.includes('úklid') || statusName.includes('uklid');
+  const shouldShowTime = !isReadyStatus && !isCleaningStatus;
 
   // Dynamic theme color based on status
   const activeColor = room.isEmergency 
@@ -1060,7 +1061,7 @@ const prevStep = activeDbStatuses.length > 0
                       UZAMČENO
                     </h2>
                   </motion.div>
-                ) : showEndTime && estimatedEndTime ? (
+                ) : showEndTime && estimatedEndTime && shouldShowTime ? (
                   <motion.div
                     key="end-time-text"
                     initial={{ opacity: 0, scale: 0.8 }}

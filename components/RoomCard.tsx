@@ -36,10 +36,11 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
     const progressPercent = ((safeIndex + 1) / totalSteps);
     
-    // Check if current status is "Sál připraven" - don't show time for this status
+    // Don't show time for "Sál připraven" and "Úklid sálu" statuses
     const statusName = dbStatus?.name?.toLowerCase() || '';
     const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
-    const shouldShowTime = !isReadyStatus;
+    const isCleaningStatus = statusName.includes('úklid') || statusName.includes('uklid');
+    const shouldShowTime = !isReadyStatus && !isCleaningStatus;
     
     const radius = 38;
     const strokeDasharray = 2 * Math.PI * radius;
