@@ -263,8 +263,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       await recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_end',
+        step_index: currentStepIndex,
+        step_name: 'Konec operace',
         duration_seconds: durationSeconds,
-        metadata: { completed_step: previousStep?.name || 'Status' },
+        metadata: { 
+          completed_step: previousStep?.name || 'Status',
+          previous_step: previousStep?.name || 'Status',
+        },
       });
     }
 
