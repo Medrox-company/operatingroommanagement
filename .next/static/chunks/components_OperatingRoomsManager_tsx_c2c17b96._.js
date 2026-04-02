@@ -33,28 +33,28 @@ var _s = __turbopack_context__.k.signature();
 const DAYS = [
     {
         key: 'monday',
-        label: 'Pondeli',
+        label: 'Pondělí',
         short: 'Po'
     },
     {
         key: 'tuesday',
-        label: 'Utery',
-        short: 'Ut'
+        label: 'Úterý',
+        short: 'Út'
     },
     {
         key: 'wednesday',
-        label: 'Streda',
+        label: 'Středa',
         short: 'St'
     },
     {
         key: 'thursday',
-        label: 'Ctvrtek',
-        short: 'Ct'
+        label: 'Čtvrtek',
+        short: 'Čt'
     },
     {
         key: 'friday',
-        label: 'Patek',
-        short: 'Pa'
+        label: 'Pátek',
+        short: 'Pá'
     },
     {
         key: 'saturday',
@@ -63,22 +63,12 @@ const DAYS = [
     },
     {
         key: 'sunday',
-        label: 'Nedele',
+        label: 'Neděle',
         short: 'Ne'
     }
 ];
-const deptColors = {
-    TRA: '#00D8C1',
-    CHIR: '#7C3AED',
-    ROBOT: '#06B6D4',
-    URO: '#EC4899',
-    ORL: '#3B82F6',
-    'CEVNI': '#F59E0B',
-    'HPB + PLICNI': '#8B5CF6',
-    DETSKE: '#06B6D4',
-    MAMMO: '#EC4899'
-};
-const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
+// Jednotná aplikační barva
+const APP_COLOR = '#00D8C1';
 /* Time Input Component */ const TimeInput = (param)=>{
     let { label, hour, minute, onHourChange, onMinuteChange, disabled } = param;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -89,7 +79,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                 children: label
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 50,
+                lineNumber: 39,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -105,7 +95,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                         className: "w-12 px-2 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-white text-center text-sm font-mono focus:outline-none focus:border-cyan-500/50 disabled:cursor-not-allowed"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 52,
+                        lineNumber: 41,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -113,7 +103,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                         children: ":"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 61,
+                        lineNumber: 50,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -127,19 +117,19 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                         className: "w-12 px-2 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-white text-center text-sm font-mono focus:outline-none focus:border-cyan-500/50 disabled:cursor-not-allowed"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 62,
+                        lineNumber: 51,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 51,
+                lineNumber: 40,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 49,
+        lineNumber: 38,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -159,12 +149,12 @@ _c = TimeInput;
                     className: "w-4 h-4"
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 98,
+                    lineNumber: 87,
                     columnNumber: 7
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 90,
+                lineNumber: 79,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -175,7 +165,7 @@ _c = TimeInput;
                         children: day.label
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 103,
+                        lineNumber: 92,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -183,13 +173,13 @@ _c = TimeInput;
                         children: schedule.enabled ? 'Aktivni' : 'Neaktivni'
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 106,
+                        lineNumber: 95,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 102,
+                lineNumber: 91,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -210,7 +200,7 @@ _c = TimeInput;
                         disabled: !schedule.enabled
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 111,
+                        lineNumber: 100,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -218,7 +208,7 @@ _c = TimeInput;
                         children: "—"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 119,
+                        lineNumber: 108,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(TimeInput, {
@@ -236,13 +226,13 @@ _c = TimeInput;
                         disabled: !schedule.enabled
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 120,
+                        lineNumber: 109,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 110,
+                lineNumber: 99,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             schedule.enabled && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -253,7 +243,7 @@ _c = TimeInput;
                         children: "Delka"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 133,
+                        lineNumber: 122,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -268,26 +258,26 @@ _c = TimeInput;
                         })()
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 134,
+                        lineNumber: 123,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 132,
+                lineNumber: 121,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 82,
+        lineNumber: 71,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0));
 };
 _c1 = DayScheduleRow;
 /* Room Card */ const RoomCard = (param)=>{
     let { room, onEdit, onDelete, onScheduleEdit } = param;
-    const color = getDeptColor(room.department);
+    const color = APP_COLOR;
     const schedule = room.weeklySchedule || __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DEFAULT_WEEKLY_SCHEDULE"];
     // Count active days
     const activeDays = DAYS.filter((d)=>schedule[d.key].enabled).length;
@@ -318,7 +308,7 @@ _c1 = DayScheduleRow;
                 }
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 175,
+                lineNumber: 164,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -335,7 +325,7 @@ _c1 = DayScheduleRow;
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 189,
+                        lineNumber: 178,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -359,12 +349,12 @@ _c1 = DayScheduleRow;
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 205,
+                                                lineNumber: 194,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 198,
+                                            lineNumber: 187,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -374,7 +364,7 @@ _c1 = DayScheduleRow;
                                                     children: room.name
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 208,
+                                                    lineNumber: 197,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -385,19 +375,19 @@ _c1 = DayScheduleRow;
                                                     children: room.department
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 209,
+                                                    lineNumber: 198,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 207,
+                                            lineNumber: 196,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 197,
+                                    lineNumber: 186,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -407,21 +397,21 @@ _c1 = DayScheduleRow;
                                         color: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? '#22C55E' : '#EF4444',
                                         border: "1px solid ".concat(room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)')
                                     },
-                                    children: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'Volny' : 'Obsazeno'
+                                    children: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'Volný' : 'Obsazeno'
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 214,
+                                    lineNumber: 203,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 196,
+                            lineNumber: 185,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 195,
+                        lineNumber: 184,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -440,13 +430,13 @@ _c1 = DayScheduleRow;
                                         children: day.short
                                     }, day.key, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 234,
+                                        lineNumber: 223,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0));
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 230,
+                                lineNumber: 219,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -465,7 +455,7 @@ _c1 = DayScheduleRow;
                                                     className: "w-4 h-4 text-white/40"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 262,
+                                                    lineNumber: 251,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -473,13 +463,13 @@ _c1 = DayScheduleRow;
                                                     children: "Dnes"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 263,
+                                                    lineNumber: 252,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 261,
+                                            lineNumber: 250,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         todaySchedule.enabled ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -494,7 +484,7 @@ _c1 = DayScheduleRow;
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 267,
+                                                    lineNumber: 256,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -502,7 +492,7 @@ _c1 = DayScheduleRow;
                                                     children: "—"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 270,
+                                                    lineNumber: 259,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -517,31 +507,31 @@ _c1 = DayScheduleRow;
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 271,
+                                                    lineNumber: 260,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 266,
+                                            lineNumber: 255,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             className: "text-xs text-white/30",
-                                            children: "Neaktivni"
+                                            children: "Neaktivní"
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 276,
+                                            lineNumber: 265,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 260,
+                                    lineNumber: 249,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 253,
+                                lineNumber: 242,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -555,10 +545,10 @@ _c1 = DayScheduleRow;
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-[10px] text-white/30 uppercase",
-                                                children: "Aktivni dny"
+                                                children: "Aktivní dny"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 287,
+                                                lineNumber: 276,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -566,13 +556,13 @@ _c1 = DayScheduleRow;
                                                 children: activeDays
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 288,
+                                                lineNumber: 277,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 283,
+                                        lineNumber: 272,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -583,10 +573,10 @@ _c1 = DayScheduleRow;
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-[10px] text-white/30 uppercase",
-                                                children: "Operaci 24h"
+                                                children: "Operací 24h"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 294,
+                                                lineNumber: 283,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -594,25 +584,25 @@ _c1 = DayScheduleRow;
                                                 children: room.operations24h || 0
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 295,
+                                                lineNumber: 284,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 290,
+                                        lineNumber: 279,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 282,
+                                lineNumber: 271,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 228,
+                        lineNumber: 217,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -633,14 +623,14 @@ _c1 = DayScheduleRow;
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 312,
+                                            lineNumber: 301,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         "Rozvrh"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 303,
+                                    lineNumber: 292,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -650,12 +640,12 @@ _c1 = DayScheduleRow;
                                         className: "w-4 h-4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 319,
+                                        lineNumber: 308,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 315,
+                                    lineNumber: 304,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -665,35 +655,35 @@ _c1 = DayScheduleRow;
                                         className: "w-4 h-4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 325,
+                                        lineNumber: 314,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 321,
+                                    lineNumber: 310,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 302,
+                            lineNumber: 291,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 301,
+                        lineNumber: 290,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 181,
+                lineNumber: 170,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 167,
+        lineNumber: 156,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -718,7 +708,7 @@ _c2 = RoomCard;
     });
     const handleAddRoom = ()=>{
         if (!newRoomData.name || !newRoomData.department) {
-            setError('Vyplnte prosim vsechna povinna pole');
+            setError('Vyplňte prosím všechna povinná pole');
             return;
         }
         const newRoom = {
@@ -796,7 +786,7 @@ _c2 = RoomCard;
                                     className: "w-4 h-4 text-[#00D8C1]"
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 420,
+                                    lineNumber: 409,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -804,13 +794,13 @@ _c2 = RoomCard;
                                     children: "OPERATINGROOM CONTROL"
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 421,
+                                    lineNumber: 410,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 419,
+                            lineNumber: 408,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -822,24 +812,24 @@ _c2 = RoomCard;
                                     children: "SÁLY"
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 424,
+                                    lineNumber: 413,
                                     columnNumber: 22
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 423,
+                            lineNumber: 412,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 418,
+                    lineNumber: 407,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 417,
+                lineNumber: 406,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -857,7 +847,7 @@ _c2 = RoomCard;
                         className: "w-5 h-5 shrink-0"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 436,
+                        lineNumber: 425,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -865,7 +855,7 @@ _c2 = RoomCard;
                         children: error
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 437,
+                        lineNumber: 426,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -875,18 +865,18 @@ _c2 = RoomCard;
                             className: "w-4 h-4"
                         }, void 0, false, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 439,
+                            lineNumber: 428,
                             columnNumber: 13
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 438,
+                        lineNumber: 427,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 431,
+                lineNumber: 420,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -918,14 +908,14 @@ _c2 = RoomCard;
                                         className: "w-5 h-5 text-cyan-400"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 461,
+                                        lineNumber: 450,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     "Přidat nový operační sál"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 460,
+                                lineNumber: 449,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -938,7 +928,7 @@ _c2 = RoomCard;
                                                 children: "Název sálu"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 466,
+                                                lineNumber: 455,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -952,13 +942,13 @@ _c2 = RoomCard;
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 467,
+                                                lineNumber: 456,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 465,
+                                        lineNumber: 454,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -968,7 +958,7 @@ _c2 = RoomCard;
                                                 children: "Oddělení"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 476,
+                                                lineNumber: 465,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -982,19 +972,19 @@ _c2 = RoomCard;
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 477,
+                                                lineNumber: 466,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 475,
+                                        lineNumber: 464,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 464,
+                                lineNumber: 453,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1008,14 +998,14 @@ _c2 = RoomCard;
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 491,
+                                                lineNumber: 480,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             "Přidat sál"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 487,
+                                        lineNumber: 476,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1031,29 +1021,29 @@ _c2 = RoomCard;
                                         children: "Zrušit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 494,
+                                        lineNumber: 483,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 486,
+                                lineNumber: 475,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 453,
+                        lineNumber: 442,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 447,
+                    lineNumber: 436,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 445,
+                lineNumber: 434,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             !isAddingNew && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1064,14 +1054,14 @@ _c2 = RoomCard;
                         className: "w-5 h-5 group-hover:rotate-90 transition-transform"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 516,
+                        lineNumber: 505,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     "Přidat nový sál"
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 512,
+                lineNumber: 501,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1083,12 +1073,12 @@ _c2 = RoomCard;
                         onScheduleEdit: ()=>setScheduleEditRoom(room)
                     }, room.id, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 524,
+                        lineNumber: 513,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 522,
+                lineNumber: 511,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             roomsList.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1098,7 +1088,7 @@ _c2 = RoomCard;
                         className: "w-16 h-16 mx-auto text-white/10 mb-4"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 537,
+                        lineNumber: 526,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1106,7 +1096,7 @@ _c2 = RoomCard;
                         children: "Žádné operační sály"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 538,
+                        lineNumber: 527,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1114,13 +1104,13 @@ _c2 = RoomCard;
                         children: "Klikněte na tlačítko výše pro přidání nového sálu"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 539,
+                        lineNumber: 528,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 536,
+                lineNumber: 525,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1171,12 +1161,12 @@ _c2 = RoomCard;
                                                 className: "w-5 h-5 text-white/60"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 571,
+                                                lineNumber: 560,
                                                 columnNumber: 21
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 567,
+                                            lineNumber: 556,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1186,7 +1176,7 @@ _c2 = RoomCard;
                                                     children: scheduleEditRoom.name
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 574,
+                                                    lineNumber: 563,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1194,24 +1184,24 @@ _c2 = RoomCard;
                                                     children: "Nastavení pracovní doby"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 575,
+                                                    lineNumber: 564,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 573,
+                                            lineNumber: 562,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 566,
+                                    lineNumber: 555,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 565,
+                                lineNumber: 554,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1234,13 +1224,13 @@ _c2 = RoomCard;
                                         }
                                     }, day.key, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 586,
+                                        lineNumber: 575,
                                         columnNumber: 21
                                     }, ("TURBOPACK compile-time value", void 0));
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 581,
+                                lineNumber: 570,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1260,14 +1250,14 @@ _c2 = RoomCard;
                                                 className: "w-5 h-5"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 614,
+                                                lineNumber: 603,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             "Uložit změny"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 607,
+                                        lineNumber: 596,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1276,29 +1266,29 @@ _c2 = RoomCard;
                                         children: "Zrušit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 617,
+                                        lineNumber: 606,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 606,
+                                lineNumber: 595,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 553,
+                        lineNumber: 542,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 546,
+                    lineNumber: 535,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 544,
+                lineNumber: 533,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1341,14 +1331,14 @@ _c2 = RoomCard;
                                         className: "w-5 h-5 text-cyan-400"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 651,
+                                        lineNumber: 640,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     "Upravit sál"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 650,
+                                lineNumber: 639,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1361,7 +1351,7 @@ _c2 = RoomCard;
                                                 children: "Název"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 656,
+                                                lineNumber: 645,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1374,13 +1364,13 @@ _c2 = RoomCard;
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 657,
+                                                lineNumber: 646,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 655,
+                                        lineNumber: 644,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1390,7 +1380,7 @@ _c2 = RoomCard;
                                                 children: "Oddělení"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 665,
+                                                lineNumber: 654,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1403,19 +1393,19 @@ _c2 = RoomCard;
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 666,
+                                                lineNumber: 655,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 664,
+                                        lineNumber: 653,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 654,
+                                lineNumber: 643,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1427,7 +1417,7 @@ _c2 = RoomCard;
                                         children: "Uložit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 675,
+                                        lineNumber: 664,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1436,29 +1426,29 @@ _c2 = RoomCard;
                                         children: "Zrušit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 681,
+                                        lineNumber: 670,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 674,
+                                lineNumber: 663,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 639,
+                        lineNumber: 628,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 632,
+                    lineNumber: 621,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 630,
+                lineNumber: 619,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1501,14 +1491,14 @@ _c2 = RoomCard;
                                         className: "w-5 h-5 text-red-400"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 715,
+                                        lineNumber: 704,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     "Potvrdit smazání"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 714,
+                                lineNumber: 703,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1516,7 +1506,7 @@ _c2 = RoomCard;
                                 children: "Opravdu chcete smazat tento operační sál? Tato akce je nevratná."
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 718,
+                                lineNumber: 707,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1528,7 +1518,7 @@ _c2 = RoomCard;
                                         children: "Smazat"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 720,
+                                        lineNumber: 709,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1537,35 +1527,35 @@ _c2 = RoomCard;
                                         children: "Zrušit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 726,
+                                        lineNumber: 715,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 719,
+                                lineNumber: 708,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 703,
+                        lineNumber: 692,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 696,
+                    lineNumber: 685,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 694,
+                lineNumber: 683,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 415,
+        lineNumber: 404,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };

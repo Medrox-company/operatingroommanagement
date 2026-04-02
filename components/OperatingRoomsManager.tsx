@@ -14,28 +14,17 @@ interface OperatingRoomsManagerProps {
 }
 
 const DAYS = [
-  { key: 'monday', label: 'Pondeli', short: 'Po' },
-  { key: 'tuesday', label: 'Utery', short: 'Ut' },
-  { key: 'wednesday', label: 'Streda', short: 'St' },
-  { key: 'thursday', label: 'Ctvrtek', short: 'Ct' },
-  { key: 'friday', label: 'Patek', short: 'Pa' },
+  { key: 'monday', label: 'Pondělí', short: 'Po' },
+  { key: 'tuesday', label: 'Úterý', short: 'Út' },
+  { key: 'wednesday', label: 'Středa', short: 'St' },
+  { key: 'thursday', label: 'Čtvrtek', short: 'Čt' },
+  { key: 'friday', label: 'Pátek', short: 'Pá' },
   { key: 'saturday', label: 'Sobota', short: 'So' },
-  { key: 'sunday', label: 'Nedele', short: 'Ne' },
+  { key: 'sunday', label: 'Neděle', short: 'Ne' },
 ] as const;
 
-const deptColors: Record<string, string> = {
-  TRA: '#00D8C1',
-  CHIR: '#7C3AED',
-  ROBOT: '#06B6D4',
-  URO: '#EC4899',
-  ORL: '#3B82F6',
-  'CEVNI': '#F59E0B',
-  'HPB + PLICNI': '#8B5CF6',
-  DETSKE: '#06B6D4',
-  MAMMO: '#EC4899',
-};
-
-const getDeptColor = (dept: string) => deptColors[dept] || '#64748B';
+// Jednotná aplikační barva
+const APP_COLOR = '#00D8C1';
 
 /* Time Input Component */
 const TimeInput: React.FC<{
@@ -153,7 +142,7 @@ const RoomCard: React.FC<{
   onDelete: () => void;
   onScheduleEdit: () => void;
 }> = ({ room, onEdit, onDelete, onScheduleEdit }) => {
-  const color = getDeptColor(room.department);
+  const color = APP_COLOR;
   const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
   
   // Count active days
@@ -219,7 +208,7 @@ const RoomCard: React.FC<{
                 border: `1px solid ${room.status === RoomStatus.FREE ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
               }}
             >
-              {room.status === RoomStatus.FREE ? 'Volny' : 'Obsazeno'}
+              {room.status === RoomStatus.FREE ? 'Volný' : 'Obsazeno'}
             </div>
           </div>
         </div>
@@ -273,7 +262,7 @@ const RoomCard: React.FC<{
                   </span>
                 </div>
               ) : (
-                <span className="text-xs text-white/30">Neaktivni</span>
+                <span className="text-xs text-white/30">Neaktivní</span>
               )}
             </div>
           </div>
@@ -284,14 +273,14 @@ const RoomCard: React.FC<{
               className="flex-1 p-2 rounded-lg text-center"
               style={{ background: 'rgba(255,255,255,0.02)' }}
             >
-              <p className="text-[10px] text-white/30 uppercase">Aktivni dny</p>
+              <p className="text-[10px] text-white/30 uppercase">Aktivní dny</p>
               <p className="text-lg font-bold text-white">{activeDays}</p>
             </div>
             <div 
               className="flex-1 p-2 rounded-lg text-center"
               style={{ background: 'rgba(255,255,255,0.02)' }}
             >
-              <p className="text-[10px] text-white/30 uppercase">Operaci 24h</p>
+              <p className="text-[10px] text-white/30 uppercase">Operací 24h</p>
               <p className="text-lg font-bold text-white">{room.operations24h || 0}</p>
             </div>
           </div>
@@ -355,7 +344,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
   const handleAddRoom = () => {
     if (!newRoomData.name || !newRoomData.department) {
-      setError('Vyplnte prosim vsechna povinna pole');
+      setError('Vyplňte prosím všechna povinná pole');
       return;
     }
 
