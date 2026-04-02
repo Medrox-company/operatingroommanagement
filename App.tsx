@@ -327,7 +327,8 @@ const AppContent: React.FC = () => {
                         const isRoomReady = (room: OperatingRoom) => {
                           const status = activeStatuses[room.currentStepIndex];
                           const statusName = status?.name?.toLowerCase() || '';
-                          return statusName.includes('připraven') || statusName.includes('pripraven') || statusName.includes('ready');
+                          // Use ASCII-safe check for "priprav" to match Czech "připraven/připraveno"
+                          return statusName.includes('priprav') || statusName.includes('ready');
                         };
                         
                         const readyRooms = rooms.filter(isRoomReady);
