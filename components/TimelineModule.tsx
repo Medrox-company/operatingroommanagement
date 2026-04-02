@@ -70,9 +70,9 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Update current time every 10 seconds (reduced from 1s for better performance)
+  // Update current time every second
   useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), 10000);
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 

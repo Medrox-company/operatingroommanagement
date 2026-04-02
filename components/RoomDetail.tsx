@@ -57,11 +57,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
 
-  // Optimized: Update elapsed time every 5 seconds instead of every second
+  // Update elapsed time every second
   useEffect(() => {
     if (isPaused) return;
     
-    // Initial update
     const updateElapsedTime = () => {
       const now = new Date();
       const diff = now.getTime() - phaseStartTime.getTime();
@@ -72,12 +71,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     };
     
     updateElapsedTime();
-    const timer = setInterval(updateElapsedTime, 5000);
+    const timer = setInterval(updateElapsedTime, 1000);
     
     return () => clearInterval(timer);
   }, [phaseStartTime, isPaused]);
 
-  // Optimized: Update pause time every 5 seconds
+  // Update pause time every second
   useEffect(() => {
     if (!isPaused) {
       setPauseElapsedTime('00:00');
@@ -95,7 +94,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     };
     
     updatePauseTime();
-    const timer = setInterval(updatePauseTime, 5000);
+    const timer = setInterval(updatePauseTime, 1000);
 
     return () => clearInterval(timer);
   }, [isPaused]);
@@ -117,7 +116,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     };
   }, []);
 
-  // Patient call timer - optimized to update every 5 seconds
+  // Patient call timer - update every second
   useEffect(() => {
     if (!patientCalledTime || patientArrivedTime) return;
 
@@ -131,7 +130,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     };
     
     updatePatientCallTime();
-    patientCallTimerRef.current = window.setInterval(updatePatientCallTime, 5000);
+    patientCallTimerRef.current = window.setInterval(updatePatientCallTime, 1000);
 
     return () => {
       if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
