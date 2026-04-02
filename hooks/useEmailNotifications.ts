@@ -10,8 +10,7 @@ interface NotificationSettings {
 }
 
 /**
- * Hook pro automatické odesílání emailových notifikací při změnách
- * v operačních sálech
+ * Hook for automatic email notifications on operating room changes
  */
 export function useEmailNotifications(
   rooms: OperatingRoom[],
@@ -99,10 +98,10 @@ async function sendEmergencyEmailNotification(
       roomName: room.name,
       message: '🚨 Emergency alert has been activated in this operating room!',
       details: {
-        'Oddělení': room.department,
-        'Čas': new Date().toLocaleString('cs-CZ'),
+        'Department': room.department,
+        'Time': new Date().toISOString(),
         'Status': room.status,
-        'Septic': room.isSeptic ? 'Ano' : 'Ne',
+        'Septic': room.isSeptic ? 'Yes' : 'No',
       },
     });
 
@@ -129,10 +128,10 @@ async function sendStatusChangeEmailNotification(
       roomName: room.name,
       message: `Operating room status has changed from ${previousStatus} to ${room.status}`,
       details: {
-        'Předchozí stav': previousStatus,
-        'Nový stav': room.status,
-        'Oddělení': room.department,
-        'Čas': new Date().toLocaleString('cs-CZ'),
+        'Previous Status': previousStatus,
+        'New Status': room.status,
+        'Department': room.department,
+        'Time': new Date().toISOString(),
       },
     });
 
@@ -159,11 +158,11 @@ async function sendQueueUpdateEmailNotification(
       roomName: room.name,
       message: `Queue has been updated in the operating room`,
       details: {
-        'Předchozí fronta': previousQueueCount.toString(),
-        'Nová fronta': room.queueCount.toString(),
-        'Změna': (room.queueCount - previousQueueCount > 0 ? '+' : '') + (room.queueCount - previousQueueCount),
-        'Oddělení': room.department,
-        'Čas': new Date().toLocaleString('cs-CZ'),
+        'Previous Queue': previousQueueCount.toString(),
+        'New Queue': room.queueCount.toString(),
+        'Change': (room.queueCount - previousQueueCount > 0 ? '+' : '') + (room.queueCount - previousQueueCount),
+        'Department': room.department,
+        'Time': new Date().toISOString(),
       },
     });
 

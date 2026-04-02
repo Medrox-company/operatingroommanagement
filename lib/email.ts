@@ -81,13 +81,13 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      emergency_alert: 'NOUZOVÉ UPOZORNĚNÍ',
-      status_change: 'ZMĚNA STAVU',
-      queue_update: 'AKTUALIZACE FRONTY',
-      maintenance: 'ÚDRŽBA',
-      custom: 'SYSTÉMOVÁ NOTIFIKACE',
+      emergency_alert: 'EMERGENCY ALERT',
+      status_change: 'STATUS CHANGE',
+      queue_update: 'QUEUE UPDATE',
+      maintenance: 'MAINTENANCE',
+      custom: 'SYSTEM NOTIFICATION',
     };
-    return labels[type] || 'NOTIFIKACE';
+    return labels[type] || 'NOTIFICATION';
   };
 
   let detailsHtml = '';
@@ -176,7 +176,7 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
                 <tr>
                   <td style="padding: 32px 0 0 0; text-align: center;">
                     <p style="margin: 0 0 8px 0; font-size: 12px; color: rgba(255,255,255,0.3);">
-                      Automatická notifikace z Operating Room Management System
+                      Automatic notification from Operating Room Management System
                     </p>
                     <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.2);">
                       ${data.timestamp || new Date().toLocaleString('cs-CZ')}

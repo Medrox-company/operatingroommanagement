@@ -57,12 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isSupabaseConfigured || !supabase) {
       // Default modules if no Supabase
       setModules([
-        { id: 'dashboard', name: 'Dashboard', description: 'Přehled operačních sálů', is_enabled: true, icon: 'LayoutGrid', accent_color: '#00D8C1', sort_order: 1 },
-        { id: 'timeline', name: 'Timeline', description: 'Časová osa operací', is_enabled: true, icon: 'Calendar', accent_color: '#A855F7', sort_order: 2 },
-        { id: 'statistics', name: 'Statistiky', description: 'Statistiky a analýzy', is_enabled: true, icon: 'BarChart3', accent_color: '#06B6D4', sort_order: 3 },
-        { id: 'staff', name: 'Personál', description: 'Správa personálu', is_enabled: true, icon: 'Users', accent_color: '#10B981', sort_order: 4 },
-        { id: 'alerts', name: 'Upozornění', description: 'Systém upozornění', is_enabled: true, icon: 'Bell', accent_color: '#EC4899', sort_order: 5 },
-        { id: 'settings', name: 'Nastavení', description: 'Konfigurace systému', is_enabled: true, icon: 'Settings', accent_color: '#64748B', sort_order: 6 },
+        { id: 'dashboard', name: 'Dashboard', description: 'Operating rooms overview', is_enabled: true, icon: 'LayoutGrid', accent_color: '#00D8C1', sort_order: 1 },
+        { id: 'timeline', name: 'Timeline', description: 'Operations timeline', is_enabled: true, icon: 'Calendar', accent_color: '#A855F7', sort_order: 2 },
+        { id: 'statistics', name: 'Statistics', description: 'Statistics and analytics', is_enabled: true, icon: 'BarChart3', accent_color: '#06B6D4', sort_order: 3 },
+        { id: 'staff', name: 'Staff', description: 'Staff management', is_enabled: true, icon: 'Users', accent_color: '#10B981', sort_order: 4 },
+        { id: 'alerts', name: 'Alerts', description: 'Alert system', is_enabled: true, icon: 'Bell', accent_color: '#EC4899', sort_order: 5 },
+        { id: 'settings', name: 'Settings', description: 'System configuration', is_enabled: true, icon: 'Settings', accent_color: '#64748B', sort_order: 6 },
       ]);
       return;
     }
@@ -87,18 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isSupabaseConfigured || !supabase) {
       // Demo mode - allow admin/user login
       if (email === 'admin@nemocnice.cz' && password === 'admin123') {
-        const demoUser: User = { id: '1', email, name: 'Administrátor', role: 'admin', is_active: true };
+        const demoUser: User = { id: '1', email, name: 'Administrator', role: 'admin', is_active: true };
         setUser(demoUser);
         localStorage.setItem('app_user', JSON.stringify(demoUser));
         return { success: true };
       }
       if (email === 'user@nemocnice.cz' && password === 'user123') {
-        const demoUser: User = { id: '2', email, name: 'Uživatel', role: 'user', is_active: true };
+        const demoUser: User = { id: '2', email, name: 'User', role: 'user', is_active: true };
         setUser(demoUser);
         localStorage.setItem('app_user', JSON.stringify(demoUser));
         return { success: true };
       }
-      return { success: false, error: 'Neplatné přihlašovací údaje' };
+      return { success: false, error: 'Invalid credentials' };
     }
 
     try {
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error || !data) {
-        return { success: false, error: 'Neplatné přihlašovací údaje' };
+        return { success: false, error: 'Invalid credentials' };
       }
 
       // For demo, accept any password that matches the simple check
@@ -130,10 +130,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: true };
       }
 
-      return { success: false, error: 'Neplatné přihlašovací údaje' };
+      return { success: false, error: 'Invalid credentials' };
     } catch (error) {
       console.error('[Auth] Login error:', error);
-      return { success: false, error: 'Chyba při přihlašování' };
+      return { success: false, error: 'Login error' };
     }
   }, [refreshModules]);
 

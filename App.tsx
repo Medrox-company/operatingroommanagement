@@ -16,7 +16,7 @@ import { OperatingRoom } from './types';
 import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
+import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
@@ -36,6 +36,7 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules } = useAuth();
+  const { workflowStatuses } = useWorkflowStatusesContext();
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -316,10 +317,27 @@ const AppContent: React.FC = () => {
                       </h1>
                     </div>
                     <div className="flex gap-4 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                      {[
-                        { label: 'AKTIVNÍ',   value: rooms.filter(r => r.currentStepIndex < 6).length,  icon: Activity,    color: 'text-red-500'      },
-                        { label: 'PŘIPRAVENO', value: rooms.filter(r => r.currentStepIndex >= 6).length, icon: LayoutGrid,  color: 'text-[#00D8C1]'   },
-                      ].map((stat) => (
+                      {(() => {
+                        // Get active workflow statuses (sorted by order)
+                        const activeStatuses = workflowStatuses
+                          .filter(s => s.is_active && !s.is_special)
+                          .sort((a, b) => a.order_index - b.order_index);
+                        
+                        // Check if room is in "ready" status based on status name
+                        const isRoomReady = (room: OperatingRoom) => {
+                          const status = activeStatuses[room.currentStepIndex];
+                          const statusName = status?.name?.toLowerCase() || '';
+                          return statusName.includes('připraven') || statusName.includes('pripraven') || statusName.includes('ready');
+                        };
+                        
+                        const readyRooms = rooms.filter(isRoomReady);
+                        const activeRooms = rooms.filter(r => !isRoomReady(r));
+                        
+                        return [
+                          { label: 'AKTIVNI',    value: activeRooms.length, icon: Activity,   color: 'text-red-500'    },
+                          { label: 'PRIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#00D8C1]'  },
+                        ];
+                      })().map((stat) => (
                         <div key={stat.label} className="flex flex-col items-center justify-center px-10 py-4 rounded-3xl hover:bg-white/5 transition-all min-w-[150px] z-10">
                           <div className="flex items-center gap-2.5 mb-2 opacity-40">
                             <stat.icon className={`w-4 h-4 ${stat.color}`} />

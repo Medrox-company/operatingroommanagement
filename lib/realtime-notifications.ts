@@ -34,42 +34,42 @@ export function notifyChange(type: 'insert' | 'update' | 'delete', table: string
   });
 }
 
-export const CZECH_MESSAGES = {
+export const NOTIFICATION_MESSAGES = {
   insert: {
-    operating_rooms: 'Nový operační sál byl přidán',
-    departments: 'Nové oddělení bylo přidáno',
-    staff: 'Nový pracovník byl přidán',
-    schedules: 'Nový plán byl vytvořen',
-    shift_schedules: 'Nová směna byla přidána',
-    patients: 'Nový pacient byl zaregistrován',
-    procedures: 'Nový postup byl zaznamenán',
-    equipment: 'Nové zařízení bylo přidáno',
-    sub_departments: 'Nové pododdělení bylo přidáno',
+    operating_rooms: 'New operating room added',
+    departments: 'New department added',
+    staff: 'New staff member added',
+    schedules: 'New schedule created',
+    shift_schedules: 'New shift added',
+    patients: 'New patient registered',
+    procedures: 'New procedure recorded',
+    equipment: 'New equipment added',
+    sub_departments: 'New sub-department added',
   },
   update: {
-    operating_rooms: 'Operační sál byl aktualizován',
-    departments: 'Oddělení bylo aktualizováno',
-    staff: 'Pracovník byl aktualizován',
-    schedules: 'Plán byl aktualizován',
-    shift_schedules: 'Směna byla aktualizována',
-    patients: 'Pacient byl aktualizován',
-    procedures: 'Postup byl aktualizován',
-    equipment: 'Zařízení bylo aktualizováno',
-    sub_departments: 'Pododdělení bylo aktualizováno',
+    operating_rooms: 'Operating room updated',
+    departments: 'Department updated',
+    staff: 'Staff member updated',
+    schedules: 'Schedule updated',
+    shift_schedules: 'Shift updated',
+    patients: 'Patient updated',
+    procedures: 'Procedure updated',
+    equipment: 'Equipment updated',
+    sub_departments: 'Sub-department updated',
   },
   delete: {
-    operating_rooms: 'Operační sál byl smazán',
-    departments: 'Oddělení bylo smazáno',
-    staff: 'Pracovník byl smazán',
-    schedules: 'Plán byl smazán',
-    shift_schedules: 'Směna byla smazána',
-    patients: 'Pacient byl smazán',
-    procedures: 'Postup byl smazán',
-    equipment: 'Zařízení bylo smazáno',
-    sub_departments: 'Pododdělení bylo smazáno',
+    operating_rooms: 'Operating room deleted',
+    departments: 'Department deleted',
+    staff: 'Staff member deleted',
+    schedules: 'Schedule deleted',
+    shift_schedules: 'Shift deleted',
+    patients: 'Patient deleted',
+    procedures: 'Procedure deleted',
+    equipment: 'Equipment deleted',
+    sub_departments: 'Sub-department deleted',
   },
 } as const;
 
 export function getChangeMessage(type: 'insert' | 'update' | 'delete', table: string): string {
-  return CZECH_MESSAGES[type][table as keyof typeof CZECH_MESSAGES['insert']] || `${table}: ${type}`;
+  return NOTIFICATION_MESSAGES[type][table as keyof typeof NOTIFICATION_MESSAGES['insert']] || `${table}: ${type}`;
 }
