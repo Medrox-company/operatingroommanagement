@@ -84,9 +84,9 @@ const StatusesManager: React.FC = () => {
           <div className="text-sm text-purple-300/90">
             <p className="font-semibold mb-1">Jak to funguje:</p>
             <ul className="space-y-1 text-xs">
-              <li>Aktivujte statusy, ktere chcete zobrazovat v aplikaci</li>
-              <li>Aktivni statusy se zobrazi v Timeline modulu a detailu salu</li>
-              <li>Zaskrtnete Pocita do statistik pro zahrnuti do vypoctu vyuziti</li>
+              <li>Aktivujte statusy, které chcete zobrazovat v aplikaci</li>
+              <li>Aktivní statusy se zobrazí v Timeline modulu a detailu sálu</li>
+              <li>Zaškrtněte Počítá do statistik pro zahrnutí do výpočtu využití</li>
             </ul>
           </div>
         </div>
@@ -97,7 +97,7 @@ const StatusesManager: React.FC = () => {
           <div className="flex items-center gap-3">
             <Activity className="w-5 h-5 text-cyan-400" />
             <div>
-              <p className="text-white/50 text-sm">Aktivni Statusy</p>
+              <p className="text-white/50 text-sm">Aktivní Statusy</p>
               <p className="text-2xl font-bold text-white">{activeCount} / {statuses.length}</p>
             </div>
           </div>
@@ -106,7 +106,7 @@ const StatusesManager: React.FC = () => {
           <div className="flex items-center gap-3">
             <BarChart3 className="w-5 h-5 text-amber-400" />
             <div>
-              <p className="text-white/50 text-sm">Pocita do Statistik</p>
+              <p className="text-white/50 text-sm">Počítá do Statistik</p>
               <p className="text-2xl font-bold text-white">{statisticsCount}</p>
             </div>
           </div>
@@ -237,7 +237,7 @@ const StatusesManager: React.FC = () => {
                       </div>
                       <div>
                         <p className="text-white/50 mb-2">Stav</p>
-                        <p className="text-white/90">{status.is_active ? 'Aktivni' : 'Neaktivni'}</p>
+                        <p className="text-white/90">{status.is_active ? 'Aktivní' : 'Neaktivní'}</p>
                       </div>
                     </div>
                   </motion.div>

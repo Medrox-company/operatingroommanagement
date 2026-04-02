@@ -512,7 +512,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 }`}
               >
                 {isPaused ? <Play className="w-5 h-5 text-[#00D8C1]" /> : <Pause className="w-5 h-5 text-white/40" />}
-                <span className="text-[8px] font-medium text-white/40 uppercase">{isPaused ? 'Play' : 'Pauza'}</span>
+                        <span className="text-[8px] font-medium text-white/40 uppercase">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
               </button>
 
               <button
@@ -905,7 +905,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               ) : (
                 <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
               )}
-              <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
+                <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
             </motion.button>
           )}
         </div>

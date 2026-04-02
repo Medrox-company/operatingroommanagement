@@ -4677,21 +4677,21 @@ const StatusesManager = ()=>{
                                     className: "space-y-1 text-xs",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
-                                            children: "Aktivujte statusy, ktere chcete zobrazovat v aplikaci"
+                                            children: "Aktivujte statusy, které chcete zobrazovat v aplikaci"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatusesManager.tsx",
                                             lineNumber: 87,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
-                                            children: "Aktivni statusy se zobrazi v Timeline modulu a detailu salu"
+                                            children: "Aktivní statusy se zobrazí v Timeline modulu a detailu sálu"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatusesManager.tsx",
                                             lineNumber: 88,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
-                                            children: "Zaskrtnete Pocita do statistik pro zahrnuti do vypoctu vyuziti"
+                                            children: "Zaškrtněte Počítá do statistik pro zahrnutí do výpočtu využití"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatusesManager.tsx",
                                             lineNumber: 89,
@@ -4739,7 +4739,7 @@ const StatusesManager = ()=>{
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                             className: "text-white/50 text-sm",
-                                            children: "Aktivni Statusy"
+                                            children: "Aktivní Statusy"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatusesManager.tsx",
                                             lineNumber: 100,
@@ -4790,7 +4790,7 @@ const StatusesManager = ()=>{
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                             className: "text-white/50 text-sm",
-                                            children: "Pocita do Statistik"
+                                            children: "Počítá do Statistik"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatusesManager.tsx",
                                             lineNumber: 109,
@@ -5187,7 +5187,7 @@ const StatusesManager = ()=>{
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                                 className: "text-white/90",
-                                                                children: status.is_active ? 'Aktivni' : 'Neaktivni'
+                                                                children: status.is_active ? 'Aktivní' : 'Neaktivní'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatusesManager.tsx",
                                                                 lineNumber: 240,

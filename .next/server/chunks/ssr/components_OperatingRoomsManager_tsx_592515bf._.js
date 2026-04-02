@@ -32,28 +32,28 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lu
 const DAYS = [
     {
         key: 'monday',
-        label: 'Pondeli',
+        label: 'Pondělí',
         short: 'Po'
     },
     {
         key: 'tuesday',
-        label: 'Utery',
-        short: 'Ut'
+        label: 'Úterý',
+        short: 'Út'
     },
     {
         key: 'wednesday',
-        label: 'Streda',
+        label: 'Středa',
         short: 'St'
     },
     {
         key: 'thursday',
-        label: 'Ctvrtek',
-        short: 'Ct'
+        label: 'Čtvrtek',
+        short: 'Čt'
     },
     {
         key: 'friday',
-        label: 'Patek',
-        short: 'Pa'
+        label: 'Pátek',
+        short: 'Pá'
     },
     {
         key: 'saturday',
@@ -62,7 +62,7 @@ const DAYS = [
     },
     {
         key: 'sunday',
-        label: 'Nedele',
+        label: 'Neděle',
         short: 'Ne'
     }
 ];
@@ -173,7 +173,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                         className: "text-[9px] text-white/30 uppercase",
-                        children: schedule.enabled ? 'Aktivni' : 'Neaktivni'
+                        children: schedule.enabled ? 'Aktivní' : 'Neaktivní'
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
                         lineNumber: 106,
@@ -397,7 +397,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                         color: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? '#22C55E' : '#EF4444',
                                         border: `1px solid ${room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
                                     },
-                                    children: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'Volny' : 'Obsazeno'
+                                    children: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'Volný' : 'Obsazeno'
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
                                     lineNumber: 214,
@@ -517,7 +517,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             className: "text-xs text-white/30",
-                                            children: "Neaktivni"
+                                            children: "Neaktivní"
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
                                             lineNumber: 276,
@@ -545,7 +545,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-[10px] text-white/30 uppercase",
-                                                children: "Aktivni dny"
+                                                children: "Aktivní dny"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
                                                 lineNumber: 287,
@@ -573,7 +573,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-[10px] text-white/30 uppercase",
-                                                children: "Operaci 24h"
+                                                children: "Operací 24h"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
                                                 lineNumber: 294,
@@ -703,7 +703,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
     });
     const handleAddRoom = ()=>{
         if (!newRoomData.name || !newRoomData.department) {
-            setError('Vyplnte prosim vsechna povinna pole');
+            setError('Vyplňte prosím všechna povinná pole');
             return;
         }
         const newRoom = {
@@ -906,7 +906,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                         lineNumber: 461,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
-                                    "Pridat novy operacni sal"
+                                    "Přidat nový operační sál"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
@@ -920,7 +920,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                 className: "block text-xs text-white/40 uppercase tracking-wider mb-2",
-                                                children: "Nazev salu"
+                                                children: "Název sálu"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
                                                 lineNumber: 466,
@@ -928,7 +928,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                                                 type: "text",
-                                                placeholder: "napr. Sal c. 1",
+                                                placeholder: "např. Sál č. 1",
                                                 value: newRoomData.name,
                                                 onChange: (e)=>setNewRoomData({
                                                         ...newRoomData,
@@ -996,7 +996,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                                                 lineNumber: 491,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
-                                            "Pridat sal"
+                                            "Přidat sál"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
@@ -1052,7 +1052,7 @@ const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
                         lineNumber: 516,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
-                    "Pridat novy sal"
+                    "Přidat nový sál"
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",

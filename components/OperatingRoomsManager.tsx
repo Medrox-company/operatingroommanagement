@@ -14,13 +14,13 @@ interface OperatingRoomsManagerProps {
 }
 
 const DAYS = [
-  { key: 'monday', label: 'Pondeli', short: 'Po' },
-  { key: 'tuesday', label: 'Utery', short: 'Ut' },
-  { key: 'wednesday', label: 'Streda', short: 'St' },
-  { key: 'thursday', label: 'Ctvrtek', short: 'Ct' },
-  { key: 'friday', label: 'Patek', short: 'Pa' },
+  { key: 'monday', label: 'Pondělí', short: 'Po' },
+  { key: 'tuesday', label: 'Úterý', short: 'Út' },
+  { key: 'wednesday', label: 'Středa', short: 'St' },
+  { key: 'thursday', label: 'Čtvrtek', short: 'Čt' },
+  { key: 'friday', label: 'Pátek', short: 'Pá' },
   { key: 'saturday', label: 'Sobota', short: 'So' },
-  { key: 'sunday', label: 'Nedele', short: 'Ne' },
+  { key: 'sunday', label: 'Neděle', short: 'Ne' },
 ] as const;
 
 const deptColors: Record<string, string> = {
@@ -103,7 +103,7 @@ const DayScheduleRow: React.FC<{
       <p className={`text-sm font-semibold ${schedule.enabled ? 'text-white' : 'text-white/30'}`}>
         {day.label}
       </p>
-      <p className="text-[9px] text-white/30 uppercase">{schedule.enabled ? 'Aktivni' : 'Neaktivni'}</p>
+      <p className="text-[9px] text-white/30 uppercase">{schedule.enabled ? 'Aktivní' : 'Neaktivní'}</p>
     </div>
     
     {/* Time Inputs */}
@@ -219,7 +219,7 @@ const RoomCard: React.FC<{
                 border: `1px solid ${room.status === RoomStatus.FREE ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
               }}
             >
-              {room.status === RoomStatus.FREE ? 'Volny' : 'Obsazeno'}
+              {room.status === RoomStatus.FREE ? 'Volný' : 'Obsazeno'}
             </div>
           </div>
         </div>
@@ -273,7 +273,7 @@ const RoomCard: React.FC<{
                   </span>
                 </div>
               ) : (
-                <span className="text-xs text-white/30">Neaktivni</span>
+                <span className="text-xs text-white/30">Neaktivní</span>
               )}
             </div>
           </div>
@@ -284,14 +284,14 @@ const RoomCard: React.FC<{
               className="flex-1 p-2 rounded-lg text-center"
               style={{ background: 'rgba(255,255,255,0.02)' }}
             >
-              <p className="text-[10px] text-white/30 uppercase">Aktivni dny</p>
+              <p className="text-[10px] text-white/30 uppercase">Aktivní dny</p>
               <p className="text-lg font-bold text-white">{activeDays}</p>
             </div>
             <div 
               className="flex-1 p-2 rounded-lg text-center"
               style={{ background: 'rgba(255,255,255,0.02)' }}
             >
-              <p className="text-[10px] text-white/30 uppercase">Operaci 24h</p>
+              <p className="text-[10px] text-white/30 uppercase">Operací 24h</p>
               <p className="text-lg font-bold text-white">{room.operations24h || 0}</p>
             </div>
           </div>
@@ -355,7 +355,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
   const handleAddRoom = () => {
     if (!newRoomData.name || !newRoomData.department) {
-      setError('Vyplnte prosim vsechna povinna pole');
+      setError('Vyplňte prosím všechna povinná pole');
       return;
     }
 
@@ -459,14 +459,14 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             >
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-cyan-400" />
-                Pridat novy operacni sal
+                Přidat nový operační sál
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Nazev salu</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Název sálu</label>
                   <input
                     type="text"
-                    placeholder="napr. Sal c. 1"
+                    placeholder="např. Sál č. 1"
                     value={newRoomData.name}
                     onChange={(e) => setNewRoomData({ ...newRoomData, name: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
@@ -489,7 +489,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   className="px-6 py-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-semibold hover:bg-cyan-500/30 transition-all flex items-center gap-2"
                 >
                   <Check className="w-4 h-4" />
-                  Pridat sal
+                  Přidat sál
                 </button>
                 <button
                   onClick={() => {
@@ -514,7 +514,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
           className="mb-8 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 text-cyan-300 font-semibold hover:from-cyan-500/30 hover:to-emerald-500/30 transition-all flex items-center gap-2 group"
         >
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-          Pridat novy sal
+          Přidat nový sál
         </button>
       )}
 

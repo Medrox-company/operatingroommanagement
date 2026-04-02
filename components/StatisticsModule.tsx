@@ -81,7 +81,7 @@ function statusColor(s:RoomStatus){
 }
 function statusLabel(s:RoomStatus){
   if(s===RoomStatus.BUSY)     return 'Obsazeno';
-  if(s===RoomStatus.FREE)     return 'Volno';
+  if(s===RoomStatus.FREE)     return 'Volné';
   if(s===RoomStatus.CLEANING) return 'Úklid';
   return 'Údržba';
 }

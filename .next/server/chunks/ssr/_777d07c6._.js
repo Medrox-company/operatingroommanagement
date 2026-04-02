@@ -1632,7 +1632,7 @@ const mapDBToStatus = (db)=>({
         is_special: db.is_special,
         special_type: db.special_type,
         organizer: db.name,
-        status: db.is_active ? 'Aktivni' : 'Neaktivni'
+        status: db.is_active ? 'Aktivní' : 'Neaktivní'
     });
 const WorkflowStatusesProvider = ({ children })=>{
     const [statuses, setStatuses] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
@@ -1650,7 +1650,7 @@ const WorkflowStatusesProvider = ({ children })=>{
             setError(null);
         } catch (err) {
             console.error('[v0] Error fetching workflow statuses:', err);
-            setError(err instanceof Error ? err.message : 'Neznama chyba');
+            setError(err instanceof Error ? err.message : 'Neznámá chyba');
         } finally{
             setLoading(false);
         }
@@ -1675,7 +1675,7 @@ const WorkflowStatusesProvider = ({ children })=>{
             if (updateError) throw updateError;
         } catch (err) {
             console.error('[v0] Error updating workflow status:', err);
-            setError(err instanceof Error ? err.message : 'Neznama chyba');
+            setError(err instanceof Error ? err.message : 'Neznámá chyba');
             // Revert on error
             await fetchStatuses();
         }
