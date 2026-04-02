@@ -1259,15 +1259,54 @@ function generateEmailTemplate(data) {
     }
     return '\n    <!DOCTYPE html>\n    <html>\n      <head>\n        <meta charset="UTF-8">\n        <meta name="viewport" content="width=device-width, initial-scale=1.0">\n        <title>Operating Room Notification</title>\n      </head>\n      <body style="margin: 0; padding: 0; background-color: #000000; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif;">\n        \n        <!-- Outer wrapper with gradient background -->\n        <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%); min-height: 100vh;">\n          <tr>\n            <td align="center" style="padding: 40px 20px;">\n              \n              <!-- Main container -->\n              <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">\n                \n                <!-- Header with accent glow -->\n                <tr>\n                  <td style="padding: 0 0 32px 0; text-align: center;">\n                    <!-- Logo area with glow effect -->\n                    <div style="display: inline-block; padding: 16px 32px; background: rgba(91, 101, 220, 0.1); border-radius: 40px; border: 1px solid rgba(91, 101, 220, 0.2);">\n                      <span style="font-size: 10px; font-weight: 800; color: #00D8C1; letter-spacing: 3px; text-transform: uppercase;">OPERATINGROOM CONTROL</span>\n                    </div>\n                  </td>\n                </tr>\n\n                <!-- Main content card -->\n                <tr>\n                  <td>\n                    <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; overflow: hidden;">\n                      \n                      <!-- Accent bar at top -->\n                      <tr>\n                        <td style="height: 4px; background: linear-gradient(90deg, '.concat(accentColor, ", ").concat(accentColor, '88);"></td>\n                      </tr>\n                      \n                      <!-- Content area -->\n                      <tr>\n                        <td style="padding: 40px;">\n                          \n                          <!-- Type badge -->\n                          <div style="margin-bottom: 24px;">\n                            <span style="display: inline-block; padding: 8px 16px; background: ').concat(accentColor, "15; border: 1px solid ").concat(accentColor, "40; border-radius: 20px; font-size: 11px; font-weight: 700; color: ").concat(accentColor, '; letter-spacing: 1.5px; text-transform: uppercase;">\n                              ').concat(getTypeLabel(data.type), '\n                            </span>\n                          </div>\n\n                          <!-- Room name -->\n                          <h1 style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1.2;">\n                            ').concat(data.roomName, '\n                          </h1>\n\n                          <!-- Message -->\n                          <p style="margin: 0; font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.7);">\n                            ').concat(data.message, "\n                          </p>\n\n                          <!-- Details table -->\n                          ").concat(detailsHtml, '\n\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n\n                <!-- Footer -->\n                <tr>\n                  <td style="padding: 32px 0 0 0; text-align: center;">\n                    <p style="margin: 0 0 8px 0; font-size: 12px; color: rgba(255,255,255,0.3);">\n                      Automatická notifikace z Operating Room Management System\n                    </p>\n                    <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.2);">\n                      ').concat(data.timestamp || new Date().toLocaleString('cs-CZ'), "\n                    </p>\n                  </td>\n                </tr>\n\n              </table>\n            </td>\n          </tr>\n        </table>\n      </body>\n    </html>\n  ");
 }
+/**
+ * Encode subject for email headers (handles Czech and other special characters)
+ */ function encodeEmailSubject(subject) {
+    // Replace Czech characters with ASCII equivalents for subject line
+    const asciiMap = {
+        'á': 'a',
+        'č': 'c',
+        'ď': 'd',
+        'é': 'e',
+        'ě': 'e',
+        'í': 'i',
+        'ň': 'n',
+        'ó': 'o',
+        'ř': 'r',
+        'š': 's',
+        'ť': 't',
+        'ú': 'u',
+        'ů': 'u',
+        'ý': 'y',
+        'ž': 'z',
+        'Á': 'A',
+        'Č': 'C',
+        'Ď': 'D',
+        'É': 'E',
+        'Ě': 'E',
+        'Í': 'I',
+        'Ň': 'N',
+        'Ó': 'O',
+        'Ř': 'R',
+        'Š': 'S',
+        'Ť': 'T',
+        'Ú': 'U',
+        'Ů': 'U',
+        'Ý': 'Y',
+        'Ž': 'Z'
+    };
+    return subject.replace(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/g, (char)=>asciiMap[char] || char);
+}
 async function sendBatchEmailNotifications(recipients, data) {
     const html = generateEmailTemplate(data);
     const errors = [];
     let sent = 0;
     let failed = 0;
     for (const recipient of recipients){
+        const rawSubject = "[".concat(data.type.toUpperCase(), "] ").concat(data.roomName, " - ").concat(data.message.substring(0, 30), "...");
         const result = await sendEmailNotification({
             to: recipient,
-            subject: "[".concat(data.type.toUpperCase(), "] ").concat(data.roomName, " - ").concat(data.message.substring(0, 30), "..."),
+            subject: encodeEmailSubject(rawSubject),
             html
         });
         if (result.success) {
