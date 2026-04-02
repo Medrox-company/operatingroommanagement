@@ -121,7 +121,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       className="flex items-center gap-2 mb-6 text-white/50 hover:text-white transition-colors group"
     >
       <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-      <span className="text-sm font-medium">Zpět na nastavení</span>
     </button>
   );
 
@@ -142,7 +141,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
               onClick={() => setSelectedModule(null)}
               className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
             >
-              Zpět na nastavení
+              <ChevronLeft className="w-5 h-5" />
             </button>
           </div>
         }

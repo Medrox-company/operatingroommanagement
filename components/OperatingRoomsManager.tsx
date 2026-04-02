@@ -424,9 +424,6 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             OPERAČNÍ <span className="text-white/20">SÁLY</span>
           </h1>
         </div>
-        <p className="text-white/40 text-sm max-w-xl">
-          Spravujte operacni saly, jejich pracovni dobu a rozvrh. Kazdy sal muze mit individualni nastaveni pracovni doby pro jednotlive dny v tydnu.
-        </p>
       </header>
 
       {/* Error Message */}
