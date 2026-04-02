@@ -203,11 +203,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
   
-  // Don't show time for "Sál připraven" and "Úklid sálu" statuses
+  // Don't show time only for "Sál připraven" status
   const statusName = currentStep?.name?.toLowerCase() || '';
   const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
-  const isCleaningStatus = statusName.includes('úklid') || statusName.includes('uklid');
-  const shouldShowTime = !isReadyStatus && !isCleaningStatus;
+  const shouldShowTime = !isReadyStatus;
 
   // Dynamic theme color based on status
   const activeColor = room.isEmergency 
