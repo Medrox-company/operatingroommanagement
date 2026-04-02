@@ -69,7 +69,7 @@ const mapDBToStatus = (db: WorkflowStatusDBRow): WorkflowStatus => ({
   is_special: db.is_special,
   special_type: db.special_type,
   organizer: db.name,
-  status: db.is_active ? 'Aktivní' : 'Neaktivní',
+  status: db.is_active ? 'Active' : 'Inactive',
 });
 
 export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -92,7 +92,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       setError(null);
     } catch (err) {
       console.error('[v0] Error fetching workflow statuses:', err);
-      setError(err instanceof Error ? err.message : 'Neznámá chyba');
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (updateError) throw updateError;
     } catch (err) {
       console.error('[v0] Error updating workflow status:', err);
-      setError(err instanceof Error ? err.message : 'Neznámá chyba');
+      setError(err instanceof Error ? err.message : 'Unknown error');
       // Revert on error
       await fetchStatuses();
     }

@@ -71,7 +71,7 @@ export const useWorkflowStatuses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Načtení statusů z databáze
+  // Fetch statuses from database
   const fetchStatuses = useCallback(async () => {
     try {
       setLoading(true);
@@ -87,13 +87,13 @@ export const useWorkflowStatuses = () => {
       setError(null);
     } catch (err) {
       console.error('[v0] Error fetching workflow statuses:', err);
-      setError(err instanceof Error ? err.message : 'Neznámá chyba');
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Aktualizace statusu
+  // Update status
   const updateStatus = async (id: string, updates: Partial<WorkflowStatus>) => {
     try {
       const dbUpdates = mapStatusToDB(updates);
@@ -105,20 +105,20 @@ export const useWorkflowStatuses = () => {
 
       if (updateError) throw updateError;
       
-      // Aktualizace lokálního stavu
+      // Update local state
       setStatuses(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
     } catch (err) {
       console.error('[v0] Error updating workflow status:', err);
-      setError(err instanceof Error ? err.message : 'Neznámá chyba');
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
-  // Získání pouze aktivních statusů
+  // Get only active statuses
   const getActiveStatuses = useCallback(() => {
     return statuses.filter(s => s.is_active);
   }, [statuses]);
 
-  // Získání statusů, které se počítají do statistik
+  // Get statuses that count in statistics
   const getStatisticsStatuses = useCallback(() => {
     return statuses.filter(s => s.is_active && s.count_in_statistics);
   }, [statuses]);
@@ -126,7 +126,7 @@ export const useWorkflowStatuses = () => {
   useEffect(() => {
     fetchStatuses();
 
-    // Subscribe na realtime změny
+    // Subscribe to realtime changes
     const subscription = supabase
       .channel('workflow_statuses_changes')
       .on(
