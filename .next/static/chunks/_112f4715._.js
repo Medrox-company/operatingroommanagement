@@ -1574,7 +1574,7 @@ const mapDBToStatus = (db)=>({
         is_special: db.is_special,
         special_type: db.special_type,
         organizer: db.name,
-        status: db.is_active ? 'Aktivni' : 'Neaktivni'
+        status: db.is_active ? 'Aktivní' : 'Neaktivní'
     });
 const WorkflowStatusesProvider = (param)=>{
     let { children } = param;
@@ -1595,7 +1595,7 @@ const WorkflowStatusesProvider = (param)=>{
                 setError(null);
             } catch (err) {
                 console.error('[v0] Error fetching workflow statuses:', err);
-                setError(err instanceof Error ? err.message : 'Neznama chyba');
+                setError(err instanceof Error ? err.message : 'Neznámá chyba');
             } finally{
                 setLoading(false);
             }
@@ -1621,7 +1621,7 @@ const WorkflowStatusesProvider = (param)=>{
             if (updateError) throw updateError;
         } catch (err) {
             console.error('[v0] Error updating workflow status:', err);
-            setError(err instanceof Error ? err.message : 'Neznama chyba');
+            setError(err instanceof Error ? err.message : 'Neznámá chyba');
             // Revert on error
             await fetchStatuses();
         }

@@ -409,7 +409,7 @@ function statusColor(s) {
 }
 function statusLabel(s) {
     if (s === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].BUSY) return 'Obsazeno';
-    if (s === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE) return 'Volno';
+    if (s === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE) return 'Volné';
     if (s === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].CLEANING) return 'Úklid';
     return 'Údržba';
 }

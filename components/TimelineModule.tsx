@@ -197,7 +197,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     }
     
     const remainingMs = endTime.getTime() - currentTime.getTime();
-    if (remainingMs <= 0) return 'Dokonceno';
+    if (remainingMs <= 0) return 'Dokončeno';
     
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -328,25 +328,25 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
           <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
             <StatBox 
               icon={Activity} 
-              label="Aktivni" 
-              value={`${stats.operations} operaci`} 
+              label="Aktivní" 
+              value={`${stats.operations} operací`} 
               color="#22C55E" 
             />
             <StatBox 
               icon={Loader2} 
-              label="Uklid" 
-              value={`${stats.cleaning} salu`} 
+              label="Úklid" 
+              value={`${stats.cleaning} sálů`} 
               color="#F97316" 
             />
             <StatBox 
               icon={Stethoscope} 
-              label="Volne" 
-              value={`${stats.free} salu`} 
+              label="Volné" 
+              value={`${stats.free} sálů`} 
               color="#22D3EE" 
             />
             <StatBox 
               icon={Shield} 
-              label="Dokonceno" 
+              label="Dokončeno" 
               value={`${stats.completed} dnes`} 
               color="#22D3EE" 
             />
@@ -388,8 +388,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     <Clock className="w-4 h-4 text-red-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PRESAH</p>
-                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} salu</p>
+                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PŘESAH</p>
+                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} sálů</p>
                   </div>
                 </div>
               </div>

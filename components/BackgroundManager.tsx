@@ -27,6 +27,42 @@ const PRESET_COLORS = [
   '#F97316', '#EAB308', '#EC4899', '#EF4444',
 ];
 
+// Preset gallery images (medical/hospital themed)
+const GALLERY_IMAGES = [
+  {
+    url: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000',
+    name: 'Operační sál',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1551190822-a9333d879b1f?auto=format&fit=crop&q=80&w=2000',
+    name: 'Moderní nemocnice',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=2000',
+    name: 'Chirurgický tým',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&q=80&w=2000',
+    name: 'Nemocniční chodba',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000',
+    name: 'Zdravotní péče',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&q=80&w=2000',
+    name: 'Nemocniční pokoj',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1504439468489-c8920d796a29?auto=format&fit=crop&q=80&w=2000',
+    name: 'Lékařské vybavení',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=2000',
+    name: 'Abstraktní medicína',
+  },
+];
+
 const DEFAULT_SETTINGS: BackgroundSettings = {
   type: 'linear',
   colors: [
@@ -109,6 +145,17 @@ const BackgroundManager: React.FC = () => {
   const updateSettings = (updates: Partial<BackgroundSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));
     markChanged();
+  };
+
+  // For gallery selection - apply immediately
+  const selectGalleryImage = async (imageUrl: string) => {
+    const newSettings = { ...settings, imageUrl };
+    setSettings(newSettings);
+    setSaving(true);
+    await saveBackgroundSettings(newSettings);
+    window.dispatchEvent(new CustomEvent('backgroundSettingsChanged', { detail: newSettings }));
+    setHasChanges(false);
+    setSaving(false);
   };
 
   const resetToDefaults = async () => {
@@ -451,9 +498,46 @@ const BackgroundManager: React.FC = () => {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                {/* Image URL */}
+                {/* Image Gallery */}
                 <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">URL obrázku</p>
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Galerie obrázků</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {GALLERY_IMAGES.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => selectGalleryImage(image.url)}
+                        disabled={saving}
+                        className={`relative aspect-video rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
+                          settings.imageUrl === image.url 
+                            ? 'border-violet-500 ring-2 ring-violet-500/30' 
+                            : 'border-white/10 hover:border-white/30'
+                        }`}
+                      >
+                        <img 
+                          src={image.url} 
+                          alt={image.name}
+                          className="w-full h-full object-cover grayscale opacity-70 hover:opacity-100 transition-opacity"
+                        />
+                        {settings.imageUrl === image.url && (
+                          <div className="absolute inset-0 bg-violet-500/20 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/80 to-transparent">
+                          <p className="text-[9px] text-white/80 truncate font-medium">{image.name}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Image URL */}
+                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Vlastní URL obrázku</p>
                   <input
                     type="url"
                     value={settings.imageUrl}
@@ -462,6 +546,7 @@ const BackgroundManager: React.FC = () => {
                     className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-violet-500/50"
                     disabled={saving}
                   />
+                  <p className="text-[10px] text-white/30 mt-2">Zadejte vlastní URL nebo vyberte z galerie výše</p>
                 </div>
 
                 {/* Image Opacity */}
