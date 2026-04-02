@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "packageManager": "npm@10.8.0",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
