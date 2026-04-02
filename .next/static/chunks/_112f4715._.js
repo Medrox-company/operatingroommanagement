@@ -1196,16 +1196,18 @@ async function sendEmailNotification(notification) {
     if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
     ;
     try {
+        // Encode the body as UTF-8 to handle Czech characters properly
+        const bodyData = JSON.stringify({
+            to: notification.to,
+            subject: notification.subject,
+            html: notification.html
+        });
         const response = await fetch("".concat(SUPABASE_URL, "/functions/v1/send-email"), {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({
-                to: notification.to,
-                subject: notification.subject,
-                html: notification.html
-            })
+            body: bodyData
         });
         const data = await response.json();
         if (!response.ok) {
