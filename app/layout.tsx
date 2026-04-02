@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Operating Room Control | NEXT-GEN',
-  description: 'Operating Room Control — přehled a řízení operačních sálů',
+  description: 'Operating Room Control - overview and management of operating rooms',
 }
 
 export default function RootLayout({

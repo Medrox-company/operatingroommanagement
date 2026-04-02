@@ -140,6 +140,8 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
 export async function updateOperatingRoom(
   id: string, 
   updates: Partial<{
+    name: string;
+    department: string;
     status: string;
     is_emergency: boolean;
     is_enhanced_hygiene: boolean;
