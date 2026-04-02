@@ -1,6 +1,5 @@
 
 import React, { memo, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
@@ -111,20 +110,14 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Central Content Wrapper */}
         <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <div className="relative flex items-center justify-center">
-                {/* Animated glow behind the circle */}
-                <motion.div
-                  className="absolute rounded-full blur-[40px]"
-                  style={{ width: 80, height: 80, backgroundColor: themeColor }}
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 0.25, scale: 1 }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                {/* Static glow behind the circle - replaced motion for performance */}
+                <div
+                  className="absolute rounded-full blur-[40px] transition-all duration-500"
+                  style={{ width: 80, height: 80, backgroundColor: themeColor, opacity: 0.25 }}
                 />
-                <motion.svg
+                <svg
                   className="w-28 h-28 overflow-visible select-none flex-shrink-0"
-                  style={{ rotate: '-90deg' }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.7, ease: 'easeOut' }}
+                  style={{ transform: 'rotate(-90deg)' }}
                 >
                     <circle 
                       cx={center} cy={center} r={radius} 
@@ -133,16 +126,15 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                       strokeWidth="1.5" 
                       className="opacity-[0.03]" 
                     />
-                    <motion.circle 
+                    <circle 
                       cx={center} cy={center} r={radius} 
                       fill="none"
                       stroke={themeColor} 
                       strokeWidth={strokeWidth} 
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
-                      initial={{ strokeDashoffset: strokeDasharray }}
-                      animate={{ strokeDashoffset: room.isPaused ? 0 : strokeDashoffset }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
+                      strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
+                      className="transition-all duration-500"
                       style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
                     />
                     {room.isPaused ? (
@@ -179,7 +171,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                         {room.operations24h}
                       </text>
                     )}
-                </motion.svg>
+                </svg>
             </div>
             
             {room.estimatedEndTime && !isFinalStep && (
