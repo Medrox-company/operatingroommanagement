@@ -272,7 +272,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lu
 ;
 const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
     const { workflowStatuses } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"])();
+    // Get ONLY main workflow statuses (bez speciálních)
     const activeDbStatuses = workflowStatuses.filter((s)=>s.is_active && !s.is_special).sort((a, b)=>a.order_index - b.order_index);
+    // Get step from database
     const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
     const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
     const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
@@ -280,8 +282,7 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
         title: dbStatus?.name || 'Status',
         color: dbStatus?.color || '#6B7280'
     };
-    // Accent color only for special states — neutral for normal
-    const accentColor = room.isEmergency ? '#FF3B30' : room.isLocked ? '#FBBF24' : room.isPaused ? '#22D3EE' : 'rgba(255,255,255,0.15)';
+    const themeColor = room.isEmergency ? '#FF3B30' : room.isLocked ? '#FBBF24' : room.isPaused ? '#22D3EE' : currentStep.color;
     const progressPercent = (safeIndex + 1) / totalSteps;
     const isFinalStep = safeIndex === activeDbStatuses.length - 1;
     const radius = 38;
@@ -293,7 +294,6 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
         e.stopPropagation();
         if (action) action(e);
     };
-    const isSpecialState = room.isEmergency || room.isLocked || room.isPaused;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         onClick: onClick,
         className: "relative group cursor-pointer h-[340px] w-full",
@@ -306,33 +306,33 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: `absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.6)] overflow-hidden backdrop-blur-[60px] transition-all duration-500
-        ${room.isEmergency ? 'bg-red-950/25 border-red-500/30' : room.isLocked ? 'bg-amber-950/20 border-amber-500/25' : 'bg-white/[0.04] border-white/[0.07] group-hover:bg-white/[0.06]'}
+                className: `absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
+        ${room.isEmergency ? 'bg-red-950/20 border-red-500/40' : room.isLocked ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]'}
       `,
                 children: [
                     room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "absolute inset-0 bg-gradient-to-br from-red-600/8 to-transparent pointer-events-none"
+                        className: "absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none"
                     }, void 0, false, {
                         fileName: "[project]/components/RoomCard.tsx",
                         lineNumber: 70,
-                        columnNumber: 30
+                        columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     room.isLocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "absolute inset-0 bg-gradient-to-br from-amber-500/8 to-transparent pointer-events-none"
+                        className: "absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none"
                     }, void 0, false, {
                         fileName: "[project]/components/RoomCard.tsx",
-                        lineNumber: 71,
-                        columnNumber: 27
+                        lineNumber: 73,
+                        columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none transition-all duration-700",
+                        className: "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000",
                         style: {
-                            backgroundColor: isSpecialState ? accentColor : 'white',
-                            opacity: isSpecialState ? 0.2 : 0.04
+                            backgroundColor: themeColor,
+                            opacity: room.isEmergency || room.isLocked ? 0.3 : 0.15
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomCard.tsx",
-                        lineNumber: 74,
+                        lineNumber: 77,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
@@ -349,7 +349,7 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                 className: `text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 transition-colors
-            ${room.isEmergency ? 'text-red-400' : room.isLocked ? 'text-amber-400' : 'text-white/25'}
+            ${room.isEmergency ? 'text-red-400' : room.isLocked ? 'text-amber-400' : 'text-white/30'}
           `,
                                 children: [
                                     "UNIT ",
@@ -357,21 +357,23 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomCard.tsx",
-                                lineNumber: 88,
+                                lineNumber: 91,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                                className: "text-xl font-bold tracking-tight uppercase leading-none text-white/90 group-hover:text-white transition-colors",
+                                className: `text-xl font-bold tracking-tight uppercase leading-none transition-colors
+            ${room.isEmergency || room.isLocked ? 'text-white' : 'text-white/90 group-hover:text-white'}
+          `,
                                 children: room.name
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomCard.tsx",
-                                lineNumber: 93,
+                                lineNumber: 96,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomCard.tsx",
-                        lineNumber: 87,
+                        lineNumber: 90,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -380,18 +382,29 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "relative flex items-center justify-center",
                                 children: [
-                                    isSpecialState && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "absolute rounded-full blur-[36px] pointer-events-none",
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
+                                        className: "absolute rounded-full blur-[40px]",
                                         style: {
-                                            width: 72,
-                                            height: 72,
-                                            backgroundColor: accentColor,
-                                            opacity: 0.25
+                                            width: 80,
+                                            height: 80,
+                                            backgroundColor: themeColor
+                                        },
+                                        initial: {
+                                            opacity: 0,
+                                            scale: 0.7
+                                        },
+                                        animate: {
+                                            opacity: 0.25,
+                                            scale: 1
+                                        },
+                                        transition: {
+                                            duration: 1.2,
+                                            ease: 'easeOut'
                                         }
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomCard.tsx",
-                                        lineNumber: 103,
-                                        columnNumber: 15
+                                        lineNumber: 107,
+                                        columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].svg, {
                                         className: "w-28 h-28 overflow-visible select-none flex-shrink-0",
@@ -400,14 +413,14 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                         },
                                         initial: {
                                             opacity: 0,
-                                            scale: 0.85
+                                            scale: 0.8
                                         },
                                         animate: {
                                             opacity: 1,
                                             scale: 1
                                         },
                                         transition: {
-                                            duration: 0.6,
+                                            duration: 0.7,
                                             ease: 'easeOut'
                                         },
                                         children: [
@@ -417,19 +430,19 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                                 r: radius,
                                                 fill: "none",
                                                 stroke: "white",
-                                                strokeWidth: "1",
-                                                className: "opacity-[0.06]"
+                                                strokeWidth: "1.5",
+                                                className: "opacity-[0.03]"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 116,
-                                                columnNumber: 15
+                                                lineNumber: 121,
+                                                columnNumber: 21
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].circle, {
                                                 cx: center,
                                                 cy: center,
                                                 r: radius,
                                                 fill: "none",
-                                                stroke: isSpecialState ? accentColor : 'rgba(255,255,255,0.35)',
+                                                stroke: themeColor,
                                                 strokeWidth: strokeWidth,
                                                 strokeLinecap: "round",
                                                 strokeDasharray: strokeDasharray,
@@ -440,16 +453,16 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                                     strokeDashoffset: room.isPaused ? 0 : strokeDashoffset
                                                 },
                                                 transition: {
-                                                    duration: 1,
+                                                    duration: 1.2,
                                                     ease: 'easeOut'
                                                 },
                                                 style: {
-                                                    filter: isSpecialState ? `drop-shadow(0 0 5px ${accentColor}88)` : 'none'
+                                                    filter: `drop-shadow(0 0 6px ${themeColor}99)`
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 118,
-                                                columnNumber: 15
+                                                lineNumber: 128,
+                                                columnNumber: 21
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             room.isPaused ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("text", {
                                                 x: center,
@@ -457,47 +470,47 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                                 textAnchor: "middle",
                                                 dominantBaseline: "central",
                                                 fill: "#22D3EE",
+                                                className: "text-4xl font-black",
                                                 style: {
-                                                    transform: `rotate(90deg)`,
+                                                    transform: 'rotate(90deg)',
                                                     transformOrigin: `${center}px ${center}px`,
-                                                    fontSize: '26px',
-                                                    fontWeight: 900
+                                                    fontSize: '28px',
+                                                    fontWeight: 900,
+                                                    letterSpacing: '-0.05em'
                                                 },
                                                 children: "P"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 132,
-                                                columnNumber: 17
+                                                lineNumber: 141,
+                                                columnNumber: 23
                                             }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("text", {
                                                 x: center,
                                                 y: center,
                                                 textAnchor: "middle",
                                                 dominantBaseline: "central",
-                                                fill: "rgba(255,255,255,0.85)",
+                                                className: `text-4xl font-black transition-colors ${room.isEmergency || room.isLocked ? 'fill-white' : 'fill-white/90'}`,
                                                 style: {
-                                                    transform: `rotate(90deg)`,
+                                                    transform: 'rotate(90deg)',
                                                     transformOrigin: `${center}px ${center}px`,
-                                                    letterSpacing: '-0.05em',
-                                                    fontSize: '28px',
-                                                    fontWeight: 800
+                                                    letterSpacing: '-0.05em'
                                                 },
                                                 children: room.operations24h
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 139,
-                                                columnNumber: 17
+                                                lineNumber: 159,
+                                                columnNumber: 23
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomCard.tsx",
-                                        lineNumber: 108,
-                                        columnNumber: 13
+                                        lineNumber: 114,
+                                        columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomCard.tsx",
-                                lineNumber: 100,
-                                columnNumber: 11
+                                lineNumber: 105,
+                                columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             room.estimatedEndTime && !isFinalStep && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "-mt-1 text-center",
@@ -505,38 +518,44 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                     className: "flex items-center gap-1.5 justify-center",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__["Clock"], {
-                                            className: "w-3.5 h-3.5 text-white/40"
+                                            className: "w-3.5 h-3.5",
+                                            style: {
+                                                color: themeColor
+                                            }
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomCard.tsx",
-                                            lineNumber: 154,
-                                            columnNumber: 17
+                                            lineNumber: 180,
+                                            columnNumber: 23
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                            className: "text-lg font-mono font-bold tracking-tight text-white/60",
+                                            className: "text-lg font-mono font-bold tracking-tight",
+                                            style: {
+                                                color: themeColor
+                                            },
                                             children: new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', {
                                                 hour: '2-digit',
                                                 minute: '2-digit'
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomCard.tsx",
-                                            lineNumber: 155,
-                                            columnNumber: 17
+                                            lineNumber: 181,
+                                            columnNumber: 23
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/RoomCard.tsx",
-                                    lineNumber: 153,
-                                    columnNumber: 15
+                                    lineNumber: 179,
+                                    columnNumber: 21
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomCard.tsx",
-                                lineNumber: 152,
-                                columnNumber: 13
+                                lineNumber: 178,
+                                columnNumber: 17
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomCard.tsx",
-                        lineNumber: 99,
+                        lineNumber: 104,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -546,99 +565,105 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                 className: "w-full text-center",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                     className: `text-[10px] font-black tracking-[0.2em] truncate uppercase py-2 px-4 rounded-full border transition-all inline-block w-full
-              ${room.isEmergency ? 'bg-red-600/80 text-white border-red-500/60' : room.isLocked ? 'bg-amber-500/80 text-white border-amber-400/60' : 'bg-white/[0.04] border-white/[0.07] text-white/40'}
+              ${room.isEmergency ? 'bg-red-600 text-white border-red-500' : room.isLocked ? 'bg-amber-500 text-white border-amber-600' : 'bg-white/5 border-white/5 text-white/50'}
             `,
                                     children: room.isEmergency ? 'STAV NOUZE' : room.isLocked ? 'SÁL UZAMČEN' : currentStep.title
                                 }, void 0, false, {
                                     fileName: "[project]/components/RoomCard.tsx",
-                                    lineNumber: 167,
+                                    lineNumber: 192,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomCard.tsx",
-                                lineNumber: 166,
+                                lineNumber: 191,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: `flex items-center justify-between pt-3 border-t gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-500/20' : room.isLocked ? 'border-amber-500/20' : room.isPaused ? 'border-cyan-500/15' : 'border-white/[0.06]'}
+            ${room.isEmergency ? 'border-red-500/20' : room.isLocked ? 'border-amber-500/20' : room.isPaused ? 'border-cyan-500/20' : 'border-white/5'}
           `,
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex items-center gap-2 min-w-0 flex-1",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "w-9 h-9 rounded-xl border border-white/[0.07] overflow-hidden shrink-0",
+                                                className: `w-9 h-9 rounded-xl border overflow-hidden shrink-0 
+                ${room.isEmergency ? 'border-red-500/30' : room.isLocked ? 'border-amber-500/30' : room.isPaused ? 'border-cyan-500/30' : 'border-white/5'}
+              `,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
                                                     src: `https://i.pravatar.cc/150?u=${room.staff.doctor.name}`,
                                                     alt: "Dr",
-                                                    className: "w-full h-full object-cover grayscale opacity-50 group-hover:opacity-80 transition-opacity"
+                                                    className: "w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomCard.tsx",
-                                                    lineNumber: 185,
+                                                    lineNumber: 211,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 184,
+                                                lineNumber: 208,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "min-w-0 flex flex-col gap-0.5",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        className: "text-[10px] font-bold uppercase tracking-tight truncate text-white/40 group-hover:text-white/60 transition-colors",
+                                                        className: `text-[10px] font-bold uppercase tracking-tight truncate transition-colors
+                  ${room.isEmergency ? 'text-red-200' : room.isLocked ? 'text-amber-200' : room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'}
+                `,
                                                         children: room.staff.doctor.name?.split(' ').pop()
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomCard.tsx",
-                                                        lineNumber: 188,
+                                                        lineNumber: 214,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     room.staff.nurse?.name && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        className: "text-[9px] font-medium uppercase tracking-tight truncate text-white/25 group-hover:text-white/40 transition-colors",
+                                                        className: `text-[9px] font-medium uppercase tracking-tight truncate transition-colors
+                    ${room.isEmergency ? 'text-red-300/60' : room.isLocked ? 'text-amber-300/60' : room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'}
+                  `,
                                                         children: room.staff.nurse.name?.split(' ').pop()
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomCard.tsx",
-                                                        lineNumber: 192,
+                                                        lineNumber: 220,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 187,
+                                                lineNumber: 213,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomCard.tsx",
-                                        lineNumber: 183,
+                                        lineNumber: 207,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex items-center gap-1.5 shrink-0",
                                         children: [
                                             room.isSeptic && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "p-1.5 bg-red-500/10 rounded-xl border border-red-500/20",
+                                                className: "p-1.5 bg-red-500/10 rounded-xl border border-red-500/20 backdrop-blur-md",
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$biohazard$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Biohazard$3e$__["Biohazard"], {
                                                     className: "w-3.5 h-3.5 text-red-500/70"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomCard.tsx",
-                                                    lineNumber: 203,
+                                                    lineNumber: 233,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 202,
+                                                lineNumber: 232,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             !room.isPaused && !room.estimatedEndTime && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "hidden sm:flex items-center gap-1 opacity-30 group-hover:opacity-60 transition-opacity",
+                                                className: "flex items-center gap-1 opacity-40 group-hover:opacity-80 transition-opacity",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__["Clock"], {
                                                         className: "w-3.5 h-3.5 text-white"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomCard.tsx",
-                                                        lineNumber: 208,
+                                                        lineNumber: 239,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -646,71 +671,71 @@ const RoomCard = ({ room, onClick, onEmergency, onLock })=>{
                                                         children: room.currentProcedure?.startTime || '--:--'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomCard.tsx",
-                                                        lineNumber: 209,
+                                                        lineNumber: 240,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 207,
+                                                lineNumber: 238,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                 onClick: (e)=>handleAction(e, onEmergency),
-                                                className: `p-2 rounded-xl border transition-all
-                  ${room.isEmergency ? 'bg-red-600 text-white border-red-500 shadow-[0_0_14px_rgba(239,68,68,0.35)]' : 'bg-white/[0.04] hover:bg-red-500/15 border-white/[0.08] text-white/30 hover:text-red-400'}
+                                                className: `p-2 rounded-xl border transition-all backdrop-blur-md
+                  ${room.isEmergency ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]' : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
                 `,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
                                                     className: "w-4 h-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomCard.tsx",
-                                                    lineNumber: 222,
+                                                    lineNumber: 255,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 214,
+                                                lineNumber: 247,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                 onClick: (e)=>handleAction(e, onLock),
-                                                className: `p-2 rounded-xl border transition-all
-                  ${room.isLocked ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_14px_rgba(245,158,11,0.35)]' : 'bg-white/[0.04] hover:bg-amber-500/15 border-white/[0.08] text-white/30 hover:text-amber-400'}
+                                                className: `p-2 rounded-xl border transition-all backdrop-blur-md
+                  ${room.isLocked ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]' : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
                 `,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$lock$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Lock$3e$__["Lock"], {
                                                     className: "w-4 h-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomCard.tsx",
-                                                    lineNumber: 232,
+                                                    lineNumber: 267,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomCard.tsx",
-                                                lineNumber: 224,
+                                                lineNumber: 259,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomCard.tsx",
-                                        lineNumber: 200,
+                                        lineNumber: 230,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomCard.tsx",
-                                lineNumber: 179,
-                                columnNumber: 11
+                                lineNumber: 203,
+                                columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomCard.tsx",
-                        lineNumber: 164,
+                        lineNumber: 190,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/RoomCard.tsx",
-                lineNumber: 84,
+                lineNumber: 87,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]

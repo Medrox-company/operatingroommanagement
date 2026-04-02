@@ -32,28 +32,28 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lu
 const DAYS = [
     {
         key: 'monday',
-        label: 'Pondělí',
+        label: 'Pondeli',
         short: 'Po'
     },
     {
         key: 'tuesday',
-        label: 'Úterý',
-        short: 'Út'
+        label: 'Utery',
+        short: 'Ut'
     },
     {
         key: 'wednesday',
-        label: 'Středa',
+        label: 'Streda',
         short: 'St'
     },
     {
         key: 'thursday',
-        label: 'Čtvrtek',
-        short: 'Čt'
+        label: 'Ctvrtek',
+        short: 'Ct'
     },
     {
         key: 'friday',
-        label: 'Pátek',
-        short: 'Pá'
+        label: 'Patek',
+        short: 'Pa'
     },
     {
         key: 'saturday',
@@ -62,12 +62,22 @@ const DAYS = [
     },
     {
         key: 'sunday',
-        label: 'Neděle',
+        label: 'Nedele',
         short: 'Ne'
     }
 ];
-// Jednotná aplikační barva
-const APP_COLOR = '#00D8C1';
+const deptColors = {
+    TRA: '#00D8C1',
+    CHIR: '#7C3AED',
+    ROBOT: '#06B6D4',
+    URO: '#EC4899',
+    ORL: '#3B82F6',
+    'CEVNI': '#F59E0B',
+    'HPB + PLICNI': '#8B5CF6',
+    DETSKE: '#06B6D4',
+    MAMMO: '#EC4899'
+};
+const getDeptColor = (dept)=>deptColors[dept] || '#64748B';
 /* Time Input Component */ const TimeInput = ({ label, hour, minute, onHourChange, onMinuteChange, disabled })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: `flex flex-col gap-1 ${disabled ? 'opacity-40' : ''}`,
         children: [
@@ -76,7 +86,7 @@ const APP_COLOR = '#00D8C1';
                 children: label
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 39,
+                lineNumber: 50,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -92,7 +102,7 @@ const APP_COLOR = '#00D8C1';
                         className: "w-12 px-2 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-white text-center text-sm font-mono focus:outline-none focus:border-cyan-500/50 disabled:cursor-not-allowed"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 41,
+                        lineNumber: 52,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -100,7 +110,7 @@ const APP_COLOR = '#00D8C1';
                         children: ":"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 50,
+                        lineNumber: 61,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -114,19 +124,19 @@ const APP_COLOR = '#00D8C1';
                         className: "w-12 px-2 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-white text-center text-sm font-mono focus:outline-none focus:border-cyan-500/50 disabled:cursor-not-allowed"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 51,
+                        lineNumber: 62,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 40,
+                lineNumber: 51,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 38,
+        lineNumber: 49,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0));
 /* Day Schedule Row */ const DayScheduleRow = ({ day, schedule, onChange })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -142,12 +152,12 @@ const APP_COLOR = '#00D8C1';
                     className: "w-4 h-4"
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 87,
+                    lineNumber: 98,
                     columnNumber: 7
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 79,
+                lineNumber: 90,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -158,7 +168,7 @@ const APP_COLOR = '#00D8C1';
                         children: day.label
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 92,
+                        lineNumber: 103,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -166,13 +176,13 @@ const APP_COLOR = '#00D8C1';
                         children: schedule.enabled ? 'Aktivni' : 'Neaktivni'
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 95,
+                        lineNumber: 106,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 91,
+                lineNumber: 102,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -193,7 +203,7 @@ const APP_COLOR = '#00D8C1';
                         disabled: !schedule.enabled
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 100,
+                        lineNumber: 111,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -201,7 +211,7 @@ const APP_COLOR = '#00D8C1';
                         children: "—"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 108,
+                        lineNumber: 119,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(TimeInput, {
@@ -219,13 +229,13 @@ const APP_COLOR = '#00D8C1';
                         disabled: !schedule.enabled
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 109,
+                        lineNumber: 120,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 99,
+                lineNumber: 110,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0)),
             schedule.enabled && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -236,7 +246,7 @@ const APP_COLOR = '#00D8C1';
                         children: "Delka"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 122,
+                        lineNumber: 133,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -251,23 +261,23 @@ const APP_COLOR = '#00D8C1';
                         })()
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 123,
+                        lineNumber: 134,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 121,
+                lineNumber: 132,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 71,
+        lineNumber: 82,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0));
 /* Room Card */ const RoomCard = ({ room, onEdit, onDelete, onScheduleEdit })=>{
-    const color = APP_COLOR;
+    const color = getDeptColor(room.department);
     const schedule = room.weeklySchedule || __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DEFAULT_WEEKLY_SCHEDULE"];
     // Count active days
     const activeDays = DAYS.filter((d)=>schedule[d.key].enabled).length;
@@ -298,7 +308,7 @@ const APP_COLOR = '#00D8C1';
                 }
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 164,
+                lineNumber: 175,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -315,7 +325,7 @@ const APP_COLOR = '#00D8C1';
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 178,
+                        lineNumber: 189,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -339,12 +349,12 @@ const APP_COLOR = '#00D8C1';
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 194,
+                                                lineNumber: 205,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 187,
+                                            lineNumber: 198,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -354,7 +364,7 @@ const APP_COLOR = '#00D8C1';
                                                     children: room.name
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 197,
+                                                    lineNumber: 208,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -365,19 +375,19 @@ const APP_COLOR = '#00D8C1';
                                                     children: room.department
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 198,
+                                                    lineNumber: 209,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 196,
+                                            lineNumber: 207,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 186,
+                                    lineNumber: 197,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -387,21 +397,21 @@ const APP_COLOR = '#00D8C1';
                                         color: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? '#22C55E' : '#EF4444',
                                         border: `1px solid ${room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
                                     },
-                                    children: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'Volný' : 'Obsazeno'
+                                    children: room.status === __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RoomStatus"].FREE ? 'Volny' : 'Obsazeno'
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 203,
+                                    lineNumber: 214,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 185,
+                            lineNumber: 196,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 184,
+                        lineNumber: 195,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -420,13 +430,13 @@ const APP_COLOR = '#00D8C1';
                                         children: day.short
                                     }, day.key, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 223,
+                                        lineNumber: 234,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0));
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 219,
+                                lineNumber: 230,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -445,7 +455,7 @@ const APP_COLOR = '#00D8C1';
                                                     className: "w-4 h-4 text-white/40"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 251,
+                                                    lineNumber: 262,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -453,13 +463,13 @@ const APP_COLOR = '#00D8C1';
                                                     children: "Dnes"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 252,
+                                                    lineNumber: 263,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 250,
+                                            lineNumber: 261,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         todaySchedule.enabled ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -474,7 +484,7 @@ const APP_COLOR = '#00D8C1';
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 256,
+                                                    lineNumber: 267,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -482,7 +492,7 @@ const APP_COLOR = '#00D8C1';
                                                     children: "—"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 259,
+                                                    lineNumber: 270,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -497,31 +507,31 @@ const APP_COLOR = '#00D8C1';
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 260,
+                                                    lineNumber: 271,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 255,
+                                            lineNumber: 266,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             className: "text-xs text-white/30",
-                                            children: "Neaktivní"
+                                            children: "Neaktivni"
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 265,
+                                            lineNumber: 276,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 249,
+                                    lineNumber: 260,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 242,
+                                lineNumber: 253,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -535,10 +545,10 @@ const APP_COLOR = '#00D8C1';
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-[10px] text-white/30 uppercase",
-                                                children: "Aktivní dny"
+                                                children: "Aktivni dny"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 276,
+                                                lineNumber: 287,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -546,13 +556,13 @@ const APP_COLOR = '#00D8C1';
                                                 children: activeDays
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 277,
+                                                lineNumber: 288,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 272,
+                                        lineNumber: 283,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -563,10 +573,10 @@ const APP_COLOR = '#00D8C1';
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-[10px] text-white/30 uppercase",
-                                                children: "Operací 24h"
+                                                children: "Operaci 24h"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 283,
+                                                lineNumber: 294,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -574,25 +584,25 @@ const APP_COLOR = '#00D8C1';
                                                 children: room.operations24h || 0
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 284,
+                                                lineNumber: 295,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 279,
+                                        lineNumber: 290,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 271,
+                                lineNumber: 282,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 217,
+                        lineNumber: 228,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -613,14 +623,14 @@ const APP_COLOR = '#00D8C1';
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 301,
+                                            lineNumber: 312,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         "Rozvrh"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 292,
+                                    lineNumber: 303,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -630,12 +640,12 @@ const APP_COLOR = '#00D8C1';
                                         className: "w-4 h-4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 308,
+                                        lineNumber: 319,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 304,
+                                    lineNumber: 315,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -645,35 +655,35 @@ const APP_COLOR = '#00D8C1';
                                         className: "w-4 h-4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 314,
+                                        lineNumber: 325,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 310,
+                                    lineNumber: 321,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 291,
+                            lineNumber: 302,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 290,
+                        lineNumber: 301,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 170,
+                lineNumber: 181,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 156,
+        lineNumber: 167,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -693,7 +703,7 @@ const APP_COLOR = '#00D8C1';
     });
     const handleAddRoom = ()=>{
         if (!newRoomData.name || !newRoomData.department) {
-            setError('Vyplňte prosím všechna povinná pole');
+            setError('Vyplnte prosim vsechna povinna pole');
             return;
         }
         const newRoom = {
@@ -771,7 +781,7 @@ const APP_COLOR = '#00D8C1';
                                     className: "w-4 h-4 text-[#00D8C1]"
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 409,
+                                    lineNumber: 420,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -779,13 +789,13 @@ const APP_COLOR = '#00D8C1';
                                     children: "OPERATINGROOM CONTROL"
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 410,
+                                    lineNumber: 421,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 408,
+                            lineNumber: 419,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -797,24 +807,24 @@ const APP_COLOR = '#00D8C1';
                                     children: "SÁLY"
                                 }, void 0, false, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 413,
+                                    lineNumber: 424,
                                     columnNumber: 22
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 412,
+                            lineNumber: 423,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 407,
+                    lineNumber: 418,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 406,
+                lineNumber: 417,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -832,7 +842,7 @@ const APP_COLOR = '#00D8C1';
                         className: "w-5 h-5 shrink-0"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 425,
+                        lineNumber: 436,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -840,7 +850,7 @@ const APP_COLOR = '#00D8C1';
                         children: error
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 426,
+                        lineNumber: 437,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -850,18 +860,18 @@ const APP_COLOR = '#00D8C1';
                             className: "w-4 h-4"
                         }, void 0, false, {
                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                            lineNumber: 428,
+                            lineNumber: 439,
                             columnNumber: 13
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 427,
+                        lineNumber: 438,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 420,
+                lineNumber: 431,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -893,14 +903,14 @@ const APP_COLOR = '#00D8C1';
                                         className: "w-5 h-5 text-cyan-400"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 450,
+                                        lineNumber: 461,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
-                                    "Přidat nový operační sál"
+                                    "Pridat novy operacni sal"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 449,
+                                lineNumber: 460,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -910,15 +920,15 @@ const APP_COLOR = '#00D8C1';
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                 className: "block text-xs text-white/40 uppercase tracking-wider mb-2",
-                                                children: "Název sálu"
+                                                children: "Nazev salu"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 455,
+                                                lineNumber: 466,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                                                 type: "text",
-                                                placeholder: "např. Sál č. 1",
+                                                placeholder: "napr. Sal c. 1",
                                                 value: newRoomData.name,
                                                 onChange: (e)=>setNewRoomData({
                                                         ...newRoomData,
@@ -927,23 +937,23 @@ const APP_COLOR = '#00D8C1';
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 456,
+                                                lineNumber: 467,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 454,
+                                        lineNumber: 465,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                 className: "block text-xs text-white/40 uppercase tracking-wider mb-2",
-                                                children: "Oddělení"
+                                                children: "Oddeleni"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 465,
+                                                lineNumber: 476,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -957,19 +967,19 @@ const APP_COLOR = '#00D8C1';
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 466,
+                                                lineNumber: 477,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 464,
+                                        lineNumber: 475,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 453,
+                                lineNumber: 464,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -983,14 +993,14 @@ const APP_COLOR = '#00D8C1';
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 480,
+                                                lineNumber: 491,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
-                                            "Přidat sál"
+                                            "Pridat sal"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 476,
+                                        lineNumber: 487,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1003,32 +1013,32 @@ const APP_COLOR = '#00D8C1';
                                             setError(null);
                                         },
                                         className: "px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all",
-                                        children: "Zrušit"
+                                        children: "Zrusit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 483,
+                                        lineNumber: 494,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 475,
+                                lineNumber: 486,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 442,
+                        lineNumber: 453,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 436,
+                    lineNumber: 447,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 434,
+                lineNumber: 445,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             !isAddingNew && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1039,14 +1049,14 @@ const APP_COLOR = '#00D8C1';
                         className: "w-5 h-5 group-hover:rotate-90 transition-transform"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 505,
+                        lineNumber: 516,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
-                    "Přidat nový sál"
+                    "Pridat novy sal"
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 501,
+                lineNumber: 512,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1058,12 +1068,12 @@ const APP_COLOR = '#00D8C1';
                         onScheduleEdit: ()=>setScheduleEditRoom(room)
                     }, room.id, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 513,
+                        lineNumber: 524,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 511,
+                lineNumber: 522,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             roomsList.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1073,29 +1083,29 @@ const APP_COLOR = '#00D8C1';
                         className: "w-16 h-16 mx-auto text-white/10 mb-4"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 526,
+                        lineNumber: 537,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                         className: "text-white/40 text-lg",
-                        children: "Žádné operační sály"
+                        children: "Zadne operacni saly"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 527,
+                        lineNumber: 538,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                         className: "text-white/20 text-sm",
-                        children: "Klikněte na tlačítko výše pro přidání nového sálu"
+                        children: "Kliknete na tlacitko vyse pro pridani noveho salu"
                     }, void 0, false, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 528,
+                        lineNumber: 539,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 525,
+                lineNumber: 536,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1146,12 +1156,12 @@ const APP_COLOR = '#00D8C1';
                                                 className: "w-5 h-5 text-white/60"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 560,
+                                                lineNumber: 571,
                                                 columnNumber: 21
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 556,
+                                            lineNumber: 567,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1161,32 +1171,32 @@ const APP_COLOR = '#00D8C1';
                                                     children: scheduleEditRoom.name
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 563,
+                                                    lineNumber: 574,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                     className: "text-sm text-white/40",
-                                                    children: "Nastavení pracovní doby"
+                                                    children: "Nastaveni pracovni doby"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                    lineNumber: 564,
+                                                    lineNumber: 575,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                            lineNumber: 562,
+                                            lineNumber: 573,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                    lineNumber: 555,
+                                    lineNumber: 566,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 554,
+                                lineNumber: 565,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1209,13 +1219,13 @@ const APP_COLOR = '#00D8C1';
                                         }
                                     }, day.key, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 575,
+                                        lineNumber: 586,
                                         columnNumber: 21
                                     }, ("TURBOPACK compile-time value", void 0));
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 570,
+                                lineNumber: 581,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1235,45 +1245,45 @@ const APP_COLOR = '#00D8C1';
                                                 className: "w-5 h-5"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 603,
+                                                lineNumber: 614,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
-                                            "Uložit změny"
+                                            "Ulozit zmeny"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 596,
+                                        lineNumber: 607,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                         onClick: ()=>setScheduleEditRoom(null),
                                         className: "px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all",
-                                        children: "Zrušit"
+                                        children: "Zrusit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 606,
+                                        lineNumber: 617,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 595,
+                                lineNumber: 606,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 542,
+                        lineNumber: 553,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 535,
+                    lineNumber: 546,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 533,
+                lineNumber: 544,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1316,14 +1326,14 @@ const APP_COLOR = '#00D8C1';
                                         className: "w-5 h-5 text-cyan-400"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 640,
+                                        lineNumber: 651,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
-                                    "Upravit sál"
+                                    "Upravit sal"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 639,
+                                lineNumber: 650,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1333,10 +1343,10 @@ const APP_COLOR = '#00D8C1';
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                 className: "block text-xs text-white/40 uppercase tracking-wider mb-2",
-                                                children: "Název"
+                                                children: "Nazev"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 645,
+                                                lineNumber: 656,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1349,23 +1359,23 @@ const APP_COLOR = '#00D8C1';
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 646,
+                                                lineNumber: 657,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 644,
+                                        lineNumber: 655,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                 className: "block text-xs text-white/40 uppercase tracking-wider mb-2",
-                                                children: "Oddělení"
+                                                children: "Oddeleni"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 654,
+                                                lineNumber: 665,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1378,19 +1388,19 @@ const APP_COLOR = '#00D8C1';
                                                 className: "w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                                lineNumber: 655,
+                                                lineNumber: 666,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 653,
+                                        lineNumber: 664,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 643,
+                                lineNumber: 654,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1399,41 +1409,41 @@ const APP_COLOR = '#00D8C1';
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                         onClick: handleUpdateRoom,
                                         className: "flex-1 px-6 py-3 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-semibold hover:bg-cyan-500/30 transition-all",
-                                        children: "Uložit"
+                                        children: "Ulozit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 664,
+                                        lineNumber: 675,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                         onClick: ()=>setEditingRoom(null),
                                         className: "px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all",
-                                        children: "Zrušit"
+                                        children: "Zrusit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 670,
+                                        lineNumber: 681,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 663,
+                                lineNumber: 674,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 628,
+                        lineNumber: 639,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 621,
+                    lineNumber: 632,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 619,
+                lineNumber: 630,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1476,22 +1486,22 @@ const APP_COLOR = '#00D8C1';
                                         className: "w-5 h-5 text-red-400"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 704,
+                                        lineNumber: 715,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
-                                    "Potvrdit smazání"
+                                    "Potvrdit smazani"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 703,
+                                lineNumber: 714,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                 className: "text-white/60 mb-6",
-                                children: "Opravdu chcete smazat tento operační sál? Tato akce je nevratná."
+                                children: "Opravdu chcete smazat tento operacni sal? Tato akce je nevratna."
                             }, void 0, false, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 707,
+                                lineNumber: 718,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1503,44 +1513,44 @@ const APP_COLOR = '#00D8C1';
                                         children: "Smazat"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 709,
+                                        lineNumber: 720,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                         onClick: ()=>setDeleteConfirm(null),
                                         className: "px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all",
-                                        children: "Zrušit"
+                                        children: "Zrusit"
                                     }, void 0, false, {
                                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                        lineNumber: 715,
+                                        lineNumber: 726,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                                lineNumber: 708,
+                                lineNumber: 719,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/OperatingRoomsManager.tsx",
-                        lineNumber: 692,
+                        lineNumber: 703,
                         columnNumber: 13
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/components/OperatingRoomsManager.tsx",
-                    lineNumber: 685,
+                    lineNumber: 696,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/OperatingRoomsManager.tsx",
-                lineNumber: 683,
+                lineNumber: 694,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/OperatingRoomsManager.tsx",
-        lineNumber: 404,
+        lineNumber: 415,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
