@@ -191,6 +191,21 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
 }
 
 /**
+ * Encode subject for email headers (handles Czech and other special characters)
+ */
+function encodeEmailSubject(subject: string): string {
+  // Replace Czech characters with ASCII equivalents for subject line
+  const asciiMap: Record<string, string> = {
+    'á': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e', 'í': 'i', 'ň': 'n',
+    'ó': 'o', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u', 'ů': 'u', 'ý': 'y', 'ž': 'z',
+    'Á': 'A', 'Č': 'C', 'Ď': 'D', 'É': 'E', 'Ě': 'E', 'Í': 'I', 'Ň': 'N',
+    'Ó': 'O', 'Ř': 'R', 'Š': 'S', 'Ť': 'T', 'Ú': 'U', 'Ů': 'U', 'Ý': 'Y', 'Ž': 'Z',
+  };
+  
+  return subject.replace(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/g, char => asciiMap[char] || char);
+}
+
+/**
  * Batch send notifications to multiple recipients
  */
 export async function sendBatchEmailNotifications(
@@ -203,9 +218,10 @@ export async function sendBatchEmailNotifications(
   let failed = 0;
 
   for (const recipient of recipients) {
+    const rawSubject = `[${data.type.toUpperCase()}] ${data.roomName} - ${data.message.substring(0, 30)}...`;
     const result = await sendEmailNotification({
       to: recipient,
-      subject: `[${data.type.toUpperCase()}] ${data.roomName} - ${data.message.substring(0, 30)}...`,
+      subject: encodeEmailSubject(rawSubject),
       html,
     });
 
