@@ -459,21 +459,21 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             >
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-cyan-400" />
-                Pridat novy operacni sal
+                Přidat nový operační sál
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Nazev salu</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Název sálu</label>
                   <input
                     type="text"
-                    placeholder="napr. Sal c. 1"
+                    placeholder="např. Sál č. 1"
                     value={newRoomData.name}
                     onChange={(e) => setNewRoomData({ ...newRoomData, name: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Oddeleni</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Oddělení</label>
                   <input
                     type="text"
                     placeholder="TRA, CHIR, atd."
@@ -489,7 +489,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   className="px-6 py-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-semibold hover:bg-cyan-500/30 transition-all flex items-center gap-2"
                 >
                   <Check className="w-4 h-4" />
-                  Pridat sal
+                  Přidat sál
                 </button>
                 <button
                   onClick={() => {
@@ -499,7 +499,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   }}
                   className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
                 >
-                  Zrusit
+                  Zrušit
                 </button>
               </div>
             </div>
@@ -514,7 +514,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
           className="mb-8 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 text-cyan-300 font-semibold hover:from-cyan-500/30 hover:to-emerald-500/30 transition-all flex items-center gap-2 group"
         >
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-          Pridat novy sal
+          Přidat nový sál
         </button>
       )}
 
@@ -535,8 +535,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       {roomsList.length === 0 && (
         <div className="text-center py-20">
           <Building2 className="w-16 h-16 mx-auto text-white/10 mb-4" />
-          <p className="text-white/40 text-lg">Zadne operacni saly</p>
-          <p className="text-white/20 text-sm">Kliknete na tlacitko vyse pro pridani noveho salu</p>
+          <p className="text-white/40 text-lg">Žádné operační sály</p>
+          <p className="text-white/20 text-sm">Klikněte na tlačítko výše pro přidání nového sálu</p>
         </div>
       )}
 
@@ -572,7 +572,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   </button>
                   <div>
                     <h2 className="text-xl font-bold text-white">{scheduleEditRoom.name}</h2>
-                    <p className="text-sm text-white/40">Nastaveni pracovni doby</p>
+                    <p className="text-sm text-white/40">Nastavení pracovní doby</p>
                   </div>
                 </div>
               </div>
@@ -612,13 +612,13 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   className="flex-1 px-6 py-3 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-semibold hover:bg-cyan-500/30 transition-all flex items-center justify-center gap-2"
                 >
                   <Check className="w-5 h-5" />
-                  Ulozit zmeny
+                  Uložit změny
                 </button>
                 <button
                   onClick={() => setScheduleEditRoom(null)}
                   className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
                 >
-                  Zrusit
+                  Zrušit
                 </button>
               </div>
             </motion.div>
@@ -649,11 +649,11 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             >
               <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <Edit2 className="w-5 h-5 text-cyan-400" />
-                Upravit sal
+                Upravit sál
               </h2>
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Nazev</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Název</label>
                   <input
                     type="text"
                     value={editingRoom.name}
@@ -662,7 +662,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Oddeleni</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Oddělení</label>
                   <input
                     type="text"
                     value={editingRoom.department}
@@ -676,13 +676,13 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   onClick={handleUpdateRoom}
                   className="flex-1 px-6 py-3 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-semibold hover:bg-cyan-500/30 transition-all"
                 >
-                  Ulozit
+                  Uložit
                 </button>
                 <button
                   onClick={() => setEditingRoom(null)}
                   className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
                 >
-                  Zrusit
+                  Zrušit
                 </button>
               </div>
             </motion.div>
@@ -713,9 +713,9 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             >
               <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-red-400" />
-                Potvrdit smazani
+                Potvrdit smazání
               </h2>
-              <p className="text-white/60 mb-6">Opravdu chcete smazat tento operacni sal? Tato akce je nevratna.</p>
+              <p className="text-white/60 mb-6">Opravdu chcete smazat tento operační sál? Tato akce je nevratná.</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => handleDeleteRoom(deleteConfirm)}
@@ -727,7 +727,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   onClick={() => setDeleteConfirm(null)}
                   className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
                 >
-                  Zrusit
+                  Zrušit
                 </button>
               </div>
             </motion.div>
