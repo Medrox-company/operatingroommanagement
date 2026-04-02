@@ -1,25 +1,23 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
-import TopBar from './components/TopBar';
 import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
-import PlaceholderView from './components/PlaceholderView';
+import TimelineModule from './components/TimelineModule';
+import StatisticsModule from './components/StatisticsModule';
 import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
+import AdminModule from './components/AdminModule';
+import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom } from './types';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
-import TimelineModule from './components/TimelineModule';
-import StatisticsModule from './components/StatisticsModule';
+import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
-import AdminModule from './components/AdminModule';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
 // Main App Content - Operating Rooms Management System
@@ -134,21 +132,16 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, isModuleEnabled]);
 
-  // Show login if not authenticated
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
-  const updateRoomStep = async (roomId: string, newStepIndex: number) => {
+  const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
     ));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { current_step_index: newStepIndex });
     }
-  };
+  }, [isDbConnected]);
 
-  const toggleEmergency = async (roomId: string) => {
+  const toggleEmergency = useCallback(async (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
     const newValue = !room?.isEmergency;
     setRooms(prev => prev.map(r =>
@@ -157,9 +150,9 @@ const AppContent: React.FC = () => {
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
-  };
+  }, [rooms, isDbConnected]);
 
-  const toggleLock = async (roomId: string) => {
+  const toggleLock = useCallback(async (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
     const newValue = !room?.isLocked;
     setRooms(prev => prev.map(r =>
@@ -168,9 +161,9 @@ const AppContent: React.FC = () => {
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_locked: newValue });
     }
-  };
+  }, [rooms, isDbConnected]);
 
-  const handleUpdateRoomEndTime = async (roomId: string, newTime: Date | null) => {
+  const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, estimatedEndTime: newTime ? newTime.toISOString() : undefined }
@@ -181,9 +174,9 @@ const AppContent: React.FC = () => {
         estimated_end_time: newTime ? newTime.toISOString() : null 
       });
     }
-  };
+  }, [isDbConnected]);
 
-  const handleEnhancedHygieneToggle = async (roomId: string, enabled: boolean) => {
+  const handleEnhancedHygieneToggle = useCallback(async (roomId: string, enabled: boolean) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, isEnhancedHygiene: enabled }
@@ -194,9 +187,9 @@ const AppContent: React.FC = () => {
         is_enhanced_hygiene: enabled 
       });
     }
-  };
+  }, [isDbConnected]);
 
-  const handleUpdateWeeklySchedule = async (roomId: string, schedule: Record<string, any>) => {
+  const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: Record<string, any>) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, weeklySchedule: schedule }
@@ -207,9 +200,9 @@ const AppContent: React.FC = () => {
         weekly_schedule: schedule
       });
     }
-  };
+  }, [isDbConnected]);
 
-  const handleStaffChange = async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
+  const handleStaffChange = useCallback(async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
     // Update local state
     setRooms(prev => prev.map(room => {
       if (room.id !== roomId) return room;
@@ -231,19 +224,26 @@ const AppContent: React.FC = () => {
       const dbField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
       await updateOperatingRoom(roomId, { [dbField]: staffId } as any);
     }
-  };
+  }, [isDbConnected]);
+
+  // Show login if not authenticated - must be after all hooks
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
       {/* Dynamic Background Layer - Controlled by BackgroundManager settings */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Background Image Layer */}
+        {/* Background Image Layer - lazy loaded for performance */}
         {bgSettings.imageUrl && (
           <img
             src={bgSettings.imageUrl}
-            alt="Background"
-            className="w-full h-full object-cover grayscale scale-105 transition-all duration-500"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover grayscale scale-105 transition-opacity duration-500"
             style={{
               opacity: bgSettings.imageOpacity / 100,
               filter: bgSettings.imageBlur > 0 ? `blur(${bgSettings.imageBlur}px)` : undefined,
@@ -376,7 +376,6 @@ const AppContent: React.FC = () => {
             {currentView === 'alerts' && (
               <div className="w-full h-full">
                 <PlaceholderView
-                  icon={AlertCircle}
                   title="Upozornění"
                   description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
                 />

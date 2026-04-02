@@ -1328,199 +1328,227 @@ function AuthProvider(param) {
             refreshModules();
         }
     }["AuthProvider.useEffect"], []);
-    const refreshModules = async ()=>{
-        if (!__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["isSupabaseConfigured"] || !__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"]) {
-            // Default modules if no Supabase
-            setModules([
-                {
-                    id: 'dashboard',
-                    name: 'Dashboard',
-                    description: 'Přehled operačních sálů',
-                    is_enabled: true,
-                    icon: 'LayoutGrid',
-                    accent_color: '#00D8C1',
-                    sort_order: 1
-                },
-                {
-                    id: 'timeline',
-                    name: 'Timeline',
-                    description: 'Časová osa operací',
-                    is_enabled: true,
-                    icon: 'Calendar',
-                    accent_color: '#A855F7',
-                    sort_order: 2
-                },
-                {
-                    id: 'statistics',
-                    name: 'Statistiky',
-                    description: 'Statistiky a analýzy',
-                    is_enabled: true,
-                    icon: 'BarChart3',
-                    accent_color: '#06B6D4',
-                    sort_order: 3
-                },
-                {
-                    id: 'staff',
-                    name: 'Personál',
-                    description: 'Správa personálu',
-                    is_enabled: true,
-                    icon: 'Users',
-                    accent_color: '#10B981',
-                    sort_order: 4
-                },
-                {
-                    id: 'alerts',
-                    name: 'Upozornění',
-                    description: 'Systém upozornění',
-                    is_enabled: true,
-                    icon: 'Bell',
-                    accent_color: '#EC4899',
-                    sort_order: 5
-                },
-                {
-                    id: 'settings',
-                    name: 'Nastavení',
-                    description: 'Konfigurace systému',
-                    is_enabled: true,
-                    icon: 'Settings',
-                    accent_color: '#64748B',
-                    sort_order: 6
+    const refreshModules = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AuthProvider.useCallback[refreshModules]": async ()=>{
+            if (!__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["isSupabaseConfigured"] || !__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"]) {
+                // Default modules if no Supabase
+                setModules([
+                    {
+                        id: 'dashboard',
+                        name: 'Dashboard',
+                        description: 'Přehled operačních sálů',
+                        is_enabled: true,
+                        icon: 'LayoutGrid',
+                        accent_color: '#00D8C1',
+                        sort_order: 1
+                    },
+                    {
+                        id: 'timeline',
+                        name: 'Timeline',
+                        description: 'Časová osa operací',
+                        is_enabled: true,
+                        icon: 'Calendar',
+                        accent_color: '#A855F7',
+                        sort_order: 2
+                    },
+                    {
+                        id: 'statistics',
+                        name: 'Statistiky',
+                        description: 'Statistiky a analýzy',
+                        is_enabled: true,
+                        icon: 'BarChart3',
+                        accent_color: '#06B6D4',
+                        sort_order: 3
+                    },
+                    {
+                        id: 'staff',
+                        name: 'Personál',
+                        description: 'Správa personálu',
+                        is_enabled: true,
+                        icon: 'Users',
+                        accent_color: '#10B981',
+                        sort_order: 4
+                    },
+                    {
+                        id: 'alerts',
+                        name: 'Upozornění',
+                        description: 'Systém upozornění',
+                        is_enabled: true,
+                        icon: 'Bell',
+                        accent_color: '#EC4899',
+                        sort_order: 5
+                    },
+                    {
+                        id: 'settings',
+                        name: 'Nastavení',
+                        description: 'Konfigurace systému',
+                        is_enabled: true,
+                        icon: 'Settings',
+                        accent_color: '#64748B',
+                        sort_order: 6
+                    }
+                ]);
+                return;
+            }
+            try {
+                const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('app_modules').select('*').order('sort_order', {
+                    ascending: true
+                });
+                if (error) throw error;
+                if (data) setModules(data);
+            } catch (error) {
+                console.error('[Auth] Failed to fetch modules:', error);
+            }
+        }
+    }["AuthProvider.useCallback[refreshModules]"], []);
+    const login = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AuthProvider.useCallback[login]": async (email, password)=>{
+            // For demo purposes, allow simple password check
+            // In production, use proper bcrypt comparison on server side
+            if (!__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["isSupabaseConfigured"] || !__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"]) {
+                // Demo mode - allow admin/user login
+                if (email === 'admin@nemocnice.cz' && password === 'admin123') {
+                    const demoUser = {
+                        id: '1',
+                        email,
+                        name: 'Administrátor',
+                        role: 'admin',
+                        is_active: true
+                    };
+                    setUser(demoUser);
+                    localStorage.setItem('app_user', JSON.stringify(demoUser));
+                    return {
+                        success: true
+                    };
                 }
-            ]);
-            return;
-        }
-        try {
-            const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('app_modules').select('*').order('sort_order', {
-                ascending: true
-            });
-            if (error) throw error;
-            if (data) setModules(data);
-        } catch (error) {
-            console.error('[Auth] Failed to fetch modules:', error);
-        }
-    };
-    const login = async (email, password)=>{
-        // For demo purposes, allow simple password check
-        // In production, use proper bcrypt comparison on server side
-        if (!__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["isSupabaseConfigured"] || !__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"]) {
-            // Demo mode - allow admin/user login
-            if (email === 'admin@nemocnice.cz' && password === 'admin123') {
-                const demoUser = {
-                    id: '1',
-                    email,
-                    name: 'Administrátor',
-                    role: 'admin',
-                    is_active: true
-                };
-                setUser(demoUser);
-                localStorage.setItem('app_user', JSON.stringify(demoUser));
-                return {
-                    success: true
-                };
-            }
-            if (email === 'user@nemocnice.cz' && password === 'user123') {
-                const demoUser = {
-                    id: '2',
-                    email,
-                    name: 'Uživatel',
-                    role: 'user',
-                    is_active: true
-                };
-                setUser(demoUser);
-                localStorage.setItem('app_user', JSON.stringify(demoUser));
-                return {
-                    success: true
-                };
-            }
-            return {
-                success: false,
-                error: 'Neplatné přihlašovací údaje'
-            };
-        }
-        try {
-            // Fetch user from database
-            const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('app_users').select('*').eq('email', email).eq('is_active', true).single();
-            if (error || !data) {
+                if (email === 'user@nemocnice.cz' && password === 'user123') {
+                    const demoUser = {
+                        id: '2',
+                        email,
+                        name: 'Uživatel',
+                        role: 'user',
+                        is_active: true
+                    };
+                    setUser(demoUser);
+                    localStorage.setItem('app_user', JSON.stringify(demoUser));
+                    return {
+                        success: true
+                    };
+                }
                 return {
                     success: false,
                     error: 'Neplatné přihlašovací údaje'
                 };
             }
-            // For demo, accept any password that matches the simple check
-            // In production, implement proper bcrypt comparison
-            if (password === 'admin123' || password === 'user123') {
-                const loggedInUser = {
-                    id: data.id,
-                    email: data.email,
-                    name: data.name,
-                    role: data.role,
-                    is_active: data.is_active
-                };
-                setUser(loggedInUser);
-                localStorage.setItem('app_user', JSON.stringify(loggedInUser));
-                await refreshModules();
+            try {
+                // Fetch user from database
+                const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('app_users').select('*').eq('email', email).eq('is_active', true).single();
+                if (error || !data) {
+                    return {
+                        success: false,
+                        error: 'Neplatné přihlašovací údaje'
+                    };
+                }
+                // For demo, accept any password that matches the simple check
+                // In production, implement proper bcrypt comparison
+                if (password === 'admin123' || password === 'user123') {
+                    const loggedInUser = {
+                        id: data.id,
+                        email: data.email,
+                        name: data.name,
+                        role: data.role,
+                        is_active: data.is_active
+                    };
+                    setUser(loggedInUser);
+                    localStorage.setItem('app_user', JSON.stringify(loggedInUser));
+                    await refreshModules();
+                    return {
+                        success: true
+                    };
+                }
                 return {
-                    success: true
+                    success: false,
+                    error: 'Neplatné přihlašovací údaje'
+                };
+            } catch (error) {
+                console.error('[Auth] Login error:', error);
+                return {
+                    success: false,
+                    error: 'Chyba při přihlašování'
                 };
             }
-            return {
-                success: false,
-                error: 'Neplatné přihlašovací údaje'
-            };
-        } catch (error) {
-            console.error('[Auth] Login error:', error);
-            return {
-                success: false,
-                error: 'Chyba při přihlašování'
-            };
         }
-    };
-    const logout = ()=>{
-        setUser(null);
-        localStorage.removeItem('app_user');
-    };
-    const toggleModule = async (moduleId, enabled)=>{
-        if (!__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["isSupabaseConfigured"] || !__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"]) {
-            // Demo mode - update local state
-            setModules((prev)=>prev.map((m)=>m.id === moduleId ? {
-                        ...m,
-                        is_enabled: enabled
-                    } : m));
-            return true;
+    }["AuthProvider.useCallback[login]"], [
+        refreshModules
+    ]);
+    const logout = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AuthProvider.useCallback[logout]": ()=>{
+            setUser(null);
+            localStorage.removeItem('app_user');
         }
-        try {
-            const { error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('app_modules').update({
-                is_enabled: enabled,
-                updated_at: new Date().toISOString()
-            }).eq('id', moduleId);
-            if (error) throw error;
-            await refreshModules();
-            return true;
-        } catch (error) {
-            console.error('[Auth] Failed to toggle module:', error);
-            return false;
+    }["AuthProvider.useCallback[logout]"], []);
+    const toggleModule = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AuthProvider.useCallback[toggleModule]": async (moduleId, enabled)=>{
+            if (!__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["isSupabaseConfigured"] || !__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"]) {
+                // Demo mode - update local state
+                setModules({
+                    "AuthProvider.useCallback[toggleModule]": (prev)=>prev.map({
+                            "AuthProvider.useCallback[toggleModule]": (m)=>m.id === moduleId ? {
+                                    ...m,
+                                    is_enabled: enabled
+                                } : m
+                        }["AuthProvider.useCallback[toggleModule]"])
+                }["AuthProvider.useCallback[toggleModule]"]);
+                return true;
+            }
+            try {
+                const { error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('app_modules').update({
+                    is_enabled: enabled,
+                    updated_at: new Date().toISOString()
+                }).eq('id', moduleId);
+                if (error) throw error;
+                await refreshModules();
+                return true;
+            } catch (error) {
+                console.error('[Auth] Failed to toggle module:', error);
+                return false;
+            }
         }
-    };
+    }["AuthProvider.useCallback[toggleModule]"], [
+        refreshModules
+    ]);
+    // Memoize context value to prevent unnecessary re-renders
+    const contextValue = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "AuthProvider.useMemo[contextValue]": ()=>({
+                user,
+                isLoading,
+                isAuthenticated: !!user,
+                isAdmin: (user === null || user === void 0 ? void 0 : user.role) === 'admin',
+                modules,
+                login,
+                logout,
+                refreshModules,
+                toggleModule
+            })
+    }["AuthProvider.useMemo[contextValue]"], [
+        user,
+        isLoading,
+        modules,
+        login,
+        logout,
+        refreshModules,
+        toggleModule
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(AuthContext.Provider, {
-        value: {
-            user,
-            isLoading,
-            isAuthenticated: !!user,
-            isAdmin: (user === null || user === void 0 ? void 0 : user.role) === 'admin',
-            modules,
-            login,
-            logout,
-            refreshModules,
-            toggleModule
-        },
+        value: contextValue,
         children: children
     }, void 0, false, {
         fileName: "[project]/contexts/AuthContext.tsx",
-        lineNumber: 168,
+        lineNumber: 181,
         columnNumber: 5
     }, this);
 }
-_s(AuthProvider, "MW60Hxd3IbF+Gam452LvbwVwCh0=");
+_s(AuthProvider, "nbtPy5LOjc60xcKsj5KHQKF7mhE=");
 _c = AuthProvider;
 function useAuth() {
     _s1();
@@ -1601,31 +1629,39 @@ const WorkflowStatusesProvider = (param)=>{
             }
         }
     }["WorkflowStatusesProvider.useCallback[fetchStatuses]"], []);
-    const updateStatus = async (id, updates)=>{
-        // IMMEDIATELY update local state for responsive UI
-        setStatuses((prev)=>prev.map((s)=>s.id === id ? {
-                    ...s,
-                    ...updates
-                } : s));
-        try {
-            const dbUpdates = {};
-            if (updates.color !== undefined) dbUpdates.accent_color = updates.color;
-            if (updates.is_active !== undefined) dbUpdates.is_active = updates.is_active;
-            if (updates.count_in_statistics !== undefined) dbUpdates.include_in_statistics = updates.count_in_statistics;
-            if (updates.default_duration !== undefined) dbUpdates.default_duration_minutes = updates.default_duration;
-            if (updates.show_in_timeline !== undefined) dbUpdates.show_in_timeline = updates.show_in_timeline;
-            if (updates.show_in_room_detail !== undefined) dbUpdates.show_in_room_detail = updates.show_in_room_detail;
-            if (updates.name !== undefined) dbUpdates.name = updates.name;
-            if (updates.description !== undefined) dbUpdates.description = updates.description;
-            const { error: updateError } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('workflow_statuses').update(dbUpdates).eq('id', id).select();
-            if (updateError) throw updateError;
-        } catch (err) {
-            console.error('[v0] Error updating workflow status:', err);
-            setError(err instanceof Error ? err.message : 'Neznámá chyba');
-            // Revert on error
-            await fetchStatuses();
+    const updateStatus = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "WorkflowStatusesProvider.useCallback[updateStatus]": async (id, updates)=>{
+            // IMMEDIATELY update local state for responsive UI
+            setStatuses({
+                "WorkflowStatusesProvider.useCallback[updateStatus]": (prev)=>prev.map({
+                        "WorkflowStatusesProvider.useCallback[updateStatus]": (s)=>s.id === id ? {
+                                ...s,
+                                ...updates
+                            } : s
+                    }["WorkflowStatusesProvider.useCallback[updateStatus]"])
+            }["WorkflowStatusesProvider.useCallback[updateStatus]"]);
+            try {
+                const dbUpdates = {};
+                if (updates.color !== undefined) dbUpdates.accent_color = updates.color;
+                if (updates.is_active !== undefined) dbUpdates.is_active = updates.is_active;
+                if (updates.count_in_statistics !== undefined) dbUpdates.include_in_statistics = updates.count_in_statistics;
+                if (updates.default_duration !== undefined) dbUpdates.default_duration_minutes = updates.default_duration;
+                if (updates.show_in_timeline !== undefined) dbUpdates.show_in_timeline = updates.show_in_timeline;
+                if (updates.show_in_room_detail !== undefined) dbUpdates.show_in_room_detail = updates.show_in_room_detail;
+                if (updates.name !== undefined) dbUpdates.name = updates.name;
+                if (updates.description !== undefined) dbUpdates.description = updates.description;
+                const { error: updateError } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["supabase"].from('workflow_statuses').update(dbUpdates).eq('id', id).select();
+                if (updateError) throw updateError;
+            } catch (err) {
+                console.error('[v0] Error updating workflow status:', err);
+                setError(err instanceof Error ? err.message : 'Neznámá chyba');
+                // Revert on error
+                await fetchStatuses();
+            }
         }
-    };
+    }["WorkflowStatusesProvider.useCallback[updateStatus]"], [
+        fetchStatuses
+    ]);
     const getActiveStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "WorkflowStatusesProvider.useCallback[getActiveStatuses]": ()=>{
             return statuses.filter({
@@ -1698,28 +1734,58 @@ const WorkflowStatusesProvider = (param)=>{
     }["WorkflowStatusesProvider.useEffect"], [
         fetchStatuses
     ]);
-    const value = {
+    // Memoize computed values
+    const activeStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "WorkflowStatusesProvider.useMemo[activeStatuses]": ()=>getActiveStatuses()
+    }["WorkflowStatusesProvider.useMemo[activeStatuses]"], [
+        getActiveStatuses
+    ]);
+    const workflowStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "WorkflowStatusesProvider.useMemo[workflowStatuses]": ()=>getWorkflowStatuses()
+    }["WorkflowStatusesProvider.useMemo[workflowStatuses]"], [
+        getWorkflowStatuses
+    ]);
+    const statisticsStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "WorkflowStatusesProvider.useMemo[statisticsStatuses]": ()=>getStatisticsStatuses()
+    }["WorkflowStatusesProvider.useMemo[statisticsStatuses]"], [
+        getStatisticsStatuses
+    ]);
+    // Memoize context value to prevent unnecessary re-renders
+    const value = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "WorkflowStatusesProvider.useMemo[value]": ()=>({
+                statuses,
+                activeStatuses,
+                workflowStatuses,
+                statisticsStatuses,
+                loading,
+                error,
+                updateStatus,
+                getStatusByIndex,
+                getStatusColor,
+                refreshStatuses: fetchStatuses
+            })
+    }["WorkflowStatusesProvider.useMemo[value]"], [
         statuses,
-        activeStatuses: getActiveStatuses(),
-        workflowStatuses: getWorkflowStatuses(),
-        statisticsStatuses: getStatisticsStatuses(),
+        activeStatuses,
+        workflowStatuses,
+        statisticsStatuses,
         loading,
         error,
         updateStatus,
         getStatusByIndex,
         getStatusColor,
-        refreshStatuses: fetchStatuses
-    };
+        fetchStatuses
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(WorkflowStatusesContext.Provider, {
         value: value,
         children: children
     }, void 0, false, {
         fileName: "[project]/contexts/WorkflowStatusesContext.tsx",
-        lineNumber: 192,
+        lineNumber: 198,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
-_s(WorkflowStatusesProvider, "qzhfhVePZCKBq2yB6vBzTHPE7A8=");
+_s(WorkflowStatusesProvider, "dnESUr4Gvi9iDo1/Fc01fkpgueU=");
 _c = WorkflowStatusesProvider;
 const useWorkflowStatusesContext = ()=>{
     _s1();
@@ -1893,23 +1959,22 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$Sidebar$2e$tsx
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$MobileNav$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/MobileNav.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$RoomCard$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/RoomCard.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$RoomDetail$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/RoomDetail.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$PlaceholderView$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/PlaceholderView.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$TimelineModule$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/TimelineModule.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StatisticsModule$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/StatisticsModule.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StaffManager$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/StaffManager.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$SettingsPage$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/SettingsPage.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$AdminModule$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/AdminModule.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$PlaceholderView$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/PlaceholderView.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$AnimatedCounter$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/AnimatedCounter.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ErrorBoundary$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/ErrorBoundary.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/constants.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/activity.js [app-client] (ecmascript) <export default as Activity>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layout$2d$grid$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LayoutGrid$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/layout-grid.js [app-client] (ecmascript) <export default as LayoutGrid>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$shield$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Shield$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/shield.js [app-client] (ecmascript) <export default as Shield>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/circle-alert.js [app-client] (ecmascript) <export default as AlertCircle>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$TimelineModule$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/TimelineModule.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StatisticsModule$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/StatisticsModule.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/db.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$AuthContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/contexts/AuthContext.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/contexts/WorkflowStatusesContext.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$LoginPage$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/LoginPage.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$AdminModule$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/AdminModule.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$useEmergencyAlert$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/hooks/useEmergencyAlert.ts [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature();
@@ -2088,120 +2153,182 @@ const AppContent = ()=>{
         currentView,
         isModuleEnabled
     ]);
-    // Show login if not authenticated
+    const updateRoomStep = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AppContent.useCallback[updateRoomStep]": async (roomId, newStepIndex)=>{
+            setRooms({
+                "AppContent.useCallback[updateRoomStep]": (prev)=>prev.map({
+                        "AppContent.useCallback[updateRoomStep]": (room)=>room.id === roomId ? {
+                                ...room,
+                                currentStepIndex: newStepIndex
+                            } : room
+                    }["AppContent.useCallback[updateRoomStep]"])
+            }["AppContent.useCallback[updateRoomStep]"]);
+            if (isDbConnected) {
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
+                    current_step_index: newStepIndex
+                });
+            }
+        }
+    }["AppContent.useCallback[updateRoomStep]"], [
+        isDbConnected
+    ]);
+    const toggleEmergency = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AppContent.useCallback[toggleEmergency]": async (roomId)=>{
+            const room = rooms.find({
+                "AppContent.useCallback[toggleEmergency].room": (r)=>r.id === roomId
+            }["AppContent.useCallback[toggleEmergency].room"]);
+            const newValue = !(room === null || room === void 0 ? void 0 : room.isEmergency);
+            setRooms({
+                "AppContent.useCallback[toggleEmergency]": (prev)=>prev.map({
+                        "AppContent.useCallback[toggleEmergency]": (r)=>r.id === roomId ? {
+                                ...r,
+                                isEmergency: newValue
+                            } : r
+                    }["AppContent.useCallback[toggleEmergency]"])
+            }["AppContent.useCallback[toggleEmergency]"]);
+            if (isDbConnected) {
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
+                    is_emergency: newValue
+                });
+            }
+        }
+    }["AppContent.useCallback[toggleEmergency]"], [
+        rooms,
+        isDbConnected
+    ]);
+    const toggleLock = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AppContent.useCallback[toggleLock]": async (roomId)=>{
+            const room = rooms.find({
+                "AppContent.useCallback[toggleLock].room": (r)=>r.id === roomId
+            }["AppContent.useCallback[toggleLock].room"]);
+            const newValue = !(room === null || room === void 0 ? void 0 : room.isLocked);
+            setRooms({
+                "AppContent.useCallback[toggleLock]": (prev)=>prev.map({
+                        "AppContent.useCallback[toggleLock]": (r)=>r.id === roomId ? {
+                                ...r,
+                                isLocked: newValue
+                            } : r
+                    }["AppContent.useCallback[toggleLock]"])
+            }["AppContent.useCallback[toggleLock]"]);
+            if (isDbConnected) {
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
+                    is_locked: newValue
+                });
+            }
+        }
+    }["AppContent.useCallback[toggleLock]"], [
+        rooms,
+        isDbConnected
+    ]);
+    const handleUpdateRoomEndTime = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AppContent.useCallback[handleUpdateRoomEndTime]": async (roomId, newTime)=>{
+            setRooms({
+                "AppContent.useCallback[handleUpdateRoomEndTime]": (prev)=>prev.map({
+                        "AppContent.useCallback[handleUpdateRoomEndTime]": (room)=>room.id === roomId ? {
+                                ...room,
+                                estimatedEndTime: newTime ? newTime.toISOString() : undefined
+                            } : room
+                    }["AppContent.useCallback[handleUpdateRoomEndTime]"])
+            }["AppContent.useCallback[handleUpdateRoomEndTime]"]);
+            if (isDbConnected) {
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
+                    estimated_end_time: newTime ? newTime.toISOString() : null
+                });
+            }
+        }
+    }["AppContent.useCallback[handleUpdateRoomEndTime]"], [
+        isDbConnected
+    ]);
+    const handleEnhancedHygieneToggle = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AppContent.useCallback[handleEnhancedHygieneToggle]": async (roomId, enabled)=>{
+            setRooms({
+                "AppContent.useCallback[handleEnhancedHygieneToggle]": (prev)=>prev.map({
+                        "AppContent.useCallback[handleEnhancedHygieneToggle]": (room)=>room.id === roomId ? {
+                                ...room,
+                                isEnhancedHygiene: enabled
+                            } : room
+                    }["AppContent.useCallback[handleEnhancedHygieneToggle]"])
+            }["AppContent.useCallback[handleEnhancedHygieneToggle]"]);
+            if (isDbConnected) {
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
+                    is_enhanced_hygiene: enabled
+                });
+            }
+        }
+    }["AppContent.useCallback[handleEnhancedHygieneToggle]"], [
+        isDbConnected
+    ]);
+    const handleUpdateWeeklySchedule = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AppContent.useCallback[handleUpdateWeeklySchedule]": async (roomId, schedule)=>{
+            setRooms({
+                "AppContent.useCallback[handleUpdateWeeklySchedule]": (prev)=>prev.map({
+                        "AppContent.useCallback[handleUpdateWeeklySchedule]": (room)=>room.id === roomId ? {
+                                ...room,
+                                weeklySchedule: schedule
+                            } : room
+                    }["AppContent.useCallback[handleUpdateWeeklySchedule]"])
+            }["AppContent.useCallback[handleUpdateWeeklySchedule]"]);
+            if (isDbConnected) {
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
+                    weekly_schedule: schedule
+                });
+            }
+        }
+    }["AppContent.useCallback[handleUpdateWeeklySchedule]"], [
+        isDbConnected
+    ]);
+    const handleStaffChange = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "AppContent.useCallback[handleStaffChange]": async (roomId, role, staffId, staffName)=>{
+            // Update local state
+            setRooms({
+                "AppContent.useCallback[handleStaffChange]": (prev)=>prev.map({
+                        "AppContent.useCallback[handleStaffChange]": (room)=>{
+                            if (room.id !== roomId) return room;
+                            const updatedStaff = {
+                                ...room.staff
+                            };
+                            if (role === 'doctor') {
+                                updatedStaff.doctor = {
+                                    name: staffName,
+                                    role: 'DOCTOR'
+                                };
+                            } else if (role === 'nurse') {
+                                updatedStaff.nurse = {
+                                    name: staffName,
+                                    role: 'NURSE'
+                                };
+                            } else if (role === 'anesthesiologist') {
+                                updatedStaff.anesthesiologist = {
+                                    name: staffName,
+                                    role: 'ANESTHESIOLOGIST'
+                                };
+                            }
+                            return {
+                                ...room,
+                                staff: updatedStaff
+                            };
+                        }
+                    }["AppContent.useCallback[handleStaffChange]"])
+            }["AppContent.useCallback[handleStaffChange]"]);
+            // Update database
+            if (isDbConnected) {
+                const dbField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
+                    [dbField]: staffId
+                });
+            }
+        }
+    }["AppContent.useCallback[handleStaffChange]"], [
+        isDbConnected
+    ]);
+    // Show login if not authenticated - must be after all hooks
     if (!isAuthenticated) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$LoginPage$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
             fileName: "[project]/App.tsx",
-            lineNumber: 139,
+            lineNumber: 231,
             columnNumber: 12
         }, ("TURBOPACK compile-time value", void 0));
     }
-    const updateRoomStep = async (roomId, newStepIndex)=>{
-        setRooms((prev)=>prev.map((room)=>room.id === roomId ? {
-                    ...room,
-                    currentStepIndex: newStepIndex
-                } : room));
-        if (isDbConnected) {
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
-                current_step_index: newStepIndex
-            });
-        }
-    };
-    const toggleEmergency = async (roomId)=>{
-        const room = rooms.find((r)=>r.id === roomId);
-        const newValue = !(room === null || room === void 0 ? void 0 : room.isEmergency);
-        setRooms((prev)=>prev.map((r)=>r.id === roomId ? {
-                    ...r,
-                    isEmergency: newValue
-                } : r));
-        if (isDbConnected) {
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
-                is_emergency: newValue
-            });
-        }
-    };
-    const toggleLock = async (roomId)=>{
-        const room = rooms.find((r)=>r.id === roomId);
-        const newValue = !(room === null || room === void 0 ? void 0 : room.isLocked);
-        setRooms((prev)=>prev.map((r)=>r.id === roomId ? {
-                    ...r,
-                    isLocked: newValue
-                } : r));
-        if (isDbConnected) {
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
-                is_locked: newValue
-            });
-        }
-    };
-    const handleUpdateRoomEndTime = async (roomId, newTime)=>{
-        setRooms((prev)=>prev.map((room)=>room.id === roomId ? {
-                    ...room,
-                    estimatedEndTime: newTime ? newTime.toISOString() : undefined
-                } : room));
-        if (isDbConnected) {
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
-                estimated_end_time: newTime ? newTime.toISOString() : null
-            });
-        }
-    };
-    const handleEnhancedHygieneToggle = async (roomId, enabled)=>{
-        setRooms((prev)=>prev.map((room)=>room.id === roomId ? {
-                    ...room,
-                    isEnhancedHygiene: enabled
-                } : room));
-        if (isDbConnected) {
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
-                is_enhanced_hygiene: enabled
-            });
-        }
-    };
-    const handleUpdateWeeklySchedule = async (roomId, schedule)=>{
-        setRooms((prev)=>prev.map((room)=>room.id === roomId ? {
-                    ...room,
-                    weeklySchedule: schedule
-                } : room));
-        if (isDbConnected) {
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
-                weekly_schedule: schedule
-            });
-        }
-    };
-    const handleStaffChange = async (roomId, role, staffId, staffName)=>{
-        // Update local state
-        setRooms((prev)=>prev.map((room)=>{
-                if (room.id !== roomId) return room;
-                const updatedStaff = {
-                    ...room.staff
-                };
-                if (role === 'doctor') {
-                    updatedStaff.doctor = {
-                        name: staffName,
-                        role: 'DOCTOR'
-                    };
-                } else if (role === 'nurse') {
-                    updatedStaff.nurse = {
-                        name: staffName,
-                        role: 'NURSE'
-                    };
-                } else if (role === 'anesthesiologist') {
-                    updatedStaff.anesthesiologist = {
-                        name: staffName,
-                        role: 'ANESTHESIOLOGIST'
-                    };
-                }
-                return {
-                    ...room,
-                    staff: updatedStaff
-                };
-            }));
-        // Update database
-        if (isDbConnected) {
-            const dbField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
-                [dbField]: staffId
-            });
-        }
-    };
     var _bgSettings_opacity;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ErrorBoundary$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ErrorBoundary"], {
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2212,15 +2339,17 @@ const AppContent = ()=>{
                     children: [
                         bgSettings.imageUrl && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
                             src: bgSettings.imageUrl,
-                            alt: "Background",
-                            className: "w-full h-full object-cover grayscale scale-105 transition-all duration-500",
+                            alt: "",
+                            loading: "lazy",
+                            decoding: "async",
+                            className: "w-full h-full object-cover grayscale scale-105 transition-opacity duration-500",
                             style: {
                                 opacity: bgSettings.imageOpacity / 100,
                                 filter: bgSettings.imageBlur > 0 ? "blur(".concat(bgSettings.imageBlur, "px)") : undefined
                             }
                         }, void 0, false, {
                             fileName: "[project]/App.tsx",
-                            lineNumber: 243,
+                            lineNumber: 241,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2237,7 +2366,7 @@ const AppContent = ()=>{
                     ]
                 }, void 0, true, {
                     fileName: "[project]/App.tsx",
-                    lineNumber: 240,
+                    lineNumber: 238,
                     columnNumber: 7
                 }, ("TURBOPACK compile-time value", void 0)),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$Sidebar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2513,7 +2642,6 @@ const AppContent = ()=>{
                             currentView === 'alerts' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "w-full h-full",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$PlaceholderView$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
-                                    icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"],
                                     title: "Upozornění",
                                     description: "Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
                                 }, void 0, false, {
@@ -2535,12 +2663,12 @@ const AppContent = ()=>{
                                     resetTrigger: settingsResetTrigger
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 389,
+                                    lineNumber: 388,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 388,
+                                lineNumber: 387,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'admin' && isAdmin && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2549,12 +2677,12 @@ const AppContent = ()=>{
                                     onClose: ()=>setCurrentView('dashboard')
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 401,
+                                    lineNumber: 400,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 400,
+                                lineNumber: 399,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
@@ -2571,16 +2699,16 @@ const AppContent = ()=>{
             ]
         }, void 0, true, {
             fileName: "[project]/App.tsx",
-            lineNumber: 238,
+            lineNumber: 236,
             columnNumber: 5
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/App.tsx",
-        lineNumber: 237,
+        lineNumber: 235,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
-_s(AppContent, "pdhCrp/GWvKmiyw8IQvQf1J22jw=", false, function() {
+_s(AppContent, "LbiBN+vkEJSDbrUmm3oiMYfrr+g=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$AuthContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useAuth"],
         __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$useEmergencyAlert$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEmergencyAlert"]
@@ -2593,17 +2721,17 @@ const App = ()=>{
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WorkflowStatusesProvider"], {
             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(AppContent, {}, void 0, false, {
                 fileName: "[project]/App.tsx",
-                lineNumber: 416,
+                lineNumber: 415,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0))
         }, void 0, false, {
             fileName: "[project]/App.tsx",
-            lineNumber: 415,
+            lineNumber: 414,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/App.tsx",
-        lineNumber: 414,
+        lineNumber: 413,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };

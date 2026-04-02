@@ -1,10 +1,8 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Pause } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -13,31 +11,46 @@ interface RoomCardProps {
   onLock?: (e: React.MouseEvent) => void;
 }
 
-const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
+const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Get ONLY main workflow statuses (bez speciálních)
-  const activeDbStatuses = workflowStatuses
-    .filter(s => s.is_active && !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
+  // Memoize filtered statuses
+  const activeDbStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => a.order_index - b.order_index),
+    [workflowStatuses]
+  );
   
-  // Get step from database
-  const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
-  const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-  const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
+  // Memoize computed values
+  const { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
+    const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+    const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+    const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
+    
+    const currentStep = {
+      title: dbStatus?.name || 'Status',
+      color: dbStatus?.color || '#6B7280',
+    };
+    
+    const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
+    const progressPercent = ((safeIndex + 1) / totalSteps);
+    
+    // Don't show time for "Sál připraven" and "Úklid sálu" statuses
+    const statusName = dbStatus?.name?.toLowerCase() || '';
+    const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
+    const isCleaningStatus = statusName.includes('úklid') || statusName.includes('uklid');
+    const shouldShowTime = !isReadyStatus && !isCleaningStatus;
+    
+    const radius = 38;
+    const strokeDasharray = 2 * Math.PI * radius;
+    const strokeDashoffset = strokeDasharray * (1 - progressPercent);
+    
+    return { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
+  }, [activeDbStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
   
-  const currentStep = {
-    title: dbStatus?.name || 'Status',
-    color: dbStatus?.color || '#6B7280',
-  };
-  
-  const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
-  const progressPercent = ((safeIndex + 1) / totalSteps);
-  const isFinalStep = safeIndex === activeDbStatuses.length - 1;
   const radius = 38;
   const strokeWidth = 4;
-  const strokeDasharray = 2 * Math.PI * radius;
-  const strokeDashoffset = strokeDasharray * (1 - progressPercent);
 
   const center = 56;
 
@@ -103,20 +116,14 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
         {/* Central Content Wrapper */}
         <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <div className="relative flex items-center justify-center">
-                {/* Animated glow behind the circle */}
-                <motion.div
-                  className="absolute rounded-full blur-[40px]"
-                  style={{ width: 80, height: 80, backgroundColor: themeColor }}
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 0.25, scale: 1 }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                {/* Static glow behind the circle - replaced motion for performance */}
+                <div
+                  className="absolute rounded-full blur-[40px] transition-all duration-500"
+                  style={{ width: 80, height: 80, backgroundColor: themeColor, opacity: 0.25 }}
                 />
-                <motion.svg
+                <svg
                   className="w-28 h-28 overflow-visible select-none flex-shrink-0"
-                  style={{ rotate: '-90deg' }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.7, ease: 'easeOut' }}
+                  style={{ transform: 'rotate(-90deg)' }}
                 >
                     <circle 
                       cx={center} cy={center} r={radius} 
@@ -125,16 +132,15 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                       strokeWidth="1.5" 
                       className="opacity-[0.03]" 
                     />
-                    <motion.circle 
+                    <circle 
                       cx={center} cy={center} r={radius} 
                       fill="none"
                       stroke={themeColor} 
                       strokeWidth={strokeWidth} 
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
-                      initial={{ strokeDashoffset: strokeDasharray }}
-                      animate={{ strokeDashoffset: room.isPaused ? 0 : strokeDashoffset }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
+                      strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
+                      className="transition-all duration-500"
                       style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
                     />
                     {room.isPaused ? (
@@ -171,10 +177,10 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                         {room.operations24h}
                       </text>
                     )}
-                </motion.svg>
+                </svg>
             </div>
             
-            {room.estimatedEndTime && !isFinalStep && (
+            {room.estimatedEndTime && shouldShowTime && (
                 <div className="-mt-1 text-center">
                     <div className="flex items-center gap-1.5 justify-center">
                       <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
@@ -272,6 +278,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
       </div>
     </div>
   );
-};
+});
 
 export default RoomCard;

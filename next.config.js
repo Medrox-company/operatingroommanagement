@@ -12,6 +12,16 @@ const nextConfig = {
       },
     ],
   },
+  // Performance optimizations
+  reactStrictMode: true,
+  compiler: {
+    // Remove console.log in production for smaller bundle
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  experimental: {
+    // Optimize package imports to reduce bundle size
+    optimizePackageImports: ['lucide-react', 'framer-motion', 'recharts'],
+  },
 }
 
 module.exports = nextConfig

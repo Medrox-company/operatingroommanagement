@@ -57,22 +57,26 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
 
+  // Update elapsed time every second
   useEffect(() => {
     if (isPaused) return;
-    const timer = setInterval(() => {
+    
+    const updateElapsedTime = () => {
       const now = new Date();
       const diff = now.getTime() - phaseStartTime.getTime();
-      
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
-      
       setElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updateElapsedTime();
+    const timer = setInterval(updateElapsedTime, 1000);
     
     return () => clearInterval(timer);
   }, [phaseStartTime, isPaused]);
 
+  // Update pause time every second
   useEffect(() => {
     if (!isPaused) {
       setPauseElapsedTime('00:00');
@@ -80,14 +84,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
 
     const pauseStartTime = new Date();
-    const timer = setInterval(() => {
+    const updatePauseTime = () => {
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       setPauseElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updatePauseTime();
+    const timer = setInterval(updatePauseTime, 1000);
 
     return () => clearInterval(timer);
   }, [isPaused]);
@@ -109,18 +116,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     };
   }, []);
 
-  // Patient call timer
+  // Patient call timer - update every second
   useEffect(() => {
     if (!patientCalledTime || patientArrivedTime) return;
 
-    patientCallTimerRef.current = window.setInterval(() => {
+    const updatePatientCallTime = () => {
       const now = new Date();
       const diff = now.getTime() - patientCalledTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       setPatientCallElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updatePatientCallTime();
+    patientCallTimerRef.current = window.setInterval(updatePatientCallTime, 1000);
 
     return () => {
       if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
@@ -192,6 +202,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
   const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
+  
+  // Don't show time only for "Sál připraven" status
+  const statusName = currentStep?.name?.toLowerCase() || '';
+  const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
+  const shouldShowTime = !isReadyStatus;
 
   // Dynamic theme color based on status
   const activeColor = room.isEmergency 
@@ -248,8 +263,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       await recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_end',
+        step_index: currentStepIndex,
+        step_name: 'Konec operace',
         duration_seconds: durationSeconds,
-        metadata: { completed_step: previousStep?.name || 'Status' },
+        metadata: { 
+          completed_step: previousStep?.name || 'Status',
+          previous_step: previousStep?.name || 'Status',
+        },
       });
     }
 
@@ -484,7 +504,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               <Minus className="w-4 h-4 text-white/60" />
             </button>
                 <p className="text-2xl font-mono font-bold text-white">
-                  {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  {estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
             <button
                   onClick={handleIncreaseTime}
@@ -1044,7 +1064,7 @@ const prevStep = activeDbStatuses.length > 0
                       UZAMČENO
                     </h2>
                   </motion.div>
-                ) : showEndTime && estimatedEndTime ? (
+                ) : showEndTime && estimatedEndTime && shouldShowTime ? (
                   <motion.div
                     key="end-time-text"
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -1144,12 +1164,14 @@ const prevStep = activeDbStatuses.length > 0
                       {currentStep.title}
                     </motion.h2>
 
-                    {/* Time display under title */}
-                    <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
-                      <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-                        {isPaused ? pauseElapsedTime : elapsedTime}
-                      </span>
-                    </div>
+                    {/* Time display under title - hide for "Sál připraven" status */}
+                    {shouldShowTime && (
+                      <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
+                        <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+                          {isPaused ? pauseElapsedTime : elapsedTime}
+                        </span>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface User {
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshModules();
   }, []);
 
-  const refreshModules = async () => {
+  const refreshModules = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
       // Default modules if no Supabase
       setModules([
@@ -78,9 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('[Auth] Failed to fetch modules:', error);
     }
-  };
+  }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     // For demo purposes, allow simple password check
     // In production, use proper bcrypt comparison on server side
     
@@ -135,14 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[Auth] Login error:', error);
       return { success: false, error: 'Chyba při přihlašování' };
     }
-  };
+  }, [refreshModules]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('app_user');
-  };
+  }, []);
 
-  const toggleModule = async (moduleId: string, enabled: boolean): Promise<boolean> => {
+  const toggleModule = useCallback(async (moduleId: string, enabled: boolean): Promise<boolean> => {
     if (!isSupabaseConfigured || !supabase) {
       // Demo mode - update local state
       setModules(prev => prev.map(m => m.id === moduleId ? { ...m, is_enabled: enabled } : m));
@@ -162,22 +162,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[Auth] Failed to toggle module:', error);
       return false;
     }
-  };
+  }, [refreshModules]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    isAdmin: user?.role === 'admin',
+    modules,
+    login,
+    logout,
+    refreshModules,
+    toggleModule,
+  }), [user, isLoading, modules, login, logout, refreshModules, toggleModule]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        isAdmin: user?.role === 'admin',
-        modules,
-        login,
-        logout,
-        refreshModules,
-        toggleModule,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

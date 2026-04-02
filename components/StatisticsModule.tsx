@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, TrendingDown, Minus, Activity,
+  TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus } from '../types';
@@ -131,7 +131,7 @@ function mergeSeg(segs:Seg[]):Seg[]{
 
 // ── Room mini card (extracted so hooks are always called at component level) ──
 interface RoomMiniCardProps { r: OperatingRoom; index: number; onClick: () => void; }
-const RoomMiniCard: React.FC<RoomMiniCardProps> = ({ r, index, onClick }) => {
+const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick }) => {
   const sc2   = statusColor(r.status);
   const tl2   = useMemo(() => mergeSeg(buildTimeline(r)), [r]);
   const utilP = buildDist(r).find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
@@ -178,7 +178,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = ({ r, index, onClick }) => {
       </div>
     </motion.button>
   );
-};
+});
 
 // ── Card primitive ────────────────────────────────────────────────────────────
 function Card({children,className='',style={}}:{children:React.ReactNode;className?:string;style?:React.CSSProperties}){
@@ -1370,4 +1370,4 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   );
 };
 
-export default StatisticsModule;
+export default memo(StatisticsModule);

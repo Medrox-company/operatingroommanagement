@@ -62,35 +62,41 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
     const [showPatientArrivedText, setShowPatientArrivedText] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const patientCallTimerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+    // Update elapsed time every second
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (isPaused) return;
-        const timer = setInterval(()=>{
+        const updateElapsedTime = ()=>{
             const now = new Date();
             const diff = now.getTime() - phaseStartTime.getTime();
             const totalSeconds = Math.floor(diff / 1000);
             const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
             const seconds = String(totalSeconds % 60).padStart(2, '0');
             setElapsedTime(`${minutes}:${seconds}`);
-        }, 1000);
+        };
+        updateElapsedTime();
+        const timer = setInterval(updateElapsedTime, 1000);
         return ()=>clearInterval(timer);
     }, [
         phaseStartTime,
         isPaused
     ]);
+    // Update pause time every second
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!isPaused) {
             setPauseElapsedTime('00:00');
             return;
         }
         const pauseStartTime = new Date();
-        const timer = setInterval(()=>{
+        const updatePauseTime = ()=>{
             const now = new Date();
             const diff = now.getTime() - pauseStartTime.getTime();
             const totalSeconds = Math.floor(diff / 1000);
             const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
             const seconds = String(totalSeconds % 60).padStart(2, '0');
             setPauseElapsedTime(`${minutes}:${seconds}`);
-        }, 1000);
+        };
+        updatePauseTime();
+        const timer = setInterval(updatePauseTime, 1000);
         return ()=>clearInterval(timer);
     }, [
         isPaused
@@ -110,17 +116,19 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
             window.removeEventListener('backgroundSettingsChanged', handleBackgroundChange);
         };
     }, []);
-    // Patient call timer
+    // Patient call timer - update every second
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!patientCalledTime || patientArrivedTime) return;
-        patientCallTimerRef.current = window.setInterval(()=>{
+        const updatePatientCallTime = ()=>{
             const now = new Date();
             const diff = now.getTime() - patientCalledTime.getTime();
             const totalSeconds = Math.floor(diff / 1000);
             const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
             const seconds = String(totalSeconds % 60).padStart(2, '0');
             setPatientCallElapsedTime(`${minutes}:${seconds}`);
-        }, 1000);
+        };
+        updatePatientCallTime();
+        patientCallTimerRef.current = window.setInterval(updatePatientCallTime, 1000);
         return ()=>{
             if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
         };
@@ -188,6 +196,10 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
     const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
     const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
     const isInteractionBlocked = isPaused || room.isLocked && isFinalStep;
+    // Don't show time only for "Sál připraven" status
+    const statusName = currentStep?.name?.toLowerCase() || '';
+    const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
+    const shouldShowTime = !isReadyStatus;
     // Dynamic theme color based on status
     const activeColor = room.isEmergency ? '#FF3B30' : room.isLocked ? '#FBBF24' : isPaused ? '#06b6d4' : currentStep?.color || '#6B7280';
     const changeStep = async (newIndex)=>{
@@ -232,9 +244,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
             await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["recordStatusEvent"])({
                 operating_room_id: room.id,
                 event_type: 'operation_end',
+                step_index: currentStepIndex,
+                step_name: 'Konec operace',
                 duration_seconds: durationSeconds,
                 metadata: {
-                    completed_step: previousStep?.name || 'Status'
+                    completed_step: previousStep?.name || 'Status',
+                    previous_step: previousStep?.name || 'Status'
                 }
             });
         }
@@ -335,7 +350,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 352,
+                                lineNumber: 372,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -345,13 +360,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 356,
+                                lineNumber: 376,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 351,
+                        lineNumber: 371,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -363,7 +378,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 363,
+                        lineNumber: 383,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -379,12 +394,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             className: "w-5 h-5 text-white/60"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 380,
+                                            lineNumber: 400,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 376,
+                                        lineNumber: 396,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -392,7 +407,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                         children: room.name
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 382,
+                                        lineNumber: 402,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -402,18 +417,18 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             className: "w-5 h-5 text-white/60"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 387,
+                                            lineNumber: 407,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 383,
+                                        lineNumber: 403,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 375,
+                                lineNumber: 395,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -439,17 +454,17 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                     children: word
                                                 }, i, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 404,
+                                                    lineNumber: 424,
                                                     columnNumber: 37
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 401,
+                                            lineNumber: 421,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, currentStep?.name, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 394,
+                                        lineNumber: 414,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -475,7 +490,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             result: "blur"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 412,
+                                                            lineNumber: 432,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("feMerge", {
@@ -484,31 +499,31 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                     in: "blur"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 414,
+                                                                    lineNumber: 434,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("feMergeNode", {
                                                                     in: "SourceGraphic"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 415,
+                                                                    lineNumber: 435,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 413,
+                                                            lineNumber: 433,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 411,
+                                                    lineNumber: 431,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 410,
+                                                lineNumber: 430,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("circle", {
@@ -520,7 +535,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 strokeWidth: "2"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 420,
+                                                lineNumber: 440,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].circle, {
@@ -558,7 +573,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 427,
+                                                lineNumber: 447,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].circle, {
@@ -583,19 +598,19 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 445,
+                                                lineNumber: 465,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 409,
+                                        lineNumber: 429,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 392,
+                                lineNumber: 412,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             !isInteractionBlocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -608,7 +623,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                 children: isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 461,
+                                lineNumber: 481,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -622,7 +637,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 children: "Ukončení"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 477,
+                                                lineNumber: 497,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -636,23 +651,23 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             className: "w-4 h-4 text-white/60"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 484,
+                                                            lineNumber: 504,
                                                             columnNumber: 15
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 479,
+                                                        lineNumber: 499,
                                                         columnNumber: 13
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                         className: "text-2xl font-mono font-bold text-white",
-                                                        children: estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
+                                                        children: estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
                                                             hour: '2-digit',
                                                             minute: '2-digit'
                                                         }) : '--:--'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 486,
+                                                        lineNumber: 506,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -663,24 +678,24 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             className: "w-4 h-4 text-white/60"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 494,
+                                                            lineNumber: 514,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 489,
+                                                        lineNumber: 509,
                                                         columnNumber: 13
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 478,
+                                                lineNumber: 498,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 476,
+                                        lineNumber: 496,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -706,13 +721,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: "w-5 h-5 text-[#00D8C1]"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 514,
+                                                        lineNumber: 534,
                                                         columnNumber: 29
                                                     }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pause$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Pause$3e$__["Pause"], {
                                                         className: "w-5 h-5 text-white/40"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 514,
+                                                        lineNumber: 534,
                                                         columnNumber: 75
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -720,13 +735,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: isPaused ? 'Pokračovat' : 'Pauza'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 515,
+                                                        lineNumber: 535,
                                                         columnNumber: 25
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 501,
+                                                lineNumber: 521,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -749,7 +764,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: `w-5 h-5 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40'}`
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 531,
+                                                        lineNumber: 551,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -757,13 +772,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: "Hygiena"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 532,
+                                                        lineNumber: 552,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 518,
+                                                lineNumber: 538,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -791,7 +806,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: `w-5 h-5 ${patientCalledTime ? 'text-green-400' : 'text-white/40'}`
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 553,
+                                                        lineNumber: 573,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -799,13 +814,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: patientCalledTime ? patientCallElapsedTime : 'Volat'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 554,
+                                                        lineNumber: 574,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 535,
+                                                lineNumber: 555,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -846,7 +861,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: `w-5 h-5 ${patientArrivedTime ? 'text-purple-400' : 'text-white/40'}`
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 583,
+                                                        lineNumber: 603,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -854,19 +869,19 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: "Příjezd"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 584,
+                                                        lineNumber: 604,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 557,
+                                                lineNumber: 577,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 500,
+                                        lineNumber: 520,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -885,12 +900,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             className: "w-4 h-4 text-violet-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 598,
+                                                            lineNumber: 618,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 597,
+                                                        lineNumber: 617,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -901,7 +916,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: "Lékař"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 601,
+                                                                lineNumber: 621,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -909,19 +924,19 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: room.staff.doctor.name || 'Nepřiřazen'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 602,
+                                                                lineNumber: 622,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 600,
+                                                        lineNumber: 620,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 590,
+                                                lineNumber: 610,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -937,12 +952,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             className: "w-4 h-4 text-emerald-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 613,
+                                                            lineNumber: 633,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 612,
+                                                        lineNumber: 632,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -953,7 +968,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: "Sestra"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 616,
+                                                                lineNumber: 636,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -961,43 +976,43 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: room.staff.nurse.name || 'Nepřiřazena'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 617,
+                                                                lineNumber: 637,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 615,
+                                                        lineNumber: 635,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 605,
+                                                lineNumber: 625,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 589,
+                                        lineNumber: 609,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 474,
+                                lineNumber: 494,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 373,
+                        lineNumber: 393,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/RoomDetail.tsx",
-                lineNumber: 349,
+                lineNumber: 369,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1007,14 +1022,14 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                         className: "absolute inset-0 z-10 pointer-events-none border-[12px] border-red-500/30"
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 630,
+                        lineNumber: 650,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     room.isLocked && !room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "absolute inset-0 z-10 pointer-events-none border-[12px] border-amber-500/20"
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 633,
+                        lineNumber: 653,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1030,27 +1045,27 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 638,
+                                lineNumber: 658,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/80"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 647,
+                                lineNumber: 667,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.9)_100%)]"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 648,
+                                lineNumber: 668,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 637,
+                        lineNumber: 657,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1060,7 +1075,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 652,
+                        lineNumber: 672,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1070,7 +1085,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 656,
+                        lineNumber: 676,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
@@ -1102,7 +1117,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 children: room.name
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 672,
+                                                lineNumber: 692,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1112,7 +1127,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: "w-8 h-8"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 680,
+                                                        lineNumber: 700,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1120,13 +1135,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: "EMERGENCY"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 681,
+                                                        lineNumber: 701,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 679,
+                                                lineNumber: 699,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             room.isLocked && !room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1136,7 +1151,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: "w-7 h-7"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 687,
+                                                        lineNumber: 707,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1144,24 +1159,24 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: "SÁL UZAMČEN"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 688,
+                                                        lineNumber: 708,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 686,
+                                                lineNumber: 706,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, room.name + room.isEmergency + room.isLocked, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 665,
+                                        lineNumber: 685,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 664,
+                                    lineNumber: 684,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1169,18 +1184,18 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                     children: "CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU"
                                 }, void 0, false, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 693,
+                                    lineNumber: 713,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/RoomDetail.tsx",
-                            lineNumber: 663,
+                            lineNumber: 683,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 662,
+                        lineNumber: 682,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     room.isEnhancedHygiene && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1191,7 +1206,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 699,
+                        lineNumber: 719,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1201,12 +1216,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                             className: "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8"
                         }, void 0, false, {
                             fileName: "[project]/components/RoomDetail.tsx",
-                            lineNumber: 714,
+                            lineNumber: 734,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 710,
+                        lineNumber: 730,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1225,7 +1240,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             className: "w-5 h-5 text-violet-400"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 728,
+                                            lineNumber: 748,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1233,18 +1248,18 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             children: room.staff.doctor.name || 'Vybrat lékaře'
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 729,
+                                            lineNumber: 749,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 727,
+                                    lineNumber: 747,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 720,
+                                lineNumber: 740,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1260,7 +1275,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             className: "w-5 h-5 text-emerald-400"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 741,
+                                            lineNumber: 761,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1268,24 +1283,24 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             children: room.staff.nurse.name || 'Vybrat sestru'
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 742,
+                                            lineNumber: 762,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 740,
+                                    lineNumber: 760,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 733,
+                                lineNumber: 753,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 718,
+                        lineNumber: 738,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1338,7 +1353,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         strokeWidth: 2
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 787,
+                                                        lineNumber: 807,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1346,13 +1361,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: patientCallElapsedTime
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 788,
+                                                        lineNumber: 808,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, "call-timer", true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 780,
+                                                lineNumber: 800,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                                                 initial: {
@@ -1374,7 +1389,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         strokeWidth: 2
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 800,
+                                                        lineNumber: 820,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1382,23 +1397,23 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: "Volat"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 801,
+                                                        lineNumber: 821,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, "call-idle", true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 793,
+                                                lineNumber: 813,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 778,
+                                            lineNumber: 798,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 753,
+                                        lineNumber: 773,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].button, {
@@ -1452,7 +1467,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 847,
+                                                lineNumber: 867,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1460,19 +1475,19 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 children: "Příjezd"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 848,
+                                                lineNumber: 868,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 808,
+                                        lineNumber: 828,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 751,
+                                lineNumber: 771,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1505,7 +1520,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 875,
+                                                lineNumber: 895,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1513,13 +1528,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 children: "Hygien."
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 876,
+                                                lineNumber: 896,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 855,
+                                        lineNumber: 875,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     !(room.isLocked && isFinalStep) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].button, {
@@ -1549,14 +1564,14 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 904,
+                                                lineNumber: 924,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pause$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Pause$3e$__["Pause"], {
                                                 className: `w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`,
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 906,
+                                                lineNumber: 926,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1564,25 +1579,25 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 children: isPaused ? 'Pokračovat' : 'Pauza'
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 908,
+                                                lineNumber: 928,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 883,
+                                        lineNumber: 903,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 853,
+                                lineNumber: 873,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 749,
+                        lineNumber: 769,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
@@ -1592,14 +1607,14 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                 className: "absolute w-[700px] h-[700px] rounded-full border border-white/5"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 917,
+                                lineNumber: 937,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 918,
+                                lineNumber: 938,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1630,7 +1645,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 935,
+                                                    lineNumber: 955,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1640,7 +1655,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 943,
+                                                    lineNumber: 963,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1651,7 +1666,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             children: "DOKONČENÁ FÁZE"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 950,
+                                                            lineNumber: 970,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1659,19 +1674,19 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             children: prevStep.title
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 953,
+                                                            lineNumber: 973,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 949,
+                                                    lineNumber: 969,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 928,
+                                            lineNumber: 948,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0));
                                     })(),
@@ -1704,7 +1719,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 974,
+                                                lineNumber: 994,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1714,7 +1729,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 983,
+                                                lineNumber: 1003,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -1732,7 +1747,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: "opacity-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 990,
+                                                        lineNumber: 1010,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].circle, {
@@ -1765,13 +1780,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         className: "opacity-80"
                                                     }, currentStepIndex, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 991,
+                                                        lineNumber: 1011,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 989,
+                                                lineNumber: 1009,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -1798,7 +1813,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1005,
+                                                lineNumber: 1025,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1809,12 +1824,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 1022,
+                                                    lineNumber: 1042,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1020,
+                                                lineNumber: 1040,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1840,7 +1855,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 className: "w-20 h-20 text-white mb-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1042,
+                                                                lineNumber: 1062,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -1848,15 +1863,15 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: "UZAMČENO"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1043,
+                                                                lineNumber: 1063,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "locked-text", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1035,
+                                                        lineNumber: 1055,
                                                         columnNumber: 19
-                                                    }, ("TURBOPACK compile-time value", void 0)) : showEndTime && estimatedEndTime ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
+                                                    }, ("TURBOPACK compile-time value", void 0)) : showEndTime && estimatedEndTime && shouldShowTime ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
                                                             opacity: 0,
                                                             scale: 0.8
@@ -1877,12 +1892,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             })
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 1054,
+                                                            lineNumber: 1074,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, "end-time-text", false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1048,
+                                                        lineNumber: 1068,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : showPatientCalledText ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -1907,7 +1922,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: "SPECIÁLNÍ STAV"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1067,
+                                                                lineNumber: 1087,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -1943,12 +1958,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                     strokeWidth: 1.5
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 1076,
+                                                                    lineNumber: 1096,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1071,
+                                                                lineNumber: 1091,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].h2, {
@@ -1968,20 +1983,20 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                     "Volání",
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, void 0, false, {
                                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                                        lineNumber: 1084,
+                                                                        lineNumber: 1104,
                                                                         columnNumber: 29
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     "pacienta"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1078,
+                                                                lineNumber: 1098,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "patient-called-text", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1059,
+                                                        lineNumber: 1079,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : showPatientArrivedText ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -2006,7 +2021,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: "SPECIÁLNÍ STAV"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1096,
+                                                                lineNumber: 1116,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -2031,12 +2046,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                     strokeWidth: 1.5
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 1105,
+                                                                    lineNumber: 1125,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1100,
+                                                                lineNumber: 1120,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].h2, {
@@ -2056,20 +2071,20 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                     "Příjezd",
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, void 0, false, {
                                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                                        lineNumber: 1113,
+                                                                        lineNumber: 1133,
                                                                         columnNumber: 30
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     "pacienta"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1107,
+                                                                lineNumber: 1127,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "patient-arrived-text", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1088,
+                                                        lineNumber: 1108,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : isPaused ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -2089,12 +2104,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                             children: "PAUZA"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 1123,
+                                                            lineNumber: 1143,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, "pause-text", false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1117,
+                                                        lineNumber: 1137,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -2112,7 +2127,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: "PROBÍHAJÍCÍ FÁZE"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1134,
+                                                                lineNumber: 1154,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].h2, {
@@ -2128,44 +2143,44 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                                 children: currentStep.title
                                                             }, currentStep.title, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1138,
+                                                                lineNumber: 1158,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            shouldShowTime && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 className: "mt-3 sm:mt-6 md:mt-8 lg:mt-10",
                                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                     className: `text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : room.isLocked ? 'text-amber-400' : 'text-white'}`,
                                                                     children: isPaused ? pauseElapsedTime : elapsedTime
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 1149,
-                                                                    columnNumber: 23
+                                                                    lineNumber: 1170,
+                                                                    columnNumber: 25
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1148,
-                                                                columnNumber: 21
+                                                                lineNumber: 1169,
+                                                                columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "current-status", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1128,
+                                                        lineNumber: 1148,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 1033,
+                                                    lineNumber: 1053,
                                                     columnNumber: 15
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1032,
+                                                lineNumber: 1052,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 962,
+                                        lineNumber: 982,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$11$2e$17_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -2191,7 +2206,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1168,
+                                                lineNumber: 1190,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2201,7 +2216,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1176,
+                                                lineNumber: 1198,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2212,7 +2227,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: isFinalStep ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1183,
+                                                        lineNumber: 1205,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -2220,25 +2235,25 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                                         children: nextStep.title
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1186,
+                                                        lineNumber: 1208,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1182,
+                                                lineNumber: 1204,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 1160,
+                                        lineNumber: 1182,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 920,
+                                lineNumber: 940,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             !isInteractionBlocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2258,12 +2273,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             strokeWidth: 2
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 1208,
+                                            lineNumber: 1230,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 1197,
+                                        lineNumber: 1219,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2281,12 +2296,12 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                             strokeWidth: 2
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 1223,
+                                            lineNumber: 1245,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 1212,
+                                        lineNumber: 1234,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
@@ -2294,7 +2309,7 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 915,
+                        lineNumber: 935,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2310,23 +2325,23 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                                     }
                                 }, status.id, false, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 1234,
+                                    lineNumber: 1256,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0)))
                         }, void 0, false, {
                             fileName: "[project]/components/RoomDetail.tsx",
-                            lineNumber: 1232,
+                            lineNumber: 1254,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 1230,
+                        lineNumber: 1252,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/RoomDetail.tsx",
-                lineNumber: 627,
+                lineNumber: 647,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StaffPickerModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -2341,13 +2356,13 @@ const RoomDetail = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHy
                 title: staffPickerRole === 'doctor' ? 'Vybrat lékaře' : 'Vybrat sestru'
             }, void 0, false, {
                 fileName: "[project]/components/RoomDetail.tsx",
-                lineNumber: 1249,
+                lineNumber: 1271,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/RoomDetail.tsx",
-        lineNumber: 341,
+        lineNumber: 361,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
