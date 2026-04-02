@@ -141,11 +141,6 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, isModuleEnabled]);
 
-  // Show login if not authenticated
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
   const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
@@ -239,6 +234,11 @@ const AppContent: React.FC = () => {
       await updateOperatingRoom(roomId, { [dbField]: staffId } as any);
     }
   }, [isDbConnected]);
+
+  // Show login if not authenticated - must be after all hooks
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   return (
     <ErrorBoundary>
