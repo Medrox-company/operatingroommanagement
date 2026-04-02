@@ -23,7 +23,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   );
   
   // Memoize computed values
-  const { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, isFinalStep, strokeDasharray, strokeDashoffset } = useMemo(() => {
+  const { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
     const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
     const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
     const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
@@ -35,12 +35,17 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     
     const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
     const progressPercent = ((safeIndex + 1) / totalSteps);
-    const isFinalStep = safeIndex === activeDbStatuses.length - 1;
+    
+    // Check if current status is "Sál připraven" - don't show time for this status
+    const statusName = dbStatus?.name?.toLowerCase() || '';
+    const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
+    const shouldShowTime = !isReadyStatus;
+    
     const radius = 38;
     const strokeDasharray = 2 * Math.PI * radius;
     const strokeDashoffset = strokeDasharray * (1 - progressPercent);
     
-    return { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, isFinalStep, strokeDasharray, strokeDashoffset };
+    return { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
   }, [activeDbStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
   
   const radius = 38;
@@ -174,7 +179,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                 </svg>
             </div>
             
-            {room.estimatedEndTime && !isFinalStep && (
+            {room.estimatedEndTime && shouldShowTime && (
                 <div className="-mt-1 text-center">
                     <div className="flex items-center gap-1.5 justify-center">
                       <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />

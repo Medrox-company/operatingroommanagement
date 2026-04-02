@@ -203,6 +203,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
   const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
+  
+  // Check if current status is "Sál připraven" - don't show time for this status
+  const statusName = currentStep?.name?.toLowerCase() || '';
+  const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
+  const shouldShowTime = !isReadyStatus;
 
   // Dynamic theme color based on status
   const activeColor = room.isEmergency 
@@ -495,7 +500,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               <Minus className="w-4 h-4 text-white/60" />
             </button>
                 <p className="text-2xl font-mono font-bold text-white">
-                  {estimatedEndTime && !isFinalStep ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  {estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
             <button
                   onClick={handleIncreaseTime}
