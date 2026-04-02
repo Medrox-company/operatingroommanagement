@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_WORKING_HOURS } from '../types';
 import { MOCK_ROOMS } from '../constants';
+import { updateOperatingRoom } from '../lib/db';
 import { 
   Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar, 
   Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft
@@ -391,8 +392,15 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     setDeleteConfirm(null);
   };
 
-  const handleUpdateRoom = () => {
+  const handleUpdateRoom = async () => {
     if (!editingRoom) return;
+    
+    // Update in database
+    await updateOperatingRoom(editingRoom.id, {
+      name: editingRoom.name,
+      department: editingRoom.department,
+    });
+    
     const updatedRooms = roomsList.map(r =>
       r.id === editingRoom.id ? editingRoom : r
     );
