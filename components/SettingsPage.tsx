@@ -114,17 +114,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
     },
   ];
 
-  // Back button component for modules
-  const BackButton = () => (
-    <button
-      onClick={() => setSelectedModule(null)}
-      className="flex items-center gap-2 mb-6 text-white/50 hover:text-white transition-colors group"
-    >
-      <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-    </button>
-  );
-
-  // Module wrapper with error boundary and back button
+  // Module wrapper with error boundary
   const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -132,17 +122,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       exit={{ opacity: 0 }}
       className="w-full px-8 md:pl-32 md:pr-10 py-10"
     >
-      <BackButton />
       <ErrorBoundary
         fallback={
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <p className="text-white/50">Modul se nepodařilo načíst</p>
-            <button
-              onClick={() => setSelectedModule(null)}
-              className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
           </div>
         }
       >
