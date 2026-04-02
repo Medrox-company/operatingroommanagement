@@ -485,7 +485,7 @@ function mergeSeg(segs) {
     }
     return out;
 }
-const RoomMiniCard = (param)=>{
+const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["memo"])(_s((param)=>{
     let { r, index, onClick } = param;
     var _buildDist_find;
     _s();
@@ -702,8 +702,7 @@ const RoomMiniCard = (param)=>{
         lineNumber: 140,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
-};
-_s(RoomMiniCard, "T66ZojMnK7FLgYv9AQ6NEA/zUz0=");
+}, "T66ZojMnK7FLgYv9AQ6NEA/zUz0="));
 _c = RoomMiniCard;
 // ── Card primitive ────────────────────────────────────────────────────────────
 function Card(param) {
@@ -5834,14 +5833,15 @@ const StatisticsModule = (param)=>{
 };
 _s2(StatisticsModule, "GNiJZNacpRaBKDbWJwwmMRK8YQI=");
 _c5 = StatisticsModule;
-const __TURBOPACK__default__export__ = StatisticsModule;
-var _c, _c1, _c2, _c3, _c4, _c5;
+const __TURBOPACK__default__export__ = /*#__PURE__*/ _c6 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["memo"])(StatisticsModule);
+var _c, _c1, _c2, _c3, _c4, _c5, _c6;
 __turbopack_context__.k.register(_c, "RoomMiniCard");
 __turbopack_context__.k.register(_c1, "Card");
 __turbopack_context__.k.register(_c2, "SectionLabel");
 __turbopack_context__.k.register(_c3, "TrendBadge");
 __turbopack_context__.k.register(_c4, "RoomDetailPanel");
 __turbopack_context__.k.register(_c5, "StatisticsModule");
+__turbopack_context__.k.register(_c6, "%default%");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface WorkflowStatus {
@@ -98,7 +98,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
     }
   }, []);
 
-  const updateStatus = async (id: string, updates: Partial<WorkflowStatus>) => {
+  const updateStatus = useCallback(async (id: string, updates: Partial<WorkflowStatus>) => {
     // IMMEDIATELY update local state for responsive UI
     setStatuses(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
 
@@ -126,7 +126,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       // Revert on error
       await fetchStatuses();
     }
-  };
+  }, [fetchStatuses]);
 
   const getActiveStatuses = useCallback(() => {
     return statuses.filter(s => s.is_active);
@@ -175,18 +175,24 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
     };
   }, [fetchStatuses]);
 
-  const value: WorkflowStatusesContextValue = {
+  // Memoize computed values
+  const activeStatuses = useMemo(() => getActiveStatuses(), [getActiveStatuses]);
+  const workflowStatuses = useMemo(() => getWorkflowStatuses(), [getWorkflowStatuses]);
+  const statisticsStatuses = useMemo(() => getStatisticsStatuses(), [getStatisticsStatuses]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<WorkflowStatusesContextValue>(() => ({
     statuses,
-    activeStatuses: getActiveStatuses(),
-    workflowStatuses: getWorkflowStatuses(),
-    statisticsStatuses: getStatisticsStatuses(),
+    activeStatuses,
+    workflowStatuses,
+    statisticsStatuses,
     loading,
     error,
     updateStatus,
     getStatusByIndex,
     getStatusColor,
     refreshStatuses: fetchStatuses,
-  };
+  }), [statuses, activeStatuses, workflowStatuses, statisticsStatuses, loading, error, updateStatus, getStatusByIndex, getStatusColor, fetchStatuses]);
 
   return (
     <WorkflowStatusesContext.Provider value={value}>

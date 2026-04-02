@@ -57,22 +57,27 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
   const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
 
+  // Optimized: Update elapsed time every 5 seconds instead of every second
   useEffect(() => {
     if (isPaused) return;
-    const timer = setInterval(() => {
+    
+    // Initial update
+    const updateElapsedTime = () => {
       const now = new Date();
       const diff = now.getTime() - phaseStartTime.getTime();
-      
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
-      
       setElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updateElapsedTime();
+    const timer = setInterval(updateElapsedTime, 5000);
     
     return () => clearInterval(timer);
   }, [phaseStartTime, isPaused]);
 
+  // Optimized: Update pause time every 5 seconds
   useEffect(() => {
     if (!isPaused) {
       setPauseElapsedTime('00:00');
@@ -80,14 +85,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
 
     const pauseStartTime = new Date();
-    const timer = setInterval(() => {
+    const updatePauseTime = () => {
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       setPauseElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updatePauseTime();
+    const timer = setInterval(updatePauseTime, 5000);
 
     return () => clearInterval(timer);
   }, [isPaused]);
@@ -109,18 +117,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     };
   }, []);
 
-  // Patient call timer
+  // Patient call timer - optimized to update every 5 seconds
   useEffect(() => {
     if (!patientCalledTime || patientArrivedTime) return;
 
-    patientCallTimerRef.current = window.setInterval(() => {
+    const updatePatientCallTime = () => {
       const now = new Date();
       const diff = now.getTime() - patientCalledTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       setPatientCallElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updatePatientCallTime();
+    patientCallTimerRef.current = window.setInterval(updatePatientCallTime, 5000);
 
     return () => {
       if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);

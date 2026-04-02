@@ -1,10 +1,9 @@
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Pause } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -13,31 +12,40 @@ interface RoomCardProps {
   onLock?: (e: React.MouseEvent) => void;
 }
 
-const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
+const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Get ONLY main workflow statuses (bez speciálních)
-  const activeDbStatuses = workflowStatuses
-    .filter(s => s.is_active && !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
+  // Memoize filtered statuses
+  const activeDbStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => a.order_index - b.order_index),
+    [workflowStatuses]
+  );
   
-  // Get step from database
-  const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
-  const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-  const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
+  // Memoize computed values
+  const { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, isFinalStep, strokeDasharray, strokeDashoffset } = useMemo(() => {
+    const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+    const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+    const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
+    
+    const currentStep = {
+      title: dbStatus?.name || 'Status',
+      color: dbStatus?.color || '#6B7280',
+    };
+    
+    const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
+    const progressPercent = ((safeIndex + 1) / totalSteps);
+    const isFinalStep = safeIndex === activeDbStatuses.length - 1;
+    const radius = 38;
+    const strokeDasharray = 2 * Math.PI * radius;
+    const strokeDashoffset = strokeDasharray * (1 - progressPercent);
+    
+    return { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, isFinalStep, strokeDasharray, strokeDashoffset };
+  }, [activeDbStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
   
-  const currentStep = {
-    title: dbStatus?.name || 'Status',
-    color: dbStatus?.color || '#6B7280',
-  };
-  
-  const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
-  const progressPercent = ((safeIndex + 1) / totalSteps);
-  const isFinalStep = safeIndex === activeDbStatuses.length - 1;
   const radius = 38;
   const strokeWidth = 4;
-  const strokeDasharray = 2 * Math.PI * radius;
-  const strokeDashoffset = strokeDasharray * (1 - progressPercent);
 
   const center = 56;
 
@@ -272,6 +280,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
       </div>
     </div>
   );
-};
+});
 
 export default RoomCard;

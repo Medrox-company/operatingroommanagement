@@ -1,26 +1,33 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
-import TopBar from './components/TopBar';
 import RoomCard from './components/RoomCard';
-import RoomDetail from './components/RoomDetail';
-import PlaceholderView from './components/PlaceholderView';
-import StaffManager from './components/StaffManager';
-import SettingsPage from './components/SettingsPage';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom } from './types';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, LayoutGrid, Shield, User, AlertCircle, Settings } from 'lucide-react';
-import TimelineModule from './components/TimelineModule';
-import StatisticsModule from './components/StatisticsModule';
+import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
-import AdminModule from './components/AdminModule';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
+
+// Lazy load heavy components to reduce initial memory footprint
+const RoomDetail = lazy(() => import('./components/RoomDetail'));
+const TimelineModule = lazy(() => import('./components/TimelineModule'));
+const StatisticsModule = lazy(() => import('./components/StatisticsModule'));
+const StaffManager = lazy(() => import('./components/StaffManager'));
+const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const AdminModule = lazy(() => import('./components/AdminModule'));
+const PlaceholderView = lazy(() => import('./components/PlaceholderView'));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-[#00D8C1] animate-spin" />
+  </div>
+);
 
 // Main App Content - Operating Rooms Management System
 const DEFAULT_BG_SETTINGS: BackgroundSettings = {
@@ -290,14 +297,16 @@ const AppContent: React.FC = () => {
             {/* Dashboard — room detail */}
             {currentView === 'dashboard' && selectedRoom && (
               <div className="absolute inset-0 z-50">
-                <RoomDetail
-                  room={selectedRoom}
-                  onClose={() => setSelectedRoomId(null)}
-                  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
-                  onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
-                  onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
-                  onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
-                />
+                <Suspense fallback={<LoadingFallback />}>
+                  <RoomDetail
+                    room={selectedRoom}
+                    onClose={() => setSelectedRoomId(null)}
+                    onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+                    onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
+                    onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
+                    onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
+                  />
+                </Suspense>
               </div>
             )}
 
@@ -350,55 +359,66 @@ const AppContent: React.FC = () => {
             {/* Timeline */}
             {currentView === 'timeline' && (
               <div className="w-full h-full overflow-hidden">
-                <TimelineModule rooms={rooms} />
+                <Suspense fallback={<LoadingFallback />}>
+                  <TimelineModule rooms={rooms} />
+                </Suspense>
               </div>
             )}
 
             {/* Statistics */}
             {currentView === 'statistics' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
-                  <StatisticsModule rooms={rooms} />
-                </div>
+                <Suspense fallback={<LoadingFallback />}>
+                  <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
+                    <StatisticsModule rooms={rooms} />
+                  </div>
+                </Suspense>
               </div>
             )}
 
             {/* Staff */}
             {currentView === 'staff' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
-                  <StaffManager />
-                </div>
+                <Suspense fallback={<LoadingFallback />}>
+                  <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
+                    <StaffManager />
+                  </div>
+                </Suspense>
               </div>
             )}
 
             {/* Alerts */}
             {currentView === 'alerts' && (
               <div className="w-full h-full">
-                <PlaceholderView
-                  icon={AlertCircle}
-                  title="Upozornění"
-                  description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
-                />
+                <Suspense fallback={<LoadingFallback />}>
+                  <PlaceholderView
+                    title="Upozornění"
+                    description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
+                  />
+                </Suspense>
               </div>
             )}
 
             {/* Settings */}
             {currentView === 'settings' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <SettingsPage 
-                  rooms={rooms} 
-                  onRoomsChange={setRooms} 
-                  onScheduleUpdate={handleUpdateWeeklySchedule}
-                  resetTrigger={settingsResetTrigger} 
-                />
+                <Suspense fallback={<LoadingFallback />}>
+                  <SettingsPage 
+                    rooms={rooms} 
+                    onRoomsChange={setRooms} 
+                    onScheduleUpdate={handleUpdateWeeklySchedule}
+                    resetTrigger={settingsResetTrigger} 
+                  />
+                </Suspense>
               </div>
             )}
 
             {/* Admin - only for admins */}
             {currentView === 'admin' && isAdmin && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <AdminModule onClose={() => setCurrentView('dashboard')} />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminModule onClose={() => setCurrentView('dashboard')} />
+                </Suspense>
               </div>
             )}
         </main>
