@@ -241,15 +241,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                 </div>
               )}
 
-              {!room.isPaused && !room.estimatedEndTime && (
-                <div className="flex items-center gap-1 opacity-40 group-hover:opacity-80 transition-opacity">
-                  <Clock className="w-3.5 h-3.5 text-white" />
-                  <span className="text-[11px] font-mono font-bold text-white">
-                    {room.currentProcedure?.startTime || '--:--'}
-                  </span>
-                </div>
-              )}
-
               {/* Patient called indicator */}
               {room.patientCalledAt && !room.patientArrivedAt && (
                 <div className="p-2 rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">

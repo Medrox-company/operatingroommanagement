@@ -849,7 +849,7 @@ function transformRoom(row, staffMap, patientMap, procedureMap) {
         isLocked: row.is_locked,
         currentStepIndex: row.current_step_index,
         estimatedEndTime: row.estimated_end_time || undefined,
-        weeklySchedule: row.weekly_schedule || {},
+        weeklySchedule: row.weekly_schedule,
         staff: {
             doctor: {
                 name: (doctor === null || doctor === void 0 ? void 0 : doctor.name) || null,
