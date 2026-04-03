@@ -191,7 +191,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
   const currentStep = activeDbStatuses.length > 0
     ? activeDbStatuses[safeStepIndex]
-    : { name: 'Čekání', color: '#6B7280', title: 'Čekání' };
+    : { name: 'Waiting', color: '#6B7280', title: 'Waiting' };
   
   const nextStepIndex = (safeStepIndex + 1) % Math.max(activeDbStatuses.length, 1);
   const nextStep = activeDbStatuses.length > 0
@@ -204,7 +204,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
   
   // Don't show time only for "Sal priprav*" status (ASCII-safe)
-  const statusName = currentStep?.name?.toLowerCase() || '';
+  // Normalize string to remove diacritics for comparison
+  const statusName = (currentStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const isReadyStatus = statusName.includes('priprav');
   const shouldShowTime = !isReadyStatus;
 
@@ -1164,7 +1165,7 @@ const prevStep = activeDbStatuses.length > 0
                       {currentStep.title}
                     </motion.h2>
 
-                    {/* Time display under title - hide for "Sál připraven" status */}
+                    {/* Time display under title - hide for "ready" status */}
                     {shouldShowTime && (
                       <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
                         <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>

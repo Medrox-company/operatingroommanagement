@@ -779,13 +779,13 @@ __turbopack_context__.s([
     "supabase",
     ()=>supabase
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$supabase$2b$supabase$2d$js$40$2$2e$98$2e$0$2f$node_modules$2f40$supabase$2f$supabase$2d$js$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@supabase+supabase-js@2.98.0/node_modules/@supabase/supabase-js/dist/index.mjs [app-ssr] (ecmascript) <locals>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$supabase$2b$supabase$2d$js$40$2$2e$101$2e$1$2f$node_modules$2f40$supabase$2f$supabase$2d$js$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@supabase+supabase-js@2.101.1/node_modules/@supabase/supabase-js/dist/index.mjs [app-ssr] (ecmascript) <locals>");
 ;
 // For Next.js, environment variables are accessed via process.env
 // Supabase integration provides NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabaseUrl = ("TURBOPACK compile-time value", "https://krljrxescufmdtfvlaqm.supabase.co") || '';
 const supabaseAnonKey = ("TURBOPACK compile-time value", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtybGpyeGVzY3VmbWR0ZnZsYXFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTY4NDksImV4cCI6MjA4ODM5Mjg0OX0._PNxW7Hw5BRi4CD8Xz7FuQdneYeBNKJpe5pkTLvM5wU") || '';
-const supabase = ("TURBOPACK compile-time truthy", 1) ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$supabase$2b$supabase$2d$js$40$2$2e$98$2e$0$2f$node_modules$2f40$supabase$2f$supabase$2d$js$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["createClient"])(supabaseUrl, supabaseAnonKey) : "TURBOPACK unreachable";
+const supabase = ("TURBOPACK compile-time truthy", 1) ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$supabase$2b$supabase$2d$js$40$2$2e$101$2e$1$2f$node_modules$2f40$supabase$2f$supabase$2d$js$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["createClient"])(supabaseUrl, supabaseAnonKey) : "TURBOPACK unreachable";
 const isSupabaseConfigured = !!supabase;
 }),
 "[project]/lib/db.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
@@ -2412,8 +2412,8 @@ const AppContent = ()=>{
                                                         // Check if room is in "ready" status based on status name
                                                         const isRoomReady = (room)=>{
                                                             const status = activeStatuses[room.currentStepIndex];
-                                                            const statusName = status?.name?.toLowerCase() || '';
-                                                            // Use ASCII-safe check for "priprav" to match Czech "připraven/připraveno"
+                                                            // Normalize string to remove diacritics for comparison
+                                                            const statusName = (status?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                                                             return statusName.includes('priprav') || statusName.includes('ready');
                                                         };
                                                         const readyRooms = rooms.filter(isRoomReady);

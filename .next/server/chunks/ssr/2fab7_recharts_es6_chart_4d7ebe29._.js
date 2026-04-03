@@ -172,12 +172,12 @@ __turbopack_context__.s([
     ()=>getAxisMapByAxes
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next@15.5.14_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.17.23/node_modules/lodash/isNil.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.17.23/node_modules/lodash/isFunction.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.17.23/node_modules/lodash/range.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.17.23/node_modules/lodash/get.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$sortBy$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.17.23/node_modules/lodash/sortBy.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$throttle$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.17.23/node_modules/lodash/throttle.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/isNil.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/isFunction.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/range.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/get.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$sortBy$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/sortBy.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$throttle$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/throttle.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$clsx$40$2$2e$1$2e$1$2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs [app-ssr] (ecmascript)");
 // eslint-disable-next-line no-restricted-imports
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$tiny$2d$invariant$40$1$2e$3$2e$3$2f$node_modules$2f$tiny$2d$invariant$2f$dist$2f$esm$2f$tiny$2d$invariant$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/tiny-invariant@1.3.3/node_modules/tiny-invariant/dist/esm/tiny-invariant.js [app-ssr] (ecmascript)");
@@ -689,7 +689,7 @@ var getAxisMapByAxes = function getAxisMapByAxes(props, _ref2) {
                     if (allowDuplicatedCategory && duplicate) {
                         duplicateDomain = domain;
                         // When category axis has duplicated text, serial numbers are used to generate scale
-                        domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(0, len);
+                        domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(0, len);
                     } else if (!allowDuplicatedCategory) {
                         // remove duplicated category
                         domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$ChartUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseDomainOfCategoryAxis"])(childDomain, domain, child).reduce(function(finalDomain, entry) {
@@ -702,14 +702,14 @@ var getAxisMapByAxes = function getAxisMapByAxes(props, _ref2) {
                     // the field type is category data and this axis is numerical axis
                     if (!allowDuplicatedCategory) {
                         domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$ChartUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseDomainOfCategoryAxis"])(childDomain, domain, child).reduce(function(finalDomain, entry) {
-                            return finalDomain.indexOf(entry) >= 0 || entry === '' || (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(entry) ? finalDomain : [].concat(_toConsumableArray(finalDomain), [
+                            return finalDomain.indexOf(entry) >= 0 || entry === '' || (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(entry) ? finalDomain : [].concat(_toConsumableArray(finalDomain), [
                                 entry
                             ]);
                         }, []);
                     } else {
                         // eliminate undefined or null or empty string
                         domain = domain.filter(function(entry) {
-                            return entry !== '' && !(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(entry);
+                            return entry !== '' && !(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(entry);
                         });
                     }
                 } else if (type === 'number') {
@@ -729,7 +729,7 @@ var getAxisMapByAxes = function getAxisMapByAxes(props, _ref2) {
                 }
             } else if (isCategorical) {
                 // the axis is a categorical axis
-                domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(0, len);
+                domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(0, len);
             } else if (stackGroups && stackGroups[axisId] && stackGroups[axisId].hasStack && type === 'number') {
                 // when stackOffset is 'expand', the domain may be calculated as [0, 1.000000000002]
                 domain = stackOffset === 'expand' ? [
@@ -805,7 +805,7 @@ var getAxisMapByAxes = function getAxisMapByAxes(props, _ref2) {
             index++;
             var domain;
             if (isCategorical) {
-                domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(0, len);
+                domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$range$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(0, len);
             } else if (stackGroups && stackGroups[axisId] && stackGroups[axisId].hasStack) {
                 domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$ChartUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getDomainOfStackGroups"])(stackGroups[axisId].stackGroups, dataStartIndex, dataEndIndex);
                 domain = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$DetectReferenceElementsDomain$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["detectReferenceElementsDomain"])(children, domain, axisId, axisType);
@@ -822,7 +822,7 @@ var getAxisMapByAxes = function getAxisMapByAxes(props, _ref2) {
                 axisType: axisType
             }, Axis.defaultProps), {}, {
                 hide: true,
-                orientation: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(ORIENT_MAP, "".concat(axisType, ".").concat(index % 2), null),
+                orientation: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(ORIENT_MAP, "".concat(axisType, ".").concat(index % 2), null),
                 domain: domain,
                 originalDomain: originalDomain,
                 isCategorical: isCategorical,
@@ -877,7 +877,7 @@ var tooltipTicksGenerator = function tooltipTicksGenerator(axisMap) {
     var tooltipTicks = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$ChartUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getTicksOfAxis"])(axis, false, true);
     return {
         tooltipTicks: tooltipTicks,
-        orderedTooltipTicks: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$sortBy$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(tooltipTicks, function(o) {
+        orderedTooltipTicks: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$sortBy$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(tooltipTicks, function(o) {
             return o.coordinate;
         }),
         tooltipAxis: axis,
@@ -971,7 +971,7 @@ var getAxisNameByLayout = function getAxisNameByLayout(layout) {
         var entry = xAxisMap[id];
         var orientation = entry.orientation;
         if (!entry.mirror && !entry.hide) {
-            return _objectSpread(_objectSpread({}, result), {}, _defineProperty({}, orientation, (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(result, "".concat(orientation)) + entry.height));
+            return _objectSpread(_objectSpread({}, result), {}, _defineProperty({}, orientation, (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(result, "".concat(orientation)) + entry.height));
         }
         return result;
     }, {
@@ -1062,7 +1062,7 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
             if (itemIsBar) {
                 var _ref7, _getBandSizeOfAxis;
                 // If it is bar, calculate the position of bar
-                var maxBarSize = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(childMaxBarSize) ? globalMaxBarSize : childMaxBarSize;
+                var maxBarSize = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(childMaxBarSize) ? globalMaxBarSize : childMaxBarSize;
                 var barBandSize = (_ref7 = (_getBandSizeOfAxis = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$ChartUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getBandSizeOfAxis"])(cateAxis, cateTicks, true)) !== null && _getBandSizeOfAxis !== void 0 ? _getBandSizeOfAxis : maxBarSize) !== null && _ref7 !== void 0 ? _ref7 : 0;
                 barPosition = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$ChartUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getBarPosition"])({
                     barGap: barGap,
@@ -1232,7 +1232,7 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
                     _this.setState(_nextState);
                     _this.triggerSyncEvent(_nextState);
                     var onMouseEnter = _this.props.onMouseEnter;
-                    if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseEnter)) {
+                    if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseEnter)) {
                         onMouseEnter(_nextState, e);
                     }
                 }
@@ -1247,7 +1247,7 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
                 _this.setState(nextState);
                 _this.triggerSyncEvent(nextState);
                 var onMouseMove = _this.props.onMouseMove;
-                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseMove)) {
+                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseMove)) {
                     onMouseMove(nextState, e);
                 }
             });
@@ -1298,14 +1298,14 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
                 _this.setState(nextState);
                 _this.triggerSyncEvent(nextState);
                 var onMouseLeave = _this.props.onMouseLeave;
-                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseLeave)) {
+                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseLeave)) {
                     onMouseLeave(nextState, e);
                 }
             });
             _defineProperty(_this, "handleOuterEvent", function(e) {
                 var eventName = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$ReactUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getReactEventByType"])(e);
-                var event = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(_this.props, "".concat(eventName));
-                if (eventName && (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(event)) {
+                var event = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(_this.props, "".concat(eventName));
+                if (eventName && (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(event)) {
                     var _mouse;
                     var mouse;
                     if (/.*touch.*/i.test(eventName)) {
@@ -1325,21 +1325,21 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
                     _this.setState(_nextState2);
                     _this.triggerSyncEvent(_nextState2);
                     var onClick = _this.props.onClick;
-                    if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onClick)) {
+                    if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onClick)) {
                         onClick(_nextState2, e);
                     }
                 }
             });
             _defineProperty(_this, "handleMouseDown", function(e) {
                 var onMouseDown = _this.props.onMouseDown;
-                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseDown)) {
+                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseDown)) {
                     var _nextState3 = _this.getMouseInfo(e);
                     onMouseDown(_nextState3, e);
                 }
             });
             _defineProperty(_this, "handleMouseUp", function(e) {
                 var onMouseUp = _this.props.onMouseUp;
-                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseUp)) {
+                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onMouseUp)) {
                     var _nextState4 = _this.getMouseInfo(e);
                     onMouseUp(_nextState4, e);
                 }
@@ -1361,14 +1361,14 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
             });
             _defineProperty(_this, "handleDoubleClick", function(e) {
                 var onDoubleClick = _this.props.onDoubleClick;
-                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onDoubleClick)) {
+                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onDoubleClick)) {
                     var _nextState5 = _this.getMouseInfo(e);
                     onDoubleClick(_nextState5, e);
                 }
             });
             _defineProperty(_this, "handleContextMenu", function(e) {
                 var onContextMenu = _this.props.onContextMenu;
-                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onContextMenu)) {
+                if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(onContextMenu)) {
                     var _nextState6 = _this.getMouseInfo(e);
                     onContextMenu(_nextState6, e);
                 }
@@ -1460,8 +1460,8 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
                 });
             });
             _defineProperty(_this, "renderPolarAxis", function(element, displayName, index) {
-                var axisType = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(element, 'type.axisType');
-                var axisMap = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(_this.state, "".concat(axisType, "Map"));
+                var axisType = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(element, 'type.axisType');
+                var axisMap = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$get$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(_this.state, "".concat(axisType, "Map"));
                 var elementDefaultProps = element.type.defaultProps;
                 var elementProps = elementDefaultProps !== undefined ? _objectSpread(_objectSpread({}, elementDefaultProps), element.props) : element.props;
                 var axisOption = axisMap && axisMap[elementProps["".concat(axisType, "Id")]];
@@ -1663,7 +1663,7 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
                                 null
                             ];
                         }
-                        if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(activePoint)) {
+                        if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(activePoint)) {
                             return [
                                 graphicalItem
                             ].concat(_toConsumableArray(_this.renderActivePoints({
@@ -1780,7 +1780,7 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
             });
             _this.clipPathId = "".concat((_props$id = _props.id) !== null && _props$id !== void 0 ? _props$id : (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$util$2f$DataUtils$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["uniqueId"])('recharts'), "-clip");
             // trigger 60fps
-            _this.throttleTriggeredAfterMouseMove = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$throttle$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(_this.triggeredAfterMouseMove, (_props$throttleDelay = _props.throttleDelay) !== null && _props$throttleDelay !== void 0 ? _props$throttleDelay : 1000 / 60);
+            _this.throttleTriggeredAfterMouseMove = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$throttle$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(_this.triggeredAfterMouseMove, (_props$throttleDelay = _props.throttleDelay) !== null && _props$throttleDelay !== void 0 ? _props$throttleDelay : 1000 / 60);
             _this.state = {};
             return _this;
         }
@@ -2275,7 +2275,7 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
             var endIndex = brush ? (_brush$props$endIndex = (_brush$props2 = brush.props) === null || _brush$props2 === void 0 ? void 0 : _brush$props2.endIndex) !== null && _brush$props$endIndex !== void 0 ? _brush$props$endIndex : dataEndIndex : dataEndIndex;
             var hasDifferentStartOrEndIndex = startIndex !== dataStartIndex || endIndex !== dataEndIndex;
             // update configuration in children
-            var hasGlobalData = !(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(data);
+            var hasGlobalData = !(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isNil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(data);
             var newUpdateId = hasGlobalData && !hasDifferentStartOrEndIndex ? prevState.updateId : prevState.updateId + 1;
             return _objectSpread(_objectSpread({
                 updateId: newUpdateId
@@ -2297,7 +2297,7 @@ var generateCategoricalChart = function generateCategoricalChart(_ref6) {
         var dot;
         if (/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["isValidElement"])(option)) {
             dot = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cloneElement"])(option, props);
-        } else if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$17$2e$23$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(option)) {
+        } else if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lodash$40$4$2e$18$2e$1$2f$node_modules$2f$lodash$2f$isFunction$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(option)) {
             dot = option(props);
         } else {
             dot = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].createElement(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$shape$2f$Dot$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dot"], props);

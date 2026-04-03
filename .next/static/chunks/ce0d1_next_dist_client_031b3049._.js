@@ -6182,8 +6182,20 @@ function tryApplyUpdatesWebpack(sendMessage) {
     switch(obj.action){
         case _hotreloadertypes.HMR_ACTIONS_SENT_TO_BROWSER.ISR_MANIFEST:
             {
-                if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
-                ;
+                if ("TURBOPACK compile-time truthy", 1) {
+                    if (appIsrManifestRef) {
+                        appIsrManifestRef.current = obj.data;
+                        // handle initial status on receiving manifest
+                        // navigation is handled in useEffect for pathname changes
+                        // as we'll receive the updated manifest before usePathname
+                        // triggers for new value
+                        if (pathnameRef.current in obj.data) {
+                            _nextdevtools.dispatcher.onStaticIndicator(true);
+                        } else {
+                            _nextdevtools.dispatcher.onStaticIndicator(false);
+                        }
+                    }
+                }
                 break;
             }
         case _hotreloadertypes.HMR_ACTIONS_SENT_TO_BROWSER.BUILDING:
@@ -6363,8 +6375,39 @@ function HotReload(param) {
     const pathname = (0, _navigationuntracked.useUntrackedPathname)();
     const appIsrManifestRef = (0, _react.useRef)({});
     const pathnameRef = (0, _react.useRef)(pathname);
-    if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
-    ;
+    if ("TURBOPACK compile-time truthy", 1) {
+        // this conditional is only for dead-code elimination which
+        // isn't a runtime conditional only build-time so ignore hooks rule
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        (0, _react.useEffect)(()=>{
+            pathnameRef.current = pathname;
+            const appIsrManifest = appIsrManifestRef.current;
+            if (appIsrManifest) {
+                if (pathname && pathname in appIsrManifest) {
+                    try {
+                        _nextdevtools.dispatcher.onStaticIndicator(true);
+                    } catch (reason) {
+                        let message = '';
+                        if (reason instanceof DOMException) {
+                            var _reason_stack;
+                            // Most likely a SecurityError, because of an unavailable localStorage
+                            message = (_reason_stack = reason.stack) != null ? _reason_stack : reason.message;
+                        } else if (reason instanceof Error) {
+                            var _reason_stack1;
+                            message = 'Error: ' + reason.message + '\n' + ((_reason_stack1 = reason.stack) != null ? _reason_stack1 : '');
+                        } else {
+                            message = 'Unexpected Exception: ' + reason;
+                        }
+                        console.warn('[HMR] ' + message);
+                    }
+                } else {
+                    _nextdevtools.dispatcher.onStaticIndicator(false);
+                }
+            }
+        }, [
+            pathname
+        ]);
+    }
     (0, _react.useEffect)(()=>{
         const websocket = webSocketRef.current;
         if (!websocket) return;

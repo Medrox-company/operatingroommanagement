@@ -326,8 +326,8 @@ const AppContent: React.FC = () => {
                         // Check if room is in "ready" status based on status name
                         const isRoomReady = (room: OperatingRoom) => {
                           const status = activeStatuses[room.currentStepIndex];
-                          const statusName = status?.name?.toLowerCase() || '';
-                          // Use ASCII-safe check for "priprav" to match Czech "připraven/připraveno"
+                          // Normalize string to remove diacritics for comparison
+                          const statusName = (status?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                           return statusName.includes('priprav') || statusName.includes('ready');
                         };
                         

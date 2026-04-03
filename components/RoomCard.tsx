@@ -37,7 +37,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     const progressPercent = ((safeIndex + 1) / totalSteps);
     
     // Don't show time for "Sal priprav*" and "Uklid" statuses (ASCII-safe)
-    const statusName = dbStatus?.name?.toLowerCase() || '';
+    // Normalize string to remove diacritics for comparison
+    const statusName = (dbStatus?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const isReadyStatus = statusName.includes('priprav');
     const isCleaningStatus = statusName.includes('uklid');
     const shouldShowTime = !isReadyStatus && !isCleaningStatus;
