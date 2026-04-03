@@ -594,14 +594,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     setShowPatientArrivedText(true);
                     await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
                     await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                    setTimeout(async () => {
-                      isResettingRef.current = true;
+                    // Just hide the text after 5 seconds, patient status stays in DB until step change
+                    setTimeout(() => {
                       setShowPatientArrivedText(false);
-                      setPatientCalledTime(null);
-                      setPatientArrivedTime(null);
-                      setPatientCallElapsedTime('00:00');
-                      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                      setTimeout(() => { isResettingRef.current = false; }, 500);
                     }, 5000);
                   }
                 }}
