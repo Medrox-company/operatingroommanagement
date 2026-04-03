@@ -265,7 +265,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
 export interface StatusHistoryEvent {
   id?: string;
   operating_room_id: string;
-  event_type: 'step_change' | 'pause' | 'resume' | 'patient_call' | 'patient_arrival' | 'patient_arrived' | 'emergency_on' | 'emergency_off' | 'lock' | 'unlock' | 'operation_start' | 'operation_end' | 'enhanced_hygiene_on' | 'enhanced_hygiene_off';
+  event_type: 'step_change' | 'pause' | 'resume' | 'patient_call' | 'patient_arrival' | 'patient_arrived' | 'emergency_on' | 'emergency_off' | 'lock' | 'unlock' | 'operation_start' | 'operation_end' | 'enhanced_hygiene_on' | 'enhanced_hygiene_off' | 'staff_change';
   step_index?: number;
   step_name?: string;
   duration_seconds?: number;
