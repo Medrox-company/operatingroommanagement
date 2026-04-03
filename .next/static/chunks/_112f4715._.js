@@ -846,6 +846,8 @@ function transformRoom(row, staffMap, patientMap, procedureMap) {
         patientCalledAt: row.patient_called_at,
         patientArrivedAt: row.patient_arrived_at,
         phaseStartedAt: row.phase_started_at,
+        operationStartedAt: row.operation_started_at,
+        statusHistory: row.status_history || [],
         isLocked: row.is_locked,
         currentStepIndex: row.current_step_index,
         estimatedEndTime: row.estimated_end_time || undefined,
@@ -974,6 +976,8 @@ function transformSingleRoom(row) {
     if (row.patient_called_at !== undefined) result.patientCalledAt = row.patient_called_at;
     if (row.patient_arrived_at !== undefined) result.patientArrivedAt = row.patient_arrived_at;
     if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;
+    if (row.operation_started_at !== undefined) result.operationStartedAt = row.operation_started_at;
+    if (row.status_history !== undefined) result.statusHistory = row.status_history || [];
     if (row.is_locked !== undefined) result.isLocked = row.is_locked;
     if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
     if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
