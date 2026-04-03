@@ -277,6 +277,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       onEndTimeChange(null);
     }
 
+    // Reset patient call/arrival status when changing steps
+    if (patientCalledTime || patientArrivedTime) {
+      setPatientCalledTime(null);
+      setPatientArrivedTime(null);
+      setPatientCallElapsedTime('00:00');
+      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+    }
+
     onStepChange(newIndex);
     setPhaseStartTime(new Date());
   };
@@ -845,15 +853,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   duration_seconds: waitDuration,
                   metadata: { call_time: patientCalledTime.toISOString() },
                 });
-                setTimeout(async () => {
-                  isResettingRef.current = true;
+                // Just hide the text after 5 seconds, keep patient status in database
+                // Patient status will be reset when moving to next step
+                setTimeout(() => {
                   setShowPatientArrivedText(false);
-                  setPatientCalledTime(null);
-                  setPatientArrivedTime(null);
-                  setPatientCallElapsedTime('00:00');
-                  await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                  // Allow sync again after DB update completes
-                  setTimeout(() => { isResettingRef.current = false; }, 500);
                 }, 5000);
               }
             }}
