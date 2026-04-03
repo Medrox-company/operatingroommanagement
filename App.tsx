@@ -12,7 +12,7 @@ import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
-import { OperatingRoom } from './types';
+import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -193,7 +193,7 @@ const AppContent: React.FC = () => {
   const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: Record<string, any>) => {
     setRooms(prev => prev.map(room =>
       room.id === roomId
-        ? { ...room, weeklySchedule: schedule }
+        ? { ...room, weeklySchedule: schedule as WeeklySchedule }
         : room
     ));
     if (isDbConnected) {
