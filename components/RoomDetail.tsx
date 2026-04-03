@@ -265,13 +265,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         operating_room_id: room.id,
         event_type: 'operation_end',
         step_index: currentStepIndex,
-        step_name: 'Konec operace',
+        step_name: 'Operation End',
         duration_seconds: durationSeconds,
         metadata: { 
           completed_step: previousStep?.name || 'Status',
           previous_step: previousStep?.name || 'Status',
         },
       });
+      
+      // Reset estimated end time when returning to "ready" status
+      onEndTimeChange(null);
     }
 
     onStepChange(newIndex);
