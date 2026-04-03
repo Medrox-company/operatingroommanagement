@@ -60,7 +60,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [localEstimatedEndTime, setLocalEstimatedEndTime] = useState<Date | null>(
     room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
   );
-  const estimatedEndTimeRef = useRef<Date | null>(localEstimatedEndTime);
+  const estimatedEndTimeRef = useRef<Date | null>(
+    room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
+  );
+  const updateTimeoutRef = useRef<number | null>(null);
+  
+  // Update ref whenever local state changes
+  useEffect(() => {
+    estimatedEndTimeRef.current = localEstimatedEndTime;
+  }, [localEstimatedEndTime]);
   
   // Sync local state with props when props change (but not during rapid clicking)
   useEffect(() => {
@@ -69,7 +77,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     if (propsTime === null && localEstimatedEndTime === null) return;
     if (propsTime && localEstimatedEndTime && Math.abs(propsTime.getTime() - localEstimatedEndTime.getTime()) < 1000) return;
     setLocalEstimatedEndTime(propsTime);
-    estimatedEndTimeRef.current = propsTime;
   }, [room.estimatedEndTime]);
   
   const estimatedEndTime = localEstimatedEndTime;
@@ -372,9 +379,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     
     // Update local state and ref immediately for responsive UI
     setLocalEstimatedEndTime(newTime);
-    estimatedEndTimeRef.current = newTime;
-    // Propagate to parent (async)
-    onEndTimeChange(newTime);
+    
+    // Debounce propagation to parent (only after user stops clicking)
+    if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+    updateTimeoutRef.current = window.setTimeout(() => {
+      onEndTimeChange(newTime);
+    }, 300);
   
     if (endTimeTimeoutRef.current) {
       clearTimeout(endTimeTimeoutRef.current);
@@ -397,9 +407,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
     // Update local state and ref immediately for responsive UI
     setLocalEstimatedEndTime(newTime);
-    estimatedEndTimeRef.current = newTime;
-    // Propagate to parent (async)
-    onEndTimeChange(newTime);
+    
+    // Debounce propagation to parent (only after user stops clicking)
+    if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+    updateTimeoutRef.current = window.setTimeout(() => {
+      onEndTimeChange(newTime);
+    }, 300);
   
     if (endTimeTimeoutRef.current) {
       clearTimeout(endTimeTimeoutRef.current);
