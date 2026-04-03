@@ -253,13 +253,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
 
     // Record operation start/end events
     if (newIndex === 1 && currentStepIndex === 0) {
-      // Starting operation
+      // Starting operation (transitioning to "Příjezd na sál")
       await recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_start',
         step_index: newIndex,
         step_name: newStep?.name || 'Status',
       });
+      
+      // Set default estimated end time: current time + 60 minutes, rounded to 15 min
+      const defaultEndTime = roundUpTo15Min(new Date(now.getTime() + 60 * 60 * 1000));
+      onEndTimeChange(defaultEndTime);
     } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
       // Ending operation (completing last step)
       await recordStatusEvent({
@@ -362,13 +366,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
   const handleDecreaseTime = () => {
     if (isInteractionBlocked || estimatedEndTime === null) return;
-  
-    // Simple: subtract 15 minutes, allow down to current time
-    const newTime = new Date(estimatedEndTime.getTime() - 15 * 60 * 1000);
-    const now = new Date();
+
+    // Snap to 15-min floor first, then subtract 15 minutes
+    const snapped = snapTo15Min(estimatedEndTime);
+    const newTime = new Date(snapped.getTime() - 15 * 60 * 1000);
     
-    // Only block if new time would be in the past
-    if (newTime <= now) return;
+    // Block if new time would be before or equal to phase start time
+    if (newTime <= phaseStartTime) return;
   
     onEndTimeChange(newTime);
   
