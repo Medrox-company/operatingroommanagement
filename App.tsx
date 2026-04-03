@@ -134,11 +134,12 @@ const AppContent: React.FC = () => {
   }, [currentView, isModuleEnabled]);
 
   const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number) => {
+    const now = new Date().toISOString();
     setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, currentStepIndex: newStepIndex } : room
+      room.id === roomId ? { ...room, currentStepIndex: newStepIndex, phaseStartedAt: now } : room
     ));
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { current_step_index: newStepIndex });
+      await updateOperatingRoom(roomId, { current_step_index: newStepIndex, phase_started_at: now });
     }
   }, [isDbConnected]);
 

@@ -261,8 +261,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         step_name: newStep?.name || 'Status',
       });
       
-      // Set default estimated end time: current time + 60 minutes
-      const defaultEndTime = new Date(now.getTime() + 60 * 60 * 1000);
+      // Set default estimated end time: current time + 60 minutes, rounded to 15 min
+      const defaultEndTime = roundUpTo15Min(new Date(now.getTime() + 60 * 60 * 1000));
       onEndTimeChange(defaultEndTime);
     } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
       // Ending operation (completing last step)
@@ -367,8 +367,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const handleDecreaseTime = () => {
     if (isInteractionBlocked || estimatedEndTime === null) return;
 
-    // Subtract 15 minutes, but don't go below phaseStartTime (start of current status)
-    const newTime = new Date(estimatedEndTime.getTime() - 15 * 60 * 1000);
+    // Snap to 15-min floor first, then subtract 15 minutes
+    const snapped = snapTo15Min(estimatedEndTime);
+    const newTime = new Date(snapped.getTime() - 15 * 60 * 1000);
     
     // Block if new time would be before or equal to phase start time
     if (newTime <= phaseStartTime) return;
