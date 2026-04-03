@@ -20,6 +20,7 @@ interface RoomDetailProps {
   onEndTimeChange: (newTime: Date | null) => void;
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
   onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
+  onPatientStatusChange?: (calledAt: string | null, arrivedAt: string | null) => void;
 }
 
 const usePrevious = (value: number) => {
@@ -30,7 +31,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
   // Get workflow statuses from database context - ONLY main workflow, no special statuses
   const { workflowStatuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
   
@@ -571,8 +572,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     setPatientCalledTime(now);
                     setShowPatientCalledText(true);
                     setTimeout(() => setShowPatientCalledText(false), 5000);
-                    await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
-                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  onPatientStatusChange?.(now.toISOString(), null);
                   }
                 }}
                 disabled={!!patientCalledTime}
@@ -592,9 +594,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     const now = new Date();
                     setPatientArrivedTime(now);
                     setShowPatientArrivedText(true);
-                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
-                    await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                    // Just hide the text after 5 seconds, patient status stays in DB until step change
+                  await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  onPatientStatusChange?.(patientCalledTime!.toISOString(), now.toISOString());
+                  // Just hide the text after 5 seconds, patient status stays in DB until step change
                     setTimeout(() => {
                       setShowPatientArrivedText(false);
                     }, 5000);
@@ -777,18 +780,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         {/* VOLAT and PŘÍJEZD Container - Vertical */}
         <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
           {/* Volat Button */}
-          <motion.button
+  <motion.button
             onClick={async () => {
               if (!patientCalledTime) {
-                setPatientCalledTime(new Date());
-    setShowPatientCalledText(true);
-    setTimeout(() => setShowPatientCalledText(false), 5000);
+                const now = new Date();
+                setPatientCalledTime(now);
+                setShowPatientCalledText(true);
+                setTimeout(() => setShowPatientCalledText(false), 5000);
+                await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_call',
                   step_index: currentStepIndex,
                   step_name: currentStep.title,
                 });
+                onPatientStatusChange?.(now.toISOString(), null);
               }
             }}
             disabled={!!patientCalledTime}
@@ -840,6 +846,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                 setPatientArrivedTime(arrivalTime);
                 await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
                 setShowPatientArrivedText(true);
+                onPatientStatusChange?.(patientCalledTime.toISOString(), arrivalTime.toISOString());
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_arrival',

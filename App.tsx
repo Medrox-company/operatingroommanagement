@@ -227,6 +227,14 @@ const AppContent: React.FC = () => {
     }
   }, [isDbConnected]);
 
+  const handlePatientStatusChange = useCallback((roomId: string, calledAt: string | null, arrivedAt: string | null) => {
+    setRooms(prev => prev.map(room =>
+      room.id === roomId
+        ? { ...room, patientCalledAt: calledAt, patientArrivedAt: arrivedAt }
+        : room
+    ));
+  }, []);
+
   // Show login if not authenticated - must be after all hooks
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -298,6 +306,7 @@ const AppContent: React.FC = () => {
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                   onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
+                  onPatientStatusChange={(calledAt, arrivedAt) => handlePatientStatusChange(selectedRoom.id, calledAt, arrivedAt)}
                 />
               </div>
             )}
