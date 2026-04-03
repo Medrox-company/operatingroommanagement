@@ -283,11 +283,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     const newStepName = (newStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const isArrivalToOR = newStepName.includes('prijezd na sal') || newStepName.includes('arrival');
     if (isArrivalToOR && (patientCalledTime || patientArrivedTime)) {
+      // Prevent sync effects from overwriting during reset
+      isResettingRef.current = true;
       setPatientCalledTime(null);
       setPatientArrivedTime(null);
       setPatientCallElapsedTime('00:00');
       await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
       onPatientStatusChange?.(null, null);
+      // Allow sync again after a short delay
+      setTimeout(() => { isResettingRef.current = false; }, 500);
     }
 
     onStepChange(newIndex);
