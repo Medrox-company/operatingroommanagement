@@ -70,7 +70,23 @@ const RoomDetail = (param)=>{
     const [showPatientCalledText, setShowPatientCalledText] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [showPatientArrivedText, setShowPatientArrivedText] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const patientCallTimerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
-    const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+    // Simple local state for estimated end time - initialized from props
+    const [localEndTime, setLocalEndTime] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
+        "RoomDetail.useState": ()=>room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
+    }["RoomDetail.useState"]);
+    const updateTimeoutRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const isLocalUpdateRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(false); // Track if update came from local buttons
+    // Sync with props only when not actively editing locally
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "RoomDetail.useEffect": ()=>{
+            if (isLocalUpdateRef.current) return; // Skip if local update in progress
+            const propsTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+            setLocalEndTime(propsTime);
+        }
+    }["RoomDetail.useEffect"], [
+        room.estimatedEndTime
+    ]);
+    const estimatedEndTime = localEndTime;
     // Update elapsed time every second
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "RoomDetail.useEffect": ()=>{
@@ -366,39 +382,53 @@ const RoomDetail = (param)=>{
     };
     const handleIncreaseTime = ()=>{
         if (isInteractionBlocked) return;
-        let newTime;
-        if (estimatedEndTime === null) {
-            // First press: round up current time to next 15-min boundary
-            newTime = roundUpTo15Min(new Date());
-        } else {
-            // Snap current time to 15-min floor, then add 15 minutes
-            const snapped = snapTo15Min(estimatedEndTime);
-            newTime = new Date(snapped.getTime() + 15 * 60 * 1000);
-        }
-        onEndTimeChange(newTime);
-        if (endTimeTimeoutRef.current) {
-            clearTimeout(endTimeTimeoutRef.current);
-        }
+        // Mark that we're doing a local update
+        isLocalUpdateRef.current = true;
+        setLocalEndTime((prev)=>{
+            let newTime;
+            if (prev === null) {
+                newTime = roundUpTo15Min(new Date());
+            } else {
+                newTime = new Date(prev.getTime() + 15 * 60 * 1000);
+            }
+            // Debounce propagation to parent
+            if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+            updateTimeoutRef.current = window.setTimeout(()=>{
+                onEndTimeChange(newTime);
+                // Allow props sync after debounce completes
+                setTimeout(()=>{
+                    isLocalUpdateRef.current = false;
+                }, 100);
+            }, 300);
+            return newTime;
+        });
+        if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
         setShowEndTime(true);
-        endTimeTimeoutRef.current = window.setTimeout(()=>{
-            setShowEndTime(false);
-        }, 2000);
+        endTimeTimeoutRef.current = window.setTimeout(()=>setShowEndTime(false), 2000);
     };
     const handleDecreaseTime = ()=>{
-        if (isInteractionBlocked || estimatedEndTime === null) return;
-        // Snap to 15-min floor first, then subtract 15 minutes
-        const snapped = snapTo15Min(estimatedEndTime);
-        const newTime = new Date(snapped.getTime() - 15 * 60 * 1000);
-        // Block if new time would be before or equal to phase start time
-        if (newTime <= phaseStartTime) return;
-        onEndTimeChange(newTime);
-        if (endTimeTimeoutRef.current) {
-            clearTimeout(endTimeTimeoutRef.current);
-        }
+        if (isInteractionBlocked || localEndTime === null) return;
+        // Mark that we're doing a local update
+        isLocalUpdateRef.current = true;
+        setLocalEndTime((prev)=>{
+            if (prev === null) return null;
+            const newTime = new Date(prev.getTime() - 15 * 60 * 1000);
+            // Block if new time would be before or equal to phase start time
+            if (newTime <= phaseStartTime) return prev;
+            // Debounce propagation to parent
+            if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+            updateTimeoutRef.current = window.setTimeout(()=>{
+                onEndTimeChange(newTime);
+                // Allow props sync after debounce completes
+                setTimeout(()=>{
+                    isLocalUpdateRef.current = false;
+                }, 100);
+            }, 300);
+            return newTime;
+        });
+        if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
         setShowEndTime(true);
-        endTimeTimeoutRef.current = window.setTimeout(()=>{
-            setShowEndTime(false);
-        }, 2000);
+        endTimeTimeoutRef.current = window.setTimeout(()=>setShowEndTime(false), 2000);
     };
     var _backgroundSettings_imageOpacity, _backgroundSettings_imageBlur;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -429,7 +459,7 @@ const RoomDetail = (param)=>{
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 400,
+                                lineNumber: 430,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -439,13 +469,13 @@ const RoomDetail = (param)=>{
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 404,
+                                lineNumber: 434,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 399,
+                        lineNumber: 429,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -456,7 +486,7 @@ const RoomDetail = (param)=>{
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 411,
+                        lineNumber: 441,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -472,12 +502,12 @@ const RoomDetail = (param)=>{
                                             className: "w-5 h-5 text-white/60"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 428,
+                                            lineNumber: 458,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 424,
+                                        lineNumber: 454,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -485,7 +515,7 @@ const RoomDetail = (param)=>{
                                         children: room.name
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 430,
+                                        lineNumber: 460,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -495,18 +525,18 @@ const RoomDetail = (param)=>{
                                             className: "w-5 h-5 text-white/60"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 435,
+                                            lineNumber: 465,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 431,
+                                        lineNumber: 461,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 423,
+                                lineNumber: 453,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -532,17 +562,17 @@ const RoomDetail = (param)=>{
                                                     children: word
                                                 }, i, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 452,
+                                                    lineNumber: 482,
                                                     columnNumber: 37
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 449,
+                                            lineNumber: 479,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, currentStep === null || currentStep === void 0 ? void 0 : currentStep.name, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 442,
+                                        lineNumber: 472,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -568,7 +598,7 @@ const RoomDetail = (param)=>{
                                                             result: "blur"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 460,
+                                                            lineNumber: 490,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("feMerge", {
@@ -577,31 +607,31 @@ const RoomDetail = (param)=>{
                                                                     in: "blur"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 462,
+                                                                    lineNumber: 492,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("feMergeNode", {
                                                                     in: "SourceGraphic"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 463,
+                                                                    lineNumber: 493,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 461,
+                                                            lineNumber: 491,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 459,
+                                                    lineNumber: 489,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 458,
+                                                lineNumber: 488,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("circle", {
@@ -613,7 +643,7 @@ const RoomDetail = (param)=>{
                                                 strokeWidth: "2"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 468,
+                                                lineNumber: 498,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].circle, {
@@ -651,7 +681,7 @@ const RoomDetail = (param)=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 475,
+                                                lineNumber: 505,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].circle, {
@@ -676,19 +706,19 @@ const RoomDetail = (param)=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 493,
+                                                lineNumber: 523,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 457,
+                                        lineNumber: 487,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 440,
+                                lineNumber: 470,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             !isInteractionBlocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -701,7 +731,7 @@ const RoomDetail = (param)=>{
                                 children: isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 509,
+                                lineNumber: 539,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -715,7 +745,7 @@ const RoomDetail = (param)=>{
                                                 children: "Ukončení"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 525,
+                                                lineNumber: 555,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -729,12 +759,12 @@ const RoomDetail = (param)=>{
                                                             className: "w-4 h-4 text-white/60"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 532,
+                                                            lineNumber: 562,
                                                             columnNumber: 15
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 527,
+                                                        lineNumber: 557,
                                                         columnNumber: 13
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -745,7 +775,7 @@ const RoomDetail = (param)=>{
                                                         }) : '--:--'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 534,
+                                                        lineNumber: 564,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -756,24 +786,24 @@ const RoomDetail = (param)=>{
                                                             className: "w-4 h-4 text-white/60"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 542,
+                                                            lineNumber: 572,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 537,
+                                                        lineNumber: 567,
                                                         columnNumber: 13
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 526,
+                                                lineNumber: 556,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 524,
+                                        lineNumber: 554,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -799,13 +829,13 @@ const RoomDetail = (param)=>{
                                                         className: "w-5 h-5 text-[#00D8C1]"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 562,
+                                                        lineNumber: 592,
                                                         columnNumber: 29
                                                     }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pause$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Pause$3e$__["Pause"], {
                                                         className: "w-5 h-5 text-white/40"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 562,
+                                                        lineNumber: 592,
                                                         columnNumber: 75
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -813,13 +843,13 @@ const RoomDetail = (param)=>{
                                                         children: isPaused ? 'Pokračovat' : 'Pauza'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 563,
+                                                        lineNumber: 593,
                                                         columnNumber: 25
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 549,
+                                                lineNumber: 579,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -842,7 +872,7 @@ const RoomDetail = (param)=>{
                                                         className: "w-5 h-5 ".concat(room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40')
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 579,
+                                                        lineNumber: 609,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -850,13 +880,13 @@ const RoomDetail = (param)=>{
                                                         children: "Hygiena"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 580,
+                                                        lineNumber: 610,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 566,
+                                                lineNumber: 596,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -885,7 +915,7 @@ const RoomDetail = (param)=>{
                                                         className: "w-5 h-5 ".concat(patientCalledTime ? 'text-green-400' : 'text-white/40')
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 602,
+                                                        lineNumber: 632,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -893,13 +923,13 @@ const RoomDetail = (param)=>{
                                                         children: patientCalledTime ? patientCallElapsedTime : 'Volat'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 603,
+                                                        lineNumber: 633,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 583,
+                                                lineNumber: 613,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -931,7 +961,7 @@ const RoomDetail = (param)=>{
                                                         className: "w-5 h-5 ".concat(patientArrivedTime ? 'text-purple-400' : 'text-white/40')
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 628,
+                                                        lineNumber: 658,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -939,19 +969,19 @@ const RoomDetail = (param)=>{
                                                         children: "Příjezd"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 629,
+                                                        lineNumber: 659,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 606,
+                                                lineNumber: 636,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 548,
+                                        lineNumber: 578,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -970,12 +1000,12 @@ const RoomDetail = (param)=>{
                                                             className: "w-4 h-4 text-violet-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 643,
+                                                            lineNumber: 673,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 642,
+                                                        lineNumber: 672,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -986,7 +1016,7 @@ const RoomDetail = (param)=>{
                                                                 children: "Lékař"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 646,
+                                                                lineNumber: 676,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -994,19 +1024,19 @@ const RoomDetail = (param)=>{
                                                                 children: room.staff.doctor.name || 'Nepřiřazen'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 647,
+                                                                lineNumber: 677,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 645,
+                                                        lineNumber: 675,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 635,
+                                                lineNumber: 665,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1022,12 +1052,12 @@ const RoomDetail = (param)=>{
                                                             className: "w-4 h-4 text-emerald-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 658,
+                                                            lineNumber: 688,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 657,
+                                                        lineNumber: 687,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1038,7 +1068,7 @@ const RoomDetail = (param)=>{
                                                                 children: "Sestra"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 661,
+                                                                lineNumber: 691,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1046,43 +1076,43 @@ const RoomDetail = (param)=>{
                                                                 children: room.staff.nurse.name || 'Nepřiřazena'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 662,
+                                                                lineNumber: 692,
                                                                 columnNumber: 19
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 660,
+                                                        lineNumber: 690,
                                                         columnNumber: 17
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 650,
+                                                lineNumber: 680,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 634,
+                                        lineNumber: 664,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 522,
+                                lineNumber: 552,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 421,
+                        lineNumber: 451,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/RoomDetail.tsx",
-                lineNumber: 397,
+                lineNumber: 427,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1092,14 +1122,14 @@ const RoomDetail = (param)=>{
                         className: "absolute inset-0 z-10 pointer-events-none border-[12px] border-red-500/30"
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 675,
+                        lineNumber: 705,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     room.isLocked && !room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "absolute inset-0 z-10 pointer-events-none border-[12px] border-amber-500/20"
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 678,
+                        lineNumber: 708,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1115,27 +1145,27 @@ const RoomDetail = (param)=>{
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 683,
+                                lineNumber: 713,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/80"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 692,
+                                lineNumber: 722,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.9)_100%)]"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 693,
+                                lineNumber: 723,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 682,
+                        lineNumber: 712,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1145,7 +1175,7 @@ const RoomDetail = (param)=>{
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 697,
+                        lineNumber: 727,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1155,7 +1185,7 @@ const RoomDetail = (param)=>{
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 701,
+                        lineNumber: 731,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
@@ -1185,7 +1215,7 @@ const RoomDetail = (param)=>{
                                                 children: room.name
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 717,
+                                                lineNumber: 747,
                                                 columnNumber: 15
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1195,7 +1225,7 @@ const RoomDetail = (param)=>{
                                                         className: "w-8 h-8"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 725,
+                                                        lineNumber: 755,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1203,13 +1233,13 @@ const RoomDetail = (param)=>{
                                                         children: "EMERGENCY"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 726,
+                                                        lineNumber: 756,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 724,
+                                                lineNumber: 754,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             room.isLocked && !room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1219,7 +1249,7 @@ const RoomDetail = (param)=>{
                                                         className: "w-7 h-7"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 732,
+                                                        lineNumber: 762,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1227,24 +1257,24 @@ const RoomDetail = (param)=>{
                                                         children: "SÁL UZAMČEN"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 733,
+                                                        lineNumber: 763,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 731,
+                                                lineNumber: 761,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, room.name + room.isEmergency + room.isLocked, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 710,
+                                        lineNumber: 740,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 709,
+                                    lineNumber: 739,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1252,18 +1282,18 @@ const RoomDetail = (param)=>{
                                     children: "CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU"
                                 }, void 0, false, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 738,
+                                    lineNumber: 768,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/RoomDetail.tsx",
-                            lineNumber: 708,
+                            lineNumber: 738,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 707,
+                        lineNumber: 737,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     room.isEnhancedHygiene && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1274,7 +1304,7 @@ const RoomDetail = (param)=>{
                         }
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 744,
+                        lineNumber: 774,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1284,12 +1314,12 @@ const RoomDetail = (param)=>{
                             className: "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8"
                         }, void 0, false, {
                             fileName: "[project]/components/RoomDetail.tsx",
-                            lineNumber: 759,
+                            lineNumber: 789,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 755,
+                        lineNumber: 785,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1308,7 +1338,7 @@ const RoomDetail = (param)=>{
                                             className: "w-5 h-5 text-violet-400"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 773,
+                                            lineNumber: 803,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1316,18 +1346,18 @@ const RoomDetail = (param)=>{
                                             children: room.staff.doctor.name || 'Vybrat lékaře'
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 774,
+                                            lineNumber: 804,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 772,
+                                    lineNumber: 802,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 765,
+                                lineNumber: 795,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1343,7 +1373,7 @@ const RoomDetail = (param)=>{
                                             className: "w-5 h-5 text-emerald-400"
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 786,
+                                            lineNumber: 816,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1351,24 +1381,24 @@ const RoomDetail = (param)=>{
                                             children: room.staff.nurse.name || 'Vybrat sestru'
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 787,
+                                            lineNumber: 817,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 785,
+                                    lineNumber: 815,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 778,
+                                lineNumber: 808,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 763,
+                        lineNumber: 793,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1426,7 +1456,7 @@ const RoomDetail = (param)=>{
                                                         strokeWidth: 2
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 835,
+                                                        lineNumber: 865,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1434,13 +1464,13 @@ const RoomDetail = (param)=>{
                                                         children: patientCallElapsedTime
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 836,
+                                                        lineNumber: 866,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, "call-timer", true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 828,
+                                                lineNumber: 858,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
                                                 initial: {
@@ -1462,7 +1492,7 @@ const RoomDetail = (param)=>{
                                                         strokeWidth: 2
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 848,
+                                                        lineNumber: 878,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1470,23 +1500,23 @@ const RoomDetail = (param)=>{
                                                         children: "Volat"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 849,
+                                                        lineNumber: 879,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, "call-idle", true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 841,
+                                                lineNumber: 871,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 826,
+                                            lineNumber: 856,
                                             columnNumber: 13
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 798,
+                                        lineNumber: 828,
                                         columnNumber: 3
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].button, {
@@ -1531,7 +1561,7 @@ const RoomDetail = (param)=>{
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 891,
+                                                lineNumber: 921,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1539,19 +1569,19 @@ const RoomDetail = (param)=>{
                                                 children: "Příjezd"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 892,
+                                                lineNumber: 922,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 856,
+                                        lineNumber: 886,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 796,
+                                lineNumber: 826,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1584,7 +1614,7 @@ const RoomDetail = (param)=>{
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 919,
+                                                lineNumber: 949,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1592,13 +1622,13 @@ const RoomDetail = (param)=>{
                                                 children: "Hygien."
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 920,
+                                                lineNumber: 950,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 899,
+                                        lineNumber: 929,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     !(room.isLocked && isFinalStep) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].button, {
@@ -1628,14 +1658,14 @@ const RoomDetail = (param)=>{
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 948,
+                                                lineNumber: 978,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pause$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Pause$3e$__["Pause"], {
                                                 className: "w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60",
                                                 strokeWidth: 2
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 950,
+                                                lineNumber: 980,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1643,25 +1673,25 @@ const RoomDetail = (param)=>{
                                                 children: isPaused ? 'Pokračovat' : 'Pauza'
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 952,
+                                                lineNumber: 982,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 927,
+                                        lineNumber: 957,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 897,
+                                lineNumber: 927,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 794,
+                        lineNumber: 824,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
@@ -1671,14 +1701,14 @@ const RoomDetail = (param)=>{
                                 className: "absolute w-[700px] h-[700px] rounded-full border border-white/5"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 961,
+                                lineNumber: 991,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]"
                             }, void 0, false, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 962,
+                                lineNumber: 992,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1709,7 +1739,7 @@ const RoomDetail = (param)=>{
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 979,
+                                                    lineNumber: 1009,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1719,7 +1749,7 @@ const RoomDetail = (param)=>{
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 987,
+                                                    lineNumber: 1017,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1730,7 +1760,7 @@ const RoomDetail = (param)=>{
                                                             children: "DOKONČENÁ FÁZE"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 994,
+                                                            lineNumber: 1024,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1738,19 +1768,19 @@ const RoomDetail = (param)=>{
                                                             children: prevStep.title
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 997,
+                                                            lineNumber: 1027,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 993,
+                                                    lineNumber: 1023,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 972,
+                                            lineNumber: 1002,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0));
                                     })(),
@@ -1781,7 +1811,7 @@ const RoomDetail = (param)=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1018,
+                                                lineNumber: 1048,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1791,7 +1821,7 @@ const RoomDetail = (param)=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1027,
+                                                lineNumber: 1057,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -1809,7 +1839,7 @@ const RoomDetail = (param)=>{
                                                         className: "opacity-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1034,
+                                                        lineNumber: 1064,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].circle, {
@@ -1842,13 +1872,13 @@ const RoomDetail = (param)=>{
                                                         className: "opacity-80"
                                                     }, currentStepIndex, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1035,
+                                                        lineNumber: 1065,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1033,
+                                                lineNumber: 1063,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -1875,7 +1905,7 @@ const RoomDetail = (param)=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1049,
+                                                lineNumber: 1079,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -1886,12 +1916,12 @@ const RoomDetail = (param)=>{
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 1066,
+                                                    lineNumber: 1096,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1064,
+                                                lineNumber: 1094,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1917,7 +1947,7 @@ const RoomDetail = (param)=>{
                                                                 className: "w-20 h-20 text-white mb-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1086,
+                                                                lineNumber: 1116,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -1925,13 +1955,13 @@ const RoomDetail = (param)=>{
                                                                 children: "UZAMČENO"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1087,
+                                                                lineNumber: 1117,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "locked-text", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1079,
+                                                        lineNumber: 1109,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : showEndTime && estimatedEndTime && shouldShowTime ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -1954,12 +1984,12 @@ const RoomDetail = (param)=>{
                                                             })
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 1098,
+                                                            lineNumber: 1128,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, "end-time-text", false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1092,
+                                                        lineNumber: 1122,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : showPatientCalledText ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -1984,7 +2014,7 @@ const RoomDetail = (param)=>{
                                                                 children: "SPECIÁLNÍ STAV"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1111,
+                                                                lineNumber: 1141,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -2020,12 +2050,12 @@ const RoomDetail = (param)=>{
                                                                     strokeWidth: 1.5
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 1120,
+                                                                    lineNumber: 1150,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1115,
+                                                                lineNumber: 1145,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].h2, {
@@ -2045,20 +2075,20 @@ const RoomDetail = (param)=>{
                                                                     "Volání",
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, void 0, false, {
                                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                                        lineNumber: 1128,
+                                                                        lineNumber: 1158,
                                                                         columnNumber: 29
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     "pacienta"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1122,
+                                                                lineNumber: 1152,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "patient-called-text", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1103,
+                                                        lineNumber: 1133,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : showPatientArrivedText ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -2083,7 +2113,7 @@ const RoomDetail = (param)=>{
                                                                 children: "SPECIÁLNÍ STAV"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1140,
+                                                                lineNumber: 1170,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -2108,12 +2138,12 @@ const RoomDetail = (param)=>{
                                                                     strokeWidth: 1.5
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 1149,
+                                                                    lineNumber: 1179,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1144,
+                                                                lineNumber: 1174,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].h2, {
@@ -2133,20 +2163,20 @@ const RoomDetail = (param)=>{
                                                                     "Příjezd",
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, void 0, false, {
                                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                                        lineNumber: 1157,
+                                                                        lineNumber: 1187,
                                                                         columnNumber: 30
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     "pacienta"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1151,
+                                                                lineNumber: 1181,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "patient-arrived-text", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1132,
+                                                        lineNumber: 1162,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : isPaused ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -2166,12 +2196,12 @@ const RoomDetail = (param)=>{
                                                             children: "PAUZA"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/RoomDetail.tsx",
-                                                            lineNumber: 1167,
+                                                            lineNumber: 1197,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, "pause-text", false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1161,
+                                                        lineNumber: 1191,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
                                                         initial: {
@@ -2189,7 +2219,7 @@ const RoomDetail = (param)=>{
                                                                 children: "PROBÍHAJÍCÍ FÁZE"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1178,
+                                                                lineNumber: 1208,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].h2, {
@@ -2205,7 +2235,7 @@ const RoomDetail = (param)=>{
                                                                 children: currentStep.title
                                                             }, currentStep.title, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1182,
+                                                                lineNumber: 1212,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             shouldShowTime && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2215,34 +2245,34 @@ const RoomDetail = (param)=>{
                                                                     children: isPaused ? pauseElapsedTime : elapsedTime
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                                    lineNumber: 1194,
+                                                                    lineNumber: 1224,
                                                                     columnNumber: 25
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                                lineNumber: 1193,
+                                                                lineNumber: 1223,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, "current-status", true, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1172,
+                                                        lineNumber: 1202,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/RoomDetail.tsx",
-                                                    lineNumber: 1077,
+                                                    lineNumber: 1107,
                                                     columnNumber: 15
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1076,
+                                                lineNumber: 1106,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 1006,
+                                        lineNumber: 1036,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -2268,7 +2298,7 @@ const RoomDetail = (param)=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1214,
+                                                lineNumber: 1244,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2278,7 +2308,7 @@ const RoomDetail = (param)=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1222,
+                                                lineNumber: 1252,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2289,7 +2319,7 @@ const RoomDetail = (param)=>{
                                                         children: isFinalStep ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1229,
+                                                        lineNumber: 1259,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -2297,25 +2327,25 @@ const RoomDetail = (param)=>{
                                                         children: nextStep.title
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/RoomDetail.tsx",
-                                                        lineNumber: 1232,
+                                                        lineNumber: 1262,
                                                         columnNumber: 15
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/RoomDetail.tsx",
-                                                lineNumber: 1228,
+                                                lineNumber: 1258,
                                                 columnNumber: 13
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 1206,
+                                        lineNumber: 1236,
                                         columnNumber: 11
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/RoomDetail.tsx",
-                                lineNumber: 964,
+                                lineNumber: 994,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             !isInteractionBlocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2335,12 +2365,12 @@ const RoomDetail = (param)=>{
                                             strokeWidth: 2
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 1254,
+                                            lineNumber: 1284,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 1243,
+                                        lineNumber: 1273,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2358,12 +2388,12 @@ const RoomDetail = (param)=>{
                                             strokeWidth: 2
                                         }, void 0, false, {
                                             fileName: "[project]/components/RoomDetail.tsx",
-                                            lineNumber: 1269,
+                                            lineNumber: 1299,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/RoomDetail.tsx",
-                                        lineNumber: 1258,
+                                        lineNumber: 1288,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
@@ -2371,7 +2401,7 @@ const RoomDetail = (param)=>{
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 959,
+                        lineNumber: 989,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2387,23 +2417,23 @@ const RoomDetail = (param)=>{
                                     }
                                 }, status.id, false, {
                                     fileName: "[project]/components/RoomDetail.tsx",
-                                    lineNumber: 1280,
+                                    lineNumber: 1310,
                                     columnNumber: 11
                                 }, ("TURBOPACK compile-time value", void 0)))
                         }, void 0, false, {
                             fileName: "[project]/components/RoomDetail.tsx",
-                            lineNumber: 1278,
+                            lineNumber: 1308,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/RoomDetail.tsx",
-                        lineNumber: 1276,
+                        lineNumber: 1306,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/RoomDetail.tsx",
-                lineNumber: 672,
+                lineNumber: 702,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StaffPickerModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2418,17 +2448,17 @@ const RoomDetail = (param)=>{
                 title: staffPickerRole === 'doctor' ? 'Vybrat lékaře' : 'Vybrat sestru'
             }, void 0, false, {
                 fileName: "[project]/components/RoomDetail.tsx",
-                lineNumber: 1295,
+                lineNumber: 1325,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/RoomDetail.tsx",
-        lineNumber: 389,
+        lineNumber: 419,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
-_s1(RoomDetail, "pUvA5tWuGRF73KdpluXnN4nyorI=", false, function() {
+_s1(RoomDetail, "hugp4br+FxaRfV5+UDA58kNNUNw=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"],
         usePrevious

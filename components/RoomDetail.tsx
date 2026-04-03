@@ -56,7 +56,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
 
-  const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+  // Simple local state for estimated end time - initialized from props
+  const [localEndTime, setLocalEndTime] = useState<Date | null>(() => 
+    room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
+  );
+  const updateTimeoutRef = useRef<number | null>(null);
+  const isLocalUpdateRef = useRef(false); // Track if update came from local buttons
+  
+  // Sync with props only when not actively editing locally
+  useEffect(() => {
+    if (isLocalUpdateRef.current) return; // Skip if local update in progress
+    const propsTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+    setLocalEndTime(propsTime);
+  }, [room.estimatedEndTime]);
+  
+  const estimatedEndTime = localEndTime;
 
   // Update elapsed time every second
   useEffect(() => {
@@ -343,46 +357,62 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
   const handleIncreaseTime = () => {
     if (isInteractionBlocked) return;
+    
+    // Mark that we're doing a local update
+    isLocalUpdateRef.current = true;
   
-    let newTime;
-    if (estimatedEndTime === null) {
-      // First press: round up current time to next 15-min boundary
-      newTime = roundUpTo15Min(new Date());
-    } else {
-      // Snap current time to 15-min floor, then add 15 minutes
-      const snapped = snapTo15Min(estimatedEndTime);
-      newTime = new Date(snapped.getTime() + 15 * 60 * 1000);
-    }
-    onEndTimeChange(newTime);
+    setLocalEndTime(prev => {
+      let newTime;
+      if (prev === null) {
+        newTime = roundUpTo15Min(new Date());
+      } else {
+        newTime = new Date(prev.getTime() + 15 * 60 * 1000);
+      }
+      
+      // Debounce propagation to parent
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = window.setTimeout(() => {
+        onEndTimeChange(newTime);
+        // Allow props sync after debounce completes
+        setTimeout(() => { isLocalUpdateRef.current = false; }, 100);
+      }, 300);
+      
+      return newTime;
+    });
   
-    if (endTimeTimeoutRef.current) {
-      clearTimeout(endTimeTimeoutRef.current);
-    }
+    if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
     setShowEndTime(true);
-    endTimeTimeoutRef.current = window.setTimeout(() => {
-      setShowEndTime(false);
-    }, 2000);
+    endTimeTimeoutRef.current = window.setTimeout(() => setShowEndTime(false), 2000);
   };
   
   const handleDecreaseTime = () => {
-    if (isInteractionBlocked || estimatedEndTime === null) return;
-
-    // Snap to 15-min floor first, then subtract 15 minutes
-    const snapped = snapTo15Min(estimatedEndTime);
-    const newTime = new Date(snapped.getTime() - 15 * 60 * 1000);
+    if (isInteractionBlocked || localEndTime === null) return;
     
-    // Block if new time would be before or equal to phase start time
-    if (newTime <= phaseStartTime) return;
+    // Mark that we're doing a local update
+    isLocalUpdateRef.current = true;
+
+    setLocalEndTime(prev => {
+      if (prev === null) return null;
+      
+      const newTime = new Date(prev.getTime() - 15 * 60 * 1000);
+      
+      // Block if new time would be before or equal to phase start time
+      if (newTime <= phaseStartTime) return prev;
+      
+      // Debounce propagation to parent
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = window.setTimeout(() => {
+        onEndTimeChange(newTime);
+        // Allow props sync after debounce completes
+        setTimeout(() => { isLocalUpdateRef.current = false; }, 100);
+      }, 300);
+      
+      return newTime;
+    });
   
-    onEndTimeChange(newTime);
-  
-    if (endTimeTimeoutRef.current) {
-      clearTimeout(endTimeTimeoutRef.current);
-    }
+    if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
     setShowEndTime(true);
-    endTimeTimeoutRef.current = window.setTimeout(() => {
-      setShowEndTime(false);
-    }, 2000);
+    endTimeTimeoutRef.current = window.setTimeout(() => setShowEndTime(false), 2000);
   };
 
   return (
