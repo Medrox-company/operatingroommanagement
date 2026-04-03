@@ -780,9 +780,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <motion.button
             onClick={async () => {
               if (!patientCalledTime) {
-                setPatientCalledTime(new Date());
-    setShowPatientCalledText(true);
-    setTimeout(() => setShowPatientCalledText(false), 5000);
+                const now = new Date();
+                setPatientCalledTime(now);
+                setShowPatientCalledText(true);
+                setTimeout(() => setShowPatientCalledText(false), 5000);
+                // Save to database so it persists across navigation
+                await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_call',
