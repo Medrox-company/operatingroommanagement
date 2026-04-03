@@ -349,9 +349,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       // First press: round up current time to next 15-min boundary
       newTime = roundUpTo15Min(new Date());
     } else {
-      // Snap current time to 15-min floor, then add 15 minutes
-      const snapped = snapTo15Min(estimatedEndTime);
-      newTime = new Date(snapped.getTime() + 15 * 60 * 1000);
+      // Simply add 15 minutes - time should already be on 15-min boundary
+      newTime = new Date(estimatedEndTime.getTime() + 15 * 60 * 1000);
     }
     onEndTimeChange(newTime);
   
@@ -367,9 +366,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const handleDecreaseTime = () => {
     if (isInteractionBlocked || estimatedEndTime === null) return;
 
-    // Snap to 15-min floor first, then subtract 15 minutes
-    const snapped = snapTo15Min(estimatedEndTime);
-    const newTime = new Date(snapped.getTime() - 15 * 60 * 1000);
+    // Simply subtract 15 minutes - time should already be on 15-min boundary
+    const newTime = new Date(estimatedEndTime.getTime() - 15 * 60 * 1000);
     
     // Block if new time would be before or equal to phase start time
     if (newTime <= phaseStartTime) return;
