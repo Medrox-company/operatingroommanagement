@@ -1738,13 +1738,13 @@ const WorkflowStatusesProvider = ({ children })=>{
         fetchStatuses
     ]);
     const getActiveStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
-        return statuses.filter((s)=>s.is_active);
+        return statuses.filter((s)=>s.is_active).sort((a, b)=>a.order_index - b.order_index);
     }, [
         statuses
     ]);
-    // Workflow statuses jsou jen ty hlavní (bez speciálních) pro kruhový graf
+    // Workflow statuses are only main ones (without special) for circular progress
     const getWorkflowStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
-        return statuses.filter((s)=>s.is_active && !s.is_special && s.order_index < 8);
+        return statuses.filter((s)=>s.is_active && !s.is_special).sort((a, b)=>a.order_index - b.order_index);
     }, [
         statuses
     ]);
