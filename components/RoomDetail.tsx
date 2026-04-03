@@ -278,12 +278,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       onEndTimeChange(null);
     }
 
-    // Reset patient call/arrival status when changing steps
-    if (patientCalledTime || patientArrivedTime) {
+    // Reset patient call/arrival status only when transitioning to "Příjezd na sál"
+    // (patient is no longer waiting in pre-OR area)
+    const newStepName = (newStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isArrivalToOR = newStepName.includes('prijezd na sal') || newStepName.includes('arrival');
+    if (isArrivalToOR && (patientCalledTime || patientArrivedTime)) {
       setPatientCalledTime(null);
       setPatientArrivedTime(null);
       setPatientCallElapsedTime('00:00');
       await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+      onPatientStatusChange?.(null, null);
     }
 
     onStepChange(newIndex);
