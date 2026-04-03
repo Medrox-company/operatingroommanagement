@@ -1361,7 +1361,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     className="w-12 h-12 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: `${stepColor}20` }}
                   >
-                    <Stethoscope className="w-5 h-5" style={{ color: stepColor }} />
+                    <span style={{ color: stepColor }}><Stethoscope className="w-5 h-5" /></span>
                   </div>
                   <div>
                     <p className="text-white font-semibold">{currentStatus?.name || 'Status'}</p>
@@ -1377,7 +1377,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 className="w-10 h-10 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: `${stepColor}30` }}
               >
-                <ChevronRight className="w-5 h-5" style={{ color: stepColor }} />
+                <span style={{ color: stepColor }}><ChevronRight className="w-5 h-5" /></span>
               </div>
 
               {/* Next step */}

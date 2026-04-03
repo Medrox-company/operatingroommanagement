@@ -967,7 +967,7 @@ function transformSingleRoom(row) {
     if (row.is_locked !== undefined) result.isLocked = row.is_locked;
     if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
     if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
-    if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule || {};
+    if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule;
     return result;
 }
 async function recordStatusEvent(event) {
