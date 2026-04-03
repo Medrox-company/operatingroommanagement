@@ -1191,7 +1191,7 @@ const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow
           border: `1px solid ${color}40`,
         }}
       >
-        <Icon className="w-4 h-4" style={{ color }} />
+        <span style={{ color }}><Icon className="w-4 h-4" /></span>
       </div>
       <div className="min-w-0">
         <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
