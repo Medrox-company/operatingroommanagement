@@ -56,30 +56,25 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
 
-  // Local state for estimated end time to handle rapid clicks
-  const [localEstimatedEndTime, setLocalEstimatedEndTime] = useState<Date | null>(
-    room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
-  );
+  // Use ref for immediate access to estimated end time during rapid clicks
   const estimatedEndTimeRef = useRef<Date | null>(
     room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
   );
   const updateTimeoutRef = useRef<number | null>(null);
+  const [, forceUpdate] = useState(0); // For triggering re-render after ref update
   
-  // Update ref whenever local state changes
-  useEffect(() => {
-    estimatedEndTimeRef.current = localEstimatedEndTime;
-  }, [localEstimatedEndTime]);
-  
-  // Sync local state with props when props change (but not during rapid clicking)
+  // Sync ref with props when props change from parent
   useEffect(() => {
     const propsTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+    const currentTime = estimatedEndTimeRef.current;
     // Only sync if the times are significantly different (more than 1 second)
-    if (propsTime === null && localEstimatedEndTime === null) return;
-    if (propsTime && localEstimatedEndTime && Math.abs(propsTime.getTime() - localEstimatedEndTime.getTime()) < 1000) return;
-    setLocalEstimatedEndTime(propsTime);
+    if (propsTime === null && currentTime === null) return;
+    if (propsTime && currentTime && Math.abs(propsTime.getTime() - currentTime.getTime()) < 1000) return;
+    estimatedEndTimeRef.current = propsTime;
+    forceUpdate(n => n + 1);
   }, [room.estimatedEndTime]);
   
-  const estimatedEndTime = localEstimatedEndTime;
+  const estimatedEndTime = estimatedEndTimeRef.current;
 
   // Update elapsed time every second
   useEffect(() => {
@@ -377,8 +372,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       newTime = new Date(currentTime.getTime() + 15 * 60 * 1000);
     }
     
-    // Update local state and ref immediately for responsive UI
-    setLocalEstimatedEndTime(newTime);
+    // Update ref synchronously for immediate next click
+    estimatedEndTimeRef.current = newTime;
+    // Trigger re-render to show updated time
+    forceUpdate(n => n + 1);
     
     // Debounce propagation to parent (only after user stops clicking)
     if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
@@ -405,8 +402,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     // Block if new time would be before or equal to phase start time
     if (newTime <= phaseStartTime) return;
   
-    // Update local state and ref immediately for responsive UI
-    setLocalEstimatedEndTime(newTime);
+    // Update ref synchronously for immediate next click
+    estimatedEndTimeRef.current = newTime;
+    // Trigger re-render to show updated time
+    forceUpdate(n => n + 1);
     
     // Debounce propagation to parent (only after user stops clicking)
     if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
