@@ -2,7 +2,7 @@
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -36,10 +36,11 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
     const progressPercent = ((safeIndex + 1) / totalSteps);
     
-    // Don't show time for "Sál připraven" and "Úklid sálu" statuses
-    const statusName = dbStatus?.name?.toLowerCase() || '';
-    const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
-    const isCleaningStatus = statusName.includes('úklid') || statusName.includes('uklid');
+    // Don't show time for "Sal priprav*" and "Uklid" statuses (ASCII-safe)
+    // Normalize string to remove diacritics for comparison
+    const statusName = (dbStatus?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isReadyStatus = statusName.includes('priprav');
+    const isCleaningStatus = statusName.includes('uklid');
     const shouldShowTime = !isReadyStatus && !isCleaningStatus;
     
     const radius = 38;
@@ -246,6 +247,20 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                   <span className="text-[11px] font-mono font-bold text-white">
                     {room.currentProcedure?.startTime || '--:--'}
                   </span>
+                </div>
+              )}
+
+              {/* Patient called indicator */}
+              {room.patientCalledAt && !room.patientArrivedAt && (
+                <div className="p-2 rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">
+                  <Phone className="w-4 h-4 text-blue-400" />
+                </div>
+              )}
+
+              {/* Patient arrived indicator */}
+              {room.patientArrivedAt && (
+                <div className="p-2 rounded-xl border transition-all backdrop-blur-md bg-green-500/20 border-green-400/40">
+                  <BedDouble className="w-4 h-4 text-green-400" />
                 </div>
               )}
 

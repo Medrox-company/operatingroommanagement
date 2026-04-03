@@ -191,7 +191,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
   const currentStep = activeDbStatuses.length > 0
     ? activeDbStatuses[safeStepIndex]
-    : { name: 'Čekání', color: '#6B7280', title: 'Čekání' };
+    : { name: 'Waiting', color: '#6B7280', title: 'Waiting' };
   
   const nextStepIndex = (safeStepIndex + 1) % Math.max(activeDbStatuses.length, 1);
   const nextStep = activeDbStatuses.length > 0
@@ -203,9 +203,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
   
-  // Don't show time only for "Sál připraven" status
-  const statusName = currentStep?.name?.toLowerCase() || '';
-  const isReadyStatus = statusName.includes('připraven') || statusName.includes('pripraven');
+  // Don't show time only for "Sal priprav*" status (ASCII-safe)
+  // Normalize string to remove diacritics for comparison
+  const statusName = (currentStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const isReadyStatus = statusName.includes('priprav');
   const shouldShowTime = !isReadyStatus;
 
   // Dynamic theme color based on status
@@ -264,13 +265,24 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         operating_room_id: room.id,
         event_type: 'operation_end',
         step_index: currentStepIndex,
-        step_name: 'Konec operace',
+        step_name: 'Operation End',
         duration_seconds: durationSeconds,
         metadata: { 
           completed_step: previousStep?.name || 'Status',
           previous_step: previousStep?.name || 'Status',
         },
       });
+      
+      // Reset estimated end time when returning to "ready" status
+      onEndTimeChange(null);
+    }
+
+    // Reset patient call/arrival status when changing steps
+    if (patientCalledTime || patientArrivedTime) {
+      setPatientCalledTime(null);
+      setPatientArrivedTime(null);
+      setPatientCallElapsedTime('00:00');
+      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
     }
 
     onStepChange(newIndex);
@@ -582,14 +594,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     setShowPatientArrivedText(true);
                     await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
                     await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                    setTimeout(async () => {
-                      isResettingRef.current = true;
+                    // Just hide the text after 5 seconds, patient status stays in DB until step change
+                    setTimeout(() => {
                       setShowPatientArrivedText(false);
-                      setPatientCalledTime(null);
-                      setPatientArrivedTime(null);
-                      setPatientCallElapsedTime('00:00');
-                      await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                      setTimeout(() => { isResettingRef.current = false; }, 500);
                     }, 5000);
                   }
                 }}
@@ -773,9 +780,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
           <motion.button
             onClick={async () => {
               if (!patientCalledTime) {
-                setPatientCalledTime(new Date());
-    setShowPatientCalledText(true);
-    setTimeout(() => setShowPatientCalledText(false), 5000);
+                const now = new Date();
+                setPatientCalledTime(now);
+                setShowPatientCalledText(true);
+                setTimeout(() => setShowPatientCalledText(false), 5000);
+                // Save to database so it persists across navigation
+                await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_call',
@@ -841,15 +851,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                   duration_seconds: waitDuration,
                   metadata: { call_time: patientCalledTime.toISOString() },
                 });
-                setTimeout(async () => {
-                  isResettingRef.current = true;
+                // Just hide the text after 5 seconds, keep patient status in database
+                // Patient status will be reset when moving to next step
+                setTimeout(() => {
                   setShowPatientArrivedText(false);
-                  setPatientCalledTime(null);
-                  setPatientArrivedTime(null);
-                  setPatientCallElapsedTime('00:00');
-                  await updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                  // Allow sync again after DB update completes
-                  setTimeout(() => { isResettingRef.current = false; }, 500);
                 }, 5000);
               }
             }}
@@ -1164,7 +1169,7 @@ const prevStep = activeDbStatuses.length > 0
                       {currentStep.title}
                     </motion.h2>
 
-                    {/* Time display under title - hide for "Sál připraven" status */}
+                    {/* Time display under title - hide for "ready" status */}
                     {shouldShowTime && (
                       <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
                         <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>

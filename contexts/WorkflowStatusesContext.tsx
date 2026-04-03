@@ -129,12 +129,12 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   }, [fetchStatuses]);
 
   const getActiveStatuses = useCallback(() => {
-    return statuses.filter(s => s.is_active);
+    return statuses.filter(s => s.is_active).sort((a, b) => a.order_index - b.order_index);
   }, [statuses]);
 
-  // Workflow statuses jsou jen ty hlavní (bez speciálních) pro kruhový graf
+  // Workflow statuses are only main ones (without special) for circular progress
   const getWorkflowStatuses = useCallback(() => {
-    return statuses.filter(s => s.is_active && !s.is_special && s.order_index < 8);
+    return statuses.filter(s => s.is_active && !s.is_special).sort((a, b) => a.order_index - b.order_index);
   }, [statuses]);
 
   const getStatisticsStatuses = useCallback(() => {
