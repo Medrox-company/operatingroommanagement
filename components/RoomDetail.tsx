@@ -56,25 +56,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
 
-  // Use ref for immediate access to estimated end time during rapid clicks
-  const estimatedEndTimeRef = useRef<Date | null>(
+  // Simple local state for estimated end time - initialized from props
+  const [localEndTime, setLocalEndTime] = useState<Date | null>(() => 
     room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
   );
   const updateTimeoutRef = useRef<number | null>(null);
-  const [, forceUpdate] = useState(0); // For triggering re-render after ref update
+  const isLocalUpdateRef = useRef(false); // Track if update came from local buttons
   
-  // Sync ref with props when props change from parent
+  // Sync with props only when not actively editing locally
   useEffect(() => {
+    if (isLocalUpdateRef.current) return; // Skip if local update in progress
     const propsTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
-    const currentTime = estimatedEndTimeRef.current;
-    // Only sync if the times are significantly different (more than 1 second)
-    if (propsTime === null && currentTime === null) return;
-    if (propsTime && currentTime && Math.abs(propsTime.getTime() - currentTime.getTime()) < 1000) return;
-    estimatedEndTimeRef.current = propsTime;
-    forceUpdate(n => n + 1);
+    setLocalEndTime(propsTime);
   }, [room.estimatedEndTime]);
   
-  const estimatedEndTime = estimatedEndTimeRef.current;
+  const estimatedEndTime = localEndTime;
 
   // Update elapsed time every second
   useEffect(() => {
@@ -361,65 +357,62 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
   const handleIncreaseTime = () => {
     if (isInteractionBlocked) return;
-  
-    let newTime;
-    const currentTime = estimatedEndTimeRef.current;
-    if (currentTime === null) {
-      // First press: round up current time to next 15-min boundary
-      newTime = roundUpTo15Min(new Date());
-    } else {
-      // Simply add 15 minutes - time should already be on 15-min boundary
-      newTime = new Date(currentTime.getTime() + 15 * 60 * 1000);
-    }
     
-    // Update ref synchronously for immediate next click
-    estimatedEndTimeRef.current = newTime;
-    // Trigger re-render to show updated time
-    forceUpdate(n => n + 1);
-    
-    // Debounce propagation to parent (only after user stops clicking)
-    if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
-    updateTimeoutRef.current = window.setTimeout(() => {
-      onEndTimeChange(newTime);
-    }, 300);
+    // Mark that we're doing a local update
+    isLocalUpdateRef.current = true;
   
-    if (endTimeTimeoutRef.current) {
-      clearTimeout(endTimeTimeoutRef.current);
-    }
+    setLocalEndTime(prev => {
+      let newTime;
+      if (prev === null) {
+        newTime = roundUpTo15Min(new Date());
+      } else {
+        newTime = new Date(prev.getTime() + 15 * 60 * 1000);
+      }
+      
+      // Debounce propagation to parent
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = window.setTimeout(() => {
+        onEndTimeChange(newTime);
+        // Allow props sync after debounce completes
+        setTimeout(() => { isLocalUpdateRef.current = false; }, 100);
+      }, 300);
+      
+      return newTime;
+    });
+  
+    if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
     setShowEndTime(true);
-    endTimeTimeoutRef.current = window.setTimeout(() => {
-      setShowEndTime(false);
-    }, 2000);
+    endTimeTimeoutRef.current = window.setTimeout(() => setShowEndTime(false), 2000);
   };
   
   const handleDecreaseTime = () => {
-    const currentTime = estimatedEndTimeRef.current;
-    if (isInteractionBlocked || currentTime === null) return;
+    if (isInteractionBlocked || localEndTime === null) return;
+    
+    // Mark that we're doing a local update
+    isLocalUpdateRef.current = true;
 
-    // Simply subtract 15 minutes - time should already be on 15-min boundary
-    const newTime = new Date(currentTime.getTime() - 15 * 60 * 1000);
-    
-    // Block if new time would be before or equal to phase start time
-    if (newTime <= phaseStartTime) return;
+    setLocalEndTime(prev => {
+      if (prev === null) return null;
+      
+      const newTime = new Date(prev.getTime() - 15 * 60 * 1000);
+      
+      // Block if new time would be before or equal to phase start time
+      if (newTime <= phaseStartTime) return prev;
+      
+      // Debounce propagation to parent
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = window.setTimeout(() => {
+        onEndTimeChange(newTime);
+        // Allow props sync after debounce completes
+        setTimeout(() => { isLocalUpdateRef.current = false; }, 100);
+      }, 300);
+      
+      return newTime;
+    });
   
-    // Update ref synchronously for immediate next click
-    estimatedEndTimeRef.current = newTime;
-    // Trigger re-render to show updated time
-    forceUpdate(n => n + 1);
-    
-    // Debounce propagation to parent (only after user stops clicking)
-    if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
-    updateTimeoutRef.current = window.setTimeout(() => {
-      onEndTimeChange(newTime);
-    }, 300);
-  
-    if (endTimeTimeoutRef.current) {
-      clearTimeout(endTimeTimeoutRef.current);
-    }
+    if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
     setShowEndTime(true);
-    endTimeTimeoutRef.current = window.setTimeout(() => {
-      setShowEndTime(false);
-    }, 2000);
+    endTimeTimeoutRef.current = window.setTimeout(() => setShowEndTime(false), 2000);
   };
 
   return (
