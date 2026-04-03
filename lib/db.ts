@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { OperatingRoom, RoomStatus } from '../types';
+import { OperatingRoom, RoomStatus, WeeklySchedule } from '../types';
 
 // Type for database row
 interface DBOperatingRoom {
@@ -79,7 +79,7 @@ function transformRoom(
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
-    weeklySchedule: row.weekly_schedule || {},
+    weeklySchedule: row.weekly_schedule as WeeklySchedule | undefined,
     staff: {
       doctor: { name: doctor?.name || null, role: 'DOCTOR' },
       nurse: { name: nurse?.name || null, role: 'NURSE' },
