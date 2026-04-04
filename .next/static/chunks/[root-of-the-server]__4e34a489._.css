@@ -1232,7 +1232,7 @@ img, video {
   width: 100%;
 }
 
-.w-px {
+.w-px, .w-\[1px\] {
   width: 1px;
 }
 

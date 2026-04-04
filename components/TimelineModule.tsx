@@ -1039,6 +1039,21 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           </>
                         )}
 
+                        {/* Estimated end time indicator - dotted line at the right edge */}
+                        {boxRightPct > 0 && boxRightPct < 100 && (
+                          <>
+                            <div 
+                              className="absolute top-0 bottom-0 w-[1px] -translate-x-1/2"
+                              style={{ 
+                                left: `${boxRightPct}%`,
+                                background: 'repeating-linear-gradient(180deg, rgba(255,165,0,0.7) 0px, rgba(255,165,0,0.7) 3px, transparent 3px, transparent 6px)',
+                                opacity: isFree ? 0.3 : 0.7
+                              }}
+                              title="Očekávaný konec operace"
+                            />
+                          </>
+                        )}
+
                         {/* Content overlay - refined typography */}
                         <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
                           {room.isPaused ? (
