@@ -323,11 +323,11 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       </div>
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
-      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden" style={{ background: BG_DARK }}>
+      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden md:pl-32 md:pr-10" style={{ background: BG_DARK }}>
 
       {/* ======== Header with Title and Stats ======== */}
       <div className="sticky top-0 z-40 flex-shrink-0" style={{ background: BG_DARK, borderBottom: `1px solid ${BORDER_SUBTLE}` }}>
-        <div className="px-6 py-5">
+        <div className="px-8 py-5">
           {/* Stats Boxes Row */}
           <div className="flex items-center gap-3 overflow-x-auto pb-1 hide-scrollbar">
             <StatBox 
@@ -974,7 +974,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
       {/* ======== Legend Footer - Clean minimal ======== */}
       <footer 
-        className="relative z-10 flex items-center justify-between gap-4 px-6 py-3 flex-shrink-0" 
+        className="relative z-10 flex items-center justify-between gap-4 px-8 py-3 flex-shrink-0" 
         style={{ background: BG_CARD, borderTop: `1px solid ${BORDER_SUBTLE}` }}
       >
         <div className="flex items-center gap-3 flex-wrap">
