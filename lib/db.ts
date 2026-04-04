@@ -78,6 +78,7 @@ function transformRoom(
     phaseStartedAt: row.phase_started_at,
     operationStartedAt: row.operation_started_at,
     statusHistory: row.status_history || [],
+    completedOperations: row.completed_operations || [],
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
@@ -256,6 +257,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;
   if (row.operation_started_at !== undefined) result.operationStartedAt = row.operation_started_at;
   if (row.status_history !== undefined) result.statusHistory = row.status_history || [];
+  if (row.completed_operations !== undefined) result.completedOperations = row.completed_operations || [];
   if (row.is_locked !== undefined) result.isLocked = row.is_locked;
   if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
   if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
