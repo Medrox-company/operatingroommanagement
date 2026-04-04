@@ -33,7 +33,8 @@ const getTimePercent = (date: Date): number => {
   const hours = date.getHours() + date.getMinutes() / 60;
   let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
   if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
-  return Math.max(0, Math.min(200, percent));
+  // Return percent clamped to valid timeline range
+  return Math.max(0, Math.min(100, percent));
 };
 
 const parseTimeToDate = (timeString: string): Date => {
@@ -58,19 +59,6 @@ interface TimelineModuleProps {
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
-  
-  // Debug: Log rooms data
-  useEffect(() => {
-    if (rooms.length > 0) {
-      console.log('[v0] TimelineModule rooms:', rooms.map(r => ({
-        id: r.id,
-        name: r.name,
-        completedOperations: r.completedOperations,
-        statusHistory: r.statusHistory,
-        operationStartedAt: r.operationStartedAt
-      })));
-    }
-  }, [rooms]);
   
   // Get ONLY main workflow statuses (bez speciálních)
   const activeStatuses = workflowStatuses
@@ -883,8 +871,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         // Handle cross-midnight operations
                         if (opWidthPct < 0) opWidthPct += 100;
                         
-                        // Skip if outside visible timeline or invalid
-                        if (opWidthPct <= 0 || opLeftPct > 100) return null;
+                        // Skip if completely outside visible timeline
+                        if (opEndPct < 0 || opLeftPct > 100 || opWidthPct <= 0) {
+                          return null;
+                        }
                         
                         return (
                           <div
