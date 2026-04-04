@@ -5,7 +5,7 @@ import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble
 } from 'lucide-react';
 
 // ========== CONSTANTS ==========
@@ -794,6 +794,28 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             <Pause className="w-2 h-2" />
                             PAUZA
                           </span>
+                        )}
+                        {/* Patient called indicator */}
+                        {room.patientCalledAt && !room.patientArrivedAt && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="p-1 rounded-md bg-blue-500/20 border border-blue-400/40"
+                            title="Pacient volán"
+                          >
+                            <Phone className="w-3 h-3 text-blue-400" />
+                          </motion.div>
+                        )}
+                        {/* Patient arrived indicator */}
+                        {room.patientArrivedAt && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="p-1 rounded-md bg-green-500/20 border border-green-400/40"
+                            title="Pacient v operačním traktu"
+                          >
+                            <BedDouble className="w-3 h-3 text-green-400" />
+                          </motion.div>
                         )}
                       </div>
                       {isFree ? (
