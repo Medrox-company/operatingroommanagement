@@ -848,6 +848,7 @@ function transformRoom(row, staffMap, patientMap, procedureMap) {
         phaseStartedAt: row.phase_started_at,
         operationStartedAt: row.operation_started_at,
         statusHistory: row.status_history || [],
+        completedOperations: row.completed_operations || [],
         isLocked: row.is_locked,
         currentStepIndex: row.current_step_index,
         estimatedEndTime: row.estimated_end_time || undefined,
@@ -978,6 +979,7 @@ function transformSingleRoom(row) {
     if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;
     if (row.operation_started_at !== undefined) result.operationStartedAt = row.operation_started_at;
     if (row.status_history !== undefined) result.statusHistory = row.status_history || [];
+    if (row.completed_operations !== undefined) result.completedOperations = row.completed_operations || [];
     if (row.is_locked !== undefined) result.isLocked = row.is_locked;
     if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
     if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
@@ -2210,6 +2212,18 @@ const AppContent = ()=>{
                 "AppContent.useCallback[updateRoomStep]": (prev)=>prev.map({
                         "AppContent.useCallback[updateRoomStep]": (room)=>{
                             if (room.id !== roomId) return room;
+                            // If resetting to index 0 (ready), save current operation to completedOperations
+                            let updatedCompletedOps = room.completedOperations || [];
+                            if (newStepIndex === 0 && room.operationStartedAt && room.statusHistory && room.statusHistory.length > 0) {
+                                updatedCompletedOps = [
+                                    ...updatedCompletedOps,
+                                    {
+                                        startedAt: room.operationStartedAt,
+                                        endedAt: now,
+                                        statusHistory: room.statusHistory
+                                    }
+                                ];
+                            }
                             // Build status history - add new entry for this status
                             const currentHistory = room.statusHistory || [];
                             const newHistory = newStepIndex === 0 ? [] // Reset history when going back to "ready" status
@@ -2228,7 +2242,8 @@ const AppContent = ()=>{
                                 currentStepIndex: newStepIndex,
                                 phaseStartedAt: now,
                                 operationStartedAt,
-                                statusHistory: newHistory
+                                statusHistory: newHistory,
+                                completedOperations: updatedCompletedOps
                             };
                         }
                     }["AppContent.useCallback[updateRoomStep]"])
@@ -2237,6 +2252,18 @@ const AppContent = ()=>{
                 const room = rooms.find({
                     "AppContent.useCallback[updateRoomStep].room": (r)=>r.id === roomId
                 }["AppContent.useCallback[updateRoomStep].room"]);
+                // If resetting to index 0, save current operation
+                let updatedCompletedOps = (room === null || room === void 0 ? void 0 : room.completedOperations) || [];
+                if (newStepIndex === 0 && (room === null || room === void 0 ? void 0 : room.operationStartedAt) && (room === null || room === void 0 ? void 0 : room.statusHistory) && room.statusHistory.length > 0) {
+                    updatedCompletedOps = [
+                        ...updatedCompletedOps,
+                        {
+                            startedAt: room.operationStartedAt,
+                            endedAt: now,
+                            statusHistory: room.statusHistory
+                        }
+                    ];
+                }
                 const currentHistory = (room === null || room === void 0 ? void 0 : room.statusHistory) || [];
                 const newHistory = newStepIndex === 0 ? [] : [
                     ...currentHistory,
@@ -2251,7 +2278,8 @@ const AppContent = ()=>{
                     current_step_index: newStepIndex,
                     phase_started_at: now,
                     operation_started_at: operationStartedAt,
-                    status_history: newHistory
+                    status_history: newHistory,
+                    completed_operations: updatedCompletedOps
                 });
             }
         }
@@ -2425,7 +2453,7 @@ const AppContent = ()=>{
     if (!isAuthenticated) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$LoginPage$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
             fileName: "[project]/App.tsx",
-            lineNumber: 274,
+            lineNumber: 303,
             columnNumber: 12
         }, ("TURBOPACK compile-time value", void 0));
     }
@@ -2449,7 +2477,7 @@ const AppContent = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "[project]/App.tsx",
-                            lineNumber: 284,
+                            lineNumber: 313,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2460,13 +2488,13 @@ const AppContent = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "[project]/App.tsx",
-                            lineNumber: 298,
+                            lineNumber: 327,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/App.tsx",
-                    lineNumber: 281,
+                    lineNumber: 310,
                     columnNumber: 7
                 }, ("TURBOPACK compile-time value", void 0)),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$Sidebar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2482,7 +2510,7 @@ const AppContent = ()=>{
                     }
                 }, void 0, false, {
                     fileName: "[project]/App.tsx",
-                    lineNumber: 308,
+                    lineNumber: 337,
                     columnNumber: 1
                 }, ("TURBOPACK compile-time value", void 0)),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$MobileNav$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2498,7 +2526,7 @@ const AppContent = ()=>{
                     }
                 }, void 0, false, {
                     fileName: "[project]/App.tsx",
-                    lineNumber: 317,
+                    lineNumber: 346,
                     columnNumber: 7
                 }, ("TURBOPACK compile-time value", void 0)),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2518,12 +2546,12 @@ const AppContent = ()=>{
                                     onPatientStatusChange: (calledAt, arrivedAt)=>handlePatientStatusChange(selectedRoom.id, calledAt, arrivedAt)
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 336,
+                                    lineNumber: 365,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 335,
+                                lineNumber: 364,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'dashboard' && !selectedRoom && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2544,7 +2572,7 @@ const AppContent = ()=>{
                                                                     className: "w-4 h-4 text-[#00D8C1]"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/App.tsx",
-                                                                    lineNumber: 355,
+                                                                    lineNumber: 384,
                                                                     columnNumber: 25
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2552,13 +2580,13 @@ const AppContent = ()=>{
                                                                     children: "OPERATINGROOM CONTROL"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/App.tsx",
-                                                                    lineNumber: 356,
+                                                                    lineNumber: 385,
                                                                     columnNumber: 25
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/App.tsx",
-                                                            lineNumber: 354,
+                                                            lineNumber: 383,
                                                             columnNumber: 23
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -2570,19 +2598,19 @@ const AppContent = ()=>{
                                                                     children: "ROOM"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/App.tsx",
-                                                                    lineNumber: 359,
+                                                                    lineNumber: 388,
                                                                     columnNumber: 35
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/App.tsx",
-                                                            lineNumber: 358,
+                                                            lineNumber: 387,
                                                             columnNumber: 23
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/App.tsx",
-                                                    lineNumber: 353,
+                                                    lineNumber: 382,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2623,7 +2651,7 @@ const AppContent = ()=>{
                                                                             className: "w-4 h-4 ".concat(stat.color)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/App.tsx",
-                                                                            lineNumber: 387,
+                                                                            lineNumber: 416,
                                                                             columnNumber: 29
                                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2631,37 +2659,37 @@ const AppContent = ()=>{
                                                                             children: stat.label
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/App.tsx",
-                                                                            lineNumber: 388,
+                                                                            lineNumber: 417,
                                                                             columnNumber: 29
                                                                         }, ("TURBOPACK compile-time value", void 0))
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/App.tsx",
-                                                                    lineNumber: 386,
+                                                                    lineNumber: 415,
                                                                     columnNumber: 27
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$AnimatedCounter$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                                                     to: stat.value
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/App.tsx",
-                                                                    lineNumber: 390,
+                                                                    lineNumber: 419,
                                                                     columnNumber: 27
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, stat.label, true, {
                                                             fileName: "[project]/App.tsx",
-                                                            lineNumber: 385,
+                                                            lineNumber: 414,
                                                             columnNumber: 25
                                                         }, ("TURBOPACK compile-time value", void 0)))
                                                 }, void 0, false, {
                                                     fileName: "[project]/App.tsx",
-                                                    lineNumber: 362,
+                                                    lineNumber: 391,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/App.tsx",
-                                            lineNumber: 352,
+                                            lineNumber: 381,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2675,28 +2703,28 @@ const AppContent = ()=>{
                                                         onLock: ()=>toggleLock(room.id)
                                                     }, room.id, false, {
                                                         fileName: "[project]/App.tsx",
-                                                        lineNumber: 398,
+                                                        lineNumber: 427,
                                                         columnNumber: 25
                                                     }, ("TURBOPACK compile-time value", void 0)))
                                             }, void 0, false, {
                                                 fileName: "[project]/App.tsx",
-                                                lineNumber: 396,
+                                                lineNumber: 425,
                                                 columnNumber: 21
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/App.tsx",
-                                            lineNumber: 395,
+                                            lineNumber: 424,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 351,
+                                    lineNumber: 380,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 350,
+                                lineNumber: 379,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'timeline' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2705,12 +2733,12 @@ const AppContent = ()=>{
                                     rooms: rooms
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 415,
+                                    lineNumber: 444,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 414,
+                                lineNumber: 443,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'statistics' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2721,17 +2749,17 @@ const AppContent = ()=>{
                                         rooms: rooms
                                     }, void 0, false, {
                                         fileName: "[project]/App.tsx",
-                                        lineNumber: 423,
+                                        lineNumber: 452,
                                         columnNumber: 19
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 422,
+                                    lineNumber: 451,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 421,
+                                lineNumber: 450,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'staff' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2740,17 +2768,17 @@ const AppContent = ()=>{
                                     className: "w-full px-8 md:pl-32 md:pr-10 py-10",
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StaffManager$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                                         fileName: "[project]/App.tsx",
-                                        lineNumber: 432,
+                                        lineNumber: 461,
                                         columnNumber: 19
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 431,
+                                    lineNumber: 460,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 430,
+                                lineNumber: 459,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'alerts' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2760,12 +2788,12 @@ const AppContent = ()=>{
                                     description: "Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 440,
+                                    lineNumber: 469,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 439,
+                                lineNumber: 468,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'settings' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2777,12 +2805,12 @@ const AppContent = ()=>{
                                     resetTrigger: settingsResetTrigger
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 450,
+                                    lineNumber: 479,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 449,
+                                lineNumber: 478,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)),
                             currentView === 'admin' && isAdmin && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2791,34 +2819,34 @@ const AppContent = ()=>{
                                     onClose: ()=>setCurrentView('dashboard')
                                 }, void 0, false, {
                                     fileName: "[project]/App.tsx",
-                                    lineNumber: 462,
+                                    lineNumber: 491,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/App.tsx",
-                                lineNumber: 461,
+                                lineNumber: 490,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/App.tsx",
-                        lineNumber: 331,
+                        lineNumber: 360,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/App.tsx",
-                    lineNumber: 327,
+                    lineNumber: 356,
                     columnNumber: 7
                 }, ("TURBOPACK compile-time value", void 0))
             ]
         }, void 0, true, {
             fileName: "[project]/App.tsx",
-            lineNumber: 279,
+            lineNumber: 308,
             columnNumber: 5
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/App.tsx",
-        lineNumber: 278,
+        lineNumber: 307,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -2836,17 +2864,17 @@ const App = ()=>{
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WorkflowStatusesProvider"], {
             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(AppContent, {}, void 0, false, {
                 fileName: "[project]/App.tsx",
-                lineNumber: 477,
+                lineNumber: 506,
                 columnNumber: 9
             }, ("TURBOPACK compile-time value", void 0))
         }, void 0, false, {
             fileName: "[project]/App.tsx",
-            lineNumber: 476,
+            lineNumber: 505,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/App.tsx",
-        lineNumber: 475,
+        lineNumber: 504,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };

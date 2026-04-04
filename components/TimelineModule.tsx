@@ -856,6 +856,79 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
+                    {/* Completed operations - inactive dark bars */}
+                    {room.completedOperations && room.completedOperations.length > 0 && (
+                      room.completedOperations.map((operation, opIdx) => {
+                        const opStart = new Date(operation.startedAt).getTime();
+                        const opEnd = new Date(operation.endedAt).getTime();
+                        const timelineStart = currentTime.getTime() - TIMELINE_HOURS * 60 * 60 * 1000;
+                        const timelineEnd = currentTime.getTime();
+                        
+                        // Check if operation falls within visible timeline
+                        if (opEnd < timelineStart || opStart > timelineEnd) return null;
+                        
+                        const opLeftPct = Math.max(0, ((opStart - timelineStart) / (timelineEnd - timelineStart)) * 100);
+                        const opWidthPct = ((opEnd - opStart) / (timelineEnd - timelineStart)) * 100;
+                        
+                        return (
+                          <motion.div
+                            key={`completed-${opIdx}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 + opIdx * 0.05 }}
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
+                            style={{ 
+                              left: `${Math.max(0, opLeftPct)}%`, 
+                              width: `${Math.max(1, opWidthPct)}%`,
+                              transformOrigin: 'left center'
+                            }}
+                          >
+                            {/* Completed operation segments */}
+                            <div className="absolute inset-0 flex overflow-hidden rounded-lg">
+                              {operation.statusHistory.map((entry, idx) => {
+                                const segStart = new Date(entry.startedAt).getTime();
+                                const nextEntry = operation.statusHistory[idx + 1];
+                                const segEnd = nextEntry 
+                                  ? new Date(nextEntry.startedAt).getTime() 
+                                  : opEnd;
+                                
+                                const segDuration = segEnd - segStart;
+                                const opDuration = opEnd - opStart;
+                                const segWidthPct = (segDuration / opDuration) * 100;
+                                const segLeftPct = ((segStart - opStart) / opDuration) * 100;
+                                const phaseColor = entry.color || '#6B7280';
+                                
+                                return (
+                                  <div
+                                    key={`completed-seg-${idx}`}
+                                    className="absolute top-0 bottom-0"
+                                    style={{ 
+                                      left: `${Math.max(0, segLeftPct)}%`,
+                                      width: `${Math.max(0.5, segWidthPct)}%`,
+                                      background: `${phaseColor}55` // Dark inactive color with low opacity
+                                    }}
+                                  >
+                                    {idx < operation.statusHistory.length - 1 && (
+                                      <div className="absolute top-0 right-0 bottom-0 w-px bg-black/20" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            {/* Label for completed operation */}
+                            <div className="absolute inset-0 flex items-center px-2 pointer-events-none z-5">
+                              {opWidthPct > 6 && (
+                                <span className="text-[9px] font-medium text-white/40 truncate">
+                                  Ukonceno
+                                </span>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })
+                    )}
+
                     {/* Active operation bar */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div

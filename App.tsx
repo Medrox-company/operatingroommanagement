@@ -138,6 +138,19 @@ const AppContent: React.FC = () => {
     setRooms(prev => prev.map(room => {
       if (room.id !== roomId) return room;
       
+      // If resetting to index 0 (ready), save current operation to completedOperations
+      let updatedCompletedOps = room.completedOperations || [];
+      if (newStepIndex === 0 && room.operationStartedAt && room.statusHistory && room.statusHistory.length > 0) {
+        updatedCompletedOps = [
+          ...updatedCompletedOps,
+          {
+            startedAt: room.operationStartedAt,
+            endedAt: now,
+            statusHistory: room.statusHistory
+          }
+        ];
+      }
+      
       // Build status history - add new entry for this status
       const currentHistory = room.statusHistory || [];
       const newHistory = newStepIndex === 0 
@@ -154,11 +167,26 @@ const AppContent: React.FC = () => {
         currentStepIndex: newStepIndex, 
         phaseStartedAt: now,
         operationStartedAt,
-        statusHistory: newHistory
+        statusHistory: newHistory,
+        completedOperations: updatedCompletedOps
       };
     }));
     if (isDbConnected) {
       const room = rooms.find(r => r.id === roomId);
+      
+      // If resetting to index 0, save current operation
+      let updatedCompletedOps = room?.completedOperations || [];
+      if (newStepIndex === 0 && room?.operationStartedAt && room?.statusHistory && room.statusHistory.length > 0) {
+        updatedCompletedOps = [
+          ...updatedCompletedOps,
+          {
+            startedAt: room.operationStartedAt,
+            endedAt: now,
+            statusHistory: room.statusHistory
+          }
+        ];
+      }
+      
       const currentHistory = room?.statusHistory || [];
       const newHistory = newStepIndex === 0 
         ? [] 
@@ -171,7 +199,8 @@ const AppContent: React.FC = () => {
         current_step_index: newStepIndex, 
         phase_started_at: now,
         operation_started_at: operationStartedAt,
-        status_history: newHistory
+        status_history: newHistory,
+        completed_operations: updatedCompletedOps
       });
     }
   }, [isDbConnected, rooms]);
