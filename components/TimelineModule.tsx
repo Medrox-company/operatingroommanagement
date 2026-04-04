@@ -857,6 +857,14 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     })}
 
                     {/* Completed operations - dark inactive bars */}
+                    {(() => {
+                      if (roomIndex === 0) {
+                        console.log("[v0] Room completedOperations:", room.name, room.completedOperations);
+                        console.log("[v0] Room statusHistory:", room.name, room.statusHistory);
+                        console.log("[v0] Room operationStartedAt:", room.operationStartedAt);
+                      }
+                      return null;
+                    })()}
                     {room.completedOperations && room.completedOperations.length > 0 && (
                       room.completedOperations.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
