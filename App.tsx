@@ -133,15 +133,48 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, isModuleEnabled]);
 
-  const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number) => {
+  const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number, stepColor?: string) => {
     const now = new Date().toISOString();
-    setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, currentStepIndex: newStepIndex, phaseStartedAt: now } : room
-    ));
+    setRooms(prev => prev.map(room => {
+      if (room.id !== roomId) return room;
+      
+      // Build status history - add new entry for this status
+      const currentHistory = room.statusHistory || [];
+      const newHistory = newStepIndex === 0 
+        ? [] // Reset history when going back to "ready" status
+        : [...currentHistory, { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' }];
+      
+      // Set operationStartedAt when transitioning to first active status (index 1)
+      const operationStartedAt = newStepIndex === 1 && room.currentStepIndex === 0 
+        ? now 
+        : (newStepIndex === 0 ? null : room.operationStartedAt);
+      
+      return { 
+        ...room, 
+        currentStepIndex: newStepIndex, 
+        phaseStartedAt: now,
+        operationStartedAt,
+        statusHistory: newHistory
+      };
+    }));
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { current_step_index: newStepIndex, phase_started_at: now });
+      const room = rooms.find(r => r.id === roomId);
+      const currentHistory = room?.statusHistory || [];
+      const newHistory = newStepIndex === 0 
+        ? [] 
+        : [...currentHistory, { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' }];
+      const operationStartedAt = newStepIndex === 1 && room?.currentStepIndex === 0 
+        ? now 
+        : (newStepIndex === 0 ? null : room?.operationStartedAt);
+      
+      await updateOperatingRoom(roomId, { 
+        current_step_index: newStepIndex, 
+        phase_started_at: now,
+        operation_started_at: operationStartedAt,
+        status_history: newHistory
+      });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, rooms]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
@@ -303,7 +336,7 @@ const AppContent: React.FC = () => {
                 <RoomDetail
                   room={selectedRoom}
                   onClose={() => setSelectedRoomId(null)}
-                  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+                  onStepChange={(index, stepColor) => updateRoomStep(selectedRoom.id, index, stepColor)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                   onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}

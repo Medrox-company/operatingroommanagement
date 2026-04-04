@@ -16,7 +16,7 @@ import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 interface RoomDetailProps {
   room: OperatingRoom;
   onClose: () => void;
-  onStepChange: (index: number) => void;
+  onStepChange: (index: number, stepColor?: string) => void;
   onEndTimeChange: (newTime: Date | null) => void;
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
   onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
@@ -315,8 +315,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       setTimeout(() => { isResettingRef.current = false; }, 1500);
     }
 
-    onStepChange(newIndex);
-    setPhaseStartTime(new Date());
+  // Pass the color of the new status for history tracking
+  const newStepColor = newStep?.color || '#6B7280';
+  onStepChange(newIndex, newStepColor);
+  setPhaseStartTime(new Date());
   };
 
   const handleNextStep = () => {

@@ -886,71 +886,90 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           }}
                         />
 
-                        {/* Multi-segment colored bar for different phases */}
+                        {/* Multi-segment colored bar based on actual status history */}
                         <div className="absolute inset-0 flex overflow-hidden rounded-2xl">
-                          {activeStatuses.map((status, idx) => {
-                            const segmentWidth = 100 / activeStatuses.length;
-                            const isCompleted = idx < stepIndex;
-                            const isCurrent = idx === stepIndex;
-                            const phaseColor = status.color || '#6B7280';
+                          {(() => {
+                            // Use status history if available, otherwise fall back to current step
+                            const history = room.statusHistory || [];
+                            const operationStart = room.operationStartedAt ? new Date(room.operationStartedAt).getTime() : null;
+                            const endTime = room.estimatedEndTime ? new Date(room.estimatedEndTime).getTime() : null;
+                            const now = Date.now();
                             
-                            return (
-                              <motion.div
-                                key={`phase-${idx}`}
-                                className="relative flex-1 overflow-hidden"
-                                style={{ width: `${segmentWidth}%` }}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.1 + idx * 0.05 }}
-                              >
-                                {/* Phase background */}
-                                <div 
-                                  className="absolute inset-0"
-                                  style={{
-                                    background: isCurrent 
-                                      ? `linear-gradient(135deg, ${phaseColor}ee 0%, ${phaseColor}dd 50%, ${phaseColor}cc 100%)`
-                                      : isCompleted
-                                      ? `linear-gradient(135deg, ${phaseColor}88 0%, ${phaseColor}77 50%, ${phaseColor}66 100%)`
-                                      : `linear-gradient(135deg, ${phaseColor}33 0%, ${phaseColor}22 50%, ${phaseColor}11 100%)`,
-                                    opacity: isCurrent ? 1 : (isCompleted ? 0.8 : 0.5)
+                            // If no history or no operation start, show simple current status bar
+                            if (history.length === 0 || !operationStart || !endTime) {
+                              const phaseColor = stepColor || '#6B7280';
+                              return (
+                                <div className="absolute inset-0" style={{
+                                  background: `linear-gradient(135deg, ${phaseColor}ee 0%, ${phaseColor}cc 100%)`
+                                }}>
+                                  <div className="absolute inset-x-0 top-0 h-1/2" style={{
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%)'
+                                  }} />
+                                </div>
+                              );
+                            }
+                            
+                            // Calculate total duration from operation start to estimated end
+                            const totalDuration = endTime - operationStart;
+                            
+                            // Build segments from history
+                            return history.map((entry, idx) => {
+                              const segmentStart = new Date(entry.startedAt).getTime();
+                              const nextEntry = history[idx + 1];
+                              const segmentEnd = nextEntry 
+                                ? new Date(nextEntry.startedAt).getTime() 
+                                : Math.min(now, endTime); // Current segment ends at now or estimated end
+                              
+                              const segmentDuration = segmentEnd - segmentStart;
+                              const segmentWidthPct = (segmentDuration / totalDuration) * 100;
+                              const segmentLeftPct = ((segmentStart - operationStart) / totalDuration) * 100;
+                              
+                              const isCurrentSegment = idx === history.length - 1;
+                              const phaseColor = entry.color || '#6B7280';
+                              
+                              return (
+                                <motion.div
+                                  key={`history-${idx}`}
+                                  className="absolute top-0 bottom-0 overflow-hidden"
+                                  style={{ 
+                                    left: `${Math.max(0, segmentLeftPct)}%`,
+                                    width: `${Math.max(0.5, segmentWidthPct)}%`
                                   }}
-                                />
-                                
-                                {/* Glass shine on top */}
-                                <div 
-                                  className="absolute inset-x-0 top-0 h-1/2"
-                                  style={{
-                                    background: `linear-gradient(180deg, rgba(255,255,255,${isCurrent ? 0.25 : 0.12}) 0%, rgba(255,255,255,${isCurrent ? 0.08 : 0.03}) 50%, transparent 100%)`
-                                  }}
-                                />
-                                
-                                {/* Progress fill within phase */}
-                                {isCurrent && !room.isPaused && progressPct > 0 && (
-                                  <motion.div 
-                                    className="absolute top-0 left-0 h-full"
-                                    style={{ 
-                                      width: `${progressPct}%`,
-                                      background: `linear-gradient(90deg, ${phaseColor}ff 0%, ${phaseColor}dd 100%)`,
-                                      boxShadow: `inset 0 0 12px rgba(255,255,255,0.2)`
-                                    }}
-                                    initial={{ scaleX: 0 }}
-                                    animate={{ scaleX: 1 }}
-                                    transition={{ duration: 0.6 }}
-                                  />
-                                )}
-                                
-                                {/* Separator line */}
-                                {idx < activeStatuses.length - 1 && (
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.1 + idx * 0.05 }}
+                                >
+                                  {/* Phase background */}
                                   <div 
-                                    className="absolute top-0 right-0 bottom-0 w-px"
+                                    className="absolute inset-0"
                                     style={{
-                                      background: `linear-gradient(180deg, transparent 0%, ${phaseColor}40 50%, transparent 100%)`
+                                      background: isCurrentSegment
+                                        ? `linear-gradient(135deg, ${phaseColor}ee 0%, ${phaseColor}dd 50%, ${phaseColor}cc 100%)`
+                                        : `linear-gradient(135deg, ${phaseColor}99 0%, ${phaseColor}88 50%, ${phaseColor}77 100%)`
                                     }}
                                   />
-                                )}
-                              </motion.div>
-                            );
-                          })}
+                                  
+                                  {/* Glass shine on top */}
+                                  <div 
+                                    className="absolute inset-x-0 top-0 h-1/2"
+                                    style={{
+                                      background: `linear-gradient(180deg, rgba(255,255,255,${isCurrentSegment ? 0.25 : 0.15}) 0%, transparent 100%)`
+                                    }}
+                                  />
+                                  
+                                  {/* Separator line */}
+                                  {idx < history.length - 1 && (
+                                    <div 
+                                      className="absolute top-0 right-0 bottom-0 w-px"
+                                      style={{
+                                        background: `linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)`
+                                      }}
+                                    />
+                                  )}
+                                </motion.div>
+                              );
+                            });
+                          })()}
                         </div>
 
                         {/* Progress fill - elegant gradient */}
