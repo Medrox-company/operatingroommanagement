@@ -71,6 +71,14 @@ interface TimelineModuleProps {
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
   
+  // Debug: Check if rooms have completedOperations
+  useEffect(() => {
+    console.log('[v0] TimelineModule: rooms count =', rooms.length);
+    rooms.forEach((room, idx) => {
+      console.log(`[v0] Room ${idx} (${room.name}): completedOperations =`, room.completedOperations);
+    });
+  }, [rooms]);
+  
   // Get ONLY main workflow statuses (bez speciálních)
   const activeStatuses = workflowStatuses
     .filter(s => s.is_active && !s.is_special)

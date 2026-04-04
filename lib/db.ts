@@ -17,6 +17,9 @@ interface DBOperatingRoom {
   patient_called_at: string | null;
   patient_arrived_at: string | null;
   phase_started_at: string | null;
+  operation_started_at: string | null;
+  status_history: any[] | null;
+  completed_operations: any[] | null;
   current_step_index: number;
   estimated_end_time: string | null;
   doctor_id: string | null;
@@ -178,6 +181,7 @@ export async function fetchCompletedOperationsForDay(
   date: Date
 ): Promise<CompletedOperation[] | null> {
   if (!isSupabaseConfigured || !supabase) {
+    console.log('[v0] Supabase not configured');
     return null;
   }
 
@@ -187,6 +191,8 @@ export async function fetchCompletedOperationsForDay(
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
+    console.log(`[v0] Fetching operations for ${roomId} from ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`);
+
     const { data, error } = await supabase
       .from('room_status_history')
       .select('*')
@@ -195,7 +201,13 @@ export async function fetchCompletedOperationsForDay(
       .lte('timestamp', endOfDay.toISOString())
       .order('timestamp', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[v0] DB Error:', error);
+      throw error;
+    }
+
+    console.log(`[v0] Got ${data?.length || 0} rows from room_status_history for ${roomId}`);
+
     if (!data || data.length === 0) return [];
 
     // Group events into operations: operation_start -> operation_end
@@ -203,6 +215,8 @@ export async function fetchCompletedOperationsForDay(
     let currentOperation: { startEvent: StatusHistoryRow; events: StatusHistoryRow[] } | null = null;
 
     for (const event of data) {
+      console.log(`[v0]   Event: ${event.event_type} - ${event.step_name}`);
+      
       if (event.event_type === 'operation_start') {
         // Start of a new operation
         if (currentOperation) {
@@ -218,7 +232,10 @@ export async function fetchCompletedOperationsForDay(
         // End of operation
         currentOperation.events.push(event);
         const op = finishOperation(currentOperation);
-        if (op) operations.push(op);
+        if (op) {
+          operations.push(op);
+          console.log(`[v0]   Completed operation with ${op.statusHistory.length} steps`);
+        }
         currentOperation = null;
       } else if (currentOperation) {
         // Collect all events during operation
@@ -226,6 +243,7 @@ export async function fetchCompletedOperationsForDay(
       }
     }
 
+    console.log(`[v0] Total operations found: ${operations.length}`);
     return operations;
   } catch (error) {
     console.error('[DB] Failed to fetch completed operations:', error);
