@@ -2251,6 +2251,10 @@ img, video {
   background-color: rgba(234, 179, 8, .2);
 }
 
+.bg-black\/30 {
+  background-color: rgba(0, 0, 0, .3);
+}
+
 .bg-\[radial-gradient\(circle_at_50\%_50\%\,_transparent_20\%\,_rgba\(0\,0\,0\,0\.6\)_100\%\)\] {
   background-image: radial-gradient(circle, rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, .6) 100%);
 }
