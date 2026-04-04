@@ -870,7 +870,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
                     {/* Completed operations - soft gray inactive bars */}
                     {room.completedOperations && room.completedOperations.length > 0 && (() => {
-                      console.log(`[v0] Rendering ${room.completedOperations.length} completed operations for ${room.name}`);
                       return room.completedOperations.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);

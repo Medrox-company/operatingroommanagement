@@ -94,7 +94,6 @@ const AppContent: React.FC = () => {
         const updatedRooms = await Promise.all(
           dbRooms.map(async (room) => {
             const completedOps = await fetchCompletedOperationsForDay(room.id, today);
-            console.log("[v0] Loaded completed operations for", room.name, ":", completedOps?.length || 0, "operations");
             return {
               ...room,
               completedOperations: completedOps || []

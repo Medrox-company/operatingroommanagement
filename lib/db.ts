@@ -198,39 +198,34 @@ export async function fetchCompletedOperationsForDay(
     if (error) throw error;
     if (!data || data.length === 0) return [];
 
-    // Group events into operations: "Příjezd na sál" -> "Úklid sálu"
+    // Group events into operations: operation_start -> operation_end
     const operations: CompletedOperation[] = [];
-    let currentOperation: { startEvent: StatusHistoryRow; allEvents: StatusHistoryRow[] } | null = null;
+    let currentOperation: { startEvent: StatusHistoryRow; events: StatusHistoryRow[] } | null = null;
 
     for (const event of data) {
-      // Start operation when we see "Příjezd na sál"
-      if (event.step_name === 'Příjezd na sál' && event.event_type === 'operation_start') {
+      if (event.event_type === 'operation_start') {
+        // Start of a new operation
         if (currentOperation) {
-          // Previous operation didn't end properly, finalize it
-          const completedOp = buildOperationFromEvents(currentOperation.allEvents);
-          if (completedOp) {
-            operations.push(completedOp);
-          }
+          // Finish previous operation if it wasn't closed
+          const op = finishOperation(currentOperation);
+          if (op) operations.push(op);
         }
         currentOperation = {
           startEvent: event,
-          allEvents: [event]
+          events: [event]
         };
+      } else if (event.event_type === 'operation_end' && currentOperation) {
+        // End of operation
+        currentOperation.events.push(event);
+        const op = finishOperation(currentOperation);
+        if (op) operations.push(op);
+        currentOperation = null;
       } else if (currentOperation) {
-        currentOperation.allEvents.push(event);
-        
-        // End operation when we see "Úklid sálu"
-        if (event.step_name === 'Úklid sálu' && event.event_type === 'step_change') {
-          const completedOp = buildOperationFromEvents(currentOperation.allEvents);
-          if (completedOp) {
-            operations.push(completedOp);
-          }
-          currentOperation = null;
-        }
+        // Collect all events during operation
+        currentOperation.events.push(event);
       }
     }
 
-    // If there's an incomplete operation at the end, don't include it
     return operations;
   } catch (error) {
     console.error('[DB] Failed to fetch completed operations:', error);
@@ -238,15 +233,15 @@ export async function fetchCompletedOperationsForDay(
   }
 }
 
-// Helper function to build operation from events
-function buildOperationFromEvents(events: StatusHistoryRow[]): CompletedOperation | null {
-  if (events.length === 0) return null;
-  
-  const startEvent = events[0];
-  const endEvent = events[events.length - 1];
-  
+// Helper to finalize an operation
+function finishOperation(op: { startEvent: StatusHistoryRow; events: StatusHistoryRow[] }): CompletedOperation | null {
+  if (op.events.length < 2) return null;
+
+  const startEvent = op.events[0];
+  const endEvent = op.events[op.events.length - 1];
+
   // Build status history from all step_change events
-  const statusHistory = events
+  const statusHistory = op.events
     .filter(e => e.event_type === 'step_change' && e.step_index !== null)
     .map(e => ({
       stepIndex: e.step_index as number,
@@ -255,11 +250,13 @@ function buildOperationFromEvents(events: StatusHistoryRow[]): CompletedOperatio
       stepName: e.step_name || ''
     }))
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
-  
+
+  if (statusHistory.length === 0) return null;
+
   return {
     startedAt: startEvent.timestamp,
     endedAt: endEvent.timestamp,
-    statusHistory: statusHistory as any // Cast to match CompletedOperation interface
+    statusHistory: statusHistory as any
   };
 }
 
