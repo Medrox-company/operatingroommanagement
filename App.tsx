@@ -522,13 +522,11 @@ const AppContent: React.FC = () => {
   );
 };
 
-// Wrap with AuthProvider and WorkflowStatusesProvider
+// Wrap with AuthProvider
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <WorkflowStatusesProvider>
-        <AppContent />
-      </WorkflowStatusesProvider>
+      <AppContent />
     </AuthProvider>
   );
 };
