@@ -580,6 +580,14 @@ img, video {
   top: -200px;
 }
 
+.bottom-1\.5 {
+  bottom: .375rem;
+}
+
+.top-1\.5 {
+  top: .375rem;
+}
+
 .z-0 {
   z-index: 0;
 }

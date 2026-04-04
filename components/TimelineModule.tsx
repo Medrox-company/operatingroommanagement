@@ -856,16 +856,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
-                    {/* Completed operations - dark inactive bars */}
-                    {(() => {
-                      if (roomIndex === 0) {
-                        console.log("[v0] Room completedOperations:", room.name, room.completedOperations);
-                        console.log("[v0] Room statusHistory:", room.name, room.statusHistory);
-                        console.log("[v0] Room operationStartedAt:", room.operationStartedAt);
-                      }
-                      return null;
-                    })()}
-                    {room.completedOperations && room.completedOperations.length > 0 && (
+                    {/* Completed operations - soft gray inactive bars */}
+                    {room.completedOperations && room.completedOperations.length > 0 && 
                       room.completedOperations.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
@@ -873,69 +865,37 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         // Use getTimePercent to calculate position on timeline
                         const opLeftPct = getTimePercent(opStartDate);
                         const opEndPct = getTimePercent(opEndDate);
-                        const opWidthPct = opEndPct - opLeftPct;
+                        let opWidthPct = opEndPct - opLeftPct;
+                        
+                        // Handle cross-midnight operations
+                        if (opWidthPct < 0) opWidthPct += 100;
                         
                         // Skip if outside visible timeline or invalid
-                        if (opWidthPct <= 0 || opLeftPct > 100 || opEndPct < 0) return null;
-                        
-                        const opDuration = opEndDate.getTime() - opStartDate.getTime();
+                        if (opWidthPct <= 0 || opLeftPct > 100) return null;
                         
                         return (
-                          <motion.div
+                          <div
                             key={`completed-${opIdx}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.6 }}
-                            transition={{ delay: 0.1 + opIdx * 0.05 }}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
+                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
                             style={{ 
                               left: `${Math.max(0, opLeftPct)}%`, 
-                              width: `${Math.min(100 - opLeftPct, opWidthPct)}%`,
+                              width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
+                              background: 'rgba(107, 114, 128, 0.35)', // Soft gray
+                              border: '1px solid rgba(107, 114, 128, 0.25)'
                             }}
                           >
-                            {/* Completed operation segments with status colors */}
-                            <div className="absolute inset-0 flex overflow-hidden rounded-lg">
-                              {operation.statusHistory && operation.statusHistory.map((entry, idx) => {
-                                const segStart = new Date(entry.startedAt).getTime();
-                                const nextEntry = operation.statusHistory[idx + 1];
-                                const segEnd = nextEntry 
-                                  ? new Date(nextEntry.startedAt).getTime() 
-                                  : opEndDate.getTime();
-                                
-                                const segDuration = segEnd - segStart;
-                                const segWidthPct = (segDuration / opDuration) * 100;
-                                const segLeftPct = ((segStart - opStartDate.getTime()) / opDuration) * 100;
-                                const phaseColor = entry.color || '#6B7280';
-                                
-                                return (
-                                  <div
-                                    key={`completed-seg-${idx}`}
-                                    className="absolute top-0 bottom-0"
-                                    style={{ 
-                                      left: `${Math.max(0, segLeftPct)}%`,
-                                      width: `${Math.max(0.5, segWidthPct)}%`,
-                                      background: `${phaseColor}66` // Dark with 40% opacity
-                                    }}
-                                  >
-                                    {idx < operation.statusHistory.length - 1 && (
-                                      <div className="absolute top-0 right-0 bottom-0 w-px bg-black/30" />
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            
-                            {/* Label */}
+                            {/* Subtle inner content */}
                             <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
-                              {opWidthPct > 5 && (
-                                <span className="text-[9px] font-medium text-white/40 truncate">
+                              {opWidthPct > 6 && (
+                                <span className="text-[9px] font-medium text-white/30 truncate">
                                   Dokonceno
                                 </span>
                               )}
                             </div>
-                          </motion.div>
+                          </div>
                         );
                       })
-                    )}
+                    }
 
                     {/* Active operation bar */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
