@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { WORKFLOW_STEPS } from '../constants';
-import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
@@ -32,13 +31,8 @@ const usePrevious = (value: number) => {
 };
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
-  // Get workflow statuses from database context - ONLY main workflow, no special statuses
-  const { workflowStatuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
-  
-  // Get ONLY main workflow statuses (bez speciálních), sorted by order_index
-  const activeDbStatuses = workflowStatuses
-    .filter(s => s.is_active && !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
+  // Use WORKFLOW_STEPS from constants
+  const activeDbStatuses = WORKFLOW_STEPS;
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
