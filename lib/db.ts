@@ -252,10 +252,6 @@ export async function fetchCompletedOperationsForDay(
 function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation | null {
   if (events.length === 0) return null;
   
-  // Find first "Příjezd na sál" and last "Úklid sálu" or operation_end
-  let startTime = events[0].timestamp;
-  let endTime = events[events.length - 1].timestamp;
-  
   // Collect all step_change events as status history
   const statusHistory = events
     .filter(e => e.event_type === 'step_change' && e.step_index !== null)
@@ -269,22 +265,14 @@ function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation
 
   if (statusHistory.length === 0) return null;
 
-  // Set startTime to "Příjezd na sál" (step_index 2)
-  const prijezdEvent = statusHistory.find(s => s.stepIndex === 2);
-  if (prijezdEvent) {
-    startTime = prijezdEvent.startedAt;
-  }
-
-  // Set endTime to "Úklid sálu" (step_index 0)
-  const uklidEvent = statusHistory.find(s => s.stepIndex === 0);
-  if (uklidEvent) {
-    endTime = uklidEvent.startedAt;
-  }
+  // Operation starts at first step_change and ends at last step_change
+  const startTime = statusHistory[0].startedAt;
+  const endTime = statusHistory[statusHistory.length - 1].startedAt;
 
   return {
     startedAt: startTime,
     endedAt: endTime,
-    statusHistory: statusHistory as any
+    statusHistory
   };
 }
 

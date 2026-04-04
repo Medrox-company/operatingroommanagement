@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
-import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble
@@ -28,15 +27,15 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
-// Mapování českých názvů statusů na anglické a jejich barvy
-const CZECH_TO_ENGLISH_STEP_NAMES: Record<string, { en: string; color: string }> = {
-  'Sál připraven': { en: 'Ready', color: '#6b7280' },
-  'Příjezd na sál': { en: 'Patient Arrival', color: '#3b82f6' },
-  'Začátek anestezie': { en: 'Anesthesia Start', color: '#8b5cf6' },
-  'Chirurgický výkon': { en: 'Surgery', color: '#ec4899' },
-  'Ukončení výkonu': { en: 'Surgery End', color: '#f59e0b' },
-  'Odjezd ze sálu': { en: 'Patient Departure', color: '#10b981' },
-  'Úklid sálu': { en: 'Room Cleanup', color: '#ef4444' }
+// Step colors podle step_index z databáze
+const STEP_INDEX_COLORS: Record<number, string> = {
+  0: '#6b7280',   // Sál připraven - gray
+  1: '#3b82f6',   // Příjezd na sál - blue
+  2: '#8b5cf6',   // Začátek anestezie - purple
+  3: '#ec4899',   // Chirurgický výkon - pink
+  4: '#f59e0b',   // Odjezd ze sálu - amber
+  5: '#10b981',   // Úklid sálu - green (step 5 means cleanup is done)
+  6: '#ef4444',   // Sál připraven po úklidu - red
 };
 
 // ========== HELPER FUNCTIONS ==========
@@ -69,20 +68,6 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
-  const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
-  
-  // Debug: Check if rooms have completedOperations
-  useEffect(() => {
-    console.log('[v0] TimelineModule: rooms count =', rooms.length);
-    rooms.forEach((room, idx) => {
-      console.log(`[v0] Room ${idx} (${room.name}): completedOperations =`, room.completedOperations);
-    });
-  }, [rooms]);
-  
-  // Get ONLY main workflow statuses (bez speciálních)
-  const activeStatuses = workflowStatuses
-    .filter(s => s.is_active && !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
@@ -919,8 +904,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                   const segWidthPct = (segDuration / opDuration) * 100;
                                   const segLeftPct = ((segStart - new Date(operation.startedAt).getTime()) / opDuration) * 100;
                                   
-                                  // Use color from entry or from CZECH_TO_ENGLISH_STEP_NAMES
-                                  const phaseColor = entry.color || CZECH_TO_ENGLISH_STEP_NAMES[entry.stepName as string]?.color || '#6b7280';
+                                  // Use color from step_index
+                                  const phaseColor = STEP_INDEX_COLORS[entry.stepIndex] || '#6b7280';
                                   
                                   return (
                                     <div
@@ -929,8 +914,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                       style={{ 
                                         left: `${Math.max(0, segLeftPct)}%`,
                                         width: `${Math.max(0.5, segWidthPct)}%`,
-                                        background: `${phaseColor}66`, // Color with 40% opacity
-                                        borderRight: '1px solid rgba(0,0,0,0.2)'
+                                        background: `${phaseColor}99`, // Color with 60% opacity
+                                        borderRight: '1px solid rgba(0,0,0,0.3)'
                                       }}
                                       title={entry.stepName}
                                     />
@@ -1293,13 +1278,12 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  const { activeStatuses } = useWorkflowStatusesContext();
-  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+  const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
   const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
   
-  const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-  const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
+  const currentStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[stepIndex] : null;
+  const nextStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[nextStepIndex] : null;
   
   const stepColor = currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;

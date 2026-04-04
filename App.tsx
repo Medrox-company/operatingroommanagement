@@ -16,7 +16,6 @@ import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, fetchCompletedOperationsForDay } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
@@ -36,7 +35,6 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules } = useAuth();
-  const { workflowStatuses } = useWorkflowStatusesContext();
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -91,11 +89,9 @@ const AppContent: React.FC = () => {
         
         // Load completed operations for today for each room
         const today = new Date();
-        console.log('[v0] Loading completedOperations for', dbRooms.length, 'rooms');
         const updatedRooms = await Promise.all(
           dbRooms.map(async (room) => {
             const completedOps = await fetchCompletedOperationsForDay(room.id, today);
-            console.log(`[v0] Room ${room.name}: got ${completedOps?.length || 0} completed operations`);
             return {
               ...room,
               completedOperations: completedOps || []
@@ -426,17 +422,9 @@ const AppContent: React.FC = () => {
                     </div>
                     <div className="flex gap-4 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
                       {(() => {
-                        // Get active workflow statuses (sorted by order)
-                        const activeStatuses = workflowStatuses
-                          .filter(s => s.is_active && !s.is_special)
-                          .sort((a, b) => a.order_index - b.order_index);
-                        
-                        // Check if room is in "ready" status based on status name
+                        // Check if room is in "ready" status (step index 0 or 7)
                         const isRoomReady = (room: OperatingRoom) => {
-                          const status = activeStatuses[room.currentStepIndex];
-                          // Normalize string to remove diacritics for comparison
-                          const statusName = (status?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                          return statusName.includes('priprav') || statusName.includes('ready');
+                          return room.currentStepIndex === 0 || room.currentStepIndex === 7;
                         };
                         
                         const readyRooms = rooms.filter(isRoomReady);
