@@ -475,12 +475,12 @@ function TimelineModule(param) {
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "flex flex-col gap-2 px-4 pb-6",
                         children: sortedRooms.map((room)=>{
-                            // Use active statuses from database
-                            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+                            // Use WORKFLOW_STEPS from constants
+                            const totalSteps = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length > 0 ? __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length : 1;
                             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-                            const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
-                            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus === null || dbStatus === void 0 ? void 0 : dbStatus.color) || '#6B7280';
-                            const statusName = (dbStatus === null || dbStatus === void 0 ? void 0 : dbStatus.name) || 'Status';
+                            const step = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][safeIndex];
+                            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step === null || step === void 0 ? void 0 : step.color) || '#6B7280';
+                            const statusName = (step === null || step === void 0 ? void 0 : step.name) || 'Status';
                             const remaining = getRemainingTime(room);
                             const isFree = safeIndex === totalSteps - 1;
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1175,8 +1175,8 @@ function TimelineModule(param) {
                                         }, this),
                                         sortedRooms.map((room, roomIndex)=>{
                                             var _room_currentProcedure_startTime, _room_currentProcedure, _room_staff_doctor, _room_staff;
-                                            // Get current workflow step info from database first
-                                            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+                                            // Get current workflow step info from WORKFLOW_STEPS
+                                            const totalSteps = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length > 0 ? __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length : 1;
                                             const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
                                             const isActive = stepIndex > 0; // index 0 = "Sál připraven"
                                             const isCleaning = stepIndex === totalSteps - 2; // Second to last step
@@ -1189,10 +1189,10 @@ function TimelineModule(param) {
                                             const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
                                             const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
                                             const remainingTime = getRemainingTime(room);
-                                            // Get status from database
-                                            const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-                                            const stepColor = (dbStatus === null || dbStatus === void 0 ? void 0 : dbStatus.color) || '#6B7280';
-                                            const stepName = (dbStatus === null || dbStatus === void 0 ? void 0 : dbStatus.name) || 'Status';
+                                            // Get status from WORKFLOW_STEPS
+                                            const currentStep = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][stepIndex];
+                                            const stepColor = (currentStep === null || currentStep === void 0 ? void 0 : currentStep.color) || '#6B7280';
+                                            const stepName = (currentStep === null || currentStep === void 0 ? void 0 : currentStep.name) || 'Status';
                                             const StepIcon = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]; // Default icon
                                             // Calculate operation bar position
                                             // Use currentProcedure if available, otherwise use phaseStartedAt or current time as fallback
@@ -2695,7 +2695,7 @@ const RoomDetailPopup = (param)=>{
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "flex items-center gap-1",
-                                            children: activeStatuses.map((_, idx)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            children: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((_, idx)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "flex flex-col items-center gap-0.5",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {

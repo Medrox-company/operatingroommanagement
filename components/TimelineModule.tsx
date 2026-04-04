@@ -266,12 +266,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            // Use active statuses from database
-            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+            // Use WORKFLOW_STEPS from constants
+            const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-            const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
-            const statusName = dbStatus?.name || 'Status';
+            const step = WORKFLOW_STEPS[safeIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.color || '#6B7280');
+            const statusName = step?.name || 'Status';
             const remaining = getRemainingTime(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
@@ -569,8 +569,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
-              // Get current workflow step info from database first
-              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+              // Get current workflow step info from WORKFLOW_STEPS
+              const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
               const isActive = stepIndex > 0; // index 0 = "Sál připraven"
               const isCleaning = stepIndex === totalSteps - 2; // Second to last step
@@ -586,10 +586,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from database
-              const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-              const stepColor = dbStatus?.color || '#6B7280';
-              const stepName = dbStatus?.name || 'Status';
+              // Get status from WORKFLOW_STEPS
+              const currentStep = WORKFLOW_STEPS[stepIndex];
+              const stepColor = currentStep?.color || '#6B7280';
+              const stepName = currentStep?.name || 'Status';
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -1366,7 +1366,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             <div>
               <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
               <div className="flex items-center gap-1">
-                {activeStatuses.map((_, idx) => (
+                {WORKFLOW_STEPS.map((_, idx) => (
                   <div
                     key={idx}
                     className="flex flex-col items-center gap-0.5"
