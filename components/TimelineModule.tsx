@@ -596,18 +596,21 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               let startDate: Date = new Date();
               let endDate: Date = new Date();
               
-              // Show status bar if active - use procedure time, phaseStartedAt, or fallback to current time
+              // Show status bar if active - use operationStartedAt (arrival to OR) as the fixed start point
               const hasRealData = startParts && startParts.length === 2;
-              const hasPhaseStart = room.phaseStartedAt;
+              const hasOperationStart = room.operationStartedAt;
               const shouldShowBar = isActive; // Always show for active rooms
 
               if (isActive) {
-                // Determine start time
-                if (hasRealData) {
+                // Determine start time - ALWAYS use operationStartedAt (arrival to OR) as the reference point
+                if (hasOperationStart) {
+                  // Use operation start time (when patient arrived to OR)
+                  startDate = new Date(room.operationStartedAt);
+                } else if (hasRealData) {
                   // Use actual procedure start time
                   startDate = new Date();
                   startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
-                } else if (hasPhaseStart) {
+                } else if (room.phaseStartedAt) {
                   // Use phase started time as fallback
                   startDate = new Date(room.phaseStartedAt);
                 } else {
