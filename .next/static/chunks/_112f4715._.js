@@ -2212,7 +2212,7 @@ const AppContent = ()=>{
                 "AppContent.useCallback[updateRoomStep]": (prev)=>prev.map({
                         "AppContent.useCallback[updateRoomStep]": (room)=>{
                             if (room.id !== roomId) return room;
-                            // If resetting to index 0 (ready), save current operation to completedOperations
+                            // If resetting to index 0, save current operation to completedOperations
                             let updatedCompletedOps = room.completedOperations || [];
                             if (newStepIndex === 0 && room.operationStartedAt && room.statusHistory && room.statusHistory.length > 0) {
                                 updatedCompletedOps = [

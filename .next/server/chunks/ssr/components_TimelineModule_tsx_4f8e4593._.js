@@ -1678,51 +1678,50 @@ function TimelineModule({ rooms }) {
                                                                 }, this);
                                                             }),
                                                             room.completedOperations && room.completedOperations.length > 0 && room.completedOperations.map((operation, opIdx)=>{
-                                                                const opStart = new Date(operation.startedAt).getTime();
-                                                                const opEnd = new Date(operation.endedAt).getTime();
-                                                                const timelineStart = currentTime.getTime() - TIMELINE_HOURS * 60 * 60 * 1000;
-                                                                const timelineEnd = currentTime.getTime();
-                                                                // Check if operation falls within visible timeline
-                                                                if (opEnd < timelineStart || opStart > timelineEnd) return null;
-                                                                const opLeftPct = Math.max(0, (opStart - timelineStart) / (timelineEnd - timelineStart) * 100);
-                                                                const opWidthPct = (opEnd - opStart) / (timelineEnd - timelineStart) * 100;
+                                                                const opStartDate = new Date(operation.startedAt);
+                                                                const opEndDate = new Date(operation.endedAt);
+                                                                // Use getTimePercent to calculate position on timeline
+                                                                const opLeftPct = getTimePercent(opStartDate);
+                                                                const opEndPct = getTimePercent(opEndDate);
+                                                                const opWidthPct = opEndPct - opLeftPct;
+                                                                // Skip if outside visible timeline or invalid
+                                                                if (opWidthPct <= 0 || opLeftPct > 100 || opEndPct < 0) return null;
+                                                                const opDuration = opEndDate.getTime() - opStartDate.getTime();
                                                                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                                                                     initial: {
                                                                         opacity: 0
                                                                     },
                                                                     animate: {
-                                                                        opacity: 1
+                                                                        opacity: 0.6
                                                                     },
                                                                     transition: {
-                                                                        delay: 0.2 + opIdx * 0.05
+                                                                        delay: 0.1 + opIdx * 0.05
                                                                     },
                                                                     className: "absolute top-1 bottom-1 overflow-hidden rounded-lg",
                                                                     style: {
                                                                         left: `${Math.max(0, opLeftPct)}%`,
-                                                                        width: `${Math.max(1, opWidthPct)}%`,
-                                                                        transformOrigin: 'left center'
+                                                                        width: `${Math.min(100 - opLeftPct, opWidthPct)}%`
                                                                     },
                                                                     children: [
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                             className: "absolute inset-0 flex overflow-hidden rounded-lg",
-                                                                            children: operation.statusHistory.map((entry, idx)=>{
+                                                                            children: operation.statusHistory && operation.statusHistory.map((entry, idx)=>{
                                                                                 const segStart = new Date(entry.startedAt).getTime();
                                                                                 const nextEntry = operation.statusHistory[idx + 1];
-                                                                                const segEnd = nextEntry ? new Date(nextEntry.startedAt).getTime() : opEnd;
+                                                                                const segEnd = nextEntry ? new Date(nextEntry.startedAt).getTime() : opEndDate.getTime();
                                                                                 const segDuration = segEnd - segStart;
-                                                                                const opDuration = opEnd - opStart;
                                                                                 const segWidthPct = segDuration / opDuration * 100;
-                                                                                const segLeftPct = (segStart - opStart) / opDuration * 100;
+                                                                                const segLeftPct = (segStart - opStartDate.getTime()) / opDuration * 100;
                                                                                 const phaseColor = entry.color || '#6B7280';
                                                                                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                                     className: "absolute top-0 bottom-0",
                                                                                     style: {
                                                                                         left: `${Math.max(0, segLeftPct)}%`,
                                                                                         width: `${Math.max(0.5, segWidthPct)}%`,
-                                                                                        background: `${phaseColor}55` // Dark inactive color with low opacity
+                                                                                        background: `${phaseColor}66` // Dark with 40% opacity
                                                                                     },
                                                                                     children: idx < operation.statusHistory.length - 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                                        className: "absolute top-0 right-0 bottom-0 w-px bg-black/20"
+                                                                                        className: "absolute top-0 right-0 bottom-0 w-px bg-black/30"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/components/TimelineModule.tsx",
                                                                                         lineNumber: 912,
@@ -1736,14 +1735,14 @@ function TimelineModule({ rooms }) {
                                                                             })
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 887,
+                                                                            lineNumber: 888,
                                                                             columnNumber: 29
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            className: "absolute inset-0 flex items-center px-2 pointer-events-none z-5",
-                                                                            children: opWidthPct > 6 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                            className: "absolute inset-0 flex items-center px-2 pointer-events-none",
+                                                                            children: opWidthPct > 5 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                                 className: "text-[9px] font-medium text-white/40 truncate",
-                                                                                children: "Ukonceno"
+                                                                                children: "Dokonceno"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
                                                                                 lineNumber: 922,
@@ -1757,7 +1756,7 @@ function TimelineModule({ rooms }) {
                                                                     ]
                                                                 }, `completed-${opIdx}`, true, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 874,
+                                                                    lineNumber: 876,
                                                                     columnNumber: 27
                                                                 }, this);
                                                             }),

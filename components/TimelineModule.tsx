@@ -856,46 +856,46 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
-                    {/* Completed operations - inactive dark bars */}
+                    {/* Completed operations - dark inactive bars */}
                     {room.completedOperations && room.completedOperations.length > 0 && (
                       room.completedOperations.map((operation, opIdx) => {
-                        const opStart = new Date(operation.startedAt).getTime();
-                        const opEnd = new Date(operation.endedAt).getTime();
-                        const timelineStart = currentTime.getTime() - TIMELINE_HOURS * 60 * 60 * 1000;
-                        const timelineEnd = currentTime.getTime();
+                        const opStartDate = new Date(operation.startedAt);
+                        const opEndDate = new Date(operation.endedAt);
                         
-                        // Check if operation falls within visible timeline
-                        if (opEnd < timelineStart || opStart > timelineEnd) return null;
+                        // Use getTimePercent to calculate position on timeline
+                        const opLeftPct = getTimePercent(opStartDate);
+                        const opEndPct = getTimePercent(opEndDate);
+                        const opWidthPct = opEndPct - opLeftPct;
                         
-                        const opLeftPct = Math.max(0, ((opStart - timelineStart) / (timelineEnd - timelineStart)) * 100);
-                        const opWidthPct = ((opEnd - opStart) / (timelineEnd - timelineStart)) * 100;
+                        // Skip if outside visible timeline or invalid
+                        if (opWidthPct <= 0 || opLeftPct > 100 || opEndPct < 0) return null;
+                        
+                        const opDuration = opEndDate.getTime() - opStartDate.getTime();
                         
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 + opIdx * 0.05 }}
+                            animate={{ opacity: 0.6 }}
+                            transition={{ delay: 0.1 + opIdx * 0.05 }}
                             className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
                             style={{ 
                               left: `${Math.max(0, opLeftPct)}%`, 
-                              width: `${Math.max(1, opWidthPct)}%`,
-                              transformOrigin: 'left center'
+                              width: `${Math.min(100 - opLeftPct, opWidthPct)}%`,
                             }}
                           >
-                            {/* Completed operation segments */}
+                            {/* Completed operation segments with status colors */}
                             <div className="absolute inset-0 flex overflow-hidden rounded-lg">
-                              {operation.statusHistory.map((entry, idx) => {
+                              {operation.statusHistory && operation.statusHistory.map((entry, idx) => {
                                 const segStart = new Date(entry.startedAt).getTime();
                                 const nextEntry = operation.statusHistory[idx + 1];
                                 const segEnd = nextEntry 
                                   ? new Date(nextEntry.startedAt).getTime() 
-                                  : opEnd;
+                                  : opEndDate.getTime();
                                 
                                 const segDuration = segEnd - segStart;
-                                const opDuration = opEnd - opStart;
                                 const segWidthPct = (segDuration / opDuration) * 100;
-                                const segLeftPct = ((segStart - opStart) / opDuration) * 100;
+                                const segLeftPct = ((segStart - opStartDate.getTime()) / opDuration) * 100;
                                 const phaseColor = entry.color || '#6B7280';
                                 
                                 return (
@@ -905,22 +905,22 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                     style={{ 
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
-                                      background: `${phaseColor}55` // Dark inactive color with low opacity
+                                      background: `${phaseColor}66` // Dark with 40% opacity
                                     }}
                                   >
                                     {idx < operation.statusHistory.length - 1 && (
-                                      <div className="absolute top-0 right-0 bottom-0 w-px bg-black/20" />
+                                      <div className="absolute top-0 right-0 bottom-0 w-px bg-black/30" />
                                     )}
                                   </div>
                                 );
                               })}
                             </div>
                             
-                            {/* Label for completed operation */}
-                            <div className="absolute inset-0 flex items-center px-2 pointer-events-none z-5">
-                              {opWidthPct > 6 && (
+                            {/* Label */}
+                            <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
+                              {opWidthPct > 5 && (
                                 <span className="text-[9px] font-medium text-white/40 truncate">
-                                  Ukonceno
+                                  Dokonceno
                                 </span>
                               )}
                             </div>
