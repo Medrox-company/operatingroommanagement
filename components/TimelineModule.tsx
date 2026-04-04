@@ -831,8 +831,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
-                    {/* Active operation bar - Premium Design with workflow step color */}
-                    {/* Active operation box - premium glass morphism design */}
+                    {/* Active operation bar - Premium Design with multi-segment timeline */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
@@ -847,128 +846,145 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       >
                         {/* Outer glow effect - ambient lighting */}
                         <div 
-                          className="absolute -inset-1 rounded-2xl blur-md opacity-30"
+                          className="absolute -inset-1 rounded-2xl blur-lg opacity-40"
                           style={{ background: room.isPaused ? '#22D3EE' : stepColor }}
                         />
 
                         {/* Glass container base */}
                         <div 
-                          className="absolute inset-0 rounded-2xl backdrop-blur-sm"
+                          className="absolute inset-0 rounded-2xl backdrop-blur-md"
                           style={{ 
-                            background: `linear-gradient(145deg, ${room.isPaused ? '#22D3EE' : stepColor}12 0%, ${room.isPaused ? '#22D3EE' : stepColor}06 100%)`,
-                            border: `1px solid ${room.isPaused ? '#22D3EE' : stepColor}25`,
+                            background: `linear-gradient(145deg, ${room.isPaused ? '#22D3EE' : stepColor}18 0%, ${room.isPaused ? '#22D3EE' : stepColor}08 100%)`,
+                            border: `1.5px solid ${room.isPaused ? '#22D3EE' : stepColor}35`,
                             boxShadow: `
-                              0 4px 24px ${room.isPaused ? '#22D3EE' : stepColor}15,
-                              0 1px 0 rgba(255,255,255,0.05) inset,
-                              0 -1px 0 rgba(0,0,0,0.1) inset
+                              0 8px 32px ${room.isPaused ? '#22D3EE' : stepColor}20,
+                              0 1px 0 rgba(255,255,255,0.08) inset,
+                              0 -2px 8px rgba(0,0,0,0.15) inset
                             `
                           }}
                         />
 
+                        {/* Multi-segment colored bar for different phases */}
+                        <div className="absolute inset-0 flex overflow-hidden rounded-2xl">
+                          {activeStatuses.map((status, idx) => {
+                            const segmentWidth = 100 / activeStatuses.length;
+                            const isCompleted = idx < stepIndex;
+                            const isCurrent = idx === stepIndex;
+                            const phaseColor = status.color || '#6B7280';
+                            
+                            return (
+                              <motion.div
+                                key={`phase-${idx}`}
+                                className="relative flex-1 overflow-hidden"
+                                style={{ width: `${segmentWidth}%` }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.1 + idx * 0.05 }}
+                              >
+                                {/* Phase background */}
+                                <div 
+                                  className="absolute inset-0"
+                                  style={{
+                                    background: isCurrent 
+                                      ? `linear-gradient(135deg, ${phaseColor}ee 0%, ${phaseColor}dd 50%, ${phaseColor}cc 100%)`
+                                      : isCompleted
+                                      ? `linear-gradient(135deg, ${phaseColor}88 0%, ${phaseColor}77 50%, ${phaseColor}66 100%)`
+                                      : `linear-gradient(135deg, ${phaseColor}33 0%, ${phaseColor}22 50%, ${phaseColor}11 100%)`,
+                                    opacity: isCurrent ? 1 : (isCompleted ? 0.8 : 0.5)
+                                  }}
+                                />
+                                
+                                {/* Glass shine on top */}
+                                <div 
+                                  className="absolute inset-x-0 top-0 h-1/2"
+                                  style={{
+                                    background: `linear-gradient(180deg, rgba(255,255,255,${isCurrent ? 0.25 : 0.12}) 0%, rgba(255,255,255,${isCurrent ? 0.08 : 0.03}) 50%, transparent 100%)`
+                                  }}
+                                />
+                                
+                                {/* Progress fill within phase */}
+                                {isCurrent && !room.isPaused && progressPct > 0 && (
+                                  <motion.div 
+                                    className="absolute top-0 left-0 h-full"
+                                    style={{ 
+                                      width: `${progressPct}%`,
+                                      background: `linear-gradient(90deg, ${phaseColor}ff 0%, ${phaseColor}dd 100%)`,
+                                      boxShadow: `inset 0 0 12px rgba(255,255,255,0.2)`
+                                    }}
+                                    initial={{ scaleX: 0 }}
+                                    animate={{ scaleX: 1 }}
+                                    transition={{ duration: 0.6 }}
+                                  />
+                                )}
+                                
+                                {/* Separator line */}
+                                {idx < activeStatuses.length - 1 && (
+                                  <div 
+                                    className="absolute top-0 right-0 bottom-0 w-px"
+                                    style={{
+                                      background: `linear-gradient(180deg, transparent 0%, ${phaseColor}40 50%, transparent 100%)`
+                                    }}
+                                  />
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+
                         {/* Progress fill - elegant gradient */}
                         {!room.isPaused && (
                           <div 
-                            className="absolute inset-0 rounded-2xl overflow-hidden" 
+                            className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none" 
                             style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
                           >
                             <div 
                               className="absolute inset-0"
                               style={{ 
-                                background: `linear-gradient(145deg, ${stepColor}95 0%, ${stepColor}75 100%)`
+                                background: `linear-gradient(90deg, ${stepColor}ff 0%, ${stepColor}dd 100%)`,
+                                opacity: 0.3
                               }}
-                            />
-                            {/* Glass shine on progress */}
-                            <div 
-                              className="absolute inset-x-0 top-0 h-1/2" 
-                              style={{ 
-                                background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 50%, transparent 100%)'
-                              }} 
                             />
                           </div>
                         )}
 
-                        {/* Status segment - glass morphism bar with gradient */}
-                        {(() => {
-                          const baseColor = room.isPaused ? '#22D3EE' : (stepColor || '#6B7280');
-                          
-                          return (
-                            <motion.div
-                              key={`segment-${stepIndex}-${room.isPaused ? 'paused' : 'active'}`}
-                              className="absolute inset-y-0 rounded-xl overflow-hidden"
-                              style={{
-                                left: 0,
-                                width: '100%',
-                              }}
-                              initial={{ opacity: 0, scale: 0.98 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ duration: 0.4, ease: 'easeOut' }}
-                              title={room.isPaused ? 'PAUZA' : stepName}
-                            >
-                              {/* Base gradient layer */}
-                              <div 
-                                className="absolute inset-0"
-                                style={{
-                                  background: `linear-gradient(135deg, ${baseColor}dd 0%, ${baseColor}99 50%, ${baseColor}77 100%)`,
-                                }}
-                              />
-                              
-                              {/* Glass overlay - top shine */}
-                              <div 
-                                className="absolute inset-x-0 top-0 h-1/2"
-                                style={{
-                                  background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
-                                }}
-                              />
-                              
-                              {/* Inner shadow for depth */}
-                              <div 
-                                className="absolute inset-0 rounded-xl"
-                                style={{
-                                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.1)`,
-                                }}
-                              />
-                              
-                              {/* Subtle border glow */}
-                              <div 
-                                className="absolute inset-0 rounded-xl"
-                                style={{
-                                  border: `1px solid ${baseColor}40`,
-                                  boxShadow: `0 0 20px ${baseColor}20, 0 4px 12px rgba(0,0,0,0.15)`,
-                                }}
-                              />
-                            </motion.div>
-                          );
-                        })()}
-
-                        {/* Current position indicator - elegant design */}
+                        {/* Current position indicator - premium design */}
                         {progressPct > 0 && progressPct < 100 && !room.isPaused && (
-                          <>
-                            {/* Glow behind line */}
-                            <div 
-                              className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                          >
+                            {/* Animated glow behind line */}
+                            <motion.div 
+                              className="absolute top-0 bottom-0 w-8 -translate-x-1/2 blur-md rounded-full"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: 'rgba(255,255,255,0.3)'
+                                background: `radial-gradient(circle, ${stepColor}60 0%, ${stepColor}20 100%)`
                               }}
+                              animate={{ opacity: [0.4, 0.8, 0.4] }}
+                              transition={{ duration: 2, repeat: Infinity }}
                             />
-                            {/* Main line */}
+                            {/* Main indicator line */}
                             <div 
-                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
+                              className="absolute top-0 bottom-0 w-[3px] -translate-x-1/2 rounded-full"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.6) 100%)'
+                                background: `linear-gradient(180deg, #fff 0%, #f0f0f0 100%)`,
+                                boxShadow: `0 0 12px rgba(255,255,255,0.9), 0 0 24px ${stepColor}40`
                               }}
                             />
-                            {/* Top diamond indicator */}
-                            <div 
-                              className="absolute -top-1 w-2 h-2 -translate-x-1/2 rotate-45"
+                            {/* Top indicator dot */}
+                            <motion.div 
+                              className="absolute -top-1.5 w-3 h-3 -translate-x-1/2 rounded-full"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: 'white',
-                                boxShadow: '0 0 8px rgba(255,255,255,0.8)'
+                                background: '#fff',
+                                boxShadow: `0 0 12px rgba(255,255,255,0.9), 0 0 20px ${stepColor}50`
                               }}
+                              animate={{ scale: [1, 1.3, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
                             />
-                          </>
+                          </motion.div>
                         )}
 
                         {/* Content overlay - refined typography */}

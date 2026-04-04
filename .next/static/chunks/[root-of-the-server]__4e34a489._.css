@@ -717,6 +717,10 @@ img, video {
   top: -200px;
 }
 
+.-top-1\.5 {
+  top: -.375rem;
+}
+
 .z-0 {
   z-index: 0;
 }
@@ -1239,6 +1243,10 @@ img, video {
 
 .w-px {
   width: 1px;
+}
+
+.w-\[3px\] {
+  width: 3px;
 }
 
 .min-w-0 {
@@ -3364,6 +3372,11 @@ img, video {
 
 .blur-xl {
   --tw-blur: blur(24px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.blur-lg {
+  --tw-blur: blur(16px);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
