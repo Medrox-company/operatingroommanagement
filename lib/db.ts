@@ -170,7 +170,7 @@ export async function updateOperatingRoom(
 export interface CompletedOperation {
   startedAt: string;
   endedAt: string;
-  statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string }>;
+  statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>;
 }
 
 export async function fetchCompletedOperationsForDay(
@@ -198,47 +198,69 @@ export async function fetchCompletedOperationsForDay(
     if (error) throw error;
     if (!data || data.length === 0) return [];
 
-    // Group events into operations: operation_start -> operation_end
+    // Group events into operations: "Příjezd na sál" -> "Úklid sálu"
     const operations: CompletedOperation[] = [];
-    let currentOperation: { startEvent: StatusHistoryRow; stepChanges: StatusHistoryRow[] } | null = null;
+    let currentOperation: { startEvent: StatusHistoryRow; allEvents: StatusHistoryRow[] } | null = null;
 
     for (const event of data) {
-      if (event.event_type === 'operation_start') {
+      // Start operation when we see "Příjezd na sál"
+      if (event.step_name === 'Příjezd na sál' && event.event_type === 'operation_start') {
         if (currentOperation) {
-          // Previous operation didn't end, skip it
+          // Previous operation didn't end properly, finalize it
+          const completedOp = buildOperationFromEvents(currentOperation.allEvents);
+          if (completedOp) {
+            operations.push(completedOp);
+          }
         }
         currentOperation = {
           startEvent: event,
-          stepChanges: []
+          allEvents: [event]
         };
-      } else if (event.event_type === 'operation_end' && currentOperation) {
-        // Found the end of the current operation
-        const statusHistory = currentOperation.stepChanges
-          .filter(e => e.step_index !== null) // Filter out null step indices
-          .map(e => ({
-            stepIndex: e.step_index as number,
-            startedAt: e.timestamp,
-            color: getStepColor(e.step_index as number)
-          }))
-          .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
-
-        operations.push({
-          startedAt: currentOperation.startEvent.timestamp,
-          endedAt: event.timestamp,
-          statusHistory
-        });
-
-        currentOperation = null;
-      } else if (event.event_type === 'step_change' && currentOperation) {
-        currentOperation.stepChanges.push(event);
+      } else if (currentOperation) {
+        currentOperation.allEvents.push(event);
+        
+        // End operation when we see "Úklid sálu"
+        if (event.step_name === 'Úklid sálu' && event.event_type === 'step_change') {
+          const completedOp = buildOperationFromEvents(currentOperation.allEvents);
+          if (completedOp) {
+            operations.push(completedOp);
+          }
+          currentOperation = null;
+        }
       }
     }
 
+    // If there's an incomplete operation at the end, don't include it
     return operations;
   } catch (error) {
     console.error('[DB] Failed to fetch completed operations:', error);
     return null;
   }
+}
+
+// Helper function to build operation from events
+function buildOperationFromEvents(events: StatusHistoryRow[]): CompletedOperation | null {
+  if (events.length === 0) return null;
+  
+  const startEvent = events[0];
+  const endEvent = events[events.length - 1];
+  
+  // Build status history from all step_change events
+  const statusHistory = events
+    .filter(e => e.event_type === 'step_change' && e.step_index !== null)
+    .map(e => ({
+      stepIndex: e.step_index as number,
+      startedAt: e.timestamp,
+      color: getStepColor(e.step_index as number),
+      stepName: e.step_name || ''
+    }))
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+  
+  return {
+    startedAt: startEvent.timestamp,
+    endedAt: endEvent.timestamp,
+    statusHistory: statusHistory as any // Cast to match CompletedOperation interface
+  };
 }
 
 // Get color for a step index (you can adjust these colors)
@@ -249,7 +271,7 @@ function getStepColor(stepIndex: number): string {
     2: '#8b5cf6', // Začátek anestezie - purple
     3: '#ec4899', // Chirurgický výkon - pink
     4: '#f59e0b', // Ukončení výkonu - amber
-    5: '#10b981', // Ukončení anestezie - green
+    5: '#10b981', // Odjezd ze sálu - green
     6: '#ef4444', // Úklid sálu - red
   };
   return colors[stepIndex] || '#6b7280';

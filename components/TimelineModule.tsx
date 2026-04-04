@@ -28,6 +28,17 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
+// Mapování českých názvů statusů na anglické a jejich barvy
+const CZECH_TO_ENGLISH_STEP_NAMES: Record<string, { en: string; color: string }> = {
+  'Sál připraven': { en: 'Ready', color: '#6b7280' },
+  'Příjezd na sál': { en: 'Patient Arrival', color: '#3b82f6' },
+  'Začátek anestezie': { en: 'Anesthesia Start', color: '#8b5cf6' },
+  'Chirurgický výkon': { en: 'Surgery', color: '#ec4899' },
+  'Ukončení výkonu': { en: 'Surgery End', color: '#f59e0b' },
+  'Odjezd ze sálu': { en: 'Patient Departure', color: '#10b981' },
+  'Úklid sálu': { en: 'Room Cleanup', color: '#ef4444' }
+};
+
 // ========== HELPER FUNCTIONS ==========
 const getTimePercent = (date: Date): number => {
   const hours = date.getHours() + date.getMinutes() / 60;
@@ -858,8 +869,9 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     })}
 
                     {/* Completed operations - soft gray inactive bars */}
-                    {room.completedOperations && room.completedOperations.length > 0 && 
-                      room.completedOperations.map((operation, opIdx) => {
+                    {room.completedOperations && room.completedOperations.length > 0 && (() => {
+                      console.log(`[v0] Rendering ${room.completedOperations.length} completed operations for ${room.name}`);
+                      return room.completedOperations.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
                         
@@ -883,22 +895,55 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             style={{ 
                               left: `${Math.max(0, opLeftPct)}%`, 
                               width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
-                              background: 'rgba(107, 114, 128, 0.35)', // Soft gray
-                              border: '1px solid rgba(107, 114, 128, 0.25)'
                             }}
                           >
-                            {/* Subtle inner content */}
+                            {/* Completed operation segments with individual colors */}
+                            <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                              {operation.statusHistory && operation.statusHistory.length > 0 && 
+                                operation.statusHistory.map((entry, idx) => {
+                                  const segStart = new Date(entry.startedAt).getTime();
+                                  const nextEntry = operation.statusHistory[idx + 1];
+                                  const segEnd = nextEntry 
+                                    ? new Date(nextEntry.startedAt).getTime() 
+                                    : new Date(operation.endedAt).getTime();
+                                  
+                                  const opDuration = new Date(operation.endedAt).getTime() - new Date(operation.startedAt).getTime();
+                                  const segDuration = segEnd - segStart;
+                                  const segWidthPct = (segDuration / opDuration) * 100;
+                                  const segLeftPct = ((segStart - new Date(operation.startedAt).getTime()) / opDuration) * 100;
+                                  
+                                  // Use color from entry or from CZECH_TO_ENGLISH_STEP_NAMES
+                                  const phaseColor = entry.color || CZECH_TO_ENGLISH_STEP_NAMES[entry.stepName as string]?.color || '#6b7280';
+                                  
+                                  return (
+                                    <div
+                                      key={`seg-${idx}`}
+                                      className="absolute top-0 bottom-0"
+                                      style={{ 
+                                        left: `${Math.max(0, segLeftPct)}%`,
+                                        width: `${Math.max(0.5, segWidthPct)}%`,
+                                        background: `${phaseColor}66`, // Color with 40% opacity
+                                        borderRight: '1px solid rgba(0,0,0,0.2)'
+                                      }}
+                                      title={entry.stepName}
+                                    />
+                                  );
+                                })
+                              }
+                            </div>
+                            
+                            {/* Label for completed operation */}
                             <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
                               {opWidthPct > 6 && (
                                 <span className="text-[9px] font-medium text-white/30 truncate">
-                                  Dokonceno
+                                  Dokončeno
                                 </span>
                               )}
                             </div>
                           </div>
                         );
                       })
-                    }
+                    })()}
 
                     {/* Active operation bar */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
