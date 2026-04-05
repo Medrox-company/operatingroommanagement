@@ -933,8 +933,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                         style={{
                                           left: `${Math.max(0, segLeftPct)}%`,
                                           width: `${Math.max(0.5, segWidthPct)}%`,
-                                          background: `${phaseColor}99`,
-                                          borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.35)' : 'none',
+                                          background: `${phaseColor}50`,
+                                          borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
                                         }}
                                         title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
                                       />
