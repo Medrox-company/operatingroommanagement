@@ -28,7 +28,7 @@ const StatusesManager: React.FC = () => {
   // Filter to get only active main workflow statuses (sorted by sort_order)
   const activeStatuses = workflowStatuses
     .filter(s => !s.is_special)
-    .sort((a, b) => a.sort_order - b.sort_order);
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const handleEdit = (status: typeof workflowStatuses[0]) => {
     setEditingId(status.id);

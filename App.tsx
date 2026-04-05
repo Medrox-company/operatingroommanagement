@@ -16,6 +16,7 @@ import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, fetchCompletedOperationsForDay } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
@@ -522,11 +523,13 @@ const AppContent: React.FC = () => {
   );
 };
 
-// Wrap with AuthProvider
+// Wrap with AuthProvider and WorkflowStatusesProvider
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <WorkflowStatusesProvider>
+        <AppContent />
+      </WorkflowStatusesProvider>
     </AuthProvider>
   );
 };
