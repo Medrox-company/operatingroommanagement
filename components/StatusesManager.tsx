@@ -19,7 +19,8 @@ interface EditingStatus {
 }
 
 const StatusesManager: React.FC = () => {
-  const { workflowStatuses, loading, refreshStatuses } = useWorkflowStatusesContext();
+  // Use 'statuses' (all statuses) instead of 'workflowStatuses' (only active non-special)
+  const { statuses, loading, refreshStatuses } = useWorkflowStatusesContext();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<EditingStatus | null>(null);
   const [saving, setSaving] = useState(false);
@@ -27,15 +28,15 @@ const StatusesManager: React.FC = () => {
 
   // Get all main workflow statuses (both active and inactive), sorted by sort_order
   // Special statuses are shown separately
-  const mainStatuses = workflowStatuses
+  const mainStatuses = statuses
     .filter(s => !s.is_special)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   
-  const specialStatuses = workflowStatuses
+  const specialStatuses = statuses
     .filter(s => s.is_special)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
-  const handleEdit = (status: typeof workflowStatuses[0]) => {
+  const handleEdit = (status: typeof statuses[0]) => {
     setEditingId(status.id);
     setEditingData({
       id: status.id,
@@ -164,7 +165,7 @@ const StatusesManager: React.FC = () => {
             <div>
               <p className="text-white/50 text-sm">Aktivní Statusy</p>
               <p className="text-2xl font-bold text-white">
-                {mainStatuses.filter(s => s.is_active).length}
+                {mainStatuses.filter(s => s.is_active).length} / {mainStatuses.length}
               </p>
             </div>
           </div>
