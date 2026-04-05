@@ -17,7 +17,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('workflow_statuses')
       .select('*')
-      .order('order_index', { ascending: true });
+      .order('sort_order', { ascending: true });
 
     if (error) throw error;
     return NextResponse.json(data);
@@ -66,15 +66,15 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Get max order_index
+    // Get max sort_order
     const { data: maxData } = await supabase
       .from('workflow_statuses')
-      .select('order_index')
-      .order('order_index', { ascending: false })
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
       .limit(1)
       .single();
 
-    const newOrderIndex = (maxData?.order_index ?? -1) + 1;
+    const newSortOrder = (maxData?.sort_order ?? -1) + 1;
 
     const { data, error } = await supabase
       .from('workflow_statuses')
@@ -82,13 +82,13 @@ export async function POST(request: Request) {
         id: `status-${Date.now()}`,
         name: body.name || 'Nový status',
         description: body.description || '',
-        color: body.color || '#6B7280',
+        accent_color: body.accent_color || '#6B7280',
         icon: body.icon || 'Circle',
-        order_index: newOrderIndex,
-        duration_minutes: body.duration_minutes || 15,
+        sort_order: newSortOrder,
+        default_duration_minutes: body.default_duration_minutes || 15,
         is_active: body.is_active ?? true,
         is_special: body.is_special ?? false,
-        count_in_statistics: body.count_in_statistics ?? true
+        include_in_statistics: body.include_in_statistics ?? true
       })
       .select()
       .single();

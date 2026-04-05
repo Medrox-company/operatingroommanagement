@@ -9,10 +9,14 @@ export interface WorkflowStatus {
   title: string;
   description: string | null;
   order_index: number;
+  sort_order: number;
   color: string;
+  accent_color: string;
   is_active: boolean;
   count_in_statistics: boolean;
+  include_in_statistics: boolean;
   default_duration: number;
+  default_duration_minutes: number;
   show_in_timeline: boolean;
   show_in_room_detail: boolean;
   is_special: boolean;
@@ -57,13 +61,16 @@ const mapDBToStatus = (db: WorkflowStatusDBRow): WorkflowStatus => ({
   name: db.name,
   title: db.name,
   description: db.description,
-  // DB sort_order starts from 1, but currentStepIndex starts from 0
-  // So we subtract 1 to align them
-  order_index: db.sort_order - 1,
+  // sort_order in DB starts from 0, same as currentStepIndex
+  order_index: db.sort_order,
+  sort_order: db.sort_order,
   color: db.accent_color,
+  accent_color: db.accent_color,
   is_active: db.is_active,
   count_in_statistics: db.include_in_statistics,
+  include_in_statistics: db.include_in_statistics,
   default_duration: db.default_duration_minutes,
+  default_duration_minutes: db.default_duration_minutes,
   show_in_timeline: db.show_in_timeline,
   show_in_room_detail: db.show_in_room_detail,
   is_special: db.is_special,

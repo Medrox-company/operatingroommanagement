@@ -12,9 +12,9 @@ interface EditingStatus {
   id: string;
   name: string;
   description: string;
-  color: string;
-  duration_minutes: number;
-  count_in_statistics: boolean;
+  accent_color: string;
+  default_duration_minutes: number;
+  include_in_statistics: boolean;
   is_active: boolean;
 }
 
@@ -25,10 +25,10 @@ const StatusesManager: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter to get only active main workflow statuses (sorted by order_index)
+  // Filter to get only active main workflow statuses (sorted by sort_order)
   const activeStatuses = workflowStatuses
     .filter(s => !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   const handleEdit = (status: typeof workflowStatuses[0]) => {
     setEditingId(status.id);
@@ -36,9 +36,9 @@ const StatusesManager: React.FC = () => {
       id: status.id,
       name: status.name,
       description: status.description || '',
-      color: status.color,
-      duration_minutes: status.duration_minutes || 0,
-      count_in_statistics: status.count_in_statistics ?? true,
+      accent_color: status.accent_color,
+      default_duration_minutes: status.default_duration_minutes || 0,
+      include_in_statistics: status.include_in_statistics ?? true,
       is_active: status.is_active
     });
     setError(null);
@@ -107,7 +107,7 @@ const StatusesManager: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: status.id,
-          count_in_statistics: !status.count_in_statistics
+          include_in_statistics: !status.include_in_statistics
         })
       });
       
@@ -170,7 +170,7 @@ const StatusesManager: React.FC = () => {
             <div>
               <p className="text-white/50 text-sm">Ve Statistikách</p>
               <p className="text-2xl font-bold text-white">
-                {activeStatuses.filter(s => s.count_in_statistics).length}
+                {activeStatuses.filter(s => s.include_in_statistics).length}
               </p>
             </div>
           </div>
@@ -250,14 +250,14 @@ const StatusesManager: React.FC = () => {
                         <div className="flex gap-2">
                           <input
                             type="color"
-                            value={editingData.color}
-                            onChange={(e) => setEditingData({ ...editingData, color: e.target.value })}
+                            value={editingData.accent_color}
+                            onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
                             className="w-12 h-10 rounded-lg cursor-pointer bg-transparent"
                           />
                           <input
                             type="text"
-                            value={editingData.color}
-                            onChange={(e) => setEditingData({ ...editingData, color: e.target.value })}
+                            value={editingData.accent_color}
+                            onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
                             className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white font-mono text-sm focus:outline-none focus:border-cyan-500"
                           />
                         </div>
@@ -269,8 +269,8 @@ const StatusesManager: React.FC = () => {
                         <input
                           type="number"
                           min="0"
-                          value={editingData.duration_minutes}
-                          onChange={(e) => setEditingData({ ...editingData, duration_minutes: parseInt(e.target.value) || 0 })}
+                          value={editingData.default_duration_minutes}
+                          onChange={(e) => setEditingData({ ...editingData, default_duration_minutes: parseInt(e.target.value) || 0 })}
                           className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-cyan-500"
                         />
                       </div>
@@ -302,8 +302,8 @@ const StatusesManager: React.FC = () => {
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={editingData.count_in_statistics}
-                          onChange={(e) => setEditingData({ ...editingData, count_in_statistics: e.target.checked })}
+                          checked={editingData.include_in_statistics}
+                          onChange={(e) => setEditingData({ ...editingData, include_in_statistics: e.target.checked })}
                           className="w-4 h-4 rounded bg-white/10 border-white/20 text-cyan-500 focus:ring-cyan-500"
                         />
                         <span className="text-sm text-white/70">Započítat do statistik</span>
@@ -313,15 +313,15 @@ const StatusesManager: React.FC = () => {
                 ) : (
                   /* View Mode */
                   <div className="flex items-center gap-4">
-                    {/* Order Index */}
+                    {/* Sort Order */}
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white/60">{status.order_index + 1}</span>
+                      <span className="text-xs font-bold text-white/60">{status.sort_order + 1}</span>
                     </div>
 
                     {/* Color Preview */}
                     <div 
                       className="flex-shrink-0 w-10 h-10 rounded-lg shadow-lg"
-                      style={{ backgroundColor: status.color }}
+                      style={{ backgroundColor: status.accent_color }}
                     />
 
                     {/* Name & Description */}
@@ -336,7 +336,7 @@ const StatusesManager: React.FC = () => {
                     <div className="flex items-center gap-2 flex-shrink-0 min-w-[80px]">
                       <Clock className="w-4 h-4 text-white/40" />
                       <span className="text-white/90 text-sm font-medium">
-                        {status.duration_minutes || 0} min
+                        {status.default_duration_minutes || 0} min
                       </span>
                     </div>
 
@@ -345,14 +345,14 @@ const StatusesManager: React.FC = () => {
                       onClick={() => handleToggleStatistics(status)}
                       disabled={saving}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                        status.count_in_statistics
+                        status.include_in_statistics
                           ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
                           : 'bg-white/5 text-white/40 hover:bg-white/10'
                       }`}
-                      title={status.count_in_statistics ? 'Započítáno do statistik' : 'Nezapočítáno do statistik'}
+                      title={status.include_in_statistics ? 'Započítáno do statistik' : 'Nezapočítáno do statistik'}
                     >
                       <BarChart3 className="w-4 h-4" />
-                      {status.count_in_statistics ? 'Statistiky' : 'Bez stat.'}
+                      {status.include_in_statistics ? 'Statistiky' : 'Bez stat.'}
                     </button>
 
                     {/* Active Toggle */}

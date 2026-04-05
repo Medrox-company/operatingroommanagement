@@ -1755,13 +1755,16 @@ const mapDBToStatus = (db)=>({
         name: db.name,
         title: db.name,
         description: db.description,
-        // DB sort_order starts from 1, but currentStepIndex starts from 0
-        // So we subtract 1 to align them
-        order_index: db.sort_order - 1,
+        // sort_order in DB starts from 0, same as currentStepIndex
+        order_index: db.sort_order,
+        sort_order: db.sort_order,
         color: db.accent_color,
+        accent_color: db.accent_color,
         is_active: db.is_active,
         count_in_statistics: db.include_in_statistics,
+        include_in_statistics: db.include_in_statistics,
         default_duration: db.default_duration_minutes,
+        default_duration_minutes: db.default_duration_minutes,
         show_in_timeline: db.show_in_timeline,
         show_in_room_detail: db.show_in_room_detail,
         is_special: db.is_special,
@@ -1904,7 +1907,7 @@ const WorkflowStatusesProvider = ({ children })=>{
         children: children
     }, void 0, false, {
         fileName: "[project]/contexts/WorkflowStatusesContext.tsx",
-        lineNumber: 198,
+        lineNumber: 205,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
