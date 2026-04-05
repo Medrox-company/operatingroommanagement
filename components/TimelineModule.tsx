@@ -936,7 +936,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                           background: `${phaseColor}99`,
                                           borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.35)' : 'none',
                                         }}
-                                        title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
+                                        title={activeStatuses[entry.stepIndex]?.title || ''}
                                       />
                                     );
                                   });
