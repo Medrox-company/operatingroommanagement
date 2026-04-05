@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
@@ -105,6 +105,10 @@ const AppContent: React.FC = () => {
     loadRooms();
   }, []);
 
+  // Track recent local updates to ignore duplicate realtime events (prevents flickering)
+  const recentLocalUpdates = useRef<Map<string, number>>(new Map());
+  const DEBOUNCE_MS = 1500; // Ignore realtime updates within 1.5s of local update
+
   // Subscribe to real-time updates with granular room updates
   useEffect(() => {
     const unsubscribe = subscribeToOperatingRooms(
@@ -117,6 +121,12 @@ const AppContent: React.FC = () => {
       },
       // Granular update callback (for UPDATE - instant sync)
       (roomId, dbChanges) => {
+        // Skip if we recently made a local update to this room (prevents double-render flickering)
+        const lastLocalUpdate = recentLocalUpdates.current.get(roomId);
+        if (lastLocalUpdate && Date.now() - lastLocalUpdate < DEBOUNCE_MS) {
+          return; // Ignore this realtime update - we already have the data from optimistic update
+        }
+        
         const appChanges = transformSingleRoom(dbChanges);
         setRooms(prev => prev.map(room =>
           room.id === roomId ? { ...room, ...appChanges } : room
@@ -146,6 +156,9 @@ const AppContent: React.FC = () => {
   }, [currentView, isModuleEnabled]);
 
   const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number, stepColor?: string) => {
+    // Mark this room as recently updated locally to prevent realtime flicker
+    recentLocalUpdates.current.set(roomId, Date.now());
+    
     const now = new Date().toISOString();
     
     // Check if operation is being completed (transitioning to "Sál připraven po úklidu" - index 7, or back to index 0)
@@ -239,6 +252,7 @@ const AppContent: React.FC = () => {
   }, [isDbConnected, rooms]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
     const room = rooms.find(r => r.id === roomId);
     const newValue = !room?.isEmergency;
     setRooms(prev => prev.map(r =>
@@ -250,6 +264,7 @@ const AppContent: React.FC = () => {
   }, [rooms, isDbConnected]);
 
   const toggleLock = useCallback(async (roomId: string) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
     const room = rooms.find(r => r.id === roomId);
     const newValue = !room?.isLocked;
     setRooms(prev => prev.map(r =>
@@ -261,6 +276,7 @@ const AppContent: React.FC = () => {
   }, [rooms, isDbConnected]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, estimatedEndTime: newTime ? newTime.toISOString() : undefined }
@@ -274,6 +290,7 @@ const AppContent: React.FC = () => {
   }, [isDbConnected]);
 
   const handleEnhancedHygieneToggle = useCallback(async (roomId: string, enabled: boolean) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, isEnhancedHygiene: enabled }
@@ -287,6 +304,7 @@ const AppContent: React.FC = () => {
   }, [isDbConnected]);
 
   const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: Record<string, any>) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, weeklySchedule: schedule as WeeklySchedule }
@@ -300,6 +318,7 @@ const AppContent: React.FC = () => {
   }, [isDbConnected]);
 
   const handleStaffChange = useCallback(async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
     // Update local state
     setRooms(prev => prev.map(room => {
       if (room.id !== roomId) return room;
