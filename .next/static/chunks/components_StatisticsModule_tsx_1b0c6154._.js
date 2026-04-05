@@ -802,7 +802,7 @@ function TrendBadge(param) {
 _c3 = TrendBadge;
 const RoomDetailPanel = (param)=>{
     let { room, onClose, workflowSteps } = param;
-    var _dist_find, _WORKFLOW_STEPS_, _dist_find1, _dist_find2, _WORKFLOW_STEPS_1, _dist_find3, _dist_find4, _WORKFLOW_STEPS_2, _dist_find5, _WORKFLOW_STEPS_3, _dist_find6, _WORKFLOW_STEPS_4;
+    var _dist_find, _workflowSteps_, _dist_find1, _dist_find2, _workflowSteps_1, _dist_find3, _dist_find4, _workflowSteps_2, _dist_find5, _workflowSteps_3, _dist_find6, _workflowSteps_4;
     _s1();
     const sc = statusColor(room.status);
     const ups = isUPS(room);
@@ -849,7 +849,7 @@ const RoomDetailPanel = (param)=>{
                     const base = {
                         day
                     };
-                    WORKFLOW_STEPS.forEach({
+                    workflowSteps.forEach({
                         "RoomDetailPanel.useMemo[weeklyStacked]": (step, si)=>{
                             const dur = si === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][si];
                             base[step.title] = di >= 5 ? Math.floor(dur * 0.3) : Math.max(1, dur + (sr(seed + di + si, 0, 10) - 5));
@@ -860,7 +860,8 @@ const RoomDetailPanel = (param)=>{
             }["RoomDetailPanel.useMemo[weeklyStacked]"])
     }["RoomDetailPanel.useMemo[weeklyStacked]"], [
         room,
-        seed
+        seed,
+        workflowSteps
     ]);
     // Hourly bar — utilisation %
     const hourlyUtil = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
@@ -876,7 +877,7 @@ const RoomDetailPanel = (param)=>{
     ]);
     // Phase bar
     const phaseBar = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "RoomDetailPanel.useMemo[phaseBar]": ()=>WORKFLOW_STEPS.map({
+        "RoomDetailPanel.useMemo[phaseBar]": ()=>workflowSteps.map({
                 "RoomDetailPanel.useMemo[phaseBar]": (step, i)=>{
                     var _dist_find;
                     var _dist_find_pct;
@@ -892,7 +893,8 @@ const RoomDetailPanel = (param)=>{
             }["RoomDetailPanel.useMemo[phaseBar]"])
     }["RoomDetailPanel.useMemo[phaseBar]"], [
         dist,
-        room
+        room,
+        workflowSteps
     ]);
     // Pie from dist
     const pieData = dist.filter((d)=>d.min > 0);
@@ -938,27 +940,27 @@ const RoomDetailPanel = (param)=>{
         {
             label: 'Výkon',
             pct: utilPct,
-            color: ((_WORKFLOW_STEPS_ = WORKFLOW_STEPS[3]) === null || _WORKFLOW_STEPS_ === void 0 ? void 0 : _WORKFLOW_STEPS_.color) || '#FCA5A5'
+            color: ((_workflowSteps_ = workflowSteps[3]) === null || _workflowSteps_ === void 0 ? void 0 : _workflowSteps_.color) || '#FCA5A5'
         },
         {
             label: 'Anestezie',
             pct: ((_dist_find_pct1 = (_dist_find1 = dist.find((d)=>d.title === 'Začátek anestezie')) === null || _dist_find1 === void 0 ? void 0 : _dist_find1.pct) !== null && _dist_find_pct1 !== void 0 ? _dist_find_pct1 : 0) + ((_dist_find_pct2 = (_dist_find2 = dist.find((d)=>d.title === 'Ukončení anestezie')) === null || _dist_find2 === void 0 ? void 0 : _dist_find2.pct) !== null && _dist_find_pct2 !== void 0 ? _dist_find_pct2 : 0),
-            color: ((_WORKFLOW_STEPS_1 = WORKFLOW_STEPS[2]) === null || _WORKFLOW_STEPS_1 === void 0 ? void 0 : _WORKFLOW_STEPS_1.color) || '#C4B5FD'
+            color: ((_workflowSteps_1 = workflowSteps[2]) === null || _workflowSteps_1 === void 0 ? void 0 : _workflowSteps_1.color) || '#C4B5FD'
         },
         {
             label: 'Příprava',
             pct: ((_dist_find_pct3 = (_dist_find3 = dist.find((d)=>d.title === 'Příjezd na sál')) === null || _dist_find3 === void 0 ? void 0 : _dist_find3.pct) !== null && _dist_find_pct3 !== void 0 ? _dist_find_pct3 : 0) + ((_dist_find_pct4 = (_dist_find4 = dist.find((d)=>d.title === 'Ukončení výkonu')) === null || _dist_find4 === void 0 ? void 0 : _dist_find4.pct) !== null && _dist_find_pct4 !== void 0 ? _dist_find_pct4 : 0),
-            color: ((_WORKFLOW_STEPS_2 = WORKFLOW_STEPS[1]) === null || _WORKFLOW_STEPS_2 === void 0 ? void 0 : _WORKFLOW_STEPS_2.color) || '#5EEAD4'
+            color: ((_workflowSteps_2 = workflowSteps[1]) === null || _workflowSteps_2 === void 0 ? void 0 : _workflowSteps_2.color) || '#5EEAD4'
         },
         {
             label: 'Úklid',
             pct: (_dist_find_pct5 = (_dist_find5 = dist.find((d)=>d.title === 'Ukončení anestezie')) === null || _dist_find5 === void 0 ? void 0 : _dist_find5.pct) !== null && _dist_find_pct5 !== void 0 ? _dist_find_pct5 : 0,
-            color: ((_WORKFLOW_STEPS_3 = WORKFLOW_STEPS[5]) === null || _WORKFLOW_STEPS_3 === void 0 ? void 0 : _WORKFLOW_STEPS_3.color) || '#A5B4FC'
+            color: ((_workflowSteps_3 = workflowSteps[5]) === null || _workflowSteps_3 === void 0 ? void 0 : _workflowSteps_3.color) || '#A5B4FC'
         },
         {
             label: 'Volno',
             pct: (_dist_find_pct6 = (_dist_find6 = dist.find((d)=>d.title === 'Sál připraven')) === null || _dist_find6 === void 0 ? void 0 : _dist_find6.pct) !== null && _dist_find_pct6 !== void 0 ? _dist_find_pct6 : 0,
-            color: ((_WORKFLOW_STEPS_4 = WORKFLOW_STEPS[0]) === null || _WORKFLOW_STEPS_4 === void 0 ? void 0 : _WORKFLOW_STEPS_4.color) || '#34D399'
+            color: ((_workflowSteps_4 = workflowSteps[0]) === null || _workflowSteps_4 === void 0 ? void 0 : _workflowSteps_4.color) || '#34D399'
         }
     ];
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -1757,7 +1759,7 @@ const RoomDetailPanel = (param)=>{
                                                         lineNumber: 441,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
-                                                    WORKFLOW_STEPS.map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
+                                                    workflowSteps.map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
                                                             dataKey: step.title,
                                                             stackId: "w",
                                                             fill: step.color,
@@ -1780,7 +1782,7 @@ const RoomDetailPanel = (param)=>{
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "flex flex-wrap gap-x-3 gap-y-1 mt-2",
-                                            children: WORKFLOW_STEPS.map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            children: workflowSteps.map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "flex items-center gap-1",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2289,7 +2291,7 @@ const RoomDetailPanel = (param)=>{
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex flex-wrap gap-2",
-                                    children: WORKFLOW_STEPS.map((step, i)=>{
+                                    children: workflowSteps.map((step, i)=>{
                                         const cur = i === room.currentStepIndex;
                                         const done = i < room.currentStepIndex;
                                         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2321,7 +2323,7 @@ const RoomDetailPanel = (param)=>{
                                                     lineNumber: 539,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0)),
-                                                i < WORKFLOW_STEPS.length - 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                i < workflowSteps.length - 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "w-2 h-px",
                                                     style: {
                                                         background: 'rgba(255,255,255,0.08)'
@@ -2378,7 +2380,7 @@ const StatisticsModule = (param)=>{
     // Get workflow statuses from database context
     const { workflowStatuses } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"])();
     // Filter to get only main workflow statuses (not special), sorted by order
-    const WORKFLOW_STEPS1 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+    const WORKFLOW_STEPS = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "StatisticsModule.useMemo[WORKFLOW_STEPS]": ()=>workflowStatuses.filter({
                 "StatisticsModule.useMemo[WORKFLOW_STEPS]": (s)=>s.is_active && !s.is_special
             }["StatisticsModule.useMemo[WORKFLOW_STEPS]"]).sort({
@@ -2493,7 +2495,7 @@ const StatisticsModule = (param)=>{
         return {
             name: r.name.replace('Sál č. ', 'S'),
             ops: r.operations24h,
-            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r, WORKFLOW_STEPS1).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
+            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r, WORKFLOW_STEPS).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
             color: statusColor(r.status)
         };
     });
@@ -2578,11 +2580,11 @@ const StatisticsModule = (param)=>{
     ].filter((s)=>s.value > 0);
     // Aggregate workflow utilisation across all rooms
     const workflowAgg = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "StatisticsModule.useMemo[workflowAgg]": ()=>WORKFLOW_STEPS1.map({
+        "StatisticsModule.useMemo[workflowAgg]": ()=>WORKFLOW_STEPS.map({
                 "StatisticsModule.useMemo[workflowAgg]": (step)=>{
                     const avg = Math.round(rooms.reduce({
                         "StatisticsModule.useMemo[workflowAgg].avg": (s, r)=>{
-                            const d = buildDist(r, WORKFLOW_STEPS1).find({
+                            const d = buildDist(r, WORKFLOW_STEPS).find({
                                 "StatisticsModule.useMemo[workflowAgg].avg.d": (d)=>d.title === step.title
                             }["StatisticsModule.useMemo[workflowAgg].avg.d"]);
                             var _d_pct;
@@ -2598,7 +2600,7 @@ const StatisticsModule = (param)=>{
             }["StatisticsModule.useMemo[workflowAgg]"])
     }["StatisticsModule.useMemo[workflowAgg]"], [
         rooms,
-        WORKFLOW_STEPS1
+        WORKFLOW_STEPS
     ]);
     // Utilisation per interval for comparison bar - use real data if available
     const intervalCompare = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
@@ -2685,18 +2687,18 @@ const StatisticsModule = (param)=>{
         var _buildDist_find_pct;
         return {
             ops: r.operations24h,
-            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r, WORKFLOW_STEPS1).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
+            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r, WORKFLOW_STEPS).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
             queue: r.queueCount,
             name: r.name
         };
     });
     // Per-room status utilisation (stacked bar, no names, index only)
     const roomStatusBar = rooms.map((r, i)=>{
-        const dist = buildDist(r, WORKFLOW_STEPS1);
+        const dist = buildDist(r, WORKFLOW_STEPS);
         const base = {
             name: "S".concat(i + 1)
         };
-        WORKFLOW_STEPS1.forEach((step)=>{
+        WORKFLOW_STEPS.forEach((step)=>{
             var _dist_find;
             var _dist_find_pct;
             base[step.title] = (_dist_find_pct = (_dist_find = dist.find((d)=>d.title === step.title)) === null || _dist_find === void 0 ? void 0 : _dist_find.pct) !== null && _dist_find_pct !== void 0 ? _dist_find_pct : 0;
@@ -4185,7 +4187,7 @@ const StatisticsModule = (param)=>{
                                                     lineNumber: 1045,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
-                                                WORKFLOW_STEPS1.map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
+                                                WORKFLOW_STEPS.map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
                                                         dataKey: step.title,
                                                         stackId: "r",
                                                         fill: step.color,
@@ -4209,7 +4211,7 @@ const StatisticsModule = (param)=>{
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex flex-wrap gap-x-4 gap-y-1.5 mt-3",
-                                        children: WORKFLOW_STEPS1.map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        children: WORKFLOW_STEPS.map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "flex items-center gap-1.5",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4265,7 +4267,7 @@ const StatisticsModule = (param)=>{
                                                 r: r,
                                                 index: i,
                                                 onClick: ()=>setSelectedRoom(r),
-                                                workflowSteps: WORKFLOW_STEPS1
+                                                workflowSteps: WORKFLOW_STEPS
                                             }, r.id, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
                                                 lineNumber: 1066,
@@ -4574,7 +4576,7 @@ const StatisticsModule = (param)=>{
                                                 width: "100%",
                                                 height: 200,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$BarChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["BarChart"], {
-                                                    data: WORKFLOW_STEPS1.map((step, i)=>({
+                                                    data: WORKFLOW_STEPS.map((step, i)=>({
                                                             name: step.title.split(' ').slice(-1)[0],
                                                             min: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][i],
                                                             color: step.color
@@ -4631,8 +4633,8 @@ const StatisticsModule = (param)=>{
                                                                 2,
                                                                 0
                                                             ],
-                                                            children: WORKFLOW_STEPS1.map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
-                                                                    fill: WORKFLOW_STEPS1[i].color,
+                                                            children: WORKFLOW_STEPS.map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
+                                                                    fill: WORKFLOW_STEPS[i].color,
                                                                     opacity: 0.82
                                                                 }, i, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
@@ -4820,7 +4822,7 @@ const StatisticsModule = (param)=>{
                                         width: "100%",
                                         height: 160,
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$BarChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["BarChart"], {
-                                            data: WORKFLOW_STEPS1.map((step, i)=>({
+                                            data: WORKFLOW_STEPS.map((step, i)=>({
                                                     name: step.title.split(' ').slice(-1)[0],
                                                     count: rooms.filter((r)=>r.currentStepIndex === i).length,
                                                     color: step.color
@@ -4874,8 +4876,8 @@ const StatisticsModule = (param)=>{
                                                         0,
                                                         0
                                                     ],
-                                                    children: WORKFLOW_STEPS1.map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
-                                                            fill: WORKFLOW_STEPS1[i].color,
+                                                    children: WORKFLOW_STEPS.map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
+                                                            fill: WORKFLOW_STEPS[i].color,
                                                             opacity: 0.8
                                                         }, i, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
@@ -5056,7 +5058,7 @@ const StatisticsModule = (param)=>{
                                                 width: "100%",
                                                 height: 180,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$LineChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["LineChart"], {
-                                                    data: WORKFLOW_STEPS1.map((step, i)=>{
+                                                    data: WORKFLOW_STEPS.map((step, i)=>{
                                                         const cum = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"].slice(0, i + 1).reduce((s, d)=>s + d, 0);
                                                         return {
                                                             name: step.title.split(' ').slice(-1)[0],
@@ -5844,7 +5846,7 @@ const StatisticsModule = (param)=>{
                 children: selectedRoom && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RoomDetailPanel, {
                     room: selectedRoom,
                     onClose: ()=>setSelectedRoom(null),
-                    workflowSteps: WORKFLOW_STEPS1
+                    workflowSteps: WORKFLOW_STEPS
                 }, void 0, false, {
                     fileName: "[project]/components/StatisticsModule.tsx",
                     lineNumber: 1385,
