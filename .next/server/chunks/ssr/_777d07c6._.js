@@ -66,6 +66,8 @@ __turbopack_context__.s([
     ()=>MOCK_ROOMS,
     "SIDEBAR_ITEMS",
     ()=>SIDEBAR_ITEMS,
+    "SPECIAL_STATUSES",
+    ()=>SPECIAL_STATUSES,
     "STEP_COLORS",
     ()=>STEP_COLORS,
     "STEP_DURATIONS",
@@ -182,112 +184,194 @@ const DEFAULT_DEPARTMENTS = [
 ];
 const WORKFLOW_STEPS = [
     {
+        name: "Sál připraven",
         title: "Sál připraven",
         organizer: "Vedoucí sestra",
         status: "Připraven",
-        color: '#34D399',
+        color: '#6B7280',
         Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sparkles$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Sparkles$3e$__["Sparkles"]
     },
     {
+        name: "Volání pacienta",
+        title: "Volání pacienta",
+        organizer: "Příjmový tým",
+        status: "Volání",
+        color: '#3B82F6',
+        Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]
+    },
+    {
+        name: "Příjezd do operačního traktu",
+        title: "Příjezd do operačního traktu",
+        organizer: "Příjmový tým",
+        status: "V traktu",
+        color: '#06B6D4',
+        Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]
+    },
+    {
+        name: "Příjezd na sál",
         title: "Příjezd na sál",
         organizer: "Příjmový tým",
-        status: "Probíhá",
-        color: '#5EEAD4',
+        status: "Na sále",
+        color: '#8B5CF6',
         Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$user$2d$check$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__UserCheck$3e$__["UserCheck"]
     },
     {
+        name: "Začátek anestezie",
         title: "Začátek anestezie",
-        organizer: "MUDr. Jelínek",
+        organizer: "Anesteziolog",
         status: "Anestezie",
-        color: '#C4B5FD',
+        color: '#EC4899',
         Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$syringe$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Syringe$3e$__["Syringe"]
     },
     {
-        title: "Chirurgický výkon",
-        organizer: "MUDr. Procházka",
-        status: "Operační fáze",
-        color: '#FCA5A5',
+        name: "Začátek chirurgického výkonu",
+        title: "Začátek chirurgického výkonu",
+        organizer: "Chirurg",
+        status: "Operace",
+        color: '#EF4444',
         Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$scissors$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Scissors$3e$__["Scissors"]
     },
     {
-        title: "Ukončení výkonu",
-        organizer: "MUDr. Procházka",
+        name: "Ukončení chirurgického výkonu",
+        title: "Ukončení chirurgického výkonu",
+        organizer: "Chirurg",
         status: "Dokončování",
-        color: '#FDE047',
+        color: '#F59E0B',
         Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$star$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Star$3e$__["Star"]
     },
     {
+        name: "Ukončení anestezie",
         title: "Ukončení anestezie",
-        organizer: "Anest. sestra",
-        status: "Monitoring",
-        color: '#A5B4FC',
+        organizer: "Anesteziolog",
+        status: "Probouzení",
+        color: '#A855F7',
         Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]
+    },
+    {
+        name: "Odjezd ze sálu",
+        title: "Odjezd ze sálu",
+        organizer: "Příjmový tým",
+        status: "Odjezd",
+        color: '#10B981',
+        Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]
+    },
+    {
+        name: "Úklid sálu",
+        title: "Úklid sálu",
+        organizer: "Sanitární tým",
+        status: "Úklid",
+        color: '#F97316',
+        Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sparkles$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Sparkles$3e$__["Sparkles"]
+    }
+];
+const SPECIAL_STATUSES = [
+    {
+        id: "status-pause",
+        name: "Pauza",
+        color: '#22D3EE',
+        icon: 'Pause',
+        special_type: 'pause'
+    },
+    {
+        id: "status-hygiene",
+        name: "Hygienický režim",
+        color: '#FBBF24',
+        icon: 'Shield',
+        special_type: 'hygiene'
     }
 ];
 const STEP_DURATIONS = [
     0,
-    15,
-    30,
+    5,
+    10,
+    5,
+    20,
     60,
+    10,
     15,
-    30
+    10,
+    15
 ];
 const STEP_COLORS = {
     0: {
-        bg: 'rgba(94,234,212,0.15)',
-        fill: 'rgba(94,234,212,0.35)',
-        border: 'rgba(94,234,212,0.25)',
-        text: '#5EEAD4',
-        glow: 'rgba(94,234,212,0.2)',
-        solid: '#5EEAD4'
+        bg: 'rgba(107,114,128,0.15)',
+        fill: 'rgba(107,114,128,0.35)',
+        border: 'rgba(107,114,128,0.25)',
+        text: '#6B7280',
+        glow: 'rgba(107,114,128,0.2)',
+        solid: '#6B7280'
     },
     1: {
-        bg: 'rgba(196,181,253,0.15)',
-        fill: 'rgba(196,181,253,0.35)',
-        border: 'rgba(196,181,253,0.25)',
-        text: '#C4B5FD',
-        glow: 'rgba(196,181,253,0.2)',
-        solid: '#C4B5FD'
+        bg: 'rgba(59,130,246,0.15)',
+        fill: 'rgba(59,130,246,0.35)',
+        border: 'rgba(59,130,246,0.25)',
+        text: '#3B82F6',
+        glow: 'rgba(59,130,246,0.2)',
+        solid: '#3B82F6'
     },
     2: {
-        bg: 'rgba(252,165,165,0.15)',
-        fill: 'rgba(252,165,165,0.35)',
-        border: 'rgba(252,165,165,0.25)',
-        text: '#FCA5A5',
-        glow: 'rgba(252,165,165,0.2)',
-        solid: '#FCA5A5'
+        bg: 'rgba(6,182,212,0.15)',
+        fill: 'rgba(6,182,212,0.35)',
+        border: 'rgba(6,182,212,0.25)',
+        text: '#06B6D4',
+        glow: 'rgba(6,182,212,0.2)',
+        solid: '#06B6D4'
     },
     3: {
-        bg: 'rgba(253,224,71,0.15)',
-        fill: 'rgba(253,224,71,0.35)',
-        border: 'rgba(253,224,71,0.25)',
-        text: '#FDE047',
-        glow: 'rgba(253,224,71,0.2)',
-        solid: '#FDE047'
+        bg: 'rgba(139,92,246,0.15)',
+        fill: 'rgba(139,92,246,0.35)',
+        border: 'rgba(139,92,246,0.25)',
+        text: '#8B5CF6',
+        glow: 'rgba(139,92,246,0.2)',
+        solid: '#8B5CF6'
     },
     4: {
-        bg: 'rgba(165,180,252,0.15)',
-        fill: 'rgba(165,180,252,0.35)',
-        border: 'rgba(165,180,252,0.25)',
-        text: '#A5B4FC',
-        glow: 'rgba(165,180,252,0.2)',
-        solid: '#A5B4FC'
+        bg: 'rgba(236,72,153,0.15)',
+        fill: 'rgba(236,72,153,0.35)',
+        border: 'rgba(236,72,153,0.25)',
+        text: '#EC4899',
+        glow: 'rgba(236,72,153,0.2)',
+        solid: '#EC4899'
     },
     5: {
-        bg: 'rgba(240,171,252,0.15)',
-        fill: 'rgba(240,171,252,0.35)',
-        border: 'rgba(240,171,252,0.25)',
-        text: '#F0ABFC',
-        glow: 'rgba(240,171,252,0.2)',
-        solid: '#F0ABFC'
+        bg: 'rgba(239,68,68,0.15)',
+        fill: 'rgba(239,68,68,0.35)',
+        border: 'rgba(239,68,68,0.25)',
+        text: '#EF4444',
+        glow: 'rgba(239,68,68,0.2)',
+        solid: '#EF4444'
     },
     6: {
-        bg: 'rgba(253,186,116,0.15)',
-        fill: 'rgba(253,186,116,0.35)',
-        border: 'rgba(253,186,116,0.25)',
-        text: '#FDBA74',
-        glow: 'rgba(253,186,116,0.2)',
-        solid: '#FDBA74'
+        bg: 'rgba(245,158,11,0.15)',
+        fill: 'rgba(245,158,11,0.35)',
+        border: 'rgba(245,158,11,0.25)',
+        text: '#F59E0B',
+        glow: 'rgba(245,158,11,0.2)',
+        solid: '#F59E0B'
+    },
+    7: {
+        bg: 'rgba(168,85,247,0.15)',
+        fill: 'rgba(168,85,247,0.35)',
+        border: 'rgba(168,85,247,0.25)',
+        text: '#A855F7',
+        glow: 'rgba(168,85,247,0.2)',
+        solid: '#A855F7'
+    },
+    8: {
+        bg: 'rgba(16,185,129,0.15)',
+        fill: 'rgba(16,185,129,0.35)',
+        border: 'rgba(16,185,129,0.25)',
+        text: '#10B981',
+        glow: 'rgba(16,185,129,0.2)',
+        solid: '#10B981'
+    },
+    9: {
+        bg: 'rgba(249,115,22,0.15)',
+        fill: 'rgba(249,115,22,0.35)',
+        border: 'rgba(249,115,22,0.25)',
+        text: '#F97316',
+        glow: 'rgba(249,115,22,0.2)',
+        solid: '#F97316'
     }
 };
 const SIDEBAR_ITEMS = [
