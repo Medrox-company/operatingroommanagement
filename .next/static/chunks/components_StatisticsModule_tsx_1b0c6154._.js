@@ -19,6 +19,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lu
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chart$2d$column$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__BarChart3$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/chart-column.js [app-client] (ecmascript) <export default as BarChart3>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/types.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/constants.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/contexts/WorkflowStatusesContext.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/db.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$AreaChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/recharts@2.15.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/recharts/es6/chart/AreaChart.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Area$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/recharts@2.15.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/recharts/es6/cartesian/Area.js [app-client] (ecmascript)");
@@ -44,6 +45,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$ZAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/recharts@2.15.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/recharts/es6/cartesian/ZAxis.js [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature(), _s2 = __turbopack_context__.k.signature();
+;
 ;
 ;
 ;
@@ -432,15 +434,15 @@ function isUPS(r) {
 function dayMinutes(r) {
     return isUPS(r) ? 1440 : 720;
 }
-function buildTimeline(r) {
+function buildTimeline(r, workflowSteps) {
     const dm = dayMinutes(r);
     const passes = Math.max(1, Math.floor(r.operations24h * (dm / 1440)));
-    const durs = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((_, i)=>i === 2 && r.currentProcedure ? r.currentProcedure.estimatedDuration : __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][i]);
+    const durs = workflowSteps.map((_, i)=>i === 2 && r.currentProcedure ? r.currentProcedure.estimatedDuration : __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][i]);
     const ct = durs.reduce((s, d)=>s + d, 0);
     const mpp = Math.floor(dm / passes);
     const raw = [];
     for(let p = 0; p < passes; p++){
-        __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].forEach((step, si)=>{
+        workflowSteps.forEach((step, si)=>{
             const m = Math.round(durs[si] / ct * mpp);
             if (m > 0) raw.push({
                 color: step.color,
@@ -462,10 +464,10 @@ function buildTimeline(r) {
             pct: sg.pct / tot * 100
         }));
 }
-function buildDist(r) {
-    const durs = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((_, i)=>i === 2 && r.currentProcedure ? r.currentProcedure.estimatedDuration : __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][i]);
+function buildDist(r, workflowSteps) {
+    const durs = workflowSteps.map((_, i)=>i === 2 && r.currentProcedure ? r.currentProcedure.estimatedDuration : __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][i]);
     const tot = durs.reduce((s, d)=>s + d, 0);
-    return __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((step, i)=>({
+    return workflowSteps.map((step, i)=>({
             color: step.color,
             title: step.title,
             pct: Math.round(durs[i] / tot * 100),
@@ -486,17 +488,18 @@ function mergeSeg(segs) {
     return out;
 }
 const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["memo"])(_s((param)=>{
-    let { r, index, onClick } = param;
+    let { r, index, onClick, workflowSteps } = param;
     var _buildDist_find;
     _s();
     const sc2 = statusColor(r.status);
     const tl2 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "RoomMiniCard.useMemo[tl2]": ()=>mergeSeg(buildTimeline(r))
+        "RoomMiniCard.useMemo[tl2]": ()=>mergeSeg(buildTimeline(r, workflowSteps))
     }["RoomMiniCard.useMemo[tl2]"], [
-        r
+        r,
+        workflowSteps
     ]);
     var _buildDist_find_pct;
-    const utilP = (_buildDist_find_pct = (_buildDist_find = buildDist(r).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0;
+    const utilP = (_buildDist_find_pct = (_buildDist_find = buildDist(r, workflowSteps).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0;
     const ups2 = isUPS(r);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].button, {
         onClick: onClick,
@@ -535,7 +538,7 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 151,
+                                lineNumber: 153,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -546,13 +549,13 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                                 children: r.name
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 152,
+                                lineNumber: 154,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 150,
+                        lineNumber: 152,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     ups2 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -564,13 +567,13 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                         children: "ÚPS"
                     }, void 0, false, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 154,
+                        lineNumber: 156,
                         columnNumber: 18
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 149,
+                lineNumber: 151,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -581,7 +584,7 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                 children: r.department
             }, void 0, false, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 156,
+                lineNumber: 158,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -595,12 +598,12 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                         }
                     }, si, false, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 160,
+                        lineNumber: 162,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)))
             }, void 0, false, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 158,
+                lineNumber: 160,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -619,7 +622,7 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                                         children: "Ops"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 166,
+                                        lineNumber: 168,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -630,13 +633,13 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                                         children: r.operations24h
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 167,
+                                        lineNumber: 169,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 165,
+                                lineNumber: 167,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -649,7 +652,7 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                                         children: "Výk%"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 170,
+                                        lineNumber: 172,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -663,19 +666,19 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 171,
+                                        lineNumber: 173,
                                         columnNumber: 13
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 169,
+                                lineNumber: 171,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 164,
+                        lineNumber: 166,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -687,19 +690,19 @@ const RoomMiniCard = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$projec
                         children: statusLabel(r.status).slice(0, 3)
                     }, void 0, false, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 174,
+                        lineNumber: 176,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 163,
+                lineNumber: 165,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 140,
+        lineNumber: 142,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 }, "T66ZojMnK7FLgYv9AQ6NEA/zUz0="));
@@ -717,7 +720,7 @@ function Card(param) {
         children: children
     }, void 0, false, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 186,
+        lineNumber: 188,
         columnNumber: 5
     }, this);
 }
@@ -732,7 +735,7 @@ function SectionLabel(param) {
         children: children
     }, void 0, false, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 192,
+        lineNumber: 194,
         columnNumber: 10
     }, this);
 }
@@ -750,7 +753,7 @@ function TrendBadge(param) {
                 className: "w-3 h-3"
             }, void 0, false, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 197,
+                lineNumber: 199,
                 columnNumber: 7
             }, this),
             "+",
@@ -759,7 +762,7 @@ function TrendBadge(param) {
         ]
     }, void 0, true, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 196,
+        lineNumber: 198,
         columnNumber: 5
     }, this);
     if (v < 0) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -773,7 +776,7 @@ function TrendBadge(param) {
                 className: "w-3 h-3"
             }, void 0, false, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 202,
+                lineNumber: 204,
                 columnNumber: 7
             }, this),
             v,
@@ -781,7 +784,7 @@ function TrendBadge(param) {
         ]
     }, void 0, true, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 201,
+        lineNumber: 203,
         columnNumber: 5
     }, this);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -792,27 +795,29 @@ function TrendBadge(param) {
         children: "—"
     }, void 0, false, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 205,
+        lineNumber: 207,
         columnNumber: 10
     }, this);
 }
 _c3 = TrendBadge;
 const RoomDetailPanel = (param)=>{
-    let { room, onClose } = param;
+    let { room, onClose, workflowSteps } = param;
     var _dist_find, _WORKFLOW_STEPS_, _dist_find1, _dist_find2, _WORKFLOW_STEPS_1, _dist_find3, _dist_find4, _WORKFLOW_STEPS_2, _dist_find5, _WORKFLOW_STEPS_3, _dist_find6, _WORKFLOW_STEPS_4;
     _s1();
     const sc = statusColor(room.status);
     const ups = isUPS(room);
     const dm = dayMinutes(room);
     const tl = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "RoomDetailPanel.useMemo[tl]": ()=>mergeSeg(buildTimeline(room))
+        "RoomDetailPanel.useMemo[tl]": ()=>mergeSeg(buildTimeline(room, workflowSteps))
     }["RoomDetailPanel.useMemo[tl]"], [
-        room
+        room,
+        workflowSteps
     ]);
     const dist = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "RoomDetailPanel.useMemo[dist]": ()=>buildDist(room)
+        "RoomDetailPanel.useMemo[dist]": ()=>buildDist(room, workflowSteps)
     }["RoomDetailPanel.useMemo[dist]"], [
-        room
+        room,
+        workflowSteps
     ]);
     const seed = parseInt(room.id);
     const opsDay = Math.max(1, Math.floor(room.operations24h * (dm / 1440)));
@@ -844,7 +849,7 @@ const RoomDetailPanel = (param)=>{
                     const base = {
                         day
                     };
-                    __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].forEach({
+                    WORKFLOW_STEPS.forEach({
                         "RoomDetailPanel.useMemo[weeklyStacked]": (step, si)=>{
                             const dur = si === 2 && room.currentProcedure ? room.currentProcedure.estimatedDuration : __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][si];
                             base[step.title] = di >= 5 ? Math.floor(dur * 0.3) : Math.max(1, dur + (sr(seed + di + si, 0, 10) - 5));
@@ -871,7 +876,7 @@ const RoomDetailPanel = (param)=>{
     ]);
     // Phase bar
     const phaseBar = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "RoomDetailPanel.useMemo[phaseBar]": ()=>__TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map({
+        "RoomDetailPanel.useMemo[phaseBar]": ()=>WORKFLOW_STEPS.map({
                 "RoomDetailPanel.useMemo[phaseBar]": (step, i)=>{
                     var _dist_find;
                     var _dist_find_pct;
@@ -933,27 +938,27 @@ const RoomDetailPanel = (param)=>{
         {
             label: 'Výkon',
             pct: utilPct,
-            color: ((_WORKFLOW_STEPS_ = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][3]) === null || _WORKFLOW_STEPS_ === void 0 ? void 0 : _WORKFLOW_STEPS_.color) || '#FCA5A5'
+            color: ((_WORKFLOW_STEPS_ = WORKFLOW_STEPS[3]) === null || _WORKFLOW_STEPS_ === void 0 ? void 0 : _WORKFLOW_STEPS_.color) || '#FCA5A5'
         },
         {
             label: 'Anestezie',
             pct: ((_dist_find_pct1 = (_dist_find1 = dist.find((d)=>d.title === 'Začátek anestezie')) === null || _dist_find1 === void 0 ? void 0 : _dist_find1.pct) !== null && _dist_find_pct1 !== void 0 ? _dist_find_pct1 : 0) + ((_dist_find_pct2 = (_dist_find2 = dist.find((d)=>d.title === 'Ukončení anestezie')) === null || _dist_find2 === void 0 ? void 0 : _dist_find2.pct) !== null && _dist_find_pct2 !== void 0 ? _dist_find_pct2 : 0),
-            color: ((_WORKFLOW_STEPS_1 = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][2]) === null || _WORKFLOW_STEPS_1 === void 0 ? void 0 : _WORKFLOW_STEPS_1.color) || '#C4B5FD'
+            color: ((_WORKFLOW_STEPS_1 = WORKFLOW_STEPS[2]) === null || _WORKFLOW_STEPS_1 === void 0 ? void 0 : _WORKFLOW_STEPS_1.color) || '#C4B5FD'
         },
         {
             label: 'Příprava',
             pct: ((_dist_find_pct3 = (_dist_find3 = dist.find((d)=>d.title === 'Příjezd na sál')) === null || _dist_find3 === void 0 ? void 0 : _dist_find3.pct) !== null && _dist_find_pct3 !== void 0 ? _dist_find_pct3 : 0) + ((_dist_find_pct4 = (_dist_find4 = dist.find((d)=>d.title === 'Ukončení výkonu')) === null || _dist_find4 === void 0 ? void 0 : _dist_find4.pct) !== null && _dist_find_pct4 !== void 0 ? _dist_find_pct4 : 0),
-            color: ((_WORKFLOW_STEPS_2 = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][1]) === null || _WORKFLOW_STEPS_2 === void 0 ? void 0 : _WORKFLOW_STEPS_2.color) || '#5EEAD4'
+            color: ((_WORKFLOW_STEPS_2 = WORKFLOW_STEPS[1]) === null || _WORKFLOW_STEPS_2 === void 0 ? void 0 : _WORKFLOW_STEPS_2.color) || '#5EEAD4'
         },
         {
             label: 'Úklid',
             pct: (_dist_find_pct5 = (_dist_find5 = dist.find((d)=>d.title === 'Ukončení anestezie')) === null || _dist_find5 === void 0 ? void 0 : _dist_find5.pct) !== null && _dist_find_pct5 !== void 0 ? _dist_find_pct5 : 0,
-            color: ((_WORKFLOW_STEPS_3 = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][5]) === null || _WORKFLOW_STEPS_3 === void 0 ? void 0 : _WORKFLOW_STEPS_3.color) || '#A5B4FC'
+            color: ((_WORKFLOW_STEPS_3 = WORKFLOW_STEPS[5]) === null || _WORKFLOW_STEPS_3 === void 0 ? void 0 : _WORKFLOW_STEPS_3.color) || '#A5B4FC'
         },
         {
             label: 'Volno',
             pct: (_dist_find_pct6 = (_dist_find6 = dist.find((d)=>d.title === 'Sál připraven')) === null || _dist_find6 === void 0 ? void 0 : _dist_find6.pct) !== null && _dist_find_pct6 !== void 0 ? _dist_find_pct6 : 0,
-            color: ((_WORKFLOW_STEPS_4 = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][0]) === null || _WORKFLOW_STEPS_4 === void 0 ? void 0 : _WORKFLOW_STEPS_4.color) || '#34D399'
+            color: ((_WORKFLOW_STEPS_4 = WORKFLOW_STEPS[0]) === null || _WORKFLOW_STEPS_4 === void 0 ? void 0 : _WORKFLOW_STEPS_4.color) || '#34D399'
         }
     ];
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -1012,7 +1017,7 @@ const RoomDetailPanel = (param)=>{
                                     }
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 299,
+                                    lineNumber: 301,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1025,7 +1030,7 @@ const RoomDetailPanel = (param)=>{
                                             children: room.name
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 301,
+                                            lineNumber: 303,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1043,7 +1048,7 @@ const RoomDetailPanel = (param)=>{
                                                     children: "· ÚPS 24 h"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 304,
+                                                    lineNumber: 306,
                                                     columnNumber: 23
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 room.isSeptic && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1054,25 +1059,25 @@ const RoomDetailPanel = (param)=>{
                                                     children: "· SEPTICKÝ"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 305,
+                                                    lineNumber: 307,
                                                     columnNumber: 33
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 302,
+                                            lineNumber: 304,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 300,
+                                    lineNumber: 302,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 298,
+                            lineNumber: 300,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1086,18 +1091,18 @@ const RoomDetailPanel = (param)=>{
                                 className: "w-4 h-4"
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 311,
+                                lineNumber: 313,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 309,
+                            lineNumber: 311,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/StatisticsModule.tsx",
-                    lineNumber: 296,
+                    lineNumber: 298,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0)),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1137,7 +1142,7 @@ const RoomDetailPanel = (param)=>{
                                             children: k.l
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 326,
+                                            lineNumber: 328,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1148,18 +1153,18 @@ const RoomDetailPanel = (param)=>{
                                             children: k.v
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 327,
+                                            lineNumber: 329,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, k.l, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 325,
+                                    lineNumber: 327,
                                     columnNumber: 15
                                 }, ("TURBOPACK compile-time value", void 0)))
                         }, void 0, false, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 318,
+                            lineNumber: 320,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1173,12 +1178,12 @@ const RoomDetailPanel = (param)=>{
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 335,
+                                        lineNumber: 337,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 334,
+                                    lineNumber: 336,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1209,17 +1214,17 @@ const RoomDetailPanel = (param)=>{
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 345,
+                                                lineNumber: 347,
                                                 columnNumber: 21
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, i, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 339,
+                                            lineNumber: 341,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0)))
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 337,
+                                    lineNumber: 339,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1234,7 +1239,7 @@ const RoomDetailPanel = (param)=>{
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 356,
+                                                    lineNumber: 358,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1247,7 +1252,7 @@ const RoomDetailPanel = (param)=>{
                                                             children: seg.title
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 358,
+                                                            lineNumber: 360,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1269,36 +1274,36 @@ const RoomDetailPanel = (param)=>{
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 361,
+                                                                    lineNumber: 363,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 359,
+                                                            lineNumber: 361,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 357,
+                                                    lineNumber: 359,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, i, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 355,
+                                            lineNumber: 357,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0)))
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 353,
+                                    lineNumber: 355,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 333,
+                            lineNumber: 335,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1311,7 +1316,7 @@ const RoomDetailPanel = (param)=>{
                                             children: "Vytížení v průběhu dne (%)"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 372,
+                                            lineNumber: 374,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -1340,7 +1345,7 @@ const RoomDetailPanel = (param)=>{
                                                                     stopOpacity: 0.28
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 377,
+                                                                    lineNumber: 379,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("stop", {
@@ -1349,18 +1354,18 @@ const RoomDetailPanel = (param)=>{
                                                                     stopOpacity: 0
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 378,
+                                                                    lineNumber: 380,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 376,
+                                                            lineNumber: 378,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 375,
+                                                        lineNumber: 377,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -1371,7 +1376,7 @@ const RoomDetailPanel = (param)=>{
                                                         axisLine: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 381,
+                                                        lineNumber: 383,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -1385,7 +1390,7 @@ const RoomDetailPanel = (param)=>{
                                                         ]
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 382,
+                                                        lineNumber: 384,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -1396,7 +1401,7 @@ const RoomDetailPanel = (param)=>{
                                                             ]
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 383,
+                                                        lineNumber: 385,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Area$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Area"], {
@@ -1408,24 +1413,24 @@ const RoomDetailPanel = (param)=>{
                                                         dot: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 384,
+                                                        lineNumber: 386,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 374,
+                                                lineNumber: 376,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 373,
+                                            lineNumber: 375,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 371,
+                                    lineNumber: 373,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -1435,7 +1440,7 @@ const RoomDetailPanel = (param)=>{
                                             children: "Procentuální využití statusů"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 389,
+                                            lineNumber: 391,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1455,7 +1460,7 @@ const RoomDetailPanel = (param)=>{
                                                                             }
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                                            lineNumber: 395,
+                                                                            lineNumber: 397,
                                                                             columnNumber: 25
                                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1466,13 +1471,13 @@ const RoomDetailPanel = (param)=>{
                                                                             children: s.label
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                                            lineNumber: 396,
+                                                                            lineNumber: 398,
                                                                             columnNumber: 25
                                                                         }, ("TURBOPACK compile-time value", void 0))
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 394,
+                                                                    lineNumber: 396,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1486,13 +1491,13 @@ const RoomDetailPanel = (param)=>{
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 398,
+                                                                    lineNumber: 400,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 393,
+                                                            lineNumber: 395,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1519,35 +1524,35 @@ const RoomDetailPanel = (param)=>{
                                                                 }
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 401,
+                                                                lineNumber: 403,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 400,
+                                                            lineNumber: 402,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, i, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 392,
+                                                    lineNumber: 394,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 390,
+                                            lineNumber: 392,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 388,
+                                    lineNumber: 390,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 370,
+                            lineNumber: 372,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1560,7 +1565,7 @@ const RoomDetailPanel = (param)=>{
                                             children: "Hodinové vytížení vs. prodlevy (%)"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 414,
+                                            lineNumber: 416,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -1584,7 +1589,7 @@ const RoomDetailPanel = (param)=>{
                                                         axisLine: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 417,
+                                                        lineNumber: 419,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -1594,14 +1599,14 @@ const RoomDetailPanel = (param)=>{
                                                         axisLine: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 418,
+                                                        lineNumber: 420,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
                                                         ...TIP
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 419,
+                                                        lineNumber: 421,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -1618,7 +1623,7 @@ const RoomDetailPanel = (param)=>{
                                                         name: "Výkon %"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 420,
+                                                        lineNumber: 422,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -1635,18 +1640,18 @@ const RoomDetailPanel = (param)=>{
                                                         name: "Prodleva %"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 421,
+                                                        lineNumber: 423,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 416,
+                                                lineNumber: 418,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 415,
+                                            lineNumber: 417,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1670,7 +1675,7 @@ const RoomDetailPanel = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 427,
+                                                            lineNumber: 429,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1681,24 +1686,24 @@ const RoomDetailPanel = (param)=>{
                                                             children: x.l
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 428,
+                                                            lineNumber: 430,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, x.l, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 426,
+                                                    lineNumber: 428,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 424,
+                                            lineNumber: 426,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 413,
+                                    lineNumber: 415,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -1708,7 +1713,7 @@ const RoomDetailPanel = (param)=>{
                                             children: "Týdenní workflow fáze — min/den"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 434,
+                                            lineNumber: 436,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -1732,7 +1737,7 @@ const RoomDetailPanel = (param)=>{
                                                         axisLine: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 437,
+                                                        lineNumber: 439,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -1742,40 +1747,40 @@ const RoomDetailPanel = (param)=>{
                                                         axisLine: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 438,
+                                                        lineNumber: 440,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
                                                         ...TIP
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 439,
+                                                        lineNumber: 441,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
-                                                    __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
+                                                    WORKFLOW_STEPS.map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
                                                             dataKey: step.title,
                                                             stackId: "w",
                                                             fill: step.color,
                                                             opacity: 0.8
                                                         }, step.title, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 441,
+                                                            lineNumber: 443,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 436,
+                                                lineNumber: 438,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 435,
+                                            lineNumber: 437,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "flex flex-wrap gap-x-3 gap-y-1 mt-2",
-                                            children: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            children: WORKFLOW_STEPS.map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "flex items-center gap-1",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1785,7 +1790,7 @@ const RoomDetailPanel = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 448,
+                                                            lineNumber: 450,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1796,30 +1801,30 @@ const RoomDetailPanel = (param)=>{
                                                             children: s.title.split(' ').slice(-1)[0]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 449,
+                                                            lineNumber: 451,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, s.title, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 447,
+                                                    lineNumber: 449,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 445,
+                                            lineNumber: 447,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 433,
+                                    lineNumber: 435,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 412,
+                            lineNumber: 414,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1829,10 +1834,10 @@ const RoomDetailPanel = (param)=>{
                                     className: "p-5",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionLabel, {
-                                            children: "Délka fází — minuty"
+                                            children: "Délka fází ��� minuty"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 459,
+                                            lineNumber: 461,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -1857,7 +1862,7 @@ const RoomDetailPanel = (param)=>{
                                                         axisLine: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 462,
+                                                        lineNumber: 464,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -1870,7 +1875,7 @@ const RoomDetailPanel = (param)=>{
                                                         width: 52
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 463,
+                                                        lineNumber: 465,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -1881,7 +1886,7 @@ const RoomDetailPanel = (param)=>{
                                                             ]
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 464,
+                                                        lineNumber: 466,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -1897,29 +1902,29 @@ const RoomDetailPanel = (param)=>{
                                                                 opacity: 0.82
                                                             }, i, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 466,
+                                                                lineNumber: 468,
                                                                 columnNumber: 42
                                                             }, ("TURBOPACK compile-time value", void 0)))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 465,
+                                                        lineNumber: 467,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 461,
+                                                lineNumber: 463,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 460,
+                                            lineNumber: 462,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 458,
+                                    lineNumber: 460,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -1929,7 +1934,7 @@ const RoomDetailPanel = (param)=>{
                                             children: "Výkonnostní profil"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 472,
+                                            lineNumber: 474,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -1948,7 +1953,7 @@ const RoomDetailPanel = (param)=>{
                                                         stroke: C.ghost
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 475,
+                                                        lineNumber: 477,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$polar$2f$PolarAngleAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PolarAngleAxis"], {
@@ -1960,7 +1965,7 @@ const RoomDetailPanel = (param)=>{
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 476,
+                                                        lineNumber: 478,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$polar$2f$Radar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Radar"], {
@@ -1971,24 +1976,24 @@ const RoomDetailPanel = (param)=>{
                                                         strokeWidth: 1.5
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 477,
+                                                        lineNumber: 479,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 474,
+                                                lineNumber: 476,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 473,
+                                            lineNumber: 475,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 471,
+                                    lineNumber: 473,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -1998,7 +2003,7 @@ const RoomDetailPanel = (param)=>{
                                             children: "Struktura cyklu (%)"
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 482,
+                                            lineNumber: 484,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -2021,12 +2026,12 @@ const RoomDetailPanel = (param)=>{
                                                                 opacity: 0.85
                                                             }, i, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 487,
+                                                                lineNumber: 489,
                                                                 columnNumber: 41
                                                             }, ("TURBOPACK compile-time value", void 0)))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 485,
+                                                        lineNumber: 487,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -2037,18 +2042,18 @@ const RoomDetailPanel = (param)=>{
                                                             ]
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 489,
+                                                        lineNumber: 491,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 484,
+                                                lineNumber: 486,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 483,
+                                            lineNumber: 485,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2063,7 +2068,7 @@ const RoomDetailPanel = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 495,
+                                                            lineNumber: 497,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2074,30 +2079,30 @@ const RoomDetailPanel = (param)=>{
                                                             children: d.title.split(' ').slice(-1)[0]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 496,
+                                                            lineNumber: 498,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, i, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 494,
+                                                    lineNumber: 496,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, void 0, false, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 492,
+                                            lineNumber: 494,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 481,
+                                    lineNumber: 483,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 457,
+                            lineNumber: 459,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -2107,7 +2112,7 @@ const RoomDetailPanel = (param)=>{
                                     children: "Kumulativní počet výkonů — 30 dní"
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 505,
+                                    lineNumber: 507,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -2127,7 +2132,7 @@ const RoomDetailPanel = (param)=>{
                                                 strokeDasharray: "3 3"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 508,
+                                                lineNumber: 510,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -2147,7 +2152,7 @@ const RoomDetailPanel = (param)=>{
                                                 ]
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 509,
+                                                lineNumber: 511,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -2158,7 +2163,7 @@ const RoomDetailPanel = (param)=>{
                                                 axisLine: false
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 511,
+                                                lineNumber: 513,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -2170,14 +2175,14 @@ const RoomDetailPanel = (param)=>{
                                                 axisLine: false
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 512,
+                                                lineNumber: 514,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
                                                 ...TIP
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 513,
+                                                lineNumber: 515,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -2194,7 +2199,7 @@ const RoomDetailPanel = (param)=>{
                                                 name: "Denní výkony"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 514,
+                                                lineNumber: 516,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Line"], {
@@ -2207,18 +2212,18 @@ const RoomDetailPanel = (param)=>{
                                                 name: "Kumulativní"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 515,
+                                                lineNumber: 517,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 507,
+                                        lineNumber: 509,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 506,
+                                    lineNumber: 508,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2242,7 +2247,7 @@ const RoomDetailPanel = (param)=>{
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 521,
+                                                    lineNumber: 523,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2253,24 +2258,24 @@ const RoomDetailPanel = (param)=>{
                                                     children: x.l
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 522,
+                                                    lineNumber: 524,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, x.l, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 520,
+                                            lineNumber: 522,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0)))
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 518,
+                                    lineNumber: 520,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 504,
+                            lineNumber: 506,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2279,12 +2284,12 @@ const RoomDetailPanel = (param)=>{
                                     children: "Aktuální fáze workflow"
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 530,
+                                    lineNumber: 532,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex flex-wrap gap-2",
-                                    children: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((step, i)=>{
+                                    children: WORKFLOW_STEPS.map((step, i)=>{
                                         const cur = i === room.currentStepIndex;
                                         const done = i < room.currentStepIndex;
                                         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2306,59 +2311,59 @@ const RoomDetailPanel = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 543,
+                                                            lineNumber: 545,
                                                             columnNumber: 23
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         step.title
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 537,
+                                                    lineNumber: 539,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0)),
-                                                i < __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length - 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                i < WORKFLOW_STEPS.length - 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "w-2 h-px",
                                                     style: {
                                                         background: 'rgba(255,255,255,0.08)'
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 547,
+                                                    lineNumber: 549,
                                                     columnNumber: 23
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, i, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 536,
+                                            lineNumber: 538,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0));
                                     })
                                 }, void 0, false, {
                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                    lineNumber: 531,
+                                    lineNumber: 533,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/StatisticsModule.tsx",
-                            lineNumber: 529,
+                            lineNumber: 531,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/StatisticsModule.tsx",
-                    lineNumber: 315,
+                    lineNumber: 317,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0))
             ]
         }, void 0, true, {
             fileName: "[project]/components/StatisticsModule.tsx",
-            lineNumber: 289,
+            lineNumber: 291,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 287,
+        lineNumber: 289,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -2370,6 +2375,29 @@ _c4 = RoomDetailPanel;
 const StatisticsModule = (param)=>{
     let { rooms: propRooms } = param;
     _s2();
+    // Get workflow statuses from database context
+    const { workflowStatuses } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"])();
+    // Filter to get only main workflow statuses (not special), sorted by order
+    const WORKFLOW_STEPS1 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "StatisticsModule.useMemo[WORKFLOW_STEPS]": ()=>workflowStatuses.filter({
+                "StatisticsModule.useMemo[WORKFLOW_STEPS]": (s)=>s.is_active && !s.is_special
+            }["StatisticsModule.useMemo[WORKFLOW_STEPS]"]).sort({
+                "StatisticsModule.useMemo[WORKFLOW_STEPS]": (a, b)=>{
+                    var _a_sort_order, _ref, _b_sort_order, _ref1;
+                    return ((_ref = (_a_sort_order = a.sort_order) !== null && _a_sort_order !== void 0 ? _a_sort_order : a.order_index) !== null && _ref !== void 0 ? _ref : 0) - ((_ref1 = (_b_sort_order = b.sort_order) !== null && _b_sort_order !== void 0 ? _b_sort_order : b.order_index) !== null && _ref1 !== void 0 ? _ref1 : 0);
+                }
+            }["StatisticsModule.useMemo[WORKFLOW_STEPS]"]).map({
+                "StatisticsModule.useMemo[WORKFLOW_STEPS]": (s)=>({
+                        name: s.name,
+                        title: s.title || s.name,
+                        color: s.accent_color || s.color,
+                        organizer: s.name,
+                        status: s.is_active ? 'Active' : 'Inactive'
+                    })
+            }["StatisticsModule.useMemo[WORKFLOW_STEPS]"])
+    }["StatisticsModule.useMemo[WORKFLOW_STEPS]"], [
+        workflowStatuses
+    ]);
     const rooms = propRooms !== null && propRooms !== void 0 ? propRooms : [];
     const [period, setPeriod] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('den');
     const [tab, setTab] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('prehled');
@@ -2465,7 +2493,7 @@ const StatisticsModule = (param)=>{
         return {
             name: r.name.replace('Sál č. ', 'S'),
             ops: r.operations24h,
-            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
+            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r, WORKFLOW_STEPS1).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
             color: statusColor(r.status)
         };
     });
@@ -2550,11 +2578,11 @@ const StatisticsModule = (param)=>{
     ].filter((s)=>s.value > 0);
     // Aggregate workflow utilisation across all rooms
     const workflowAgg = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "StatisticsModule.useMemo[workflowAgg]": ()=>__TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map({
+        "StatisticsModule.useMemo[workflowAgg]": ()=>WORKFLOW_STEPS1.map({
                 "StatisticsModule.useMemo[workflowAgg]": (step)=>{
                     const avg = Math.round(rooms.reduce({
                         "StatisticsModule.useMemo[workflowAgg].avg": (s, r)=>{
-                            const d = buildDist(r).find({
+                            const d = buildDist(r, WORKFLOW_STEPS1).find({
                                 "StatisticsModule.useMemo[workflowAgg].avg.d": (d)=>d.title === step.title
                             }["StatisticsModule.useMemo[workflowAgg].avg.d"]);
                             var _d_pct;
@@ -2569,7 +2597,8 @@ const StatisticsModule = (param)=>{
                 }
             }["StatisticsModule.useMemo[workflowAgg]"])
     }["StatisticsModule.useMemo[workflowAgg]"], [
-        rooms
+        rooms,
+        WORKFLOW_STEPS1
     ]);
     // Utilisation per interval for comparison bar - use real data if available
     const intervalCompare = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
@@ -2656,18 +2685,18 @@ const StatisticsModule = (param)=>{
         var _buildDist_find_pct;
         return {
             ops: r.operations24h,
-            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
+            util: Math.round((_buildDist_find_pct = (_buildDist_find = buildDist(r, WORKFLOW_STEPS1).find((d)=>d.title === 'Chirurgický výkon')) === null || _buildDist_find === void 0 ? void 0 : _buildDist_find.pct) !== null && _buildDist_find_pct !== void 0 ? _buildDist_find_pct : 0),
             queue: r.queueCount,
             name: r.name
         };
     });
     // Per-room status utilisation (stacked bar, no names, index only)
     const roomStatusBar = rooms.map((r, i)=>{
-        const dist = buildDist(r);
+        const dist = buildDist(r, WORKFLOW_STEPS1);
         const base = {
             name: "S".concat(i + 1)
         };
-        __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].forEach((step)=>{
+        WORKFLOW_STEPS1.forEach((step)=>{
             var _dist_find;
             var _dist_find_pct;
             base[step.title] = (_dist_find_pct = (_dist_find = dist.find((d)=>d.title === step.title)) === null || _dist_find === void 0 ? void 0 : _dist_find.pct) !== null && _dist_find_pct !== void 0 ? _dist_find_pct : 0;
@@ -2705,7 +2734,7 @@ const StatisticsModule = (param)=>{
                                 className: "w-4 h-4 text-[#00D8C1]"
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 737,
+                                lineNumber: 757,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2713,13 +2742,13 @@ const StatisticsModule = (param)=>{
                                 children: "OPERATINGROOM CONTROL"
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 738,
+                                lineNumber: 758,
                                 columnNumber: 11
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 736,
+                        lineNumber: 756,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -2727,13 +2756,13 @@ const StatisticsModule = (param)=>{
                         children: "STATISTIKY"
                     }, void 0, false, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 740,
+                        lineNumber: 760,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 735,
+                lineNumber: 755,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2755,12 +2784,12 @@ const StatisticsModule = (param)=>{
                                 children: t.label
                             }, t.id, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 750,
+                                lineNumber: 770,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)))
                     }, void 0, false, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 748,
+                        lineNumber: 768,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2781,18 +2810,18 @@ const StatisticsModule = (param)=>{
                                 children: p
                             }, p, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 763,
+                                lineNumber: 783,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)))
                     }, void 0, false, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 761,
+                        lineNumber: 781,
                         columnNumber: 9
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 746,
+                lineNumber: 766,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnimatePresence"], {
@@ -2889,7 +2918,7 @@ const StatisticsModule = (param)=>{
                                                 children: k.l
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 800,
+                                                lineNumber: 820,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2900,18 +2929,18 @@ const StatisticsModule = (param)=>{
                                                 children: k.v
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 801,
+                                                lineNumber: 821,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, i, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 796,
+                                        lineNumber: 816,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)))
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 784,
+                                lineNumber: 804,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2927,7 +2956,7 @@ const StatisticsModule = (param)=>{
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 809,
+                                                lineNumber: 829,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -2956,7 +2985,7 @@ const StatisticsModule = (param)=>{
                                                                         stopOpacity: 0.20
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 814,
+                                                                        lineNumber: 834,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("stop", {
@@ -2965,18 +2994,18 @@ const StatisticsModule = (param)=>{
                                                                         stopOpacity: 0
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 815,
+                                                                        lineNumber: 835,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0))
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 813,
+                                                                lineNumber: 833,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 812,
+                                                            lineNumber: 832,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$CartesianGrid$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CartesianGrid"], {
@@ -2984,7 +3013,7 @@ const StatisticsModule = (param)=>{
                                                             strokeDasharray: "3 3"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 818,
+                                                            lineNumber: 838,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -2995,7 +3024,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 819,
+                                                            lineNumber: 839,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -3010,7 +3039,7 @@ const StatisticsModule = (param)=>{
                                                             tickFormatter: (v)=>"".concat(v, "%")
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 820,
+                                                            lineNumber: 840,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -3021,7 +3050,7 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 821,
+                                                            lineNumber: 841,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Line"], {
@@ -3034,7 +3063,7 @@ const StatisticsModule = (param)=>{
                                                             name: "Kapacita"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 823,
+                                                            lineNumber: 843,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Area$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Area"], {
@@ -3047,24 +3076,24 @@ const StatisticsModule = (param)=>{
                                                             name: "Využití"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 824,
+                                                            lineNumber: 844,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 811,
+                                                    lineNumber: 831,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 810,
+                                                lineNumber: 830,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 808,
+                                        lineNumber: 828,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -3074,7 +3103,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Stav sálů — podíl"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 829,
+                                                lineNumber: 849,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -3097,12 +3126,12 @@ const StatisticsModule = (param)=>{
                                                                     opacity: 0.85
                                                                 }, i, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 834,
+                                                                    lineNumber: 854,
                                                                     columnNumber: 45
                                                                 }, ("TURBOPACK compile-time value", void 0)))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 832,
+                                                            lineNumber: 852,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -3113,18 +3142,18 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 836,
+                                                            lineNumber: 856,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 831,
+                                                    lineNumber: 851,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 830,
+                                                lineNumber: 850,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3139,7 +3168,7 @@ const StatisticsModule = (param)=>{
                                                                 }
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 842,
+                                                                lineNumber: 862,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3150,7 +3179,7 @@ const StatisticsModule = (param)=>{
                                                                 children: s.name
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 843,
+                                                                lineNumber: 863,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3161,18 +3190,18 @@ const StatisticsModule = (param)=>{
                                                                 children: s.value
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 844,
+                                                                lineNumber: 864,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, s.name, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 841,
+                                                        lineNumber: 861,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 839,
+                                                lineNumber: 859,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             (emergCnt > 0 || septicCnt > 0) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3192,7 +3221,7 @@ const StatisticsModule = (param)=>{
                                                                 className: "w-3 h-3"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 854,
+                                                                lineNumber: 874,
                                                                 columnNumber: 25
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             emergCnt,
@@ -3200,7 +3229,7 @@ const StatisticsModule = (param)=>{
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 852,
+                                                        lineNumber: 872,
                                                         columnNumber: 23
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     septicCnt > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3214,7 +3243,7 @@ const StatisticsModule = (param)=>{
                                                                 className: "w-3 h-3"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 860,
+                                                                lineNumber: 880,
                                                                 columnNumber: 25
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             septicCnt,
@@ -3222,7 +3251,7 @@ const StatisticsModule = (param)=>{
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 858,
+                                                        lineNumber: 878,
                                                         columnNumber: 23
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     upsCnt > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3236,7 +3265,7 @@ const StatisticsModule = (param)=>{
                                                                 className: "w-3 h-3"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 866,
+                                                                lineNumber: 886,
                                                                 columnNumber: 25
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             upsCnt,
@@ -3244,25 +3273,25 @@ const StatisticsModule = (param)=>{
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 864,
+                                                        lineNumber: 884,
                                                         columnNumber: 23
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 850,
+                                                lineNumber: 870,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 828,
+                                        lineNumber: 848,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 807,
+                                lineNumber: 827,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3275,7 +3304,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Výkony / sál (24 h)"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 877,
+                                                lineNumber: 897,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -3299,7 +3328,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 880,
+                                                            lineNumber: 900,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -3309,7 +3338,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 881,
+                                                            lineNumber: 901,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -3320,7 +3349,7 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 882,
+                                                            lineNumber: 902,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -3336,29 +3365,29 @@ const StatisticsModule = (param)=>{
                                                                     opacity: 0.75
                                                                 }, i, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 884,
+                                                                    lineNumber: 904,
                                                                     columnNumber: 47
                                                                 }, ("TURBOPACK compile-time value", void 0)))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 883,
+                                                            lineNumber: 903,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 879,
+                                                    lineNumber: 899,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 878,
+                                                lineNumber: 898,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 876,
+                                        lineNumber: 896,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -3368,7 +3397,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Oddělení — výkony / 24 h"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 890,
+                                                lineNumber: 910,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3392,7 +3421,7 @@ const StatisticsModule = (param)=>{
                                                                                 }
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 898,
+                                                                                lineNumber: 918,
                                                                                 columnNumber: 29
                                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3403,13 +3432,13 @@ const StatisticsModule = (param)=>{
                                                                                 children: dept
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 899,
+                                                                                lineNumber: 919,
                                                                                 columnNumber: 29
                                                                             }, ("TURBOPACK compile-time value", void 0))
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 897,
+                                                                        lineNumber: 917,
                                                                         columnNumber: 27
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3420,13 +3449,13 @@ const StatisticsModule = (param)=>{
                                                                         children: count
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 901,
+                                                                        lineNumber: 921,
                                                                         columnNumber: 27
                                                                     }, ("TURBOPACK compile-time value", void 0))
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 896,
+                                                                lineNumber: 916,
                                                                 columnNumber: 25
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3453,30 +3482,30 @@ const StatisticsModule = (param)=>{
                                                                     }
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 904,
+                                                                    lineNumber: 924,
                                                                     columnNumber: 27
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 903,
+                                                                lineNumber: 923,
                                                                 columnNumber: 25
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, dept, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 895,
+                                                        lineNumber: 915,
                                                         columnNumber: 23
                                                     }, ("TURBOPACK compile-time value", void 0));
                                                 })
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 891,
+                                                lineNumber: 911,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 889,
+                                        lineNumber: 909,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -3486,7 +3515,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Trend výkonů — 7 dní"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 914,
+                                                lineNumber: 934,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -3506,7 +3535,7 @@ const StatisticsModule = (param)=>{
                                                             strokeDasharray: "3 3"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 917,
+                                                            lineNumber: 937,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -3517,7 +3546,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 918,
+                                                            lineNumber: 938,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -3527,7 +3556,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 919,
+                                                            lineNumber: 939,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -3538,7 +3567,7 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 920,
+                                                            lineNumber: 940,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -3553,7 +3582,7 @@ const StatisticsModule = (param)=>{
                                                             ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 921,
+                                                            lineNumber: 941,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Line"], {
@@ -3568,30 +3597,30 @@ const StatisticsModule = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 922,
+                                                            lineNumber: 942,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 916,
+                                                    lineNumber: 936,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 915,
+                                                lineNumber: 935,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 913,
+                                        lineNumber: 933,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 875,
+                                lineNumber: 895,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3604,7 +3633,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Výkony vs. využití — srovnání sálů"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 932,
+                                                lineNumber: 952,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -3623,7 +3652,7 @@ const StatisticsModule = (param)=>{
                                                             strokeDasharray: "3 3"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 935,
+                                                            lineNumber: 955,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -3635,7 +3664,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 936,
+                                                            lineNumber: 956,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -3647,7 +3676,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 937,
+                                                            lineNumber: 957,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$ZAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ZAxis"], {
@@ -3658,7 +3687,7 @@ const StatisticsModule = (param)=>{
                                                             ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 938,
+                                                            lineNumber: 958,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -3669,7 +3698,7 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 939,
+                                                            lineNumber: 959,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Scatter$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Scatter"], {
@@ -3678,24 +3707,24 @@ const StatisticsModule = (param)=>{
                                                             opacity: 0.72
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 941,
+                                                            lineNumber: 961,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 934,
+                                                    lineNumber: 954,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 933,
+                                                lineNumber: 953,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 931,
+                                        lineNumber: 951,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -3705,7 +3734,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Využití dle dne v týdnu (%)"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 946,
+                                                lineNumber: 966,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -3729,7 +3758,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 949,
+                                                            lineNumber: 969,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -3740,7 +3769,7 @@ const StatisticsModule = (param)=>{
                                                             tickFormatter: (v)=>"".concat(v, "%")
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 950,
+                                                            lineNumber: 970,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -3751,7 +3780,7 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 951,
+                                                            lineNumber: 971,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -3767,29 +3796,29 @@ const StatisticsModule = (param)=>{
                                                                     opacity: 0.75
                                                                 }, i, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 954,
+                                                                    lineNumber: 974,
                                                                     columnNumber: 25
                                                                 }, ("TURBOPACK compile-time value", void 0)))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 952,
+                                                            lineNumber: 972,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 948,
+                                                    lineNumber: 968,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 947,
+                                                lineNumber: 967,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 945,
+                                        lineNumber: 965,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -3799,7 +3828,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Fronta a kapacita"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 961,
+                                                lineNumber: 981,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3815,7 +3844,7 @@ const StatisticsModule = (param)=>{
                                                                 children: "Celková fronta"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 964,
+                                                                lineNumber: 984,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3826,13 +3855,13 @@ const StatisticsModule = (param)=>{
                                                                 children: totalQueue
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 965,
+                                                                lineNumber: 985,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 963,
+                                                        lineNumber: 983,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3845,7 +3874,7 @@ const StatisticsModule = (param)=>{
                                                                 children: "ÚPS sálů"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 968,
+                                                                lineNumber: 988,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3856,13 +3885,13 @@ const StatisticsModule = (param)=>{
                                                                 children: upsCnt
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 969,
+                                                                lineNumber: 989,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 967,
+                                                        lineNumber: 987,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3875,7 +3904,7 @@ const StatisticsModule = (param)=>{
                                                                 children: "Zaplněnost"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 972,
+                                                                lineNumber: 992,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3889,19 +3918,19 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 973,
+                                                                lineNumber: 993,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 971,
+                                                        lineNumber: 991,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 962,
+                                                lineNumber: 982,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3920,7 +3949,7 @@ const StatisticsModule = (param)=>{
                                                                             }
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                                            lineNumber: 980,
+                                                                            lineNumber: 1000,
                                                                             columnNumber: 25
                                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3931,13 +3960,13 @@ const StatisticsModule = (param)=>{
                                                                             children: r.name
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                                            lineNumber: 981,
+                                                                            lineNumber: 1001,
                                                                             columnNumber: 25
                                                                         }, ("TURBOPACK compile-time value", void 0))
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 979,
+                                                                    lineNumber: 999,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3951,13 +3980,13 @@ const StatisticsModule = (param)=>{
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 983,
+                                                                    lineNumber: 1003,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, r.id, true, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 978,
+                                                            lineNumber: 998,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))),
                                                     totalQueue === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3968,31 +3997,31 @@ const StatisticsModule = (param)=>{
                                                         children: "Žádná fronta"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 986,
+                                                        lineNumber: 1006,
                                                         columnNumber: 36
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 976,
+                                                lineNumber: 996,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 960,
+                                        lineNumber: 980,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 930,
+                                lineNumber: 950,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, "prehled", true, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 779,
+                        lineNumber: 799,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     tab === 'saly' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -4063,7 +4092,7 @@ const StatisticsModule = (param)=>{
                                                     children: k.l
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1010,
+                                                    lineNumber: 1030,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4074,7 +4103,7 @@ const StatisticsModule = (param)=>{
                                                     children: k.v
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1011,
+                                                    lineNumber: 1031,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4085,23 +4114,23 @@ const StatisticsModule = (param)=>{
                                                     children: k.sub
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1012,
+                                                    lineNumber: 1032,
                                                     columnNumber: 21
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 1009,
+                                            lineNumber: 1029,
                                             columnNumber: 19
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, k.l, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1007,
+                                        lineNumber: 1027,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)))
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1000,
+                                lineNumber: 1020,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -4111,7 +4140,7 @@ const StatisticsModule = (param)=>{
                                         children: "Procentuální využití workflow fází — jednotlivé sály"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1020,
+                                        lineNumber: 1040,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -4135,7 +4164,7 @@ const StatisticsModule = (param)=>{
                                                     axisLine: false
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1023,
+                                                    lineNumber: 1043,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -4146,17 +4175,17 @@ const StatisticsModule = (param)=>{
                                                     tickFormatter: (v)=>"".concat(v, "%")
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1024,
+                                                    lineNumber: 1044,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
                                                     ...TIP
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1025,
+                                                    lineNumber: 1045,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
-                                                __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
+                                                WORKFLOW_STEPS1.map((step)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
                                                         dataKey: step.title,
                                                         stackId: "r",
                                                         fill: step.color,
@@ -4164,23 +4193,23 @@ const StatisticsModule = (param)=>{
                                                         name: step.title
                                                     }, step.title, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1027,
+                                                        lineNumber: 1047,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 1022,
+                                            lineNumber: 1042,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1021,
+                                        lineNumber: 1041,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex flex-wrap gap-x-4 gap-y-1.5 mt-3",
-                                        children: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        children: WORKFLOW_STEPS1.map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "flex items-center gap-1.5",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4190,7 +4219,7 @@ const StatisticsModule = (param)=>{
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1034,
+                                                        lineNumber: 1054,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4201,24 +4230,24 @@ const StatisticsModule = (param)=>{
                                                         children: s.title
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1035,
+                                                        lineNumber: 1055,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, s.title, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1033,
+                                                lineNumber: 1053,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1031,
+                                        lineNumber: 1051,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1019,
+                                lineNumber: 1039,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4227,7 +4256,7 @@ const StatisticsModule = (param)=>{
                                         children: "Sály — kliknutím zobrazíte podrobné statistiky"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1043,
+                                        lineNumber: 1063,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4235,21 +4264,22 @@ const StatisticsModule = (param)=>{
                                         children: rooms.map((r, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RoomMiniCard, {
                                                 r: r,
                                                 index: i,
-                                                onClick: ()=>setSelectedRoom(r)
+                                                onClick: ()=>setSelectedRoom(r),
+                                                workflowSteps: WORKFLOW_STEPS1
                                             }, r.id, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1046,
+                                                lineNumber: 1066,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1044,
+                                        lineNumber: 1064,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1042,
+                                lineNumber: 1062,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -4259,7 +4289,7 @@ const StatisticsModule = (param)=>{
                                         children: "Procentuální využití výkonem — porovnání sálů"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1053,
+                                        lineNumber: 1073,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -4283,7 +4313,7 @@ const StatisticsModule = (param)=>{
                                                     axisLine: false
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1056,
+                                                    lineNumber: 1076,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -4294,7 +4324,7 @@ const StatisticsModule = (param)=>{
                                                     tickFormatter: (v)=>"".concat(v, "%")
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1057,
+                                                    lineNumber: 1077,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -4305,7 +4335,7 @@ const StatisticsModule = (param)=>{
                                                         ]
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1058,
+                                                    lineNumber: 1078,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -4321,35 +4351,35 @@ const StatisticsModule = (param)=>{
                                                             opacity: 0.78
                                                         }, i, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1060,
+                                                            lineNumber: 1080,
                                                             columnNumber: 45
                                                         }, ("TURBOPACK compile-time value", void 0)))
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1059,
+                                                    lineNumber: 1079,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 1055,
+                                            lineNumber: 1075,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1054,
+                                        lineNumber: 1074,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1052,
+                                lineNumber: 1072,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, "saly", true, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 995,
+                        lineNumber: 1015,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     tab === 'faze' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -4377,7 +4407,7 @@ const StatisticsModule = (param)=>{
                                         children: "Průměrné procentuální zastoupení workflow fází — všechny sály"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1076,
+                                        lineNumber: 1096,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4408,17 +4438,17 @@ const StatisticsModule = (param)=>{
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1085,
+                                                    lineNumber: 1105,
                                                     columnNumber: 23
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, i, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1079,
+                                                lineNumber: 1099,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1077,
+                                        lineNumber: 1097,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4438,7 +4468,7 @@ const StatisticsModule = (param)=>{
                                                                         }
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 1097,
+                                                                        lineNumber: 1117,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4449,13 +4479,13 @@ const StatisticsModule = (param)=>{
                                                                         children: seg.title
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 1098,
+                                                                        lineNumber: 1118,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0))
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 1096,
+                                                                lineNumber: 1116,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4469,13 +4499,13 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 1100,
+                                                                lineNumber: 1120,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1095,
+                                                        lineNumber: 1115,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4502,29 +4532,29 @@ const StatisticsModule = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1103,
+                                                            lineNumber: 1123,
                                                             columnNumber: 23
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1102,
+                                                        lineNumber: 1122,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, i, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1094,
+                                                lineNumber: 1114,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1092,
+                                        lineNumber: 1112,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1075,
+                                lineNumber: 1095,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4537,14 +4567,14 @@ const StatisticsModule = (param)=>{
                                                 children: "Průměrné trvání fází — minuty"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1115,
+                                                lineNumber: 1135,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
                                                 width: "100%",
                                                 height: 200,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$BarChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["BarChart"], {
-                                                    data: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((step, i)=>({
+                                                    data: WORKFLOW_STEPS1.map((step, i)=>({
                                                             name: step.title.split(' ').slice(-1)[0],
                                                             min: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"][i],
                                                             color: step.color
@@ -4566,7 +4596,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1122,
+                                                            lineNumber: 1142,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -4579,7 +4609,7 @@ const StatisticsModule = (param)=>{
                                                             width: 52
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1123,
+                                                            lineNumber: 1143,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -4590,7 +4620,7 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1124,
+                                                            lineNumber: 1144,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -4601,34 +4631,34 @@ const StatisticsModule = (param)=>{
                                                                 2,
                                                                 0
                                                             ],
-                                                            children: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
-                                                                    fill: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][i].color,
+                                                            children: WORKFLOW_STEPS1.map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
+                                                                    fill: WORKFLOW_STEPS1[i].color,
                                                                     opacity: 0.82
                                                                 }, i, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1126,
+                                                                    lineNumber: 1146,
                                                                     columnNumber: 50
                                                                 }, ("TURBOPACK compile-time value", void 0)))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1125,
+                                                            lineNumber: 1145,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1117,
+                                                    lineNumber: 1137,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1116,
+                                                lineNumber: 1136,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1114,
+                                        lineNumber: 1134,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -4638,7 +4668,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Distribuce fází — % z celkového cyklu"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1132,
+                                                lineNumber: 1152,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4658,7 +4688,7 @@ const StatisticsModule = (param)=>{
                                                                                 }
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 1138,
+                                                                                lineNumber: 1158,
                                                                                 columnNumber: 27
                                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4669,13 +4699,13 @@ const StatisticsModule = (param)=>{
                                                                                 children: seg.title
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 1139,
+                                                                                lineNumber: 1159,
                                                                                 columnNumber: 27
                                                                             }, ("TURBOPACK compile-time value", void 0))
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 1137,
+                                                                        lineNumber: 1157,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4692,7 +4722,7 @@ const StatisticsModule = (param)=>{
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 1142,
+                                                                                lineNumber: 1162,
                                                                                 columnNumber: 27
                                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4706,19 +4736,19 @@ const StatisticsModule = (param)=>{
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 1143,
+                                                                                lineNumber: 1163,
                                                                                 columnNumber: 27
                                                                             }, ("TURBOPACK compile-time value", void 0))
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 1141,
+                                                                        lineNumber: 1161,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0))
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 1136,
+                                                                lineNumber: 1156,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4745,35 +4775,35 @@ const StatisticsModule = (param)=>{
                                                                     }
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1147,
+                                                                    lineNumber: 1167,
                                                                     columnNumber: 25
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 1146,
+                                                                lineNumber: 1166,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, i, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1135,
+                                                        lineNumber: 1155,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1133,
+                                                lineNumber: 1153,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1131,
+                                        lineNumber: 1151,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1113,
+                                lineNumber: 1133,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -4783,14 +4813,14 @@ const StatisticsModule = (param)=>{
                                         children: "Aktuální workflow fáze — počet sálů na každém kroku"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1159,
+                                        lineNumber: 1179,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
                                         width: "100%",
                                         height: 160,
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$BarChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["BarChart"], {
-                                            data: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((step, i)=>({
+                                            data: WORKFLOW_STEPS1.map((step, i)=>({
                                                     name: step.title.split(' ').slice(-1)[0],
                                                     count: rooms.filter((r)=>r.currentStepIndex === i).length,
                                                     color: step.color
@@ -4811,7 +4841,7 @@ const StatisticsModule = (param)=>{
                                                     axisLine: false
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1166,
+                                                    lineNumber: 1186,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -4822,7 +4852,7 @@ const StatisticsModule = (param)=>{
                                                     allowDecimals: false
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1167,
+                                                    lineNumber: 1187,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -4833,7 +4863,7 @@ const StatisticsModule = (param)=>{
                                                         ]
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1168,
+                                                    lineNumber: 1188,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -4844,34 +4874,34 @@ const StatisticsModule = (param)=>{
                                                         0,
                                                         0
                                                     ],
-                                                    children: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
-                                                            fill: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][i].color,
+                                                    children: WORKFLOW_STEPS1.map((_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Cell$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Cell"], {
+                                                            fill: WORKFLOW_STEPS1[i].color,
                                                             opacity: 0.8
                                                         }, i, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1170,
+                                                            lineNumber: 1190,
                                                             columnNumber: 48
                                                         }, ("TURBOPACK compile-time value", void 0)))
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1169,
+                                                    lineNumber: 1189,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 1161,
+                                            lineNumber: 1181,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1160,
+                                        lineNumber: 1180,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1158,
+                                lineNumber: 1178,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4884,7 +4914,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Pie — struktura operačního cyklu"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1179,
+                                                lineNumber: 1199,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4910,12 +4940,12 @@ const StatisticsModule = (param)=>{
                                                                             opacity: 0.85
                                                                         }, i, false, {
                                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                                            lineNumber: 1186,
+                                                                            lineNumber: 1206,
                                                                             columnNumber: 27
                                                                         }, ("TURBOPACK compile-time value", void 0)))
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1183,
+                                                                    lineNumber: 1203,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -4926,18 +4956,18 @@ const StatisticsModule = (param)=>{
                                                                         ]
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1189,
+                                                                    lineNumber: 1209,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1182,
+                                                            lineNumber: 1202,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1181,
+                                                        lineNumber: 1201,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4955,7 +4985,7 @@ const StatisticsModule = (param)=>{
                                                                                 }
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 1196,
+                                                                                lineNumber: 1216,
                                                                                 columnNumber: 27
                                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4966,13 +4996,13 @@ const StatisticsModule = (param)=>{
                                                                                 children: seg.title.split(' ').slice(-1)[0]
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                                lineNumber: 1197,
+                                                                                lineNumber: 1217,
                                                                                 columnNumber: 27
                                                                             }, ("TURBOPACK compile-time value", void 0))
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 1195,
+                                                                        lineNumber: 1215,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4986,30 +5016,30 @@ const StatisticsModule = (param)=>{
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                                        lineNumber: 1199,
+                                                                        lineNumber: 1219,
                                                                         columnNumber: 25
                                                                     }, ("TURBOPACK compile-time value", void 0))
                                                                 ]
                                                             }, i, true, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 1194,
+                                                                lineNumber: 1214,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0)))
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1192,
+                                                        lineNumber: 1212,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1180,
+                                                lineNumber: 1200,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1178,
+                                        lineNumber: 1198,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -5019,14 +5049,14 @@ const StatisticsModule = (param)=>{
                                                 children: "Line — průběh fází (kumulativní trvání)"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1206,
+                                                lineNumber: 1226,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
                                                 width: "100%",
                                                 height: 180,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$LineChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["LineChart"], {
-                                                    data: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((step, i)=>{
+                                                    data: WORKFLOW_STEPS1.map((step, i)=>{
                                                         const cum = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["STEP_DURATIONS"].slice(0, i + 1).reduce((s, d)=>s + d, 0);
                                                         return {
                                                             name: step.title.split(' ').slice(-1)[0],
@@ -5046,7 +5076,7 @@ const StatisticsModule = (param)=>{
                                                             strokeDasharray: "3 3"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1212,
+                                                            lineNumber: 1232,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -5057,7 +5087,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1213,
+                                                            lineNumber: 1233,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -5067,7 +5097,7 @@ const StatisticsModule = (param)=>{
                                                             axisLine: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1214,
+                                                            lineNumber: 1234,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -5078,7 +5108,7 @@ const StatisticsModule = (param)=>{
                                                                 ]
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1215,
+                                                            lineNumber: 1235,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -5094,7 +5124,7 @@ const StatisticsModule = (param)=>{
                                                             name: "Fáze"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1216,
+                                                            lineNumber: 1236,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Line"], {
@@ -5110,36 +5140,36 @@ const StatisticsModule = (param)=>{
                                                             name: "Kumulativní"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1217,
+                                                            lineNumber: 1237,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1208,
+                                                    lineNumber: 1228,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1207,
+                                                lineNumber: 1227,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1205,
+                                        lineNumber: 1225,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1177,
+                                lineNumber: 1197,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, "faze", true, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 1070,
+                        lineNumber: 1090,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0)),
                     tab === 'heatmapa' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -5198,7 +5228,7 @@ const StatisticsModule = (param)=>{
                                                 children: k.l
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1241,
+                                                lineNumber: 1261,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5209,7 +5239,7 @@ const StatisticsModule = (param)=>{
                                                 children: k.v
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1242,
+                                                lineNumber: 1262,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5220,18 +5250,18 @@ const StatisticsModule = (param)=>{
                                                 children: k.sub
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1243,
+                                                lineNumber: 1263,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0))
                                         ]
                                     }, k.l, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1240,
+                                        lineNumber: 1260,
                                         columnNumber: 17
                                     }, ("TURBOPACK compile-time value", void 0)))
                             }, void 0, false, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1233,
+                                lineNumber: 1253,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -5241,7 +5271,7 @@ const StatisticsModule = (param)=>{
                                         children: "Heatmapa vytížení — den × hodina (%)"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1250,
+                                        lineNumber: 1270,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5264,12 +5294,12 @@ const StatisticsModule = (param)=>{
                                                             children: h
                                                         }, h, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1255,
+                                                            lineNumber: 1275,
                                                             columnNumber: 23
                                                         }, ("TURBOPACK compile-time value", void 0)))
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1253,
+                                                    lineNumber: 1273,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 DAYS.map((day, di)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5283,7 +5313,7 @@ const StatisticsModule = (param)=>{
                                                                 children: day
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                                lineNumber: 1260,
+                                                                lineNumber: 1280,
                                                                 columnNumber: 23
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             HEATMAP[di].map((v, hi)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -5306,24 +5336,24 @@ const StatisticsModule = (param)=>{
                                                                     title: "".concat(day, " ").concat(hi, ":00 — ").concat(v, "%")
                                                                 }, hi, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1262,
+                                                                    lineNumber: 1282,
                                                                     columnNumber: 25
                                                                 }, ("TURBOPACK compile-time value", void 0)))
                                                         ]
                                                     }, di, true, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1259,
+                                                        lineNumber: 1279,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 1252,
+                                            lineNumber: 1272,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1251,
+                                        lineNumber: 1271,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5337,7 +5367,7 @@ const StatisticsModule = (param)=>{
                                                 children: "Legenda"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1274,
+                                                lineNumber: 1294,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             [
@@ -5371,7 +5401,7 @@ const StatisticsModule = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1283,
+                                                            lineNumber: 1303,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5382,25 +5412,25 @@ const StatisticsModule = (param)=>{
                                                             children: l.l
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1284,
+                                                            lineNumber: 1304,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, l.l, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1282,
+                                                    lineNumber: 1302,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1273,
+                                        lineNumber: 1293,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1249,
+                                lineNumber: 1269,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -5410,7 +5440,7 @@ const StatisticsModule = (param)=>{
                                         children: "Průměrné hodinové vytížení — pracovní týden (%)"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1292,
+                                        lineNumber: 1312,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -5446,7 +5476,7 @@ const StatisticsModule = (param)=>{
                                                                     stopOpacity: 0.2
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1303,
+                                                                    lineNumber: 1323,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("stop", {
@@ -5455,13 +5485,13 @@ const StatisticsModule = (param)=>{
                                                                     stopOpacity: 0
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1304,
+                                                                    lineNumber: 1324,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1302,
+                                                            lineNumber: 1322,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("linearGradient", {
@@ -5477,7 +5507,7 @@ const StatisticsModule = (param)=>{
                                                                     stopOpacity: 0.12
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1307,
+                                                                    lineNumber: 1327,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("stop", {
@@ -5486,19 +5516,19 @@ const StatisticsModule = (param)=>{
                                                                     stopOpacity: 0
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                                    lineNumber: 1308,
+                                                                    lineNumber: 1328,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                                            lineNumber: 1306,
+                                                            lineNumber: 1326,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1301,
+                                                    lineNumber: 1321,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$CartesianGrid$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CartesianGrid"], {
@@ -5506,7 +5536,7 @@ const StatisticsModule = (param)=>{
                                                     strokeDasharray: "3 3"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1311,
+                                                    lineNumber: 1331,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -5517,7 +5547,7 @@ const StatisticsModule = (param)=>{
                                                     axisLine: false
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1312,
+                                                    lineNumber: 1332,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -5532,7 +5562,7 @@ const StatisticsModule = (param)=>{
                                                     tickFormatter: (v)=>"".concat(v, "%")
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1313,
+                                                    lineNumber: 1333,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -5543,7 +5573,7 @@ const StatisticsModule = (param)=>{
                                                         ]
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1314,
+                                                    lineNumber: 1334,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Area$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Area"], {
@@ -5556,7 +5586,7 @@ const StatisticsModule = (param)=>{
                                                     name: "prac"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1315,
+                                                    lineNumber: 1335,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Area$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Area"], {
@@ -5569,18 +5599,18 @@ const StatisticsModule = (param)=>{
                                                     name: "vikend"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1316,
+                                                    lineNumber: 1336,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 1294,
+                                            lineNumber: 1314,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1293,
+                                        lineNumber: 1313,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5604,7 +5634,7 @@ const StatisticsModule = (param)=>{
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1322,
+                                                        lineNumber: 1342,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5615,24 +5645,24 @@ const StatisticsModule = (param)=>{
                                                         children: x.l
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1323,
+                                                        lineNumber: 1343,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, x.l, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1321,
+                                                lineNumber: 1341,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1319,
+                                        lineNumber: 1339,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1291,
+                                lineNumber: 1311,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Card, {
@@ -5642,7 +5672,7 @@ const StatisticsModule = (param)=>{
                                         children: "Denní průměrné vytížení dle dne v týdnu (%)"
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1331,
+                                        lineNumber: 1351,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -5667,7 +5697,7 @@ const StatisticsModule = (param)=>{
                                                     strokeDasharray: "3 3"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1340,
+                                                    lineNumber: 1360,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -5678,7 +5708,7 @@ const StatisticsModule = (param)=>{
                                                     axisLine: false
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1341,
+                                                    lineNumber: 1361,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -5689,7 +5719,7 @@ const StatisticsModule = (param)=>{
                                                     tickFormatter: (v)=>"".concat(v, "%")
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1342,
+                                                    lineNumber: 1362,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -5700,7 +5730,7 @@ const StatisticsModule = (param)=>{
                                                         ]
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1343,
+                                                    lineNumber: 1363,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -5716,7 +5746,7 @@ const StatisticsModule = (param)=>{
                                                     name: "avg"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1344,
+                                                    lineNumber: 1364,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$4_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -5732,18 +5762,18 @@ const StatisticsModule = (param)=>{
                                                     name: "peak"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/StatisticsModule.tsx",
-                                                    lineNumber: 1345,
+                                                    lineNumber: 1365,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/StatisticsModule.tsx",
-                                            lineNumber: 1333,
+                                            lineNumber: 1353,
                                             columnNumber: 17
                                         }, ("TURBOPACK compile-time value", void 0))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1332,
+                                        lineNumber: 1352,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5767,7 +5797,7 @@ const StatisticsModule = (param)=>{
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1351,
+                                                        lineNumber: 1371,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5778,60 +5808,65 @@ const StatisticsModule = (param)=>{
                                                         children: x.l
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                                        lineNumber: 1352,
+                                                        lineNumber: 1372,
                                                         columnNumber: 21
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 ]
                                             }, x.l, true, {
                                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                                lineNumber: 1350,
+                                                lineNumber: 1370,
                                                 columnNumber: 19
                                             }, ("TURBOPACK compile-time value", void 0)))
                                     }, void 0, false, {
                                         fileName: "[project]/components/StatisticsModule.tsx",
-                                        lineNumber: 1348,
+                                        lineNumber: 1368,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/StatisticsModule.tsx",
-                                lineNumber: 1330,
+                                lineNumber: 1350,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, "heatmapa", true, {
                         fileName: "[project]/components/StatisticsModule.tsx",
-                        lineNumber: 1228,
+                        lineNumber: 1248,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 777,
+                lineNumber: 797,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnimatePresence"], {
                 children: selectedRoom && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RoomDetailPanel, {
                     room: selectedRoom,
-                    onClose: ()=>setSelectedRoom(null)
+                    onClose: ()=>setSelectedRoom(null),
+                    workflowSteps: WORKFLOW_STEPS1
                 }, void 0, false, {
                     fileName: "[project]/components/StatisticsModule.tsx",
-                    lineNumber: 1365,
+                    lineNumber: 1385,
                     columnNumber: 11
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/components/StatisticsModule.tsx",
-                lineNumber: 1363,
+                lineNumber: 1383,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/StatisticsModule.tsx",
-        lineNumber: 732,
+        lineNumber: 752,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
-_s2(StatisticsModule, "GNiJZNacpRaBKDbWJwwmMRK8YQI=");
+_s2(StatisticsModule, "+hCzZIz9eL0AcboOO6ykjqpz0wA=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"]
+    ];
+});
 _c5 = StatisticsModule;
 const __TURBOPACK__default__export__ = /*#__PURE__*/ _c6 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["memo"])(StatisticsModule);
 var _c, _c1, _c2, _c3, _c4, _c5, _c6;

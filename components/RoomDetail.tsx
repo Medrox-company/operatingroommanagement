@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
@@ -31,8 +31,16 @@ const usePrevious = (value: number) => {
 };
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
-  // Use WORKFLOW_STEPS from constants
-  const activeDbStatuses = WORKFLOW_STEPS;
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeDbStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
+    [workflowStatuses]
+  );
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');

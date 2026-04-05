@@ -11,7 +11,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$ne
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/framer-motion@11.18.2_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/framer-motion/dist/es/render/components/motion/proxy.mjs [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$components$2f$AnimatePresence$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/framer-motion@11.18.2_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$types$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/types.ts [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/constants.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/contexts/WorkflowStatusesContext.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/clock.js [app-client] (ecmascript) <export default as Clock>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calendar$2d$days$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__CalendarDays$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/calendar-days.js [app-client] (ecmascript) <export default as CalendarDays>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$lock$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Lock$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/lock.js [app-client] (ecmascript) <export default as Lock>");
@@ -30,7 +30,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lu
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$phone$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Phone$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/phone.js [app-client] (ecmascript) <export default as Phone>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$bed$2d$double$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__BedDouble$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.454.0_react@18.3.1/node_modules/lucide-react/dist/esm/icons/bed-double.js [app-client] (ecmascript) <export default as BedDouble>");
 ;
-var _s = __turbopack_context__.k.signature();
+var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature();
 ;
 ;
 ;
@@ -139,6 +139,21 @@ const isNextDayHour = (hour)=>hour >= 24;
 function TimelineModule(param) {
     let { rooms } = param;
     _s();
+    // Get workflow statuses from database context
+    const { workflowStatuses } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"])();
+    // Filter to get only main workflow statuses (not special), sorted by order
+    const activeStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "TimelineModule.useMemo[activeStatuses]": ()=>workflowStatuses.filter({
+                "TimelineModule.useMemo[activeStatuses]": (s)=>s.is_active && !s.is_special
+            }["TimelineModule.useMemo[activeStatuses]"]).sort({
+                "TimelineModule.useMemo[activeStatuses]": (a, b)=>{
+                    var _a_sort_order, _ref, _b_sort_order, _ref1;
+                    return ((_ref = (_a_sort_order = a.sort_order) !== null && _a_sort_order !== void 0 ? _a_sort_order : a.order_index) !== null && _ref !== void 0 ? _ref : 0) - ((_ref1 = (_b_sort_order = b.sort_order) !== null && _b_sort_order !== void 0 ? _b_sort_order : b.order_index) !== null && _ref1 !== void 0 ? _ref1 : 0);
+                }
+            }["TimelineModule.useMemo[activeStatuses]"])
+    }["TimelineModule.useMemo[activeStatuses]"], [
+        workflowStatuses
+    ]);
     const [currentTime, setCurrentTime] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(new Date());
     const [selectedRoomId, setSelectedRoomId] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [selectedRoom, setSelectedRoom] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
@@ -343,12 +358,12 @@ function TimelineModule(param) {
                     currentTime: currentTime
                 }, void 0, false, {
                     fileName: "[project]/components/TimelineModule.tsx",
-                    lineNumber: 231,
+                    lineNumber: 243,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/components/TimelineModule.tsx",
-                lineNumber: 229,
+                lineNumber: 241,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -363,12 +378,12 @@ function TimelineModule(param) {
                                     children: "Přehled sálů"
                                 }, void 0, false, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 240,
+                                    lineNumber: 252,
                                     columnNumber: 3
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 239,
+                                lineNumber: 251,
                                 columnNumber: 3
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -379,7 +394,7 @@ function TimelineModule(param) {
                                         children: "Čas"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 243,
+                                        lineNumber: 255,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -390,19 +405,19 @@ function TimelineModule(param) {
                                         })
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 244,
+                                        lineNumber: 256,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 242,
+                                lineNumber: 254,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 238,
+                        lineNumber: 250,
                         columnNumber: 3
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -450,7 +465,7 @@ function TimelineModule(param) {
                                         children: s.label
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 260,
+                                        lineNumber: 272,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -458,29 +473,29 @@ function TimelineModule(param) {
                                         children: s.value
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 261,
+                                        lineNumber: 273,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, s.label, true, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 259,
+                                lineNumber: 271,
                                 columnNumber: 13
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 251,
+                        lineNumber: 263,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "flex flex-col gap-2 px-4 pb-6",
                         children: sortedRooms.map((room)=>{
-                            // Use WORKFLOW_STEPS from constants
-                            const totalSteps = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length > 0 ? __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length : 1;
+                            // Use activeStatuses from database context
+                            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
                             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-                            const step = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][safeIndex];
-                            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step === null || step === void 0 ? void 0 : step.color) || '#6B7280';
-                            const statusName = (step === null || step === void 0 ? void 0 : step.name) || 'Status';
+                            const step = activeStatuses[safeIndex];
+                            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step === null || step === void 0 ? void 0 : step.accent_color) || (step === null || step === void 0 ? void 0 : step.color) || '#6B7280';
+                            const statusName = (step === null || step === void 0 ? void 0 : step.title) || (step === null || step === void 0 ? void 0 : step.name) || 'Status';
                             const remaining = getRemainingTime(room);
                             const isFree = safeIndex === totalSteps - 1;
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -505,7 +520,7 @@ function TimelineModule(param) {
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 286,
+                                                        lineNumber: 298,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -513,7 +528,7 @@ function TimelineModule(param) {
                                                         children: room.name
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 287,
+                                                        lineNumber: 299,
                                                         columnNumber: 21
                                                     }, this),
                                                     room.isEmergency && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -521,7 +536,7 @@ function TimelineModule(param) {
                                                         children: "EMERGENCY"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 288,
+                                                        lineNumber: 300,
                                                         columnNumber: 42
                                                     }, this),
                                                     room.isLocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -529,7 +544,7 @@ function TimelineModule(param) {
                                                         children: "UZAMČEN"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 289,
+                                                        lineNumber: 301,
                                                         columnNumber: 39
                                                     }, this),
                                                     room.isPaused && !room.isEmergency && !room.isLocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -537,13 +552,13 @@ function TimelineModule(param) {
                                                         children: "PAUZA"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 290,
+                                                        lineNumber: 302,
                                                         columnNumber: 78
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 285,
+                                                lineNumber: 297,
                                                 columnNumber: 19
                                             }, this),
                                             remaining && !isFree && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -554,7 +569,7 @@ function TimelineModule(param) {
                                                 children: remaining
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 293,
+                                                lineNumber: 305,
                                                 columnNumber: 21
                                             }, this),
                                             isFree && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -562,13 +577,13 @@ function TimelineModule(param) {
                                                 children: "Volný"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 295,
+                                                lineNumber: 307,
                                                 columnNumber: 30
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 284,
+                                        lineNumber: 296,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -584,7 +599,7 @@ function TimelineModule(param) {
                                                         children: statusName
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 299,
+                                                        lineNumber: 311,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -592,13 +607,13 @@ function TimelineModule(param) {
                                                         children: room.staff.doctor.name
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 300,
+                                                        lineNumber: 312,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 298,
+                                                lineNumber: 310,
                                                 columnNumber: 19
                                             }, this),
                                             room.estimatedEndTime && !isFree && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -609,7 +624,7 @@ function TimelineModule(param) {
                                                         children: "Ukončení"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 304,
+                                                        lineNumber: 316,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -620,19 +635,19 @@ function TimelineModule(param) {
                                                         })
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 305,
+                                                        lineNumber: 317,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 303,
+                                                lineNumber: 315,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 297,
+                                        lineNumber: 309,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -646,30 +661,30 @@ function TimelineModule(param) {
                                             }
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 313,
+                                            lineNumber: 325,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 312,
+                                        lineNumber: 324,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, room.id, true, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 278,
+                                lineNumber: 290,
                                 columnNumber: 15
                             }, this);
                         })
                     }, void 0, false, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 267,
+                        lineNumber: 279,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/TimelineModule.tsx",
-                lineNumber: 236,
+                lineNumber: 248,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -689,7 +704,7 @@ function TimelineModule(param) {
                                         color: "#22C55E"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 334,
+                                        lineNumber: 346,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(StatBox, {
@@ -699,7 +714,7 @@ function TimelineModule(param) {
                                         color: "#F97316"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 340,
+                                        lineNumber: 352,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(StatBox, {
@@ -709,7 +724,7 @@ function TimelineModule(param) {
                                         color: "#22D3EE"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 346,
+                                        lineNumber: 358,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(StatBox, {
@@ -719,7 +734,7 @@ function TimelineModule(param) {
                                         color: "#22D3EE"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 352,
+                                        lineNumber: 364,
                                         columnNumber: 13
                                     }, this),
                                     stats.emergencyCount > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(StatBox, {
@@ -730,7 +745,7 @@ function TimelineModule(param) {
                                         glow: true
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 360,
+                                        lineNumber: 372,
                                         columnNumber: 15
                                     }, this),
                                     aroOvertimeRooms.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -748,7 +763,7 @@ function TimelineModule(param) {
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 379,
+                                                lineNumber: 391,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -764,12 +779,12 @@ function TimelineModule(param) {
                                                             className: "w-4 h-4 text-red-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 393,
+                                                            lineNumber: 405,
                                                             columnNumber: 21
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 386,
+                                                        lineNumber: 398,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -780,7 +795,7 @@ function TimelineModule(param) {
                                                                 children: "ARO PŘESAH"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 396,
+                                                                lineNumber: 408,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -791,32 +806,32 @@ function TimelineModule(param) {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 397,
+                                                                lineNumber: 409,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 395,
+                                                        lineNumber: 407,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 385,
+                                                lineNumber: 397,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 371,
+                                        lineNumber: 383,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex-1 min-w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 404,
+                                        lineNumber: 416,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(StatBox, {
@@ -826,7 +841,7 @@ function TimelineModule(param) {
                                         color: "#6366F1"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 407,
+                                        lineNumber: 419,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -844,7 +859,7 @@ function TimelineModule(param) {
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 423,
+                                                lineNumber: 435,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -860,12 +875,12 @@ function TimelineModule(param) {
                                                             className: "w-4 h-4 text-purple-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 437,
+                                                            lineNumber: 449,
                                                             columnNumber: 19
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 430,
+                                                        lineNumber: 442,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -876,7 +891,7 @@ function TimelineModule(param) {
                                                                 children: "Cas"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 440,
+                                                                lineNumber: 452,
                                                                 columnNumber: 19
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -888,25 +903,25 @@ function TimelineModule(param) {
                                                                 })
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 441,
+                                                                lineNumber: 453,
                                                                 columnNumber: 19
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 439,
+                                                        lineNumber: 451,
                                                         columnNumber: 17
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 429,
+                                                lineNumber: 441,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 415,
+                                        lineNumber: 427,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -929,12 +944,12 @@ function TimelineModule(param) {
                                                         className: "w-4 h-4 text-slate-400"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 469,
+                                                        lineNumber: 481,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 462,
+                                                    lineNumber: 474,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -945,7 +960,7 @@ function TimelineModule(param) {
                                                             children: "Zobrazit"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 472,
+                                                            lineNumber: 484,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -953,40 +968,40 @@ function TimelineModule(param) {
                                                             children: "Legendu"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 473,
+                                                            lineNumber: 485,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 471,
+                                                    lineNumber: 483,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 461,
+                                            lineNumber: 473,
                                             columnNumber: 15
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 453,
+                                        lineNumber: 465,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 333,
+                                lineNumber: 345,
                                 columnNumber: 11
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/TimelineModule.tsx",
-                            lineNumber: 329,
+                            lineNumber: 341,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 328,
+                        lineNumber: 340,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1011,7 +1026,7 @@ function TimelineModule(param) {
                                                 className: "w-4 h-4 text-emerald-400/60"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 491,
+                                                lineNumber: 503,
                                                 columnNumber: 13
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1019,13 +1034,13 @@ function TimelineModule(param) {
                                                 children: "OPERACNI SALY"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 492,
+                                                lineNumber: 504,
                                                 columnNumber: 13
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 487,
+                                        lineNumber: 499,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1054,7 +1069,7 @@ function TimelineModule(param) {
                                                             className: "w-px h-full ".concat(isNightHour ? 'bg-white/[0.04]' : 'bg-white/[0.08]')
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 515,
+                                                            lineNumber: 527,
                                                             columnNumber: 21
                                                         }, this),
                                                         !isLast && (isCurrentHour ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1068,12 +1083,12 @@ function TimelineModule(param) {
                                                                 children: "".concat(currentHour < 10 ? '0' : '').concat(currentHour, ":").concat(currentMin < 10 ? '0' : '').concat(currentMin)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 525,
+                                                                lineNumber: 537,
                                                                 columnNumber: 27
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 518,
+                                                            lineNumber: 530,
                                                             columnNumber: 25
                                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                             className: "ml-2 flex items-center gap-1",
@@ -1083,7 +1098,7 @@ function TimelineModule(param) {
                                                                     children: hourLabel(hour)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 531,
+                                                                    lineNumber: 543,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 isNextDay && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1091,36 +1106,36 @@ function TimelineModule(param) {
                                                                     children: "+1"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 535,
+                                                                    lineNumber: 547,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 530,
+                                                            lineNumber: 542,
                                                             columnNumber: 25
                                                         }, this))
                                                     ]
                                                 }, "h-".concat(hour, "-").concat(i), true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 510,
+                                                    lineNumber: 522,
                                                     columnNumber: 19
                                                 }, this);
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 497,
+                                            lineNumber: 509,
                                             columnNumber: 13
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 496,
+                                        lineNumber: 508,
                                         columnNumber: 11
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 485,
+                                lineNumber: 497,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1149,7 +1164,7 @@ function TimelineModule(param) {
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 561,
+                                                        lineNumber: 573,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1159,24 +1174,24 @@ function TimelineModule(param) {
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 562,
+                                                        lineNumber: 574,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 555,
+                                                lineNumber: 567,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 553,
+                                            lineNumber: 565,
                                             columnNumber: 13
                                         }, this),
                                         sortedRooms.map((room, roomIndex)=>{
                                             var _room_currentProcedure_startTime, _room_currentProcedure, _room_staff_doctor, _room_staff;
-                                            // Get current workflow step info from WORKFLOW_STEPS
-                                            const totalSteps = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length > 0 ? __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length : 1;
+                                            // Get current workflow step info from database context
+                                            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
                                             const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
                                             const isActive = stepIndex > 0; // index 0 = "Sál připraven"
                                             const isCleaning = stepIndex === totalSteps - 2; // Second to last step
@@ -1189,10 +1204,10 @@ function TimelineModule(param) {
                                             const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
                                             const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
                                             const remainingTime = getRemainingTime(room);
-                                            // Get status from WORKFLOW_STEPS
-                                            const currentStep = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][stepIndex];
-                                            const stepColor = (currentStep === null || currentStep === void 0 ? void 0 : currentStep.color) || '#6B7280';
-                                            const stepName = (currentStep === null || currentStep === void 0 ? void 0 : currentStep.name) || 'Status';
+                                            // Get status from database context
+                                            const currentStep = activeStatuses[stepIndex];
+                                            const stepColor = (currentStep === null || currentStep === void 0 ? void 0 : currentStep.accent_color) || (currentStep === null || currentStep === void 0 ? void 0 : currentStep.color) || '#6B7280';
+                                            const stepName = (currentStep === null || currentStep === void 0 ? void 0 : currentStep.title) || (currentStep === null || currentStep === void 0 ? void 0 : currentStep.name) || 'Status';
                                             const StepIcon = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]; // Default icon
                                             // Calculate operation bar position
                                             // Use currentProcedure if available, otherwise use phaseStartedAt or current time as fallback
@@ -1276,12 +1291,12 @@ function TimelineModule(param) {
                                                                         className: "w-3 h-3 text-red-300/70"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 664,
+                                                                        lineNumber: 676,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 663,
+                                                                    lineNumber: 675,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1292,7 +1307,7 @@ function TimelineModule(param) {
                                                                             children: room.name
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 667,
+                                                                            lineNumber: 679,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1300,19 +1315,19 @@ function TimelineModule(param) {
                                                                             children: "EMERGENCY"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 668,
+                                                                            lineNumber: 680,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 666,
+                                                                    lineNumber: 678,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 659,
+                                                            lineNumber: 671,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1328,7 +1343,7 @@ function TimelineModule(param) {
                                                                         }
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 675,
+                                                                        lineNumber: 687,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1338,7 +1353,7 @@ function TimelineModule(param) {
                                                                                 className: "w-3.5 h-3.5 text-red-300/70"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 684,
+                                                                                lineNumber: 696,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1346,30 +1361,30 @@ function TimelineModule(param) {
                                                                                 children: "EMERGENCY"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 685,
+                                                                                lineNumber: 697,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 683,
+                                                                        lineNumber: 695,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 673,
+                                                                lineNumber: 685,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 672,
+                                                            lineNumber: 684,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, room.id, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 653,
+                                                    lineNumber: 665,
                                                     columnNumber: 19
                                                 }, this);
                                             }
@@ -1397,12 +1412,12 @@ function TimelineModule(param) {
                                                                         className: "w-3 h-3 text-amber-300/60"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 709,
+                                                                        lineNumber: 721,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 708,
+                                                                    lineNumber: 720,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1413,7 +1428,7 @@ function TimelineModule(param) {
                                                                             children: room.name
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 712,
+                                                                            lineNumber: 724,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1421,19 +1436,19 @@ function TimelineModule(param) {
                                                                             children: "UZAMCENO"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 713,
+                                                                            lineNumber: 725,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 711,
+                                                                    lineNumber: 723,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 704,
+                                                            lineNumber: 716,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1449,7 +1464,7 @@ function TimelineModule(param) {
                                                                         }
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 720,
+                                                                        lineNumber: 732,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1459,7 +1474,7 @@ function TimelineModule(param) {
                                                                                 className: "w-3.5 h-3.5 text-amber-300/60"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 729,
+                                                                                lineNumber: 741,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1467,30 +1482,30 @@ function TimelineModule(param) {
                                                                                 children: "UZAMCENO"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 730,
+                                                                                lineNumber: 742,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 728,
+                                                                        lineNumber: 740,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 718,
+                                                                lineNumber: 730,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 717,
+                                                            lineNumber: 729,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, room.id, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 698,
+                                                    lineNumber: 710,
                                                     columnNumber: 19
                                                 }, this);
                                             }
@@ -1539,7 +1554,7 @@ function TimelineModule(param) {
                                                                                 children: "ARO"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 770,
+                                                                                lineNumber: 782,
                                                                                 columnNumber: 29
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1547,7 +1562,7 @@ function TimelineModule(param) {
                                                                                 children: aroPosition
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 771,
+                                                                                lineNumber: 783,
                                                                                 columnNumber: 29
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1559,13 +1574,13 @@ function TimelineModule(param) {
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 772,
+                                                                                lineNumber: 784,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 763,
+                                                                        lineNumber: 775,
                                                                         columnNumber: 27
                                                                     }, this);
                                                                 }
@@ -1582,12 +1597,12 @@ function TimelineModule(param) {
                                                                     children: currentRoomNumber
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 782,
+                                                                    lineNumber: 794,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 780,
+                                                                lineNumber: 792,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1601,7 +1616,7 @@ function TimelineModule(param) {
                                                                                 children: room.name
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 794,
+                                                                                lineNumber: 806,
                                                                                 columnNumber: 25
                                                                             }, this),
                                                                             room.isSeptic && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1609,7 +1624,7 @@ function TimelineModule(param) {
                                                                                 children: "SEPTIKA"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 798,
+                                                                                lineNumber: 810,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             room.isPaused && !room.isEmergency && !room.isLocked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1619,14 +1634,14 @@ function TimelineModule(param) {
                                                                                         className: "w-2 h-2"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                                        lineNumber: 802,
+                                                                                        lineNumber: 814,
                                                                                         columnNumber: 29
                                                                                     }, this),
                                                                                     "PAUZA"
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 801,
+                                                                                lineNumber: 813,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             room.patientCalledAt && !room.patientArrivedAt && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -1642,12 +1657,12 @@ function TimelineModule(param) {
                                                                                     className: "w-3 h-3 text-blue-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 814,
+                                                                                    lineNumber: 826,
                                                                                     columnNumber: 29
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 808,
+                                                                                lineNumber: 820,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             room.patientArrivedAt && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$11$2e$18$2e$2_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
@@ -1663,18 +1678,18 @@ function TimelineModule(param) {
                                                                                     className: "w-3 h-3 text-green-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 825,
+                                                                                    lineNumber: 837,
                                                                                     columnNumber: 29
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 819,
+                                                                                lineNumber: 831,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 793,
+                                                                        lineNumber: 805,
                                                                         columnNumber: 23
                                                                     }, this),
                                                                     isFree ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1684,40 +1699,40 @@ function TimelineModule(param) {
                                                                                 className: "w-1 h-1 rounded-full bg-emerald-400/40"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 831,
+                                                                                lineNumber: 843,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             "Volny"
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 830,
+                                                                        lineNumber: 842,
                                                                         columnNumber: 25
                                                                     }, this) : remainingTime && stepIndex !== 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                                         className: "text-[9px] font-medium text-white/50",
                                                                         children: remainingTime
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 835,
+                                                                        lineNumber: 847,
                                                                         columnNumber: 25
                                                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                                         className: "text-[9px] font-medium text-white/25",
                                                                         children: room.department
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 841,
+                                                                        lineNumber: 853,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 792,
+                                                                lineNumber: 804,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 752,
+                                                        lineNumber: 764,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1734,7 +1749,7 @@ function TimelineModule(param) {
                                                                     }
                                                                 }, i, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 853,
+                                                                    lineNumber: 865,
                                                                     columnNumber: 25
                                                                 }, this);
                                                             }),
@@ -1782,13 +1797,13 @@ function TimelineModule(param) {
                                                                                         title: entry.stepName
                                                                                     }, "seg-".concat(idx), false, {
                                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                                        lineNumber: 911,
+                                                                                        lineNumber: 923,
                                                                                         columnNumber: 37
                                                                                     }, this);
                                                                                 })
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 893,
+                                                                                lineNumber: 905,
                                                                                 columnNumber: 29
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1798,18 +1813,18 @@ function TimelineModule(param) {
                                                                                     children: "Dokončeno"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 930,
+                                                                                    lineNumber: 942,
                                                                                     columnNumber: 33
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 928,
+                                                                                lineNumber: 940,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         ]
                                                                     }, "completed-".concat(opIdx), true, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 884,
+                                                                        lineNumber: 896,
                                                                         columnNumber: 27
                                                                     }, this);
                                                                 });
@@ -1857,7 +1872,7 @@ function TimelineModule(param) {
                                                                                     }
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 965,
+                                                                                    lineNumber: 977,
                                                                                     columnNumber: 33
                                                                                 }, this);
                                                                             }
@@ -1891,19 +1906,19 @@ function TimelineModule(param) {
                                                                                         className: "absolute top-0 right-0 bottom-0 w-px bg-black/30"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                                        lineNumber: 999,
+                                                                                        lineNumber: 1011,
                                                                                         columnNumber: 37
                                                                                     }, this)
                                                                                 }, "history-".concat(idx), false, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 985,
+                                                                                    lineNumber: 997,
                                                                                     columnNumber: 33
                                                                                 }, this);
                                                                             });
                                                                         })()
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 954,
+                                                                        lineNumber: 966,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     progressPct > 0 && progressPct < 100 && !room.isPaused && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -1916,7 +1931,7 @@ function TimelineModule(param) {
                                                                                 }
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 1010,
+                                                                                lineNumber: 1022,
                                                                                 columnNumber: 29
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1927,7 +1942,7 @@ function TimelineModule(param) {
                                                                                 }
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 1017,
+                                                                                lineNumber: 1029,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         ]
@@ -1944,7 +1959,7 @@ function TimelineModule(param) {
                                                                             title: "Očekávaný konec operace"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 1031,
+                                                                            lineNumber: 1043,
                                                                             columnNumber: 29
                                                                         }, this);
                                                                     })(),
@@ -1959,12 +1974,12 @@ function TimelineModule(param) {
                                                                                         className: "w-3 h-3 text-white"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                                        lineNumber: 1050,
+                                                                                        lineNumber: 1062,
                                                                                         columnNumber: 35
                                                                                     }, this)
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 1049,
+                                                                                    lineNumber: 1061,
                                                                                     columnNumber: 33
                                                                                 }, this),
                                                                                 boxWidthPct > 12 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1974,7 +1989,7 @@ function TimelineModule(param) {
                                                                                             children: "PAUZA"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                                            lineNumber: 1055,
+                                                                                            lineNumber: 1067,
                                                                                             columnNumber: 35
                                                                                         }, this),
                                                                                         boxWidthPct > 20 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1982,19 +1997,19 @@ function TimelineModule(param) {
                                                                                             children: "Operace pozastavena"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                                            lineNumber: 1059,
+                                                                                            lineNumber: 1071,
                                                                                             columnNumber: 37
                                                                                         }, this)
                                                                                     ]
                                                                                 }, void 0, true, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 1054,
+                                                                                    lineNumber: 1066,
                                                                                     columnNumber: 33
                                                                                 }, this)
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 1047,
+                                                                            lineNumber: 1059,
                                                                             columnNumber: 29
                                                                         }, this) : /* Normal state - refined step info */ /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                                                             children: [
@@ -2006,7 +2021,7 @@ function TimelineModule(param) {
                                                                                             children: stepName
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                                            lineNumber: 1071,
+                                                                                            lineNumber: 1083,
                                                                                             columnNumber: 35
                                                                                         }, this),
                                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2014,13 +2029,13 @@ function TimelineModule(param) {
                                                                                             children: ((_room_staff = room.staff) === null || _room_staff === void 0 ? void 0 : (_room_staff_doctor = _room_staff.doctor) === null || _room_staff_doctor === void 0 ? void 0 : _room_staff_doctor.name) || ''
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                                            lineNumber: 1074,
+                                                                                            lineNumber: 1086,
                                                                                             columnNumber: 35
                                                                                         }, this)
                                                                                     ]
                                                                                 }, void 0, true, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 1070,
+                                                                                    lineNumber: 1082,
                                                                                     columnNumber: 33
                                                                                 }, this),
                                                                                 boxWidthPct > 18 && remainingTime && stepIndex !== 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2032,20 +2047,20 @@ function TimelineModule(param) {
                                                                                     children: remainingTime
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                                    lineNumber: 1080,
+                                                                                    lineNumber: 1092,
                                                                                     columnNumber: 33
                                                                                 }, this)
                                                                             ]
                                                                         }, void 0, true)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 1044,
+                                                                        lineNumber: 1056,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 942,
+                                                                lineNumber: 954,
                                                                 columnNumber: 23
                                                             }, this),
                                                             isFree && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2062,17 +2077,17 @@ function TimelineModule(param) {
                                                                         children: stepName
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 1107,
+                                                                        lineNumber: 1119,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1106,
+                                                                    lineNumber: 1118,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 1098,
+                                                                lineNumber: 1110,
                                                                 columnNumber: 23
                                                             }, this),
                                                             (()=>{
@@ -2121,49 +2136,49 @@ function TimelineModule(param) {
                                                                                 children: "+1"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                                lineNumber: 1150,
+                                                                                lineNumber: 1162,
                                                                                 columnNumber: 46
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 1141,
+                                                                        lineNumber: 1153,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1133,
+                                                                    lineNumber: 1145,
                                                                     columnNumber: 25
                                                                 }, this);
                                                             })()
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 847,
+                                                        lineNumber: 859,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, room.id, true, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 742,
+                                                lineNumber: 754,
                                                 columnNumber: 17
                                             }, this);
                                         })
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 551,
+                                    lineNumber: 563,
                                     columnNumber: 11
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 550,
+                                lineNumber: 562,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 482,
+                        lineNumber: 494,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("footer", {
@@ -2186,7 +2201,7 @@ function TimelineModule(param) {
                                                 className: "w-4 h-4 rounded bg-white/10"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1170,
+                                                lineNumber: 1182,
                                                 columnNumber: 13
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2194,13 +2209,13 @@ function TimelineModule(param) {
                                                 children: "Dokoncene"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1171,
+                                                lineNumber: 1183,
                                                 columnNumber: 13
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1166,
+                                        lineNumber: 1178,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2217,7 +2232,7 @@ function TimelineModule(param) {
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1177,
+                                                lineNumber: 1189,
                                                 columnNumber: 13
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2225,13 +2240,13 @@ function TimelineModule(param) {
                                                 children: "Zacatek smeny"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1178,
+                                                lineNumber: 1190,
                                                 columnNumber: 13
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1173,
+                                        lineNumber: 1185,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2248,7 +2263,7 @@ function TimelineModule(param) {
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1184,
+                                                lineNumber: 1196,
                                                 columnNumber: 13
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2256,13 +2271,13 @@ function TimelineModule(param) {
                                                 children: "Konec smeny"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1185,
+                                                lineNumber: 1197,
                                                 columnNumber: 13
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1180,
+                                        lineNumber: 1192,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2279,7 +2294,7 @@ function TimelineModule(param) {
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1191,
+                                                lineNumber: 1203,
                                                 columnNumber: 13
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2287,13 +2302,13 @@ function TimelineModule(param) {
                                                 children: "Konec prac. doby salu"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1192,
+                                                lineNumber: 1204,
                                                 columnNumber: 13
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1187,
+                                        lineNumber: 1199,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2307,7 +2322,7 @@ function TimelineModule(param) {
                                                 className: "w-4 h-4 rounded-full border-2 border-red-500/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1198,
+                                                lineNumber: 1210,
                                                 columnNumber: 13
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2315,13 +2330,13 @@ function TimelineModule(param) {
                                                 children: "Presah"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1199,
+                                                lineNumber: 1211,
                                                 columnNumber: 13
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1194,
+                                        lineNumber: 1206,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2340,7 +2355,7 @@ function TimelineModule(param) {
                                                 children: "1"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1205,
+                                                lineNumber: 1217,
                                                 columnNumber: 13
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2348,19 +2363,19 @@ function TimelineModule(param) {
                                                 children: "ARO poradi stridani"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1211,
+                                                lineNumber: 1223,
                                                 columnNumber: 13
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1201,
+                                        lineNumber: 1213,
                                         columnNumber: 11
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 1165,
+                                lineNumber: 1177,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2374,7 +2389,7 @@ function TimelineModule(param) {
                                         className: "w-3.5 h-3.5 text-white/30"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1218,
+                                        lineNumber: 1230,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2382,35 +2397,39 @@ function TimelineModule(param) {
                                         children: "Kliknete na sal pro zobrazeni detailu"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1219,
+                                        lineNumber: 1231,
                                         columnNumber: 11
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 1214,
+                                lineNumber: 1226,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 1164,
+                        lineNumber: 1176,
                         columnNumber: 7
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/TimelineModule.tsx",
-                lineNumber: 325,
+                lineNumber: 337,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/TimelineModule.tsx",
-        lineNumber: 226,
+        lineNumber: 238,
         columnNumber: 5
     }, this);
 }
-_s(TimelineModule, "3l26UesfSC+ec/1JrvBgTNaBDOk=");
+_s(TimelineModule, "NR2MUXbfpT6aAgLx/HbMKYVeDLs=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"]
+    ];
+});
 _c = TimelineModule;
 const StatBox = (param)=>{
     let { icon: Icon, label, value, color, glow } = param;
@@ -2429,7 +2448,7 @@ const StatBox = (param)=>{
                 }
             }, void 0, false, {
                 fileName: "[project]/components/TimelineModule.tsx",
-                lineNumber: 1248,
+                lineNumber: 1260,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2449,17 +2468,17 @@ const StatBox = (param)=>{
                                 className: "w-4 h-4"
                             }, void 0, false, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 1263,
+                                lineNumber: 1275,
                                 columnNumber: 33
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/components/TimelineModule.tsx",
-                            lineNumber: 1263,
+                            lineNumber: 1275,
                             columnNumber: 9
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 1256,
+                        lineNumber: 1268,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2470,7 +2489,7 @@ const StatBox = (param)=>{
                                 children: label
                             }, void 0, false, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 1266,
+                                lineNumber: 1278,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2478,25 +2497,25 @@ const StatBox = (param)=>{
                                 children: value
                             }, void 0, false, {
                                 fileName: "[project]/components/TimelineModule.tsx",
-                                lineNumber: 1267,
+                                lineNumber: 1279,
                                 columnNumber: 9
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/TimelineModule.tsx",
-                        lineNumber: 1265,
+                        lineNumber: 1277,
                         columnNumber: 7
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/TimelineModule.tsx",
-                lineNumber: 1255,
+                lineNumber: 1267,
                 columnNumber: 5
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/components/TimelineModule.tsx",
-        lineNumber: 1237,
+        lineNumber: 1249,
         columnNumber: 3
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -2504,12 +2523,28 @@ _c1 = StatBox;
 const RoomDetailPopup = (param)=>{
     let { room, onClose, currentTime } = param;
     var _room_staff_doctor, _room_staff, _room_staff_nurse, _room_staff1;
-    const totalSteps = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length > 0 ? __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length : 1;
+    _s1();
+    // Get workflow statuses from database context
+    const { workflowStatuses } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"])();
+    // Filter to get only main workflow statuses (not special), sorted by order
+    const activeStatuses = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "RoomDetailPopup.useMemo[activeStatuses]": ()=>workflowStatuses.filter({
+                "RoomDetailPopup.useMemo[activeStatuses]": (s)=>s.is_active && !s.is_special
+            }["RoomDetailPopup.useMemo[activeStatuses]"]).sort({
+                "RoomDetailPopup.useMemo[activeStatuses]": (a, b)=>{
+                    var _a_sort_order, _ref, _b_sort_order, _ref1;
+                    return ((_ref = (_a_sort_order = a.sort_order) !== null && _a_sort_order !== void 0 ? _a_sort_order : a.order_index) !== null && _ref !== void 0 ? _ref : 0) - ((_ref1 = (_b_sort_order = b.sort_order) !== null && _b_sort_order !== void 0 ? _b_sort_order : b.order_index) !== null && _ref1 !== void 0 ? _ref1 : 0);
+                }
+            }["RoomDetailPopup.useMemo[activeStatuses]"])
+    }["RoomDetailPopup.useMemo[activeStatuses]"], [
+        workflowStatuses
+    ]);
+    const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
     const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
     const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
-    const currentStatus = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length > 0 ? __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][stepIndex] : null;
-    const nextStatus = __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].length > 0 ? __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"][nextStepIndex] : null;
-    const stepColor = (currentStatus === null || currentStatus === void 0 ? void 0 : currentStatus.color) || '#6B7280';
+    const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
+    const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
+    const stepColor = (currentStatus === null || currentStatus === void 0 ? void 0 : currentStatus.accent_color) || (currentStatus === null || currentStatus === void 0 ? void 0 : currentStatus.color) || '#6B7280';
     const progressPercent = totalSteps > 1 ? Math.round(stepIndex / (totalSteps - 1) * 100) : 0;
     // Calculate elapsed time from phaseStartedAt
     const getElapsedTime = ()=>{
@@ -2583,7 +2618,7 @@ const RoomDetailPopup = (param)=>{
                                                     strokeWidth: "4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1336,
+                                                    lineNumber: 1359,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("circle", {
@@ -2597,13 +2632,13 @@ const RoomDetailPopup = (param)=>{
                                                     strokeLinecap: "round"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1337,
+                                                    lineNumber: 1360,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1335,
+                                            lineNumber: 1358,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2614,13 +2649,13 @@ const RoomDetailPopup = (param)=>{
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1343,
+                                            lineNumber: 1366,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1334,
+                                    lineNumber: 1357,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2633,7 +2668,7 @@ const RoomDetailPopup = (param)=>{
                                                     children: room.name
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1349,
+                                                    lineNumber: 1372,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2645,13 +2680,13 @@ const RoomDetailPopup = (param)=>{
                                                     children: (currentStatus === null || currentStatus === void 0 ? void 0 : currentStatus.name) || 'Status'
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1350,
+                                                    lineNumber: 1373,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1348,
+                                            lineNumber: 1371,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2665,19 +2700,19 @@ const RoomDetailPopup = (param)=>{
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1357,
+                                            lineNumber: 1380,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1347,
+                                    lineNumber: 1370,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/TimelineModule.tsx",
-                            lineNumber: 1332,
+                            lineNumber: 1355,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2690,12 +2725,12 @@ const RoomDetailPopup = (param)=>{
                                             children: "DOBA OPERACE"
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1367,
+                                            lineNumber: 1390,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "flex items-center gap-1",
-                                            children: __TURBOPACK__imported__module__$5b$project$5d2f$constants$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WORKFLOW_STEPS"].map((_, idx)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            children: activeStatuses.map((_, idx)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "flex flex-col items-center gap-0.5",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2705,7 +2740,7 @@ const RoomDetailPopup = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1374,
+                                                            lineNumber: 1397,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2715,24 +2750,24 @@ const RoomDetailPopup = (param)=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1378,
+                                                            lineNumber: 1401,
                                                             columnNumber: 21
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, idx, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1370,
+                                                    lineNumber: 1393,
                                                     columnNumber: 19
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1368,
+                                            lineNumber: 1391,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1366,
+                                    lineNumber: 1389,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2742,24 +2777,24 @@ const RoomDetailPopup = (param)=>{
                                         className: "w-5 h-5 text-white/60"
                                     }, void 0, false, {
                                         fileName: "[project]/components/TimelineModule.tsx",
-                                        lineNumber: 1390,
+                                        lineNumber: 1413,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1386,
+                                    lineNumber: 1409,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/TimelineModule.tsx",
-                            lineNumber: 1364,
+                            lineNumber: 1387,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/TimelineModule.tsx",
-                    lineNumber: 1330,
+                    lineNumber: 1353,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0)),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2774,7 +2809,7 @@ const RoomDetailPopup = (param)=>{
                                             className: "w-4 h-4 text-white/40"
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1400,
+                                            lineNumber: 1423,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2782,13 +2817,13 @@ const RoomDetailPopup = (param)=>{
                                             children: "POSTUP OPERACE"
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1401,
+                                            lineNumber: 1424,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1399,
+                                    lineNumber: 1422,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2814,7 +2849,7 @@ const RoomDetailPopup = (param)=>{
                                                                     }
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1415,
+                                                                    lineNumber: 1438,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2825,13 +2860,13 @@ const RoomDetailPopup = (param)=>{
                                                                     children: "PRAVE PROBIHA"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1416,
+                                                                    lineNumber: 1439,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1414,
+                                                            lineNumber: 1437,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2848,13 +2883,13 @@ const RoomDetailPopup = (param)=>{
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1420,
+                                                            lineNumber: 1443,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1413,
+                                                    lineNumber: 1436,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2873,17 +2908,17 @@ const RoomDetailPopup = (param)=>{
                                                                     className: "w-5 h-5"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1432,
+                                                                    lineNumber: 1455,
                                                                     columnNumber: 56
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 1432,
+                                                                lineNumber: 1455,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1428,
+                                                            lineNumber: 1451,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2893,7 +2928,7 @@ const RoomDetailPopup = (param)=>{
                                                                     children: (currentStatus === null || currentStatus === void 0 ? void 0 : currentStatus.name) || 'Status'
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1435,
+                                                                    lineNumber: 1458,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2903,7 +2938,7 @@ const RoomDetailPopup = (param)=>{
                                                                             className: "w-3 h-3"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                                            lineNumber: 1437,
+                                                                            lineNumber: 1460,
                                                                             columnNumber: 23
                                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                                         " ",
@@ -2912,25 +2947,25 @@ const RoomDetailPopup = (param)=>{
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1436,
+                                                                    lineNumber: 1459,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1434,
+                                                            lineNumber: 1457,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1427,
+                                                    lineNumber: 1450,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1406,
+                                            lineNumber: 1429,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2946,17 +2981,17 @@ const RoomDetailPopup = (param)=>{
                                                     className: "w-5 h-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1448,
+                                                    lineNumber: 1471,
                                                     columnNumber: 52
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                lineNumber: 1448,
+                                                lineNumber: 1471,
                                                 columnNumber: 17
                                             }, ("TURBOPACK compile-time value", void 0))
                                         }, void 0, false, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1444,
+                                            lineNumber: 1467,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2972,7 +3007,7 @@ const RoomDetailPopup = (param)=>{
                                                                     className: "w-2 h-2 rounded-full bg-white/30"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1455,
+                                                                    lineNumber: 1478,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2980,13 +3015,13 @@ const RoomDetailPopup = (param)=>{
                                                                     children: "NASLEDUJICI"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1456,
+                                                                    lineNumber: 1479,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1454,
+                                                            lineNumber: 1477,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2999,13 +3034,13 @@ const RoomDetailPopup = (param)=>{
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1460,
+                                                            lineNumber: 1483,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1453,
+                                                    lineNumber: 1476,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3017,12 +3052,12 @@ const RoomDetailPopup = (param)=>{
                                                                 className: "w-5 h-5 text-white/40"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 1466,
+                                                                lineNumber: 1489,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1465,
+                                                            lineNumber: 1488,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3032,7 +3067,7 @@ const RoomDetailPopup = (param)=>{
                                                                     children: (nextStatus === null || nextStatus === void 0 ? void 0 : nextStatus.name) || 'Další krok'
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1469,
+                                                                    lineNumber: 1492,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3040,37 +3075,37 @@ const RoomDetailPopup = (param)=>{
                                                                     children: "Ceka na zahajeni"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1470,
+                                                                    lineNumber: 1493,
                                                                     columnNumber: 21
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1468,
+                                                            lineNumber: 1491,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1464,
+                                                    lineNumber: 1487,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1452,
+                                            lineNumber: 1475,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1404,
+                                    lineNumber: 1427,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/TimelineModule.tsx",
-                            lineNumber: 1398,
+                            lineNumber: 1421,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3085,7 +3120,7 @@ const RoomDetailPopup = (param)=>{
                                                     className: "w-4 h-4 text-white/40"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1482,
+                                                    lineNumber: 1505,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3093,13 +3128,13 @@ const RoomDetailPopup = (param)=>{
                                                     children: "TYM"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1483,
+                                                    lineNumber: 1506,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1481,
+                                            lineNumber: 1504,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3116,12 +3151,12 @@ const RoomDetailPopup = (param)=>{
                                                                     className: "w-4 h-4 text-violet-400"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1490,
+                                                                    lineNumber: 1513,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 1489,
+                                                                lineNumber: 1512,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3131,7 +3166,7 @@ const RoomDetailPopup = (param)=>{
                                                                         children: "ANESTEZIOLOG"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 1493,
+                                                                        lineNumber: 1516,
                                                                         columnNumber: 23
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3139,24 +3174,24 @@ const RoomDetailPopup = (param)=>{
                                                                         children: ((_room_staff = room.staff) === null || _room_staff === void 0 ? void 0 : (_room_staff_doctor = _room_staff.doctor) === null || _room_staff_doctor === void 0 ? void 0 : _room_staff_doctor.name) || 'MUDr. --'
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 1494,
+                                                                        lineNumber: 1517,
                                                                         columnNumber: 23
                                                                     }, ("TURBOPACK compile-time value", void 0))
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 1492,
+                                                                lineNumber: 1515,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 1488,
+                                                        lineNumber: 1511,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1487,
+                                                    lineNumber: 1510,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3170,12 +3205,12 @@ const RoomDetailPopup = (param)=>{
                                                                     className: "w-4 h-4 text-emerald-400"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                                    lineNumber: 1502,
+                                                                    lineNumber: 1525,
                                                                     columnNumber: 23
                                                                 }, ("TURBOPACK compile-time value", void 0))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 1501,
+                                                                lineNumber: 1524,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0)),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3185,7 +3220,7 @@ const RoomDetailPopup = (param)=>{
                                                                         children: "SESTRA"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 1505,
+                                                                        lineNumber: 1528,
                                                                         columnNumber: 23
                                                                     }, ("TURBOPACK compile-time value", void 0)),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3193,36 +3228,36 @@ const RoomDetailPopup = (param)=>{
                                                                         children: ((_room_staff1 = room.staff) === null || _room_staff1 === void 0 ? void 0 : (_room_staff_nurse = _room_staff1.nurse) === null || _room_staff_nurse === void 0 ? void 0 : _room_staff_nurse.name) || 'Bc. --'
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                                        lineNumber: 1506,
+                                                                        lineNumber: 1529,
                                                                         columnNumber: 23
                                                                     }, ("TURBOPACK compile-time value", void 0))
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/TimelineModule.tsx",
-                                                                lineNumber: 1504,
+                                                                lineNumber: 1527,
                                                                 columnNumber: 21
                                                             }, ("TURBOPACK compile-time value", void 0))
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/TimelineModule.tsx",
-                                                        lineNumber: 1500,
+                                                        lineNumber: 1523,
                                                         columnNumber: 19
                                                     }, ("TURBOPACK compile-time value", void 0))
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1499,
+                                                    lineNumber: 1522,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1485,
+                                            lineNumber: 1508,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1480,
+                                    lineNumber: 1503,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3234,7 +3269,7 @@ const RoomDetailPopup = (param)=>{
                                                     className: "w-4 h-4 text-white/40"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1516,
+                                                    lineNumber: 1539,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3242,13 +3277,13 @@ const RoomDetailPopup = (param)=>{
                                                     children: "CASY"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1517,
+                                                    lineNumber: 1540,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1515,
+                                            lineNumber: 1538,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0)),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3262,7 +3297,7 @@ const RoomDetailPopup = (param)=>{
                                                             children: "ZACATEK"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1522,
+                                                            lineNumber: 1545,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3270,13 +3305,13 @@ const RoomDetailPopup = (param)=>{
                                                             children: "--:--"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1523,
+                                                            lineNumber: 1546,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1521,
+                                                    lineNumber: 1544,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0)),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3287,7 +3322,7 @@ const RoomDetailPopup = (param)=>{
                                                             children: "ODHAD"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1527,
+                                                            lineNumber: 1550,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0)),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$14_react$2d$dom$40$18$2e$3$2e$1_react$40$18$2e$3$2e$1_$5f$react$40$18$2e$3$2e$1$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3301,51 +3336,56 @@ const RoomDetailPopup = (param)=>{
                                                             }) : '--:--'
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/TimelineModule.tsx",
-                                                            lineNumber: 1528,
+                                                            lineNumber: 1551,
                                                             columnNumber: 19
                                                         }, ("TURBOPACK compile-time value", void 0))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/TimelineModule.tsx",
-                                                    lineNumber: 1526,
+                                                    lineNumber: 1549,
                                                     columnNumber: 17
                                                 }, ("TURBOPACK compile-time value", void 0))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/TimelineModule.tsx",
-                                            lineNumber: 1519,
+                                            lineNumber: 1542,
                                             columnNumber: 15
                                         }, ("TURBOPACK compile-time value", void 0))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/TimelineModule.tsx",
-                                    lineNumber: 1514,
+                                    lineNumber: 1537,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/TimelineModule.tsx",
-                            lineNumber: 1478,
+                            lineNumber: 1501,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/TimelineModule.tsx",
-                    lineNumber: 1396,
+                    lineNumber: 1419,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0))
             ]
         }, void 0, true, {
             fileName: "[project]/components/TimelineModule.tsx",
-            lineNumber: 1318,
+            lineNumber: 1341,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/components/TimelineModule.tsx",
-        lineNumber: 1311,
+        lineNumber: 1334,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
+_s1(RoomDetailPopup, "NMacc41iHHx6aw7IFmP1iAqejTs=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$contexts$2f$WorkflowStatusesContext$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useWorkflowStatusesContext"]
+    ];
+});
 _c2 = RoomDetailPopup;
 var _c, _c1, _c2;
 __turbopack_context__.k.register(_c, "TimelineModule");

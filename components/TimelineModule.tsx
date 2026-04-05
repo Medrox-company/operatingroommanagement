@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
-import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
+import { STEP_DURATIONS, STEP_COLORS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble
@@ -68,6 +69,17 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
+    [workflowStatuses]
+  );
+  
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
@@ -266,12 +278,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            // Use WORKFLOW_STEPS from constants
-            const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
+            // Use activeStatuses from database context
+            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-            const step = WORKFLOW_STEPS[safeIndex];
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.color || '#6B7280');
-            const statusName = step?.name || 'Status';
+            const step = activeStatuses[safeIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
+            const statusName = step?.title || step?.name || 'Status';
             const remaining = getRemainingTime(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
@@ -569,8 +581,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
-              // Get current workflow step info from WORKFLOW_STEPS
-              const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
+              // Get current workflow step info from database context
+              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
               const isActive = stepIndex > 0; // index 0 = "Sál připraven"
               const isCleaning = stepIndex === totalSteps - 2; // Second to last step
@@ -586,10 +598,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from WORKFLOW_STEPS
-              const currentStep = WORKFLOW_STEPS[stepIndex];
-              const stepColor = currentStep?.color || '#6B7280';
-              const stepName = currentStep?.name || 'Status';
+              // Get status from database context
+              const currentStep = activeStatuses[stepIndex];
+              const stepColor = currentStep?.accent_color || currentStep?.color || '#6B7280';
+              const stepName = currentStep?.title || currentStep?.name || 'Status';
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -1278,14 +1290,25 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
+    [workflowStatuses]
+  );
+  
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
   const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
   
-  const currentStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[stepIndex] : null;
-  const nextStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[nextStepIndex] : null;
+  const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
+  const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
   
-  const stepColor = currentStatus?.color || '#6B7280';
+  const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
 
   // Calculate elapsed time from phaseStartedAt
@@ -1366,7 +1389,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             <div>
               <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
               <div className="flex items-center gap-1">
-                {WORKFLOW_STEPS.map((_, idx) => (
+                {activeStatuses.map((_, idx) => (
                   <div
                     key={idx}
                     className="flex flex-col items-center gap-0.5"

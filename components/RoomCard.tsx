@@ -1,7 +1,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble } from 'lucide-react';
 
 interface RoomCardProps {
@@ -12,15 +12,26 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
-  // Memoize computed values using WORKFLOW_STEPS from constants
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
+    [workflowStatuses]
+  );
+  
+  // Memoize computed values using database statuses
   const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
-    const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
+    const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
     const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-    const step = WORKFLOW_STEPS[safeIndex];
+    const step = activeStatuses[safeIndex];
     
     const currentStep = {
-      title: step?.name || 'Status',
-      color: step?.color || '#6B7280',
+      title: step?.title || step?.name || 'Status',
+      color: step?.accent_color || step?.color || '#6B7280',
     };
     
     const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
@@ -37,7 +48,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     const strokeDashoffset = strokeDasharray * (1 - progressPercent);
     
     return { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
-  }, [room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
+  }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
   
   const radius = 38;
   const strokeWidth = 4;
