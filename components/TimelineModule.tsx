@@ -28,15 +28,16 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
-// Step colors podle step_index z databáze
+// Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
 const STEP_INDEX_COLORS: Record<number, string> = {
-  0: '#6b7280',   // Sál připraven - gray
-  1: '#3b82f6',   // Příjezd na sál - blue
-  2: '#8b5cf6',   // Začátek anestezie - purple
-  3: '#ec4899',   // Chirurgický výkon - pink
-  4: '#f59e0b',   // Odjezd ze sálu - amber
-  5: '#10b981',   // Úklid sálu - green (step 5 means cleanup is done)
-  6: '#ef4444',   // Sál připraven po úklidu - red
+  0: '#6b7280',
+  1: '#8b5cf6',
+  2: '#ec4899',
+  3: '#ef4444',
+  4: '#f59e0b',
+  5: '#a855f7',
+  6: '#10b981',
+  7: '#f97316',
 };
 
 // ========== HELPER FUNCTIONS ==========
@@ -901,39 +902,56 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                               width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
                             }}
                           >
-                            {/* Completed operation segments with individual colors */}
+                            {/* Completed operation segments with colors from database context */}
                             <div className="absolute inset-0 flex overflow-hidden rounded-md">
-                              {operation.statusHistory && operation.statusHistory.length > 0 && 
-                                operation.statusHistory.map((entry, idx) => {
-                                  const segStart = new Date(entry.startedAt).getTime();
-                                  const nextEntry = operation.statusHistory[idx + 1];
-                                  const segEnd = nextEntry 
-                                    ? new Date(nextEntry.startedAt).getTime() 
-                                    : new Date(operation.endedAt).getTime();
-                                  
-                                  const opDuration = new Date(operation.endedAt).getTime() - new Date(operation.startedAt).getTime();
-                                  const segDuration = segEnd - segStart;
-                                  const segWidthPct = (segDuration / opDuration) * 100;
-                                  const segLeftPct = ((segStart - new Date(operation.startedAt).getTime()) / opDuration) * 100;
-                                  
-                                  // Use color from step_index
-                                  const phaseColor = STEP_INDEX_COLORS[entry.stepIndex] || '#6b7280';
-                                  
-                                  return (
-                                    <div
-                                      key={`seg-${idx}`}
-                                      className="absolute top-0 bottom-0"
-                                      style={{ 
-                                        left: `${Math.max(0, segLeftPct)}%`,
-                                        width: `${Math.max(0.5, segWidthPct)}%`,
-                                        background: `${phaseColor}99`, // Color with 60% opacity
-                                        borderRight: '1px solid rgba(0,0,0,0.3)'
-                                      }}
-                                      title={entry.stepName}
-                                    />
-                                  );
-                                })
-                              }
+                              {(() => {
+                                // Build color lookup from activeStatuses
+                                const stepColorMap: Record<number, string> = {};
+                                activeStatuses.forEach((s, i) => {
+                                  stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
+                                });
+
+                                if (operation.statusHistory && operation.statusHistory.length > 0) {
+                                  const opStart = new Date(operation.startedAt).getTime();
+                                  const opEnd = new Date(operation.endedAt).getTime();
+                                  const opDuration = Math.max(1, opEnd - opStart);
+
+                                  return operation.statusHistory.map((entry, idx) => {
+                                    const segStart = new Date(entry.startedAt).getTime();
+                                    const nextEntry = operation.statusHistory[idx + 1];
+                                    const segEnd = nextEntry
+                                      ? new Date(nextEntry.startedAt).getTime()
+                                      : opEnd;
+                                    const segDuration = Math.max(0, segEnd - segStart);
+                                    const segWidthPct = (segDuration / opDuration) * 100;
+                                    const segLeftPct = ((segStart - opStart) / opDuration) * 100;
+                                    if (segWidthPct <= 0) return null;
+                                    const phaseColor = entry.color
+                                      || stepColorMap[entry.stepIndex]
+                                      || STEP_INDEX_COLORS[entry.stepIndex]
+                                      || '#6b7280';
+
+                                    return (
+                                      <div
+                                        key={`seg-${idx}`}
+                                        className="absolute top-0 bottom-0"
+                                        style={{
+                                          left: `${Math.max(0, segLeftPct)}%`,
+                                          width: `${Math.max(0.5, segWidthPct)}%`,
+                                          background: `${phaseColor}99`,
+                                          borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.35)' : 'none',
+                                        }}
+                                        title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
+                                      />
+                                    );
+                                  });
+                                }
+
+                                // No history: show single color block for this completed op
+                                return (
+                                  <div className="absolute inset-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                                );
+                              })()}
                             </div>
                             
                             {/* Label for completed operation */}
@@ -962,53 +980,124 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           transformOrigin: 'left center'
                         }}
                       >
-                        {/* Multi-segment colored bar based on actual status history */}
+                        {/* Multi-segment colored bar: one full cycle = all phases colored by status */}
                         <div className="absolute inset-0 flex overflow-hidden rounded-lg">
                           {(() => {
                             const history = room.statusHistory || [];
-                            const operationStart = room.operationStartedAt ? new Date(room.operationStartedAt).getTime() : null;
-                            const endTime = room.estimatedEndTime ? new Date(room.estimatedEndTime).getTime() : null;
+                            const operationStart = room.operationStartedAt
+                              ? new Date(room.operationStartedAt).getTime()
+                              : room.phaseStartedAt
+                                ? new Date(room.phaseStartedAt).getTime()
+                                : Date.now() - 30 * 60 * 1000;
+                            const endTime = room.estimatedEndTime
+                              ? new Date(room.estimatedEndTime).getTime()
+                              : operationStart + 120 * 60 * 1000;
                             const now = Date.now();
-                            
-                            // If no history or no operation start, show simple current status bar
-                            if (history.length === 0 || !operationStart || !endTime) {
-                              const phaseColor = stepColor || '#6B7280';
-                              return (
-                                <div className="absolute inset-0" style={{ background: phaseColor }} />
-                              );
+                            const totalDuration = Math.max(1, endTime - operationStart);
+
+                            // Build color lookup from activeStatuses (database-driven)
+                            const stepColorMap: Record<number, string> = {};
+                            activeStatuses.forEach((s, i) => {
+                              stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
+                            });
+
+                            // If we have real status history → render exact segments
+                            if (history.length > 0) {
+                              return history.map((entry, idx) => {
+                                const segStart = new Date(entry.startedAt).getTime();
+                                const nextEntry = history[idx + 1];
+                                const segEnd = nextEntry
+                                  ? new Date(nextEntry.startedAt).getTime()
+                                  : Math.min(now, endTime);
+                                const segDuration = Math.max(0, segEnd - segStart);
+                                const segWidthPct = (segDuration / totalDuration) * 100;
+                                const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
+                                if (segWidthPct <= 0) return null;
+                                const isCurrentSeg = idx === history.length - 1;
+                                const phaseColor = entry.color
+                                  || stepColorMap[entry.stepIndex]
+                                  || STEP_INDEX_COLORS[entry.stepIndex]
+                                  || '#6b7280';
+
+                                return (
+                                  <motion.div
+                                    key={`seg-${idx}`}
+                                    className="absolute top-0 bottom-0"
+                                    style={{
+                                      left: `${Math.max(0, segLeftPct)}%`,
+                                      width: `${Math.max(0.5, segWidthPct)}%`,
+                                      background: isCurrentSeg
+                                        ? phaseColor
+                                        : `${phaseColor}bb`,
+                                    }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.04 * idx }}
+                                  >
+                                    {/* Subtle separator between segments */}
+                                    {idx < history.length - 1 && (
+                                      <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/40 z-10" />
+                                    )}
+                                    {/* Show phase label if segment is wide enough */}
+                                    {segWidthPct > 8 && (
+                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
+                                        <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
+                                          {entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                );
+                              });
                             }
-                            
-                            const totalDuration = endTime - operationStart;
-                            
-                            return history.map((entry, idx) => {
-                              const segmentStart = new Date(entry.startedAt).getTime();
-                              const nextEntry = history[idx + 1];
-                              const segmentEnd = nextEntry 
-                                ? new Date(nextEntry.startedAt).getTime() 
-                                : Math.min(now, endTime);
-                              
-                              const segmentDuration = segmentEnd - segmentStart;
-                              const segmentWidthPct = (segmentDuration / totalDuration) * 100;
-                              const segmentLeftPct = ((segmentStart - operationStart) / totalDuration) * 100;
-                              const isCurrentSegment = idx === history.length - 1;
-                              const phaseColor = entry.color || '#6B7280';
-                              
+
+                            // Fallback: no history → show estimated future segments
+                            // Split total duration proportionally by default step durations
+                            const stepDurations = activeStatuses.map((_, i) => STEP_DURATIONS[i] || 15);
+                            const completedDuration = stepDurations
+                              .slice(0, stepIndex)
+                              .reduce((a, b) => a + b, 0);
+                            const remainingDuration = stepDurations
+                              .slice(stepIndex)
+                              .reduce((a, b) => a + b, 0);
+                            const scaleFactor = totalDuration / Math.max(1, (completedDuration + remainingDuration) * 60 * 1000);
+
+                            let cursor = 0;
+                            return activeStatuses.map((step, i) => {
+                              const rawDur = (STEP_DURATIONS[i] || 15) * 60 * 1000 * scaleFactor;
+                              const segWidthPct = (rawDur / totalDuration) * 100;
+                              const segLeftPct = cursor;
+                              cursor += segWidthPct;
+                              const isPast = i < stepIndex;
+                              const isCurrent = i === stepIndex;
+                              const phaseColor = stepColorMap[i] || '#6b7280';
+
                               return (
                                 <motion.div
-                                  key={`history-${idx}`}
+                                  key={`est-${i}`}
                                   className="absolute top-0 bottom-0"
-                                  style={{ 
-                                    left: `${Math.max(0, segmentLeftPct)}%`,
-                                    width: `${Math.max(0.5, segmentWidthPct)}%`,
-                                    background: isCurrentSegment ? phaseColor : `${phaseColor}bb`
+                                  style={{
+                                    left: `${Math.max(0, segLeftPct)}%`,
+                                    width: `${Math.max(0.5, segWidthPct)}%`,
+                                    background: isCurrent
+                                      ? phaseColor
+                                      : isPast
+                                        ? `${phaseColor}bb`
+                                        : `${phaseColor}33`,
                                   }}
                                   initial={{ opacity: 0 }}
                                   animate={{ opacity: 1 }}
-                                  transition={{ delay: 0.05 * idx }}
+                                  transition={{ delay: 0.03 * i }}
                                 >
-                                  {/* Separator */}
-                                  {idx < history.length - 1 && (
-                                    <div className="absolute top-0 right-0 bottom-0 w-px bg-black/30" />
+                                  {i < activeStatuses.length - 1 && (
+                                    <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/35 z-10" />
+                                  )}
+                                  {segWidthPct > 7 && (
+                                    <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
+                                      <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
+                                        {step.title || step.name}
+                                      </span>
+                                    </div>
                                   )}
                                 </motion.div>
                               );
