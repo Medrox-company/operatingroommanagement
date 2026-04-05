@@ -17,6 +17,9 @@ interface StaffMember {
   is_external?: boolean;
   is_recommended?: boolean;
   is_active: boolean;
+  sick_leave_days?: number;
+  vacation_days?: number;
+  notes?: string;
 }
 
 type StaffCategory = 'doctors' | 'nurses';
@@ -207,6 +210,49 @@ function DetailEditModal({
         </button>
       </div>
 
+      {/* Sick Leave and Vacation Days */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* PN - Sick Leave Days */}
+        <div>
+          <label className="text-xs text-white/40 font-bold uppercase tracking-wider">PN (Dny)</label>
+          <input
+            type="number"
+            min="0"
+            value={formData.sick_leave_days ?? 0}
+            onChange={(e) => setFormData({ ...formData, sick_leave_days: parseInt(e.target.value) || 0 })}
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-red-500/50 transition-all text-center font-semibold"
+            placeholder="0"
+          />
+          <p className="text-[10px] text-white/30 mt-1">Pracovní neschopnost</p>
+        </div>
+
+        {/* D - Vacation Days */}
+        <div>
+          <label className="text-xs text-white/40 font-bold uppercase tracking-wider">D (Dny)</label>
+          <input
+            type="number"
+            min="0"
+            value={formData.vacation_days ?? 0}
+            onChange={(e) => setFormData({ ...formData, vacation_days: parseInt(e.target.value) || 0 })}
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-blue-500/50 transition-all text-center font-semibold"
+            placeholder="0"
+          />
+          <p className="text-[10px] text-white/30 mt-1">Dovolená</p>
+        </div>
+      </div>
+
+      {/* Notes */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Poznámky</label>
+        <textarea
+          value={formData.notes ?? ''}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all resize-none"
+          placeholder="Zadejte dodatečné poznámky..."
+          rows={3}
+        />
+      </div>
+
       {/* Active Status */}
       <button
         onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
@@ -376,6 +422,9 @@ export default function StaffManager() {
           is_external: updated.is_external,
           is_recommended: updated.is_recommended,
           is_active: updated.is_active,
+          sick_leave_days: updated.sick_leave_days,
+          vacation_days: updated.vacation_days,
+          notes: updated.notes,
         })
         .eq('id', updated.id);
       
@@ -549,6 +598,20 @@ export default function StaffManager() {
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-300 border-orange-500/30 flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
                           Externí
+                        </span>
+                      )}
+                      
+                      {/* Sick Leave Badge */}
+                      {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-500/20 text-red-300 border-red-500/30">
+                          PN: {member.sick_leave_days}d
+                        </span>
+                      )}
+                      
+                      {/* Vacation Badge */}
+                      {member.vacation_days !== undefined && member.vacation_days > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-300 border-blue-500/30">
+                          D: {member.vacation_days}d
                         </span>
                       )}
                     </div>
