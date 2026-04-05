@@ -416,6 +416,7 @@ const AppContent: React.FC = () => {
               <div className="absolute inset-0 z-50">
                 <RoomDetail
                   room={selectedRoom}
+                  allRooms={rooms}
                   onClose={() => setSelectedRoomId(null)}
                   onStepChange={(index, stepColor) => updateRoomStep(selectedRoom.id, index, stepColor)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}

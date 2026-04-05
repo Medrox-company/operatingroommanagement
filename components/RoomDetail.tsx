@@ -14,6 +14,7 @@ import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 
 interface RoomDetailProps {
   room: OperatingRoom;
+  allRooms?: OperatingRoom[];
   onClose: () => void;
   onStepChange: (index: number, stepColor?: string) => void;
   onEndTimeChange: (newTime: Date | null) => void;
@@ -30,7 +31,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -1331,6 +1332,8 @@ const prevStep = activeDbStatuses.length > 0
         }}
         filterRole={staffPickerRole === 'doctor' ? 'DOCTOR' : 'NURSE'}
         title={staffPickerRole === 'doctor' ? 'Vybrat lékaře' : 'Vybrat sestru'}
+        allRooms={allRooms}
+        currentRoomId={room.id}
       />
     </motion.div>
   );

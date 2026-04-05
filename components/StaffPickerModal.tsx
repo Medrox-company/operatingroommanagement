@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus, Star, MapPin, Percent } from 'lucide-react';
+import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus, Star, MapPin, Percent, AlertTriangle, Ban } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { SkillLevel } from '../types';
+import type { SkillLevel, OperatingRoom } from '../types';
 
 export type StaffRole = 'DOCTOR' | 'NURSE';
 
@@ -15,6 +15,8 @@ interface StaffMember {
   is_external?: boolean;
   is_recommended?: boolean;
   is_active: boolean;
+  sick_leave_days?: number;
+  vacation_days?: number;
 }
 
 interface StaffPickerModalProps {
@@ -24,6 +26,8 @@ interface StaffPickerModalProps {
   currentStaffId?: string | null;
   filterRole?: StaffRole;
   title?: string;
+  allRooms?: OperatingRoom[];
+  currentRoomId?: string;
 }
 
 // Skill level metadata
@@ -50,11 +54,42 @@ export default function StaffPickerModal({
   currentStaffId,
   filterRole,
   title = 'Vybrat personál',
+  allRooms = [],
+  currentRoomId,
 }: StaffPickerModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Helper: Check if staff member is on sick leave or vacation
+  const getLeaveStatus = (member: StaffMember): { isOnLeave: boolean; reason: string } => {
+    if (member.sick_leave_days && member.sick_leave_days > 0) {
+      return { isOnLeave: true, reason: `Pracovní neschopnost (${member.sick_leave_days} dní)` };
+    }
+    if (member.vacation_days && member.vacation_days > 0) {
+      return { isOnLeave: true, reason: `Dovolená (${member.vacation_days} dní)` };
+    }
+    return { isOnLeave: false, reason: '' };
+  };
+
+  // Helper: Check if staff member is already assigned to another room
+  const getAssignedRoom = (memberId: string): { isAssigned: boolean; roomName: string } => {
+    if (!allRooms || allRooms.length === 0) return { isAssigned: false, roomName: '' };
+    
+    for (const room of allRooms) {
+      // Skip the current room we're assigning to
+      if (room.id === currentRoomId) continue;
+      
+      // Check if this person is already assigned as doctor, nurse, or anesthesiologist
+      if (room.staff?.doctor?.id === memberId || 
+          room.staff?.nurse?.id === memberId || 
+          room.staff?.anesthesiologist?.id === memberId) {
+        return { isAssigned: true, roomName: room.name };
+      }
+    }
+    return { isAssigned: false, roomName: '' };
+  };
 
   // Fetch staff when modal opens
   useEffect(() => {
@@ -115,6 +150,15 @@ export default function StaffPickerModal({
   );
 
   const handleSelect = (member: StaffMember) => {
+    // Check if member is unavailable
+    const leaveStatus = getLeaveStatus(member);
+    const assignedRoom = getAssignedRoom(member.id);
+    
+    if (leaveStatus.isOnLeave || assignedRoom.isAssigned) {
+      // Don't allow selection of unavailable staff
+      return;
+    }
+    
     onSelect(member.id, member.name);
     onClose();
   };
@@ -318,23 +362,56 @@ export default function StaffPickerModal({
                   const isSelected = member.id === currentStaffId;
                   const skillLevel = member.skill_level as SkillLevel | undefined;
                   const skillMeta = skillLevel ? SKILL_LEVELS[skillLevel] : null;
+                  
+                  // Check availability status
+                  const leaveStatus = getLeaveStatus(member);
+                  const assignedRoom = getAssignedRoom(member.id);
+                  const isUnavailable = leaveStatus.isOnLeave || assignedRoom.isAssigned;
+                  
+                  // Determine unavailability reason
+                  let unavailableReason = '';
+                  let unavailableIcon = null;
+                  if (leaveStatus.isOnLeave) {
+                    unavailableReason = leaveStatus.reason;
+                    unavailableIcon = <AlertTriangle className="w-3.5 h-3.5" />;
+                  } else if (assignedRoom.isAssigned) {
+                    unavailableReason = `Přiřazen na: ${assignedRoom.roomName}`;
+                    unavailableIcon = <Ban className="w-3.5 h-3.5" />;
+                  }
 
                   return (
                     <motion.button
                       key={member.id}
                       onClick={() => handleSelect(member)}
-                      className="flex flex-col items-start gap-2 px-4 py-3.5 rounded-2xl transition-all group text-left"
+                      disabled={isUnavailable}
+                      className={`flex flex-col items-start gap-2 px-4 py-3.5 rounded-2xl transition-all group text-left ${
+                        isUnavailable ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                       style={{
-                        background: isSelected
+                        background: isUnavailable
+                          ? 'rgba(239,68,68,0.05)'
+                          : isSelected
                           ? 'rgba(0,216,193,0.08)'
                           : 'rgba(255,255,255,0.02)',
-                        border: isSelected
+                        border: isUnavailable
+                          ? '1px solid rgba(239,68,68,0.2)'
+                          : isSelected
                           ? '1px solid rgba(0,216,193,0.35)'
                           : '1px solid rgba(255,255,255,0.05)',
                       }}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.985 }}
+                      whileHover={isUnavailable ? {} : { scale: 1.01 }}
+                      whileTap={isUnavailable ? {} : { scale: 0.985 }}
                     >
+                      {/* Unavailable Banner */}
+                      {isUnavailable && (
+                        <div className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                          <span className="text-red-400">{unavailableIcon}</span>
+                          <span className="text-[10px] font-semibold text-red-300 truncate">
+                            {unavailableReason}
+                          </span>
+                        </div>
+                      )}
+                      
                       {/* Top row: Icon + Name + Selected */}
                       <div className="flex items-center gap-2 w-full">
                         {/* Skill Level Badge */}
@@ -343,11 +420,14 @@ export default function StaffPickerModal({
                             {skillMeta.label}
                           </div>
                         )}
-                        <span className={`text-sm font-bold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
+                        <span className={`text-sm font-bold truncate ${
+                          isUnavailable ? 'text-white/40 line-through' :
+                          isSelected ? 'text-[#00D8C1]' : 'text-white'
+                        }`}>
                           {member.name}
                         </span>
-                        {member.is_recommended && <Star className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />}
-                        {isSelected && (
+                        {member.is_recommended && !isUnavailable && <Star className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />}
+                        {isSelected && !isUnavailable && (
                           <Check className="w-4 h-4 text-[#00D8C1] flex-shrink-0 ml-auto" />
                         )}
                       </div>
@@ -362,7 +442,7 @@ export default function StaffPickerModal({
                           {member.role === 'DOCTOR' ? 'MUDr.' : 'Sestra'}
                         </span>
                         
-                        {member.availability !== undefined && (
+                        {member.availability !== undefined && !isUnavailable && (
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${
                             member.availability === 100 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
                             member.availability >= 50 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
@@ -373,7 +453,7 @@ export default function StaffPickerModal({
                           </span>
                         )}
                         
-                        {member.is_external && (
+                        {member.is_external && !isUnavailable && (
                           <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-300 border-orange-500/30 flex items-center gap-0.5">
                             <MapPin className="w-2.5 h-2.5" />
                             Ext.
