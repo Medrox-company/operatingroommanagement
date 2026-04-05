@@ -772,13 +772,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   <div
 className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
 style={{
-  background: 'rgba(255, 168, 0, 0.1)',
-  border: '1px solid rgba(255, 168, 0, 0.96)'
+  background: 'rgba(132, 255, 0, 0.1)',
+  border: '1px solid rgba(132, 255, 0, 0.96)'
 }}
                           >
-                            <span className="text-[7px] font-medium text-red-300/60 tracking-wider">ARO</span>
+                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
                             <span className="text-xs font-bold text-white/80">{aroPosition}</span>
-                            <span className="text-[6px] font-normal text-red-300/50">+{overtimeInfo.overtimeMinutes}m</span>
+                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
                           </div>
                         );
                       }
