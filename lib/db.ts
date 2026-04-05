@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { OperatingRoom, RoomStatus, WeeklySchedule } from '../types';
+import { OperatingRoom, RoomStatus, WeeklySchedule, SkillLevel } from '../types';
 
 // Type for database row
 interface DBOperatingRoom {
@@ -100,7 +100,7 @@ function transformRoom(
         id: doctor?.id,
         name: doctor?.name || null, 
         role: 'DOCTOR',
-        skill_level: doctor?.skill_level,
+        skill_level: doctor?.skill_level as SkillLevel | undefined,
         availability: doctor?.availability,
         is_external: doctor?.is_external,
         is_recommended: doctor?.is_recommended,
@@ -113,7 +113,7 @@ function transformRoom(
         id: nurse?.id,
         name: nurse?.name || null, 
         role: 'NURSE',
-        skill_level: nurse?.skill_level,
+        skill_level: nurse?.skill_level as SkillLevel | undefined,
         availability: nurse?.availability,
         is_external: nurse?.is_external,
         is_recommended: nurse?.is_recommended,
@@ -127,7 +127,7 @@ function transformRoom(
             id: anesthesiologist.id, 
             name: anesthesiologist.name, 
             role: 'ANESTHESIOLOGIST',
-            skill_level: anesthesiologist.skill_level,
+            skill_level: anesthesiologist.skill_level as SkillLevel | undefined,
             availability: anesthesiologist.availability,
             is_external: anesthesiologist.is_external,
             is_recommended: anesthesiologist.is_recommended,
