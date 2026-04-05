@@ -234,12 +234,12 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   // Weekly stacked data (no names, just percentages per step)
   const weeklyStacked=useMemo(()=>DAYS.map((day,di)=>{
     const base:Record<string,number|string>={day};
-    WORKFLOW_STEPS.forEach((step,si)=>{
+    workflowSteps.forEach((step,si)=>{
       const dur=si===2&&room.currentProcedure?room.currentProcedure.estimatedDuration:STEP_DURATIONS[si];
       base[step.title]=di>=5?Math.floor(dur*0.3):Math.max(1,dur+(sr(seed+di+si,0,10)-5));
     });
     return base;
-  }),[room,seed]);
+  }),[room,seed,workflowSteps]);
 
   // Hourly bar — utilisation %
   const hourlyUtil=useMemo(()=>dayCurve.map(d=>({
@@ -249,12 +249,12 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   })),[dayCurve]);
 
   // Phase bar
-  const phaseBar=useMemo(()=>WORKFLOW_STEPS.map((step,i)=>({
+  const phaseBar=useMemo(()=>workflowSteps.map((step,i)=>({
     name:step.title.split(' ').slice(-1)[0],
     pct:dist.find(d=>d.title===step.title)?.pct??0,
     min:i===2&&room.currentProcedure?room.currentProcedure.estimatedDuration:STEP_DURATIONS[i],
     color:step.color,
-  })),[dist,room]);
+  })),[dist,room,workflowSteps]);
 
   // Pie from dist
   const pieData=dist.filter(d=>d.min>0);
@@ -278,11 +278,11 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
 
   // Utilisation per status (time-based %)
   const statusUtil=[
-    {label:'Výkon',      pct:utilPct,                         color:WORKFLOW_STEPS[3]?.color || '#FCA5A5'},
-    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Začátek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:WORKFLOW_STEPS[2]?.color || '#C4B5FD'},
-    {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:WORKFLOW_STEPS[1]?.color || '#5EEAD4'},
-    {label:'Úklid',      pct:dist.find(d=>d.title==='Ukončení anestezie')?.pct??0,                                                         color:WORKFLOW_STEPS[5]?.color || '#A5B4FC'},
-    {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:WORKFLOW_STEPS[0]?.color || '#34D399'},
+    {label:'Výkon',      pct:utilPct,                         color:workflowSteps[3]?.color || '#FCA5A5'},
+    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Začátek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:workflowSteps[2]?.color || '#C4B5FD'},
+    {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:workflowSteps[1]?.color || '#5EEAD4'},
+    {label:'Úklid',      pct:dist.find(d=>d.title==='Ukončení anestezie')?.pct??0,                                                         color:workflowSteps[5]?.color || '#A5B4FC'},
+    {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:workflowSteps[0]?.color || '#34D399'},
   ];
 
   return(
@@ -439,13 +439,13 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                   <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
                   <YAxis stroke={C.ghost} fontSize={10}  tickLine={false} axisLine={false}/>
                   <Tooltip {...TIP}/>
-                  {WORKFLOW_STEPS.map(step=>(
+                  {workflowSteps.map(step=>(
                     <Bar key={step.title} dataKey={step.title} stackId="w" fill={step.color} opacity={0.8}/>
                   ))}
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                {WORKFLOW_STEPS.map(s=>(
+                {workflowSteps.map(s=>(
                   <div key={s.title} className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-[2px]" style={{background:s.color}}/>
                     <span className="text-[9px]" style={{color:C.faint}}>{s.title.split(' ').slice(-1)[0]}</span>
@@ -531,7 +531,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           <div>
             <SectionLabel>Aktuální fáze workflow</SectionLabel>
             <div className="flex flex-wrap gap-2">
-              {WORKFLOW_STEPS.map((step,i)=>{
+              {workflowSteps.map((step,i)=>{
                 const cur=i===room.currentStepIndex;
                 const done=i<room.currentStepIndex;
                 return(
@@ -545,7 +545,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                       <div className="w-1.5 h-1.5 rounded-full" style={{background:step.color,opacity:cur?1:0.3}}/>
                       {step.title}
                     </div>
-                    {i<WORKFLOW_STEPS.length-1&&(
+                    {i<workflowSteps.length-1&&(
                       <div className="w-2 h-px" style={{background:'rgba(255,255,255,0.08)'}}/>
                     )}
                   </div>
