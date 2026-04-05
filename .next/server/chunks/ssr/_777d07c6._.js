@@ -2358,7 +2358,7 @@ const AppContent = ()=>{
             await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateOperatingRoom"])(roomId, {
                 current_step_index: newStepIndex,
                 phase_started_at: now,
-                operation_started_at: operationStartedAt,
+                operationStartedAt: operationStartedAt,
                 status_history: newHistory,
                 completed_operations: updatedCompletedOps
             });
