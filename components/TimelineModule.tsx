@@ -596,8 +596,14 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               
               // Get status from database context
               const currentStep = activeStatuses[stepIndex];
-              const stepColor = currentStep?.accent_color || currentStep?.color || '#6B7280';
-              const stepName = currentStep?.title || currentStep?.name || 'Status';
+              // If paused, override color to pause color (cyan)
+              const PAUSE_COLOR = '#22D3EE';
+              const stepColor = room.isPaused 
+                ? PAUSE_COLOR 
+                : (currentStep?.accent_color || currentStep?.color || '#6B7280');
+              const stepName = room.isPaused 
+                ? 'Pauza' 
+                : (currentStep?.title || currentStep?.name || 'Status');
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
