@@ -209,7 +209,7 @@ const WORKFLOW_STEPS = [
     },
     {
         name: "Začátek chirurgického výkonu",
-        title: "Začátek chirurgického výkonu",
+        title: "Chirurgický výkon",
         organizer: "Chirurg",
         status: "Operace",
         color: '#EF4444',
@@ -217,7 +217,7 @@ const WORKFLOW_STEPS = [
     },
     {
         name: "Ukončení chirurgického výkonu",
-        title: "Ukončení chirurgického výkonu",
+        title: "Ukončení výkonu",
         organizer: "Chirurg",
         status: "Dokončování",
         color: '#F59E0B',
