@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
-  Shield, Activity, Syringe, UserPlus, Loader2
+  Shield, Activity, UserPlus, Loader2
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -14,7 +14,7 @@ interface StaffMember {
   is_active: boolean;
 }
 
-type StaffCategory = 'doctors' | 'nurses' | 'anesthesiologists';
+type StaffCategory = 'doctors' | 'nurses';
 
 // Role metadata
 const ROLE_META: Record<string, { label: string; badge: string; badgeClass: string; iconBg: string; iconColor: string; dbRole: string }> = {
@@ -25,14 +25,6 @@ const ROLE_META: Record<string, { label: string; badge: string; badgeClass: stri
     iconBg: 'bg-violet-500/15',
     iconColor: 'text-violet-400',
     dbRole: 'DOCTOR',
-  },
-  ANESTHESIOLOGIST: {
-    label: 'Anesteziolog',
-    badge: 'ARO',
-    badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    iconBg: 'bg-amber-500/15',
-    iconColor: 'text-amber-400',
-    dbRole: 'ANESTHESIOLOGIST',
   },
   NURSE: {
     label: 'Sestra',
@@ -48,7 +40,6 @@ function RoleIcon({ role, size = 'md' }: { role: string; size?: 'sm' | 'md' | 'l
   const sz = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
   const meta = ROLE_META[role] || ROLE_META['NURSE'];
   if (role === 'DOCTOR') return <Stethoscope className={`${sz} ${meta.iconColor}`} />;
-  if (role === 'ANESTHESIOLOGIST') return <Syringe className={`${sz} ${meta.iconColor}`} />;
   return <Heart className={`${sz} ${meta.iconColor}`} />;
 }
 
@@ -95,12 +86,10 @@ export default function StaffManager() {
 
   // Filter staff by category
   const staffByCategory = useMemo(() => {
-    const roleMap: Record<StaffCategory, string> = {
-      doctors: 'DOCTOR',
-      nurses: 'NURSE',
-      anesthesiologists: 'ANESTHESIOLOGIST',
-    };
-    return staff.filter(s => s.role === roleMap[activeCategory]);
+    if (activeCategory === 'doctors') {
+      return staff.filter(s => s.role === 'DOCTOR');
+    }
+    return staff.filter(s => s.role === 'NURSE');
   }, [staff, activeCategory]);
 
   // Filter by search
@@ -114,13 +103,11 @@ export default function StaffManager() {
   const counts = useMemo(() => ({
     doctors: staff.filter(s => s.role === 'DOCTOR').length,
     nurses: staff.filter(s => s.role === 'NURSE').length,
-    anesthesiologists: staff.filter(s => s.role === 'ANESTHESIOLOGIST').length,
   }), [staff]);
 
   const categories = [
     { id: 'doctors' as StaffCategory, label: 'Lékaři', count: counts.doctors, icon: Stethoscope, role: 'DOCTOR' },
     { id: 'nurses' as StaffCategory, label: 'Sestry', count: counts.nurses, icon: Heart, role: 'NURSE' },
-    { id: 'anesthesiologists' as StaffCategory, label: 'Anesteziologové', count: counts.anesthesiologists, icon: Syringe, role: 'ANESTHESIOLOGIST' },
   ];
 
   const selectedStaff = selectedStaffId ? filteredStaff.find(s => s.id === selectedStaffId) : null;
@@ -133,7 +120,6 @@ export default function StaffManager() {
     const roleMap: Record<StaffCategory, string> = {
       doctors: 'DOCTOR',
       nurses: 'NURSE',
-      anesthesiologists: 'ANESTHESIOLOGIST',
     };
     
     try {
@@ -232,7 +218,6 @@ export default function StaffManager() {
           {[
             { label: 'LÉKAŘI', value: counts.doctors, icon: Stethoscope, color: 'text-violet-400' },
             { label: 'SESTRY', value: counts.nurses, icon: Heart, color: 'text-emerald-400' },
-            { label: 'ARO', value: counts.anesthesiologists, icon: Syringe, color: 'text-amber-400' },
             { label: 'CELKEM', value: staff.length, icon: Users, color: 'text-[#00D8C1]' },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center justify-center px-6 md:px-10 py-4 rounded-2xl hover:bg-white/5 transition-all min-w-[100px]">
