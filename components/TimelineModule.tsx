@@ -936,7 +936,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                           background: `${phaseColor}99`,
                                           borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.35)' : 'none',
                                         }}
-                                        title={activeStatuses[entry.stepIndex]?.title || ''}
+                                        title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
                                       />
                                     );
                                   });
@@ -1037,7 +1037,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                     {segWidthPct > 8 && (
                                       <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
                                         <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
-                                          {entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
+                                          {activeStatuses[entry.stepIndex]?.title || ''}
                                         </span>
                                       </div>
                                     )}
