@@ -100,7 +100,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           <p className={`text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 transition-colors
             ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
           `}>
-            UNIT {room.department}
+            {room.department}
           </p>
           <h3 className={`text-xl font-bold tracking-tight uppercase leading-none transition-colors
             ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
