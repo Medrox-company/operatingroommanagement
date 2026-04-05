@@ -25,9 +25,14 @@ const StatusesManager: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter to get only active main workflow statuses (sorted by sort_order)
-  const activeStatuses = workflowStatuses
+  // Get all main workflow statuses (both active and inactive), sorted by sort_order
+  // Special statuses are shown separately
+  const mainStatuses = workflowStatuses
     .filter(s => !s.is_special)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  
+  const specialStatuses = workflowStatuses
+    .filter(s => s.is_special)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const handleEdit = (status: typeof workflowStatuses[0]) => {
@@ -159,7 +164,7 @@ const StatusesManager: React.FC = () => {
             <div>
               <p className="text-white/50 text-sm">Aktivní Statusy</p>
               <p className="text-2xl font-bold text-white">
-                {activeStatuses.filter(s => s.is_active).length}
+                {mainStatuses.filter(s => s.is_active).length}
               </p>
             </div>
           </div>
@@ -170,7 +175,7 @@ const StatusesManager: React.FC = () => {
             <div>
               <p className="text-white/50 text-sm">Ve Statistikách</p>
               <p className="text-2xl font-bold text-white">
-                {activeStatuses.filter(s => s.include_in_statistics).length}
+                {mainStatuses.filter(s => s.include_in_statistics).length}
               </p>
             </div>
           </div>
@@ -180,7 +185,7 @@ const StatusesManager: React.FC = () => {
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             <div>
               <p className="text-white/50 text-sm">Celkem Statusů</p>
-              <p className="text-2xl font-bold text-white">{activeStatuses.length}</p>
+              <p className="text-2xl font-bold text-white">{mainStatuses.length}</p>
             </div>
           </div>
         </div>
@@ -191,7 +196,7 @@ const StatusesManager: React.FC = () => {
         <h2 className="text-lg font-semibold text-white/80">Workflow Statusy</h2>
         
         <AnimatePresence>
-          {activeStatuses.map((status, idx) => {
+          {mainStatuses.map((status, idx) => {
             const isEditing = editingId === status.id;
             
             return (
@@ -389,6 +394,185 @@ const StatusesManager: React.FC = () => {
         </AnimatePresence>
       </div>
 
+      {/* Special Statuses (Button-activated) */}
+      {specialStatuses.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-white/80">Speciální Statusy (Tlačítka)</h2>
+          <p className="text-sm text-white/50">Tyto statusy se aktivují pomocí tlačítek v detailu sálu</p>
+          
+          <AnimatePresence>
+            {specialStatuses.map((status, idx) => {
+              const isEditing = editingId === status.id;
+              
+              return (
+                <motion.div
+                  key={status.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className={`rounded-lg border p-4 transition-colors ${
+                    isEditing 
+                      ? 'bg-white/10 border-cyan-500/50' 
+                      : status.is_active 
+                        ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
+                        : 'bg-white/[0.02] border-white/5 opacity-50'
+                  }`}
+                >
+                  {isEditing && editingData ? (
+                    /* Edit Mode for special statuses */
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-amber-400">Úprava speciálního statusu</h3>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleCancel}
+                            className="px-3 py-1.5 text-sm rounded-lg bg-white/10 hover:bg-white/20 text-white/70 transition-colors"
+                          >
+                            Zrušit
+                          </button>
+                          <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="px-3 py-1.5 text-sm rounded-lg bg-amber-500 hover:bg-amber-400 text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                          >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            Uložit
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Name */}
+                        <div>
+                          <label className="block text-sm text-white/50 mb-1">Název</label>
+                          <input
+                            type="text"
+                            value={editingData.name}
+                            onChange={(e) => setEditingData({ ...editingData, name: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        
+                        {/* Color */}
+                        <div>
+                          <label className="block text-sm text-white/50 mb-1">Barva</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="color"
+                              value={editingData.accent_color}
+                              onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
+                              className="w-12 h-10 rounded-lg cursor-pointer bg-transparent"
+                            />
+                            <input
+                              type="text"
+                              value={editingData.accent_color}
+                              onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
+                              className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white font-mono text-sm focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Toggles */}
+                      <div className="flex gap-6 pt-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editingData.is_active}
+                            onChange={(e) => setEditingData({ ...editingData, is_active: e.target.checked })}
+                            className="w-4 h-4 rounded bg-white/10 border-white/20 text-amber-500 focus:ring-amber-500"
+                          />
+                          <span className="text-sm text-white/70">Aktivní</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editingData.include_in_statistics}
+                            onChange={(e) => setEditingData({ ...editingData, include_in_statistics: e.target.checked })}
+                            className="w-4 h-4 rounded bg-white/10 border-white/20 text-amber-500 focus:ring-amber-500"
+                          />
+                          <span className="text-sm text-white/70">Započítat do statistik</span>
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    /* View Mode for special statuses */
+                    <div className="flex items-center gap-4">
+                      {/* Color Preview */}
+                      <div 
+                        className="flex-shrink-0 w-10 h-10 rounded-lg shadow-lg"
+                        style={{ backgroundColor: status.accent_color }}
+                      />
+
+                      {/* Status Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className={`font-medium truncate ${status.is_active ? 'text-white' : 'text-white/50'}`}>
+                            {status.name}
+                          </h3>
+                          {!status.is_active && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-white/10 text-white/40">Neaktivní</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-white/40 truncate">
+                          {status.special_type === 'pause' && 'Tlačítko Pauza'}
+                          {status.special_type === 'hygiene' && 'Tlačítko Hygiena'}
+                          {status.special_type === 'patient_called' && 'Tlačítko Volání'}
+                          {status.special_type === 'patient_arrived_tract' && 'Tlačítko Příjezd'}
+                        </p>
+                      </div>
+
+                      {/* Statistics Toggle */}
+                      <button
+                        onClick={() => handleToggleStatistics(status)}
+                        disabled={saving}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                          status.include_in_statistics
+                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                            : 'bg-white/5 text-white/40 hover:bg-white/10'
+                        }`}
+                        title={status.include_in_statistics ? 'Započítáno do statistik' : 'Nezapočítáno do statistik'}
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                        {status.include_in_statistics ? 'Statistiky' : 'Bez stat.'}
+                      </button>
+
+                      {/* Active Toggle */}
+                      <button
+                        onClick={() => handleToggleActive(status)}
+                        disabled={saving}
+                        className={`p-2 rounded-lg transition-colors ${
+                          status.is_active
+                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                            : 'bg-white/5 text-white/40 hover:bg-white/10'
+                        }`}
+                        title={status.is_active ? 'Aktivní' : 'Neaktivní'}
+                      >
+                        {status.is_active ? (
+                          <ToggleRight className="w-5 h-5" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5" />
+                        )}
+                      </button>
+
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => handleEdit(status)}
+                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                        title="Upravit"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      )}
+
       {/* Info Box */}
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
         <div className="flex items-start gap-3">
@@ -398,6 +582,7 @@ const StatusesManager: React.FC = () => {
             <p className="text-xs">
               Klikněte na ikonu tužky pro úpravu statusu. Můžete měnit název, barvu, dobu trvání a nastavení statistik.
               Přepínač statistik určuje, zda se daný status započítává do přehledů a grafů.
+              Neaktivní statusy jsou zobrazeny se sníženou průhledností a lze je znovu aktivovat.
             </p>
           </div>
         </div>
