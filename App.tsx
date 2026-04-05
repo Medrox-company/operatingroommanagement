@@ -231,7 +231,7 @@ const AppContent: React.FC = () => {
       await updateOperatingRoom(roomId, { 
         current_step_index: newStepIndex, 
         phase_started_at: now,
-        operationStartedAt: operationStartedAt,
+        operation_started_at: operationStartedAt,
         status_history: newHistory,
         completed_operations: updatedCompletedOps
       });

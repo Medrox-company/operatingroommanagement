@@ -156,15 +156,34 @@ export async function updateOperatingRoom(
     patient_called_at: string | null;
     patient_arrived_at: string | null;
     phase_started_at: string | null;
+    operation_started_at: string | null;
     current_step_index: number;
     estimated_end_time: string | null;
     weekly_schedule: Record<string, any>;
     doctor_id: string | null;
     nurse_id: string | null;
     anesthesiologist_id: string | null;
+    status_history: any[] | null;
+    completed_operations: any[] | null;
   }>
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
+    return false;
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('operating_rooms')
+      .update(updates)
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error updating operating room:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error updating operating room:', err);
     return false;
   }
 }
