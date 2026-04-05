@@ -104,11 +104,10 @@ export const DEFAULT_DEPARTMENTS: Department[] = [
 ];
 
 
-// Main workflow steps (10 steps) - synchronized with database workflow_statuses
+// Main workflow steps (8 steps) - synchronized with database workflow_statuses
+// Note: "Volání pacienta" and "Příjezd do operačního traktu" are SPECIAL statuses (buttons)
 export const WORKFLOW_STEPS = [
   { name: "Sál připraven",                  title: "Sál připraven",                  organizer: "Vedoucí sestra",    status: "Připraven",       color: '#6B7280', Icon: Sparkles  },
-  { name: "Volání pacienta",                title: "Volání pacienta",                organizer: "Příjmový tým",      status: "Volání",          color: '#3B82F6', Icon: Activity  },
-  { name: "Příjezd do operačního traktu",   title: "Příjezd do operačního traktu",   organizer: "Příjmový tým",      status: "V traktu",        color: '#06B6D4', Icon: Activity  },
   { name: "Příjezd na sál",                 title: "Příjezd na sál",                 organizer: "Příjmový tým",      status: "Na sále",         color: '#8B5CF6', Icon: UserCheck },
   { name: "Začátek anestezie",              title: "Začátek anestezie",              organizer: "Anesteziolog",      status: "Anestezie",       color: '#EC4899', Icon: Syringe  },
   { name: "Začátek chirurgického výkonu",   title: "Začátek chirurgického výkonu",   organizer: "Chirurg",           status: "Operace",         color: '#EF4444', Icon: Scissors },
@@ -118,16 +117,16 @@ export const WORKFLOW_STEPS = [
   { name: "Úklid sálu",                     title: "Úklid sálu",                     organizer: "Sanitární tým",     status: "Úklid",           color: '#F97316', Icon: Sparkles },
 ];
 
-// Special statuses (activated by buttons, not part of main workflow)
+// Special statuses (activated by buttons, not part of main sequential workflow)
 export const SPECIAL_STATUSES = [
-  { id: "status-pause",   name: "Pauza",             color: '#22D3EE', icon: 'Pause',  special_type: 'pause'   },
-  { id: "status-hygiene", name: "Hygienický režim",  color: '#FBBF24', icon: 'Shield', special_type: 'hygiene' },
+  { id: "status-pause",          name: "Pauza",                       color: '#22D3EE', icon: 'Pause',    special_type: 'pause'               },
+  { id: "status-hygiene",        name: "Hygienický režim",            color: '#FBBF24', icon: 'Shield',   special_type: 'hygiene'             },
+  { id: "status-patient-called", name: "Volání pacienta",             color: '#3B82F6', icon: 'Phone',    special_type: 'patient_called'      },
+  { id: "status-patient-tract",  name: "Příjezd do operačního traktu", color: '#06B6D4', icon: 'Building', special_type: 'patient_arrived_tract' },
 ];
 
 export const STEP_DURATIONS = [
   0,   // Sál připraven (výchozí stav, netrvá)
-  5,   // Volání pacienta
-  10,  // Příjezd do operačního traktu
   5,   // Příjezd na sál
   20,  // Začátek anestezie
   60,  // Začátek chirurgického výkonu (přepsáno délkou procedury)
@@ -139,15 +138,13 @@ export const STEP_DURATIONS = [
 
 export const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
   0: { bg: 'rgba(107,114,128,0.15)', fill: 'rgba(107,114,128,0.35)', border: 'rgba(107,114,128,0.25)', text: '#6B7280', glow: 'rgba(107,114,128,0.2)', solid: '#6B7280' },  // Sál připraven
-  1: { bg: 'rgba(59,130,246,0.15)',  fill: 'rgba(59,130,246,0.35)',  border: 'rgba(59,130,246,0.25)',  text: '#3B82F6', glow: 'rgba(59,130,246,0.2)',  solid: '#3B82F6' },  // Volání pacienta
-  2: { bg: 'rgba(6,182,212,0.15)',   fill: 'rgba(6,182,212,0.35)',   border: 'rgba(6,182,212,0.25)',   text: '#06B6D4', glow: 'rgba(6,182,212,0.2)',   solid: '#06B6D4' },  // Příjezd do traktu
-  3: { bg: 'rgba(139,92,246,0.15)',  fill: 'rgba(139,92,246,0.35)',  border: 'rgba(139,92,246,0.25)',  text: '#8B5CF6', glow: 'rgba(139,92,246,0.2)',  solid: '#8B5CF6' },  // Příjezd na sál
-  4: { bg: 'rgba(236,72,153,0.15)',  fill: 'rgba(236,72,153,0.35)',  border: 'rgba(236,72,153,0.25)',  text: '#EC4899', glow: 'rgba(236,72,153,0.2)',  solid: '#EC4899' },  // Začátek anestezie
-  5: { bg: 'rgba(239,68,68,0.15)',   fill: 'rgba(239,68,68,0.35)',   border: 'rgba(239,68,68,0.25)',   text: '#EF4444', glow: 'rgba(239,68,68,0.2)',   solid: '#EF4444' },  // Chirurgický výkon
-  6: { bg: 'rgba(245,158,11,0.15)',  fill: 'rgba(245,158,11,0.35)',  border: 'rgba(245,158,11,0.25)',  text: '#F59E0B', glow: 'rgba(245,158,11,0.2)',  solid: '#F59E0B' },  // Ukončení výkonu
-  7: { bg: 'rgba(168,85,247,0.15)',  fill: 'rgba(168,85,247,0.35)',  border: 'rgba(168,85,247,0.25)',  text: '#A855F7', glow: 'rgba(168,85,247,0.2)',  solid: '#A855F7' },  // Ukončení anestezie
-  8: { bg: 'rgba(16,185,129,0.15)',  fill: 'rgba(16,185,129,0.35)',  border: 'rgba(16,185,129,0.25)',  text: '#10B981', glow: 'rgba(16,185,129,0.2)',  solid: '#10B981' },  // Odjezd ze sálu
-  9: { bg: 'rgba(249,115,22,0.15)',  fill: 'rgba(249,115,22,0.35)',  border: 'rgba(249,115,22,0.25)',  text: '#F97316', glow: 'rgba(249,115,22,0.2)',  solid: '#F97316' },  // Úklid sálu
+  1: { bg: 'rgba(139,92,246,0.15)',  fill: 'rgba(139,92,246,0.35)',  border: 'rgba(139,92,246,0.25)',  text: '#8B5CF6', glow: 'rgba(139,92,246,0.2)',  solid: '#8B5CF6' },  // Příjezd na sál
+  2: { bg: 'rgba(236,72,153,0.15)',  fill: 'rgba(236,72,153,0.35)',  border: 'rgba(236,72,153,0.25)',  text: '#EC4899', glow: 'rgba(236,72,153,0.2)',  solid: '#EC4899' },  // Začátek anestezie
+  3: { bg: 'rgba(239,68,68,0.15)',   fill: 'rgba(239,68,68,0.35)',   border: 'rgba(239,68,68,0.25)',   text: '#EF4444', glow: 'rgba(239,68,68,0.2)',   solid: '#EF4444' },  // Chirurgický výkon
+  4: { bg: 'rgba(245,158,11,0.15)',  fill: 'rgba(245,158,11,0.35)',  border: 'rgba(245,158,11,0.25)',  text: '#F59E0B', glow: 'rgba(245,158,11,0.2)',  solid: '#F59E0B' },  // Ukončení výkonu
+  5: { bg: 'rgba(168,85,247,0.15)',  fill: 'rgba(168,85,247,0.35)',  border: 'rgba(168,85,247,0.25)',  text: '#A855F7', glow: 'rgba(168,85,247,0.2)',  solid: '#A855F7' },  // Ukončení anestezie
+  6: { bg: 'rgba(16,185,129,0.15)',  fill: 'rgba(16,185,129,0.35)',  border: 'rgba(16,185,129,0.25)',  text: '#10B981', glow: 'rgba(16,185,129,0.2)',  solid: '#10B981' },  // Odjezd ze sálu
+  7: { bg: 'rgba(249,115,22,0.15)',  fill: 'rgba(249,115,22,0.35)',  border: 'rgba(249,115,22,0.25)',  text: '#F97316', glow: 'rgba(249,115,22,0.2)',  solid: '#F97316' },  // Úklid sálu
 };
 
 export const SIDEBAR_ITEMS = [

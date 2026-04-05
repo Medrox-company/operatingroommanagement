@@ -192,22 +192,6 @@ const WORKFLOW_STEPS = [
         Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sparkles$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Sparkles$3e$__["Sparkles"]
     },
     {
-        name: "Volání pacienta",
-        title: "Volání pacienta",
-        organizer: "Příjmový tým",
-        status: "Volání",
-        color: '#3B82F6',
-        Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]
-    },
-    {
-        name: "Příjezd do operačního traktu",
-        title: "Příjezd do operačního traktu",
-        organizer: "Příjmový tým",
-        status: "V traktu",
-        color: '#06B6D4',
-        Icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$454$2e$0_react$40$18$2e$3$2e$1$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]
-    },
-    {
         name: "Příjezd na sál",
         title: "Příjezd na sál",
         organizer: "Příjmový tým",
@@ -278,12 +262,24 @@ const SPECIAL_STATUSES = [
         color: '#FBBF24',
         icon: 'Shield',
         special_type: 'hygiene'
+    },
+    {
+        id: "status-patient-called",
+        name: "Volání pacienta",
+        color: '#3B82F6',
+        icon: 'Phone',
+        special_type: 'patient_called'
+    },
+    {
+        id: "status-patient-tract",
+        name: "Příjezd do operačního traktu",
+        color: '#06B6D4',
+        icon: 'Building',
+        special_type: 'patient_arrived_tract'
     }
 ];
 const STEP_DURATIONS = [
     0,
-    5,
-    10,
     5,
     20,
     60,
@@ -302,22 +298,6 @@ const STEP_COLORS = {
         solid: '#6B7280'
     },
     1: {
-        bg: 'rgba(59,130,246,0.15)',
-        fill: 'rgba(59,130,246,0.35)',
-        border: 'rgba(59,130,246,0.25)',
-        text: '#3B82F6',
-        glow: 'rgba(59,130,246,0.2)',
-        solid: '#3B82F6'
-    },
-    2: {
-        bg: 'rgba(6,182,212,0.15)',
-        fill: 'rgba(6,182,212,0.35)',
-        border: 'rgba(6,182,212,0.25)',
-        text: '#06B6D4',
-        glow: 'rgba(6,182,212,0.2)',
-        solid: '#06B6D4'
-    },
-    3: {
         bg: 'rgba(139,92,246,0.15)',
         fill: 'rgba(139,92,246,0.35)',
         border: 'rgba(139,92,246,0.25)',
@@ -325,7 +305,7 @@ const STEP_COLORS = {
         glow: 'rgba(139,92,246,0.2)',
         solid: '#8B5CF6'
     },
-    4: {
+    2: {
         bg: 'rgba(236,72,153,0.15)',
         fill: 'rgba(236,72,153,0.35)',
         border: 'rgba(236,72,153,0.25)',
@@ -333,7 +313,7 @@ const STEP_COLORS = {
         glow: 'rgba(236,72,153,0.2)',
         solid: '#EC4899'
     },
-    5: {
+    3: {
         bg: 'rgba(239,68,68,0.15)',
         fill: 'rgba(239,68,68,0.35)',
         border: 'rgba(239,68,68,0.25)',
@@ -341,7 +321,7 @@ const STEP_COLORS = {
         glow: 'rgba(239,68,68,0.2)',
         solid: '#EF4444'
     },
-    6: {
+    4: {
         bg: 'rgba(245,158,11,0.15)',
         fill: 'rgba(245,158,11,0.35)',
         border: 'rgba(245,158,11,0.25)',
@@ -349,7 +329,7 @@ const STEP_COLORS = {
         glow: 'rgba(245,158,11,0.2)',
         solid: '#F59E0B'
     },
-    7: {
+    5: {
         bg: 'rgba(168,85,247,0.15)',
         fill: 'rgba(168,85,247,0.35)',
         border: 'rgba(168,85,247,0.25)',
@@ -357,7 +337,7 @@ const STEP_COLORS = {
         glow: 'rgba(168,85,247,0.2)',
         solid: '#A855F7'
     },
-    8: {
+    6: {
         bg: 'rgba(16,185,129,0.15)',
         fill: 'rgba(16,185,129,0.35)',
         border: 'rgba(16,185,129,0.25)',
@@ -365,7 +345,7 @@ const STEP_COLORS = {
         glow: 'rgba(16,185,129,0.2)',
         solid: '#10B981'
     },
-    9: {
+    7: {
         bg: 'rgba(249,115,22,0.15)',
         fill: 'rgba(249,115,22,0.35)',
         border: 'rgba(249,115,22,0.25)',
