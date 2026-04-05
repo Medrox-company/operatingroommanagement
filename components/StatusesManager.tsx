@@ -63,6 +63,10 @@ const StatusesManager: React.FC = () => {
     setError(null);
     
     try {
+      // Optimistically close the editor immediately for smooth UX
+      setEditingId(null);
+      setEditingData(null);
+      
       const response = await fetch('/api/workflow-statuses', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -73,9 +77,8 @@ const StatusesManager: React.FC = () => {
         throw new Error('Failed to save status');
       }
       
-      await refreshStatuses();
-      setEditingId(null);
-      setEditingData(null);
+      // Silent refresh - realtime subscription will update the UI
+      refreshStatuses();
     } catch (err) {
       setError('Nepodařilo se uložit změny');
       console.error('Error saving status:', err);
@@ -85,7 +88,7 @@ const StatusesManager: React.FC = () => {
   };
 
   const handleToggleActive = async (status: typeof statuses[0]) => {
-    setSaving(true);
+    // No setSaving(true) - keep UI responsive without blocking indicator
     try {
       const response = await fetch('/api/workflow-statuses', {
         method: 'PUT',
@@ -97,16 +100,15 @@ const StatusesManager: React.FC = () => {
       });
       
       if (!response.ok) throw new Error('Failed to toggle status');
-      await refreshStatuses();
+      // Silent refresh - realtime subscription handles update
+      refreshStatuses();
     } catch (err) {
       console.error('Error toggling status:', err);
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleToggleStatistics = async (status: typeof statuses[0]) => {
-    setSaving(true);
+    // No setSaving(true) - keep UI responsive
     try {
       const response = await fetch('/api/workflow-statuses', {
         method: 'PUT',
@@ -118,11 +120,10 @@ const StatusesManager: React.FC = () => {
       });
       
       if (!response.ok) throw new Error('Failed to toggle statistics');
-      await refreshStatuses();
+      // Silent refresh - realtime subscription handles update
+      refreshStatuses();
     } catch (err) {
       console.error('Error toggling statistics:', err);
-    } finally {
-      setSaving(false);
     }
   };
 
