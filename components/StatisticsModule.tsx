@@ -564,29 +564,20 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
 // MAIN MODULE
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
-  // Get workflow statuses from database context
+  // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Cache previous valid statuses to prevent flickering during refresh
-  const cachedStatusesRef = useRef(workflowStatuses);
-  if (workflowStatuses.length > 0) {
-    cachedStatusesRef.current = workflowStatuses;
-  }
-  const stableStatuses = cachedStatusesRef.current;
-  
-  // Filter to get only main workflow statuses (not special), sorted by order
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  // Map to WORKFLOW_STEPS format
   const WORKFLOW_STEPS = useMemo(() => 
-    stableStatuses
-      .filter(s => s.is_active && !s.is_special)
-      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0))
-      .map(s => ({
-        name: s.name,
-        title: s.title || s.name,
-        color: s.accent_color || s.color,
-        organizer: s.name,
-        status: s.is_active ? 'Active' : 'Inactive',
-      })),
-    [stableStatuses]
+    workflowStatuses.map(s => ({
+      name: s.name,
+      title: s.title || s.name,
+      color: s.accent_color || s.color,
+      organizer: s.name,
+      status: s.is_active ? 'Active' : 'Inactive',
+    })),
+    [workflowStatuses]
   );
   
   const rooms  = propRooms ?? [];

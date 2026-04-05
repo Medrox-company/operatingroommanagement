@@ -31,23 +31,11 @@ const usePrevious = (value: number) => {
 };
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
-  // Get workflow statuses from database context
+  // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Cache previous valid statuses to prevent flickering during refresh
-  const cachedStatusesRef = useRef(workflowStatuses);
-  if (workflowStatuses.length > 0) {
-    cachedStatusesRef.current = workflowStatuses;
-  }
-  const stableStatuses = cachedStatusesRef.current;
-  
-  // Filter to get only main workflow statuses (not special), sorted by order
-  const activeDbStatuses = useMemo(() => 
-    stableStatuses
-      .filter(s => s.is_active && !s.is_special)
-      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
-    [stableStatuses]
-  );
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  const activeDbStatuses = workflowStatuses;
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');

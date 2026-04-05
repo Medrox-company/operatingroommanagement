@@ -1,5 +1,5 @@
 
-import React, { memo, useMemo, useRef } from 'react';
+import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble } from 'lucide-react';
@@ -12,23 +12,11 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
-  // Get workflow statuses from database context
+  // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Cache previous valid statuses to prevent flickering during refresh
-  const cachedStatusesRef = useRef(workflowStatuses);
-  if (workflowStatuses.length > 0) {
-    cachedStatusesRef.current = workflowStatuses;
-  }
-  const stableStatuses = cachedStatusesRef.current;
-  
-  // Filter to get only main workflow statuses (not special), sorted by order
-  const activeStatuses = useMemo(() => 
-    stableStatuses
-      .filter(s => s.is_active && !s.is_special)
-      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
-    [stableStatuses]
-  );
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  const activeStatuses = workflowStatuses;
   
   // Memoize computed values using database statuses
   const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {

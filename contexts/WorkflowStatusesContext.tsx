@@ -181,20 +181,11 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   useEffect(() => {
     // Initial load with loading indicator
     fetchStatuses(true);
-
-    // Subscribe na realtime změny - silent refresh (no loading indicator)
-    const channel = supabase
-      .channel('workflow_statuses_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'workflow_statuses' },
-        () => fetchStatuses(false) // Silent refresh
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    
+    // NOTE: Realtime subscription DISABLED to prevent flickering
+    // Workflow statuses only change via Settings module, not during normal operation
+    // If user changes statuses in Settings, they can refresh page or the optimistic update handles it
+    // This prevents unnecessary re-renders of ALL components when ANY room status changes
   }, [fetchStatuses]);
 
   // Memoize computed values
