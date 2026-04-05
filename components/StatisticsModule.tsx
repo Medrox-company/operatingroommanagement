@@ -5,7 +5,8 @@ import {
   AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus } from '../types';
-import { WORKFLOW_STEPS, STEP_DURATIONS } from '../constants';
+import { STEP_DURATIONS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { fetchRoomStatistics, fetchStatusHistory, RoomStatistics, StatusHistoryRow } from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -97,15 +98,16 @@ function isUPS(r:OperatingRoom){ return r.isEmergency||UPS_DEPTS.includes(r.depa
 function dayMinutes(r:OperatingRoom){ return isUPS(r)?1440:720; }
 
 type Seg={color:string;title:string;pct:number;min:number};
-function buildTimeline(r:OperatingRoom):Seg[]{
+type WorkflowStep={name:string;title:string;color:string;organizer:string;status:string};
+function buildTimeline(r:OperatingRoom,workflowSteps:WorkflowStep[]):Seg[]{
   const dm=dayMinutes(r);
   const passes=Math.max(1,Math.floor(r.operations24h*(dm/1440)));
-  const durs=WORKFLOW_STEPS.map((_,i)=>i===2&&r.currentProcedure?r.currentProcedure.estimatedDuration:STEP_DURATIONS[i]);
+  const durs=workflowSteps.map((_,i)=>i===2&&r.currentProcedure?r.currentProcedure.estimatedDuration:STEP_DURATIONS[i]);
   const ct=durs.reduce((s,d)=>s+d,0);
   const mpp=Math.floor(dm/passes);
   const raw:Seg[]=[];
   for(let p=0;p<passes;p++){
-    WORKFLOW_STEPS.forEach((step,si)=>{
+    workflowSteps.forEach((step,si)=>{
       const m=Math.round((durs[si]/ct)*mpp);
       if(m>0) raw.push({color:step.color,title:step.title,pct:(m/dm)*100,min:m});
     });
@@ -114,10 +116,10 @@ function buildTimeline(r:OperatingRoom):Seg[]{
   const tot=raw.reduce((s,sg)=>s+sg.pct,0);
   return raw.map(sg=>({...sg,pct:(sg.pct/tot)*100}));
 }
-function buildDist(r:OperatingRoom):Seg[]{
-  const durs=WORKFLOW_STEPS.map((_,i)=>i===2&&r.currentProcedure?r.currentProcedure.estimatedDuration:STEP_DURATIONS[i]);
+function buildDist(r:OperatingRoom,workflowSteps:WorkflowStep[]):Seg[]{
+  const durs=workflowSteps.map((_,i)=>i===2&&r.currentProcedure?r.currentProcedure.estimatedDuration:STEP_DURATIONS[i]);
   const tot=durs.reduce((s,d)=>s+d,0);
-  return WORKFLOW_STEPS.map((step,i)=>({color:step.color,title:step.title,pct:Math.round((durs[i]/tot)*100),min:durs[i]}));
+  return workflowSteps.map((step,i)=>({color:step.color,title:step.title,pct:Math.round((durs[i]/tot)*100),min:durs[i]}));
 }
 function mergeSeg(segs:Seg[]):Seg[]{
   const out:Seg[]=[];
@@ -130,11 +132,11 @@ function mergeSeg(segs:Seg[]):Seg[]{
 }
 
 // ── Room mini card (extracted so hooks are always called at component level) ──
-interface RoomMiniCardProps { r: OperatingRoom; index: number; onClick: () => void; }
-const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick }) => {
+interface RoomMiniCardProps { r: OperatingRoom; index: number; onClick: () => void; workflowSteps: WorkflowStep[]; }
+const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps }) => {
   const sc2   = statusColor(r.status);
-  const tl2   = useMemo(() => mergeSeg(buildTimeline(r)), [r]);
-  const utilP = buildDist(r).find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
+  const tl2   = useMemo(() => mergeSeg(buildTimeline(r, workflowSteps)), [r, workflowSteps]);
+  const utilP = buildDist(r, workflowSteps).find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
   const ups2  = isUPS(r);
   return (
     <motion.button onClick={onClick}
@@ -208,14 +210,14 @@ function TrendBadge({v}:{v:number}){
 // ══════════════════════════════════════════════════════════════════════════════
 // ROOM DETAIL PANEL
 // ══════════════════════════════════════════════════════════════════════════════
-interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; }
+interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
-const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose})=>{
+const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
   const sc     = statusColor(room.status);
   const ups    = isUPS(room);
   const dm     = dayMinutes(room);
-  const tl     = useMemo(()=>mergeSeg(buildTimeline(room)),[room]);
-  const dist   = useMemo(()=>buildDist(room),[room]);
+  const tl     = useMemo(()=>mergeSeg(buildTimeline(room,workflowSteps)),[room,workflowSteps]);
+  const dist   = useMemo(()=>buildDist(room,workflowSteps),[room,workflowSteps]);
   const seed   = parseInt(room.id);
   const opsDay = Math.max(1,Math.floor(room.operations24h*(dm/1440)));
   const utilPct= dist.find(d=>d.title==='Chirurgický výkon')?.pct??0;
@@ -456,7 +458,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose})=>{
           {/* Row: Phase bar + Radar + Pie */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <Card className="p-5">
-              <SectionLabel>Délka fází — minuty</SectionLabel>
+              <SectionLabel>Délka fází ��� minuty</SectionLabel>
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={phaseBar} layout="vertical" margin={{top:0,right:16,bottom:0,left:0}} barSize={8}>
                   <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -562,6 +564,24 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose})=>{
 // MAIN MODULE
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const WORKFLOW_STEPS = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0))
+      .map(s => ({
+        name: s.name,
+        title: s.title || s.name,
+        color: s.accent_color || s.color,
+        organizer: s.name,
+        status: s.is_active ? 'Active' : 'Inactive',
+      })),
+    [workflowStatuses]
+  );
+  
   const rooms  = propRooms ?? [];
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
@@ -635,7 +655,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const roomBarData = rooms.map(r=>({
     name:r.name.replace('Sál č. ','S'),
     ops:r.operations24h,
-    util:Math.round(buildDist(r).find(d=>d.title==='Chirurgický výkon')?.pct??0),
+    util:Math.round(buildDist(r,WORKFLOW_STEPS).find(d=>d.title==='Chirurgický výkon')?.pct??0),
     color:statusColor(r.status),
   }));
 
@@ -668,11 +688,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   // Aggregate workflow utilisation across all rooms
   const workflowAgg=useMemo(()=>WORKFLOW_STEPS.map(step=>{
     const avg=Math.round(rooms.reduce((s,r)=>{
-      const d=buildDist(r).find(d=>d.title===step.title);
+      const d=buildDist(r,WORKFLOW_STEPS).find(d=>d.title===step.title);
       return s+(d?.pct??0);
     },0)/Math.max(1,rooms.length));
     return{title:step.title,color:step.color,pct:avg};
-  }),[rooms]);
+  }),[rooms,WORKFLOW_STEPS]);
 
   // Utilisation per interval for comparison bar - use real data if available
   const intervalCompare = useMemo(() => {
@@ -706,14 +726,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   // Scatter: ops24h vs utilPct per room
   const scatterData=rooms.map(r=>({
     ops:r.operations24h,
-    util:Math.round(buildDist(r).find(d=>d.title==='Chirurgický výkon')?.pct??0),
+    util:Math.round(buildDist(r,WORKFLOW_STEPS).find(d=>d.title==='Chirurgický výkon')?.pct??0),
     queue:r.queueCount,
     name:r.name,
   }));
 
   // Per-room status utilisation (stacked bar, no names, index only)
   const roomStatusBar=rooms.map((r,i)=>{
-    const dist=buildDist(r);
+    const dist=buildDist(r,WORKFLOW_STEPS);
     const base:Record<string,number|string>={name:`S${i+1}`};
     WORKFLOW_STEPS.forEach(step=>{
       base[step.title]=dist.find(d=>d.title===step.title)?.pct??0;
@@ -1043,7 +1063,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               <SectionLabel>Sály — kliknutím zobrazíte podrobné statistiky</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                 {rooms.map((r, i) => (
-                  <RoomMiniCard key={r.id} r={r} index={i} onClick={() => setSelectedRoom(r)} />
+                  <RoomMiniCard key={r.id} r={r} index={i} onClick={() => setSelectedRoom(r)} workflowSteps={WORKFLOW_STEPS} />
                 ))}
               </div>
             </div>
@@ -1362,7 +1382,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       {/* ── Room detail panel ── */}
       <AnimatePresence>
         {selectedRoom&&(
-          <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)}/>
+          <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>
         )}
       </AnimatePresence>
 

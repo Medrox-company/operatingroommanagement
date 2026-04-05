@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
-import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
+import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble
 } from 'lucide-react';
 
 // ========== CONSTANTS ==========
@@ -28,12 +28,24 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
+// Step colors podle step_index z databáze
+const STEP_INDEX_COLORS: Record<number, string> = {
+  0: '#6b7280',   // Sál připraven - gray
+  1: '#3b82f6',   // Příjezd na sál - blue
+  2: '#8b5cf6',   // Začátek anestezie - purple
+  3: '#ec4899',   // Chirurgický výkon - pink
+  4: '#f59e0b',   // Odjezd ze sálu - amber
+  5: '#10b981',   // Úklid sálu - green (step 5 means cleanup is done)
+  6: '#ef4444',   // Sál připraven po úklidu - red
+};
+
 // ========== HELPER FUNCTIONS ==========
 const getTimePercent = (date: Date): number => {
   const hours = date.getHours() + date.getMinutes() / 60;
   let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
   if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
-  return Math.max(0, Math.min(200, percent));
+  // Return percent clamped to valid timeline range
+  return Math.max(0, Math.min(100, percent));
 };
 
 const parseTimeToDate = (timeString: string): Date => {
@@ -57,12 +69,17 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
-  const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Get ONLY main workflow statuses (bez speciálních)
-  const activeStatuses = workflowStatuses
-    .filter(s => s.is_active && !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
+    [workflowStatuses]
+  );
+  
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
@@ -261,12 +278,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            // Use active statuses from database
+            // Use activeStatuses from database context
             const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-            const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
-            const statusName = dbStatus?.name || 'Status';
+            const step = activeStatuses[safeIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
+            const statusName = step?.title || step?.name || 'Status';
             const remaining = getRemainingTime(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
@@ -564,7 +581,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
-              // Get current workflow step info from database first
+              // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
               const isActive = stepIndex > 0; // index 0 = "Sál připraven"
@@ -581,10 +598,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from database
-              const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-              const stepColor = dbStatus?.color || '#6B7280';
-              const stepName = dbStatus?.name || 'Status';
+              // Get status from database context
+              const currentStep = activeStatuses[stepIndex];
+              const stepColor = currentStep?.accent_color || currentStep?.color || '#6B7280';
+              const stepName = currentStep?.title || currentStep?.name || 'Status';
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -596,18 +613,21 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               let startDate: Date = new Date();
               let endDate: Date = new Date();
               
-              // Show status bar if active - use procedure time, phaseStartedAt, or fallback to current time
+              // Show status bar if active - use operationStartedAt (arrival to OR) as the fixed start point
               const hasRealData = startParts && startParts.length === 2;
-              const hasPhaseStart = room.phaseStartedAt;
+              const hasOperationStart = room.operationStartedAt;
               const shouldShowBar = isActive; // Always show for active rooms
 
               if (isActive) {
-                // Determine start time
-                if (hasRealData) {
+                // Determine start time - ALWAYS use operationStartedAt (arrival to OR) as the reference point
+                if (hasOperationStart) {
+                  // Use operation start time (when patient arrived to OR)
+                  startDate = new Date(room.operationStartedAt);
+                } else if (hasRealData) {
                   // Use actual procedure start time
                   startDate = new Date();
                   startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
-                } else if (hasPhaseStart) {
+                } else if (room.phaseStartedAt) {
                   // Use phase started time as fallback
                   startDate = new Date(room.phaseStartedAt);
                 } else {
@@ -795,6 +815,28 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             PAUZA
                           </span>
                         )}
+                        {/* Patient called indicator */}
+                        {room.patientCalledAt && !room.patientArrivedAt && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="p-1 rounded-md bg-blue-500/20 border border-blue-400/40"
+                            title="Pacient volán"
+                          >
+                            <Phone className="w-3 h-3 text-blue-400" />
+                          </motion.div>
+                        )}
+                        {/* Patient arrived indicator */}
+                        {room.patientArrivedAt && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="p-1 rounded-md bg-green-500/20 border border-green-400/40"
+                            title="Pacient v operačním traktu"
+                          >
+                            <BedDouble className="w-3 h-3 text-green-400" />
+                          </motion.div>
+                        )}
                       </div>
                       {isFree ? (
                         <p className="text-[9px] font-medium text-white/25 flex items-center gap-1">
@@ -831,145 +873,184 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
-                    {/* Active operation bar - Premium Design with workflow step color */}
-                    {/* Active operation box - premium glass morphism design */}
+                    {/* Completed operations - soft gray inactive bars */}
+                    {room.completedOperations && room.completedOperations.length > 0 && (() => {
+                      return room.completedOperations.map((operation, opIdx) => {
+                        const opStartDate = new Date(operation.startedAt);
+                        const opEndDate = new Date(operation.endedAt);
+                        
+                        // Use getTimePercent to calculate position on timeline
+                        const opLeftPct = getTimePercent(opStartDate);
+                        const opEndPct = getTimePercent(opEndDate);
+                        let opWidthPct = opEndPct - opLeftPct;
+                        
+                        // Handle cross-midnight operations
+                        if (opWidthPct < 0) opWidthPct += 100;
+                        
+                        // Skip if completely outside visible timeline
+                        if (opEndPct < 0 || opLeftPct > 100 || opWidthPct <= 0) {
+                          return null;
+                        }
+                        
+                        return (
+                          <div
+                            key={`completed-${opIdx}`}
+                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
+                            style={{ 
+                              left: `${Math.max(0, opLeftPct)}%`, 
+                              width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
+                            }}
+                          >
+                            {/* Completed operation segments with individual colors */}
+                            <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                              {operation.statusHistory && operation.statusHistory.length > 0 && 
+                                operation.statusHistory.map((entry, idx) => {
+                                  const segStart = new Date(entry.startedAt).getTime();
+                                  const nextEntry = operation.statusHistory[idx + 1];
+                                  const segEnd = nextEntry 
+                                    ? new Date(nextEntry.startedAt).getTime() 
+                                    : new Date(operation.endedAt).getTime();
+                                  
+                                  const opDuration = new Date(operation.endedAt).getTime() - new Date(operation.startedAt).getTime();
+                                  const segDuration = segEnd - segStart;
+                                  const segWidthPct = (segDuration / opDuration) * 100;
+                                  const segLeftPct = ((segStart - new Date(operation.startedAt).getTime()) / opDuration) * 100;
+                                  
+                                  // Use color from step_index
+                                  const phaseColor = STEP_INDEX_COLORS[entry.stepIndex] || '#6b7280';
+                                  
+                                  return (
+                                    <div
+                                      key={`seg-${idx}`}
+                                      className="absolute top-0 bottom-0"
+                                      style={{ 
+                                        left: `${Math.max(0, segLeftPct)}%`,
+                                        width: `${Math.max(0.5, segWidthPct)}%`,
+                                        background: `${phaseColor}99`, // Color with 60% opacity
+                                        borderRight: '1px solid rgba(0,0,0,0.3)'
+                                      }}
+                                      title={entry.stepName}
+                                    />
+                                  );
+                                })
+                              }
+                            </div>
+                            
+                            {/* Label for completed operation */}
+                            <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
+                              {opWidthPct > 6 && (
+                                <span className="text-[9px] font-medium text-white/30 truncate">
+                                  Dokončeno
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    })()}
+
+                    {/* Active operation bar */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.5, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
-                        className="absolute top-1 bottom-1 overflow-hidden rounded-2xl group/bar"
+                        transition={{ duration: 0.4, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
                           transformOrigin: 'left center'
                         }}
                       >
-                        {/* Outer glow effect - ambient lighting */}
-                        <div 
-                          className="absolute -inset-1 rounded-2xl blur-md opacity-30"
-                          style={{ background: room.isPaused ? '#22D3EE' : stepColor }}
-                        />
-
-                        {/* Glass container base */}
-                        <div 
-                          className="absolute inset-0 rounded-2xl backdrop-blur-sm"
-                          style={{ 
-                            background: `linear-gradient(145deg, ${room.isPaused ? '#22D3EE' : stepColor}12 0%, ${room.isPaused ? '#22D3EE' : stepColor}06 100%)`,
-                            border: `1px solid ${room.isPaused ? '#22D3EE' : stepColor}25`,
-                            boxShadow: `
-                              0 4px 24px ${room.isPaused ? '#22D3EE' : stepColor}15,
-                              0 1px 0 rgba(255,255,255,0.05) inset,
-                              0 -1px 0 rgba(0,0,0,0.1) inset
-                            `
-                          }}
-                        />
-
-                        {/* Progress fill - elegant gradient */}
-                        {!room.isPaused && (
-                          <div 
-                            className="absolute inset-0 rounded-2xl overflow-hidden" 
-                            style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
-                          >
-                            <div 
-                              className="absolute inset-0"
-                              style={{ 
-                                background: `linear-gradient(145deg, ${stepColor}95 0%, ${stepColor}75 100%)`
-                              }}
-                            />
-                            {/* Glass shine on progress */}
-                            <div 
-                              className="absolute inset-x-0 top-0 h-1/2" 
-                              style={{ 
-                                background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 50%, transparent 100%)'
-                              }} 
-                            />
-                          </div>
-                        )}
-
-                        {/* Status segment - glass morphism bar with gradient */}
-                        {(() => {
-                          const baseColor = room.isPaused ? '#22D3EE' : (stepColor || '#6B7280');
-                          
-                          return (
-                            <motion.div
-                              key={`segment-${stepIndex}-${room.isPaused ? 'paused' : 'active'}`}
-                              className="absolute inset-y-0 rounded-xl overflow-hidden"
-                              style={{
-                                left: 0,
-                                width: '100%',
-                              }}
-                              initial={{ opacity: 0, scale: 0.98 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ duration: 0.4, ease: 'easeOut' }}
-                              title={room.isPaused ? 'PAUZA' : stepName}
-                            >
-                              {/* Base gradient layer */}
-                              <div 
-                                className="absolute inset-0"
-                                style={{
-                                  background: `linear-gradient(135deg, ${baseColor}dd 0%, ${baseColor}99 50%, ${baseColor}77 100%)`,
-                                }}
-                              />
+                        {/* Multi-segment colored bar based on actual status history */}
+                        <div className="absolute inset-0 flex overflow-hidden rounded-lg">
+                          {(() => {
+                            const history = room.statusHistory || [];
+                            const operationStart = room.operationStartedAt ? new Date(room.operationStartedAt).getTime() : null;
+                            const endTime = room.estimatedEndTime ? new Date(room.estimatedEndTime).getTime() : null;
+                            const now = Date.now();
+                            
+                            // If no history or no operation start, show simple current status bar
+                            if (history.length === 0 || !operationStart || !endTime) {
+                              const phaseColor = stepColor || '#6B7280';
+                              return (
+                                <div className="absolute inset-0" style={{ background: phaseColor }} />
+                              );
+                            }
+                            
+                            const totalDuration = endTime - operationStart;
+                            
+                            return history.map((entry, idx) => {
+                              const segmentStart = new Date(entry.startedAt).getTime();
+                              const nextEntry = history[idx + 1];
+                              const segmentEnd = nextEntry 
+                                ? new Date(nextEntry.startedAt).getTime() 
+                                : Math.min(now, endTime);
                               
-                              {/* Glass overlay - top shine */}
-                              <div 
-                                className="absolute inset-x-0 top-0 h-1/2"
-                                style={{
-                                  background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
-                                }}
-                              />
+                              const segmentDuration = segmentEnd - segmentStart;
+                              const segmentWidthPct = (segmentDuration / totalDuration) * 100;
+                              const segmentLeftPct = ((segmentStart - operationStart) / totalDuration) * 100;
+                              const isCurrentSegment = idx === history.length - 1;
+                              const phaseColor = entry.color || '#6B7280';
                               
-                              {/* Inner shadow for depth */}
-                              <div 
-                                className="absolute inset-0 rounded-xl"
-                                style={{
-                                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.1)`,
-                                }}
-                              />
-                              
-                              {/* Subtle border glow */}
-                              <div 
-                                className="absolute inset-0 rounded-xl"
-                                style={{
-                                  border: `1px solid ${baseColor}40`,
-                                  boxShadow: `0 0 20px ${baseColor}20, 0 4px 12px rgba(0,0,0,0.15)`,
-                                }}
-                              />
-                            </motion.div>
-                          );
-                        })()}
+                              return (
+                                <motion.div
+                                  key={`history-${idx}`}
+                                  className="absolute top-0 bottom-0"
+                                  style={{ 
+                                    left: `${Math.max(0, segmentLeftPct)}%`,
+                                    width: `${Math.max(0.5, segmentWidthPct)}%`,
+                                    background: isCurrentSegment ? phaseColor : `${phaseColor}bb`
+                                  }}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.05 * idx }}
+                                >
+                                  {/* Separator */}
+                                  {idx < history.length - 1 && (
+                                    <div className="absolute top-0 right-0 bottom-0 w-px bg-black/30" />
+                                  )}
+                                </motion.div>
+                              );
+                            });
+                          })()}
+                        </div>
 
-                        {/* Current position indicator - elegant design */}
+                        {/* Current position indicator */}
                         {progressPct > 0 && progressPct < 100 && !room.isPaused && (
                           <>
-                            {/* Glow behind line */}
-                            <div 
-                              className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: 'rgba(255,255,255,0.3)'
-                              }}
-                            />
-                            {/* Main line */}
                             <div 
                               className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.6) 100%)'
+                                background: 'rgba(255,255,255,0.9)'
                               }}
                             />
-                            {/* Top diamond indicator */}
                             <div 
-                              className="absolute -top-1 w-2 h-2 -translate-x-1/2 rotate-45"
+                              className="absolute -top-0.5 w-2 h-2 -translate-x-1/2 rounded-full"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: 'white',
-                                boxShadow: '0 0 8px rgba(255,255,255,0.8)'
+                                background: 'white'
                               }}
                             />
                           </>
                         )}
+
+                        {/* Estimated end time indicator - dotted line at the right edge */}
+                        {room.estimatedEndTime && (() => {
+                          const endPct = getTimePercent(new Date(room.estimatedEndTime));
+                          return endPct > 0 && endPct < 100 && (
+                            <div 
+                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
+                              style={{ 
+                                left: `${endPct}%`,
+                                background: 'rgba(255,165,0,0.8)',
+                                boxShadow: '0 0 4px rgba(255,165,0,0.5)'
+                              }}
+                              title="Očekávaný konec operace"
+                            />
+                          );
+                        })()}
 
                         {/* Content overlay - refined typography */}
                         <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
@@ -1209,7 +1290,17 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  const { activeStatuses } = useWorkflowStatusesContext();
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
+    [workflowStatuses]
+  );
+  
   const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
   const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
@@ -1217,7 +1308,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
   const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
   
-  const stepColor = currentStatus?.color || '#6B7280';
+  const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
 
   // Calculate elapsed time from phaseStartedAt

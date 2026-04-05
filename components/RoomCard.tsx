@@ -12,33 +12,33 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
+  // Get workflow statuses from database context
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Memoize filtered statuses
-  const activeDbStatuses = useMemo(() => 
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeStatuses = useMemo(() => 
     workflowStatuses
       .filter(s => s.is_active && !s.is_special)
-      .sort((a, b) => a.order_index - b.order_index),
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
     [workflowStatuses]
   );
   
-  // Memoize computed values
-  const { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
-    const totalSteps = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+  // Memoize computed values using database statuses
+  const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
+    const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
     const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-    const dbStatus = activeDbStatuses.length > 0 ? activeDbStatuses[safeIndex] : null;
+    const step = activeStatuses[safeIndex];
     
     const currentStep = {
-      title: dbStatus?.name || 'Status',
-      color: dbStatus?.color || '#6B7280',
+      title: step?.title || step?.name || 'Status',
+      color: step?.accent_color || step?.color || '#6B7280',
     };
     
     const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
     const progressPercent = ((safeIndex + 1) / totalSteps);
     
     // Don't show time for "Sal priprav*" and "Uklid" statuses (ASCII-safe)
-    // Normalize string to remove diacritics for comparison
-    const statusName = (dbStatus?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const statusName = (step?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const isReadyStatus = statusName.includes('priprav');
     const isCleaningStatus = statusName.includes('uklid');
     const shouldShowTime = !isReadyStatus && !isCleaningStatus;
@@ -47,8 +47,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     const strokeDasharray = 2 * Math.PI * radius;
     const strokeDashoffset = strokeDasharray * (1 - progressPercent);
     
-    return { totalSteps, safeIndex, dbStatus, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
-  }, [activeDbStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
+    return { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
+  }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
   
   const radius = 38;
   const strokeWidth = 4;

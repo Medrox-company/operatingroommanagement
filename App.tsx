@@ -14,9 +14,9 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield } from 'lucide-react';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, fetchCompletedOperationsForDay } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
+import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
@@ -36,7 +36,6 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules } = useAuth();
-  const { workflowStatuses } = useWorkflowStatusesContext();
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -88,6 +87,19 @@ const AppContent: React.FC = () => {
       if (dbRooms && dbRooms.length > 0) {
         setRooms(dbRooms);
         setIsDbConnected(true);
+        
+        // Load completed operations for today for each room
+        const today = new Date();
+        const updatedRooms = await Promise.all(
+          dbRooms.map(async (room) => {
+            const completedOps = await fetchCompletedOperationsForDay(room.id, today);
+            return {
+              ...room,
+              completedOperations: completedOps || []
+            };
+          })
+        );
+        setRooms(updatedRooms);
       }
     };
     loadRooms();
@@ -133,15 +145,98 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, isModuleEnabled]);
 
-  const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number) => {
+  const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number, stepColor?: string) => {
     const now = new Date().toISOString();
-    setRooms(prev => prev.map(room =>
-      room.id === roomId ? { ...room, currentStepIndex: newStepIndex, phaseStartedAt: now } : room
-    ));
+    
+    // Check if operation is being completed (transitioning to "Sál připraven po úklidu" - index 7, or back to index 0)
+    // Operation is complete when: resetting to 0, or moving to index 7 (after cleanup)
+    const isOperationComplete = (currentIndex: number, nextIndex: number) => {
+      // Reset to ready state
+      if (nextIndex === 0) return true;
+      // Moving to "Sál připraven po úklidu" (index 7) after úklid sálu (index 6)
+      if (nextIndex === 7 && currentIndex >= 1) return true;
+      return false;
+    };
+    
+    setRooms(prev => prev.map(room => {
+      if (room.id !== roomId) return room;
+      
+      // Save completed operation when transitioning to ready state
+      let updatedCompletedOps = room.completedOperations || [];
+      const shouldSaveOperation = isOperationComplete(room.currentStepIndex, newStepIndex) && 
+        room.operationStartedAt && room.statusHistory && room.statusHistory.length > 0;
+        
+      if (shouldSaveOperation) {
+        console.log("[v0] Saving completed operation for room:", room.name);
+        updatedCompletedOps = [
+          ...updatedCompletedOps,
+          {
+            startedAt: room.operationStartedAt!,
+            endedAt: now,
+            statusHistory: [...room.statusHistory!]
+          }
+        ];
+      }
+      
+      // Build status history - reset when going back to ready state
+      const shouldResetHistory = newStepIndex === 0 || newStepIndex === 7;
+      const currentHistory = room.statusHistory || [];
+      const newHistory = shouldResetHistory
+        ? [] 
+        : [...currentHistory, { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' }];
+      
+      // Set operationStartedAt when transitioning to first active status (index 1)
+      const operationStartedAt = newStepIndex === 1 && (room.currentStepIndex === 0 || room.currentStepIndex === 7)
+        ? now 
+        : (shouldResetHistory ? null : room.operationStartedAt);
+      
+      return { 
+        ...room, 
+        currentStepIndex: newStepIndex, 
+        phaseStartedAt: now,
+        operationStartedAt,
+        statusHistory: newHistory,
+        completedOperations: updatedCompletedOps
+      };
+    }));
+    
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { current_step_index: newStepIndex, phase_started_at: now });
+      const room = rooms.find(r => r.id === roomId);
+      
+      // Save completed operation
+      let updatedCompletedOps = room?.completedOperations || [];
+      const shouldSaveOperation = isOperationComplete(room?.currentStepIndex || 0, newStepIndex) && 
+        room?.operationStartedAt && room?.statusHistory && room.statusHistory.length > 0;
+        
+      if (shouldSaveOperation) {
+        updatedCompletedOps = [
+          ...updatedCompletedOps,
+          {
+            startedAt: room!.operationStartedAt!,
+            endedAt: now,
+            statusHistory: [...room!.statusHistory!]
+          }
+        ];
+      }
+      
+      const shouldResetHistory = newStepIndex === 0 || newStepIndex === 7;
+      const currentHistory = room?.statusHistory || [];
+      const newHistory = shouldResetHistory
+        ? [] 
+        : [...currentHistory, { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' }];
+      const operationStartedAt = newStepIndex === 1 && (room?.currentStepIndex === 0 || room?.currentStepIndex === 7)
+        ? now 
+        : (shouldResetHistory ? null : room?.operationStartedAt);
+      
+      await updateOperatingRoom(roomId, { 
+        current_step_index: newStepIndex, 
+        phase_started_at: now,
+        operation_started_at: operationStartedAt,
+        status_history: newHistory,
+        completed_operations: updatedCompletedOps
+      });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, rooms]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
@@ -303,7 +398,7 @@ const AppContent: React.FC = () => {
                 <RoomDetail
                   room={selectedRoom}
                   onClose={() => setSelectedRoomId(null)}
-                  onStepChange={(index) => updateRoomStep(selectedRoom.id, index)}
+                  onStepChange={(index, stepColor) => updateRoomStep(selectedRoom.id, index, stepColor)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                   onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
@@ -328,17 +423,9 @@ const AppContent: React.FC = () => {
                     </div>
                     <div className="flex gap-4 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
                       {(() => {
-                        // Get active workflow statuses (sorted by order)
-                        const activeStatuses = workflowStatuses
-                          .filter(s => s.is_active && !s.is_special)
-                          .sort((a, b) => a.order_index - b.order_index);
-                        
-                        // Check if room is in "ready" status based on status name
+                        // Check if room is in "ready" status (step index 0 or 7)
                         const isRoomReady = (room: OperatingRoom) => {
-                          const status = activeStatuses[room.currentStepIndex];
-                          // Normalize string to remove diacritics for comparison
-                          const statusName = (status?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                          return statusName.includes('priprav') || statusName.includes('ready');
+                          return room.currentStepIndex === 0 || room.currentStepIndex === 7;
                         };
                         
                         const readyRooms = rooms.filter(isRoomReady);

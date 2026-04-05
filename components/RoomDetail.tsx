@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Plus, Minus, X, QrCode, User, Video, Cast, 
@@ -16,7 +15,7 @@ import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 interface RoomDetailProps {
   room: OperatingRoom;
   onClose: () => void;
-  onStepChange: (index: number) => void;
+  onStepChange: (index: number, stepColor?: string) => void;
   onEndTimeChange: (newTime: Date | null) => void;
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
   onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
@@ -32,13 +31,16 @@ const usePrevious = (value: number) => {
 };
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
-  // Get workflow statuses from database context - ONLY main workflow, no special statuses
-  const { workflowStatuses, getStatusColor, getStatusByIndex } = useWorkflowStatusesContext();
+  // Get workflow statuses from database context
+  const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Get ONLY main workflow statuses (bez speciálních), sorted by order_index
-  const activeDbStatuses = workflowStatuses
-    .filter(s => s.is_active && !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
+  // Filter to get only main workflow statuses (not special), sorted by order
+  const activeDbStatuses = useMemo(() => 
+    workflowStatuses
+      .filter(s => s.is_active && !s.is_special)
+      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
+    [workflowStatuses]
+  );
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
@@ -315,8 +317,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       setTimeout(() => { isResettingRef.current = false; }, 1500);
     }
 
-    onStepChange(newIndex);
-    setPhaseStartTime(new Date());
+  // Pass the color of the new status for history tracking
+  const newStepColor = newStep?.color || '#6B7280';
+  onStepChange(newIndex, newStepColor);
+  setPhaseStartTime(new Date());
   };
 
   const handleNextStep = () => {

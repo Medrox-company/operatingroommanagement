@@ -1,3 +1,4 @@
 {
+  "/api/workflow-statuses/route": "app/api/workflow-statuses/route.js",
   "/page": "app/page.js"
 }
