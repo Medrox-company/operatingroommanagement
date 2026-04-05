@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus } from 'lucide-react';
+import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus, Star, MapPin, Percent } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import type { SkillLevel } from '../types';
 
 export type StaffRole = 'DOCTOR' | 'NURSE';
 
@@ -9,6 +10,10 @@ interface StaffMember {
   id: string;
   name: string;
   role: string;
+  skill_level?: SkillLevel;
+  availability?: number;
+  is_external?: boolean;
+  is_recommended?: boolean;
   is_active: boolean;
 }
 
@@ -21,44 +26,21 @@ interface StaffPickerModalProps {
   title?: string;
 }
 
-// Role metadata — label, color, icon, badge
-const ROLE_META: Record<string, {
-  label: string;
-  badge: string;
-  badgeClass: string;
-  iconBg: string;
-  iconColor: string;
-  accentBorder: string;
-  accentBg: string;
-  accentText: string;
-}> = {
-  DOCTOR: {
-    label: 'Chirurg / Lékař',
-    badge: 'MUDr.',
-    badgeClass: 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
-    iconBg: 'bg-violet-500/15',
-    iconColor: 'text-violet-400',
-    accentBorder: 'border-violet-500/50',
-    accentBg: 'bg-violet-500/10',
-    accentText: 'text-violet-300',
-  },
-  NURSE: {
-    label: 'Sestra / Zdravotník',
-    badge: 'Sestra',
-    badgeClass: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-    iconBg: 'bg-emerald-500/15',
-    iconColor: 'text-emerald-400',
-    accentBorder: 'border-emerald-500/50',
-    accentBg: 'bg-emerald-500/10',
-    accentText: 'text-emerald-300',
-  },
+// Skill level metadata
+const SKILL_LEVELS: Record<SkillLevel, { label: string; color: string; bgColor: string }> = {
+  'L3': { label: 'L3', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' },
+  'L2': { label: 'L2', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20 border-cyan-500/30' },
+  'L1': { label: 'L1', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20 border-yellow-500/30' },
+  'A': { label: 'Abs.', color: 'text-orange-400', bgColor: 'bg-orange-500/20 border-orange-500/30' },
+  'SR': { label: 'SR', color: 'text-purple-400', bgColor: 'bg-purple-500/20 border-purple-500/30' },
+  'N': { label: 'Nov.', color: 'text-red-400', bgColor: 'bg-red-500/20 border-red-500/30' },
+  'S': { label: 'Stáž', color: 'text-gray-400', bgColor: 'bg-gray-500/20 border-gray-500/30' },
 };
 
 function RoleIcon({ role, size = 'md' }: { role: string; size?: 'sm' | 'md' | 'lg' }) {
   const sz = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-3.5 h-3.5' : 'w-5 h-5';
-  const meta = ROLE_META[role] || ROLE_META['NURSE'];
-  if (role === 'DOCTOR') return <Stethoscope className={`${sz} ${meta.iconColor}`} />;
-  return <Heart className={`${sz} ${meta.iconColor}`} />;
+  if (role === 'DOCTOR') return <Stethoscope className={`${sz} text-violet-400`} />;
+  return <Heart className={`${sz} text-emerald-400`} />;
 }
 
 export default function StaffPickerModal({
@@ -112,11 +94,9 @@ export default function StaffPickerModal({
     return staff
       .filter((m) => {
         if (filterRole && m.role !== filterRole) return false;
-        const meta = ROLE_META[m.role];
         const searchableText = [
           m.name,
-          meta?.label ?? '',
-          meta?.badge ?? '',
+          m.role === 'DOCTOR' ? 'Lékař MUDr.' : 'Sestra',
           m.role,
         ].join(' ').toLowerCase();
         return searchableText.includes(q);
@@ -140,7 +120,11 @@ export default function StaffPickerModal({
   };
 
   // Header accent by filterRole
-  const headerMeta = filterRole ? ROLE_META[filterRole] : null;
+  const headerAccent = filterRole === 'DOCTOR' 
+    ? { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)' }
+    : filterRole === 'NURSE'
+    ? { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)' }
+    : { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)' };
 
   if (!isOpen) return null;
 
@@ -180,13 +164,11 @@ export default function StaffPickerModal({
           <div
             className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px"
             style={{
-              background: headerMeta
-                ? `linear-gradient(90deg, transparent, ${
-                    filterRole === 'DOCTOR' ? 'rgba(167,139,250,0.6)' :
-                    filterRole === 'NURSE' ? 'rgba(52,211,153,0.6)' :
-                    'rgba(251,191,36,0.6)'
-                  }, transparent)`
-                : 'linear-gradient(90deg, transparent, rgba(0,216,193,0.6), transparent)',
+              background: `linear-gradient(90deg, transparent, ${
+                filterRole === 'DOCTOR' ? 'rgba(167,139,250,0.6)' :
+                filterRole === 'NURSE' ? 'rgba(52,211,153,0.6)' :
+                'rgba(0,216,193,0.6)'
+              }, transparent)`,
             }}
           />
 
@@ -196,7 +178,7 @@ export default function StaffPickerModal({
               <div>
                 <div className="flex items-center gap-2.5 mb-1.5">
                   {filterRole && (
-                    <div className={`p-1.5 rounded-lg ${ROLE_META[filterRole]?.iconBg}`}>
+                    <div className={`p-1.5 rounded-lg ${filterRole === 'DOCTOR' ? 'bg-violet-500/15' : 'bg-emerald-500/15'}`}>
                       <RoleIcon role={filterRole} size="sm" />
                     </div>
                   )}
@@ -334,13 +316,14 @@ export default function StaffPickerModal({
               <div className="grid grid-cols-2 gap-2">
                 {filteredStaff.map((member) => {
                   const isSelected = member.id === currentStaffId;
-                  const meta = ROLE_META[member.role] || ROLE_META['NURSE'];
+                  const skillLevel = member.skill_level as SkillLevel | undefined;
+                  const skillMeta = skillLevel ? SKILL_LEVELS[skillLevel] : null;
 
                   return (
                     <motion.button
                       key={member.id}
                       onClick={() => handleSelect(member)}
-                      className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group text-left"
+                      className="flex flex-col items-start gap-2 px-4 py-3.5 rounded-2xl transition-all group text-left"
                       style={{
                         background: isSelected
                           ? 'rgba(0,216,193,0.08)'
@@ -352,45 +335,51 @@ export default function StaffPickerModal({
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.985 }}
                     >
-                      {/* Icon avatar */}
-                      <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${meta.iconBg}`}
-                      >
-                        <RoleIcon role={member.role} size="md" />
-                      </div>
-
-                      {/* Name + badges */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-bold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
-                            {member.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badgeClass}`}>
-                            {meta.badge}
-                          </span>
-                          <span className="text-[10px] text-white/30 font-medium tracking-wide">
-                            {meta.label}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Selected checkmark */}
-                      <AnimatePresence>
-                        {isSelected && (
-                          <motion.div
-                            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                            style={{ background: 'rgba(0,216,193,0.15)', border: '1px solid rgba(0,216,193,0.4)' }}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                          >
-                            <Check className="w-4 h-4 text-[#00D8C1]" />
-                          </motion.div>
+                      {/* Top row: Icon + Name + Selected */}
+                      <div className="flex items-center gap-2 w-full">
+                        {/* Skill Level Badge */}
+                        {skillMeta && (
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] border ${skillMeta.bgColor} ${skillMeta.color}`}>
+                            {skillMeta.label}
+                          </div>
                         )}
-                      </AnimatePresence>
+                        <span className={`text-sm font-bold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
+                          {member.name}
+                        </span>
+                        {member.is_recommended && <Star className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />}
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-[#00D8C1] flex-shrink-0 ml-auto" />
+                        )}
+                      </div>
+
+                      {/* Metadata badges */}
+                      <div className="flex items-center gap-1.5 flex-wrap w-full">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${
+                          member.role === 'DOCTOR' 
+                            ? 'bg-violet-500/20 text-violet-300 border-violet-500/30'
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                        }`}>
+                          {member.role === 'DOCTOR' ? 'MUDr.' : 'Sestra'}
+                        </span>
+                        
+                        {member.availability !== undefined && (
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${
+                            member.availability === 100 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                            member.availability >= 50 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                            'bg-red-500/20 text-red-300 border-red-500/30'
+                          }`}>
+                            <Percent className="w-2.5 h-2.5" />
+                            {member.availability}%
+                          </span>
+                        )}
+                        
+                        {member.is_external && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-300 border-orange-500/30 flex items-center gap-0.5">
+                            <MapPin className="w-2.5 h-2.5" />
+                            Ext.
+                          </span>
+                        )}
+                      </div>
                     </motion.button>
                   );
                 })}

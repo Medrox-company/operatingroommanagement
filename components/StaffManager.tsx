@@ -2,46 +2,35 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
-  Shield, Activity, UserPlus, Loader2
+  Shield, Activity, UserPlus, Loader2, Star, MapPin, Percent
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import type { SkillLevel } from '../types';
 
 // Types from database
 interface StaffMember {
   id: string;
   name: string;
-  role: 'DOCTOR' | 'NURSE' | 'ANESTHESIOLOGIST';
+  role: 'DOCTOR' | 'NURSE';
+  skill_level?: SkillLevel;
+  availability?: number;
+  is_external?: boolean;
+  is_recommended?: boolean;
   is_active: boolean;
 }
 
 type StaffCategory = 'doctors' | 'nurses';
 
-// Role metadata
-const ROLE_META: Record<string, { label: string; badge: string; badgeClass: string; iconBg: string; iconColor: string; dbRole: string }> = {
-  DOCTOR: {
-    label: 'Lékař',
-    badge: 'MUDr.',
-    badgeClass: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
-    iconBg: 'bg-violet-500/15',
-    iconColor: 'text-violet-400',
-    dbRole: 'DOCTOR',
-  },
-  NURSE: {
-    label: 'Sestra',
-    badge: 'Sestra',
-    badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    iconBg: 'bg-emerald-500/15',
-    iconColor: 'text-emerald-400',
-    dbRole: 'NURSE',
-  },
+// Skill level metadata
+const SKILL_LEVELS: Record<SkillLevel, { label: string; color: string; bgColor: string }> = {
+  'L3': { label: 'L3', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' },
+  'L2': { label: 'L2', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20 border-cyan-500/30' },
+  'L1': { label: 'L1', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20 border-yellow-500/30' },
+  'A': { label: 'Abs.', color: 'text-orange-400', bgColor: 'bg-orange-500/20 border-orange-500/30' },
+  'SR': { label: 'SR', color: 'text-purple-400', bgColor: 'bg-purple-500/20 border-purple-500/30' },
+  'N': { label: 'Nov.', color: 'text-red-400', bgColor: 'bg-red-500/20 border-red-500/30' },
+  'S': { label: 'Stáž', color: 'text-gray-400', bgColor: 'bg-gray-500/20 border-gray-500/30' },
 };
-
-function RoleIcon({ role, size = 'md' }: { role: string; size?: 'sm' | 'md' | 'lg' }) {
-  const sz = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
-  const meta = ROLE_META[role] || ROLE_META['NURSE'];
-  if (role === 'DOCTOR') return <Stethoscope className={`${sz} ${meta.iconColor}`} />;
-  return <Heart className={`${sz} ${meta.iconColor}`} />;
-}
 
 export default function StaffManager() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -282,8 +271,10 @@ export default function StaffManager() {
         /* Staff Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredStaff.map((member) => {
-            const meta = ROLE_META[member.role] || ROLE_META['NURSE'];
+            const skillLevel = member.skill_level as SkillLevel | undefined;
+            const skillMeta = skillLevel ? SKILL_LEVELS[skillLevel] : null;
             const isSelected = selectedStaffId === member.id;
+            const roleIcon = member.role === 'DOCTOR' ? <Stethoscope className="w-5 h-5 text-violet-400" /> : <Heart className="w-5 h-5 text-emerald-400" />;
             
             return (
               <motion.button
@@ -297,31 +288,54 @@ export default function StaffManager() {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
               >
-                <div className="flex items-center gap-4">
-                  {/* Icon */}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${meta.iconBg}`}>
-                    <RoleIcon role={member.role} size="lg" />
-                  </div>
+                <div className="flex items-start gap-3">
+                  {/* Skill Level Badge */}
+                  {skillMeta && (
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs border ${skillMeta.bgColor} ${skillMeta.color}`}>
+                      {skillMeta.label}
+                    </div>
+                  )}
                   
-                  {/* Name + Badge */}
+                  {/* Name + Details */}
                   <div className="flex-1 min-w-0">
-                    <p className={`font-semibold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
-                      {member.name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badgeClass}`}>
-                        {meta.badge}
+                    <div className="flex items-center gap-2">
+                      <p className={`font-semibold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
+                        {member.name}
+                      </p>
+                      {member.is_recommended && <Star className="w-4 h-4 text-yellow-400 flex-shrink-0" />}
+                    </div>
+                    
+                    {/* Metadata Row */}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {/* Role Badge */}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-white/5 text-white/60">
+                        {member.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
                       </span>
-                      {!member.is_active && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
-                          Neaktivní
+                      
+                      {/* Availability */}
+                      {member.availability !== undefined && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                          member.availability === 100 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                          member.availability >= 50 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                          'bg-red-500/20 text-red-300 border-red-500/30'
+                        }`}>
+                          <Percent className="w-3 h-3" />
+                          {member.availability}%
+                        </span>
+                      )}
+                      
+                      {/* External Badge */}
+                      {member.is_external && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-300 border-orange-500/30 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          Externí
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Status indicator */}
-                  <div className={`w-3 h-3 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  <div className={`flex-shrink-0 w-3 h-3 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
                 </div>
               </motion.button>
             );
@@ -366,14 +380,21 @@ export default function StaffManager() {
                 {/* Header */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${ROLE_META[selectedStaff.role]?.iconBg}`}>
-                      <RoleIcon role={selectedStaff.role} size="lg" />
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${selectedStaff.role === 'DOCTOR' ? 'bg-violet-500/15' : 'bg-emerald-500/15'}`}>
+                      {selectedStaff.role === 'DOCTOR' ? <Stethoscope className="w-6 h-6 text-violet-400" /> : <Heart className="w-6 h-6 text-emerald-400" />}
                     </div>
                     <div>
                       <p className="text-lg font-bold text-white">{selectedStaff.name}</p>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${ROLE_META[selectedStaff.role]?.badgeClass}`}>
-                        {ROLE_META[selectedStaff.role]?.badge} - {ROLE_META[selectedStaff.role]?.label}
-                      </span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${selectedStaff.role === 'DOCTOR' ? 'bg-violet-500/20 text-violet-300 border-violet-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`}>
+                          {selectedStaff.role === 'DOCTOR' ? 'MUDr.' : 'Sestra'} - {selectedStaff.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
+                        </span>
+                        {selectedStaff.skill_level && (
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.bgColor || ''} ${SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.color || ''}`}>
+                            {SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.label}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <button
@@ -384,9 +405,55 @@ export default function StaffManager() {
                   </button>
                 </div>
 
+                {/* Attributes Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Skill Level */}
+                  {selectedStaff.skill_level && (
+                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
+                      <p className="text-xs text-white/50 mb-1">Úroveň</p>
+                      <p className={`font-bold ${SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.color}`}>
+                        {SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.label}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Availability */}
+                  {selectedStaff.availability !== undefined && (
+                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
+                      <p className="text-xs text-white/50 mb-1">Dostupnost</p>
+                      <p className={`font-bold flex items-center gap-1 ${
+                        selectedStaff.availability === 100 ? 'text-emerald-400' :
+                        selectedStaff.availability >= 50 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>
+                        <Percent className="w-4 h-4" />
+                        {selectedStaff.availability}%
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Location */}
+                  <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
+                    <p className="text-xs text-white/50 mb-1">Typ</p>
+                    <p className="font-bold text-white flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {selectedStaff.is_external ? 'Externí' : 'Interní'}
+                    </p>
+                  </div>
+                  
+                  {/* Recommended */}
+                  <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
+                    <p className="text-xs text-white/50 mb-1">Doporučený</p>
+                    <p className={`font-bold flex items-center gap-1 ${selectedStaff.is_recommended ? 'text-yellow-400' : 'text-white/40'}`}>
+                      <Star className="w-4 h-4" />
+                      {selectedStaff.is_recommended ? 'Ano' : 'Ne'}
+                    </p>
+                  </div>
+                </div>
+
                 {/* Status */}
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/10">
-                  <span className="text-sm text-white/60">Status</span>
+                  <span className="text-sm text-white/60">Stav</span>
                   <button
                     onClick={() => handleToggleActive(selectedStaff)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${

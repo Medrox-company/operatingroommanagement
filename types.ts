@@ -6,9 +6,19 @@ export enum RoomStatus {
   MAINTENANCE = 'MAINTENANCE'
 }
 
+export type SkillLevel = 'L3' | 'L2' | 'L1' | 'A' | 'SR' | 'N' | 'S';
+
 export interface Staff {
+  id?: string;
   name: string | null;
-  role: 'DOCTOR' | 'NURSE' | 'ANESTHESIOLOGIST';
+  role: 'DOCTOR' | 'NURSE';
+  skillLevel?: SkillLevel;
+  availability?: number; // 0-100
+  isExternal?: boolean;
+  isRecommended?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Patient {
