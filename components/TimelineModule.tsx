@@ -1120,7 +1120,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           </>
                         )}
 
-                        {/* Estimated end time indicator - dotted line at the right edge */}
+                        {/* Estimated end time indicator - line at the right edge in current status color */}
                         {room.estimatedEndTime && (() => {
                           const endPct = getTimePercent(new Date(room.estimatedEndTime));
                           return endPct > 0 && endPct < 100 && (
@@ -1128,8 +1128,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                               className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
                               style={{ 
                                 left: `${endPct}%`,
-                                background: 'rgba(255,165,0,0.8)',
-                                boxShadow: '0 0 4px rgba(255,165,0,0.5)'
+                                background: stepColor,
+                                boxShadow: `0 0 6px ${stepColor}`
                               }}
                               title="Očekávaný konec operace"
                             />
