@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
+  Users, Stethoscope, Heart, Search, Plus, Trash2, X, Check,
   Shield, Activity, UserPlus, Loader2, Star, MapPin, Percent
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -32,14 +32,227 @@ const SKILL_LEVELS: Record<SkillLevel, { label: string; color: string; bgColor: 
   'S': { label: 'Stáž', color: 'text-gray-400', bgColor: 'bg-gray-500/20 border-gray-500/30' },
 };
 
+const SKILL_LEVEL_OPTIONS: SkillLevel[] = ['L3', 'L2', 'L1', 'A', 'SR', 'N', 'S'];
+
+// Detail Edit Modal Component - all fields are directly editable
+function DetailEditModal({
+  staff,
+  onClose,
+  onSave,
+  onDelete,
+  saving,
+}: {
+  staff: StaffMember;
+  onClose: () => void;
+  onSave: (updated: StaffMember) => void;
+  onDelete: () => void;
+  saving: boolean;
+}) {
+  const [formData, setFormData] = React.useState<StaffMember>({ ...staff });
+
+  const handleSave = () => {
+    onSave(formData);
+  };
+
+  return (
+    <div 
+      className="w-full max-w-lg rounded-2xl p-6 space-y-5"
+      style={{
+        background: 'rgba(10,10,18,0.95)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${formData.role === 'DOCTOR' ? 'bg-violet-500/15' : 'bg-emerald-500/15'}`}>
+            {formData.role === 'DOCTOR' ? <Stethoscope className="w-5 h-5 text-violet-400" /> : <Heart className="w-5 h-5 text-emerald-400" />}
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Upravit personál</h3>
+            <p className="text-xs text-white/40">Upravte údaje a uložte změny</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Name Field */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Jméno</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+          placeholder="Zadejte jméno..."
+        />
+      </div>
+
+      {/* Role Selection */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Role</label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {(['DOCTOR', 'NURSE'] as const).map((role) => (
+            <button
+              key={role}
+              onClick={() => setFormData({ ...formData, role })}
+              className={`py-3 px-4 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                formData.role === role
+                  ? role === 'DOCTOR'
+                    ? 'bg-violet-500/20 border-violet-500/40 text-violet-300'
+                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                  : 'bg-white/[0.03] border-white/10 text-white/60 hover:bg-white/[0.05]'
+              }`}
+            >
+              {role === 'DOCTOR' ? <Stethoscope className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
+              {role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Skill Level */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Úroveň dovedností</label>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {SKILL_LEVEL_OPTIONS.map((level) => {
+            const meta = SKILL_LEVELS[level];
+            return (
+              <button
+                key={level}
+                onClick={() => setFormData({ ...formData, skill_level: level })}
+                className={`px-3 py-2 rounded-lg border font-bold text-xs transition-all ${
+                  formData.skill_level === level
+                    ? `${meta.bgColor} ${meta.color}`
+                    : 'bg-white/[0.03] border-white/10 text-white/40 hover:bg-white/[0.05]'
+                }`}
+              >
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Availability Slider */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center justify-between">
+          <span>Dostupnost</span>
+          <span className={`text-sm font-bold ${
+            (formData.availability ?? 100) === 100 ? 'text-emerald-400' :
+            (formData.availability ?? 100) >= 50 ? 'text-yellow-400' :
+            'text-red-400'
+          }`}>
+            {formData.availability ?? 100}%
+          </span>
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="10"
+          value={formData.availability ?? 100}
+          onChange={(e) => setFormData({ ...formData, availability: parseInt(e.target.value) })}
+          className="w-full mt-2 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00D8C1]"
+        />
+        <div className="flex justify-between text-[10px] text-white/30 mt-1">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      {/* Toggle Options */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* External Toggle */}
+        <button
+          onClick={() => setFormData({ ...formData, is_external: !formData.is_external })}
+          className={`p-4 rounded-xl border transition-all text-left ${
+            formData.is_external
+              ? 'bg-orange-500/15 border-orange-500/30'
+              : 'bg-white/[0.03] border-white/10'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <MapPin className={`w-4 h-4 ${formData.is_external ? 'text-orange-400' : 'text-white/40'}`} />
+            <span className={`text-sm font-semibold ${formData.is_external ? 'text-orange-300' : 'text-white/60'}`}>
+              Externí
+            </span>
+          </div>
+          <p className="text-[10px] text-white/30 mt-1">Zaměstnanec mimo organizaci</p>
+        </button>
+
+        {/* Recommended Toggle */}
+        <button
+          onClick={() => setFormData({ ...formData, is_recommended: !formData.is_recommended })}
+          className={`p-4 rounded-xl border transition-all text-left ${
+            formData.is_recommended
+              ? 'bg-yellow-500/15 border-yellow-500/30'
+              : 'bg-white/[0.03] border-white/10'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Star className={`w-4 h-4 ${formData.is_recommended ? 'text-yellow-400' : 'text-white/40'}`} />
+            <span className={`text-sm font-semibold ${formData.is_recommended ? 'text-yellow-300' : 'text-white/60'}`}>
+              Doporučený
+            </span>
+          </div>
+          <p className="text-[10px] text-white/30 mt-1">Prioritně zobrazit při výběru</p>
+        </button>
+      </div>
+
+      {/* Active Status */}
+      <button
+        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+        className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between ${
+          formData.is_active
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-red-500/10 border-red-500/30'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${formData.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
+          <span className={`font-semibold ${formData.is_active ? 'text-emerald-300' : 'text-red-300'}`}>
+            {formData.is_active ? 'Aktivní' : 'Neaktivní'}
+          </span>
+        </div>
+        <span className="text-xs text-white/30">Kliknutím změníte</span>
+      </button>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3 pt-2">
+        <button
+          onClick={onDelete}
+          className="px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 font-semibold transition-all flex items-center justify-center gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          Smazat
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving || !formData.name.trim()}
+          className="flex-1 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          Uložit změny
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function StaffManager() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newStaffName, setNewStaffName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -132,29 +345,6 @@ export default function StaffManager() {
     }
   };
 
-  // Update staff
-  const handleUpdateStaff = async () => {
-    if (!editingStaff || !supabase) return;
-    
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('staff')
-        .update({ name: editingStaff.name, is_active: editingStaff.is_active })
-        .eq('id', editingStaff.id);
-      
-      if (error) throw error;
-      
-      setStaff(prev => prev.map(s => s.id === editingStaff.id ? editingStaff : s));
-      setIsEditing(false);
-      setEditingStaff(null);
-    } catch (err) {
-      console.error('[StaffManager] update error:', err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // Delete staff
   const handleDeleteStaff = async (id: string) => {
     if (!supabase || !confirm('Opravdu chcete smazat tohoto zaměstnance?')) return;
@@ -167,6 +357,36 @@ export default function StaffManager() {
       setSelectedStaffId(null);
     } catch (err) {
       console.error('[StaffManager] delete error:', err);
+    }
+  };
+
+  // Save staff detail (all fields)
+  const handleSaveStaffDetail = async (updated: StaffMember) => {
+    if (!supabase) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({
+          name: updated.name,
+          role: updated.role,
+          skill_level: updated.skill_level,
+          availability: updated.availability,
+          is_external: updated.is_external,
+          is_recommended: updated.is_recommended,
+          is_active: updated.is_active,
+        })
+        .eq('id', updated.id);
+      
+      if (error) throw error;
+      
+      setStaff(prev => prev.map(s => s.id === updated.id ? updated : s));
+      setSelectedStaffId(null);
+    } catch (err) {
+      console.error('[StaffManager] save detail error:', err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -369,195 +589,13 @@ export default function StaffManager() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="fixed inset-0 flex items-center justify-center z-50 p-4"
             >
-              <div 
-                className="w-full max-w-md rounded-2xl p-6 space-y-6"
-                style={{
-                  background: 'rgba(10,10,18,0.95)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-                }}
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${selectedStaff.role === 'DOCTOR' ? 'bg-violet-500/15' : 'bg-emerald-500/15'}`}>
-                      {selectedStaff.role === 'DOCTOR' ? <Stethoscope className="w-6 h-6 text-violet-400" /> : <Heart className="w-6 h-6 text-emerald-400" />}
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-white">{selectedStaff.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${selectedStaff.role === 'DOCTOR' ? 'bg-violet-500/20 text-violet-300 border-violet-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`}>
-                          {selectedStaff.role === 'DOCTOR' ? 'MUDr.' : 'Sestra'} - {selectedStaff.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
-                        </span>
-                        {selectedStaff.skill_level && (
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.bgColor || ''} ${SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.color || ''}`}>
-                            {SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.label}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedStaffId(null)}
-                    className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Attributes Grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Skill Level */}
-                  {selectedStaff.skill_level && (
-                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
-                      <p className="text-xs text-white/50 mb-1">Úroveň</p>
-                      <p className={`font-bold ${SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.color}`}>
-                        {SKILL_LEVELS[selectedStaff.skill_level as SkillLevel]?.label}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {/* Availability */}
-                  {selectedStaff.availability !== undefined && (
-                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
-                      <p className="text-xs text-white/50 mb-1">Dostupnost</p>
-                      <p className={`font-bold flex items-center gap-1 ${
-                        selectedStaff.availability === 100 ? 'text-emerald-400' :
-                        selectedStaff.availability >= 50 ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>
-                        <Percent className="w-4 h-4" />
-                        {selectedStaff.availability}%
-                      </p>
-                    </div>
-                  )}
-                  
-                  {/* Location */}
-                  <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
-                    <p className="text-xs text-white/50 mb-1">Typ</p>
-                    <p className="font-bold text-white flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {selectedStaff.is_external ? 'Externí' : 'Interní'}
-                    </p>
-                  </div>
-                  
-                  {/* Recommended */}
-                  <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10">
-                    <p className="text-xs text-white/50 mb-1">Doporučený</p>
-                    <p className={`font-bold flex items-center gap-1 ${selectedStaff.is_recommended ? 'text-yellow-400' : 'text-white/40'}`}>
-                      <Star className="w-4 h-4" />
-                      {selectedStaff.is_recommended ? 'Ano' : 'Ne'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/10">
-                  <span className="text-sm text-white/60">Stav</span>
-                  <button
-                    onClick={() => handleToggleActive(selectedStaff)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-                      selectedStaff.is_active
-                        ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
-                        : 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
-                    }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${selectedStaff.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                    {selectedStaff.is_active ? 'Aktivní' : 'Neaktivní'}
-                  </button>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setEditingStaff({ ...selectedStaff });
-                      setIsEditing(true);
-                      setSelectedStaffId(null);
-                    }}
-                    className="flex-1 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-white font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    Upravit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteStaff(selectedStaff.id)}
-                    className="flex-1 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Smazat
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Edit Modal */}
-      <AnimatePresence>
-        {isEditing && editingStaff && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => { setIsEditing(false); setEditingStaff(null); }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
-            >
-              <div 
-                className="w-full max-w-md rounded-2xl p-6 space-y-6"
-                style={{
-                  background: 'rgba(10,10,18,0.95)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">Upravit personál</h3>
-                  <button
-                    onClick={() => { setIsEditing(false); setEditingStaff(null); }}
-                    className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Jméno</label>
-                    <input
-                      type="text"
-                      value={editingStaff.name}
-                      onChange={(e) => setEditingStaff({ ...editingStaff, name: e.target.value })}
-                      className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-white/20"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setIsEditing(false); setEditingStaff(null); }}
-                    className="flex-1 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-white/60 font-semibold transition-all"
-                  >
-                    Zrušit
-                  </button>
-                  <button
-                    onClick={handleUpdateStaff}
-                    disabled={saving}
-                    className="flex-1 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    Uložit
-                  </button>
-                </div>
-              </div>
+              <DetailEditModal
+                staff={selectedStaff}
+                onClose={() => setSelectedStaffId(null)}
+                onSave={handleSaveStaffDetail}
+                onDelete={() => handleDeleteStaff(selectedStaff.id)}
+                saving={saving}
+              />
             </motion.div>
           </>
         )}
