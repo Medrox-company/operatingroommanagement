@@ -1,46 +1,296 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Users, Stethoscope, Heart, Search, Plus, Edit2, Trash2, X, Check,
-  Shield, Activity, UserPlus, Loader2
+  Users, Stethoscope, Heart, Search, Plus, Trash2, X, Check,
+  Shield, Activity, UserPlus, Loader2, Star, MapPin, Percent
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import type { SkillLevel } from '../types';
 
 // Types from database
 interface StaffMember {
   id: string;
   name: string;
-  role: 'DOCTOR' | 'NURSE' | 'ANESTHESIOLOGIST';
+  role: 'DOCTOR' | 'NURSE';
+  skill_level?: SkillLevel;
+  availability?: number;
+  is_external?: boolean;
+  is_recommended?: boolean;
   is_active: boolean;
+  sick_leave_days?: number;
+  vacation_days?: number;
+  notes?: string;
 }
 
 type StaffCategory = 'doctors' | 'nurses';
 
-// Role metadata
-const ROLE_META: Record<string, { label: string; badge: string; badgeClass: string; iconBg: string; iconColor: string; dbRole: string }> = {
-  DOCTOR: {
-    label: 'Lékař',
-    badge: 'MUDr.',
-    badgeClass: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
-    iconBg: 'bg-violet-500/15',
-    iconColor: 'text-violet-400',
-    dbRole: 'DOCTOR',
-  },
-  NURSE: {
-    label: 'Sestra',
-    badge: 'Sestra',
-    badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    iconBg: 'bg-emerald-500/15',
-    iconColor: 'text-emerald-400',
-    dbRole: 'NURSE',
-  },
+// Skill level metadata
+const SKILL_LEVELS: Record<SkillLevel, { label: string; color: string; bgColor: string }> = {
+  'L3': { label: 'L3', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' },
+  'L2': { label: 'L2', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20 border-cyan-500/30' },
+  'L1': { label: 'L1', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20 border-yellow-500/30' },
+  'A': { label: 'Abs.', color: 'text-orange-400', bgColor: 'bg-orange-500/20 border-orange-500/30' },
+  'SR': { label: 'SR', color: 'text-purple-400', bgColor: 'bg-purple-500/20 border-purple-500/30' },
+  'N': { label: 'Nov.', color: 'text-red-400', bgColor: 'bg-red-500/20 border-red-500/30' },
+  'S': { label: 'Stáž', color: 'text-gray-400', bgColor: 'bg-gray-500/20 border-gray-500/30' },
 };
 
-function RoleIcon({ role, size = 'md' }: { role: string; size?: 'sm' | 'md' | 'lg' }) {
-  const sz = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
-  const meta = ROLE_META[role] || ROLE_META['NURSE'];
-  if (role === 'DOCTOR') return <Stethoscope className={`${sz} ${meta.iconColor}`} />;
-  return <Heart className={`${sz} ${meta.iconColor}`} />;
+const SKILL_LEVEL_OPTIONS: SkillLevel[] = ['L3', 'L2', 'L1', 'A', 'SR', 'N', 'S'];
+
+// Detail Edit Modal Component - all fields are directly editable
+function DetailEditModal({
+  staff,
+  onClose,
+  onSave,
+  onDelete,
+  saving,
+}: {
+  staff: StaffMember;
+  onClose: () => void;
+  onSave: (updated: StaffMember) => void;
+  onDelete: () => void;
+  saving: boolean;
+}) {
+  const [formData, setFormData] = React.useState<StaffMember>({ ...staff });
+
+  const handleSave = () => {
+    onSave(formData);
+  };
+
+  return (
+    <div 
+      className="w-full max-w-lg rounded-2xl p-6 space-y-5"
+      style={{
+        background: 'rgba(10,10,18,0.95)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${formData.role === 'DOCTOR' ? 'bg-violet-500/15' : 'bg-emerald-500/15'}`}>
+            {formData.role === 'DOCTOR' ? <Stethoscope className="w-5 h-5 text-violet-400" /> : <Heart className="w-5 h-5 text-emerald-400" />}
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Upravit personál</h3>
+            <p className="text-xs text-white/40">Upravte údaje a uložte změny</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Name Field */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Jméno</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+          placeholder="Zadejte jméno..."
+        />
+      </div>
+
+      {/* Role Selection */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Role</label>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {(['DOCTOR', 'NURSE'] as const).map((role) => (
+            <button
+              key={role}
+              onClick={() => setFormData({ ...formData, role })}
+              className={`py-3 px-4 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                formData.role === role
+                  ? role === 'DOCTOR'
+                    ? 'bg-violet-500/20 border-violet-500/40 text-violet-300'
+                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                  : 'bg-white/[0.03] border-white/10 text-white/60 hover:bg-white/[0.05]'
+              }`}
+            >
+              {role === 'DOCTOR' ? <Stethoscope className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
+              {role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Skill Level */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Úroveň dovedností</label>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {SKILL_LEVEL_OPTIONS.map((level) => {
+            const meta = SKILL_LEVELS[level];
+            return (
+              <button
+                key={level}
+                onClick={() => setFormData({ ...formData, skill_level: level })}
+                className={`px-3 py-2 rounded-lg border font-bold text-xs transition-all ${
+                  formData.skill_level === level
+                    ? `${meta.bgColor} ${meta.color}`
+                    : 'bg-white/[0.03] border-white/10 text-white/40 hover:bg-white/[0.05]'
+                }`}
+              >
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Availability Slider */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center justify-between">
+          <span>Dostupnost</span>
+          <span className={`text-sm font-bold ${
+            (formData.availability ?? 100) === 100 ? 'text-emerald-400' :
+            (formData.availability ?? 100) >= 50 ? 'text-yellow-400' :
+            'text-red-400'
+          }`}>
+            {formData.availability ?? 100}%
+          </span>
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="10"
+          value={formData.availability ?? 100}
+          onChange={(e) => setFormData({ ...formData, availability: parseInt(e.target.value) })}
+          className="w-full mt-2 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00D8C1]"
+        />
+        <div className="flex justify-between text-[10px] text-white/30 mt-1">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      {/* Toggle Options */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* External Toggle */}
+        <button
+          onClick={() => setFormData({ ...formData, is_external: !formData.is_external })}
+          className={`p-4 rounded-xl border transition-all text-left ${
+            formData.is_external
+              ? 'bg-orange-500/15 border-orange-500/30'
+              : 'bg-white/[0.03] border-white/10'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <MapPin className={`w-4 h-4 ${formData.is_external ? 'text-orange-400' : 'text-white/40'}`} />
+            <span className={`text-sm font-semibold ${formData.is_external ? 'text-orange-300' : 'text-white/60'}`}>
+              Externí
+            </span>
+          </div>
+          <p className="text-[10px] text-white/30 mt-1">Zaměstnanec mimo organizaci</p>
+        </button>
+
+        {/* Recommended Toggle */}
+        <button
+          onClick={() => setFormData({ ...formData, is_recommended: !formData.is_recommended })}
+          className={`p-4 rounded-xl border transition-all text-left ${
+            formData.is_recommended
+              ? 'bg-yellow-500/15 border-yellow-500/30'
+              : 'bg-white/[0.03] border-white/10'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Star className={`w-4 h-4 ${formData.is_recommended ? 'text-yellow-400' : 'text-white/40'}`} />
+            <span className={`text-sm font-semibold ${formData.is_recommended ? 'text-yellow-300' : 'text-white/60'}`}>
+              Doporučený
+            </span>
+          </div>
+          <p className="text-[10px] text-white/30 mt-1">Prioritně zobrazit při výběru</p>
+        </button>
+      </div>
+
+      {/* Sick Leave and Vacation Days */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* PN - Sick Leave Days */}
+        <div>
+          <label className="text-xs text-white/40 font-bold uppercase tracking-wider">PN (Dny)</label>
+          <input
+            type="number"
+            min="0"
+            value={formData.sick_leave_days ?? 0}
+            onChange={(e) => setFormData({ ...formData, sick_leave_days: parseInt(e.target.value) || 0 })}
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-red-500/50 transition-all text-center font-semibold"
+            placeholder="0"
+          />
+          <p className="text-[10px] text-white/30 mt-1">Pracovní neschopnost</p>
+        </div>
+
+        {/* D - Vacation Days */}
+        <div>
+          <label className="text-xs text-white/40 font-bold uppercase tracking-wider">D (Dny)</label>
+          <input
+            type="number"
+            min="0"
+            value={formData.vacation_days ?? 0}
+            onChange={(e) => setFormData({ ...formData, vacation_days: parseInt(e.target.value) || 0 })}
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-blue-500/50 transition-all text-center font-semibold"
+            placeholder="0"
+          />
+          <p className="text-[10px] text-white/30 mt-1">Dovolená</p>
+        </div>
+      </div>
+
+      {/* Notes */}
+      <div>
+        <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Poznámky</label>
+        <textarea
+          value={formData.notes ?? ''}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all resize-none"
+          placeholder="Zadejte dodatečné poznámky..."
+          rows={3}
+        />
+      </div>
+
+      {/* Active Status */}
+      <button
+        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+        className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between ${
+          formData.is_active
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-red-500/10 border-red-500/30'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${formData.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
+          <span className={`font-semibold ${formData.is_active ? 'text-emerald-300' : 'text-red-300'}`}>
+            {formData.is_active ? 'Aktivní' : 'Neaktivní'}
+          </span>
+        </div>
+        <span className="text-xs text-white/30">Kliknutím změníte</span>
+      </button>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3 pt-2">
+        <button
+          onClick={onDelete}
+          className="px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 font-semibold transition-all flex items-center justify-center gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          Smazat
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving || !formData.name.trim()}
+          className="flex-1 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          Uložit změny
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function StaffManager() {
@@ -49,8 +299,6 @@ export default function StaffManager() {
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newStaffName, setNewStaffName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -143,29 +391,6 @@ export default function StaffManager() {
     }
   };
 
-  // Update staff
-  const handleUpdateStaff = async () => {
-    if (!editingStaff || !supabase) return;
-    
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('staff')
-        .update({ name: editingStaff.name, is_active: editingStaff.is_active })
-        .eq('id', editingStaff.id);
-      
-      if (error) throw error;
-      
-      setStaff(prev => prev.map(s => s.id === editingStaff.id ? editingStaff : s));
-      setIsEditing(false);
-      setEditingStaff(null);
-    } catch (err) {
-      console.error('[StaffManager] update error:', err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // Delete staff
   const handleDeleteStaff = async (id: string) => {
     if (!supabase || !confirm('Opravdu chcete smazat tohoto zaměstnance?')) return;
@@ -178,6 +403,39 @@ export default function StaffManager() {
       setSelectedStaffId(null);
     } catch (err) {
       console.error('[StaffManager] delete error:', err);
+    }
+  };
+
+  // Save staff detail (all fields)
+  const handleSaveStaffDetail = async (updated: StaffMember) => {
+    if (!supabase) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({
+          name: updated.name,
+          role: updated.role,
+          skill_level: updated.skill_level,
+          availability: updated.availability,
+          is_external: updated.is_external,
+          is_recommended: updated.is_recommended,
+          is_active: updated.is_active,
+          sick_leave_days: updated.sick_leave_days,
+          vacation_days: updated.vacation_days,
+          notes: updated.notes,
+        })
+        .eq('id', updated.id);
+      
+      if (error) throw error;
+      
+      setStaff(prev => prev.map(s => s.id === updated.id ? updated : s));
+      setSelectedStaffId(null);
+    } catch (err) {
+      console.error('[StaffManager] save detail error:', err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -282,8 +540,10 @@ export default function StaffManager() {
         /* Staff Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredStaff.map((member) => {
-            const meta = ROLE_META[member.role] || ROLE_META['NURSE'];
+            const skillLevel = member.skill_level as SkillLevel | undefined;
+            const skillMeta = skillLevel ? SKILL_LEVELS[skillLevel] : null;
             const isSelected = selectedStaffId === member.id;
+            const roleIcon = member.role === 'DOCTOR' ? <Stethoscope className="w-5 h-5 text-violet-400" /> : <Heart className="w-5 h-5 text-emerald-400" />;
             
             return (
               <motion.button
@@ -297,31 +557,68 @@ export default function StaffManager() {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
               >
-                <div className="flex items-center gap-4">
-                  {/* Icon */}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${meta.iconBg}`}>
-                    <RoleIcon role={member.role} size="lg" />
-                  </div>
+                <div className="flex items-start gap-3">
+                  {/* Skill Level Badge */}
+                  {skillMeta && (
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs border ${skillMeta.bgColor} ${skillMeta.color}`}>
+                      {skillMeta.label}
+                    </div>
+                  )}
                   
-                  {/* Name + Badge */}
+                  {/* Name + Details */}
                   <div className="flex-1 min-w-0">
-                    <p className={`font-semibold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
-                      {member.name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badgeClass}`}>
-                        {meta.badge}
+                    <div className="flex items-center gap-2">
+                      <p className={`font-semibold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
+                        {member.name}
+                      </p>
+                      {member.is_recommended && <Star className="w-4 h-4 text-yellow-400 flex-shrink-0" />}
+                    </div>
+                    
+                    {/* Metadata Row */}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {/* Role Badge */}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-white/5 text-white/60">
+                        {member.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
                       </span>
-                      {!member.is_active && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
-                          Neaktivní
+                      
+                      {/* Availability */}
+                      {member.availability !== undefined && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                          member.availability === 100 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                          member.availability >= 50 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                          'bg-red-500/20 text-red-300 border-red-500/30'
+                        }`}>
+                          <Percent className="w-3 h-3" />
+                          {member.availability}%
+                        </span>
+                      )}
+                      
+                      {/* External Badge */}
+                      {member.is_external && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-300 border-orange-500/30 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          Externí
+                        </span>
+                      )}
+                      
+                      {/* Sick Leave Badge */}
+                      {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-500/20 text-red-300 border-red-500/30">
+                          PN: {member.sick_leave_days}d
+                        </span>
+                      )}
+                      
+                      {/* Vacation Badge */}
+                      {member.vacation_days !== undefined && member.vacation_days > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-300 border-blue-500/30">
+                          D: {member.vacation_days}d
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Status indicator */}
-                  <div className={`w-3 h-3 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  <div className={`flex-shrink-0 w-3 h-3 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
                 </div>
               </motion.button>
             );
@@ -355,142 +652,13 @@ export default function StaffManager() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="fixed inset-0 flex items-center justify-center z-50 p-4"
             >
-              <div 
-                className="w-full max-w-md rounded-2xl p-6 space-y-6"
-                style={{
-                  background: 'rgba(10,10,18,0.95)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-                }}
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${ROLE_META[selectedStaff.role]?.iconBg}`}>
-                      <RoleIcon role={selectedStaff.role} size="lg" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-white">{selectedStaff.name}</p>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${ROLE_META[selectedStaff.role]?.badgeClass}`}>
-                        {ROLE_META[selectedStaff.role]?.badge} - {ROLE_META[selectedStaff.role]?.label}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedStaffId(null)}
-                    className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Status */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/10">
-                  <span className="text-sm text-white/60">Status</span>
-                  <button
-                    onClick={() => handleToggleActive(selectedStaff)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-                      selectedStaff.is_active
-                        ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
-                        : 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
-                    }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${selectedStaff.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                    {selectedStaff.is_active ? 'Aktivní' : 'Neaktivní'}
-                  </button>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setEditingStaff({ ...selectedStaff });
-                      setIsEditing(true);
-                      setSelectedStaffId(null);
-                    }}
-                    className="flex-1 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-white font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    Upravit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteStaff(selectedStaff.id)}
-                    className="flex-1 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Smazat
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Edit Modal */}
-      <AnimatePresence>
-        {isEditing && editingStaff && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => { setIsEditing(false); setEditingStaff(null); }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
-            >
-              <div 
-                className="w-full max-w-md rounded-2xl p-6 space-y-6"
-                style={{
-                  background: 'rgba(10,10,18,0.95)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">Upravit personál</h3>
-                  <button
-                    onClick={() => { setIsEditing(false); setEditingStaff(null); }}
-                    className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-white/40 font-bold uppercase tracking-wider">Jméno</label>
-                    <input
-                      type="text"
-                      value={editingStaff.name}
-                      onChange={(e) => setEditingStaff({ ...editingStaff, name: e.target.value })}
-                      className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-white/20"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setIsEditing(false); setEditingStaff(null); }}
-                    className="flex-1 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-white/60 font-semibold transition-all"
-                  >
-                    Zrušit
-                  </button>
-                  <button
-                    onClick={handleUpdateStaff}
-                    disabled={saving}
-                    className="flex-1 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    Uložit
-                  </button>
-                </div>
-              </div>
+              <DetailEditModal
+                staff={selectedStaff}
+                onClose={() => setSelectedStaffId(null)}
+                onSave={handleSaveStaffDetail}
+                onDelete={() => handleDeleteStaff(selectedStaff.id)}
+                saving={saving}
+              />
             </motion.div>
           </>
         )}

@@ -87,10 +87,10 @@ function transformRoom(
     estimatedEndTime: row.estimated_end_time || undefined,
     weeklySchedule: row.weekly_schedule as WeeklySchedule | undefined,
     staff: {
-      doctor: { name: doctor?.name || null, role: 'DOCTOR' },
-      nurse: { name: nurse?.name || null, role: 'NURSE' },
+      doctor: { id: doctor?.id, name: doctor?.name || null, role: 'DOCTOR' },
+      nurse: { id: nurse?.id, name: nurse?.name || null, role: 'NURSE' },
       anesthesiologist: anesthesiologist 
-        ? { name: anesthesiologist.name, role: 'ANESTHESIOLOGIST' }
+        ? { id: anesthesiologist.id, name: anesthesiologist.name, role: 'ANESTHESIOLOGIST' }
         : undefined,
     },
     currentPatient: patient ? {
