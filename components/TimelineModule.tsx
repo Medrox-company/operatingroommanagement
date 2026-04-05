@@ -70,16 +70,11 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
-  // Get workflow statuses from database context
+  // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Filter to get only main workflow statuses (not special), sorted by order
-  const activeStatuses = useMemo(() => 
-    workflowStatuses
-      .filter(s => s.is_active && !s.is_special)
-      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
-    [workflowStatuses]
-  );
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  const activeStatuses = workflowStatuses;
   
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -1379,16 +1374,11 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  // Get workflow statuses from database context
+  // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
-  // Filter to get only main workflow statuses (not special), sorted by order
-  const activeStatuses = useMemo(() => 
-    workflowStatuses
-      .filter(s => s.is_active && !s.is_special)
-      .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0)),
-    [workflowStatuses]
-  );
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  const activeStatuses = workflowStatuses;
   
   const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);

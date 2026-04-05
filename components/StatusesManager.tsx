@@ -19,8 +19,8 @@ interface EditingStatus {
 }
 
 const StatusesManager: React.FC = () => {
-  // Use 'statuses' (all statuses) instead of 'workflowStatuses' (only active non-special)
-  const { statuses, loading, refreshStatuses } = useWorkflowStatusesContext();
+  // Use 'statuses' (all statuses) and 'updateStatus' for optimistic updates
+  const { statuses, loading, updateStatus } = useWorkflowStatusesContext();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<EditingStatus | null>(null);
   const [saving, setSaving] = useState(false);
@@ -63,19 +63,19 @@ const StatusesManager: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch('/api/workflow-statuses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingData)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save status');
-      }
-      
-      await refreshStatuses();
+      // Close editor immediately
       setEditingId(null);
       setEditingData(null);
+      
+      // Optimistic update via context (updates UI immediately)
+      await updateStatus(editingData.id, {
+        name: editingData.name,
+        description: editingData.description,
+        color: editingData.accent_color,
+        default_duration: editingData.default_duration_minutes,
+        count_in_statistics: editingData.include_in_statistics,
+        is_active: editingData.is_active,
+      });
     } catch (err) {
       setError('Nepodařilo se uložit změny');
       console.error('Error saving status:', err);
@@ -85,44 +85,20 @@ const StatusesManager: React.FC = () => {
   };
 
   const handleToggleActive = async (status: typeof statuses[0]) => {
-    setSaving(true);
+    // Optimistic update via context - no API call needed, context handles it
     try {
-      const response = await fetch('/api/workflow-statuses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: status.id,
-          is_active: !status.is_active
-        })
-      });
-      
-      if (!response.ok) throw new Error('Failed to toggle status');
-      await refreshStatuses();
+      await updateStatus(status.id, { is_active: !status.is_active });
     } catch (err) {
       console.error('Error toggling status:', err);
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleToggleStatistics = async (status: typeof statuses[0]) => {
-    setSaving(true);
+    // Optimistic update via context
     try {
-      const response = await fetch('/api/workflow-statuses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: status.id,
-          include_in_statistics: !status.include_in_statistics
-        })
-      });
-      
-      if (!response.ok) throw new Error('Failed to toggle statistics');
-      await refreshStatuses();
+      await updateStatus(status.id, { count_in_statistics: !status.include_in_statistics });
     } catch (err) {
       console.error('Error toggling statistics:', err);
-    } finally {
-      setSaving(false);
     }
   };
 

@@ -84,9 +84,16 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStatuses = useCallback(async () => {
+  // Track if initial load is complete
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const fetchStatuses = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      // Only show loading on initial load, not on refreshes (to prevent flickering)
+      if (isInitialLoad) {
+        setLoading(true);
+      }
+      
       const { data, error: fetchError } = await supabase
         .from('workflow_statuses')
         .select('*')
@@ -95,13 +102,20 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (fetchError) throw fetchError;
       
       const mappedStatuses = (data || []).map(mapDBToStatus);
-      setStatuses(mappedStatuses);
+      
+      // Only update if we have data - prevents flickering when refresh returns empty temporarily
+      if (mappedStatuses.length > 0) {
+        setStatuses(mappedStatuses);
+      }
       setError(null);
+      setIsInitialized(true);
     } catch (err) {
       console.error('[v0] Error fetching workflow statuses:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -165,21 +179,13 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   }, [getStatusByIndex]);
 
   useEffect(() => {
-    fetchStatuses();
-
-    // Subscribe na realtime změny
-    const channel = supabase
-      .channel('workflow_statuses_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'workflow_statuses' },
-        () => fetchStatuses()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // Initial load with loading indicator
+    fetchStatuses(true);
+    
+    // NOTE: Realtime subscription DISABLED to prevent flickering
+    // Workflow statuses only change via Settings module, not during normal operation
+    // If user changes statuses in Settings, they can refresh page or the optimistic update handles it
+    // This prevents unnecessary re-renders of ALL components when ANY room status changes
   }, [fetchStatuses]);
 
   // Memoize computed values
@@ -198,7 +204,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
     updateStatus,
     getStatusByIndex,
     getStatusColor,
-    refreshStatuses: fetchStatuses,
+    refreshStatuses: () => fetchStatuses(false), // Silent refresh without loading indicator
   }), [statuses, activeStatuses, workflowStatuses, statisticsStatuses, loading, error, updateStatus, getStatusByIndex, getStatusColor, fetchStatuses]);
 
   return (
