@@ -11,14 +11,17 @@ export type SkillLevel = 'L3' | 'L2' | 'L1' | 'A' | 'SR' | 'N' | 'S';
 export interface Staff {
   id?: string;
   name: string | null;
-  role: 'DOCTOR' | 'NURSE';
-  skillLevel?: SkillLevel;
+  role: 'DOCTOR' | 'NURSE' | 'ANESTHESIOLOGIST';
+  skill_level?: SkillLevel;
   availability?: number; // 0-100
-  isExternal?: boolean;
-  isRecommended?: boolean;
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  is_external?: boolean;
+  is_recommended?: boolean;
+  is_active?: boolean;
+  sick_leave_days?: number;
+  vacation_days?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Patient {

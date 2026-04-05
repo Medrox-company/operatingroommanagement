@@ -35,6 +35,15 @@ interface DBStaff {
   name: string;
   role: string;
   is_active: boolean;
+  skill_level?: string;
+  availability?: number;
+  is_external?: boolean;
+  is_recommended?: boolean;
+  sick_leave_days?: number;
+  vacation_days?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface DBPatient {
@@ -87,10 +96,46 @@ function transformRoom(
     estimatedEndTime: row.estimated_end_time || undefined,
     weeklySchedule: row.weekly_schedule as WeeklySchedule | undefined,
     staff: {
-      doctor: { id: doctor?.id, name: doctor?.name || null, role: 'DOCTOR' },
-      nurse: { id: nurse?.id, name: nurse?.name || null, role: 'NURSE' },
+      doctor: { 
+        id: doctor?.id,
+        name: doctor?.name || null, 
+        role: 'DOCTOR',
+        skill_level: doctor?.skill_level,
+        availability: doctor?.availability,
+        is_external: doctor?.is_external,
+        is_recommended: doctor?.is_recommended,
+        is_active: doctor?.is_active,
+        sick_leave_days: doctor?.sick_leave_days,
+        vacation_days: doctor?.vacation_days,
+        notes: doctor?.notes,
+      },
+      nurse: { 
+        id: nurse?.id,
+        name: nurse?.name || null, 
+        role: 'NURSE',
+        skill_level: nurse?.skill_level,
+        availability: nurse?.availability,
+        is_external: nurse?.is_external,
+        is_recommended: nurse?.is_recommended,
+        is_active: nurse?.is_active,
+        sick_leave_days: nurse?.sick_leave_days,
+        vacation_days: nurse?.vacation_days,
+        notes: nurse?.notes,
+      },
       anesthesiologist: anesthesiologist 
-        ? { id: anesthesiologist.id, name: anesthesiologist.name, role: 'ANESTHESIOLOGIST' }
+        ? { 
+            id: anesthesiologist.id, 
+            name: anesthesiologist.name, 
+            role: 'ANESTHESIOLOGIST',
+            skill_level: anesthesiologist.skill_level,
+            availability: anesthesiologist.availability,
+            is_external: anesthesiologist.is_external,
+            is_recommended: anesthesiologist.is_recommended,
+            is_active: anesthesiologist.is_active,
+            sick_leave_days: anesthesiologist.sick_leave_days,
+            vacation_days: anesthesiologist.vacation_days,
+            notes: anesthesiologist.notes,
+          }
         : undefined,
     },
     currentPatient: patient ? {
