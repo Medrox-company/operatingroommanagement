@@ -20,7 +20,7 @@ interface EditingStatus {
 
 const StatusesManager: React.FC = () => {
   // Use 'statuses' (all statuses) instead of 'workflowStatuses' (only active non-special)
-  const { statuses, loading, refreshStatuses } = useWorkflowStatusesContext();
+  const { statuses, loading } = useWorkflowStatusesContext();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<EditingStatus | null>(null);
   const [saving, setSaving] = useState(false);
@@ -77,8 +77,7 @@ const StatusesManager: React.FC = () => {
         throw new Error('Failed to save status');
       }
       
-      // Silent refresh - realtime subscription will update the UI
-      refreshStatuses();
+      // Realtime subscription will handle the update automatically - NO refresh needed
     } catch (err) {
       setError('Nepodařilo se uložit změny');
       console.error('Error saving status:', err);
@@ -100,8 +99,7 @@ const StatusesManager: React.FC = () => {
       });
       
       if (!response.ok) throw new Error('Failed to toggle status');
-      // Silent refresh - realtime subscription handles update
-      refreshStatuses();
+      // Realtime subscription handles update - NO refresh needed
     } catch (err) {
       console.error('Error toggling status:', err);
     }
@@ -120,8 +118,7 @@ const StatusesManager: React.FC = () => {
       });
       
       if (!response.ok) throw new Error('Failed to toggle statistics');
-      // Silent refresh - realtime subscription handles update
-      refreshStatuses();
+      // Realtime subscription handles update - NO refresh needed
     } catch (err) {
       console.error('Error toggling statistics:', err);
     }
