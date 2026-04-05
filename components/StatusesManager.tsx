@@ -84,7 +84,7 @@ const StatusesManager: React.FC = () => {
     }
   };
 
-  const handleToggleActive = async (status: typeof workflowStatuses[0]) => {
+  const handleToggleActive = async (status: typeof statuses[0]) => {
     setSaving(true);
     try {
       const response = await fetch('/api/workflow-statuses', {
@@ -105,7 +105,7 @@ const StatusesManager: React.FC = () => {
     }
   };
 
-  const handleToggleStatistics = async (status: typeof workflowStatuses[0]) => {
+  const handleToggleStatistics = async (status: typeof statuses[0]) => {
     setSaving(true);
     try {
       const response = await fetch('/api/workflow-statuses', {
