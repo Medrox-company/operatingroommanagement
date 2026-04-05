@@ -539,11 +539,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
                             {hourLabel(hour)}
                           </span>
-                          {isNextDay && (
-                            <span className="text-[8px] font-bold text-cyan-400/60 px-1 py-0.5 rounded bg-cyan-400/10">
-                              +1
-                            </span>
-                          )}
                         </div>
                       )
                     )}
@@ -596,8 +591,14 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               
               // Get status from database context
               const currentStep = activeStatuses[stepIndex];
-              const stepColor = currentStep?.accent_color || currentStep?.color || '#6B7280';
-              const stepName = currentStep?.title || currentStep?.name || 'Status';
+              // If paused, override color to pause color (cyan)
+              const PAUSE_COLOR = '#22D3EE';
+              const stepColor = room.isPaused 
+                ? PAUSE_COLOR 
+                : (currentStep?.accent_color || currentStep?.color || '#6B7280');
+              const stepName = room.isPaused 
+                ? 'Pauza' 
+                : (currentStep?.title || currentStep?.name || 'Status');
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -767,17 +768,17 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       const overtimeInfo = getOvertimeInfo(room.id);
                       
                       if (aroPosition && overtimeInfo) {
-                        return (
-                          <div 
-                            className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-                            style={{ 
-                              background: 'rgba(252, 165, 165, 0.1)',
-                              border: '1px solid rgba(252, 165, 165, 0.2)'
-                            }}
+  return (
+  <div
+className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+style={{
+  background: 'rgba(132, 255, 0, 0.1)',
+  border: '1px solid rgba(132, 255, 0, 0.96)'
+}}
                           >
-                            <span className="text-[7px] font-medium text-red-300/60 tracking-wider">ARO</span>
+                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
                             <span className="text-xs font-bold text-white/80">{aroPosition}</span>
-                            <span className="text-[6px] font-normal text-red-300/50">+{overtimeInfo.overtimeMinutes}m</span>
+                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
                           </div>
                         );
                       }
@@ -933,8 +934,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                                         style={{
                                           left: `${Math.max(0, segLeftPct)}%`,
                                           width: `${Math.max(0.5, segWidthPct)}%`,
-                                          background: `${phaseColor}99`,
-                                          borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.35)' : 'none',
+                                          background: `${phaseColor}50`,
+                                          borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
                                         }}
                                         title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
                                       />
@@ -1001,41 +1002,60 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                               return history.map((entry, idx) => {
                                 const segStart = new Date(entry.startedAt).getTime();
                                 const nextEntry = history[idx + 1];
+                                const isCurrentSeg = idx === history.length - 1;
+                                
+                                // For current segment: extend to estimated end time
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
-                                  : Math.min(now, endTime);
+                                  : endTime; // Extend current segment all the way to estimated end
+                                
                                 const segDuration = Math.max(0, segEnd - segStart);
                                 const segWidthPct = (segDuration / totalDuration) * 100;
                                 const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
                                 if (segWidthPct <= 0) return null;
-                                const isCurrentSeg = idx === history.length - 1;
+                                
                                 const phaseColor = entry.color
                                   || stepColorMap[entry.stepIndex]
                                   || STEP_INDEX_COLORS[entry.stepIndex]
                                   || '#6b7280';
 
+                                // For current segment, calculate progress within the segment
+                                const progressWithinSeg = isCurrentSeg 
+                                  ? Math.max(0, Math.min(100, ((now - segStart) / (segEnd - segStart)) * 100))
+                                  : 100;
+
                                 return (
                                   <motion.div
                                     key={`seg-${idx}`}
-                                    className="absolute top-0 bottom-0"
+                                    className="absolute top-0 bottom-0 overflow-hidden"
                                     style={{
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
                                       background: isCurrentSeg
-                                        ? phaseColor
+                                        ? `${phaseColor}40` // Lighter background for remaining time
                                         : `${phaseColor}bb`,
                                     }}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.04 * idx }}
                                   >
+                                    {/* For current segment: show completed portion with full color */}
+                                    {isCurrentSeg && (
+                                      <div 
+                                        className="absolute top-0 bottom-0 left-0"
+                                        style={{
+                                          width: `${progressWithinSeg}%`,
+                                          background: phaseColor,
+                                        }}
+                                      />
+                                    )}
                                     {/* Subtle separator between segments */}
                                     {idx < history.length - 1 && (
                                       <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/40 z-10" />
                                     )}
                                     {/* Show phase label if segment is wide enough */}
                                     {segWidthPct > 8 && (
-                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
+                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
                                         <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
                                           {activeStatuses[entry.stepIndex]?.title || ''}
                                         </span>
@@ -1120,21 +1140,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           </>
                         )}
 
-                        {/* Estimated end time indicator - dotted line at the right edge */}
-                        {room.estimatedEndTime && (() => {
-                          const endPct = getTimePercent(new Date(room.estimatedEndTime));
-                          return endPct > 0 && endPct < 100 && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
-                              style={{ 
-                                left: `${endPct}%`,
-                                background: 'rgba(255,165,0,0.8)',
-                                boxShadow: '0 0 4px rgba(255,165,0,0.5)'
-                              }}
-                              title="Očekávaný konec operace"
-                            />
-                          );
-                        })()}
+
 
                         {/* Content overlay - refined typography */}
                         <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
@@ -1243,7 +1249,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
                           </div>
                         </div>
                       );
