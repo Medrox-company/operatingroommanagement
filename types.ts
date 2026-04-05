@@ -109,6 +109,9 @@ export interface OperatingRoom {
   // Working hours schedule
   weeklySchedule?: WeeklySchedule;
   
+  // Display order
+  sort_order?: number;
+  
   // Extended details for interactivity
   currentPatient?: Patient;
   currentProcedure?: Procedure;

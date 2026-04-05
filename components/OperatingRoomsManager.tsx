@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_WORKING_HOURS } from '../types';
 import { MOCK_ROOMS } from '../constants';
 import { updateOperatingRoom } from '../lib/db';
 import { 
   Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar, 
-  Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft
+  Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft, GripVertical
 } from 'lucide-react';
 
 interface OperatingRoomsManagerProps {
@@ -153,7 +153,12 @@ const RoomCard: React.FC<{
   onEdit: () => void;
   onDelete: () => void;
   onScheduleEdit: () => void;
-}> = ({ room, onEdit, onDelete, onScheduleEdit }) => {
+  isDragging?: boolean;
+  onDragStart?: (room: OperatingRoom) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent, room: OperatingRoom) => void;
+  onDragEnd?: () => void;
+}> = ({ room, onEdit, onDelete, onScheduleEdit, isDragging, onDragStart, onDragOver, onDrop, onDragEnd }) => {
   const color = getDeptColor(room.department);
   const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
   
@@ -166,11 +171,16 @@ const RoomCard: React.FC<{
   
   return (
     <motion.div
-      className="relative group overflow-hidden rounded-xl"
+      className={`relative group overflow-hidden rounded-xl transition-opacity ${isDragging ? 'opacity-50' : 'opacity-100'}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.3 }}
+      draggable
+      onDragStart={() => onDragStart?.(room)}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop?.(e, room)}
+      onDragEnd={onDragEnd}
     >
       {/* Card Content */}
       <div 
@@ -182,8 +192,16 @@ const RoomCard: React.FC<{
       >
         {/* Content */}
         <div className="p-6 flex flex-col h-full">
-          {/* Top Row: Name and Status */}
-          <div className="flex items-start justify-between mb-5 pb-5 border-b border-white/5">
+          {/* Top Row: Name and Status with Drag Handle */}
+          <div className="flex items-start justify-between gap-3 mb-5 pb-5 border-b border-white/5">
+            {/* Drag Handle */}
+            <div 
+              className="flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 transition-opacity"
+              title="Táhněte pro změnu pořadí"
+            >
+              <GripVertical className="w-4 h-4 text-white/40" />
+            </div>
+
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-semibold text-white/40 uppercase tracking-wide mb-1">{room.department}</p>
               <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
@@ -301,17 +319,35 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     (initialRooms || MOCK_ROOMS).map(room => ({
       ...room,
       weeklySchedule: room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE
-    }))
+    })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
   );
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingRoom, setEditingRoom] = useState<OperatingRoom | null>(null);
   const [scheduleEditRoom, setScheduleEditRoom] = useState<OperatingRoom | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [draggedRoom, setDraggedRoom] = useState<OperatingRoom | null>(null);
   const [newRoomData, setNewRoomData] = useState({
     name: '',
     department: '',
   });
+
+  const saveRoomOrder = useCallback(async (rooms: OperatingRoom[]) => {
+    try {
+      const response = await fetch('/api/operating-rooms/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rooms })
+      });
+
+      if (!response.ok) {
+        throw new Error('Nepodařilo se uložit pořadí');
+      }
+    } catch (err) {
+      console.error('Error saving room order:', err);
+      setError('Chyba při ukládání pořadí sálů');
+    }
+  }, []);
 
   const handleAddRoom = () => {
     if (!newRoomData.name || !newRoomData.department) {
@@ -330,6 +366,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       isEmergency: false,
       isLocked: false,
       weeklySchedule: { ...DEFAULT_WEEKLY_SCHEDULE },
+      sort_order: roomsList.length,
       staff: {
         doctor: { name: null, role: 'DOCTOR' },
         nurse: { name: null, role: 'NURSE' },
@@ -338,10 +375,50 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
     const updatedRooms = [...roomsList, newRoom];
     setRoomsList(updatedRooms);
+    saveRoomOrder(updatedRooms);
     onRoomsChange?.(updatedRooms);
     setNewRoomData({ name: '', department: '' });
     setIsAddingNew(false);
     setError(null);
+  };
+
+  const handleDragStart = (room: OperatingRoom) => {
+    setDraggedRoom(room);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetRoom: OperatingRoom) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedRoom || draggedRoom.id === targetRoom.id) return;
+
+    const draggedIndex = roomsList.findIndex(r => r.id === draggedRoom.id);
+    const targetIndex = roomsList.findIndex(r => r.id === targetRoom.id);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newRooms = [...roomsList];
+    [newRooms[draggedIndex], newRooms[targetIndex]] = [newRooms[targetIndex], newRooms[draggedIndex]];
+
+    // Update sort_order based on new positions
+    const updatedRooms = newRooms.map((room, index) => ({
+      ...room,
+      sort_order: index
+    }));
+
+    setRoomsList(updatedRooms);
+    saveRoomOrder(updatedRooms);
+    onRoomsChange?.(updatedRooms);
+    setDraggedRoom(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedRoom(null);
   };
 
   const handleDeleteRoom = (id: string) => {
@@ -492,9 +569,14 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
           <RoomCard
             key={room.id}
             room={room}
+            isDragging={draggedRoom?.id === room.id}
             onEdit={() => setEditingRoom(room)}
             onDelete={() => setDeleteConfirm(room.id)}
             onScheduleEdit={() => setScheduleEditRoom(room)}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
           />
         ))}
       </div>
