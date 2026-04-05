@@ -773,7 +773,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
 style={{
   background: 'rgba(255, 168, 0, 0.1)',
-  border: '1px solid rgba(255, 168, 0, 0.20)'
+  border: '1px solid rgba(255, 168, 0, 0.96)'
 }}
                           >
                             <span className="text-[7px] font-medium text-red-300/60 tracking-wider">ARO</span>
