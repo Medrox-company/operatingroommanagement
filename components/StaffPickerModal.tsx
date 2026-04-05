@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Stethoscope, Heart, Check, UserX, Syringe, ShieldPlus } from 'lucide-react';
+import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-export type StaffRole = 'DOCTOR' | 'NURSE' | 'ANESTHESIOLOGIST';
+export type StaffRole = 'DOCTOR' | 'NURSE';
 
 interface StaffMember {
   id: string;
@@ -42,16 +42,6 @@ const ROLE_META: Record<string, {
     accentBg: 'bg-violet-500/10',
     accentText: 'text-violet-300',
   },
-  ANESTHESIOLOGIST: {
-    label: 'Anesteziolog',
-    badge: 'ARO',
-    badgeClass: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
-    iconBg: 'bg-amber-500/15',
-    iconColor: 'text-amber-400',
-    accentBorder: 'border-amber-500/50',
-    accentBg: 'bg-amber-500/10',
-    accentText: 'text-amber-300',
-  },
   NURSE: {
     label: 'Sestra / Zdravotník',
     badge: 'Sestra',
@@ -68,7 +58,6 @@ function RoleIcon({ role, size = 'md' }: { role: string; size?: 'sm' | 'md' | 'l
   const sz = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-3.5 h-3.5' : 'w-5 h-5';
   const meta = ROLE_META[role] || ROLE_META['NURSE'];
   if (role === 'DOCTOR') return <Stethoscope className={`${sz} ${meta.iconColor}`} />;
-  if (role === 'ANESTHESIOLOGIST') return <Syringe className={`${sz} ${meta.iconColor}`} />;
   return <Heart className={`${sz} ${meta.iconColor}`} />;
 }
 
@@ -122,13 +111,7 @@ export default function StaffPickerModal({
 
     return staff
       .filter((m) => {
-        if (filterRole) {
-          if (filterRole === 'DOCTOR') {
-            if (m.role !== 'DOCTOR' && m.role !== 'ANESTHESIOLOGIST') return false;
-          } else {
-            if (m.role !== filterRole) return false;
-          }
-        }
+        if (filterRole && m.role !== filterRole) return false;
         const meta = ROLE_META[m.role];
         const searchableText = [
           m.name,
@@ -143,7 +126,7 @@ export default function StaffPickerModal({
 
   // Split counts for header chips
   const doctorCount = useMemo(
-    () => staff.filter((s) => s.role === 'DOCTOR' || s.role === 'ANESTHESIOLOGIST').length,
+    () => staff.filter((s) => s.role === 'DOCTOR').length,
     [staff]
   );
   const nurseCount = useMemo(
@@ -221,7 +204,7 @@ export default function StaffPickerModal({
                 </div>
                 {/* Count chips */}
                 <div className="flex gap-2">
-                  {(!filterRole || filterRole === 'DOCTOR' || filterRole === 'ANESTHESIOLOGIST') && (
+                  {(!filterRole || filterRole === 'DOCTOR') && (
                     <span className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/20">
                       <Stethoscope className="w-3 h-3" />
                       {doctorCount} lékaři
