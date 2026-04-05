@@ -768,13 +768,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       const overtimeInfo = getOvertimeInfo(room.id);
                       
                       if (aroPosition && overtimeInfo) {
-                        return (
-                          <div 
-                            className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-                            style={{ 
-                              background: 'rgba(252, 165, 165, 0.1)',
-                              border: '1px solid rgba(252, 165, 165, 0.2)'
-                            }}
+  return (
+  <div
+className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+style={{
+  background: 'rgba(255, 168, 0, 0.1)',
+  border: '1px solid rgba(255, 168, 0, 0.20)'
+}}
                           >
                             <span className="text-[7px] font-medium text-red-300/60 tracking-wider">ARO</span>
                             <span className="text-xs font-bold text-white/80">{aroPosition}</span>
