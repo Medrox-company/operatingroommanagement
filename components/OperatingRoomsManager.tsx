@@ -5,7 +5,7 @@ import { MOCK_ROOMS } from '../constants';
 import { updateOperatingRoom } from '../lib/db';
 import { 
   Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar, 
-  Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft, GripVertical
+  Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft
 } from 'lucide-react';
 
 interface OperatingRoomsManagerProps {
@@ -153,12 +153,7 @@ const RoomCard: React.FC<{
   onEdit: () => void;
   onDelete: () => void;
   onScheduleEdit: () => void;
-  isDragging?: boolean;
-  onDragStart?: (room: OperatingRoom) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent, room: OperatingRoom) => void;
-  onDragEnd?: () => void;
-}> = ({ room, onEdit, onDelete, onScheduleEdit, isDragging, onDragStart, onDragOver, onDrop, onDragEnd }) => {
+}> = ({ room, onEdit, onDelete, onScheduleEdit }) => {
   const color = getDeptColor(room.department);
   const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
   
@@ -171,16 +166,11 @@ const RoomCard: React.FC<{
   
   return (
     <motion.div
-      className={`relative group overflow-hidden rounded-xl transition-opacity ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      className="relative group overflow-hidden rounded-xl"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.3 }}
-      draggable
-      onDragStart={() => onDragStart?.(room)}
-      onDragOver={onDragOver}
-      onDrop={(e) => onDrop?.(e, room)}
-      onDragEnd={onDragEnd}
     >
       {/* Card Content */}
       <div 
@@ -192,16 +182,8 @@ const RoomCard: React.FC<{
       >
         {/* Content */}
         <div className="p-6 flex flex-col h-full">
-          {/* Top Row: Name and Status with Drag Handle */}
-          <div className="flex items-start justify-between gap-3 mb-5 pb-5 border-b border-white/5">
-            {/* Drag Handle */}
-            <div 
-              className="flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 transition-opacity"
-              title="Táhněte pro změnu pořadí"
-            >
-              <GripVertical className="w-4 h-4 text-white/40" />
-            </div>
-
+          {/* Top Row: Name and Status */}
+          <div className="flex items-start justify-between mb-5 pb-5 border-b border-white/5">
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-semibold text-white/40 uppercase tracking-wide mb-1">{room.department}</p>
               <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
@@ -326,7 +308,6 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   const [scheduleEditRoom, setScheduleEditRoom] = useState<OperatingRoom | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [draggedRoom, setDraggedRoom] = useState<OperatingRoom | null>(null);
   const [newRoomData, setNewRoomData] = useState({
     name: '',
     department: '',
@@ -380,45 +361,6 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     setNewRoomData({ name: '', department: '' });
     setIsAddingNew(false);
     setError(null);
-  };
-
-  const handleDragStart = (room: OperatingRoom) => {
-    setDraggedRoom(room);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent, targetRoom: OperatingRoom) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedRoom || draggedRoom.id === targetRoom.id) return;
-
-    const draggedIndex = roomsList.findIndex(r => r.id === draggedRoom.id);
-    const targetIndex = roomsList.findIndex(r => r.id === targetRoom.id);
-
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
-    const newRooms = [...roomsList];
-    [newRooms[draggedIndex], newRooms[targetIndex]] = [newRooms[targetIndex], newRooms[draggedIndex]];
-
-    // Update sort_order based on new positions
-    const updatedRooms = newRooms.map((room, index) => ({
-      ...room,
-      sort_order: index
-    }));
-
-    setRoomsList(updatedRooms);
-    saveRoomOrder(updatedRooms);
-    onRoomsChange?.(updatedRooms);
-    setDraggedRoom(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedRoom(null);
   };
 
   const handleDeleteRoom = (id: string) => {
@@ -569,14 +511,9 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
           <RoomCard
             key={room.id}
             room={room}
-            isDragging={draggedRoom?.id === room.id}
             onEdit={() => setEditingRoom(room)}
             onDelete={() => setDeleteConfirm(room.id)}
             onScheduleEdit={() => setScheduleEditRoom(room)}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onDragEnd={handleDragEnd}
           />
         ))}
       </div>
@@ -717,6 +654,16 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     type="text"
                     value={editingRoom.department}
                     onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Pořadí zobrazení</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={(editingRoom.sort_order ?? 0) + 1}
+                    onChange={(e) => setEditingRoom({ ...editingRoom, sort_order: Math.max(0, parseInt(e.target.value) || 1) - 1 })}
                     className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
