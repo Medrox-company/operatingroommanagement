@@ -86,11 +86,6 @@ export interface OperatingRoom {
   phaseStartedAt?: string | null; // ISO timestamp začátku aktuální fáze
   operationStartedAt?: string | null; // ISO timestamp kdy začala operace (Příjezd na sál)
   statusHistory?: Array<{ stepIndex: number; startedAt: string; color?: string }>; // Historie změn statusů
-  completedOperations?: Array<{ 
-    startedAt: string; // ISO timestamp začátku operace
-    endedAt: string; // ISO timestamp konce operace
-    statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string }>; // Historie změn statusů
-  }>; // Dokončené operace daného dne
   currentStepIndex: number; // Index aktuální fáze workflow (0-7)
   
   // Working hours schedule

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble
@@ -27,24 +28,12 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
-// Step colors podle step_index z databáze
-const STEP_INDEX_COLORS: Record<number, string> = {
-  0: '#6b7280',   // Sál připraven - gray
-  1: '#3b82f6',   // Příjezd na sál - blue
-  2: '#8b5cf6',   // Začátek anestezie - purple
-  3: '#ec4899',   // Chirurgický výkon - pink
-  4: '#f59e0b',   // Odjezd ze sálu - amber
-  5: '#10b981',   // Úklid sálu - green (step 5 means cleanup is done)
-  6: '#ef4444',   // Sál připraven po úklidu - red
-};
-
 // ========== HELPER FUNCTIONS ==========
 const getTimePercent = (date: Date): number => {
   const hours = date.getHours() + date.getMinutes() / 60;
   let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
   if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
-  // Return percent clamped to valid timeline range
-  return Math.max(0, Math.min(100, percent));
+  return Math.max(0, Math.min(200, percent));
 };
 
 const parseTimeToDate = (timeString: string): Date => {
@@ -68,6 +57,12 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
+  const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
+  
+  // Get ONLY main workflow statuses (bez speciálních)
+  const activeStatuses = workflowStatuses
+    .filter(s => s.is_active && !s.is_special)
+    .sort((a, b) => a.order_index - b.order_index);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
@@ -266,12 +261,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            // Use WORKFLOW_STEPS from constants
-            const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
+            // Use active statuses from database
+            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-            const step = WORKFLOW_STEPS[safeIndex];
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.color || '#6B7280');
-            const statusName = step?.name || 'Status';
+            const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
+            const statusName = dbStatus?.name || 'Status';
             const remaining = getRemainingTime(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
@@ -569,8 +564,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
-              // Get current workflow step info from WORKFLOW_STEPS
-              const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
+              // Get current workflow step info from database first
+              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
               const isActive = stepIndex > 0; // index 0 = "Sál připraven"
               const isCleaning = stepIndex === totalSteps - 2; // Second to last step
@@ -586,10 +581,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from WORKFLOW_STEPS
-              const currentStep = WORKFLOW_STEPS[stepIndex];
-              const stepColor = currentStep?.color || '#6B7280';
-              const stepName = currentStep?.name || 'Status';
+              // Get status from database
+              const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
+              const stepColor = dbStatus?.color || '#6B7280';
+              const stepName = dbStatus?.name || 'Status';
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -861,82 +856,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
-                    {/* Completed operations - soft gray inactive bars */}
-                    {room.completedOperations && room.completedOperations.length > 0 && (() => {
-                      return room.completedOperations.map((operation, opIdx) => {
-                        const opStartDate = new Date(operation.startedAt);
-                        const opEndDate = new Date(operation.endedAt);
-                        
-                        // Use getTimePercent to calculate position on timeline
-                        const opLeftPct = getTimePercent(opStartDate);
-                        const opEndPct = getTimePercent(opEndDate);
-                        let opWidthPct = opEndPct - opLeftPct;
-                        
-                        // Handle cross-midnight operations
-                        if (opWidthPct < 0) opWidthPct += 100;
-                        
-                        // Skip if completely outside visible timeline
-                        if (opEndPct < 0 || opLeftPct > 100 || opWidthPct <= 0) {
-                          return null;
-                        }
-                        
-                        return (
-                          <div
-                            key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
-                            style={{ 
-                              left: `${Math.max(0, opLeftPct)}%`, 
-                              width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
-                            }}
-                          >
-                            {/* Completed operation segments with individual colors */}
-                            <div className="absolute inset-0 flex overflow-hidden rounded-md">
-                              {operation.statusHistory && operation.statusHistory.length > 0 && 
-                                operation.statusHistory.map((entry, idx) => {
-                                  const segStart = new Date(entry.startedAt).getTime();
-                                  const nextEntry = operation.statusHistory[idx + 1];
-                                  const segEnd = nextEntry 
-                                    ? new Date(nextEntry.startedAt).getTime() 
-                                    : new Date(operation.endedAt).getTime();
-                                  
-                                  const opDuration = new Date(operation.endedAt).getTime() - new Date(operation.startedAt).getTime();
-                                  const segDuration = segEnd - segStart;
-                                  const segWidthPct = (segDuration / opDuration) * 100;
-                                  const segLeftPct = ((segStart - new Date(operation.startedAt).getTime()) / opDuration) * 100;
-                                  
-                                  // Use color from step_index
-                                  const phaseColor = STEP_INDEX_COLORS[entry.stepIndex] || '#6b7280';
-                                  
-                                  return (
-                                    <div
-                                      key={`seg-${idx}`}
-                                      className="absolute top-0 bottom-0"
-                                      style={{ 
-                                        left: `${Math.max(0, segLeftPct)}%`,
-                                        width: `${Math.max(0.5, segWidthPct)}%`,
-                                        background: `${phaseColor}99`, // Color with 60% opacity
-                                        borderRight: '1px solid rgba(0,0,0,0.3)'
-                                      }}
-                                      title={entry.stepName}
-                                    />
-                                  );
-                                })
-                              }
-                            </div>
-                            
-                            {/* Label for completed operation */}
-                            <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
-                              {opWidthPct > 6 && (
-                                <span className="text-[9px] font-medium text-white/30 truncate">
-                                  Dokončeno
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    })()}
-
                     {/* Active operation bar */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
@@ -1023,22 +942,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             />
                           </>
                         )}
-
-                        {/* Estimated end time indicator - dotted line at the right edge */}
-                        {room.estimatedEndTime && (() => {
-                          const endPct = getTimePercent(new Date(room.estimatedEndTime));
-                          return endPct > 0 && endPct < 100 && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
-                              style={{ 
-                                left: `${endPct}%`,
-                                background: 'rgba(255,165,0,0.8)',
-                                boxShadow: '0 0 4px rgba(255,165,0,0.5)'
-                              }}
-                              title="Očekávaný konec operace"
-                            />
-                          );
-                        })()}
 
                         {/* Content overlay - refined typography */}
                         <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
@@ -1278,12 +1181,13 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
+  const { activeStatuses } = useWorkflowStatusesContext();
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
   const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
   
-  const currentStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[stepIndex] : null;
-  const nextStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[nextStepIndex] : null;
+  const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
+  const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
   
   const stepColor = currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
@@ -1366,7 +1270,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             <div>
               <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
               <div className="flex items-center gap-1">
-                {WORKFLOW_STEPS.map((_, idx) => (
+                {activeStatuses.map((_, idx) => (
                   <div
                     key={idx}
                     className="flex flex-col items-center gap-0.5"
