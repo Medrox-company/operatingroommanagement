@@ -11,7 +11,7 @@ export type SkillLevel = 'L3' | 'L2' | 'L1' | 'A' | 'SR' | 'N' | 'S';
 export interface Staff {
   id?: string;
   name: string | null;
-  role: 'DOCTOR' | 'NURSE';
+  role: 'DOCTOR' | 'NURSE' | 'ANESTHESIOLOGIST';
   skill_level?: SkillLevel;
   availability?: number; // 0-100
   is_external?: boolean;
