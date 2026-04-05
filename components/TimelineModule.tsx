@@ -539,11 +539,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
                             {hourLabel(hour)}
                           </span>
-                          {isNextDay && (
-                            <span className="text-[8px] font-bold text-cyan-400/60 px-1 py-0.5 rounded bg-cyan-400/10">
-                              +1
-                            </span>
-                          )}
                         </div>
                       )
                     )}
@@ -1254,7 +1249,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
                           </div>
                         </div>
                       );
