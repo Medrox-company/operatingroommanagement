@@ -567,9 +567,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   // Get workflow statuses from database context
   const { workflowStatuses } = useWorkflowStatusesContext();
   
+  // Cache previous valid statuses to prevent flickering during refresh
+  const cachedStatusesRef = useRef(workflowStatuses);
+  if (workflowStatuses.length > 0) {
+    cachedStatusesRef.current = workflowStatuses;
+  }
+  const stableStatuses = cachedStatusesRef.current;
+  
   // Filter to get only main workflow statuses (not special), sorted by order
   const WORKFLOW_STEPS = useMemo(() => 
-    workflowStatuses
+    stableStatuses
       .filter(s => s.is_active && !s.is_special)
       .sort((a, b) => (a.sort_order ?? a.order_index ?? 0) - (b.sort_order ?? b.order_index ?? 0))
       .map(s => ({
@@ -579,7 +586,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         organizer: s.name,
         status: s.is_active ? 'Active' : 'Inactive',
       })),
-    [workflowStatuses]
+    [stableStatuses]
   );
   
   const rooms  = propRooms ?? [];

@@ -102,7 +102,11 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (fetchError) throw fetchError;
       
       const mappedStatuses = (data || []).map(mapDBToStatus);
-      setStatuses(mappedStatuses);
+      
+      // Only update if we have data - prevents flickering when refresh returns empty temporarily
+      if (mappedStatuses.length > 0) {
+        setStatuses(mappedStatuses);
+      }
       setError(null);
       setIsInitialized(true);
     } catch (err) {
