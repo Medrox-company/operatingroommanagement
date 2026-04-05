@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { WORKFLOW_STEPS, STEP_DURATIONS, STEP_COLORS } from '../constants';
-import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble
@@ -28,12 +27,24 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
+// Step colors podle step_index z databáze
+const STEP_INDEX_COLORS: Record<number, string> = {
+  0: '#6b7280',   // Sál připraven - gray
+  1: '#3b82f6',   // Příjezd na sál - blue
+  2: '#8b5cf6',   // Začátek anestezie - purple
+  3: '#ec4899',   // Chirurgický výkon - pink
+  4: '#f59e0b',   // Odjezd ze sálu - amber
+  5: '#10b981',   // Úklid sálu - green (step 5 means cleanup is done)
+  6: '#ef4444',   // Sál připraven po úklidu - red
+};
+
 // ========== HELPER FUNCTIONS ==========
 const getTimePercent = (date: Date): number => {
   const hours = date.getHours() + date.getMinutes() / 60;
   let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
   if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
-  return Math.max(0, Math.min(200, percent));
+  // Return percent clamped to valid timeline range
+  return Math.max(0, Math.min(100, percent));
 };
 
 const parseTimeToDate = (timeString: string): Date => {
@@ -57,12 +68,6 @@ interface TimelineModuleProps {
 }
 
 export default function TimelineModule({ rooms }: TimelineModuleProps) {
-  const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
-  
-  // Get ONLY main workflow statuses (bez speciálních)
-  const activeStatuses = workflowStatuses
-    .filter(s => s.is_active && !s.is_special)
-    .sort((a, b) => a.order_index - b.order_index);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
@@ -261,12 +266,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            // Use active statuses from database
-            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+            // Use WORKFLOW_STEPS from constants
+            const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
             const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-            const dbStatus = activeStatuses.length > 0 ? activeStatuses[safeIndex] : null;
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (dbStatus?.color || '#6B7280');
-            const statusName = dbStatus?.name || 'Status';
+            const step = WORKFLOW_STEPS[safeIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.color || '#6B7280');
+            const statusName = step?.name || 'Status';
             const remaining = getRemainingTime(room);
             const isFree = safeIndex === totalSteps - 1;
             return (
@@ -564,8 +569,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
-              // Get current workflow step info from database first
-              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+              // Get current workflow step info from WORKFLOW_STEPS
+              const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
               const isActive = stepIndex > 0; // index 0 = "Sál připraven"
               const isCleaning = stepIndex === totalSteps - 2; // Second to last step
@@ -581,10 +586,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from database
-              const dbStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-              const stepColor = dbStatus?.color || '#6B7280';
-              const stepName = dbStatus?.name || 'Status';
+              // Get status from WORKFLOW_STEPS
+              const currentStep = WORKFLOW_STEPS[stepIndex];
+              const stepColor = currentStep?.color || '#6B7280';
+              const stepName = currentStep?.name || 'Status';
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -856,43 +861,98 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
-                    {/* Active operation bar - Premium Design with multi-segment timeline */}
+                    {/* Completed operations - soft gray inactive bars */}
+                    {room.completedOperations && room.completedOperations.length > 0 && (() => {
+                      return room.completedOperations.map((operation, opIdx) => {
+                        const opStartDate = new Date(operation.startedAt);
+                        const opEndDate = new Date(operation.endedAt);
+                        
+                        // Use getTimePercent to calculate position on timeline
+                        const opLeftPct = getTimePercent(opStartDate);
+                        const opEndPct = getTimePercent(opEndDate);
+                        let opWidthPct = opEndPct - opLeftPct;
+                        
+                        // Handle cross-midnight operations
+                        if (opWidthPct < 0) opWidthPct += 100;
+                        
+                        // Skip if completely outside visible timeline
+                        if (opEndPct < 0 || opLeftPct > 100 || opWidthPct <= 0) {
+                          return null;
+                        }
+                        
+                        return (
+                          <div
+                            key={`completed-${opIdx}`}
+                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
+                            style={{ 
+                              left: `${Math.max(0, opLeftPct)}%`, 
+                              width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
+                            }}
+                          >
+                            {/* Completed operation segments with individual colors */}
+                            <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                              {operation.statusHistory && operation.statusHistory.length > 0 && 
+                                operation.statusHistory.map((entry, idx) => {
+                                  const segStart = new Date(entry.startedAt).getTime();
+                                  const nextEntry = operation.statusHistory[idx + 1];
+                                  const segEnd = nextEntry 
+                                    ? new Date(nextEntry.startedAt).getTime() 
+                                    : new Date(operation.endedAt).getTime();
+                                  
+                                  const opDuration = new Date(operation.endedAt).getTime() - new Date(operation.startedAt).getTime();
+                                  const segDuration = segEnd - segStart;
+                                  const segWidthPct = (segDuration / opDuration) * 100;
+                                  const segLeftPct = ((segStart - new Date(operation.startedAt).getTime()) / opDuration) * 100;
+                                  
+                                  // Use color from step_index
+                                  const phaseColor = STEP_INDEX_COLORS[entry.stepIndex] || '#6b7280';
+                                  
+                                  return (
+                                    <div
+                                      key={`seg-${idx}`}
+                                      className="absolute top-0 bottom-0"
+                                      style={{ 
+                                        left: `${Math.max(0, segLeftPct)}%`,
+                                        width: `${Math.max(0.5, segWidthPct)}%`,
+                                        background: `${phaseColor}99`, // Color with 60% opacity
+                                        borderRight: '1px solid rgba(0,0,0,0.3)'
+                                      }}
+                                      title={entry.stepName}
+                                    />
+                                  );
+                                })
+                              }
+                            </div>
+                            
+                            {/* Label for completed operation */}
+                            <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
+                              {opWidthPct > 6 && (
+                                <span className="text-[9px] font-medium text-white/30 truncate">
+                                  Dokončeno
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    })()}
+
+                    {/* Active operation bar */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.5, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
-                        className="absolute top-1 bottom-1 overflow-hidden rounded-2xl group/bar"
+                        transition={{ duration: 0.4, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
                           transformOrigin: 'left center'
                         }}
                       >
-                        {/* Outer glow effect - ambient lighting */}
-                        <div 
-                          className="absolute -inset-1 rounded-2xl blur-lg opacity-40"
-                          style={{ background: room.isPaused ? '#22D3EE' : stepColor }}
-                        />
-
-                        {/* Glass container base */}
-                        <div 
-                          className="absolute inset-0 rounded-2xl backdrop-blur-md"
-                          style={{ 
-                            background: `linear-gradient(145deg, ${room.isPaused ? '#22D3EE' : stepColor}18 0%, ${room.isPaused ? '#22D3EE' : stepColor}08 100%)`,
-                            border: `1.5px solid ${room.isPaused ? '#22D3EE' : stepColor}35`,
-                            boxShadow: `
-                              0 8px 32px ${room.isPaused ? '#22D3EE' : stepColor}20,
-                              0 1px 0 rgba(255,255,255,0.08) inset,
-                              0 -2px 8px rgba(0,0,0,0.15) inset
-                            `
-                          }}
-                        />
-
                         {/* Multi-segment colored bar based on actual status history */}
-                        <div className="absolute inset-0 flex overflow-hidden rounded-2xl">
+                        <div className="absolute inset-0 flex overflow-hidden rounded-lg">
                           {(() => {
-                            // Use status history if available, otherwise fall back to current step
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt ? new Date(room.operationStartedAt).getTime() : null;
                             const endTime = room.estimatedEndTime ? new Date(room.estimatedEndTime).getTime() : null;
@@ -902,72 +962,41 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                             if (history.length === 0 || !operationStart || !endTime) {
                               const phaseColor = stepColor || '#6B7280';
                               return (
-                                <div className="absolute inset-0" style={{
-                                  background: `linear-gradient(135deg, ${phaseColor}ee 0%, ${phaseColor}cc 100%)`
-                                }}>
-                                  <div className="absolute inset-x-0 top-0 h-1/2" style={{
-                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%)'
-                                  }} />
-                                </div>
+                                <div className="absolute inset-0" style={{ background: phaseColor }} />
                               );
                             }
                             
-                            // Calculate total duration from operation start to estimated end
                             const totalDuration = endTime - operationStart;
                             
-                            // Build segments from history
                             return history.map((entry, idx) => {
                               const segmentStart = new Date(entry.startedAt).getTime();
                               const nextEntry = history[idx + 1];
                               const segmentEnd = nextEntry 
                                 ? new Date(nextEntry.startedAt).getTime() 
-                                : Math.min(now, endTime); // Current segment ends at now or estimated end
+                                : Math.min(now, endTime);
                               
                               const segmentDuration = segmentEnd - segmentStart;
                               const segmentWidthPct = (segmentDuration / totalDuration) * 100;
                               const segmentLeftPct = ((segmentStart - operationStart) / totalDuration) * 100;
-                              
                               const isCurrentSegment = idx === history.length - 1;
                               const phaseColor = entry.color || '#6B7280';
                               
                               return (
                                 <motion.div
                                   key={`history-${idx}`}
-                                  className="absolute top-0 bottom-0 overflow-hidden"
+                                  className="absolute top-0 bottom-0"
                                   style={{ 
                                     left: `${Math.max(0, segmentLeftPct)}%`,
-                                    width: `${Math.max(0.5, segmentWidthPct)}%`
+                                    width: `${Math.max(0.5, segmentWidthPct)}%`,
+                                    background: isCurrentSegment ? phaseColor : `${phaseColor}bb`
                                   }}
                                   initial={{ opacity: 0 }}
                                   animate={{ opacity: 1 }}
-                                  transition={{ delay: 0.1 + idx * 0.05 }}
+                                  transition={{ delay: 0.05 * idx }}
                                 >
-                                  {/* Phase background */}
-                                  <div 
-                                    className="absolute inset-0"
-                                    style={{
-                                      background: isCurrentSegment
-                                        ? `linear-gradient(135deg, ${phaseColor}ee 0%, ${phaseColor}dd 50%, ${phaseColor}cc 100%)`
-                                        : `linear-gradient(135deg, ${phaseColor}99 0%, ${phaseColor}88 50%, ${phaseColor}77 100%)`
-                                    }}
-                                  />
-                                  
-                                  {/* Glass shine on top */}
-                                  <div 
-                                    className="absolute inset-x-0 top-0 h-1/2"
-                                    style={{
-                                      background: `linear-gradient(180deg, rgba(255,255,255,${isCurrentSegment ? 0.25 : 0.15}) 0%, transparent 100%)`
-                                    }}
-                                  />
-                                  
-                                  {/* Separator line */}
+                                  {/* Separator */}
                                   {idx < history.length - 1 && (
-                                    <div 
-                                      className="absolute top-0 right-0 bottom-0 w-px"
-                                      style={{
-                                        background: `linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)`
-                                      }}
-                                    />
+                                    <div className="absolute top-0 right-0 bottom-0 w-px bg-black/30" />
                                   )}
                                 </motion.div>
                               );
@@ -975,61 +1004,41 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           })()}
                         </div>
 
-                        {/* Progress fill - elegant gradient */}
-                        {!room.isPaused && (
-                          <div 
-                            className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none" 
-                            style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
-                          >
+                        {/* Current position indicator */}
+                        {progressPct > 0 && progressPct < 100 && !room.isPaused && (
+                          <>
                             <div 
-                              className="absolute inset-0"
+                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
                               style={{ 
-                                background: `linear-gradient(90deg, ${stepColor}ff 0%, ${stepColor}dd 100%)`,
-                                opacity: 0.3
+                                left: `${progressPct}%`,
+                                background: 'rgba(255,255,255,0.9)'
                               }}
                             />
-                          </div>
+                            <div 
+                              className="absolute -top-0.5 w-2 h-2 -translate-x-1/2 rounded-full"
+                              style={{ 
+                                left: `${progressPct}%`,
+                                background: 'white'
+                              }}
+                            />
+                          </>
                         )}
 
-                        {/* Current position indicator - premium design */}
-                        {progressPct > 0 && progressPct < 100 && !room.isPaused && (
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
-                            {/* Animated glow behind line */}
-                            <motion.div 
-                              className="absolute top-0 bottom-0 w-8 -translate-x-1/2 blur-md rounded-full"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: `radial-gradient(circle, ${stepColor}60 0%, ${stepColor}20 100%)`
-                              }}
-                              animate={{ opacity: [0.4, 0.8, 0.4] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            />
-                            {/* Main indicator line */}
+                        {/* Estimated end time indicator - dotted line at the right edge */}
+                        {room.estimatedEndTime && (() => {
+                          const endPct = getTimePercent(new Date(room.estimatedEndTime));
+                          return endPct > 0 && endPct < 100 && (
                             <div 
-                              className="absolute top-0 bottom-0 w-[3px] -translate-x-1/2 rounded-full"
+                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
                               style={{ 
-                                left: `${progressPct}%`,
-                                background: `linear-gradient(180deg, #fff 0%, #f0f0f0 100%)`,
-                                boxShadow: `0 0 12px rgba(255,255,255,0.9), 0 0 24px ${stepColor}40`
+                                left: `${endPct}%`,
+                                background: 'rgba(255,165,0,0.8)',
+                                boxShadow: '0 0 4px rgba(255,165,0,0.5)'
                               }}
+                              title="Očekávaný konec operace"
                             />
-                            {/* Top indicator dot */}
-                            <motion.div 
-                              className="absolute -top-1.5 w-3 h-3 -translate-x-1/2 rounded-full"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: '#fff',
-                                boxShadow: `0 0 12px rgba(255,255,255,0.9), 0 0 20px ${stepColor}50`
-                              }}
-                              animate={{ scale: [1, 1.3, 1] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            />
-                          </motion.div>
-                        )}
+                          );
+                        })()}
 
                         {/* Content overlay - refined typography */}
                         <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
@@ -1269,13 +1278,12 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  const { activeStatuses } = useWorkflowStatusesContext();
-  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+  const totalSteps = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
   const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
   
-  const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-  const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
+  const currentStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[stepIndex] : null;
+  const nextStatus = WORKFLOW_STEPS.length > 0 ? WORKFLOW_STEPS[nextStepIndex] : null;
   
   const stepColor = currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
@@ -1358,7 +1366,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             <div>
               <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
               <div className="flex items-center gap-1">
-                {activeStatuses.map((_, idx) => (
+                {WORKFLOW_STEPS.map((_, idx) => (
                   <div
                     key={idx}
                     className="flex flex-col items-center gap-0.5"

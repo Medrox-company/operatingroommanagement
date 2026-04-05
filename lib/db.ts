@@ -17,6 +17,9 @@ interface DBOperatingRoom {
   patient_called_at: string | null;
   patient_arrived_at: string | null;
   phase_started_at: string | null;
+  operation_started_at: string | null;
+  status_history: any[] | null;
+  completed_operations: any[] | null;
   current_step_index: number;
   estimated_end_time: string | null;
   doctor_id: string | null;
@@ -78,6 +81,7 @@ function transformRoom(
     phaseStartedAt: row.phase_started_at,
     operationStartedAt: row.operation_started_at,
     statusHistory: row.status_history || [],
+    completedOperations: row.completed_operations || [],
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
@@ -163,19 +167,127 @@ export async function updateOperatingRoom(
   if (!isSupabaseConfigured || !supabase) {
     return false;
   }
+}
+
+// Fetch completed operations for a specific room on a given day
+export interface CompletedOperation {
+  startedAt: string;
+  endedAt: string;
+  statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>;
+}
+
+export async function fetchCompletedOperationsForDay(
+  roomId: string,
+  date: Date
+): Promise<CompletedOperation[] | null> {
+  if (!isSupabaseConfigured || !supabase) {
+    return null;
+  }
 
   try {
-    const { error } = await supabase
-      .from('operating_rooms')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id);
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data, error } = await supabase
+      .from('room_status_history')
+      .select('*')
+      .eq('operating_room_id', roomId)
+      .gte('timestamp', startOfDay.toISOString())
+      .lte('timestamp', endOfDay.toISOString())
+      .order('timestamp', { ascending: true });
 
     if (error) throw error;
-    return true;
+    if (!data || data.length === 0) return [];
+
+    // Group events into operations
+    // Strategy: Look for operation_end events or "Úklid sálu" to mark end of operation
+    // Then collect all events backwards to operation_start or first event
+    const operations: CompletedOperation[] = [];
+    let i = 0;
+    
+    while (i < data.length) {
+      const event = data[i];
+      
+      // Check if this is start of an operation (operation_start or first step_change)
+      if (event.event_type === 'operation_start' || 
+          (event.event_type === 'step_change' && event.step_name === 'Příjezd na sál')) {
+        
+        const operationStart = i;
+        let operationEnd = i;
+        
+        // Find the end of this operation (operation_end or "Úklid sálu")
+        for (let j = i + 1; j < data.length; j++) {
+          if (data[j].event_type === 'operation_end' || 
+              (data[j].event_type === 'step_change' && data[j].step_name === 'Úklid sálu')) {
+            operationEnd = j;
+            break;
+          }
+        }
+        
+        // Extract events for this operation
+        const operationEvents = data.slice(operationStart, operationEnd + 1);
+        const op = buildCompletedOperation(operationEvents);
+        
+        if (op) {
+          operations.push(op);
+        }
+        
+        // Move to next event after this operation
+        i = operationEnd + 1;
+      } else {
+        i++;
+      }
+    }
+
+    return operations;
   } catch (error) {
-    console.error('[DB] Failed to update operating room:', error);
-    return false;
+    console.error('[DB] Failed to fetch completed operations:', error);
+    return null;
   }
+}
+
+// Build a completed operation from events
+function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation | null {
+  if (events.length === 0) return null;
+  
+  // Collect all step_change events as status history
+  const statusHistory = events
+    .filter(e => e.event_type === 'step_change' && e.step_index !== null)
+    .map(e => ({
+      stepIndex: e.step_index as number,
+      startedAt: e.timestamp,
+      color: getStepColor(e.step_index as number),
+      stepName: e.step_name || ''
+    }))
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+
+  if (statusHistory.length === 0) return null;
+
+  // Operation starts at first step_change and ends at last step_change
+  const startTime = statusHistory[0].startedAt;
+  const endTime = statusHistory[statusHistory.length - 1].startedAt;
+
+  return {
+    startedAt: startTime,
+    endedAt: endTime,
+    statusHistory
+  };
+}
+
+// Get color for a step index (you can adjust these colors)
+function getStepColor(stepIndex: number): string {
+  const colors: Record<number, string> = {
+    0: '#6b7280', // Sál připraven - gray
+    1: '#3b82f6', // Příjezd na sál - blue
+    2: '#8b5cf6', // Začátek anestezie - purple
+    3: '#ec4899', // Chirurgický výkon - pink
+    4: '#f59e0b', // Ukončení výkonu - amber
+    5: '#10b981', // Odjezd ze sálu - green
+    6: '#ef4444', // Úklid sálu - red
+  };
+  return colors[stepIndex] || '#6b7280';
 }
 
 // Subscribe to real-time changes with granular updates
@@ -256,6 +368,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;
   if (row.operation_started_at !== undefined) result.operationStartedAt = row.operation_started_at;
   if (row.status_history !== undefined) result.statusHistory = row.status_history || [];
+  if (row.completed_operations !== undefined) result.completedOperations = row.completed_operations || [];
   if (row.is_locked !== undefined) result.isLocked = row.is_locked;
   if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
   if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
