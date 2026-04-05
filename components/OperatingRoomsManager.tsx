@@ -400,16 +400,15 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   return (
     <div className="w-full">
       {/* Header */}
-      <header className="flex flex-col lg:flex-row items-start justify-between gap-8 mb-12">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-4 opacity-60">
-            <Building2 className="w-3.5 h-3.5 text-white/50" />
-            <p className="text-[9px] font-bold text-white/40 tracking-widest uppercase">Operační sály</p>
+      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
+        <div className="text-center lg:text-left">
+          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+            <Building2 className="w-4 h-4 text-[#00D8C1]" />
+            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERAČNÍ SÁLY MANAGEMENT</p>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight leading-none mb-2">
-            Správa operačních sálů
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
+            OPERAČNÍ <span className="text-white/20">SÁLY</span>
           </h1>
-          <p className="text-sm text-white/40 max-w-md">Spravujte a konfigurujte všechny operační sály v systému</p>
         </div>
       </header>
 
