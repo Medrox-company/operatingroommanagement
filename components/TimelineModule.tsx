@@ -1001,41 +1001,60 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                               return history.map((entry, idx) => {
                                 const segStart = new Date(entry.startedAt).getTime();
                                 const nextEntry = history[idx + 1];
+                                const isCurrentSeg = idx === history.length - 1;
+                                
+                                // For current segment: extend to estimated end time
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
-                                  : Math.min(now, endTime);
+                                  : endTime; // Extend current segment all the way to estimated end
+                                
                                 const segDuration = Math.max(0, segEnd - segStart);
                                 const segWidthPct = (segDuration / totalDuration) * 100;
                                 const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
                                 if (segWidthPct <= 0) return null;
-                                const isCurrentSeg = idx === history.length - 1;
+                                
                                 const phaseColor = entry.color
                                   || stepColorMap[entry.stepIndex]
                                   || STEP_INDEX_COLORS[entry.stepIndex]
                                   || '#6b7280';
 
+                                // For current segment, calculate progress within the segment
+                                const progressWithinSeg = isCurrentSeg 
+                                  ? Math.max(0, Math.min(100, ((now - segStart) / (segEnd - segStart)) * 100))
+                                  : 100;
+
                                 return (
                                   <motion.div
                                     key={`seg-${idx}`}
-                                    className="absolute top-0 bottom-0"
+                                    className="absolute top-0 bottom-0 overflow-hidden"
                                     style={{
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
                                       background: isCurrentSeg
-                                        ? phaseColor
+                                        ? `${phaseColor}40` // Lighter background for remaining time
                                         : `${phaseColor}bb`,
                                     }}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.04 * idx }}
                                   >
+                                    {/* For current segment: show completed portion with full color */}
+                                    {isCurrentSeg && (
+                                      <div 
+                                        className="absolute top-0 bottom-0 left-0"
+                                        style={{
+                                          width: `${progressWithinSeg}%`,
+                                          background: phaseColor,
+                                        }}
+                                      />
+                                    )}
                                     {/* Subtle separator between segments */}
                                     {idx < history.length - 1 && (
                                       <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/40 z-10" />
                                     )}
                                     {/* Show phase label if segment is wide enough */}
                                     {segWidthPct > 8 && (
-                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
+                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
                                         <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
                                           {activeStatuses[entry.stepIndex]?.title || ''}
                                         </span>
@@ -1120,21 +1139,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           </>
                         )}
 
-                        {/* Estimated end time indicator - line at the right edge in current status color */}
-                        {room.estimatedEndTime && (() => {
-                          const endPct = getTimePercent(new Date(room.estimatedEndTime));
-                          return endPct > 0 && endPct < 100 && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
-                              style={{ 
-                                left: `${endPct}%`,
-                                background: stepColor,
-                                boxShadow: `0 0 6px ${stepColor}`
-                              }}
-                              title="Očekávaný konec operace"
-                            />
-                          );
-                        })()}
+
 
                         {/* Content overlay - refined typography */}
                         <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
