@@ -1063,8 +1063,7 @@ style={{
                     })()}
 
                     {/* Continuing operation bar (green) - for operations that overflow to next day (endPct > 100)
-                        Shows as a continuous green bar from 0% (7:00) to 100% (7:00 next day)
-                        This underlays the active operation bar to show the full continuing duration
+                        Shows as a continuous green bar from 0% (7:00) to estimated end time
                     */}
                     {isActive && room.estimatedEndTime && (() => {
                       const opEnd = new Date(room.estimatedEndTime);
@@ -1079,15 +1078,18 @@ style={{
                       // Only show if operation extends past 100% (beyond 7:00 tomorrow)
                       if (endPct <= 100) return null;
                       
-                      // Green bar from 0% (7:00) to 100% (7:00 next day) - full day coverage for continuing operation
+                      // Green bar from 0% (7:00) to estimated end time (endPct, capped at reasonable max)
+                      // endPct can be >100 for operations ending next day (e.g., 104% = 8:00 next day)
+                      const displayWidthPct = Math.min(endPct, 150); // Cap at 150% to prevent extreme widths
+                      
                       return (
                         <div
                           className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
                           style={{
                             left: '0%',
-                            width: '100%',
+                            width: `${displayWidthPct}%`,
                             background: 'rgba(34, 197, 94, 0.35)',
-                            borderRight: 'none',
+                            borderRight: '2px solid rgba(34, 197, 94, 0.8)',
                             zIndex: 0  // Behind the active operation bar
                           }}
                         >
