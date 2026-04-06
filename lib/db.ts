@@ -155,6 +155,7 @@ function transformRoom(
 
 // Fetch all operating rooms with related data
 export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
+  console.log("[v0] fetchOperatingRooms called");
   if (!isSupabaseConfigured || !supabase) {
     return null;
   }
@@ -165,6 +166,7 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
       supabase.from('operating_rooms').select('*').order('name'),
       supabase.from('staff').select('*'),
     ]);
+    console.log("[v0] fetchOperatingRooms: got", roomsRes.data?.length, "rooms");
 
     if (roomsRes.error) throw roomsRes.error;
     if (!roomsRes.data || roomsRes.data.length === 0) return null;
