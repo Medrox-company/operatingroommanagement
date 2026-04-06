@@ -87,6 +87,52 @@ const exceedsT24Hours = (startDate: Date, endDate: Date): boolean => {
   return durationHours > 24;
 };
 
+// Get time percent without clamping (allows values > 100 for next-day operations)
+const getTimePercentUnclamped = (date: Date): number => {
+  const hours = date.getHours() + date.getMinutes() / 60;
+  let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
+  if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
+  return percent;
+};
+
+// Get operation segments for timeline display (handles cross-midnight)
+const getOperationSegments = (startDate: Date, endDate: Date): Array<{start: number, end: number, isNextDay: boolean}> => {
+  const windowStart = TIMELINE_START_HOUR; // 7:00
+  const windowEnd = TIMELINE_START_HOUR + TIMELINE_HOURS; // 7:00 next day
+  
+  const startPercent = getTimePercentUnclamped(startDate);
+  const endPercent = getTimePercentUnclamped(endDate);
+  
+  const segments: Array<{start: number, end: number, isNextDay: boolean}> = [];
+  
+  // If operation ends on next day (endPercent < startPercent due to day wrap-around)
+  if (endPercent < startPercent) {
+    // First segment: from start to end of timeline (7:00 tomorrow = 100%)
+    segments.push({
+      start: Math.max(0, startPercent),
+      end: 100,
+      isNextDay: false
+    });
+    // Second segment: from beginning of timeline (0% = 7:00 tomorrow) to end
+    if (endPercent > 0) {
+      segments.push({
+        start: 0,
+        end: Math.min(100, endPercent),
+        isNextDay: true
+      });
+    }
+  } else {
+    // Single segment within same day
+    segments.push({
+      start: Math.max(0, startPercent),
+      end: Math.min(100, endPercent),
+      isNextDay: false
+    });
+  }
+  
+  return segments;
+};
+
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
@@ -906,26 +952,16 @@ style={{
                         const opEndDate = new Date(operation.endedAt);
                         const exceedsDay = exceedsT24Hours(opStartDate, opEndDate);
                         
-                        // Use getTimePercent to calculate position on timeline
-                        const opLeftPct = getTimePercent(opStartDate);
-                        const opEndPct = getTimePercent(opEndDate);
-                        let opWidthPct = opEndPct - opLeftPct;
+                        // Get segments for cross-midnight operations
+                        const segments = getOperationSegments(opStartDate, opEndDate);
                         
-                        // Handle cross-midnight operations
-                        if (opWidthPct < 0) opWidthPct += 100;
-                        
-                        // Skip if completely outside visible timeline
-                        if (opEndPct < 0 || opLeftPct > 100 || opWidthPct <= 0) {
-                          return null;
-                        }
-                        
-                        return (
-                          <div key={`completed-${opIdx}`} className="relative">
+                        return segments.map((segment, segIdx) => (
+                          <div key={`completed-${opIdx}-seg-${segIdx}`} className="relative">
                             <div
                               className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
                               style={{ 
-                                left: `${Math.max(0, opLeftPct)}%`, 
-                                width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
+                                left: `${segment.start}%`, 
+                                width: `${segment.end - segment.start}%`,
                               }}
                             >
                               {/* Completed operation segments with colors from database context */}
@@ -982,7 +1018,7 @@ style={{
                               
                               {/* Label for completed operation */}
                               <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
-                                {opWidthPct > 6 && (
+                                {(segment.end - segment.start) > 6 && (
                                   <span className="text-[9px] font-medium text-white/30 truncate">
                                     Dokončeno
                                   </span>
@@ -990,8 +1026,8 @@ style={{
                               </div>
                             </div>
                             
-                            {/* Icon for operations exceeding 24 hours */}
-                            {exceedsDay && (
+                            {/* Icon for operations exceeding 24 hours - only show on first segment */}
+                            {exceedsDay && segIdx === 0 && (
                               <div className="absolute -top-4 right-0 z-10">
                                 <div 
                                   className="flex items-center justify-center bg-orange-500 rounded-full p-1"
@@ -1002,7 +1038,7 @@ style={{
                               </div>
                             )}
                           </div>
-                        );
+                        ));
                       })
                     })()}
 
