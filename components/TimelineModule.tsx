@@ -970,8 +970,18 @@ style={{
                       const filteredOps = opsToRender.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
-                        return isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        if (room.name === 'DaVinci') {
+                          console.log("[v0] DaVinci op filter:", operation.startedAt.substring(0, 16), "-", operation.endedAt.substring(0, 16), "inWindow:", inWindow);
+                        }
+                        return inWindow;
                       });
+                      
+                      if (room.name === 'DaVinci') {
+                        console.log("[v0] DaVinci after filter:", filteredOps.length, "ops remain");
+                      }
+                      
+                      if (filteredOps.length === 0) return null;
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
