@@ -960,26 +960,14 @@ style={{
                       // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
-                      // DEBUG: Log all rooms to see what data we have
-                      if (room.name === 'DaVinci') {
-                        console.log("[v0] DaVinci completedOperations:", opsToRender.length, opsToRender);
-                      }
-                      
                       if (opsToRender.length === 0) return null;
                       
                       const filteredOps = opsToRender.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
                         const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
-                        if (room.name === 'DaVinci') {
-                          console.log("[v0] DaVinci op filter:", operation.startedAt.substring(0, 16), "-", operation.endedAt.substring(0, 16), "inWindow:", inWindow);
-                        }
                         return inWindow;
                       });
-                      
-                      if (room.name === 'DaVinci') {
-                        console.log("[v0] DaVinci after filter:", filteredOps.length, "ops remain");
-                      }
                       
                       if (filteredOps.length === 0) return null;
                       return filteredOps.map((operation, opIdx) => {
@@ -989,10 +977,6 @@ style={{
                         
                         // Get single continuous position (even if crossing 7:00)
                         const position = getOperationPosition(opStartDate, opEndDate, currentTime);
-                        
-                        if (room.name === 'DaVinci') {
-                          console.log("[v0] DaVinci op render - position:", position, "width<=0?", position.width <= 0);
-                        }
                         
                         // Skip if width is 0
                         if (position.width <= 0) return null;
