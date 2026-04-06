@@ -279,7 +279,6 @@ export async function fetchAllCompletedOperationsForDay(
       .order('timestamp', { ascending: true });
 
     if (error) throw error;
-    console.log("[v0] fetchAllCompletedOperationsForDay - raw data count:", data?.length || 0);
     if (!data || data.length === 0) return new Map();
 
     // Group by room
@@ -295,15 +294,12 @@ export async function fetchAllCompletedOperationsForDay(
     // Build operations for each room
     const result = new Map<string, CompletedOperation[]>();
     for (const [roomId, events] of byRoom) {
-      console.log("[v0] Room", roomId, "has", events.length, "events");
       const ops = buildOperationsFromEvents(events);
-      console.log("[v0] Room", roomId, "built", ops.length, "operations");
       if (ops.length > 0) {
         result.set(roomId, ops);
       }
     }
 
-    console.log("[v0] Total rooms with completed ops:", result.size);
     return result;
   } catch (error) {
     console.error('[DB] Failed to fetch completed operations:', error);
@@ -317,14 +313,9 @@ function buildOperationsFromEvents(events: StatusHistoryRow[]): CompletedOperati
   let currentOpEvents: StatusHistoryRow[] = [];
   let inOperation = false;
 
-  // Debug: show all event types and step_names
-  const eventTypes = events.map(e => `${e.event_type}:${e.step_name}`);
-  console.log("[v0] buildOperationsFromEvents - event types:", eventTypes.slice(0, 10));
-
   for (const event of events) {
     // Start of operation: "Příjezd na sál"
     if (event.event_type === 'step_change' && event.step_name === 'Příjezd na sál') {
-      console.log("[v0] Found Příjezd na sál at", event.timestamp);
       // If already in operation, close previous one first
       if (inOperation && currentOpEvents.length > 0) {
         const op = buildCompletedOperation(currentOpEvents);
@@ -338,10 +329,8 @@ function buildOperationsFromEvents(events: StatusHistoryRow[]): CompletedOperati
       (event.event_type === 'step_change' && event.step_name === 'Úklid sálu') ||
       event.event_type === 'operation_completed'
     )) {
-      console.log("[v0] Found Úklid sálu/operation_completed at", event.timestamp);
       currentOpEvents.push(event);
       const op = buildCompletedOperation(currentOpEvents);
-      console.log("[v0] Built operation:", op ? `${op.startedAt} - ${op.endedAt}` : "null");
       if (op) operations.push(op);
       currentOpEvents = [];
       inOperation = false;
