@@ -164,6 +164,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  // DEBUG: Log rooms data
+  console.log("[v0] TimelineModule rooms:", rooms.map(r => ({
+    name: r.name,
+    completedOps: r.completedOperations?.length || 0,
+    data: r.completedOperations?.slice(0, 2)
+  })));
+
   // Update current time every second
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -953,12 +960,18 @@ style={{
 
                     {/* Completed operations - soft gray inactive bars */}
                     {room.completedOperations && room.completedOperations.length > 0 && (() => {
+                      console.log("[v0] Rendering completedOps for room", room.name, "count:", room.completedOperations.length);
                       const filteredOps = room.completedOperations.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
-                        return isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        if (!inWindow) {
+                          console.log("[v0]   Op FILTERED OUT:", operation.startedAt, "->", operation.endedAt);
+                        }
+                        return inWindow;
                       });
                       
+                      console.log("[v0] Filtered ops for room", room.name, ":", filteredOps.length, "will render");
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
