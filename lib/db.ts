@@ -155,7 +155,6 @@ function transformRoom(
 
 // Fetch all operating rooms with related data
 export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
-  console.log("[v0] fetchOperatingRooms called");
   if (!isSupabaseConfigured || !supabase) {
     return null;
   }
@@ -166,7 +165,6 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
       supabase.from('operating_rooms').select('*').order('name'),
       supabase.from('staff').select('*'),
     ]);
-    console.log("[v0] fetchOperatingRooms: got", roomsRes.data?.length, "rooms");
 
     if (roomsRes.error) throw roomsRes.error;
     if (!roomsRes.data || roomsRes.data.length === 0) return null;
@@ -178,14 +176,6 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
     // Empty maps for removed tables
     const patientMap = new Map<string, DBPatient>();
     const procedureMap = new Map<string, DBProcedure>();
-
-    // Debug: Log raw completed_operations from first room with data
-    const roomWithOps = roomsRes.data.find((r: DBOperatingRoom) => r.completed_operations && r.completed_operations.length > 0);
-    if (roomWithOps) {
-      console.log("[v0] DB Room with completed_operations:", roomWithOps.name, "count:", roomWithOps.completed_operations?.length);
-    } else {
-      console.log("[v0] No rooms have completed_operations in DB response");
-    }
     
     // Transform rows
     return roomsRes.data.map((row: DBOperatingRoom) => 
