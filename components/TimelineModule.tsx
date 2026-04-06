@@ -66,9 +66,10 @@ const hourLabel = (hour: number): string => {
 const isNextDayHour = (hour: number): boolean => hour >= 24;
 
 // Check if operation should be displayed in current 24-hour window (7:00-7:00)
-// Show operations that:
-// 1. Ended within the current window (today's completed operations)
-// 2. OR are still in progress (continuing operations that started before window but end after window start)
+// Rules:
+// 1. DO NOT show operations that ended BEFORE current time (old operations from previous days)
+// 2. SHOW operations that ended AFTER current time OR are still in progress
+// 3. SHOW continuing operations (started before 7:00 but still running or ended after current time)
 const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date): boolean => {
   // Get current window start: 7:00 of the current day
   const windowStart = new Date(currentTime);
@@ -83,9 +84,15 @@ const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date):
   const windowEnd = new Date(windowStart);
   windowEnd.setDate(windowEnd.getDate() + 1);
   
-  // Operation is visible if it overlaps with the current 24-hour window
-  // (operation ends after window starts AND operation starts before window ends)
-  return endDate > windowStart && startDate < windowEnd;
+  // Rule 1: Don't show operations that ended before current time
+  // (these are completed operations from the past that should be hidden)
+  if (endDate < currentTime) {
+    return false;
+  }
+  
+  // Rule 2: Show operations that overlap with the 24-hour window
+  // and end after current time (still relevant/in progress)
+  return startDate < windowEnd && endDate > windowStart;
 };
 
 // Check if operation exceeds 24 hours
@@ -164,12 +171,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // DEBUG: Log rooms data
-  console.log("[v0] TimelineModule rooms:", rooms.map(r => ({
-    name: r.name,
-    completedOps: r.completedOperations?.length || 0,
-    data: r.completedOperations?.slice(0, 2)
-  })));
+
 
   // Update current time every second
   useEffect(() => {
@@ -960,18 +962,12 @@ style={{
 
                     {/* Completed operations - soft gray inactive bars */}
                     {room.completedOperations && room.completedOperations.length > 0 && (() => {
-                      console.log("[v0] Rendering completedOps for room", room.name, "count:", room.completedOperations.length);
                       const filteredOps = room.completedOperations.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
-                        const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
-                        if (!inWindow) {
-                          console.log("[v0]   Op FILTERED OUT:", operation.startedAt, "->", operation.endedAt);
-                        }
-                        return inWindow;
+                        return isOperationInWindow(opStartDate, opEndDate, currentTime);
                       });
                       
-                      console.log("[v0] Filtered ops for room", room.name, ":", filteredOps.length, "will render");
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
@@ -1069,6 +1065,49 @@ style={{
                           </div>
                         );
                       })
+                    })()}
+
+                    {/* Continuing operation bar (green) - shown when operation started before 7:00 of current day */}
+                    {isActive && room.operationStartedAt && (() => {
+                      const opStart = new Date(room.operationStartedAt);
+                      
+                      // Calculate window start: 7:00 of current day
+                      const windowStart = new Date(currentTime);
+                      windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+                      windowStart.setMinutes(0, 0, 0);
+                      if (currentTime.getHours() < TIMELINE_START_HOUR) {
+                        windowStart.setDate(windowStart.getDate() - 1);
+                      }
+                      
+                      // Check if operation started BEFORE 7:00 today (window start)
+                      // This means the operation is continuing from the previous day
+                      if (opStart.getTime() < windowStart.getTime()) {
+                        // Calculate where the actual operation starts on the timeline
+                        // The continuing bar goes from 0% (7:00) to the current time position
+                        const nowPct = getTimePercent(currentTime);
+                        const continuingWidthPct = Math.max(0, nowPct);
+                        
+                        if (continuingWidthPct > 0) {
+                          return (
+                            <div
+                              className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
+                              style={{ 
+                                left: '0%', 
+                                width: `${continuingWidthPct}%`,
+                                background: 'rgba(34, 197, 94, 0.4)',
+                                borderRight: '2px solid rgba(34, 197, 94, 0.8)'
+                              }}
+                            >
+                              {continuingWidthPct > 10 && (
+                                <span className="text-[11px] font-semibold text-white uppercase tracking-wide">
+                                  POKRAČUJÍCÍ VÝKON
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+                      }
+                      return null;
                     })()}
 
                     {/* Active operation bar */}
