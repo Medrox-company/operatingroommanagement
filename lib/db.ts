@@ -254,98 +254,105 @@ export interface CompletedOperation {
   statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>;
 }
 
-export async function fetchCompletedOperationsForDay(
-  roomId: string,
+// Fetch ALL completed operations for ALL rooms in a single query (fast)
+export async function fetchAllCompletedOperationsForDay(
   date: Date
-): Promise<CompletedOperation[] | null> {
+): Promise<Map<string, CompletedOperation[]> | null> {
   if (!isSupabaseConfigured || !supabase) {
     return null;
   }
 
   try {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Use 7:00 AM window like timeline (7:00 today to 6:59 tomorrow)
+    const startOfWindow = new Date(date);
+    startOfWindow.setHours(7, 0, 0, 0);
+    const endOfWindow = new Date(date);
+    endOfWindow.setDate(endOfWindow.getDate() + 1);
+    endOfWindow.setHours(6, 59, 59, 999);
 
     const { data, error } = await supabase
       .from('room_status_history')
       .select('*')
-      .eq('operating_room_id', roomId)
-      .gte('timestamp', startOfDay.toISOString())
-      .lte('timestamp', endOfDay.toISOString())
+      .gte('timestamp', startOfWindow.toISOString())
+      .lte('timestamp', endOfWindow.toISOString())
+      .order('operating_room_id')
       .order('timestamp', { ascending: true });
 
     if (error) throw error;
-    if (!data || data.length === 0) return [];
+    if (!data || data.length === 0) return new Map();
 
-    // Group events into operations
-    // Strategy: Look for operation_end events or "Úklid sálu" to mark end of operation
-    // Then collect all events backwards to operation_start or first event
-    const operations: CompletedOperation[] = [];
-    let i = 0;
-    
-    while (i < data.length) {
-      const event = data[i];
-      
-      // Check if this is start of an operation (operation_start or first step_change)
-      if (event.event_type === 'operation_start' || 
-          (event.event_type === 'step_change' && event.step_name === 'Příjezd na sál')) {
-        
-        const operationStart = i;
-        let operationEnd = i;
-        
-        // Find the end of this operation (operation_end or "Úklid sálu")
-        for (let j = i + 1; j < data.length; j++) {
-          if (data[j].event_type === 'operation_end' || 
-              (data[j].event_type === 'step_change' && data[j].step_name === 'Úklid sálu')) {
-            operationEnd = j;
-            break;
-          }
-        }
-        
-        // Extract events for this operation
-        const operationEvents = data.slice(operationStart, operationEnd + 1);
-        const op = buildCompletedOperation(operationEvents);
-        
-        if (op) {
-          operations.push(op);
-        }
-        
-        // Move to next event after this operation
-        i = operationEnd + 1;
-      } else {
-        i++;
+    // Group by room
+    const byRoom = new Map<string, StatusHistoryRow[]>();
+    for (const row of data) {
+      const roomId = row.operating_room_id;
+      if (!byRoom.has(roomId)) {
+        byRoom.set(roomId, []);
+      }
+      byRoom.get(roomId)!.push(row);
+    }
+
+    // Build operations for each room
+    const result = new Map<string, CompletedOperation[]>();
+    for (const [roomId, events] of byRoom) {
+      const ops = buildOperationsFromEvents(events);
+      if (ops.length > 0) {
+        result.set(roomId, ops);
       }
     }
 
-    return operations;
+    return result;
   } catch (error) {
     console.error('[DB] Failed to fetch completed operations:', error);
     return null;
   }
 }
 
+// Build operations from a sequence of events for one room
+function buildOperationsFromEvents(events: StatusHistoryRow[]): CompletedOperation[] {
+  const operations: CompletedOperation[] = [];
+  let currentOpEvents: StatusHistoryRow[] = [];
+  let inOperation = false;
+
+  for (const event of events) {
+    // Start of operation: "Příjezd na sál"
+    if (event.event_type === 'step_change' && event.step_name === 'Příjezd na sál') {
+      // If already in operation, close previous one first
+      if (inOperation && currentOpEvents.length > 0) {
+        const op = buildCompletedOperation(currentOpEvents);
+        if (op) operations.push(op);
+      }
+      currentOpEvents = [event];
+      inOperation = true;
+    } 
+    // End of operation: "Úklid sálu" or operation_completed
+    else if (inOperation && (
+      (event.event_type === 'step_change' && event.step_name === 'Úklid sálu') ||
+      event.event_type === 'operation_completed'
+    )) {
+      currentOpEvents.push(event);
+      const op = buildCompletedOperation(currentOpEvents);
+      if (op) operations.push(op);
+      currentOpEvents = [];
+      inOperation = false;
+    }
+    // Middle events
+    else if (inOperation) {
+      currentOpEvents.push(event);
+    }
+  }
+
+  return operations;
+}
+
 // Build a completed operation from events
 function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation | null {
   if (events.length === 0) return null;
   
-  // Find first "Příjezd na sál" (start) and last "Úklid sálu" (end)
-  const prijezdEvent = events.find(e => e.event_type === 'step_change' && e.step_name === 'Příjezd na sál');
-  const uklidEvent = events.find(e => {
-    // Find last occurrence of Úklid sálu
-    return e.event_type === 'step_change' && e.step_name === 'Úklid sálu';
-  });
+  // First event should be "Příjezd na sál", last should be "Úklid sálu"
+  const firstEvent = events[0];
+  const lastEvent = events[events.length - 1];
   
-  // Must have both to be valid operation
-  if (!prijezdEvent || !uklidEvent) return null;
-  
-  // Get all events in reverse to find the LAST "Úklid sálu"
-  const uklidEventLast = [...events].reverse().find(e => 
-    e.event_type === 'step_change' && e.step_name === 'Úklid sálu'
-  );
-  
-  if (!uklidEventLast) return null;
+  if (!firstEvent || !lastEvent) return null;
   
   // Collect all step_change events as status history
   const statusHistory = events
@@ -358,11 +365,23 @@ function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation
     }))
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
 
+  if (statusHistory.length === 0) return null;
+
   return {
-    startedAt: prijezdEvent.timestamp,
-    endedAt: uklidEventLast.timestamp,
+    startedAt: firstEvent.timestamp,
+    endedAt: lastEvent.timestamp,
     statusHistory
   };
+}
+
+// Keep old function for compatibility but make it use new logic
+export async function fetchCompletedOperationsForDay(
+  roomId: string,
+  date: Date
+): Promise<CompletedOperation[] | null> {
+  const allOps = await fetchAllCompletedOperationsForDay(date);
+  if (!allOps) return null;
+  return allOps.get(roomId) || [];
 }
 
 // Get color for a step index (you can adjust these colors)
