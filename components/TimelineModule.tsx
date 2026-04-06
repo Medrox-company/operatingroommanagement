@@ -1062,67 +1062,45 @@ style={{
                       })
                     })()}
 
-                    {/* Continuing operation bar (green) - two cases:
-                        1. Operation started BEFORE 7:00 (yesterday) → green bar from 0% to nowWindowPct
-                        2. Operation started TODAY but ends AFTER 7:00 tomorrow → green bar from 0% to nowWindowPct on the NEXT day (not applicable here, handled as overflow)
-                        For case 2 we just extend the active bar to 100% and show overflow indicator.
+                    {/* Continuing operation bar (green) - for operations that overflow to next day (endPct > 100)
+                        Shows as a continuous green bar from operation start until 100% (7:00 next day boundary)
                     */}
-                    {isActive && room.operationStartedAt && (() => {
+                    {isActive && room.estimatedEndTime && (() => {
                       const opStart = new Date(room.operationStartedAt);
+                      const opEnd = new Date(room.estimatedEndTime);
                       const windowStart = new Date(currentTime);
                       windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
                       if (currentTime.getHours() < TIMELINE_START_HOUR) {
                         windowStart.setDate(windowStart.getDate() - 1);
                       }
 
-                      const rawLeftPct = getTimePercentForTimeline(opStart, windowStart);
-                      const nowWindowPct = getTimePercentForTimeline(currentTime, windowStart);
-
-                      // CASE 1: Operation started BEFORE window start (7:00) - show green bar from 0% to now
-                      if (rawLeftPct < 0) {
-                        const continuingWidthPct = Math.max(0, Math.min(100, nowWindowPct));
-                        if (continuingWidthPct <= 0) return null;
-                        return (
-                          <div
-                            className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
-                            style={{
-                              left: '0%',
-                              width: `${continuingWidthPct}%`,
-                              background: 'rgba(34, 197, 94, 0.4)',
-                              borderRight: '2px solid rgba(34, 197, 94, 0.8)'
-                            }}
-                          >
-                            {continuingWidthPct > 8 && (
-                              <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
-                                POKRAČUJÍCÍ VÝKON
-                              </span>
-                            )}
-                          </div>
-                        );
-                      }
-
-                      // CASE 2: Operation started TODAY but will end AFTER next 7:00 (overflows tomorrow)
-                      // Check room.estimatedEndTime instead of endDate (which is in parent scope)
-                      if (room.estimatedEndTime) {
-                        const opEndDate = new Date(room.estimatedEndTime);
-                        const endPct = getTimePercentForTimeline(opEndDate, windowStart);
-                        if (endPct > 100) {
-                          // Show overflow indicator at the right edge
-                          return (
-                            <div
-                              className="absolute top-1 bottom-1 right-0 flex items-center justify-center"
-                              style={{ width: '24px', right: '0%' }}
-                              title="Výkon pokračuje do dalšího dne"
-                            >
-                              <div className="w-5 h-5 rounded-full bg-green-500/80 flex items-center justify-center">
-                                <span className="text-[9px] font-bold text-white">→</span>
-                              </div>
-                            </div>
-                          );
-                        }
-                      }
-
-                      return null;
+                      const startPct = getTimePercentForTimeline(opStart, windowStart);
+                      const endPct = getTimePercentForTimeline(opEnd, windowStart);
+                      
+                      // Only show if operation extends past 100% (beyond 7:00 tomorrow)
+                      if (endPct <= 100) return null;
+                      
+                      // Green bar for the overflow part (from startPct to 100%)
+                      const displayLeftPct = Math.max(0, startPct);
+                      const displayWidthPct = Math.max(2, 100 - displayLeftPct);
+                      
+                      return (
+                        <div
+                          className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
+                          style={{
+                            left: `${displayLeftPct}%`,
+                            width: `${displayWidthPct}%`,
+                            background: 'rgba(34, 197, 94, 0.4)',
+                            borderRight: '2px solid rgba(34, 197, 94, 0.8)'
+                          }}
+                        >
+                          {displayWidthPct > 8 && (
+                            <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
+                              POKRAČUJÍCÍ VÝKON
+                            </span>
+                          )}
+                        </div>
+                      );
                     })()}
 
                     {/* Active operation bar */}
