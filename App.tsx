@@ -98,6 +98,11 @@ const AppContent: React.FC = () => {
             const completedOps = (historyOps && historyOps.length > 0) 
               ? historyOps 
               : (room.completedOperations && room.completedOperations.length > 0 ? room.completedOperations : []);
+            
+            if (room.completedOperations && room.completedOperations.length > 0) {
+              console.log("[v0] Room:", room.name, "has", room.completedOperations.length, "completed ops");
+            }
+            
             return {
               ...room,
               completedOperations: completedOps
