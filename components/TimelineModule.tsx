@@ -1062,7 +1062,11 @@ style={{
                       })
                     })()}
 
-                    {/* Continuing operation bar (green) - shown when active operation started before window start (7:00) */}
+                    {/* Continuing operation bar (green) - two cases:
+                        1. Operation started BEFORE 7:00 (yesterday) → green bar from 0% to nowWindowPct
+                        2. Operation started TODAY but ends AFTER 7:00 tomorrow → green bar from 0% to nowWindowPct on the NEXT day (not applicable here, handled as overflow)
+                        For case 2 we just extend the active bar to 100% and show overflow indicator.
+                    */}
                     {isActive && room.operationStartedAt && (() => {
                       const opStart = new Date(room.operationStartedAt);
                       const windowStart = new Date(currentTime);
@@ -1071,34 +1075,50 @@ style={{
                         windowStart.setDate(windowStart.getDate() - 1);
                       }
 
-                      // rawLeftPct < 0 means operation started before 7:00 (window start)
                       const rawLeftPct = getTimePercentForTimeline(opStart, windowStart);
-                      if (rawLeftPct >= 0) return null; // started within window, no continuing bar needed
-
-                      // Green bar from 0% (7:00) to where the active bar starts (boxLeftPct = 0 after clamping)
-                      // But we want it to reach the current time position
                       const nowWindowPct = getTimePercentForTimeline(currentTime, windowStart);
-                      const continuingWidthPct = Math.max(0, Math.min(100, nowWindowPct));
 
-                      if (continuingWidthPct <= 0) return null;
+                      // CASE 1: Operation started BEFORE window start (7:00) - show green bar from 0% to now
+                      if (rawLeftPct < 0) {
+                        const continuingWidthPct = Math.max(0, Math.min(100, nowWindowPct));
+                        if (continuingWidthPct <= 0) return null;
+                        return (
+                          <div
+                            className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
+                            style={{
+                              left: '0%',
+                              width: `${continuingWidthPct}%`,
+                              background: 'rgba(34, 197, 94, 0.4)',
+                              borderRight: '2px solid rgba(34, 197, 94, 0.8)'
+                            }}
+                          >
+                            {continuingWidthPct > 8 && (
+                              <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
+                                POKRAČUJÍCÍ VÝKON
+                              </span>
+                            )}
+                          </div>
+                        );
+                      }
 
-                      return (
-                        <div
-                          className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
-                          style={{
-                            left: '0%',
-                            width: `${continuingWidthPct}%`,
-                            background: 'rgba(34, 197, 94, 0.4)',
-                            borderRight: '2px solid rgba(34, 197, 94, 0.8)'
-                          }}
-                        >
-                          {continuingWidthPct > 8 && (
-                            <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
-                              POKRAČUJÍCÍ VÝKON
-                            </span>
-                          )}
-                        </div>
-                      );
+                      // CASE 2: Operation started TODAY but will end AFTER next 7:00 (overflows tomorrow)
+                      // rawLeftPct >= 0 but rawRightPct > 100
+                      if (endDate && getTimePercentForTimeline(endDate, windowStart) > 100) {
+                        // Show overflow indicator at the right edge
+                        return (
+                          <div
+                            className="absolute top-1 bottom-1 right-0 flex items-center justify-center"
+                            style={{ width: '24px', right: '0%' }}
+                            title="Výkon pokračuje do dalšího dne"
+                          >
+                            <div className="w-5 h-5 rounded-full bg-green-500/80 flex items-center justify-center">
+                              <span className="text-[9px] font-bold text-white">→</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return null;
                     })()}
 
                     {/* Active operation bar */}
