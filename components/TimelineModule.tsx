@@ -990,6 +990,10 @@ style={{
                         // Get single continuous position (even if crossing 7:00)
                         const position = getOperationPosition(opStartDate, opEndDate, currentTime);
                         
+                        if (room.name === 'DaVinci') {
+                          console.log("[v0] DaVinci op render - position:", position, "width<=0?", position.width <= 0);
+                        }
+                        
                         // Skip if width is 0
                         if (position.width <= 0) return null;
                         
