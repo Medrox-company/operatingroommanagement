@@ -177,6 +177,14 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
     const patientMap = new Map<string, DBPatient>();
     const procedureMap = new Map<string, DBProcedure>();
 
+    // Debug: Log raw completed_operations from first room with data
+    const roomWithOps = roomsRes.data.find((r: DBOperatingRoom) => r.completed_operations && r.completed_operations.length > 0);
+    if (roomWithOps) {
+      console.log("[v0] DB Room with completed_operations:", roomWithOps.name, "count:", roomWithOps.completed_operations?.length);
+    } else {
+      console.log("[v0] No rooms have completed_operations in DB response");
+    }
+    
     // Transform rows
     return roomsRes.data.map((row: DBOperatingRoom) => 
       transformRoom(row, staffMap, patientMap, procedureMap)
