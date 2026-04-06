@@ -957,8 +957,30 @@ style={{
 
                     {/* Completed operations - soft gray inactive bars */}
                     {(() => {
-                      if (!room.completedOperations || room.completedOperations.length === 0) return null;
-                      const filteredOps = room.completedOperations.filter(operation => {
+                      // Use completedOperations from room data
+                      let opsToRender = room.completedOperations || [];
+                      
+                      // TEST: If room has no completedOperations but has name "DaVinci", add test data
+                      if (opsToRender.length === 0 && room.name === 'DaVinci') {
+                        const today = new Date();
+                        const todayStr = today.toISOString().split('T')[0];
+                        opsToRender = [
+                          {
+                            startedAt: `${todayStr}T10:00:00.000Z`,
+                            endedAt: `${todayStr}T12:00:00.000Z`,
+                            statusHistory: [
+                              { stepIndex: 0, startedAt: `${todayStr}T10:00:00.000Z`, stepName: 'Příjezd na sál', color: '#22c55e' },
+                              { stepIndex: 1, startedAt: `${todayStr}T10:30:00.000Z`, stepName: 'Příprava', color: '#3b82f6' },
+                              { stepIndex: 2, startedAt: `${todayStr}T11:00:00.000Z`, stepName: 'Operace', color: '#ef4444' },
+                              { stepIndex: 3, startedAt: `${todayStr}T11:30:00.000Z`, stepName: 'Ukončení', color: '#8b5cf6' },
+                            ]
+                          }
+                        ];
+                      }
+                      
+                      if (opsToRender.length === 0) return null;
+                      
+                      const filteredOps = opsToRender.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
                         return isOperationInWindow(opStartDate, opEndDate, currentTime);

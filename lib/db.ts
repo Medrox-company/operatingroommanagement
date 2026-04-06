@@ -183,21 +183,6 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
     if (roomsRes.error) throw roomsRes.error;
     if (!roomsRes.data || roomsRes.data.length === 0) return null;
 
-    // DEBUG: Log raw data from Supabase to see completed_operations
-    const roomWithOps = roomsRes.data.find((r: DBOperatingRoom) => 
-      r.completed_operations && 
-      (Array.isArray(r.completed_operations) ? r.completed_operations.length > 0 : true)
-    );
-    if (roomWithOps) {
-      console.log("[v0] RAW Supabase data - room:", roomWithOps.name);
-      console.log("[v0] RAW completed_operations type:", typeof roomWithOps.completed_operations);
-      console.log("[v0] RAW completed_operations isArray:", Array.isArray(roomWithOps.completed_operations));
-      console.log("[v0] RAW completed_operations value:", JSON.stringify(roomWithOps.completed_operations).substring(0, 500));
-    } else {
-      console.log("[v0] NO room has completed_operations in raw Supabase response");
-      console.log("[v0] First room completed_operations:", roomsRes.data[0]?.completed_operations);
-    }
-
     // Create staff lookup map
     const staffMap = new Map<string, DBStaff>();
     (staffRes.data || []).forEach((s: DBStaff) => staffMap.set(s.id, s));
