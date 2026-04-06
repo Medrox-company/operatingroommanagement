@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_WORKING_HOURS } from '../types';
 import { MOCK_ROOMS } from '../constants';
@@ -166,56 +166,34 @@ const RoomCard: React.FC<{
   
   return (
     <motion.div
-      className="relative group overflow-hidden rounded-[1.5rem]"
+      className="relative group overflow-hidden rounded-xl"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Background Glow */}
-      <div 
-        className="absolute inset-0 opacity-20 blur-3xl transition-opacity group-hover:opacity-30"
-        style={{ background: color }}
-      />
-      
       {/* Card Content */}
       <div 
-        className="relative rounded-[1.5rem] border backdrop-blur-xl overflow-hidden transition-all duration-300"
+        className="relative rounded-xl border backdrop-blur-sm overflow-hidden transition-all duration-300"
         style={{ 
           background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
           borderColor: 'rgba(255,255,255,0.08)'
         }}
       >
-        {/* Top Accent Line */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-1"
-          style={{ background: `linear-gradient(90deg, ${color}, ${color}50)` }}
-        />
-        
-        {/* Header */}
-        <div className="p-5 pb-0">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ 
-                  background: `linear-gradient(135deg, ${color}30, ${color}10)`,
-                  border: `1px solid ${color}40`
-                }}
-              >
-                <Building2 className="w-5 h-5" style={{ color }} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">{room.name}</h3>
-                <p className="text-xs font-medium" style={{ color }}>{room.department}</p>
-              </div>
+        {/* Content */}
+        <div className="p-6 flex flex-col h-full">
+          {/* Top Row: Name and Status */}
+          <div className="flex items-start justify-between mb-5 pb-5 border-b border-white/5">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-white/40 uppercase tracking-wide mb-1">{room.department}</p>
+              <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
             </div>
             
-            {/* Status indicator */}
+            {/* Status Badge */}
             <div 
-              className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              className="ml-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
               style={{ 
-                background: room.status === RoomStatus.FREE ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                background: room.status === RoomStatus.FREE ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                 color: room.status === RoomStatus.FREE ? '#22C55E' : '#EF4444',
                 border: `1px solid ${room.status === RoomStatus.FREE ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
               }}
@@ -223,107 +201,88 @@ const RoomCard: React.FC<{
               {room.status === RoomStatus.FREE ? 'Volný' : 'Obsazeno'}
             </div>
           </div>
-        </div>
-        
-        {/* Schedule Preview */}
-        <div className="p-5">
-          {/* Days Strip */}
-          <div className="flex items-center gap-1 mb-4">
-            {DAYS.map(day => {
-              const daySchedule = schedule[day.key as keyof WeeklySchedule];
-              return (
-                <div 
-                  key={day.key}
-                  className={`flex-1 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all ${
-                    daySchedule.enabled 
-                      ? 'text-white' 
-                      : 'text-white/20'
-                  }`}
-                  style={{
-                    background: daySchedule.enabled ? `${color}25` : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${daySchedule.enabled ? `${color}40` : 'rgba(255,255,255,0.05)'}`
-                  }}
-                >
-                  {day.short}
-                </div>
-              );
-            })}
-          </div>
           
-          {/* Today's Hours */}
-          <div 
-            className="p-3 rounded-xl mb-4"
-            style={{ 
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.05)'
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-white/40" />
-                <span className="text-xs text-white/40">Dnes</span>
+          {/* Middle: Schedule Info */}
+          <div className="flex-1 mb-5">
+            {/* Days Strip */}
+            <div className="flex items-center gap-1 mb-4">
+              {DAYS.map(day => {
+                const daySchedule = schedule[day.key as keyof WeeklySchedule];
+                return (
+                  <div 
+                    key={day.key}
+                    className={`flex-1 h-7 rounded-md flex items-center justify-center text-[9px] font-bold transition-all ${
+                      daySchedule.enabled 
+                        ? 'text-white' 
+                        : 'text-white/30'
+                    }`}
+                    style={{
+                      background: daySchedule.enabled ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}
+                  >
+                    {day.short}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Today's Hours and Stats */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* Today's Hours */}
+              <div 
+                className="col-span-2 p-3 rounded-lg"
+                style={{ 
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                }}
+              >
+                <p className="text-[9px] text-white/40 uppercase tracking-wide mb-1">Dnes</p>
+                {todaySchedule.enabled ? (
+                  <p className="text-sm font-mono text-white">
+                    {todaySchedule.startHour.toString().padStart(2, '0')}:{todaySchedule.startMinute.toString().padStart(2, '0')} — {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                  </p>
+                ) : (
+                  <p className="text-sm text-white/30">Neaktivní</p>
+                )}
               </div>
-              {todaySchedule.enabled ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono text-white">
-                    {todaySchedule.startHour.toString().padStart(2, '0')}:{todaySchedule.startMinute.toString().padStart(2, '0')}
-                  </span>
-                  <span className="text-white/30">—</span>
-                  <span className="text-sm font-mono font-bold" style={{ color }}>
-                    {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-xs text-white/30">Neaktivní</span>
-              )}
+              
+              {/* Active Days Count */}
+              <div 
+                className="p-3 rounded-lg text-center"
+                style={{ 
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                }}
+              >
+                <p className="text-[9px] text-white/40 uppercase tracking-wide mb-1">Dny</p>
+                <p className="text-lg font-bold text-white">{activeDays}</p>
+              </div>
             </div>
           </div>
           
-          {/* Stats */}
-          <div className="flex items-center gap-3 mb-4">
-            <div 
-              className="flex-1 p-2 rounded-lg text-center"
-              style={{ background: 'rgba(255,255,255,0.02)' }}
-            >
-              <p className="text-[10px] text-white/30 uppercase">Aktivní dny</p>
-              <p className="text-lg font-bold text-white">{activeDays}</p>
-            </div>
-            <div 
-              className="flex-1 p-2 rounded-lg text-center"
-              style={{ background: 'rgba(255,255,255,0.02)' }}
-            >
-              <p className="text-[10px] text-white/30 uppercase">Operací 24h</p>
-              <p className="text-lg font-bold text-white">{room.operations24h || 0}</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Actions */}
-        <div className="px-5 pb-5">
-          <div className="flex gap-2">
+          {/* Bottom: Actions */}
+          <div className="flex gap-2 pt-4 border-t border-white/5">
             <button
               onClick={onScheduleEdit}
-              className="flex-1 px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
-              style={{ 
-                background: `${color}20`,
-                border: `1px solid ${color}40`,
-                color
-              }}
+              className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
             >
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-3.5 h-3.5 inline mr-1.5" />
               Rozvrh
             </button>
             <button
               onClick={onEdit}
-              className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+              className="px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+              title="Upravit"
             >
-              <Edit2 className="w-4 h-4" />
+              <Edit2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all"
+              className="px-3 py-2 rounded-lg text-sm font-medium transition-all bg-red-500/5 border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400"
+              title="Smazat"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -342,7 +301,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     (initialRooms || MOCK_ROOMS).map(room => ({
       ...room,
       weeklySchedule: room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE
-    }))
+    })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
   );
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingRoom, setEditingRoom] = useState<OperatingRoom | null>(null);
@@ -353,6 +312,23 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     name: '',
     department: '',
   });
+
+  const saveRoomOrder = useCallback(async (rooms: OperatingRoom[]) => {
+    try {
+      const response = await fetch('/api/operating-rooms/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rooms })
+      });
+
+      if (!response.ok) {
+        throw new Error('Nepodařilo se uložit pořadí');
+      }
+    } catch (err) {
+      console.error('Error saving room order:', err);
+      setError('Chyba při ukládání pořadí sálů');
+    }
+  }, []);
 
   const handleAddRoom = () => {
     if (!newRoomData.name || !newRoomData.department) {
@@ -371,6 +347,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       isEmergency: false,
       isLocked: false,
       weeklySchedule: { ...DEFAULT_WEEKLY_SCHEDULE },
+      sort_order: roomsList.length,
       staff: {
         doctor: { name: null, role: 'DOCTOR' },
         nurse: { name: null, role: 'NURSE' },
@@ -379,6 +356,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
     const updatedRooms = [...roomsList, newRoom];
     setRoomsList(updatedRooms);
+    saveRoomOrder(updatedRooms);
     onRoomsChange?.(updatedRooms);
     setNewRoomData({ name: '', department: '' });
     setIsAddingNew(false);
@@ -422,13 +400,13 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   return (
     <div className="w-full">
       {/* Header */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-10">
+      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <Building2 className="w-4 h-4 text-[#00D8C1]" />
-            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERAČNÍ SÁLY MANAGEMENT</p>
           </div>
-          <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
             OPERAČNÍ <span className="text-white/20">SÁLY</span>
           </h1>
         </div>
@@ -527,7 +505,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       )}
 
       {/* Rooms Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {roomsList.map((room) => (
           <RoomCard
             key={room.id}
@@ -675,6 +653,16 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     type="text"
                     value={editingRoom.department}
                     onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Pořadí zobrazení</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={(editingRoom.sort_order ?? 0) + 1}
+                    onChange={(e) => setEditingRoom({ ...editingRoom, sort_order: Math.max(0, parseInt(e.target.value) || 1) - 1 })}
                     className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>

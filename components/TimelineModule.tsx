@@ -5,7 +5,7 @@ import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle
 } from 'lucide-react';
 
 // ========== CONSTANTS ==========
@@ -65,6 +65,87 @@ const hourLabel = (hour: number): string => {
 
 const isNextDayHour = (hour: number): boolean => hour >= 24;
 
+// Check if operation should be displayed in current 24-hour window (7:00-7:00)
+// Show operations that:
+// 1. Ended within the current window (today's completed operations)
+// 2. OR are still in progress (continuing operations that started before window but end after window start)
+const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date): boolean => {
+  // Get current window start: 7:00 of the current day
+  const windowStart = new Date(currentTime);
+  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+  
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
+    windowStart.setDate(windowStart.getDate() - 1);
+  }
+  
+  // Window ends at 7:00 next day
+  const windowEnd = new Date(windowStart);
+  windowEnd.setDate(windowEnd.getDate() + 1);
+  
+  // Operation is visible if it overlaps with the current 24-hour window
+  // (operation ends after window starts AND operation starts before window ends)
+  return endDate > windowStart && startDate < windowEnd;
+};
+
+// Check if operation exceeds 24 hours
+const exceedsT24Hours = (startDate: Date, endDate: Date): boolean => {
+  const durationMs = endDate.getTime() - startDate.getTime();
+  const durationHours = durationMs / (1000 * 60 * 60);
+  return durationHours > 24;
+};
+
+// Get time percent for timeline display
+// Timeline runs from 7:00 (0%) to 7:00 next day (100%)
+// Operations that cross 7:00 will extend beyond 100%
+const getTimePercentForTimeline = (date: Date, referenceStart: Date): number => {
+  const diffMs = date.getTime() - referenceStart.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  return (diffHours / TIMELINE_HOURS) * 100;
+};
+
+// Get operation position on timeline (single continuous bar, even if crossing 7:00)
+const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {
+  left: number, 
+  width: number, 
+  exceedsBoundary: boolean,
+  isContinuing: boolean  // True if operation started before 7:00 (from previous day)
+} => {
+  // Calculate window start (7:00 of the current day)
+  const windowStart = new Date(currentTime);
+  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+  
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
+    windowStart.setDate(windowStart.getDate() - 1);
+  }
+  
+  // Calculate position relative to window start
+  let leftPct = getTimePercentForTimeline(startDate, windowStart);
+  let endPct = getTimePercentForTimeline(endDate, windowStart);
+  
+  // Check if operation started before window (continuing from previous day)
+  const isContinuing = leftPct < 0;
+  
+  // Clamp left to 0 if operation started before window
+  if (leftPct < 0) leftPct = 0;
+  
+  // Check if operation exceeds timeline boundary (past 7:00 next day = 100%)
+  const exceedsBoundary = endPct > 100;
+  
+  // Clamp end to 100 for display (but track if it exceeds)
+  if (endPct > 100) endPct = 100;
+  
+  const width = Math.max(0, endPct - leftPct);
+  
+  return {
+    left: leftPct,
+    width: width,
+    exceedsBoundary: exceedsBoundary,
+    isContinuing: isContinuing
+  };
+};
+
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
@@ -82,6 +163,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const [showLegend, setShowLegend] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+
+  // DEBUG: Log rooms data
+  console.log("[v0] TimelineModule rooms:", rooms.map(r => ({
+    name: r.name,
+    completedOps: r.completedOperations?.length || 0,
+    data: r.completedOperations?.slice(0, 2)
+  })));
 
   // Update current time every second
   useEffect(() => {
@@ -872,92 +960,112 @@ style={{
 
                     {/* Completed operations - soft gray inactive bars */}
                     {room.completedOperations && room.completedOperations.length > 0 && (() => {
-                      return room.completedOperations.map((operation, opIdx) => {
+                      console.log("[v0] Rendering completedOps for room", room.name, "count:", room.completedOperations.length);
+                      const filteredOps = room.completedOperations.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
-                        
-                        // Use getTimePercent to calculate position on timeline
-                        const opLeftPct = getTimePercent(opStartDate);
-                        const opEndPct = getTimePercent(opEndDate);
-                        let opWidthPct = opEndPct - opLeftPct;
-                        
-                        // Handle cross-midnight operations
-                        if (opWidthPct < 0) opWidthPct += 100;
-                        
-                        // Skip if completely outside visible timeline
-                        if (opEndPct < 0 || opLeftPct > 100 || opWidthPct <= 0) {
-                          return null;
+                        const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        if (!inWindow) {
+                          console.log("[v0]   Op FILTERED OUT:", operation.startedAt, "->", operation.endedAt);
                         }
+                        return inWindow;
+                      });
+                      
+                      console.log("[v0] Filtered ops for room", room.name, ":", filteredOps.length, "will render");
+                      return filteredOps.map((operation, opIdx) => {
+                        const opStartDate = new Date(operation.startedAt);
+                        const opEndDate = new Date(operation.endedAt);
+                        const exceedsDay = exceedsT24Hours(opStartDate, opEndDate);
+                        
+                        // Get single continuous position (even if crossing 7:00)
+                        const position = getOperationPosition(opStartDate, opEndDate, currentTime);
+                        
+                        // Skip if width is 0
+                        if (position.width <= 0) return null;
+                        
+                        // Check if this is a continuing operation (started before 7:00)
+                        const isContinuingOp = position.isContinuing;
                         
                         return (
-                          <div
-                            key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
-                            style={{ 
-                              left: `${Math.max(0, opLeftPct)}%`, 
-                              width: `${Math.min(100 - Math.max(0, opLeftPct), opWidthPct)}%`,
-                            }}
-                          >
-                            {/* Completed operation segments with colors from database context */}
-                            <div className="absolute inset-0 flex overflow-hidden rounded-md">
-                              {(() => {
-                                // Build color lookup from activeStatuses
-                                const stepColorMap: Record<number, string> = {};
-                                activeStatuses.forEach((s, i) => {
-                                  stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
-                                });
+                          <div key={`completed-${opIdx}`} className="relative">
+                            <div
+                              className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
+                              style={{ 
+                                left: `${position.left}%`, 
+                                width: `${position.width}%`,
+                                // Green background for continuing operations, gray for completed
+                                background: isContinuingOp ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.08)',
+                              }}
+                            >
+                              {/* Completed operation segments with colors from database context */}
+                              {!isContinuingOp && operation.statusHistory && operation.statusHistory.length > 0 && (
+                                <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                                  {(() => {
+                                    // Build color lookup from activeStatuses
+                                    const stepColorMap: Record<number, string> = {};
+                                    activeStatuses.forEach((s, i) => {
+                                      stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
+                                    });
 
-                                if (operation.statusHistory && operation.statusHistory.length > 0) {
-                                  const opStart = new Date(operation.startedAt).getTime();
-                                  const opEnd = new Date(operation.endedAt).getTime();
-                                  const opDuration = Math.max(1, opEnd - opStart);
+                                    const opStart = new Date(operation.startedAt).getTime();
+                                    const opEnd = new Date(operation.endedAt).getTime();
+                                    const opDuration = Math.max(1, opEnd - opStart);
 
-                                  return operation.statusHistory.map((entry, idx) => {
-                                    const segStart = new Date(entry.startedAt).getTime();
-                                    const nextEntry = operation.statusHistory[idx + 1];
-                                    const segEnd = nextEntry
-                                      ? new Date(nextEntry.startedAt).getTime()
-                                      : opEnd;
-                                    const segDuration = Math.max(0, segEnd - segStart);
-                                    const segWidthPct = (segDuration / opDuration) * 100;
-                                    const segLeftPct = ((segStart - opStart) / opDuration) * 100;
-                                    if (segWidthPct <= 0) return null;
-                                    const phaseColor = entry.color
-                                      || stepColorMap[entry.stepIndex]
-                                      || STEP_INDEX_COLORS[entry.stepIndex]
-                                      || '#6b7280';
+                                    return operation.statusHistory.map((entry, idx) => {
+                                      const segStart = new Date(entry.startedAt).getTime();
+                                      const nextEntry = operation.statusHistory[idx + 1];
+                                      const segEnd = nextEntry
+                                        ? new Date(nextEntry.startedAt).getTime()
+                                        : opEnd;
+                                      const segDuration = Math.max(0, segEnd - segStart);
+                                      const segWidthPct = (segDuration / opDuration) * 100;
+                                      const segLeftPct = ((segStart - opStart) / opDuration) * 100;
+                                      if (segWidthPct <= 0) return null;
+                                      const phaseColor = entry.color
+                                        || stepColorMap[entry.stepIndex]
+                                        || STEP_INDEX_COLORS[entry.stepIndex]
+                                        || '#6b7280';
 
-                                    return (
-                                      <div
-                                        key={`seg-${idx}`}
-                                        className="absolute top-0 bottom-0"
-                                        style={{
-                                          left: `${Math.max(0, segLeftPct)}%`,
-                                          width: `${Math.max(0.5, segWidthPct)}%`,
-                                          background: `${phaseColor}50`,
-                                          borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
-                                        }}
-                                        title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
-                                      />
-                                    );
-                                  });
-                                }
-
-                                // No history: show single color block for this completed op
-                                return (
-                                  <div className="absolute inset-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                                );
-                              })()}
+                                      return (
+                                        <div
+                                          key={`seg-${idx}`}
+                                          className="absolute top-0 bottom-0"
+                                          style={{
+                                            left: `${Math.max(0, segLeftPct)}%`,
+                                            width: `${Math.max(0.5, segWidthPct)}%`,
+                                            background: `${phaseColor}50`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
+                                          }}
+                                          title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
+                                        />
+                                      );
+                                    });
+                                  })()}
+                                </div>
+                              )}
+                              
+                              {/* Label for operation */}
+                              <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                                {position.width > 6 && (
+                                  <span className={`text-[10px] font-semibold truncate uppercase tracking-wide ${
+                                    isContinuingOp ? 'text-white' : 'text-white/30'
+                                  }`}>
+                                    {isContinuingOp ? 'POKRAČUJÍCÍ VÝKON' : 'Dokončeno'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             
-                            {/* Label for completed operation */}
-                            <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
-                              {opWidthPct > 6 && (
-                                <span className="text-[9px] font-medium text-white/30 truncate">
-                                  Dokončeno
-                                </span>
-                              )}
-                            </div>
+                            {/* Icon for operations exceeding 24 hours or crossing boundary */}
+                            {(exceedsDay || position.exceedsBoundary) && (
+                              <div 
+                                className="absolute -top-3 z-10 flex items-center justify-center bg-orange-500 rounded-full p-0.5"
+                                style={{ left: `${position.left + position.width - 1}%` }}
+                                title={exceedsDay ? "Výkon přesahuje 24 hodin" : "Výkon pokračuje do dalšího dne"}
+                              >
+                                <AlertCircle className="w-3 h-3 text-white" />
+                              </div>
+                            )}
                           </div>
                         );
                       })
@@ -1270,6 +1378,13 @@ style={{
           >
             <div className="w-4 h-4 rounded bg-white/10" />
             <span className="text-[10px] font-medium text-white/40">Dokoncene</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)' }}
+          >
+            <div className="w-4 h-4 rounded" style={{ background: 'rgba(34, 197, 94, 0.4)' }} />
+            <span className="text-[10px] font-medium text-green-400/70">Pokracujici vykon</span>
           </div>
           <div 
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
