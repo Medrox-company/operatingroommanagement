@@ -1077,13 +1077,10 @@ style={{
 
                       const rawLeftPct = getTimePercentForTimeline(opStart, windowStart);
                       const nowWindowPct = getTimePercentForTimeline(currentTime, windowStart);
-                      
-                      console.log("[v0] Room:", room.name, "opStart:", opStart.toISOString(), "windowStart:", windowStart.toISOString(), "rawLeftPct:", rawLeftPct, "nowWindowPct:", nowWindowPct);
 
                       // CASE 1: Operation started BEFORE window start (7:00) - show green bar from 0% to now
                       if (rawLeftPct < 0) {
                         const continuingWidthPct = Math.max(0, Math.min(100, nowWindowPct));
-                        console.log("[v0]   CASE 1 (before 7:00): continuingWidthPct:", continuingWidthPct);
                         if (continuingWidthPct <= 0) return null;
                         return (
                           <div
@@ -1109,9 +1106,7 @@ style={{
                       if (room.estimatedEndTime) {
                         const opEndDate = new Date(room.estimatedEndTime);
                         const endPct = getTimePercentForTimeline(opEndDate, windowStart);
-                        console.log("[v0]   CASE 2 check: endPct:", endPct, "room.estimatedEndTime:", room.estimatedEndTime);
                         if (endPct > 100) {
-                          console.log("[v0]   CASE 2 (overflows tomorrow)");
                           // Show overflow indicator at the right edge
                           return (
                             <div
