@@ -174,8 +174,9 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
 
   try {
     // Fetch rooms and staff data in parallel
+    // Explicitly select columns including completed_operations JSONB
     const [roomsRes, staffRes] = await Promise.all([
-      supabase.from('operating_rooms').select('*').order('name'),
+      supabase.from('operating_rooms').select('*, completed_operations').order('name'),
       supabase.from('staff').select('*'),
     ]);
 
