@@ -956,12 +956,20 @@ style={{
                     })}
 
                     {/* Completed operations - soft gray inactive bars */}
-                    {room.completedOperations && room.completedOperations.length > 0 && (() => {
-                      const filteredOps = room.completedOperations.filter(operation => {
+                    {(() => {
+                      // Use completedOperations from room data
+                      const opsToRender = room.completedOperations || [];
+                      
+                      if (opsToRender.length === 0) return null;
+                      
+                      const filteredOps = opsToRender.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
-                        return isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        return inWindow;
                       });
+                      
+                      if (filteredOps.length === 0) return null;
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);

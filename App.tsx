@@ -14,7 +14,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield } from 'lucide-react';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, fetchAllCompletedOperationsForDay } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
@@ -85,9 +85,17 @@ const AppContent: React.FC = () => {
     const loadRooms = async () => {
       const dbRooms = await fetchOperatingRooms();
       if (dbRooms && dbRooms.length > 0) {
-        // Use completedOperations directly from database (JSONB column)
-        // Data is already loaded via fetchOperatingRooms -> transformRoom
-        setRooms(dbRooms);
+        // Load ALL completed operations in ONE query (fast)
+        const today = new Date();
+        const allCompletedOps = await fetchAllCompletedOperationsForDay(today);
+        
+        // Merge completed operations into rooms
+        const updatedRooms = dbRooms.map(room => ({
+          ...room,
+          completedOperations: allCompletedOps?.get(room.id) || []
+        }));
+        
+        setRooms(updatedRooms);
         setIsDbConnected(true);
       }
     };
