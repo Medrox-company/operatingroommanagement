@@ -98,7 +98,6 @@ const AppContent: React.FC = () => {
             const completedOps = (historyOps && historyOps.length > 0) 
               ? historyOps 
               : (room.completedOperations || []);
-            console.log("[v0] Room:", room.name, "historyOps:", historyOps?.length || 0, "roomCompletedOps:", room.completedOperations?.length || 0, "final:", completedOps.length);
             return {
               ...room,
               completedOperations: completedOps
