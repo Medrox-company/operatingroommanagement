@@ -68,10 +68,6 @@ function transformRoom(
   patientMap: Map<string, DBPatient>,
   procedureMap: Map<string, DBProcedure>
 ): OperatingRoom {
-  // Debug: Log completed_operations from database
-  if (row.completed_operations && row.completed_operations.length > 0) {
-    console.log("[v0] transformRoom:", row.name, "completed_operations:", row.completed_operations.length);
-  }
   const doctor = row.doctor_id ? staffMap.get(row.doctor_id) : null;
   const nurse = row.nurse_id ? staffMap.get(row.nurse_id) : null;
   const anesthesiologist = row.anesthesiologist_id ? staffMap.get(row.anesthesiologist_id) : null;
