@@ -1062,32 +1062,31 @@ style={{
                       })
                     })()}
 
-                    {/* Continuing operation bar (green) - for operations that overflow to next day (endPct > 100)
-                        Shows green bar from 0% to current time position with indicator showing end time tomorrow
+                    {/* Continuing operation bar (green):
+                        Displayed ONLY when the current window starts at 7:00 today and the operation
+                        started BEFORE that 7:00 (i.e. it ran overnight and is still active).
+                        The bar goes from 0% (7:00 today) to the estimated end time position.
                     */}
-                    {isActive && room.estimatedEndTime && (() => {
-                      const opEnd = new Date(room.estimatedEndTime);
+                    {isActive && room.operationStartedAt && room.estimatedEndTime && (() => {
+                      const opStart = new Date(room.operationStartedAt);
+                      const opEnd   = new Date(room.estimatedEndTime);
+
+                      // Window start = 7:00 of the current calendar day (never yesterday)
                       const windowStart = new Date(currentTime);
                       windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-                      if (currentTime.getHours() < TIMELINE_START_HOUR) {
-                        windowStart.setDate(windowStart.getDate() - 1);
-                      }
 
+                      // Only show when op started BEFORE today's 7:00 → it's a true overnight carry-over
+                      if (opStart >= windowStart) return null;
+
+                      // Position of estimated end on today's timeline (0% = 7:00, 100% = 7:00 tomorrow)
                       const endPct = getTimePercentForTimeline(opEnd, windowStart);
-                      
-                      // Only show if operation extends past 100% (beyond 7:00 tomorrow)
-                      if (endPct <= 100) return null;
-                      
-                      // Calculate current time position for the green bar width
-                      const nowPct = getTimePercentForTimeline(currentTime, windowStart);
-                      // Green bar goes from 0% to current time (showing elapsed continuing time)
-                      const displayWidthPct = Math.max(0, Math.min(nowPct, 100));
-                      
+                      // Cap to visible area (7:00-7:00)
+                      const displayWidthPct = Math.max(2, Math.min(endPct, 100));
+
                       // Format end time for display
-                      const endHours = opEnd.getHours().toString().padStart(2, '0');
+                      const endHours   = opEnd.getHours().toString().padStart(2, '0');
                       const endMinutes = opEnd.getMinutes().toString().padStart(2, '0');
-                      const endTimeStr = `→ ${endHours}:${endMinutes}`;
-                      
+
                       return (
                         <div
                           className="absolute top-1 bottom-1 rounded-lg flex items-center justify-between px-3"
@@ -1096,14 +1095,14 @@ style={{
                             width: `${displayWidthPct}%`,
                             background: 'rgba(34, 197, 94, 0.35)',
                             borderRight: '2px solid rgba(34, 197, 94, 0.8)',
-                            zIndex: 0  // Behind the active operation bar
+                            zIndex: 1,
                           }}
                         >
                           <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
                             POKRAČUJÍCÍ VÝKON
                           </span>
                           <span className="text-[10px] font-medium text-green-300 ml-2 whitespace-nowrap">
-                            {endTimeStr}
+                            do {endHours}:{endMinutes}
                           </span>
                         </div>
                       );
