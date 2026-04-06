@@ -108,7 +108,12 @@ const getTimePercentForTimeline = (date: Date, referenceStart: Date): number => 
 };
 
 // Get operation position on timeline (single continuous bar, even if crossing 7:00)
-const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {left: number, width: number, exceedsBoundary: boolean} => {
+const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {
+  left: number, 
+  width: number, 
+  exceedsBoundary: boolean,
+  isContinuing: boolean  // True if operation started before 7:00 (from previous day)
+} => {
   // Calculate window start (7:00 of the current day)
   const windowStart = new Date(currentTime);
   windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
@@ -121,6 +126,9 @@ const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date)
   // Calculate position relative to window start
   let leftPct = getTimePercentForTimeline(startDate, windowStart);
   let endPct = getTimePercentForTimeline(endDate, windowStart);
+  
+  // Check if operation started before window (continuing from previous day)
+  const isContinuing = leftPct < 0;
   
   // Clamp left to 0 if operation started before window
   if (leftPct < 0) leftPct = 0;
@@ -136,7 +144,8 @@ const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date)
   return {
     left: leftPct,
     width: width,
-    exceedsBoundary: exceedsBoundary
+    exceedsBoundary: exceedsBoundary,
+    isContinuing: isContinuing
   };
 };
 
@@ -965,6 +974,9 @@ style={{
                         // Skip if width is 0
                         if (position.width <= 0) return null;
                         
+                        // Check if this is a continuing operation (started before 7:00)
+                        const isContinuingOp = position.isContinuing;
+                        
                         return (
                           <div key={`completed-${opIdx}`} className="relative">
                             <div
@@ -972,65 +984,71 @@ style={{
                               style={{ 
                                 left: `${position.left}%`, 
                                 width: `${position.width}%`,
+                                // Green background for continuing operations
+                                background: isContinuingOp ? 'rgba(34, 197, 94, 0.3)' : undefined,
                               }}
                             >
                               {/* Completed operation segments with colors from database context */}
-                              <div className="absolute inset-0 flex overflow-hidden rounded-md">
-                                {(() => {
-                                  // Build color lookup from activeStatuses
-                                  const stepColorMap: Record<number, string> = {};
-                                  activeStatuses.forEach((s, i) => {
-                                    stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
-                                  });
-
-                                  if (operation.statusHistory && operation.statusHistory.length > 0) {
-                                    const opStart = new Date(operation.startedAt).getTime();
-                                    const opEnd = new Date(operation.endedAt).getTime();
-                                    const opDuration = Math.max(1, opEnd - opStart);
-
-                                    return operation.statusHistory.map((entry, idx) => {
-                                      const segStart = new Date(entry.startedAt).getTime();
-                                      const nextEntry = operation.statusHistory[idx + 1];
-                                      const segEnd = nextEntry
-                                        ? new Date(nextEntry.startedAt).getTime()
-                                        : opEnd;
-                                      const segDuration = Math.max(0, segEnd - segStart);
-                                      const segWidthPct = (segDuration / opDuration) * 100;
-                                      const segLeftPct = ((segStart - opStart) / opDuration) * 100;
-                                      if (segWidthPct <= 0) return null;
-                                      const phaseColor = entry.color
-                                        || stepColorMap[entry.stepIndex]
-                                        || STEP_INDEX_COLORS[entry.stepIndex]
-                                        || '#6b7280';
-
-                                      return (
-                                        <div
-                                          key={`seg-${idx}`}
-                                          className="absolute top-0 bottom-0"
-                                          style={{
-                                            left: `${Math.max(0, segLeftPct)}%`,
-                                            width: `${Math.max(0.5, segWidthPct)}%`,
-                                            background: `${phaseColor}50`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
-                                          }}
-                                          title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
-                                        />
-                                      );
+                              {!isContinuingOp && (
+                                <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                                  {(() => {
+                                    // Build color lookup from activeStatuses
+                                    const stepColorMap: Record<number, string> = {};
+                                    activeStatuses.forEach((s, i) => {
+                                      stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
                                     });
-                                  }
 
-                                  // No history: show single color block for this completed op
-                                  return (
-                                    <div className="absolute inset-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                                  );
-                                })()}
-                              </div>
+                                    if (operation.statusHistory && operation.statusHistory.length > 0) {
+                                      const opStart = new Date(operation.startedAt).getTime();
+                                      const opEnd = new Date(operation.endedAt).getTime();
+                                      const opDuration = Math.max(1, opEnd - opStart);
+
+                                      return operation.statusHistory.map((entry, idx) => {
+                                        const segStart = new Date(entry.startedAt).getTime();
+                                        const nextEntry = operation.statusHistory[idx + 1];
+                                        const segEnd = nextEntry
+                                          ? new Date(nextEntry.startedAt).getTime()
+                                          : opEnd;
+                                        const segDuration = Math.max(0, segEnd - segStart);
+                                        const segWidthPct = (segDuration / opDuration) * 100;
+                                        const segLeftPct = ((segStart - opStart) / opDuration) * 100;
+                                        if (segWidthPct <= 0) return null;
+                                        const phaseColor = entry.color
+                                          || stepColorMap[entry.stepIndex]
+                                          || STEP_INDEX_COLORS[entry.stepIndex]
+                                          || '#6b7280';
+
+                                        return (
+                                          <div
+                                            key={`seg-${idx}`}
+                                            className="absolute top-0 bottom-0"
+                                            style={{
+                                              left: `${Math.max(0, segLeftPct)}%`,
+                                              width: `${Math.max(0.5, segWidthPct)}%`,
+                                              background: `${phaseColor}50`,
+                                              borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
+                                            }}
+                                            title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
+                                          />
+                                        );
+                                      });
+                                    }
+
+                                    // No history: show single color block for this completed op
+                                    return (
+                                      <div className="absolute inset-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                                    );
+                                  })()}
+                                </div>
+                              )}
                               
-                              {/* Label for completed operation */}
-                              <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
+                              {/* Label for operation */}
+                              <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
                                 {position.width > 6 && (
-                                  <span className="text-[9px] font-medium text-white/30 truncate">
-                                    Dokončeno
+                                  <span className={`text-[10px] font-semibold truncate uppercase tracking-wide ${
+                                    isContinuingOp ? 'text-white' : 'text-white/30'
+                                  }`}>
+                                    {isContinuingOp ? 'POKRAČUJÍCÍ VÝKON' : 'Dokončeno'}
                                   </span>
                                 )}
                               </div>
@@ -1358,6 +1376,13 @@ style={{
           >
             <div className="w-4 h-4 rounded bg-white/10" />
             <span className="text-[10px] font-medium text-white/40">Dokoncene</span>
+          </div>
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)' }}
+          >
+            <div className="w-4 h-4 rounded" style={{ background: 'rgba(34, 197, 94, 0.4)' }} />
+            <span className="text-[10px] font-medium text-green-400/70">Pokracujici vykon</span>
           </div>
           <div 
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
