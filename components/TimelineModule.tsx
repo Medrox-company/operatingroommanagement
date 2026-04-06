@@ -938,7 +938,7 @@ style={{
                   </div>
 
                   {/* Timeline */}
-                  <div className="relative flex-1 overflow-hidden">
+                  <div className="relative flex-1 overflow-visible">
                     {/* Hour grid lines */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                       const displayHour = hour % 24;
