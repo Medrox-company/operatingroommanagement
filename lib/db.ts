@@ -316,6 +316,13 @@ export async function fetchCompletedOperationsForDay(
 function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation | null {
   if (events.length === 0) return null;
   
+  // Find operation start and end times
+  const operationStart = events.find(e => e.event_type === 'operation_start');
+  const operationEnd = events.find(e => e.event_type === 'operation_end');
+  
+  // Must have both start and end to be a valid completed operation
+  if (!operationStart || !operationEnd) return null;
+  
   // Collect all step_change events as status history
   const statusHistory = events
     .filter(e => e.event_type === 'step_change' && e.step_index !== null)
@@ -327,15 +334,9 @@ function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation
     }))
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
 
-  if (statusHistory.length === 0) return null;
-
-  // Operation starts at first step_change and ends at last step_change
-  const startTime = statusHistory[0].startedAt;
-  const endTime = statusHistory[statusHistory.length - 1].startedAt;
-
   return {
-    startedAt: startTime,
-    endedAt: endTime,
+    startedAt: operationStart.timestamp,
+    endedAt: operationEnd.timestamp,
     statusHistory
   };
 }
