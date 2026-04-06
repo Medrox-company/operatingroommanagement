@@ -956,7 +956,8 @@ style={{
                     })}
 
                     {/* Completed operations - soft gray inactive bars */}
-                    {room.completedOperations && room.completedOperations.length > 0 && (() => {
+                    {(() => {
+                      if (!room.completedOperations || room.completedOperations.length === 0) return null;
                       const filteredOps = room.completedOperations.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);

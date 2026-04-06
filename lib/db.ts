@@ -74,24 +74,18 @@ function transformRoom(
   const patient = row.current_patient_id ? patientMap.get(row.current_patient_id) : null;
   const procedure = row.current_procedure_id ? procedureMap.get(row.current_procedure_id) : null;
 
-  // Parse completed_operations - they may come as JSON string from database
+  // Parse completed_operations - Supabase returns JSONB arrays as-is
   let completedOps: CompletedOperation[] = [];
-  const rawOps = row.completed_operations;
-  console.log("[v0] transformRoom", row.name, "raw completed_operations:", typeof rawOps, Array.isArray(rawOps), rawOps ? (Array.isArray(rawOps) ? rawOps.length : 'not-array') : 'null');
-  if (rawOps) {
-    if (typeof rawOps === 'string') {
-      try {
-        completedOps = JSON.parse(rawOps);
-        console.log("[v0] parsed from string:", completedOps.length);
-      } catch (e) {
-        completedOps = [];
-      }
-    } else if (Array.isArray(rawOps)) {
-      completedOps = rawOps;
-      console.log("[v0] used as array:", completedOps.length);
+  if (Array.isArray(row.completed_operations)) {
+    completedOps = row.completed_operations;
+  } else if (typeof row.completed_operations === 'string') {
+    try {
+      const parsed = JSON.parse(row.completed_operations);
+      completedOps = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      completedOps = [];
     }
   }
-  console.log("[v0] transformRoom", row.name, "final completedOps:", completedOps.length);
 
   return {
     id: row.id,
