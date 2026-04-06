@@ -66,18 +66,29 @@ const hourLabel = (hour: number): string => {
 const isNextDayHour = (hour: number): boolean => hour >= 24;
 
 // Check if operation should be displayed in current 24-hour window (7:00-7:00)
-const isOperationInWindow = (startDate: Date, endDate: Date, referenceDate: Date): boolean => {
+// Only show operations that ended AFTER the current time (not from previous day)
+const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date): boolean => {
   // Get current window: 7:00 today to 7:00 tomorrow
-  const windowStart = new Date(referenceDate);
+  const windowStart = new Date(currentTime);
   windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
   
-  const windowEnd = new Date(referenceDate);
-  windowEnd.setHours(TIMELINE_START_HOUR + 24, 0, 0, 0);
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
+    windowStart.setDate(windowStart.getDate() - 1);
+  }
+  
+  const windowEnd = new Date(windowStart);
+  windowEnd.setHours(windowStart.getHours() + 24, 0, 0, 0);
   
   // Operation is visible if:
-  // 1. It starts before window ends AND
-  // 2. It ends after window starts
-  return startDate < windowEnd && endDate > windowStart;
+  // 1. It ends AFTER current time (not completed before now)
+  // 2. OR it started within the current 24-hour window (today's operations)
+  // 3. AND it overlaps with the window
+  const endsAfterNow = endDate > currentTime;
+  const startsInWindow = startDate >= windowStart && startDate < windowEnd;
+  const overlapsWindow = startDate < windowEnd && endDate > windowStart;
+  
+  return overlapsWindow && (endsAfterNow || startsInWindow);
 };
 
 // Check if operation exceeds 24 hours
@@ -87,50 +98,46 @@ const exceedsT24Hours = (startDate: Date, endDate: Date): boolean => {
   return durationHours > 24;
 };
 
-// Get time percent without clamping (allows values > 100 for next-day operations)
-const getTimePercentUnclamped = (date: Date): number => {
-  const hours = date.getHours() + date.getMinutes() / 60;
-  let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
-  if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
-  return percent;
+// Get time percent for timeline display
+// Timeline runs from 7:00 (0%) to 7:00 next day (100%)
+// Operations that cross 7:00 will extend beyond 100%
+const getTimePercentForTimeline = (date: Date, referenceStart: Date): number => {
+  const diffMs = date.getTime() - referenceStart.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  return (diffHours / TIMELINE_HOURS) * 100;
 };
 
-// Get operation segments for timeline display (handles cross-midnight)
-const getOperationSegments = (startDate: Date, endDate: Date): Array<{start: number, end: number, isNextDay: boolean}> => {
-  const windowStart = TIMELINE_START_HOUR; // 7:00
-  const windowEnd = TIMELINE_START_HOUR + TIMELINE_HOURS; // 7:00 next day
+// Get operation position on timeline (single continuous bar, even if crossing 7:00)
+const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {left: number, width: number, exceedsBoundary: boolean} => {
+  // Calculate window start (7:00 of the current day)
+  const windowStart = new Date(currentTime);
+  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
   
-  const startPercent = getTimePercentUnclamped(startDate);
-  const endPercent = getTimePercentUnclamped(endDate);
-  
-  const segments: Array<{start: number, end: number, isNextDay: boolean}> = [];
-  
-  // If operation ends on next day (endPercent < startPercent due to day wrap-around)
-  if (endPercent < startPercent) {
-    // First segment: from start to end of timeline (7:00 tomorrow = 100%)
-    segments.push({
-      start: Math.max(0, startPercent),
-      end: 100,
-      isNextDay: false
-    });
-    // Second segment: from beginning of timeline (0% = 7:00 tomorrow) to end
-    if (endPercent > 0) {
-      segments.push({
-        start: 0,
-        end: Math.min(100, endPercent),
-        isNextDay: true
-      });
-    }
-  } else {
-    // Single segment within same day
-    segments.push({
-      start: Math.max(0, startPercent),
-      end: Math.min(100, endPercent),
-      isNextDay: false
-    });
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
+    windowStart.setDate(windowStart.getDate() - 1);
   }
   
-  return segments;
+  // Calculate position relative to window start
+  let leftPct = getTimePercentForTimeline(startDate, windowStart);
+  let endPct = getTimePercentForTimeline(endDate, windowStart);
+  
+  // Clamp left to 0 if operation started before window
+  if (leftPct < 0) leftPct = 0;
+  
+  // Check if operation exceeds timeline boundary (past 7:00 next day = 100%)
+  const exceedsBoundary = endPct > 100;
+  
+  // Clamp end to 100 for display (but track if it exceeds)
+  if (endPct > 100) endPct = 100;
+  
+  const width = Math.max(0, endPct - leftPct);
+  
+  return {
+    left: leftPct,
+    width: width,
+    exceedsBoundary: exceedsBoundary
+  };
 };
 
 interface TimelineModuleProps {
@@ -944,7 +951,7 @@ style={{
                         .filter(operation => {
                           const opStartDate = new Date(operation.startedAt);
                           const opEndDate = new Date(operation.endedAt);
-                          // Filter operations: show only those that fall within or overlap the 24-hour window (7:00-7:00)
+                          // Filter: show only operations that ended after current time or started today
                           return isOperationInWindow(opStartDate, opEndDate, currentTime);
                         })
                         .map((operation, opIdx) => {
@@ -952,16 +959,19 @@ style={{
                         const opEndDate = new Date(operation.endedAt);
                         const exceedsDay = exceedsT24Hours(opStartDate, opEndDate);
                         
-                        // Get segments for cross-midnight operations
-                        const segments = getOperationSegments(opStartDate, opEndDate);
+                        // Get single continuous position (even if crossing 7:00)
+                        const position = getOperationPosition(opStartDate, opEndDate, currentTime);
                         
-                        return segments.map((segment, segIdx) => (
-                          <div key={`completed-${opIdx}-seg-${segIdx}`} className="relative">
+                        // Skip if width is 0
+                        if (position.width <= 0) return null;
+                        
+                        return (
+                          <div key={`completed-${opIdx}`} className="relative">
                             <div
                               className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
                               style={{ 
-                                left: `${segment.start}%`, 
-                                width: `${segment.end - segment.start}%`,
+                                left: `${position.left}%`, 
+                                width: `${position.width}%`,
                               }}
                             >
                               {/* Completed operation segments with colors from database context */}
@@ -1018,7 +1028,7 @@ style={{
                               
                               {/* Label for completed operation */}
                               <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
-                                {(segment.end - segment.start) > 6 && (
+                                {position.width > 6 && (
                                   <span className="text-[9px] font-medium text-white/30 truncate">
                                     Dokončeno
                                   </span>
@@ -1026,19 +1036,18 @@ style={{
                               </div>
                             </div>
                             
-                            {/* Icon for operations exceeding 24 hours - only show on first segment */}
-                            {exceedsDay && segIdx === 0 && (
-                              <div className="absolute -top-4 right-0 z-10">
-                                <div 
-                                  className="flex items-center justify-center bg-orange-500 rounded-full p-1"
-                                  title="Výkon přesahuje 24 hodin"
-                                >
-                                  <AlertCircle className="w-3 h-3 text-white" />
-                                </div>
+                            {/* Icon for operations exceeding 24 hours or crossing boundary */}
+                            {(exceedsDay || position.exceedsBoundary) && (
+                              <div 
+                                className="absolute -top-3 z-10 flex items-center justify-center bg-orange-500 rounded-full p-0.5"
+                                style={{ left: `${position.left + position.width - 1}%` }}
+                                title={exceedsDay ? "Výkon přesahuje 24 hodin" : "Výkon pokračuje do dalšího dne"}
+                              >
+                                <AlertCircle className="w-3 h-3 text-white" />
                               </div>
                             )}
                           </div>
-                        ));
+                        );
                       })
                     })()}
 
