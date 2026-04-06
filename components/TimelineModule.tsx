@@ -960,6 +960,10 @@ style={{
                       // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
+                      if (room.name === 'Sál č. 10') {
+                        console.log("[v0] Sál č. 10 completedOperations:", opsToRender.length, opsToRender);
+                      }
+                      
                       if (opsToRender.length === 0) return null;
                       
                       const filteredOps = opsToRender.filter(operation => {
