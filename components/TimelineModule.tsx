@@ -938,7 +938,7 @@ style={{
                   </div>
 
                   {/* Timeline */}
-                  <div className="relative flex-1 overflow-visible">
+                  <div className="relative flex-1 overflow-hidden">
                     {/* Hour grid lines */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                       const displayHour = hour % 24;
@@ -1063,7 +1063,7 @@ style={{
                     })()}
 
                     {/* Continuing operation bar (green) - for operations that overflow to next day (endPct > 100)
-                        Shows as a continuous green bar from 0% (7:00) to estimated end time
+                        Shows green bar from 0% to current time position with indicator showing end time tomorrow
                     */}
                     {isActive && room.estimatedEndTime && (() => {
                       const opEnd = new Date(room.estimatedEndTime);
@@ -1078,13 +1078,19 @@ style={{
                       // Only show if operation extends past 100% (beyond 7:00 tomorrow)
                       if (endPct <= 100) return null;
                       
-                      // Green bar from 0% (7:00) to estimated end time (endPct, capped at reasonable max)
-                      // endPct can be >100 for operations ending next day (e.g., 104% = 8:00 next day)
-                      const displayWidthPct = Math.min(endPct, 150); // Cap at 150% to prevent extreme widths
+                      // Calculate current time position for the green bar width
+                      const nowPct = getTimePercentForTimeline(currentTime, windowStart);
+                      // Green bar goes from 0% to current time (showing elapsed continuing time)
+                      const displayWidthPct = Math.max(0, Math.min(nowPct, 100));
+                      
+                      // Format end time for display
+                      const endHours = opEnd.getHours().toString().padStart(2, '0');
+                      const endMinutes = opEnd.getMinutes().toString().padStart(2, '0');
+                      const endTimeStr = `→ ${endHours}:${endMinutes}`;
                       
                       return (
                         <div
-                          className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
+                          className="absolute top-1 bottom-1 rounded-lg flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
@@ -1095,6 +1101,9 @@ style={{
                         >
                           <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
                             POKRAČUJÍCÍ VÝKON
+                          </span>
+                          <span className="text-[10px] font-medium text-green-300 ml-2 whitespace-nowrap">
+                            {endTimeStr}
                           </span>
                         </div>
                       );
