@@ -1063,10 +1063,10 @@ style={{
                     })()}
 
                     {/* Continuing operation bar (green) - for operations that overflow to next day (endPct > 100)
-                        Shows as a continuous green bar from operation start until 100% (7:00 next day boundary)
+                        Shows as a continuous green bar from 0% (7:00) to 100% (7:00 next day)
+                        This underlays the active operation bar to show the full continuing duration
                     */}
                     {isActive && room.estimatedEndTime && (() => {
-                      const opStart = new Date(room.operationStartedAt);
                       const opEnd = new Date(room.estimatedEndTime);
                       const windowStart = new Date(currentTime);
                       windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
@@ -1074,31 +1074,26 @@ style={{
                         windowStart.setDate(windowStart.getDate() - 1);
                       }
 
-                      const startPct = getTimePercentForTimeline(opStart, windowStart);
                       const endPct = getTimePercentForTimeline(opEnd, windowStart);
                       
                       // Only show if operation extends past 100% (beyond 7:00 tomorrow)
                       if (endPct <= 100) return null;
                       
-                      // Green bar for the overflow part (from startPct to 100%)
-                      const displayLeftPct = Math.max(0, startPct);
-                      const displayWidthPct = Math.max(2, 100 - displayLeftPct);
-                      
+                      // Green bar from 0% (7:00) to 100% (7:00 next day) - full day coverage for continuing operation
                       return (
                         <div
                           className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
                           style={{
-                            left: `${displayLeftPct}%`,
-                            width: `${displayWidthPct}%`,
-                            background: 'rgba(34, 197, 94, 0.4)',
-                            borderRight: '2px solid rgba(34, 197, 94, 0.8)'
+                            left: '0%',
+                            width: '100%',
+                            background: 'rgba(34, 197, 94, 0.35)',
+                            borderRight: 'none',
+                            zIndex: 0  // Behind the active operation bar
                           }}
                         >
-                          {displayWidthPct > 8 && (
-                            <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
-                              POKRAČUJÍCÍ VÝKON
-                            </span>
-                          )}
+                          <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
+                            POKRAČUJÍCÍ VÝKON
+                          </span>
                         </div>
                       );
                     })()}
