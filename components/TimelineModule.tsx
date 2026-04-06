@@ -957,11 +957,13 @@ style={{
 
                     {/* Completed operations - soft gray inactive bars */}
                     {room.completedOperations && room.completedOperations.length > 0 && (() => {
+                      console.log("[v0] Room", room.name, "has", room.completedOperations.length, "completed ops");
                       const filteredOps = room.completedOperations.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
                         return isOperationInWindow(opStartDate, opEndDate, currentTime);
                       });
+                      console.log("[v0] Room", room.name, "filtered to", filteredOps.length, "ops in window");
                       
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
