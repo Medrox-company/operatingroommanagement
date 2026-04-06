@@ -86,6 +86,11 @@ function transformRoom(
       completedOps = [];
     }
   }
+  
+  // Debug: Log completed operations count
+  if (completedOps.length > 0) {
+    console.log("[v0] transformRoom:", row.name, "has", completedOps.length, "completed ops");
+  }
 
   return {
     id: row.id,
