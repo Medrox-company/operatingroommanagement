@@ -76,17 +76,22 @@ function transformRoom(
 
   // Parse completed_operations - they may come as JSON string from database
   let completedOps: CompletedOperation[] = [];
-  if (row.completed_operations) {
-    if (typeof row.completed_operations === 'string') {
+  const rawOps = row.completed_operations;
+  console.log("[v0] transformRoom", row.name, "raw completed_operations:", typeof rawOps, Array.isArray(rawOps), rawOps ? (Array.isArray(rawOps) ? rawOps.length : 'not-array') : 'null');
+  if (rawOps) {
+    if (typeof rawOps === 'string') {
       try {
-        completedOps = JSON.parse(row.completed_operations);
+        completedOps = JSON.parse(rawOps);
+        console.log("[v0] parsed from string:", completedOps.length);
       } catch (e) {
         completedOps = [];
       }
-    } else if (Array.isArray(row.completed_operations)) {
-      completedOps = row.completed_operations;
+    } else if (Array.isArray(rawOps)) {
+      completedOps = rawOps;
+      console.log("[v0] used as array:", completedOps.length);
     }
   }
+  console.log("[v0] transformRoom", row.name, "final completedOps:", completedOps.length);
 
   return {
     id: row.id,
