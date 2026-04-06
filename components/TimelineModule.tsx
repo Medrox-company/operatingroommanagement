@@ -87,6 +87,7 @@ const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date):
   // Rule 1: Don't show operations that ended before current time
   // (these are completed operations from the past that should be hidden)
   if (endDate < currentTime) {
+    console.log("[v0] FILTERED OUT: endDate", endDate.toISOString(), "< currentTime", currentTime.toISOString());
     return false;
   }
   
@@ -962,12 +963,16 @@ style={{
 
                     {/* Completed operations - soft gray inactive bars */}
                     {room.completedOperations && room.completedOperations.length > 0 && (() => {
+                      console.log("[v0] Room", room.name, "has", room.completedOperations.length, "completedOps");
                       const filteredOps = room.completedOperations.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
-                        return isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        const include = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        console.log("[v0]   Op", opStartDate.toISOString(), "to", opEndDate.toISOString(), "include:", include);
+                        return include;
                       });
                       
+                      console.log("[v0] Room", room.name, "filtered to", filteredOps.length, "ops");
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
