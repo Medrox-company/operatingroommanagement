@@ -332,7 +332,7 @@ function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation
   
   // Find operation start and end times
   const operationStart = events.find(e => e.event_type === 'operation_start');
-  const operationEnd = events.find(e => e.event_type === 'operation_end');
+  const operationEnd = events.find(e => e.event_type === 'operation_completed' || e.event_type === 'operation_end');
   
   // Must have both start and end to be a valid completed operation
   if (!operationStart || !operationEnd) return null;
