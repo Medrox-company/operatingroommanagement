@@ -89,15 +89,16 @@ const AppContent: React.FC = () => {
         setIsDbConnected(true);
         
         // Load completed operations for today for each room
-        // Combine data from room_status_history table with existing completedOperations from operating_rooms
+        // Prioritize data from room_status_history table, fall back to operating_rooms.completed_operations
         const today = new Date();
         const updatedRooms = await Promise.all(
           dbRooms.map(async (room) => {
             const historyOps = await fetchCompletedOperationsForDay(room.id, today);
-            // Use data from operating_rooms.completed_operations if room_status_history is empty
+            // Use data from room_status_history if available, otherwise use existing completedOperations from operating_rooms
             const completedOps = (historyOps && historyOps.length > 0) 
               ? historyOps 
-              : (room.completedOperations || []);
+              : (room.completedOperations && room.completedOperations.length > 0 ? room.completedOperations : []);
+            
             return {
               ...room,
               completedOperations: completedOps

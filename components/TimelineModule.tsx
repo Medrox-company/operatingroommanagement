@@ -65,34 +65,26 @@ const hourLabel = (hour: number): string => {
 
 const isNextDayHour = (hour: number): boolean => hour >= 24;
 
-// Check if operation should be displayed in current 24-hour window (7:00-7:00)
+// Check if operation should be displayed in current 24-hour window (7:00 today to 7:00 tomorrow)
 // Rules:
-// 1. DO NOT show operations that ended BEFORE current time (old operations from previous days)
-// 2. SHOW operations that ended AFTER current time OR are still in progress
-// 3. SHOW continuing operations (started before 7:00 but still running or ended after current time)
+// - SHOW operations that started OR ended within the current 24h window (7:00 - 7:00)
+// - SHOW continuing operations that started before 7:00 but end after 7:00 (still running)
+// - DO NOT show operations that fully ended before the window start (yesterday's old ops)
 const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date): boolean => {
   // Get current window start: 7:00 of the current day
   const windowStart = new Date(currentTime);
   windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-  
   // If current time is before 7:00, window started yesterday
   if (currentTime.getHours() < TIMELINE_START_HOUR) {
     windowStart.setDate(windowStart.getDate() - 1);
   }
-  
   // Window ends at 7:00 next day
   const windowEnd = new Date(windowStart);
   windowEnd.setDate(windowEnd.getDate() + 1);
-  
-  // Rule 1: Don't show operations that ended before current time
-  // (these are completed operations from the past that should be hidden)
-  if (endDate < currentTime) {
-    return false;
-  }
-  
-  // Rule 2: Show operations that overlap with the 24-hour window
-  // and end after current time (still relevant/in progress)
-  return startDate < windowEnd && endDate > windowStart;
+
+  // Show if operation overlaps with the 24h window at all
+  // (operation ends after window start AND starts before window end)
+  return endDate > windowStart && startDate < windowEnd;
 };
 
 // Check if operation exceeds 24 hours
@@ -708,42 +700,45 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               if (isActive) {
                 // Determine start time - ALWAYS use operationStartedAt (arrival to OR) as the reference point
                 if (hasOperationStart) {
-                  // Use operation start time (when patient arrived to OR)
                   startDate = new Date(room.operationStartedAt);
                 } else if (hasRealData) {
-                  // Use actual procedure start time
                   startDate = new Date();
                   startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
                 } else if (room.phaseStartedAt) {
-                  // Use phase started time as fallback
                   startDate = new Date(room.phaseStartedAt);
                 } else {
-                  // Ultimate fallback: use a time 30 minutes ago
                   startDate = new Date(currentTime.getTime() - 30 * 60 * 1000);
                 }
-                
-                boxLeftPct = getTimePercent(startDate);
-                
+
+                // Calculate window start: 7:00 today (or yesterday if before 7:00)
+                const activeWindowStart = new Date(currentTime);
+                activeWindowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+                if (currentTime.getHours() < TIMELINE_START_HOUR) {
+                  activeWindowStart.setDate(activeWindowStart.getDate() - 1);
+                }
+
+                // Use date-aware percent calculation
+                const rawLeftPct = getTimePercentForTimeline(startDate, activeWindowStart);
+                // If operation started before window (continuing), clamp to 0
+                boxLeftPct = Math.max(0, rawLeftPct);
+
                 if (room.estimatedEndTime) {
                   endDate = new Date(room.estimatedEndTime);
                 } else if (room.currentProcedure?.estimatedDuration) {
                   endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
                 } else {
-                  // Fallback: generate duration based on step (longer for surgery steps)
-                  const fallbackDurations = [30, 20, 120, 60, 30, 45, 0]; // minutes per step
+                  const fallbackDurations = [30, 20, 120, 60, 30, 45, 0];
                   const duration = fallbackDurations[Math.min(stepIndex, 5)] || 90;
                   endDate = new Date(startDate.getTime() + duration * 60 * 1000);
                 }
-                
-                const boxRightPct = getTimePercent(endDate);
-                // Handle cases where operation spans past midnight (end is before start on timeline)
-                if (boxRightPct < boxLeftPct) {
-                  // Operation ends next day - extend to end of timeline
-                  boxWidthPct = Math.max(2, (100 - boxLeftPct) + boxRightPct);
-                } else {
-                  boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
-                }
-                progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
+
+                const rawRightPct = getTimePercentForTimeline(endDate, activeWindowStart);
+                // Clamp right to 100 (timeline boundary)
+                const boxRightPct = Math.min(100, rawRightPct);
+                boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                // nowWindowPct for progress calculation
+                const nowWindowPct = getTimePercentForTimeline(currentTime, activeWindowStart);
+                progressPct = Math.max(0, Math.min(100, ((nowWindowPct - boxLeftPct) / boxWidthPct) * 100));
               }
 
               /* Emergency row */
@@ -967,7 +962,6 @@ style={{
                         const opEndDate = new Date(operation.endedAt);
                         return isOperationInWindow(opStartDate, opEndDate, currentTime);
                       });
-                      
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
@@ -1067,47 +1061,50 @@ style={{
                       })
                     })()}
 
-                    {/* Continuing operation bar (green) - shown when operation started before 7:00 of current day */}
-                    {isActive && room.operationStartedAt && (() => {
+                    {/* Continuing operation bar (green):
+                        Displayed ONLY when the current window starts at 7:00 today and the operation
+                        started BEFORE that 7:00 (i.e. it ran overnight and is still active).
+                        The bar goes from 0% (7:00 today) to the estimated end time position.
+                    */}
+                    {isActive && room.operationStartedAt && room.estimatedEndTime && (() => {
                       const opStart = new Date(room.operationStartedAt);
-                      
-                      // Calculate window start: 7:00 of current day
+                      const opEnd   = new Date(room.estimatedEndTime);
+
+                      // Window start = 7:00 of the current calendar day (never yesterday)
                       const windowStart = new Date(currentTime);
                       windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-                      windowStart.setMinutes(0, 0, 0);
-                      if (currentTime.getHours() < TIMELINE_START_HOUR) {
-                        windowStart.setDate(windowStart.getDate() - 1);
-                      }
-                      
-                      // Check if operation started BEFORE 7:00 today (window start)
-                      // This means the operation is continuing from the previous day
-                      if (opStart.getTime() < windowStart.getTime()) {
-                        // Calculate where the actual operation starts on the timeline
-                        // The continuing bar goes from 0% (7:00) to the current time position
-                        const nowPct = getTimePercent(currentTime);
-                        const continuingWidthPct = Math.max(0, nowPct);
-                        
-                        if (continuingWidthPct > 0) {
-                          return (
-                            <div
-                              className="absolute top-1 bottom-1 rounded-lg flex items-center px-3"
-                              style={{ 
-                                left: '0%', 
-                                width: `${continuingWidthPct}%`,
-                                background: 'rgba(34, 197, 94, 0.4)',
-                                borderRight: '2px solid rgba(34, 197, 94, 0.8)'
-                              }}
-                            >
-                              {continuingWidthPct > 10 && (
-                                <span className="text-[11px] font-semibold text-white uppercase tracking-wide">
-                                  POKRAČUJÍCÍ VÝKON
-                                </span>
-                              )}
-                            </div>
-                          );
-                        }
-                      }
-                      return null;
+
+                      // Only show when op started BEFORE today's 7:00 → it's a true overnight carry-over
+                      if (opStart >= windowStart) return null;
+
+                      // Position of estimated end on today's timeline (0% = 7:00, 100% = 7:00 tomorrow)
+                      const endPct = getTimePercentForTimeline(opEnd, windowStart);
+                      // Cap to visible area (7:00-7:00)
+                      const displayWidthPct = Math.max(2, Math.min(endPct, 100));
+
+                      // Format end time for display
+                      const endHours   = opEnd.getHours().toString().padStart(2, '0');
+                      const endMinutes = opEnd.getMinutes().toString().padStart(2, '0');
+
+                      return (
+                        <div
+                          className="absolute top-1 bottom-1 rounded-lg flex items-center justify-between px-3"
+                          style={{
+                            left: '0%',
+                            width: `${displayWidthPct}%`,
+                            background: 'rgba(34, 197, 94, 0.35)',
+                            borderRight: '2px solid rgba(34, 197, 94, 0.8)',
+                            zIndex: 1,
+                          }}
+                        >
+                          <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
+                            POKRAČUJÍCÍ VÝKON
+                          </span>
+                          <span className="text-[10px] font-medium text-green-300 ml-2 whitespace-nowrap">
+                            do {endHours}:{endMinutes}
+                          </span>
+                        </div>
+                      );
                     })()}
 
                     {/* Active operation bar */}

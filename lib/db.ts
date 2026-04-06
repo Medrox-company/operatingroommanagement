@@ -176,7 +176,7 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
     // Empty maps for removed tables
     const patientMap = new Map<string, DBPatient>();
     const procedureMap = new Map<string, DBProcedure>();
-
+    
     // Transform rows
     return roomsRes.data.map((row: DBOperatingRoom) => 
       transformRoom(row, staffMap, patientMap, procedureMap)
