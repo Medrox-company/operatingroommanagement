@@ -1603,17 +1603,17 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-3xl overflow-hidden max-w-2xl w-full"
+        className="rounded-3xl overflow-hidden max-w-2xl w-full backdrop-blur-xl border border-white/10"
         style={{
-          background: '#0f0a1a',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(76, 29, 149, 0.7) 50%, rgba(49, 46, 129, 0.85) 100%)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255,255,255,0.1)',
         }}
       >
-        {/* Header with purple gradient */}
+        {/* Header with glassmorphism */}
         <div 
-          className="px-6 py-5 flex items-center justify-between"
+          className="px-6 py-5 flex items-center justify-between backdrop-blur-sm border-b border-white/10"
           style={{
-            background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #312e81 100%)',
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(217, 70, 239, 0.1) 100%)',
           }}
         >
           {/* Left side - Progress circle and room info */}
@@ -1673,9 +1673,9 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+              className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 hover:border-white/30 transition-all"
             >
-              <X className="w-5 h-5 text-white/60" />
+              <X className="w-5 h-5 text-white/70" />
             </button>
           </div>
         </div>
@@ -1690,12 +1690,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Current step */}
+              {/* Current step - glassmorphism */}
               <div 
-                className="flex-1 rounded-2xl p-4 border"
+                className="flex-1 rounded-2xl p-4 backdrop-blur-sm border"
                 style={{ 
-                  backgroundColor: `${stepColor}15`,
-                  borderColor: `${stepColor}40`
+                  background: `linear-gradient(135deg, ${stepColor}20 0%, ${stepColor}10 100%)`,
+                  borderColor: `${stepColor}50`,
+                  boxShadow: `0 4px 24px -4px ${stepColor}30, inset 0 1px 1px rgba(255,255,255,0.1)`
                 }}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -1714,8 +1715,11 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 </div>
                 <div className="flex items-center gap-3">
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${stepColor}20` }}
+                    className="w-12 h-12 rounded-xl flex items-center justify-center backdrop-blur-sm border"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${stepColor}30 0%, ${stepColor}15 100%)`,
+                      borderColor: `${stepColor}40`
+                    }}
                   >
                     <span style={{ color: stepColor }}><Stethoscope className="w-5 h-5" /></span>
                   </div>
@@ -1728,15 +1732,25 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 </div>
               </div>
 
-              {/* Arrow */}
+              {/* Arrow - glassmorphism */}
               <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500/20"
+                className="w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm border border-orange-400/30"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.25) 0%, rgba(249, 115, 22, 0.15) 100%)',
+                  boxShadow: '0 4px 16px -4px rgba(249, 115, 22, 0.3)'
+                }}
               >
                 <ChevronRight className="w-5 h-5 text-orange-400" />
               </div>
 
-              {/* Next step */}
-              <div className="flex-1 rounded-2xl p-4 bg-white/5 border border-white/10">
+              {/* Next step - glassmorphism */}
+              <div 
+                className="flex-1 rounded-2xl p-4 backdrop-blur-sm border border-white/15"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1)'
+                }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-white/30" />
@@ -1749,8 +1763,11 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/10">
-                    <Sparkles className="w-5 h-5 text-white/40" />
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/15"
+                    style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)' }}
+                  >
+                    <Sparkles className="w-5 h-5 text-white/50" />
                   </div>
                   <div>
                     <p className="text-white/80 font-semibold">{nextStatus?.name || 'Sal pripaven'}</p>
@@ -1770,26 +1787,44 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">TYM</p>
               </div>
               <div className="flex gap-3">
-                {/* Doctor */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                {/* Doctor - glassmorphism */}
+                <div 
+                  className="flex-1 rounded-xl p-3 backdrop-blur-sm border border-white/15"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+                    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1)'
+                  }}
+                >
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-500/20">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center backdrop-blur-sm border border-violet-400/30"
+                      style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(139, 92, 246, 0.1) 100%)' }}
+                    >
                       <Stethoscope className="w-4 h-4 text-violet-400" />
                     </div>
                     <div>
-                      <p className="text-[9px] text-white/40 uppercase tracking-wider">ANESTEZIOLOG</p>
+                      <p className="text-[9px] text-white/50 uppercase tracking-wider">ANESTEZIOLOG</p>
                       <p className="text-sm font-semibold text-white">{room.staff?.doctor?.name || 'MUDr. --'}</p>
                     </div>
                   </div>
                 </div>
-                {/* Nurse */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                {/* Nurse - glassmorphism */}
+                <div 
+                  className="flex-1 rounded-xl p-3 backdrop-blur-sm border border-white/15"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+                    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1)'
+                  }}
+                >
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/20">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center backdrop-blur-sm border border-emerald-400/30"
+                      style={{ background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.25) 0%, rgba(52, 211, 153, 0.1) 100%)' }}
+                    >
                       <Users className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-[9px] text-white/40 uppercase tracking-wider">SESTRA</p>
+                      <p className="text-[9px] text-white/50 uppercase tracking-wider">SESTRA</p>
                       <p className="text-sm font-semibold text-white">{room.staff?.nurse?.name || 'Bc. --'}</p>
                     </div>
                   </div>
@@ -1804,14 +1839,27 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">CASY</p>
               </div>
               <div className="flex gap-3">
-                {/* Start time */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
-                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ZACATEK</p>
+                {/* Start time - glassmorphism */}
+                <div 
+                  className="flex-1 rounded-xl p-3 text-center backdrop-blur-sm border border-white/15"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+                    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1)'
+                  }}
+                >
+                  <p className="text-[9px] text-white/50 uppercase tracking-wider mb-1">ZACATEK</p>
                   <p className="text-xl font-mono font-bold text-white/60">--:--</p>
                 </div>
-                {/* Estimated end */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
-                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ODHAD</p>
+                {/* Estimated end - glassmorphism with accent */}
+                <div 
+                  className="flex-1 rounded-xl p-3 text-center backdrop-blur-sm border"
+                  style={{
+                    background: `linear-gradient(135deg, ${stepColor}15 0%, ${stepColor}05 100%)`,
+                    borderColor: `${stepColor}30`,
+                    boxShadow: `0 4px 16px -4px ${stepColor}20, inset 0 1px 1px rgba(255,255,255,0.1)`
+                  }}
+                >
+                  <p className="text-[9px] text-white/50 uppercase tracking-wider mb-1">ODHAD</p>
                   <p className="text-xl font-mono font-bold" style={{ color: stepColor }}>
                     {room.estimatedEndTime 
                       ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
