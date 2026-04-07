@@ -960,9 +960,9 @@ style={{
                       // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
-                      // DEBUG: Always log for first room
-                      if (rowIndex === 0) {
-                        console.log("[v0] First room completedOps:", room.name, opsToRender.length, JSON.stringify(opsToRender.slice(0, 1)));
+                      // DEBUG: Log for first room with name DaVinci
+                      if (room.name === 'DaVinci' || room.name === 'Sál č. 10') {
+                        console.log("[v0] completedOps:", room.name, opsToRender.length, opsToRender);
                       }
                       
                       if (opsToRender.length === 0) return null;
