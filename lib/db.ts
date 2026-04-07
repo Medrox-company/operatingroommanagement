@@ -192,9 +192,16 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
     const procedureMap = new Map<string, DBProcedure>();
     
     // Transform rows
-    return roomsRes.data.map((row: DBOperatingRoom) => 
+    const transformed = roomsRes.data.map((row: DBOperatingRoom) => 
       transformRoom(row, staffMap, patientMap, procedureMap)
     );
+    
+    console.log("[DB] Fetched rooms with completed ops:", transformed.map(r => ({ 
+      name: r.name, 
+      ops: r.completedOperations?.length 
+    })));
+    
+    return transformed;
   } catch (error) {
     console.error('[DB] Failed to fetch operating rooms:', error);
     return null;
