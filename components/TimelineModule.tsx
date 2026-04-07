@@ -960,8 +960,6 @@ style={{
                       // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
-                      console.log("[v0]", room.name, "has", opsToRender.length, "completed ops");
-                      
                       if (opsToRender.length === 0) return null;
                       
                       const filteredOps = opsToRender.filter(operation => {
@@ -970,8 +968,6 @@ style={{
                         const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
                         return inWindow;
                       });
-                      
-                      console.log("[v0]", room.name, "filtered to", filteredOps.length, "ops");
                       
                       if (filteredOps.length === 0) return null;
                       return filteredOps.map((operation, opIdx) => {

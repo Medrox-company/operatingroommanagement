@@ -80,18 +80,19 @@ const AppContent: React.FC = () => {
   // Emergency alert sound - plays when any room's emergency status is activated
   useEmergencyAlert(rooms, selectedRoomId);
 
-  // Load rooms from database on mount, fallback to MOCK_ROOMS
+  // Load rooms from API on mount
   useEffect(() => {
     const loadRooms = async () => {
-      const dbRooms = await fetchOperatingRooms();
-      if (dbRooms && dbRooms.length > 0) {
-        // Use completed_operations from database directly
-        // Data is already loaded via fetchOperatingRooms -> transformRoom
-        console.log("[v0] Loaded rooms:", dbRooms.map(r => ({ name: r.name, completedOps: r.completedOperations?.length })));
-        setRooms(dbRooms);
-        setIsDbConnected(true);
-      } else {
-        console.log("[v0] No database rooms, using mock");
+      try {
+        const response = await fetch('/api/rooms');
+        if (!response.ok) throw new Error('Failed to fetch rooms');
+        const dbRooms = await response.json();
+        if (dbRooms && dbRooms.length > 0) {
+          setRooms(dbRooms);
+          setIsDbConnected(true);
+        }
+      } catch (error) {
+        console.error("Failed to load rooms from API:", error);
       }
     };
     loadRooms();
