@@ -18,6 +18,23 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   // workflowStatuses is already filtered (active, non-special) and sorted by context
   const activeStatuses = workflowStatuses;
   
+  // Filter completed operations for today (7:00-6:59 window)
+  const todayOperationCount = useMemo(() => {
+    if (!room.completedOperations || room.completedOperations.length === 0) return 0;
+    
+    const now = new Date();
+    const startOfWindow = new Date(now);
+    startOfWindow.setHours(7, 0, 0, 0);
+    const endOfWindow = new Date(now);
+    endOfWindow.setDate(endOfWindow.getDate() + 1);
+    endOfWindow.setHours(6, 59, 59, 999);
+    
+    return room.completedOperations.filter(op => {
+      const opStart = new Date(op.startedAt);
+      return opStart >= startOfWindow && opStart <= endOfWindow;
+    }).length;
+  }, [room.completedOperations]);
+  
   // Memoize computed values using database statuses
   const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
     const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -170,7 +187,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                             letterSpacing: '-0.05em'
                         }}
                       >
-                        {room.operations24h}
+                        {todayOperationCount}
                       </text>
                     )}
                 </svg>
