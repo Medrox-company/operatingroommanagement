@@ -960,14 +960,26 @@ style={{
                       // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
+                      // DEBUG: Log first room
+                      if (room.name === 'Sál č. 10' || room.name === 'Sál č. 3') {
+                        console.log("[v0]", room.name, "completedOps:", opsToRender.length, opsToRender.map(o => o.startedAt));
+                      }
+                      
                       if (opsToRender.length === 0) return null;
                       
                       const filteredOps = opsToRender.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
                         const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        if (room.name === 'Sál č. 10') {
+                          console.log("[v0] filter:", operation.startedAt, "->", operation.endedAt, "inWindow:", inWindow);
+                        }
                         return inWindow;
                       });
+                      
+                      if (room.name === 'Sál č. 10') {
+                        console.log("[v0] Sál č. 10 after filter:", filteredOps.length);
+                      }
                       
                       if (filteredOps.length === 0) return null;
                       return filteredOps.map((operation, opIdx) => {
