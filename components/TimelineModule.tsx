@@ -1562,12 +1562,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   
   const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-  const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
+  const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : null;
   
   const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-  const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
+  const nextStatus = nextStepIndex !== null && activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
   
-  const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
+  // Use magenta/pink accent for active status badge
+  const stepColor = currentStatus?.accent_color || currentStatus?.color || '#D946EF';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
 
   // Calculate elapsed time from phaseStartedAt
@@ -1604,12 +1605,17 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         onClick={(e) => e.stopPropagation()}
         className="rounded-3xl overflow-hidden max-w-2xl w-full"
         style={{
-          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          background: '#0f0a1a',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
         }}
       >
-        {/* Header */}
-        <div className="px-6 py-5 flex items-center justify-between">
+        {/* Header with purple gradient */}
+        <div 
+          className="px-6 py-5 flex items-center justify-between"
+          style={{
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #312e81 100%)',
+          }}
+        >
           {/* Left side - Progress circle and room info */}
           <div className="flex items-center gap-4">
             {/* Progress circle */}
@@ -1724,10 +1730,9 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
 
               {/* Arrow */}
               <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${stepColor}30` }}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500/20"
               >
-                <span style={{ color: stepColor }}><ChevronRight className="w-5 h-5" /></span>
+                <ChevronRight className="w-5 h-5 text-orange-400" />
               </div>
 
               {/* Next step */}
@@ -1740,7 +1745,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     </span>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40">
-                    Krok {nextStepIndex + 1}/{totalSteps}
+                    Krok {nextStepIndex !== null ? nextStepIndex + 1 : totalSteps}/{totalSteps}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1748,7 +1753,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     <Sparkles className="w-5 h-5 text-white/40" />
                   </div>
                   <div>
-                    <p className="text-white/80 font-semibold">{nextStatus?.name || 'Další krok'}</p>
+                    <p className="text-white/80 font-semibold">{nextStatus?.name || 'Sal pripaven'}</p>
                     <p className="text-white/30 text-xs mt-0.5">Ceka na zahajeni</p>
                   </div>
                 </div>
