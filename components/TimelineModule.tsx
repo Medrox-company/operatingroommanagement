@@ -979,6 +979,11 @@ style={{
                         // Get single continuous position (even if crossing 7:00)
                         const position = getOperationPosition(opStartDate, opEndDate, currentTime);
                         
+                        // DEBUG
+                        if (room.name === 'DaVinci') {
+                          console.log("[v0] DaVinci completed op position:", position, "start:", operation.startedAt, "end:", operation.endedAt);
+                        }
+                        
                         // Skip if width is 0
                         if (position.width <= 0) return null;
                         
