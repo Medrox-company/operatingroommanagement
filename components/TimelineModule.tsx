@@ -971,10 +971,15 @@ style={{
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
                         const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        if (room.name === 'DaVinci') {
+                          console.log("[v0] Filter DaVinci op:", operation.startedAt, inWindow ? "✓ IN WINDOW" : "✗ OUT OF WINDOW");
+                        }
                         return inWindow;
                       });
                       
-                      if (filteredOps.length === 0) return null;
+                      if (room.name === 'DaVinci') {
+                        console.log("[v0] DaVinci filtered:", filteredOps.length, "from", opsToRender.length);
+                      }
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
