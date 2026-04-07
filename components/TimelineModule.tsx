@@ -979,11 +979,6 @@ style={{
                         // Get single continuous position (even if crossing 7:00)
                         const position = getOperationPosition(opStartDate, opEndDate, currentTime);
                         
-                        // DEBUG
-                        if (room.name === 'DaVinci') {
-                          console.log("[v0] DaVinci completed op position:", position, "start:", operation.startedAt, "end:", operation.endedAt);
-                        }
-                        
                         // Skip if width is 0
                         if (position.width <= 0) return null;
                         
@@ -991,16 +986,17 @@ style={{
                         const isContinuingOp = position.isContinuing;
                         
                         return (
-                          <div key={`completed-${opIdx}`} className="relative">
-                            <div
-                              className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
-                              style={{ 
-                                left: `${position.left}%`, 
-                                width: `${position.width}%`,
-                                // Green background for continuing operations, gray for completed
-                                background: isContinuingOp ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.08)',
-                              }}
-                            >
+                          <div
+                            key={`completed-${opIdx}`}
+                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
+                            style={{ 
+                              left: `${position.left}%`, 
+                              width: `${Math.max(0.3, position.width)}%`,
+                              // Green background for continuing operations, gray for completed
+                              background: isContinuingOp ? 'rgba(34, 197, 94, 0.3)' : 'rgba(107, 114, 128, 0.4)',
+                              border: '1px solid rgba(107, 114, 128, 0.5)',
+                            }}
+                          >
                               {/* Completed operation segments with colors from database context */}
                               {!isContinuingOp && operation.statusHistory && operation.statusHistory.length > 0 && (
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
@@ -1052,24 +1048,12 @@ style={{
                               <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
                                 {position.width > 6 && (
                                   <span className={`text-[10px] font-semibold truncate uppercase tracking-wide ${
-                                    isContinuingOp ? 'text-white' : 'text-white/30'
+                                    isContinuingOp ? 'text-white' : 'text-white/50'
                                   }`}>
                                     {isContinuingOp ? 'POKRAČUJÍCÍ VÝKON' : 'Dokončeno'}
                                   </span>
                                 )}
                               </div>
-                            </div>
-                            
-                            {/* Icon for operations exceeding 24 hours or crossing boundary */}
-                            {(exceedsDay || position.exceedsBoundary) && (
-                              <div 
-                                className="absolute -top-3 z-10 flex items-center justify-center bg-orange-500 rounded-full p-0.5"
-                                style={{ left: `${position.left + position.width - 1}%` }}
-                                title={exceedsDay ? "Výkon přesahuje 24 hodin" : "Výkon pokračuje do dalšího dne"}
-                              >
-                                <AlertCircle className="w-3 h-3 text-white" />
-                              </div>
-                            )}
                           </div>
                         );
                       })
