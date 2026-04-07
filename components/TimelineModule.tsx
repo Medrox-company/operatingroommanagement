@@ -960,6 +960,11 @@ style={{
                       // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
+                      // DEBUG: Always log for first room
+                      if (rowIndex === 0) {
+                        console.log("[v0] First room completedOps:", room.name, opsToRender.length, JSON.stringify(opsToRender.slice(0, 1)));
+                      }
+                      
                       if (opsToRender.length === 0) return null;
                       
                       const filteredOps = opsToRender.filter(operation => {
