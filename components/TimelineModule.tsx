@@ -1867,6 +1867,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </div>
           </div>
         </div>
+        </div>
       </motion.div>
     </motion.div>
   );
