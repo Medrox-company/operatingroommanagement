@@ -1560,23 +1560,42 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   // workflowStatuses is already filtered (active, non-special) and sorted by context
   const activeStatuses = workflowStatuses;
   
-  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 7;
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
   const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : null;
   
   const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
   const nextStatus = nextStepIndex !== null && activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
   
-  // Use magenta/pink accent color
-  const stepColor = '#D946EF';
+  // Use magenta/pink accent for active status badge
+  const stepColor = currentStatus?.accent_color || currentStatus?.color || '#D946EF';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
+
+  // Calculate elapsed time from phaseStartedAt
+  const getElapsedTime = (): string => {
+    if (!room.phaseStartedAt) return '--:--';
+    const phaseStartTime = new Date(room.phaseStartedAt);
+    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
+    if (elapsedMs < 0) return '--:--';
+    
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours === 0) {
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
       onClick={onClose}
     >
       <motion.div
@@ -1584,77 +1603,77 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-3xl overflow-hidden max-w-3xl w-full"
+        className="rounded-3xl overflow-hidden max-w-2xl w-full"
         style={{
-          background: '#0d0b14',
-          boxShadow: '0 25px 80px -12px rgba(0, 0, 0, 0.8)',
+          background: '#0f0a1a',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
         }}
       >
         {/* Header with purple gradient */}
         <div 
-          className="px-8 py-6 flex items-center justify-between relative"
+          className="px-6 py-5 flex items-center justify-between"
           style={{
-            background: 'linear-gradient(135deg, #1a1535 0%, #2d1f5c 40%, #3b2870 70%, #2a1d4e 100%)',
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #312e81 100%)',
           }}
         >
           {/* Left side - Progress circle and room info */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             {/* Progress circle */}
-            <div className="relative w-16 h-16 flex items-center justify-center">
-              <svg className="w-16 h-16 -rotate-90">
-                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <svg className="w-14 h-14 -rotate-90">
+                <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
                 <circle 
-                  cx="32" cy="32" r="28" fill="none" stroke={stepColor} strokeWidth="3"
-                  strokeDasharray={`${progressPercent * 1.76} 176`}
+                  cx="28" cy="28" r="24" fill="none" stroke={stepColor} strokeWidth="4"
+                  strokeDasharray={`${progressPercent * 1.5} 150`}
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute text-base font-bold text-white">{progressPercent}%</span>
+              <span className="absolute text-sm font-bold text-white">{progressPercent}%</span>
             </div>
             
             {/* Room name and status */}
             <div>
-              <div className="flex items-center gap-4">
-                <h2 className="text-3xl font-bold text-white">{room.name}</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-white">{room.name}</h2>
                 <span 
-                  className="px-4 py-1.5 rounded-full text-sm font-bold"
-                  style={{ backgroundColor: stepColor, color: 'white' }}
+                  className="px-3 py-1 rounded-full text-xs font-bold"
+                  style={{ backgroundColor: `${stepColor}30`, color: stepColor }}
                 >
-                  {currentStatus?.name || 'Uklid salu'}
+                  {currentStatus?.name || 'Status'}
                 </span>
               </div>
-              <p className="text-white/50 text-sm mt-1 uppercase tracking-wider">
-                {room.department || 'DETSKE'} · KROK {stepIndex + 1} Z {totalSteps}
+              <p className="text-white/50 text-sm mt-0.5">
+                {room.department} · KROK {stepIndex + 1} Z {totalSteps}
               </p>
             </div>
           </div>
           
-          {/* Right side - Operation time indicator and close */}
+          {/* Right side - Step dots, time display and close */}
           <div className="flex items-center gap-6">
-            {/* Operation time display */}
-            <div className="text-right">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">DOBA OPERACE</p>
-              <div className="flex items-center gap-0.5">
-                {/* Time display with dots and dashes like in image */}
-                {[...Array(7)].map((_, idx) => (
-                  <div key={idx} className="flex flex-col items-center">
-                    <div 
-                      className="w-1.5 h-1.5 rounded-full mb-0.5"
-                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.25)' }}
+            {/* Step progress dots */}
+            <div>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
+              <div className="flex items-center gap-1">
+                {activeStatuses.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center gap-0.5"
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
                     />
-                    <div 
-                      className="w-0.5 h-3"
-                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.25)' }}
+                    <div
+                      className="w-0.5 h-2"
+                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
                     />
                   </div>
                 ))}
               </div>
             </div>
-            
-            {/* Close button */}
             <button
               onClick={onClose}
-              className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors border border-white/10"
+              className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
             >
               <X className="w-5 h-5 text-white/60" />
             </button>
@@ -1662,80 +1681,80 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         </div>
 
         {/* Content */}
-        <div className="px-8 py-6 space-y-6">
+        <div className="px-6 pb-6 space-y-5">
           {/* Operation progress section */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-4 h-4 text-white/50" />
-              <p className="text-xs text-white/50 uppercase tracking-widest font-medium">POSTUP OPERACE</p>
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4 text-white/40" />
+              <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">POSTUP OPERACE</p>
             </div>
             
-            <div className="flex items-center gap-4">
-              {/* Current step - with pink/magenta accent */}
+            <div className="flex items-center gap-3">
+              {/* Current step */}
               <div 
-                className="flex-1 rounded-2xl p-5"
+                className="flex-1 rounded-2xl p-4 border"
                 style={{ 
-                  backgroundColor: 'rgba(217, 70, 239, 0.08)',
-                  border: '1px solid rgba(217, 70, 239, 0.3)'
+                  backgroundColor: `${stepColor}15`,
+                  borderColor: `${stepColor}40`
                 }}
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stepColor }} />
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: stepColor }}>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stepColor }} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: stepColor }}>
                       PRAVE PROBIHA
                     </span>
                   </div>
                   <span 
-                    className="px-3 py-1 rounded-full text-[11px] font-bold"
-                    style={{ backgroundColor: stepColor, color: 'white' }}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    style={{ backgroundColor: `${stepColor}30`, color: stepColor }}
                   >
                     Krok {stepIndex + 1}/{totalSteps}
                   </span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <div 
-                    className="w-14 h-14 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(217, 70, 239, 0.2)' }}
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${stepColor}20` }}
                   >
-                    <Stethoscope className="w-6 h-6" style={{ color: stepColor }} />
+                    <span style={{ color: stepColor }}><Stethoscope className="w-5 h-5" /></span>
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-lg">{currentStatus?.name || 'Uklid salu'}</p>
-                    <p className="text-white/40 text-sm flex items-center gap-2 mt-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span className="font-mono">--:--</span>
-                      <span className="font-mono text-white/60">--:--</span>
+                    <p className="text-white font-semibold">{currentStatus?.name || 'Status'}</p>
+                    <p className="text-white/40 text-xs flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3 h-3" /> {getElapsedTime()} --:--
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Arrow button - orange */}
-              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-orange-500/20 border border-orange-500/30 flex-shrink-0">
-                <ChevronRight className="w-6 h-6 text-orange-400" />
+              {/* Arrow */}
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500/20"
+              >
+                <ChevronRight className="w-5 h-5 text-orange-400" />
               </div>
 
-              {/* Next step - gray/subtle */}
-              <div className="flex-1 rounded-2xl p-5 bg-white/[0.03] border border-white/10">
-                <div className="flex items-center justify-between mb-4">
+              {/* Next step */}
+              <div className="flex-1 rounded-2xl p-4 bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-white/30" />
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-white/40">
+                    <div className="w-2 h-2 rounded-full bg-white/30" />
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
                       NASLEDUJICI
                     </span>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-white/10 text-white/40">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40">
                     Krok {nextStepIndex !== null ? nextStepIndex + 1 : totalSteps}/{totalSteps}
                   </span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-white/10">
-                    <Sparkles className="w-6 h-6 text-white/40" />
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/10">
+                    <Sparkles className="w-5 h-5 text-white/40" />
                   </div>
                   <div>
-                    <p className="text-white/70 font-semibold text-lg">{nextStatus?.name || 'Sal pripaven'}</p>
-                    <p className="text-white/30 text-sm mt-1">Ceka na zahajeni</p>
+                    <p className="text-white/80 font-semibold">{nextStatus?.name || 'Sal pripaven'}</p>
+                    <p className="text-white/30 text-xs mt-0.5">Ceka na zahajeni</p>
                   </div>
                 </div>
               </div>
@@ -1743,35 +1762,35 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           </div>
 
           {/* Bottom row - Team and Times */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             {/* Team section */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="w-4 h-4 text-white/50" />
-                <p className="text-xs text-white/50 uppercase tracking-widest font-medium">TYM</p>
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="w-4 h-4 text-white/40" />
+                <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">TYM</p>
               </div>
               <div className="flex gap-3">
                 {/* Doctor */}
-                <div className="flex-1 rounded-xl p-4 bg-white/[0.03] border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-violet-500/15 border border-violet-500/20">
-                      <Stethoscope className="w-5 h-5 text-violet-400" />
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-500/20">
+                      <Stethoscope className="w-4 h-4 text-violet-400" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">ANESTEZIOLOG</p>
-                      <p className="text-base font-semibold text-white">{room.staff?.doctor?.name || 'MUDr. Marek'}</p>
+                      <p className="text-[9px] text-white/40 uppercase tracking-wider">ANESTEZIOLOG</p>
+                      <p className="text-sm font-semibold text-white">{room.staff?.doctor?.name || 'MUDr. --'}</p>
                     </div>
                   </div>
                 </div>
                 {/* Nurse */}
-                <div className="flex-1 rounded-xl p-4 bg-white/[0.03] border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-500/15 border border-emerald-500/20">
-                      <Users className="w-5 h-5 text-emerald-400" />
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/20">
+                      <Users className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">SESTRA</p>
-                      <p className="text-base font-semibold text-white">{room.staff?.nurse?.name || 'Bc. Nova'}</p>
+                      <p className="text-[9px] text-white/40 uppercase tracking-wider">SESTRA</p>
+                      <p className="text-sm font-semibold text-white">{room.staff?.nurse?.name || 'Bc. --'}</p>
                     </div>
                   </div>
                 </div>
@@ -1780,23 +1799,23 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
 
             {/* Times section */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-4 h-4 text-white/50" />
-                <p className="text-xs text-white/50 uppercase tracking-widest font-medium">CASY</p>
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-4 h-4 text-white/40" />
+                <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">CASY</p>
               </div>
               <div className="flex gap-3">
                 {/* Start time */}
-                <div className="flex-1 rounded-xl p-4 bg-white/[0.03] border border-white/10 text-center">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">ZACATEK</p>
-                  <p className="text-2xl font-mono font-bold text-white/50">--:--</p>
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ZACATEK</p>
+                  <p className="text-xl font-mono font-bold text-white/60">--:--</p>
                 </div>
                 {/* Estimated end */}
-                <div className="flex-1 rounded-xl p-4 bg-white/[0.03] border border-white/10 text-center">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">ODHAD</p>
-                  <p className="text-2xl font-mono font-bold text-cyan-400">
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ODHAD</p>
+                  <p className="text-xl font-mono font-bold" style={{ color: stepColor }}>
                     {room.estimatedEndTime 
                       ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
-                      : '06:30'
+                      : '--:--'
                     }
                   </p>
                 </div>
