@@ -1584,289 +1584,101 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-[32px] overflow-hidden max-w-3xl w-full relative shadow-2xl"
+        className="rounded-2xl overflow-hidden max-w-2xl w-full"
         style={{
-          background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1612 50%, #0d0d0d 100%)',
-          boxShadow: '0 25px 80px -12px rgba(249, 115, 22, 0.15), 0 10px 40px -10px rgba(0, 0, 0, 0.8)',
-          border: '1px solid rgba(249, 115, 22, 0.1)',
+          background: 'linear-gradient(135deg, #0a0a12 0%, #1a1a2e 100%)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 20px 60px -12px rgba(0, 0, 0, 0.7)',
         }}
       >
-        {/* Decorative gradient glows - large orange glow in top right */}
-        <div 
-          className="absolute top-0 right-0 w-96 h-96 pointer-events-none opacity-60"
-          style={{
-            background: 'radial-gradient(ellipse at top right, rgba(249, 115, 22, 0.4) 0%, rgba(234, 88, 12, 0.2) 25%, rgba(220, 38, 38, 0.1) 50%, transparent 70%)',
-            filter: 'blur(40px)',
-          }}
-        />
-        {/* Secondary warm glow */}
-        <div 
-          className="absolute top-20 right-32 w-48 h-48 pointer-events-none opacity-50"
-          style={{
-            background: 'radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, transparent 70%)',
-            filter: 'blur(50px)',
-          }}
-        />
-        {/* Dark overlay to control glow intensity */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/60 pointer-events-none" />
-        
-        {/* Content - relative so it's above glows */}
-        <div className="relative z-10">
-        
         {/* Header */}
-        <div className="px-8 py-8">
-          <div className="flex items-start justify-between mb-6">
-            {/* Left side - Icon and room info */}
-            <div className="flex items-start gap-5">
-              {/* Icon - elegant design */}
-              <div 
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%)',
-                  border: '1px solid rgba(249, 115, 22, 0.2)',
-                }}
-              >
-                <Activity className="w-6 h-6" style={{ color: accentColor }} />
-              </div>
-              
-              {/* Room name and status */}
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-bold text-white">{room.name}</h2>
-                  <span 
-                    className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
-                    style={{ backgroundColor: accentColor, color: 'white' }}
-                  >
-                    {currentStatus?.name || 'Aktivni'}
-                  </span>
-                </div>
-                <p className="text-white/50 text-sm">
-                  {room.department || 'Oddeleni'} · Krok {stepIndex + 1} z {totalSteps}
-                </p>
-              </div>
+        <div className="px-8 py-6 border-b border-white/10">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-white mb-1">{room.name}</h2>
+              <p className="text-sm text-white/50">
+                {room.department || 'Oddeleni'} · Krok {stepIndex + 1} z {totalSteps}
+              </p>
             </div>
-            
-            {/* Right side - Close button */}
             <button
               onClick={onClose}
-              className="w-11 h-11 rounded-xl flex items-center justify-center transition-all"
-              style={{
-                background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%)',
-                border: '1px solid rgba(249, 115, 22, 0.15)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(249, 115, 22, 0.1) 100%)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%)';
-              }}
+              className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
             >
               <X className="w-5 h-5 text-white/60" />
             </button>
           </div>
-          
-          {/* Progress bar - elegant */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-white/40 uppercase tracking-widest font-semibold">Prubeh operace</span>
-              <span className="text-sm font-bold text-white">{progressPercent}%</span>
-            </div>
-            <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/10">
-              <div 
-                className="h-full rounded-full transition-all duration-500"
-                style={{ 
-                  width: `${progressPercent}%`,
-                  background: `linear-gradient(90deg, ${accentColor} 0%, #FB923C 50%, #FBBF24 100%)`,
-                  boxShadow: `0 0 20px ${accentColor}80`,
-                }}
-              />
-            </div>
-          </div>
         </div>
-
-        {/* Divider with subtle glow */}
-        <div 
-          className="h-px mx-8"
-          style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(249, 115, 22, 0.2) 50%, transparent 100%)',
-            boxShadow: `0 0 10px rgba(249, 115, 22, 0.1)`,
-          }}
-        />
 
         {/* Content */}
-        <div className="px-8 py-8 space-y-8">
-          {/* Operation progress section */}
+        <div className="px-8 py-8 space-y-6">
+          {/* Current operation */}
           <div>
-            <p className="text-sm font-semibold text-white uppercase tracking-wider mb-5">Postup operace</p>
-            
-            <div className="flex items-center gap-4">
-              {/* Current step - with accent styling */}
-              <div 
-                className="flex-1 rounded-2xl p-6 border transition-all"
-                style={{ 
-                  backgroundColor: 'rgba(249, 115, 22, 0.06)',
-                  borderColor: 'rgba(249, 115, 22, 0.3)',
-                  boxShadow: `0 4px 24px -8px ${accentColor}30, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                }}
+            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Prave probiha</p>
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-white/10">
+                <Activity className="w-5 h-5 text-white/70" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-white">{currentStatus?.name || 'Aktivni'}</p>
+                <p className="text-sm text-white/40 mt-0.5">Krok {stepIndex + 1} z {totalSteps}</p>
+              </div>
+              <span 
+                className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: accentColor, color: 'white' }}
               >
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accentColor }} />
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: accentColor }}>
-                      Prave probíhá
-                    </span>
-                  </div>
-                  <span 
-                    className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                    style={{ backgroundColor: accentColor, color: 'white' }}
-                  >
-                    Krok {stepIndex + 1}/{totalSteps}
-                  </span>
+                {Math.round((stepIndex / (totalSteps - 1)) * 100)}%
+              </span>
+            </div>
+          </div>
+
+          {/* Team */}
+          <div>
+            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Tym</p>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Doctor */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-500/15">
+                  <Stethoscope className="w-4 h-4 text-violet-400" />
                 </div>
-                <div className="flex items-center gap-4">
-                  <div 
-                    className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${accentColor}20 0%, ${accentColor}10 100%)`,
-                      border: `1px solid ${accentColor}30`,
-                    }}
-                  >
-                    <Stethoscope className="w-6 h-6" style={{ color: accentColor }} />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold text-base">{currentStatus?.name || 'Aktivni krok'}</p>
-                    <p className="text-white/40 text-sm flex items-center gap-2 mt-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span className="font-mono">--:--</span>
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-white/40 uppercase truncate">Anesteziolog</p>
+                  <p className="text-sm font-semibold text-white truncate">{room.staff?.doctor?.name || 'MUDr. --'}</p>
                 </div>
               </div>
-
-              {/* Arrow */}
-              <div 
-                className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
-                style={{ 
-                  background: `linear-gradient(135deg, ${accentColor}20 0%, ${accentColor}10 100%)`,
-                  border: `1px solid ${accentColor}30`,
-                  boxShadow: `0 0 12px ${accentColor}20`,
-                }}
-              >
-                <ChevronRight className="w-5 h-5" style={{ color: accentColor }} />
-              </div>
-
-              {/* Next step */}
-              <div className="flex-1 rounded-2xl p-6 border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-white/20" />
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-white/40">
-                      Nasledujici
-                    </span>
-                  </div>
-                  <span className="px-3 py-1.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40 uppercase tracking-wider">
-                    Krok {nextStepIndex !== null ? nextStepIndex + 1 : totalSteps}/{totalSteps}
-                  </span>
+              {/* Nurse */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/15">
+                  <Users className="w-4 h-4 text-emerald-400" />
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/[0.04]">
-                    <Sparkles className="w-6 h-6 text-white/30" />
-                  </div>
-                  <div>
-                    <p className="text-white/60 font-semibold text-base">{nextStatus?.name || 'Dalsi krok'}</p>
-                    <p className="text-white/30 text-sm mt-1.5">Ceka na zahajeni</p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-white/40 uppercase truncate">Sestra</p>
+                  <p className="text-sm font-semibold text-white truncate">{room.staff?.nurse?.name || 'Bc. --'}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Bottom row - Team and Times */}
-          <div className="grid grid-cols-2 gap-8">
-            {/* Team section */}
-            <div>
-              <p className="text-sm font-semibold text-white uppercase tracking-wider mb-5">Tym</p>
-              <div className="space-y-3">
-                {/* Doctor */}
-                <div 
-                  className="flex items-center gap-4 p-4 rounded-xl border transition-all"
-                  style={{
-                    background: 'rgba(139, 92, 246, 0.04)',
-                    borderColor: 'rgba(139, 92, 246, 0.2)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-                  }}
-                >
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%)',
-                    border: '1px solid rgba(139, 92, 246, 0.25)',
-                  }}>
-                    <Stethoscope className="w-5 h-5 text-violet-400" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-white/40 uppercase tracking-wider font-semibold mb-0.5">Anesteziolog</p>
-                    <p className="text-sm font-semibold text-white">{room.staff?.doctor?.name || 'MUDr. --'}</p>
-                  </div>
-                </div>
-                {/* Nurse */}
-                <div 
-                  className="flex items-center gap-4 p-4 rounded-xl border transition-all"
-                  style={{
-                    background: 'rgba(52, 211, 153, 0.04)',
-                    borderColor: 'rgba(52, 211, 153, 0.2)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-                  }}
-                >
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                    background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(52, 211, 153, 0.05) 100%)',
-                    border: '1px solid rgba(52, 211, 153, 0.25)',
-                  }}>
-                    <Users className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-white/40 uppercase tracking-wider font-semibold mb-0.5">Sestra</p>
-                    <p className="text-sm font-semibold text-white">{room.staff?.nurse?.name || 'Bc. --'}</p>
-                  </div>
-                </div>
+          {/* Times */}
+          <div>
+            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Casy</p>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Start time */}
+              <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+                <p className="text-[11px] text-white/40 uppercase mb-1">Zacatek</p>
+                <p className="text-lg font-mono font-semibold text-white/70">--:--</p>
               </div>
-            </div>
-
-            {/* Times section */}
-            <div>
-              <p className="text-sm font-semibold text-white uppercase tracking-wider mb-5">Casy</p>
-              <div className="space-y-3">
-                {/* Start time */}
-                <div 
-                  className="flex items-center justify-between p-4 rounded-xl border"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderColor: 'rgba(255, 255, 255, 0.08)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-                  }}
-                >
-                  <span className="text-sm text-white/50 font-medium">Zacatek</span>
-                  <span className="text-lg font-mono font-semibold text-white/60">--:--</span>
-                </div>
-                {/* Estimated end */}
-                <div 
-                  className="flex items-center justify-between p-4 rounded-xl border transition-all"
-                  style={{
-                    background: `linear-gradient(135deg, ${accentColor}10 0%, ${accentColor}05 100%)`,
-                    borderColor: `${accentColor}30`,
-                    boxShadow: `0 4px 16px -4px ${accentColor}20, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                  }}
-                >
-                  <span className="text-sm text-white/50 font-medium">Odhad konce</span>
-                  <span className="text-lg font-mono font-bold" style={{ color: accentColor }}>
-                    {room.estimatedEndTime 
-                      ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
-                      : '--:--'
-                    }
-                  </span>
-                </div>
+              {/* Estimated end */}
+              <div className="p-3 rounded-lg border" style={{ backgroundColor: `${accentColor}10`, borderColor: `${accentColor}30` }}>
+                <p className="text-[11px] text-white/40 uppercase mb-1">Odhad</p>
+                <p className="text-lg font-mono font-semibold" style={{ color: accentColor }}>
+                  {room.estimatedEndTime 
+                    ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+                    : '--:--'
+                  }
+                </p>
               </div>
             </div>
           </div>
-        </div>
         </div>
       </motion.div>
     </motion.div>
