@@ -960,26 +960,17 @@ style={{
                       // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
-                      // DEBUG: Log for first room with name DaVinci
-                      if (room.name === 'DaVinci' || room.name === 'Sál č. 10') {
-                        console.log("[v0] completedOps:", room.name, opsToRender.length, opsToRender);
-                      }
-                      
                       if (opsToRender.length === 0) return null;
                       
                       const filteredOps = opsToRender.filter(operation => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
                         const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
-                        if (room.name === 'DaVinci') {
-                          console.log("[v0] Filter DaVinci op:", operation.startedAt, inWindow ? "✓ IN WINDOW" : "✗ OUT OF WINDOW");
-                        }
                         return inWindow;
                       });
                       
-                      if (room.name === 'DaVinci') {
-                        console.log("[v0] DaVinci filtered:", filteredOps.length, "from", opsToRender.length);
-                      }
+                      if (filteredOps.length === 0) return null;
+                      
                       return filteredOps.map((operation, opIdx) => {
                         const opStartDate = new Date(operation.startedAt);
                         const opEndDate = new Date(operation.endedAt);
@@ -1028,7 +1019,7 @@ style={{
                                       const segDuration = Math.max(0, segEnd - segStart);
                                       const segWidthPct = (segDuration / opDuration) * 100;
                                       const segLeftPct = ((segStart - opStart) / opDuration) * 100;
-                                      if (segWidthPct <= 0) return null;
+                                      if (segWidthPct <= 0) return undefined;
                                       const phaseColor = entry.color
                                         || stepColorMap[entry.stepIndex]
                                         || STEP_INDEX_COLORS[entry.stepIndex]
@@ -1047,7 +1038,7 @@ style={{
                                           title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
                                         />
                                       );
-                                    });
+                                    }).filter(Boolean);
                                   })()}
                                 </div>
                               )}
