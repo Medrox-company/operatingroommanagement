@@ -87,8 +87,11 @@ const AppContent: React.FC = () => {
       if (dbRooms && dbRooms.length > 0) {
         // Use completed_operations from database directly
         // Data is already loaded via fetchOperatingRooms -> transformRoom
+        console.log("[v0] Loaded rooms:", dbRooms.map(r => ({ name: r.name, completedOps: r.completedOperations?.length })));
         setRooms(dbRooms);
         setIsDbConnected(true);
+      } else {
+        console.log("[v0] No database rooms, using mock");
       }
     };
     loadRooms();
