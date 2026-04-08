@@ -423,278 +423,232 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT (md:hidden) - LoginPage Design ========== */}
-      <div className="md:hidden w-full h-full flex flex-col bg-[#0a0a0f] relative overflow-hidden">
-        {/* Background Effects - same as LoginPage */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] rounded-full opacity-20"
-            style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 70%)` }} 
-          />
-          <div 
-            className="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] rounded-full opacity-15"
-            style={{ background: 'radial-gradient(circle, #00D8C1 0%, transparent 70%)' }} 
-          />
+      {/* ========== MOBILE LAYOUT (md:hidden) - Ultraminimalist Modern Design ========== */}
+      <div className="md:hidden w-full h-full flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        {/* Gradient background with glow */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-cyan-500/15 blur-3xl" />
         </div>
 
-        {/* Grid Pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.02] pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-            backgroundSize: '50px 50px'
-          }}
-        />
-
         {/* Content */}
-        <div className="relative z-10 flex flex-col h-full p-4">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+        <div className="relative z-10 flex flex-col h-full px-6 py-8">
+          {/* Header - Close button */}
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex-1" />
+            <h1 className="text-3xl font-bold text-white text-center flex-1">{room.name}</h1>
             <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
+              className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center active:scale-90 outline-none select-none hover:bg-white/20 transition-all"
             >
-              <ChevronLeft className="w-5 h-5 text-white/60" />
-            </button>
-            <h1 className="text-2xl font-bold text-white">{room.name}</h1>
-            <button 
-              onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
-            >
-              <X className="w-5 h-5 text-white/60" />
+              <X className="w-5 h-5 text-white" />
             </button>
           </div>
 
-          {/* Circular Progress with Status */}
-          <div className="flex flex-col items-center relative py-4">
-            {/* Text in circle - absolute positioning */}
-            <motion.div
-              className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
-              key={currentStep?.name}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="text-center px-8">
-                {(room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status')
-                  .split(' ')
-                  .map((word, i) => <div key={i} className="text-2xl font-bold text-white leading-tight">{word}</div>)}
-              </div>
-            </motion.div>
-            
-            {/* Pure SVG circle - no box container */}
-            <svg width="240" height="240" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
-              <defs>
-                <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              {/* Background track */}
-              <circle
-                cx="50" cy="50" r="44"
-                fill="none"
-                stroke="rgba(255,255,255,0.05)"
-                strokeWidth="2"
-              />
-              {/* Animated glow layer */}
-              <motion.circle
-                cx="50" cy="50" r="44"
-                fill="none"
-                stroke={activeColor}
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)', filter: 'url(#mobile-glow-ring)' }}
-                animate={{
-                  strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
-                  opacity: [0.2, 0.45, 0.2]
-                }}
-                transition={{
-                  strokeDasharray: { duration: 0.8, ease: 'easeOut' },
-                  opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
-                }}
-              />
-              {/* Main progress */}
-              <motion.circle
-                cx="50" cy="50" r="44"
-                fill="none"
-                stroke={activeColor}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
-                animate={{ strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
-            </svg>
-          </div>
+          {/* Main Status Card */}
+          <motion.div 
+            className="flex-1 flex flex-col items-center justify-center gap-6 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Large Status Text */}
+            <div className="text-center">
+              <p className="text-sm font-semibold text-white/60 uppercase tracking-widest mb-2">Aktuální status</p>
+              <motion.h2 
+                key={currentStep?.name}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-5xl font-bold text-white leading-tight"
+              >
+                {room.isEmergency ? 'STAV NOUZE' : room.isLocked ? 'UZAMČEN' : (currentStep?.name || 'Status')}
+              </motion.h2>
+            </div>
 
-          {/* Main CTA Button - moved up */}
-          {!isInteractionBlocked && (
-            <button
-              onClick={handleNextStep}
-              className="w-full py-4 rounded-xl font-semibold text-white mb-4 active:scale-[0.98] outline-none select-none"
-              style={{
-                background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}80 100%)`,
-                boxShadow: `0 0 30px ${activeColor}40`
-              }}
-            >
-              {isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}
-            </button>
-          )}
-
-          {/* Main Card */}
-          <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-4 flex-1 flex flex-col">
-            {/* End Time Control */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 mb-3">
-              <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 text-center">Ukončení</p>
-              <div className="flex items-center justify-between">
-            <button
-              onClick={handleDecreaseTime}
-              disabled={isInteractionBlocked || !estimatedEndTime}
-              className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none"
-            >
-              <Minus className="w-4 h-4 text-white/60" />
-            </button>
-                <p className="text-2xl font-mono font-bold text-white">
-                  {estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+            {/* Circular Progress */}
+            <div className="relative w-40 h-40">
+              <svg width="160" height="160" viewBox="0 0 100 100" className="absolute inset-0">
+                <defs>
+                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: activeColor, stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: '#06B6D4', stopOpacity: 0.8 }} />
+                  </linearGradient>
+                </defs>
+                
+                {/* Background circle */}
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
+                
+                {/* Progress circle */}
+                <motion.circle
+                  cx="50" cy="50" r="45"
+                  fill="none"
+                  stroke="url(#progressGradient)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 283} 283`}
+                  style={{ transformOrigin: '50px 50px', rotate: '-90deg' }}
+                  animate={{ 
+                    strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 283} 283`
+                  }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                />
+              </svg>
+              
+              {/* Center badge with progress percentage */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <p className="text-2xl font-bold text-white">
+                  {Math.round(((safeStepIndex + 1) / validStepCount) * 100)}%
                 </p>
-            <button
-                  onClick={handleIncreaseTime}
-                  disabled={isInteractionBlocked}
-                  className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none"
-                >
-                  <Plus className="w-4 h-4 text-white/60" />
-                </button>
+                <p className="text-xs text-white/60 uppercase tracking-wider">Progress</p>
               </div>
             </div>
 
-            {/* Action Buttons Grid */}
-            <div className="grid grid-cols-4 gap-2 mb-3">
-              <button
-                onClick={async () => {
-                  const newPaused = !isPaused;
-                  setIsPaused(newPaused);
-                  await updateOperatingRoom(room.id, { is_paused: newPaused });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 outline-none select-none ${
-                  isPaused
-                    ? 'bg-[#00D8C1]/20 border-[#00D8C1]/50'
-                    : 'bg-white/[0.02] border-white/10'
-                }`}
-              >
-                {isPaused ? <Play className="w-5 h-5 text-[#00D8C1]" /> : <Pause className="w-5 h-5 text-white/40" />}
-                        <span className="text-[8px] font-medium text-white/40 uppercase">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
-              </button>
+            {/* Elapsed time */}
+            <div className="text-center">
+              <p className="text-4xl font-mono font-bold text-white">{elapsedTime}</p>
+              <p className="text-xs text-white/60 uppercase tracking-widest mt-1">Elapsed</p>
+            </div>
+          </motion.div>
 
-              <button
-                onClick={async () => {
-                  const newH = !room.isEnhancedHygiene;
-                  onEnhancedHygieneToggle?.(newH);
-                  await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
-                }}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 outline-none select-none ${
-                  room.isEnhancedHygiene
-                    ? 'bg-orange-500/20 border-orange-500/50'
-                    : 'bg-white/[0.02] border-white/10'
-                }`}
-              >
-                <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-orange-400' : 'text-white/40'}`} />
-                <span className="text-[8px] font-medium text-white/40 uppercase">Hygiena</span>
-              </button>
+          {/* Quick Actions - Grid of buttons */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* Pause / Resume */}
+            <motion.button
+              onClick={async () => {
+                const newPaused = !isPaused;
+                setIsPaused(newPaused);
+                await updateOperatingRoom(room.id, { is_paused: newPaused });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`py-4 px-4 rounded-2xl font-semibold text-white backdrop-blur-md border flex flex-col items-center gap-2 active:scale-[0.98] outline-none select-none transition-all ${
+                isPaused
+                  ? 'bg-cyan-500/30 border-cyan-500/50 text-cyan-100'
+                  : 'bg-white/10 border-white/20 text-white/80'
+              }`}
+            >
+              {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+              <span className="text-xs font-semibold">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
+            </motion.button>
 
-              <button
-                onClick={async () => {
-                  if (!patientCalledTime) {
-                    const now = new Date();
-                    setPatientCalledTime(now);
-                    setShowPatientCalledText(true);
-                    setTimeout(() => setShowPatientCalledText(false), 5000);
+            {/* Enhanced Hygiene */}
+            <motion.button
+              onClick={async () => {
+                const newH = !room.isEnhancedHygiene;
+                onEnhancedHygieneToggle?.(newH);
+                await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`py-4 px-4 rounded-2xl font-semibold text-white backdrop-blur-md border flex flex-col items-center gap-2 active:scale-[0.98] outline-none select-none transition-all ${
+                room.isEnhancedHygiene
+                  ? 'bg-orange-500/30 border-orange-500/50 text-orange-100'
+                  : 'bg-white/10 border-white/20 text-white/80'
+              }`}
+            >
+              <ShieldAlert className="w-5 h-5" />
+              <span className="text-xs font-semibold">Hygiena</span>
+            </motion.button>
+
+            {/* Patient Called */}
+            <motion.button
+              onClick={async () => {
+                if (!patientCalledTime) {
+                  const now = new Date();
+                  setPatientCalledTime(now);
+                  setShowPatientCalledText(true);
+                  setTimeout(() => setShowPatientCalledText(false), 5000);
                   await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_called', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                   onPatientStatusChange?.(now.toISOString(), null);
-                  }
-                }}
-                disabled={!!patientCalledTime}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-50 outline-none select-none ${
-                  patientCalledTime
-                    ? 'bg-green-500/20 border-green-500/50'
-                    : 'bg-white/[0.02] border-white/10'
-                }`}
-              >
-                <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-400' : 'text-white/40'}`} />
-                <span className="text-[8px] font-medium text-white/40 uppercase">{patientCalledTime ? patientCallElapsedTime : 'Volat'}</span>
-              </button>
+                }
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={!!patientCalledTime}
+              className={`py-4 px-4 rounded-2xl font-semibold text-white backdrop-blur-md border flex flex-col items-center gap-2 active:scale-[0.98] outline-none select-none transition-all disabled:opacity-60 ${
+                patientCalledTime
+                  ? 'bg-blue-500/30 border-blue-500/50 text-blue-100'
+                  : 'bg-white/10 border-white/20 text-white/80'
+              }`}
+            >
+              <Phone className="w-5 h-5" />
+              <span className="text-xs font-semibold">Volat</span>
+            </motion.button>
 
-              <button
-                onClick={async () => {
-                  if (patientCalledTime && !patientArrivedTime) {
-                    const now = new Date();
-                    setPatientArrivedTime(now);
-                    setShowPatientArrivedText(true);
+            {/* Patient Arrived */}
+            <motion.button
+              onClick={async () => {
+                if (patientCalledTime && !patientArrivedTime) {
+                  const now = new Date();
+                  setPatientArrivedTime(now);
+                  setShowPatientArrivedText(true);
                   await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
                   await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                   onPatientStatusChange?.(patientCalledTime!.toISOString(), now.toISOString());
-                  // Just hide the text after 5 seconds, patient status stays in DB until step change
-                    setTimeout(() => {
-                      setShowPatientArrivedText(false);
-                    }, 5000);
-                  }
-                }}
-                disabled={!patientCalledTime || !!patientArrivedTime}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 active:scale-95 disabled:opacity-30 outline-none select-none ${
-                  patientArrivedTime
-                    ? 'bg-purple-500/20 border-purple-500/50'
-                    : 'bg-white/[0.02] border-white/10'
-                }`}
-              >
-                <BedDouble className={`w-5 h-5 ${patientArrivedTime ? 'text-purple-400' : 'text-white/40'}`} />
-                <span className="text-[8px] font-medium text-white/40 uppercase">Příjezd</span>
-              </button>
-            </div>
-
-            {/* Staff Section */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => {
-                  setStaffPickerRole('doctor');
-                  setStaffPickerOpen(true);
-                }}
-                className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left"
-              >
-                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                  <Stethoscope className="w-4 h-4 text-violet-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] text-white/40 uppercase tracking-wide">Lékař</p>
-                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.doctor.name || 'Nepřiřazen'}</p>
-                </div>
-              </button>
-              <button
-                onClick={() => {
-                  setStaffPickerRole('nurse');
-                  setStaffPickerOpen(true);
-                }}
-                className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left"
-              >
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <Heart className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] text-white/40 uppercase tracking-wide">Sestra</p>
-                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.nurse.name || 'Nepřiřazena'}</p>
-                </div>
-              </button>
-            </div>
-
+                  setTimeout(() => setShowPatientArrivedText(false), 5000);
+                }
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={!patientCalledTime || !!patientArrivedTime}
+              className={`py-4 px-4 rounded-2xl font-semibold text-white backdrop-blur-md border flex flex-col items-center gap-2 active:scale-[0.98] outline-none select-none transition-all disabled:opacity-60 ${
+                patientArrivedTime
+                  ? 'bg-green-500/30 border-green-500/50 text-green-100'
+                  : 'bg-white/10 border-white/20 text-white/80'
+              }`}
+            >
+              <UserCheck className="w-5 h-5" />
+              <span className="text-xs font-semibold">Příjezd</span>
+            </motion.button>
           </div>
+
+          {/* Team & End Time - Bottom section */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Doctor */}
+            <motion.button
+              onClick={() => {
+                setStaffPickerRole('doctor');
+                setStaffPickerOpen(true);
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-left hover:bg-white/15 hover:border-white/30 transition-all active:scale-[0.98]"
+            >
+              <p className="text-[11px] font-semibold text-white/60 uppercase tracking-wider mb-1">Lékař</p>
+              <p className="text-sm font-bold text-white truncate">{room.staff?.doctor?.name || 'Vybrat'}</p>
+            </motion.button>
+
+            {/* End Time */}
+            <motion.div
+              className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 backdrop-blur-md border border-cyan-500/30 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <p className="text-[11px] font-semibold text-white/60 uppercase tracking-wider mb-1">Ukončení</p>
+              <p className="text-sm font-mono font-bold text-white">
+                {estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Next Step Button */}
+          {!isInteractionBlocked && (
+            <motion.button
+              onClick={handleNextStep}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="mt-6 w-full py-5 px-6 rounded-2xl font-bold text-white text-lg backdrop-blur-md border border-white/30 active:scale-[0.98] outline-none select-none shadow-2xl"
+              style={{
+                background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}80 100%)`,
+                boxShadow: `0 0 40px ${activeColor}40, 0 8px 32px ${activeColor}20`
+              }}
+            >
+              {isFinalStep ? '↻ Nový cyklus' : '→ Další fáze'}
+            </motion.button>
+          )}
         </div>
       </div>
 
