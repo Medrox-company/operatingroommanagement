@@ -318,7 +318,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     }
     
     const remainingMs = endTime.getTime() - currentTime.getTime();
-    if (remainingMs <= 0) return 'Dokončeno';
+    
+    // Pokud čas přesáhl odhad ale výkon stále probíhá (currentStepIndex < 6), zobrazíme překročený čas
+    if (remainingMs <= 0) {
+      // Výkon stále běží - zobrazíme záporný čas (překročení)
+      const overMs = Math.abs(remainingMs);
+      const overHours = Math.floor(overMs / (1000 * 60 * 60));
+      const overMinutes = Math.floor((overMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `-${overHours}h ${overMinutes < 10 ? '0' : ''}${overMinutes}m`;
+    }
     
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
