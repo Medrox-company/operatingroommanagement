@@ -398,128 +398,61 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
-          <AnimatePresence>
-            {sortedRooms.map((room, idx) => {
-              // Safe lookup with fallbacks
-              const step = statusByOrderIndex?.[room.currentStepIndex];
-              const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
-              const statusName = step?.title || step?.name || 'Status';
-              const remaining = getRemainingTime(room);
-              const totalSteps = activeStatuses?.length || 1;
-              const stepIndex = room.currentStepIndex || 0;
-              const isFree = stepIndex >= totalSteps - 1;
-              const doctorName = room.staff?.doctor?.name || 'Neurčeno';
-              
-              return (
-                <motion.button
-                  key={room.id}
-                  onClick={() => setSelectedRoom(room)}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: idx * 0.05 }}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full rounded-2xl p-4 border text-left active:scale-[0.99]"
-                  style={{ background: `${color}08`, borderColor: `${color}25` }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <motion.div 
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        animate={{ 
-                          boxShadow: [
-                            `0 0 6px ${color}80`,
-                            `0 0 12px ${color}c0`,
-                            `0 0 6px ${color}80`,
-                          ]
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        style={{ backgroundColor: color }}
-                      />
-                      <p className="text-base font-black text-white uppercase tracking-tight">{room.name}</p>
-                      {room.isEmergency && (
-                        <motion.span 
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase"
-                        >
-                          EMERGENCY
-                        </motion.span>
-                      )}
-                      {room.isLocked && (
-                        <motion.span 
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase"
-                        >
-                          UZAMČEN
-                        </motion.span>
-                      )}
-                      {room.isPaused && !room.isEmergency && !room.isLocked && (
-                        <motion.span 
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="text-[9px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 uppercase"
-                        >
-                          PAUZA
-                        </motion.span>
-                      )}
+          {sortedRooms.map((room) => {
+            // Safe lookup with fallbacks
+            const step = statusByOrderIndex?.[room.currentStepIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
+            const statusName = step?.title || step?.name || 'Status';
+            const remaining = getRemainingTime(room);
+            const totalSteps = activeStatuses?.length || 1;
+            const stepIndex = room.currentStepIndex || 0;
+            const isFree = stepIndex >= totalSteps - 1;
+            const doctorName = room.staff?.doctor?.name || 'Neurčeno';
+            
+            return (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoom(room)}
+                className="w-full rounded-2xl p-4 border text-left transition-all active:scale-[0.99]"
+                style={{ background: `${color}08`, borderColor: `${color}25` }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}80` }} />
+                    <p className="text-base font-black text-white uppercase tracking-tight">{room.name}</p>
+                    {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
+                    {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
+                    {room.isPaused && !room.isEmergency && !room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 uppercase">PAUZA</span>}
+                  </div>
+                  {remaining && !isFree && (
+                    <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
+                  )}
+                  {isFree && <span className="text-[10px] font-black text-emerald-400/70 uppercase tracking-wider">Volný</span>}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{statusName}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{doctorName}</p>
+                  </div>
+                  {room.estimatedEndTime && !isFree && (
+                    <div className="text-right">
+                      <p className="text-[8px] uppercase tracking-wider text-white/30">Ukončení</p>
+                      <p className="text-sm font-mono font-black text-white">
+                        {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
-                    {remaining && !isFree && (
-                      <motion.span 
-                        className="text-[11px] font-mono font-bold"
-                        animate={{ opacity: [1, 0.6, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        style={{ color }}
-                      >
-                        {remaining}
-                      </motion.span>
-                    )}
-                    {isFree && (
-                      <motion.span 
-                        className="text-[10px] font-black text-emerald-400/70 uppercase tracking-wider"
-                        animate={{ opacity: [0.7, 1, 0.7] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        Volný
-                      </motion.span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{statusName}</p>
-                      <p className="text-[10px] text-white/40 mt-0.5">{doctorName}</p>
-                    </div>
-                    {room.estimatedEndTime && !isFree && (
-                      <motion.div 
-                        className="text-right"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                      >
-                        <p className="text-[8px] uppercase tracking-wider text-white/30">Ukončení</p>
-                        <p className="text-sm font-mono font-black text-white">
-                          {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </motion.div>
-                    )}
-                  </div>
-                  {/* Mini progress bar with animation */}
-                  <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                      style={{ backgroundColor: color, opacity: 0.6 }}
-                    />
-                  </div>
-                </motion.button>
-              );
-            })}
-          </AnimatePresence>
+                  )}
+                </div>
+                {/* Mini progress bar */}
+                <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
+                  />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1299,23 +1232,8 @@ style={{
                                         : `${phaseColor}bb`,
                                     }}
                                     initial={{ opacity: 0 }}
-                                    animate={{ 
-                                      opacity: 1,
-                                      boxShadow: isCurrentSeg 
-                                        ? [
-                                            `inset 0 0 0 2px ${phaseColor}`,
-                                            `inset 0 0 8px ${phaseColor}80`,
-                                            `inset 0 0 0 2px ${phaseColor}`,
-                                          ]
-                                        : 'none'
-                                    }}
-                                    transition={{ 
-                                      delay: 0.04 * idx,
-                                      boxShadow: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
-                                    }}
-                                    whileHover={{ 
-                                      boxShadow: `0 0 12px ${phaseColor}80`
-                                    }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.04 * idx }}
                                   >
                                     {/* For current segment: show completed portion with full color */}
                                     {isCurrentSeg && (
@@ -1368,7 +1286,7 @@ style={{
                               return (
                                 <motion.div
                                   key={`est-${i}`}
-                                  className="absolute top-0 bottom-0 group"
+                                  className="absolute top-0 bottom-0"
                                   style={{
                                     left: `${Math.max(0, segLeftPct)}%`,
                                     width: `${Math.max(0.5, segWidthPct)}%`,
@@ -1379,24 +1297,8 @@ style={{
                                         : `${phaseColor}33`,
                                   }}
                                   initial={{ opacity: 0 }}
-                                  animate={{ 
-                                    opacity: 1,
-                                    boxShadow: isCurrent 
-                                      ? [
-                                          `inset 0 0 0 2px ${phaseColor}`,
-                                          `inset 0 0 12px ${phaseColor}80`,
-                                          `inset 0 0 0 2px ${phaseColor}`,
-                                        ]
-                                      : 'none'
-                                  }}
-                                  transition={{ 
-                                    delay: 0.03 * i,
-                                    boxShadow: isCurrent ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' } : {}
-                                  }}
-                                  whileHover={{ 
-                                    boxShadow: `0 0 12px ${phaseColor}80`,
-                                    scale: 1.02
-                                  }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.03 * i }}
                                 >
                                   {i < activeStatuses.length - 1 && (
                                     <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/35 z-10" />
@@ -1636,71 +1538,40 @@ interface StatBoxProps {
 }
 
 const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
-  <motion.div
+  <div
     className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'shadow-lg' : ''}`}
     style={{
       background: glow
         ? `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`
         : `linear-gradient(135deg, ${color}12 0%, ${color}04 100%)`,
       border: glow ? `2px solid ${color}50` : `1px solid ${color}25`,
+      boxShadow: glow ? `0 0 30px ${color}30` : 'none',
     }}
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ 
-      opacity: 1, 
-      y: 0,
-      boxShadow: glow 
-        ? [
-            `0 0 10px ${color}30`,
-            `0 0 20px ${color}60`,
-            `0 0 10px ${color}30`,
-          ]
-        : 'none'
-    }}
-    transition={{
-      default: { duration: 0.3 },
-      boxShadow: glow ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}
-    }}
-    whileHover={{ scale: 1.05, y: -2 }}
   >
     {glow && (
-      <motion.div
+      <div
         className="absolute inset-0 opacity-50"
         style={{
           background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
         }}
-        animate={{ opacity: [0.3, 0.8, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity }}
       />
     )}
     <div className="relative flex items-center gap-3 h-full">
-      <motion.div
+      <div
         className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
         style={{
           background: `${color}20`,
           border: `1px solid ${color}40`,
         }}
-        whileHover={{ scale: 1.1, rotate: 5 }}
       >
-        <motion.span 
-          style={{ color }}
-          animate={{ rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 3, repeat: Infinity, repeatType: 'reverse' }}
-        >
-          <Icon className="w-4 h-4" />
-        </motion.span>
-      </motion.div>
+        <span style={{ color }}><Icon className="w-4 h-4" /></span>
+      </div>
       <div className="min-w-0">
         <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
-        <motion.p 
-          className="text-sm font-semibold text-white leading-tight"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          {value}
-        </motion.p>
+        <p className="text-sm font-semibold text-white leading-tight">{value}</p>
       </div>
     </div>
-  </motion.div>
+  </div>
 );
 
 // Helper Component - Room Detail Popup (Design matching screenshot)
