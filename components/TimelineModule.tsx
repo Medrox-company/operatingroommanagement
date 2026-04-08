@@ -749,13 +749,18 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 boxLeftPct = Math.max(0, rawLeftPct);
 
                 if (room.estimatedEndTime) {
-                  endDate = new Date(room.estimatedEndTime);
+                  const estimatedEnd = new Date(room.estimatedEndTime);
+                  // Pokud operace stále probíhá a aktuální čas přesahuje odhadovaný konec,
+                  // prodloužíme zobrazení na aktuální čas (výkon dosud neskončil)
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 } else if (room.currentProcedure?.estimatedDuration) {
-                  endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                  const estimatedEnd = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 } else {
                   const fallbackDurations = [30, 20, 120, 60, 30, 45, 0];
                   const duration = fallbackDurations[Math.min(stepIndex, 5)] || 90;
-                  endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+                  const estimatedEnd = new Date(startDate.getTime() + duration * 60 * 1000);
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 }
 
                 const rawRightPct = getTimePercentForTimeline(endDate, activeWindowStart);
@@ -1153,11 +1158,13 @@ style={{
                               : room.phaseStartedAt
                                 ? new Date(room.phaseStartedAt).getTime()
                                 : Date.now() - 30 * 60 * 1000;
-                            const endTime = room.estimatedEndTime
+                            const estimatedEndTime = room.estimatedEndTime
                               ? new Date(room.estimatedEndTime).getTime()
                               : operationStart + 120 * 60 * 1000;
                             const now = Date.now();
-                            const totalDuration = Math.max(1, endTime - operationStart);
+                            // Pokud operace přesáhla odhadovaný čas, použijeme aktuální čas jako koncový bod
+                            const effectiveEndTime = Math.max(estimatedEndTime, now);
+                            const totalDuration = Math.max(1, effectiveEndTime - operationStart);
 
                             // Build color lookup from activeStatuses (database-driven)
                             const stepColorMap: Record<number, string> = {};
@@ -1172,10 +1179,10 @@ style={{
                                 const nextEntry = history[idx + 1];
                                 const isCurrentSeg = idx === history.length - 1;
                                 
-                                // For current segment: extend to current time if it exceeds estimated end, otherwise to estimated end
+                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
-                                  : Math.max(endTime, now); // Extend to now if operation is ongoing beyond estimated end
+                                  : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
                                 
                                 const segDuration = Math.max(0, segEnd - segStart);
                                 const segWidthPct = (segDuration / totalDuration) * 100;
