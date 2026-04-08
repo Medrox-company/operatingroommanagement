@@ -318,7 +318,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     }
     
     const remainingMs = endTime.getTime() - currentTime.getTime();
-    if (remainingMs <= 0) return 'Dokončeno';
+    
+    // Pokud čas přesáhl odhad ale výkon stále probíhá (currentStepIndex < 6), zobrazíme překročený čas
+    if (remainingMs <= 0) {
+      // Výkon stále běží - zobrazíme záporný čas (překročení)
+      const overMs = Math.abs(remainingMs);
+      const overHours = Math.floor(overMs / (1000 * 60 * 60));
+      const overMinutes = Math.floor((overMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `-${overHours}h ${overMinutes < 10 ? '0' : ''}${overMinutes}m`;
+    }
     
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -749,13 +757,18 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 boxLeftPct = Math.max(0, rawLeftPct);
 
                 if (room.estimatedEndTime) {
-                  endDate = new Date(room.estimatedEndTime);
+                  const estimatedEnd = new Date(room.estimatedEndTime);
+                  // Pokud operace stále probíhá a aktuální čas přesahuje odhadovaný konec,
+                  // prodloužíme zobrazení na aktuální čas (výkon dosud neskončil)
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 } else if (room.currentProcedure?.estimatedDuration) {
-                  endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                  const estimatedEnd = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 } else {
                   const fallbackDurations = [30, 20, 120, 60, 30, 45, 0];
                   const duration = fallbackDurations[Math.min(stepIndex, 5)] || 90;
-                  endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+                  const estimatedEnd = new Date(startDate.getTime() + duration * 60 * 1000);
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 }
 
                 const rawRightPct = getTimePercentForTimeline(endDate, activeWindowStart);
@@ -1153,11 +1166,13 @@ style={{
                               : room.phaseStartedAt
                                 ? new Date(room.phaseStartedAt).getTime()
                                 : Date.now() - 30 * 60 * 1000;
-                            const endTime = room.estimatedEndTime
+                            const estimatedEndTime = room.estimatedEndTime
                               ? new Date(room.estimatedEndTime).getTime()
                               : operationStart + 120 * 60 * 1000;
                             const now = Date.now();
-                            const totalDuration = Math.max(1, endTime - operationStart);
+                            // Pokud operace přesáhla odhadovaný čas, použijeme aktuální čas jako koncový bod
+                            const effectiveEndTime = Math.max(estimatedEndTime, now);
+                            const totalDuration = Math.max(1, effectiveEndTime - operationStart);
 
                             // Build color lookup from activeStatuses (database-driven)
                             const stepColorMap: Record<number, string> = {};
@@ -1172,10 +1187,10 @@ style={{
                                 const nextEntry = history[idx + 1];
                                 const isCurrentSeg = idx === history.length - 1;
                                 
-                                // For current segment: extend to estimated end time
+                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
-                                  : endTime; // Extend current segment all the way to estimated end
+                                  : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
                                 
                                 const segDuration = Math.max(0, segEnd - segStart);
                                 const segWidthPct = (segDuration / totalDuration) * 100;
