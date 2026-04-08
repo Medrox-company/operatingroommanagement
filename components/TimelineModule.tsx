@@ -13,7 +13,8 @@ const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 200;
-const ROW_HEIGHT = 72;
+const MIN_ROW_HEIGHT = 40; // Minimum row height
+const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
@@ -160,8 +161,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
   const [showLegend, setShowLegend] = useState(false);
+  const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const rowsContainerRef = useRef<HTMLDivElement>(null);
 
 
 
@@ -170,6 +173,29 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+  
+  // Calculate responsive row height based on container height and number of rooms
+  useEffect(() => {
+    const calculateRowHeight = () => {
+      if (rowsContainerRef.current && rooms.length > 0) {
+        const containerHeight = rowsContainerRef.current.clientHeight;
+        const calculatedHeight = Math.floor(containerHeight / rooms.length);
+        // Clamp between MIN and MAX
+        const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
+        setRowHeight(clampedHeight);
+      }
+    };
+    
+    calculateRowHeight();
+    
+    // Recalculate on resize
+    const resizeObserver = new ResizeObserver(calculateRowHeight);
+    if (rowsContainerRef.current) {
+      resizeObserver.observe(rowsContainerRef.current);
+    }
+    
+    return () => resizeObserver.disconnect();
+  }, [rooms.length]);
 
   // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
   // useEffect(() => {
@@ -631,9 +657,9 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
           </div>
         </div>
 
-        {/* Room Rows - No scroll, full width */}
-        <div className="flex-1 min-h-0 overflow-hidden" ref={scrollContainerRef}>
-          <div className="relative w-full h-full">
+        {/* Room Rows - Responsive height, no scroll */}
+        <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
+          <div className="relative w-full h-full" ref={scrollContainerRef}>
             {/* Now indicator - subtle cyan line */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
@@ -747,7 +773,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   <div
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
@@ -764,7 +790,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     </div>
                     {/* Emergency timeline box - softer */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
+                      <div className="absolute inset-y-1 left-2 right-2 rounded-lg overflow-hidden">
                         {/* Main background - softer */}
                         <div 
                           className="absolute inset-0 rounded-xl"
@@ -792,7 +818,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   <div
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
@@ -809,10 +835,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     </div>
                     {/* Locked timeline box - softer */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
+                      <div className="absolute inset-y-1 left-2 right-2 rounded-lg overflow-hidden">
                         {/* Main background - softer */}
                         <div 
-                          className="absolute inset-0 rounded-xl"
+                          className="absolute inset-0 rounded-lg"
                           style={{ 
                             background: 'linear-gradient(135deg, rgba(253, 224, 71, 0.12) 0%, rgba(253, 224, 71, 0.06) 100%)',
                             border: '1px solid rgba(253, 224, 71, 0.25)'
@@ -839,7 +865,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
                   className="flex items-stretch border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
-                  style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                  style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
                   onClick={() => setSelectedRoom(room)}
                 >
                   {/* Room Label - Sticky */}
@@ -988,7 +1014,7 @@ style={{
                         return (
                           <div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.3, position.width)}%`,
