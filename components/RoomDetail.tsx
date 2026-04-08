@@ -423,174 +423,172 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT (md:hidden) - Ultra Luxury Design ========== */}
-      <div className="md:hidden w-full h-full flex flex-col relative overflow-hidden bg-black">
-        {/* Sophisticated background - Almost pure black with minimal accents */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 right-0 w-[400px] h-[400px] rounded-full bg-gradient-to-l from-slate-900/40 via-slate-950 to-transparent blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-slate-950/60 to-transparent" />
-        </div>
-
-        {/* Content - Asymmetric layout */}
+      {/* ========== MOBILE LAYOUT (md:hidden) - iOS Design ========== */}
+      <div className="md:hidden w-full h-full flex flex-col relative overflow-hidden bg-gray-50 dark:bg-gray-950">
+        {/* Content */}
         <div className="relative z-10 flex flex-col h-full">
-          {/* Header - Minimal and refined */}
-          <div className="flex justify-between items-start px-8 pt-8">
+          {/* Header */}
+          <div className="flex justify-between items-center px-6 pt-6 pb-4">
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
               className="flex-1"
             >
-              <p className="text-xs font-light text-white/40 uppercase tracking-[0.3em] mb-2">Current</p>
-              <h1 className="text-4xl font-thin text-white">{room.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{room.name}</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">OR Status</p>
             </motion.div>
             
             <motion.button 
               onClick={onClose}
-              whileHover={{ scale: 1.15, rotate: 90 }}
-              whileTap={{ scale: 0.85 }}
-              className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center outline-none select-none hover:border-white/40 transition-all duration-300"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center outline-none select-none active:scale-90"
             >
-              <X className="w-4 h-4 text-white/60" />
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </motion.button>
           </div>
 
-          {/* Main content area - Asymmetric */}
-          <div className="flex-1 flex flex-col justify-between px-8 py-12">
-            {/* Left side - Status and time info */}
-            <motion.div 
-              className="space-y-12"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              {/* Large status display */}
-              <div className="space-y-6">
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="space-y-6">
+              {/* Main Status Card */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="rounded-3xl bg-white dark:bg-gray-900 p-8 shadow-sm border border-gray-100 dark:border-gray-800"
+              >
+                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Current Status</p>
                 <motion.h2 
                   key={currentStep?.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="text-8xl font-thin text-white leading-[0.8] tracking-tighter"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-6xl font-bold text-gray-900 dark:text-white leading-tight"
                 >
-                  {room.isEmergency ? 'Crisis' : room.isLocked ? 'Sealed' : (currentStep?.name || 'Mode')}
+                  {room.isEmergency ? 'Emergency' : room.isLocked ? 'Locked' : (currentStep?.name || 'Status')}
                 </motion.h2>
+              </motion.div>
 
-                {/* Elegant separator */}
-                <div className="h-px bg-gradient-to-r from-white/30 via-white/10 to-transparent w-16" />
-
-                {/* Elapsed time - Large and prominent */}
-                <div className="pt-4">
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-sm font-light text-white/50 uppercase tracking-[0.2em] mb-2"
-                  >
-                    Elapsed
-                  </motion.p>
-                  <motion.p 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-7xl font-thin text-white font-mono tracking-tighter"
-                  >
-                    {elapsedTime}
-                  </motion.p>
-                </div>
-              </div>
-
-              {/* Progress indicator - Horizontal line with percentage */}
+              {/* Progress Card */}
               <motion.div 
-                className="space-y-3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="rounded-3xl bg-white dark:bg-gray-900 p-6 shadow-sm border border-gray-100 dark:border-gray-800"
               >
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      style={{ background: `linear-gradient(90deg, ${activeColor}, #06B6D4)` }}
-                    />
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Progress</p>
                   <motion.span 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-2xl font-light text-white/80 min-w-[3rem]"
+                    className="text-2xl font-bold text-blue-600 dark:text-blue-400"
                   >
                     {Math.round(((safeStepIndex + 1) / validStepCount) * 100)}%
                   </motion.span>
                 </div>
+                
+                {/* Progress bar */}
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    style={{ background: `linear-gradient(90deg, #0066FF, #00B4D8)` }}
+                  />
+                </div>
               </motion.div>
-            </motion.div>
 
-            {/* Right side actions - Bottom */}
-            <motion.div 
-              className="space-y-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              {/* Doctor Info */}
+              {/* Time Card */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="rounded-3xl bg-white dark:bg-gray-900 p-6 shadow-sm border border-gray-100 dark:border-gray-800"
+              >
+                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Time Elapsed</p>
+                <p className="text-5xl font-bold text-gray-900 dark:text-white font-mono">{elapsedTime}</p>
+              </motion.div>
+
+              {/* End Time Card */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 p-6 shadow-sm border border-blue-100 dark:border-blue-900"
+              >
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">Estimated End</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 font-mono">
+                  {estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                </p>
+              </motion.div>
+
+              {/* Doctor Info Card */}
               <motion.button
                 onClick={() => {
                   setStaffPickerRole('doctor');
                   setStaffPickerOpen(true);
                 }}
-                whileHover={{ x: 8 }}
-                className="w-full text-left p-4 border-b border-white/10 hover:border-white/20 transition-all duration-300"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="w-full rounded-3xl bg-white dark:bg-gray-900 p-6 shadow-sm border border-gray-100 dark:border-gray-800 text-left active:bg-gray-100 dark:active:bg-gray-800 transition-colors"
               >
-                <p className="text-xs font-light text-white/50 uppercase tracking-[0.2em] mb-1">Physician</p>
-                <p className="text-sm font-light text-white">{room.staff?.doctor?.name || 'Assign'}</p>
+                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Physician</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">{room.staff?.doctor?.name || 'Assign Doctor'}</p>
+                  <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                </div>
               </motion.button>
 
-              {/* Quick status buttons - Horizontal layout */}
-              <div className="grid grid-cols-4 gap-2 pt-4">
-                {/* Pause */}
-                <motion.button
+              {/* Quick Actions */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="grid grid-cols-2 gap-3"
+              >
+                {/* Pause Button */}
+                <button
                   onClick={async () => {
                     const newPaused = !isPaused;
                     setIsPaused(newPaused);
                     await updateOperatingRoom(room.id, { is_paused: newPaused });
                     await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                   }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className={`aspect-square rounded-lg flex items-center justify-center border transition-all duration-300 ${
+                  className={`rounded-2xl p-4 font-semibold text-white flex items-center justify-center gap-2 active:scale-95 transition-all ${
                     isPaused
-                      ? 'bg-cyan-500/30 border-cyan-500/50'
-                      : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30'
+                      ? 'bg-blue-600 dark:bg-blue-500'
+                      : 'bg-gray-300 dark:bg-gray-700'
                   }`}
-                  title="Pause"
                 >
-                  {isPaused ? <Play className="w-4 h-4 text-cyan-300" /> : <Pause className="w-4 h-4 text-white/50" />}
-                </motion.button>
+                  {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                  <span className="text-sm font-semibold">{isPaused ? 'Resume' : 'Pause'}</span>
+                </button>
 
-                {/* Hygiene */}
-                <motion.button
+                {/* Hygiene Button */}
+                <button
                   onClick={async () => {
                     const newH = !room.isEnhancedHygiene;
                     onEnhancedHygieneToggle?.(newH);
                     await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
                     await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
                   }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className={`aspect-square rounded-lg flex items-center justify-center border transition-all duration-300 ${
+                  className={`rounded-2xl p-4 font-semibold text-white flex items-center justify-center gap-2 active:scale-95 transition-all ${
                     room.isEnhancedHygiene
-                      ? 'bg-orange-500/30 border-orange-500/50'
-                      : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30'
+                      ? 'bg-orange-600 dark:bg-orange-500'
+                      : 'bg-gray-300 dark:bg-gray-700'
                   }`}
-                  title="Hygiene"
                 >
-                  <ShieldAlert className={`w-4 h-4 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/50'}`} />
-                </motion.button>
+                  <ShieldAlert className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Hygiene</span>
+                </button>
 
-                {/* Call Patient */}
-                <motion.button
+                {/* Call Button */}
+                <button
                   onClick={async () => {
                     if (!patientCalledTime) {
                       const now = new Date();
@@ -600,21 +598,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                       onPatientStatusChange?.(now.toISOString(), null);
                     }
                   }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
                   disabled={!!patientCalledTime}
-                  className={`aspect-square rounded-lg flex items-center justify-center border transition-all duration-300 disabled:opacity-50 ${
+                  className={`rounded-2xl p-4 font-semibold text-white flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60 ${
                     patientCalledTime
-                      ? 'bg-blue-500/30 border-blue-500/50'
-                      : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30'
+                      ? 'bg-green-600 dark:bg-green-500'
+                      : 'bg-gray-300 dark:bg-gray-700'
                   }`}
-                  title="Call"
                 >
-                  <Phone className={`w-4 h-4 ${patientCalledTime ? 'text-blue-300' : 'text-white/50'}`} />
-                </motion.button>
+                  <Phone className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Call</span>
+                </button>
 
-                {/* Patient Arrived */}
-                <motion.button
+                {/* Arrived Button */}
+                <button
                   onClick={async () => {
                     if (patientCalledTime && !patientArrivedTime) {
                       const now = new Date();
@@ -624,56 +620,38 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                       onPatientStatusChange?.(patientCalledTime!.toISOString(), now.toISOString());
                     }
                   }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
                   disabled={!patientCalledTime || !!patientArrivedTime}
-                  className={`aspect-square rounded-lg flex items-center justify-center border transition-all duration-300 disabled:opacity-50 ${
+                  className={`rounded-2xl p-4 font-semibold text-white flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60 ${
                     patientArrivedTime
-                      ? 'bg-green-500/30 border-green-500/50'
-                      : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30'
+                      ? 'bg-purple-600 dark:bg-purple-500'
+                      : 'bg-gray-300 dark:bg-gray-700'
                   }`}
-                  title="Arrived"
                 >
-                  <UserCheck className={`w-4 h-4 ${patientArrivedTime ? 'text-green-300' : 'text-white/50'}`} />
-                </motion.button>
-              </div>
-
-              {/* Primary CTA - Next Phase */}
-              {!isInteractionBlocked && (
-                <motion.button
-                  onClick={handleNextStep}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-5 mt-6 border border-white/40 text-white font-light text-sm uppercase tracking-[0.15em] rounded-lg hover:bg-white/5 hover:border-white/60 transition-all duration-300"
-                  style={{
-                    boxShadow: `inset 0 1px 0 ${activeColor}40, 0 0 20px ${activeColor}15`
-                  }}
-                >
-                  {isFinalStep ? '↻ New Cycle' : '→ Next Phase'}
-                </motion.button>
-              )}
-            </motion.div>
+                  <UserCheck className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Arrived</span>
+                </button>
+              </motion.div>
+            </div>
           </div>
 
-          {/* Footer info - End time */}
-          <motion.div 
-            className="px-8 pb-8 border-t border-white/10 pt-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-xs font-light text-white/50 uppercase tracking-[0.2em] mb-2">Finish</p>
-                <p className="text-2xl font-light text-white/90 font-mono">
-                  {estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                </p>
-              </div>
-              <div className="text-right text-xs text-white/40 font-light">
-                {Math.round(((safeStepIndex + 1) / validStepCount) * 100)}% Complete
-              </div>
-            </div>
-          </motion.div>
+          {/* Primary CTA - Bottom */}
+          {!isInteractionBlocked && (
+            <motion.div 
+              className="px-6 pb-8 pt-4 border-t border-gray-200 dark:border-gray-800"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <motion.button
+                onClick={handleNextStep}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-4 px-6 rounded-2xl bg-blue-600 dark:bg-blue-500 text-white font-semibold text-lg active:scale-[0.98] outline-none select-none shadow-md"
+              >
+                {isFinalStep ? '↻ New Cycle' : '→ Next Phase'}
+              </motion.button>
+            </motion.div>
+          )}
         </div>
       </div>
 
