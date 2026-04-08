@@ -1041,9 +1041,10 @@ style={{
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
                                   {(() => {
                                     // Build color lookup from activeStatuses
+                                    // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
                                     const stepColorMap: Record<number, string> = {};
-                                    activeStatuses.forEach((s, i) => {
-                                      stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
+                                    activeStatuses.forEach((s) => {
+                                      stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
                                     });
 
                                     const opStart = new Date(operation.startedAt).getTime();
@@ -1175,9 +1176,10 @@ style={{
                             const totalDuration = Math.max(1, effectiveEndTime - operationStart);
 
                             // Build color lookup from activeStatuses (database-driven)
+                            // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
                             const stepColorMap: Record<number, string> = {};
-                            activeStatuses.forEach((s, i) => {
-                              stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
+                            activeStatuses.forEach((s) => {
+                              stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
                             });
 
                             // If we have real status history → render exact segments
@@ -1262,13 +1264,13 @@ style={{
 
                             let cursor = 0;
                             return activeStatuses.map((step, i) => {
-                              const rawDur = (STEP_DURATIONS[i] || 15) * 60 * 1000 * scaleFactor;
+                              const rawDur = (STEP_DURATIONS[step.order_index] || 15) * 60 * 1000 * scaleFactor;
                               const segWidthPct = (rawDur / totalDuration) * 100;
                               const segLeftPct = cursor;
                               cursor += segWidthPct;
-                              const isPast = i < stepIndex;
-                              const isCurrent = i === stepIndex;
-                              const phaseColor = stepColorMap[i] || '#6b7280';
+                              const isPast = step.order_index < stepIndex;
+                              const isCurrent = step.order_index === stepIndex;
+                              const phaseColor = stepColorMap[step.order_index] || '#6b7280';
 
                               return (
                                 <motion.div
