@@ -399,12 +399,14 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-  // Use statusByOrderIndex lookup for correct status mapping
-  const step = statusByOrderIndex[room.currentStepIndex];
-  const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
+            // Use statusByOrderIndex lookup for correct status mapping
+            const step = statusByOrderIndex[room.currentStepIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
             const statusName = step?.title || step?.name || 'Status';
             const remaining = getRemainingTime(room);
-            const isFree = safeIndex === totalSteps - 1;
+            const totalSteps = activeStatuses.length || 1;
+            const stepIndex = room.currentStepIndex;
+            const isFree = stepIndex >= totalSteps - 1;
             return (
               <button
                 key={room.id}
@@ -443,7 +445,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${((safeIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
+                    style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
                   />
                 </div>
               </button>
