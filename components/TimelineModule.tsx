@@ -399,14 +399,16 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            // Use statusByOrderIndex lookup for correct status mapping
-            const step = statusByOrderIndex[room.currentStepIndex];
+            // Safe lookup with fallbacks
+            const step = statusByOrderIndex?.[room.currentStepIndex];
             const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
             const statusName = step?.title || step?.name || 'Status';
             const remaining = getRemainingTime(room);
-            const totalSteps = activeStatuses.length || 1;
-            const stepIndex = room.currentStepIndex;
+            const totalSteps = activeStatuses?.length || 1;
+            const stepIndex = room.currentStepIndex || 0;
             const isFree = stepIndex >= totalSteps - 1;
+            const doctorName = room.staff?.doctor?.name || 'Neurčeno';
+            
             return (
               <button
                 key={room.id}
@@ -430,7 +432,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{statusName}</p>
-                    <p className="text-[10px] text-white/40 mt-0.5">{room.staff.doctor.name}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{doctorName}</p>
                   </div>
                   {room.estimatedEndTime && !isFree && (
                     <div className="text-right">
@@ -714,8 +716,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from database context - použít lookup mapu podle order_index
-              const currentStep = statusByOrderIndex[room.currentStepIndex];
+              // Get status from database context - use safe lookup by order_index
+              const currentStep = statusByOrderIndex?.[room.currentStepIndex];
               // If paused, override color to pause color (cyan)
               const PAUSE_COLOR = '#22D3EE';
               const stepColor = room.isPaused 
@@ -1085,7 +1087,7 @@ style={{
                                             background: `${phaseColor}50`,
                                             borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
                                           }}
-                                          title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                          title={entry.stepName || statusByOrderIndex?.[entry.stepIndex]?.title || ''}
                                         />
                                       );
                                     }).filter(Boolean);
@@ -1251,7 +1253,7 @@ style={{
                                     {segWidthPct > 8 && (
                                       <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
                                         <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
-                                          {statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                          {statusByOrderIndex?.[entry.stepIndex]?.title || ''}
                                         </span>
                                       </div>
                                     )}
@@ -1262,7 +1264,7 @@ style={{
 
                             // Fallback: no history → show estimated future segments
                             // Split total duration proportionally by default step durations
-                            const stepDurations = activeStatuses.map((_, i) => STEP_DURATIONS[i] || 15);
+                            const stepDurations = activeStatuses.map((s) => STEP_DURATIONS[s.order_index] || 15);
                             const completedDuration = stepDurations
                               .slice(0, stepIndex)
                               .reduce((a, b) => a + b, 0);
@@ -1599,9 +1601,9 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const stepIndex = room.currentStepIndex;
   const nextStepIndex = stepIndex + 1;
   
-  // Použít lookup mapu pro správné mapování barvy a statusu
-  const currentStatus = statusByOrderIndex[stepIndex] || null;
-  const nextStatus = statusByOrderIndex[nextStepIndex] || null;
+  // Use safe lookup by order_index
+  const currentStatus = statusByOrderIndex?.[stepIndex] || null;
+  const nextStatus = statusByOrderIndex?.[nextStepIndex] || null;
   
   const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
