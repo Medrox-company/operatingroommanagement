@@ -1172,10 +1172,10 @@ style={{
                                 const nextEntry = history[idx + 1];
                                 const isCurrentSeg = idx === history.length - 1;
                                 
-                                // For current segment: extend to estimated end time
+                                // For current segment: extend to current time if it exceeds estimated end, otherwise to estimated end
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
-                                  : endTime; // Extend current segment all the way to estimated end
+                                  : Math.max(endTime, now); // Extend to now if operation is ongoing beyond estimated end
                                 
                                 const segDuration = Math.max(0, segEnd - segStart);
                                 const segWidthPct = (segDuration / totalDuration) * 100;
