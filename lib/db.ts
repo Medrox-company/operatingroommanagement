@@ -386,18 +386,19 @@ export async function fetchCompletedOperationsForDay(
   return allOps.get(roomId) || [];
 }
 
-// Get color for a step index (you can adjust these colors)
+// Get color for a step index - synchronized with STEP_COLORS in constants.ts
 function getStepColor(stepIndex: number): string {
   const colors: Record<number, string> = {
-    0: '#6b7280', // Sál připraven - gray
-    1: '#3b82f6', // Příjezd na sál - blue
-    2: '#8b5cf6', // Začátek anestezie - purple
-    3: '#ec4899', // Chirurgický výkon - pink
-    4: '#f59e0b', // Ukončení výkonu - amber
-    5: '#10b981', // Odjezd ze sálu - green
-    6: '#ef4444', // Úklid sálu - red
+    0: '#6B7280', // Sál připraven - gray
+    1: '#8B5CF6', // Příjezd na sál - purple
+    2: '#EC4899', // Začátek anestezie - pink
+    3: '#EF4444', // Chirurgický výkon - red
+    4: '#F59E0B', // Ukončení výkonu - amber
+    5: '#A855F7', // Ukončení anestezie - purple
+    6: '#10B981', // Odjezd ze sálu - green
+    7: '#F97316', // Úklid sálu - orange
   };
-  return colors[stepIndex] || '#6b7280';
+  return colors[stepIndex] || '#6B7280';
 }
 
 // Subscribe to real-time changes with granular updates

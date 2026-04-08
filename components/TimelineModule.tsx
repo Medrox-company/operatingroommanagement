@@ -157,6 +157,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
   // workflowStatuses is already filtered (active, non-special) and sorted by context
   const activeStatuses = workflowStatuses;
   
+  // Lookup mapa pro rychlý přístup k statusu podle order_index (room.currentStepIndex)
+  const statusByOrderIndex = useMemo(() => {
+    const map: Record<number, typeof activeStatuses[number]> = {};
+    activeStatuses.forEach((s) => {
+      map[s.order_index] = s;
+    });
+    return map;
+  }, [activeStatuses]);
+  
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
@@ -390,14 +399,14 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            // Use activeStatuses from database context
-            const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-            const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-            const step = activeStatuses[safeIndex];
+            // Use statusByOrderIndex lookup for correct status mapping
+            const step = statusByOrderIndex[room.currentStepIndex];
             const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
             const statusName = step?.title || step?.name || 'Status';
             const remaining = getRemainingTime(room);
-            const isFree = safeIndex === totalSteps - 1;
+            const totalSteps = activeStatuses.length || 1;
+            const stepIndex = room.currentStepIndex;
+            const isFree = stepIndex >= totalSteps - 1;
             return (
               <button
                 key={room.id}
@@ -436,7 +445,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${((safeIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
+                    style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
                   />
                 </div>
               </button>
@@ -705,8 +714,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from database context
-              const currentStep = activeStatuses[stepIndex];
+              // Get status from database context - použít lookup mapu podle order_index
+              const currentStep = statusByOrderIndex[room.currentStepIndex];
               // If paused, override color to pause color (cyan)
               const PAUSE_COLOR = '#22D3EE';
               const stepColor = room.isPaused 
@@ -1041,9 +1050,10 @@ style={{
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
                                   {(() => {
                                     // Build color lookup from activeStatuses
+                                    // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
                                     const stepColorMap: Record<number, string> = {};
-                                    activeStatuses.forEach((s, i) => {
-                                      stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
+                                    activeStatuses.forEach((s) => {
+                                      stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
                                     });
 
                                     const opStart = new Date(operation.startedAt).getTime();
@@ -1075,7 +1085,7 @@ style={{
                                             background: `${phaseColor}50`,
                                             borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
                                           }}
-                                          title={entry.stepName || activeStatuses[entry.stepIndex]?.title || ''}
+                                          title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                         />
                                       );
                                     }).filter(Boolean);
@@ -1175,9 +1185,10 @@ style={{
                             const totalDuration = Math.max(1, effectiveEndTime - operationStart);
 
                             // Build color lookup from activeStatuses (database-driven)
+                            // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
                             const stepColorMap: Record<number, string> = {};
-                            activeStatuses.forEach((s, i) => {
-                              stepColorMap[i] = s.accent_color || s.color || STEP_INDEX_COLORS[i] || '#6b7280';
+                            activeStatuses.forEach((s) => {
+                              stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
                             });
 
                             // If we have real status history → render exact segments
@@ -1240,7 +1251,7 @@ style={{
                                     {segWidthPct > 8 && (
                                       <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
                                         <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
-                                          {activeStatuses[entry.stepIndex]?.title || ''}
+                                          {statusByOrderIndex[entry.stepIndex]?.title || ''}
                                         </span>
                                       </div>
                                     )}
@@ -1262,13 +1273,13 @@ style={{
 
                             let cursor = 0;
                             return activeStatuses.map((step, i) => {
-                              const rawDur = (STEP_DURATIONS[i] || 15) * 60 * 1000 * scaleFactor;
+                              const rawDur = (STEP_DURATIONS[step.order_index] || 15) * 60 * 1000 * scaleFactor;
                               const segWidthPct = (rawDur / totalDuration) * 100;
                               const segLeftPct = cursor;
                               cursor += segWidthPct;
-                              const isPast = i < stepIndex;
-                              const isCurrent = i === stepIndex;
-                              const phaseColor = stepColorMap[i] || '#6b7280';
+                              const isPast = step.order_index < stepIndex;
+                              const isCurrent = step.order_index === stepIndex;
+                              const phaseColor = stepColorMap[step.order_index] || '#6b7280';
 
                               return (
                                 <motion.div
@@ -1575,12 +1586,22 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   // workflowStatuses is already filtered (active, non-special) and sorted by context
   const activeStatuses = workflowStatuses;
   
-  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-  const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-  const nextStepIndex = stepIndex + 1 < totalSteps ? stepIndex + 1 : 0;
+  // Lookup mapa pro správné mapování podle order_index
+  const statusByOrderIndex = useMemo(() => {
+    const map: Record<number, typeof activeStatuses[number]> = {};
+    activeStatuses.forEach((s) => {
+      map[s.order_index] = s;
+    });
+    return map;
+  }, [activeStatuses]);
   
-  const currentStatus = activeStatuses.length > 0 ? activeStatuses[stepIndex] : null;
-  const nextStatus = activeStatuses.length > 0 ? activeStatuses[nextStepIndex] : null;
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+  const stepIndex = room.currentStepIndex;
+  const nextStepIndex = stepIndex + 1;
+  
+  // Použít lookup mapu pro správné mapování barvy a statusu
+  const currentStatus = statusByOrderIndex[stepIndex] || null;
+  const nextStatus = statusByOrderIndex[nextStepIndex] || null;
   
   const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
