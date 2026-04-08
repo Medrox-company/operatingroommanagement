@@ -227,15 +227,15 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               <div className={`w-9 h-9 rounded-xl border overflow-hidden shrink-0 
                 ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : (room.isPaused ? 'border-cyan-500/30' : 'border-white/5'))}
               `}>
-                <img src={`https://i.pravatar.cc/150?u=${room.staff?.doctor?.name || 'unknown'}`} alt="Dr" className="w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity" />
+                <img src={`https://i.pravatar.cc/150?u=${room.staff.doctor.name}`} alt="Dr" className="w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="min-w-0 flex flex-col gap-0.5">
                 <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors
                   ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
                 `}>
-                  {room.staff?.doctor?.name?.split(' ').pop() || 'Dr.'}
+                  {room.staff.doctor.name?.split(' ').pop()}
                 </span>
-                {room.staff?.nurse?.name && (
+                {room.staff.nurse?.name && (
                   <span className={`text-[9px] font-medium uppercase tracking-tight truncate transition-colors
                     ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
                   `}>
