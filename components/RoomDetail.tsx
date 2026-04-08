@@ -423,13 +423,255 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT (md:hidden) - Ultraminimalist Modern Design ========== */}
-      <div className="md:hidden w-full h-full flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        {/* Gradient background with glow */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-cyan-500/15 blur-3xl" />
+      {/* ========== MOBILE LAYOUT (md:hidden) - Elegant Minimalist Design ========== */}
+      <div className="md:hidden w-full h-full flex flex-col relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+        {/* Subtle gradient background with minimal glow */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-60 -right-60 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl opacity-40" />
+          <div className="absolute -bottom-60 -left-60 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl opacity-30" />
         </div>
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col h-full px-8 py-10">
+          {/* Header - Minimal close button */}
+          <div className="flex justify-between items-center mb-16">
+            <div className="flex-1" />
+            <h1 className="text-4xl font-light text-white text-center flex-1 tracking-tight">{room.name}</h1>
+            <button 
+              onClick={onClose} 
+              className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center active:scale-90 outline-none select-none hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+            >
+              <X className="w-5 h-5 text-white/70" />
+            </button>
+          </div>
+
+          {/* Main Status Display */}
+          <motion.div 
+            className="flex-1 flex flex-col items-center justify-center gap-12 mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          >
+            {/* Large Status Text - Elegant Typography */}
+            <div className="text-center space-y-4">
+              <p className="text-xs font-light text-white/50 uppercase tracking-[0.2em]">Status</p>
+              <motion.h2 
+                key={currentStep?.name}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="text-5xl font-light text-white leading-tight tracking-tight"
+              >
+                {room.isEmergency ? 'Emergency' : room.isLocked ? 'Locked' : (currentStep?.name || 'Status')}
+              </motion.h2>
+            </div>
+
+            {/* Circular Progress - Minimalist */}
+            <motion.div 
+              className="relative w-48 h-48 flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+            >
+              <svg width="200" height="200" viewBox="0 0 100 100" className="absolute inset-0 drop-shadow-2xl">
+                <defs>
+                  <linearGradient id="elegantGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: activeColor, stopOpacity: 0.9 }} />
+                    <stop offset="100%" style={{ stopColor: '#06B6D4', stopOpacity: 0.7 }} />
+                  </linearGradient>
+                  <filter id="subtleGlow">
+                    <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+                
+                {/* Background circle */}
+                <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                
+                {/* Progress circle with subtle filter */}
+                <motion.circle
+                  cx="50" cy="50" r="48"
+                  fill="none"
+                  stroke="url(#elegantGradient)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 301.6} 301.6`}
+                  style={{ transformOrigin: '50px 50px', rotate: '-90deg' }}
+                  animate={{ 
+                    strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 301.6} 301.6`,
+                    filter: 'url(#subtleGlow)'
+                  }}
+                  transition={{ duration: 0.7, ease: 'easeInOut' }}
+                />
+              </svg>
+              
+              {/* Center badge */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                <p className="text-3xl font-light text-white">
+                  {Math.round(((safeStepIndex + 1) / validStepCount) * 100)}%
+                </p>
+                <div className="w-12 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              </div>
+            </motion.div>
+
+            {/* Elapsed time - Minimalist */}
+            <motion.div 
+              className="text-center space-y-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <p className="text-5xl font-light text-white tracking-tight">{elapsedTime}</p>
+              <p className="text-xs font-light text-white/40 uppercase tracking-[0.15em]">Elapsed</p>
+            </motion.div>
+          </motion.div>
+
+          {/* Quick Actions - Minimalist cards */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            {/* Pause / Resume */}
+            <motion.button
+              onClick={async () => {
+                const newPaused = !isPaused;
+                setIsPaused(newPaused);
+                await updateOperatingRoom(room.id, { is_paused: newPaused });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+              }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className={`py-5 px-4 rounded-xl font-light text-sm flex flex-col items-center gap-3 active:scale-[0.98] outline-none select-none transition-all duration-300 ${
+                isPaused
+                  ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-100'
+                  : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] hover:border-white/20'
+              }`}
+            >
+              {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              <span className="text-[11px] font-light uppercase tracking-wide">{isPaused ? 'Resume' : 'Pause'}</span>
+            </motion.button>
+
+            {/* Enhanced Hygiene */}
+            <motion.button
+              onClick={async () => {
+                const newH = !room.isEnhancedHygiene;
+                onEnhancedHygieneToggle?.(newH);
+                await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
+                await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+              }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className={`py-5 px-4 rounded-xl font-light text-sm flex flex-col items-center gap-3 active:scale-[0.98] outline-none select-none transition-all duration-300 ${
+                room.isEnhancedHygiene
+                  ? 'bg-orange-500/20 border border-orange-500/40 text-orange-100'
+                  : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] hover:border-white/20'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4" />
+              <span className="text-[11px] font-light uppercase tracking-wide">Hygiene</span>
+            </motion.button>
+
+            {/* Patient Called */}
+            <motion.button
+              onClick={async () => {
+                if (!patientCalledTime) {
+                  const now = new Date();
+                  setPatientCalledTime(now);
+                  setShowPatientCalledText(true);
+                  setTimeout(() => setShowPatientCalledText(false), 5000);
+                  await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_called', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  onPatientStatusChange?.(now.toISOString(), null);
+                }
+              }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={!!patientCalledTime}
+              className={`py-5 px-4 rounded-xl font-light text-sm flex flex-col items-center gap-3 active:scale-[0.98] outline-none select-none transition-all duration-300 disabled:opacity-60 ${
+                patientCalledTime
+                  ? 'bg-blue-500/20 border border-blue-500/40 text-blue-100'
+                  : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] hover:border-white/20'
+              }`}
+            >
+              <Phone className="w-4 h-4" />
+              <span className="text-[11px] font-light uppercase tracking-wide">Call</span>
+            </motion.button>
+
+            {/* Patient Arrived */}
+            <motion.button
+              onClick={async () => {
+                if (patientCalledTime && !patientArrivedTime) {
+                  const now = new Date();
+                  setPatientArrivedTime(now);
+                  setShowPatientArrivedText(true);
+                  await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
+                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_arrived', step_index: currentStepIndex, step_name: currentStep?.name || 'Status' });
+                  onPatientStatusChange?.(patientCalledTime!.toISOString(), now.toISOString());
+                  setTimeout(() => setShowPatientArrivedText(false), 5000);
+                }
+              }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={!patientCalledTime || !!patientArrivedTime}
+              className={`py-5 px-4 rounded-xl font-light text-sm flex flex-col items-center gap-3 active:scale-[0.98] outline-none select-none transition-all duration-300 disabled:opacity-60 ${
+                patientArrivedTime
+                  ? 'bg-green-500/20 border border-green-500/40 text-green-100'
+                  : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] hover:border-white/20'
+              }`}
+            >
+              <UserCheck className="w-4 h-4" />
+              <span className="text-[11px] font-light uppercase tracking-wide">Arrived</span>
+            </motion.button>
+          </div>
+
+          {/* Bottom Information - Elegant layout */}
+          <div className="space-y-4 pt-4 border-t border-white/5">
+            {/* Doctor */}
+            <motion.button
+              onClick={() => {
+                setStaffPickerRole('doctor');
+                setStaffPickerOpen(true);
+              }}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full p-4 rounded-lg bg-white/5 border border-white/10 text-left hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 flex items-center justify-between"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-light text-white/50 uppercase tracking-wider mb-1">Doctor</p>
+                <p className="text-sm font-light text-white truncate">{room.staff?.doctor?.name || 'Select'}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/30 flex-shrink-0 ml-2" />
+            </motion.button>
+
+            {/* End Time */}
+            <motion.div
+              className="p-4 rounded-lg bg-gradient-to-br from-cyan-500/15 to-blue-500/10 border border-cyan-500/25"
+              whileHover={{ y: -2 }}
+            >
+              <p className="text-xs font-light text-white/50 uppercase tracking-wider mb-1">End Time</p>
+              <p className="text-sm font-light text-white font-mono">
+                {estimatedEndTime && shouldShowTime ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Next Step Button */}
+          {!isInteractionBlocked && (
+            <motion.button
+              onClick={handleNextStep}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="mt-8 w-full py-5 px-6 rounded-lg font-light text-base text-white backdrop-blur-sm border border-white/20 active:scale-[0.98] outline-none select-none transition-all duration-300 shadow-2xl"
+              style={{
+                background: `linear-gradient(135deg, ${activeColor}15 0%, ${activeColor}05 100%)`,
+                boxShadow: `0 0 30px ${activeColor}20, inset 0 1px 0 ${activeColor}30`
+              }}
+            >
+              {isFinalStep ? '↻ New Cycle' : '→ Next Phase'}
+            </motion.button>
+          )}
+        </div>
+      </div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full px-6 py-8">
