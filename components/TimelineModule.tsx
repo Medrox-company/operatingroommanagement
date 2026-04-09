@@ -429,8 +429,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{statusName}</p>
-                    <p className="text-[10px] text-white/40 mt-0.5">{room?.staff?.doctor?.name || 'Neurčeno'}</p>
+                    <p className="text-[10px] text-white/40">{room?.staff?.doctor?.name || 'Neurčeno'}</p>
                   </div>
                   {room.estimatedEndTime && !isFree && (
                     <div className="text-right">
@@ -1455,72 +1454,7 @@ style={{
         </div>
       </div>
 
-      {/* ======== Legend Footer ======== */}
-      <footer className="relative z-10 flex items-center justify-between gap-4 px-8 md:pl-32 md:pr-10 py-4 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-4 flex-wrap">
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-4 rounded bg-white/10" />
-            <span className="text-[10px] font-medium text-white/40">Dokoncene</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)' }}
-          >
-            <div className="w-4 h-4 rounded" style={{ background: 'rgba(34, 197, 94, 0.4)' }} />
-            <span className="text-[10px] font-medium text-green-400/70">Pokracujici vykon</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #3B82F6 0px, #3B82F6 4px, transparent 4px, transparent 8px)' }} />
-            <span className="text-[10px] font-medium text-white/40">Zacatek smeny</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #F97316 0px, #F97316 4px, transparent 4px, transparent 8px)' }} />
-            <span className="text-[10px] font-medium text-white/40">Konec smeny</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(249, 115, 22, 0.05)', border: '1px solid rgba(249, 115, 22, 0.15)' }}
-          >
-            <div className="w-0.5 h-4 rounded-full" style={{ background: '#F97316' }} />
-            <span className="text-[10px] font-medium text-orange-400/60">Konec prac. doby salu</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-4 rounded-full border-2 border-red-500/50" />
-            <span className="text-[10px] font-medium text-white/40">Presah</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
-          >
-            <div 
-              className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-red-400"
-              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
-            >
-              1
-            </div>
-            <span className="text-[10px] font-medium text-red-400/70">ARO poradi stridani</span>
-          </div>
-        </div>
-        <div 
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          <Info className="w-3.5 h-3.5 text-white/30" />
-          <span className="text-[10px] font-medium text-white/30">Kliknete na sal pro zobrazeni detailu</span>
-        </div>
-      </footer>
+
       </div>{/* end desktop wrapper */}
     </div>
   );
