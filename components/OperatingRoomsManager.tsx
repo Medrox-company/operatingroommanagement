@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_WORKING_HOURS } from '../types';
 import { MOCK_ROOMS } from '../constants';
-import { updateOperatingRoom } from '../lib/db';
+import { updateOperatingRoom, createOperatingRoom, deleteOperatingRoom } from '../lib/db';
 import { 
   Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar, 
   Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft
@@ -330,7 +330,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     }
   }, []);
 
-  const handleAddRoom = () => {
+  const handleAddRoom = async () => {
     if (!newRoomData.name || !newRoomData.department) {
       setError('Vyplňte prosím všechna povinná pole');
       return;
@@ -354,6 +354,27 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       },
     };
 
+    // Save to database first
+    const success = await createOperatingRoom({
+      id: newRoom.id,
+      name: newRoom.name,
+      department: newRoom.department,
+      status: 'free',
+      queue_count: 0,
+      operations_24h: 0,
+      current_step_index: 6,
+      is_emergency: false,
+      is_locked: false,
+      is_paused: false,
+      weekly_schedule: newRoom.weeklySchedule,
+      sort_order: roomsList.length,
+    });
+
+    if (!success) {
+      setError('Nepodařilo se uložit sál do databáze');
+      return;
+    }
+
     const updatedRooms = [...roomsList, newRoom];
     setRoomsList(updatedRooms);
     saveRoomOrder(updatedRooms);
@@ -363,7 +384,15 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     setError(null);
   };
 
-  const handleDeleteRoom = (id: string) => {
+  const handleDeleteRoom = async (id: string) => {
+    // Delete from database first
+    const success = await deleteOperatingRoom(id);
+    if (!success) {
+      setError('Nepodařilo se smazat sál z databáze');
+      setDeleteConfirm(null);
+      return;
+    }
+    
     const updatedRooms = roomsList.filter(r => r.id !== id);
     setRoomsList(updatedRooms);
     onRoomsChange?.(updatedRooms);

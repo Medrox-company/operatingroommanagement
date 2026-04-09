@@ -286,6 +286,84 @@ export async function updateOperatingRoom(
   }
 }
 
+// Create a new operating room
+export async function createOperatingRoom(
+  roomData: {
+    id: string;
+    name: string;
+    department: string;
+    status?: string;
+    queue_count?: number;
+    operations_24h?: number;
+    current_step_index?: number;
+    is_emergency?: boolean;
+    is_locked?: boolean;
+    is_paused?: boolean;
+    weekly_schedule?: Record<string, any>;
+    sort_order?: number;
+  }
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    console.error('[DB] Supabase not configured');
+    return false;
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('operating_rooms')
+      .insert({
+        id: roomData.id,
+        name: roomData.name,
+        department: roomData.department,
+        status: roomData.status || 'free',
+        queue_count: roomData.queue_count || 0,
+        operations_24h: roomData.operations_24h || 0,
+        current_step_index: roomData.current_step_index ?? 6,
+        is_emergency: roomData.is_emergency || false,
+        is_locked: roomData.is_locked || false,
+        is_paused: roomData.is_paused || false,
+        weekly_schedule: roomData.weekly_schedule || null,
+        sort_order: roomData.sort_order || 0,
+        completed_operations: [],
+        status_history: [],
+      });
+    
+    if (error) {
+      console.error('[DB] Error creating operating room:', error);
+      return false;
+    }
+    console.log('[DB] Successfully created operating room:', roomData.name);
+    return true;
+  } catch (err) {
+    console.error('[DB] Error creating operating room:', err);
+    return false;
+  }
+}
+
+// Delete an operating room
+export async function deleteOperatingRoom(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    return false;
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('operating_rooms')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('[DB] Error deleting operating room:', error);
+      return false;
+    }
+    console.log('[DB] Successfully deleted operating room:', id);
+    return true;
+  } catch (err) {
+    console.error('[DB] Error deleting operating room:', err);
+    return false;
+  }
+}
+
 // Fetch completed operations for a specific room on a given day
 export interface CompletedOperation {
   startedAt: string;
