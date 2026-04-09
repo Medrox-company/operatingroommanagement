@@ -1363,9 +1363,6 @@ style={{
                             <>
                               {boxWidthPct > 8 && (
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] font-semibold text-white truncate drop-shadow-sm">
-                                    {stepName}
-                                  </p>
                                   <p className="text-[9px] font-normal text-white/60 truncate">
                                     {room.staff?.doctor?.name || ''}
                                   </p>
