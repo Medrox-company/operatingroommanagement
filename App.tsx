@@ -43,6 +43,24 @@ const AppContent: React.FC = () => {
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
 
+  // Global error handler - prevent white screen on unhandled errors
+  useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      console.error('[v0] Unhandled error:', e.message);
+      e.preventDefault();
+    };
+    const handleRejection = (e: PromiseRejectionEvent) => {
+      console.error('[v0] Unhandled rejection:', e.reason);
+      e.preventDefault();
+    };
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
   // Load background settings from database
   useEffect(() => {
     const loadBgSettings = async () => {
@@ -568,11 +586,13 @@ const AppContent: React.FC = () => {
 // Wrap with AuthProvider and WorkflowStatusesProvider
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <WorkflowStatusesProvider>
-        <AppContent />
-      </WorkflowStatusesProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <WorkflowStatusesProvider>
+          <AppContent />
+        </WorkflowStatusesProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 
