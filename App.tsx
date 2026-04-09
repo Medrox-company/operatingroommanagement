@@ -98,22 +98,34 @@ const AppContent: React.FC = () => {
   // Emergency alert sound - plays when any room's emergency status is activated
   useEmergencyAlert(rooms, selectedRoomId);
 
-  // Load rooms from API on mount
+  // Load rooms from API on mount - separated for stability
   useEffect(() => {
+    let isMounted = true;
     const loadRooms = async () => {
       try {
-        const response = await fetch('/api/rooms');
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch('/api/rooms', { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        if (!isMounted) return; // Ignore if unmounted
         if (!response.ok) throw new Error('Failed to fetch rooms');
+        
         const dbRooms = await response.json();
-        if (dbRooms && dbRooms.length > 0) {
+        if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
           setRooms(dbRooms);
           setIsDbConnected(true);
         }
       } catch (error) {
-        console.error("Failed to load rooms from API:", error);
+        if (!isMounted) return;
+        console.error("[v0] Failed to load rooms from API:", error);
+        // Keep using MOCK_ROOMS on error - don't crash
       }
     };
     loadRooms();
+    return () => { isMounted = false; };
   }, []);
 
   // Track recent local updates to ignore duplicate realtime events (prevents flickering)
