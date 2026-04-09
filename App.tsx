@@ -100,7 +100,21 @@ const AppContent: React.FC = () => {
 
   // Track recent local updates to ignore duplicate realtime events (prevents flickering)
   const recentLocalUpdates = useRef<Map<string, number>>(new Map());
-  const DEBOUNCE_MS = 1500; // Ignore realtime updates within 1.5s of local update
+  const DEBOUNCE_MS = 2000; // Ignore realtime updates within 2s of local update (increased for stability)
+  
+  // Cleanup old entries from recentLocalUpdates to prevent memory growth
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      recentLocalUpdates.current.forEach((timestamp, roomId) => {
+        if (now - timestamp > DEBOUNCE_MS * 2) {
+          recentLocalUpdates.current.delete(roomId);
+        }
+      });
+    }, 10000); // Cleanup every 10 seconds
+    
+    return () => clearInterval(cleanupInterval);
+  }, []);
 
   // Subscribe to real-time updates with granular room updates
   useEffect(() => {
@@ -169,17 +183,24 @@ const AppContent: React.FC = () => {
       
       // Save completed operation when transitioning to ready state
       let updatedCompletedOps = room.completedOperations || [];
+      // Check if operation is being completed (going to index 0 or 7)
+      // We need operationStartedAt to track when operation began
       const shouldSaveOperation = isOperationComplete(room.currentStepIndex, newStepIndex) && 
-        room.operationStartedAt && room.statusHistory && room.statusHistory.length > 0;
+        room.operationStartedAt;
         
       if (shouldSaveOperation) {
-        console.log("[v0] Saving completed operation for room:", room.name);
+        console.log("[v0] Saving completed operation for room:", room.name, {
+          from: room.currentStepIndex,
+          to: newStepIndex,
+          startedAt: room.operationStartedAt,
+          historyLength: room.statusHistory?.length || 0
+        });
         updatedCompletedOps = [
           ...updatedCompletedOps,
           {
             startedAt: room.operationStartedAt!,
             endedAt: now,
-            statusHistory: [...room.statusHistory!]
+            statusHistory: room.statusHistory ? [...room.statusHistory] : []
           }
         ];
       }
@@ -212,15 +233,19 @@ const AppContent: React.FC = () => {
       // Save completed operation
       let updatedCompletedOps = room?.completedOperations || [];
       const shouldSaveOperation = isOperationComplete(room?.currentStepIndex || 0, newStepIndex) && 
-        room?.operationStartedAt && room?.statusHistory && room.statusHistory.length > 0;
+        room?.operationStartedAt;
         
       if (shouldSaveOperation) {
+        console.log("[v0] DB: Saving completed operation for room:", room?.name, {
+          from: room?.currentStepIndex,
+          to: newStepIndex
+        });
         updatedCompletedOps = [
           ...updatedCompletedOps,
           {
             startedAt: room!.operationStartedAt!,
             endedAt: now,
-            statusHistory: [...room!.statusHistory!]
+            statusHistory: room?.statusHistory ? [...room.statusHistory] : []
           }
         ];
       }
@@ -246,27 +271,33 @@ const AppContent: React.FC = () => {
 
   const toggleEmergency = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
-    const room = rooms.find(r => r.id === roomId);
-    const newValue = !room?.isEmergency;
-    setRooms(prev => prev.map(r =>
-      r.id === roomId ? { ...r, isEmergency: newValue } : r
-    ));
+    let newValue = false;
+    setRooms(prev => prev.map(r => {
+      if (r.id === roomId) {
+        newValue = !r.isEmergency;
+        return { ...r, isEmergency: newValue };
+      }
+      return r;
+    }));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
-  }, [rooms, isDbConnected]);
+  }, [isDbConnected]);
 
   const toggleLock = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
-    const room = rooms.find(r => r.id === roomId);
-    const newValue = !room?.isLocked;
-    setRooms(prev => prev.map(r =>
-      r.id === roomId ? { ...r, isLocked: newValue } : r
-    ));
+    let newValue = false;
+    setRooms(prev => prev.map(r => {
+      if (r.id === roomId) {
+        newValue = !r.isLocked;
+        return { ...r, isLocked: newValue };
+      }
+      return r;
+    }));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_locked: newValue });
     }
-  }, [rooms, isDbConnected]);
+  }, [isDbConnected]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
     recentLocalUpdates.current.set(roomId, Date.now());

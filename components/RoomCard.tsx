@@ -16,30 +16,48 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   const { workflowStatuses } = useWorkflowStatusesContext();
   
   // workflowStatuses is already filtered (active, non-special) and sorted by context
-  const activeStatuses = workflowStatuses;
+  // Add null safety
+  const activeStatuses = workflowStatuses || [];
   
-  // Filter completed operations for today (7:00-6:59 window)
+  // Filter completed operations for today (7:00 yesterday/today to 6:59 today/tomorrow)
+  // The window is: if current time >= 7:00, count from 7:00 today to 6:59 tomorrow
+  //                if current time < 7:00, count from 7:00 yesterday to 6:59 today
   const todayOperationCount = useMemo(() => {
     if (!room.completedOperations || room.completedOperations.length === 0) return 0;
     
     const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Determine the start of the 24h window based on current time
     const startOfWindow = new Date(now);
-    startOfWindow.setHours(7, 0, 0, 0);
-    const endOfWindow = new Date(now);
+    if (currentHour >= 7) {
+      // After 7 AM - window starts at 7:00 today
+      startOfWindow.setHours(7, 0, 0, 0);
+    } else {
+      // Before 7 AM - window starts at 7:00 yesterday
+      startOfWindow.setDate(startOfWindow.getDate() - 1);
+      startOfWindow.setHours(7, 0, 0, 0);
+    }
+    
+    // End of window is 24h after start (6:59:59 next day)
+    const endOfWindow = new Date(startOfWindow);
     endOfWindow.setDate(endOfWindow.getDate() + 1);
     endOfWindow.setHours(6, 59, 59, 999);
     
-    return room.completedOperations.filter(op => {
-      const opStart = new Date(op.startedAt);
-      return opStart >= startOfWindow && opStart <= endOfWindow;
+    const count = room.completedOperations.filter(op => {
+      if (!op.endedAt) return false; // Use endedAt for completed operations
+      const opEnd = new Date(op.endedAt);
+      return opEnd >= startOfWindow && opEnd <= endOfWindow;
     }).length;
+    
+    return count;
   }, [room.completedOperations]);
   
   // Memoize computed values using database statuses
   const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
     const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-    const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-    const step = activeStatuses[safeIndex];
+    const safeIndex = Math.min(Math.max(0, room.currentStepIndex || 0), totalSteps - 1);
+    const step = activeStatuses[safeIndex] || null;
     
     const currentStep = {
       title: step?.title || step?.name || 'Status',
