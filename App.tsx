@@ -183,17 +183,24 @@ const AppContent: React.FC = () => {
       
       // Save completed operation when transitioning to ready state
       let updatedCompletedOps = room.completedOperations || [];
+      // Check if operation is being completed (going to index 0 or 7)
+      // We need operationStartedAt to track when operation began
       const shouldSaveOperation = isOperationComplete(room.currentStepIndex, newStepIndex) && 
-        room.operationStartedAt && room.statusHistory && room.statusHistory.length > 0;
+        room.operationStartedAt;
         
       if (shouldSaveOperation) {
-        console.log("[v0] Saving completed operation for room:", room.name);
+        console.log("[v0] Saving completed operation for room:", room.name, {
+          from: room.currentStepIndex,
+          to: newStepIndex,
+          startedAt: room.operationStartedAt,
+          historyLength: room.statusHistory?.length || 0
+        });
         updatedCompletedOps = [
           ...updatedCompletedOps,
           {
             startedAt: room.operationStartedAt!,
             endedAt: now,
-            statusHistory: [...room.statusHistory!]
+            statusHistory: room.statusHistory ? [...room.statusHistory] : []
           }
         ];
       }
@@ -226,15 +233,19 @@ const AppContent: React.FC = () => {
       // Save completed operation
       let updatedCompletedOps = room?.completedOperations || [];
       const shouldSaveOperation = isOperationComplete(room?.currentStepIndex || 0, newStepIndex) && 
-        room?.operationStartedAt && room?.statusHistory && room.statusHistory.length > 0;
+        room?.operationStartedAt;
         
       if (shouldSaveOperation) {
+        console.log("[v0] DB: Saving completed operation for room:", room?.name, {
+          from: room?.currentStepIndex,
+          to: newStepIndex
+        });
         updatedCompletedOps = [
           ...updatedCompletedOps,
           {
             startedAt: room!.operationStartedAt!,
             endedAt: now,
-            statusHistory: [...room!.statusHistory!]
+            statusHistory: room?.statusHistory ? [...room.statusHistory] : []
           }
         ];
       }
