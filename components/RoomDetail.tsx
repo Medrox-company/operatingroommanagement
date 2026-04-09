@@ -684,7 +684,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[9px] text-white/40 uppercase tracking-wide">Lékař</p>
-                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.doctor.name || 'Nepřiřazen'}</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room?.staff?.doctor?.name || 'Nepřiřazen'}</p>
                 </div>
               </button>
               <button
@@ -699,7 +699,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[9px] text-white/40 uppercase tracking-wide">Sestra</p>
-                  <p className="text-xs font-medium text-white/80 truncate">{room.staff.nurse.name || 'Nepřiřazena'}</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room?.staff?.nurse?.name || 'Nepřiřazena'}</p>
                 </div>
               </button>
             </div>
@@ -811,7 +811,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         >
           <div className="flex items-center gap-2">
             <Stethoscope className="w-5 h-5 text-violet-400" />
-            <span className="text-sm font-bold text-violet-300">{room.staff.doctor.name || 'Vybrat lékaře'}</span>
+            <span className="text-sm font-bold text-violet-300">{room?.staff?.doctor?.name || 'Vybrat lékaře'}</span>
           </div>
         </button>
         {/* Nurse Button */}
@@ -824,7 +824,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         >
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-emerald-400" />
-            <span className="text-sm font-bold text-emerald-300">{room.staff.nurse.name || 'Vybrat sestru'}</span>
+            <span className="text-sm font-bold text-emerald-300">{room?.staff?.nurse?.name || 'Vybrat sestru'}</span>
           </div>
         </button>
       </div>

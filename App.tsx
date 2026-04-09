@@ -43,6 +43,24 @@ const AppContent: React.FC = () => {
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
 
+  // Global error handler - prevent white screen on unhandled errors
+  useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      console.error('[v0] Unhandled error:', e.message);
+      e.preventDefault();
+    };
+    const handleRejection = (e: PromiseRejectionEvent) => {
+      console.error('[v0] Unhandled rejection:', e.reason);
+      e.preventDefault();
+    };
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
   // Load background settings from database
   useEffect(() => {
     const loadBgSettings = async () => {
@@ -80,22 +98,34 @@ const AppContent: React.FC = () => {
   // Emergency alert sound - plays when any room's emergency status is activated
   useEmergencyAlert(rooms, selectedRoomId);
 
-  // Load rooms from API on mount
+  // Load rooms from API on mount - separated for stability
   useEffect(() => {
+    let isMounted = true;
     const loadRooms = async () => {
       try {
-        const response = await fetch('/api/rooms');
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch('/api/rooms', { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        if (!isMounted) return; // Ignore if unmounted
         if (!response.ok) throw new Error('Failed to fetch rooms');
+        
         const dbRooms = await response.json();
-        if (dbRooms && dbRooms.length > 0) {
+        if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
           setRooms(dbRooms);
           setIsDbConnected(true);
         }
       } catch (error) {
-        console.error("Failed to load rooms from API:", error);
+        if (!isMounted) return;
+        console.error("[v0] Failed to load rooms from API:", error);
+        // Keep using MOCK_ROOMS on error - don't crash
       }
     };
     loadRooms();
+    return () => { isMounted = false; };
   }, []);
 
   // Track recent local updates to ignore duplicate realtime events (prevents flickering)
@@ -271,45 +301,29 @@ const AppContent: React.FC = () => {
 
   const toggleEmergency = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
-    // Find the room and calculate new value BEFORE setRooms
     const room = rooms.find(r => r.id === roomId);
     const newValue = room ? !room.isEmergency : false;
-    
-    console.log("[v0] toggleEmergency:", { roomId, currentValue: room?.isEmergency, newValue, isDbConnected });
     
     setRooms(prev => prev.map(r =>
       r.id === roomId ? { ...r, isEmergency: newValue } : r
     ));
     
     if (isDbConnected) {
-      try {
-        await updateOperatingRoom(roomId, { is_emergency: newValue });
-        console.log("[v0] toggleEmergency DB update success");
-      } catch (e) {
-        console.error("[v0] toggleEmergency DB update failed:", e);
-      }
+      await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
   }, [isDbConnected, rooms]);
 
   const toggleLock = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
-    // Find the room and calculate new value BEFORE setRooms
     const room = rooms.find(r => r.id === roomId);
     const newValue = room ? !room.isLocked : false;
-    
-    console.log("[v0] toggleLock:", { roomId, currentValue: room?.isLocked, newValue, isDbConnected });
     
     setRooms(prev => prev.map(r =>
       r.id === roomId ? { ...r, isLocked: newValue } : r
     ));
     
     if (isDbConnected) {
-      try {
-        await updateOperatingRoom(roomId, { is_locked: newValue });
-        console.log("[v0] toggleLock DB update success");
-      } catch (e) {
-        console.error("[v0] toggleLock DB update failed:", e);
-      }
+      await updateOperatingRoom(roomId, { is_locked: newValue });
     }
   }, [isDbConnected, rooms]);
 
@@ -584,11 +598,13 @@ const AppContent: React.FC = () => {
 // Wrap with AuthProvider and WorkflowStatusesProvider
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <WorkflowStatusesProvider>
-        <AppContent />
-      </WorkflowStatusesProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <WorkflowStatusesProvider>
+          <AppContent />
+        </WorkflowStatusesProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 
