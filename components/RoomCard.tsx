@@ -16,7 +16,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   const { workflowStatuses } = useWorkflowStatusesContext();
   
   // workflowStatuses is already filtered (active, non-special) and sorted by context
-  const activeStatuses = workflowStatuses;
+  // Add null safety
+  const activeStatuses = workflowStatuses || [];
   
   // Filter completed operations for today (7:00-6:59 window)
   const todayOperationCount = useMemo(() => {
@@ -38,8 +39,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   // Memoize computed values using database statuses
   const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
     const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-    const safeIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-    const step = activeStatuses[safeIndex];
+    const safeIndex = Math.min(Math.max(0, room.currentStepIndex || 0), totalSteps - 1);
+    const step = activeStatuses[safeIndex] || null;
     
     const currentStep = {
       title: step?.title || step?.name || 'Status',

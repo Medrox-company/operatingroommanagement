@@ -1,6 +1,43 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { OperatingRoom, RoomStatus, WeeklySchedule, SkillLevel } from '../types';
 
+// Network resilience: Retry wrapper for transient failures
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string = 'database operation'
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // Don't retry on non-transient errors
+      const isTransient = 
+        lastError.message.includes('network') ||
+        lastError.message.includes('timeout') ||
+        lastError.message.includes('connection') ||
+        lastError.message.includes('ECONNREFUSED') ||
+        lastError.message.includes('fetch');
+      
+      if (!isTransient || attempt === MAX_RETRIES) {
+        console.error(`[v0] ${operationName} failed after ${attempt} attempt(s):`, lastError.message);
+        throw lastError;
+      }
+      
+      console.warn(`[v0] ${operationName} failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+    }
+  }
+  
+  throw lastError;
+}
+
 // Type for database row
 interface DBOperatingRoom {
   id: string;

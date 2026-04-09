@@ -36,7 +36,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const { workflowStatuses } = useWorkflowStatusesContext();
   
   // workflowStatuses is already filtered (active, non-special) and sorted by context
-  const activeDbStatuses = workflowStatuses;
+  // Add null safety fallback to prevent crashes if context is not ready
+  const activeDbStatuses = workflowStatuses || [];
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
@@ -60,6 +61,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   );
   const updateTimeoutRef = useRef<number | null>(null);
   const isLocalUpdateRef = useRef(false); // Track if update came from local buttons
+  
+  // Cleanup all timeouts on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
+      if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
+    };
+  }, []);
   
   // Sync with props only when not actively editing locally
   useEffect(() => {
