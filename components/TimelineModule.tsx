@@ -429,7 +429,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{statusName}</p>
+                    <p className="text-[10px] text-white/40">{room?.staff?.doctor?.name || 'Neurčeno'}</p>
                   </div>
                   {room.estimatedEndTime && !isFree && (
                     <div className="text-right">
@@ -1365,6 +1365,9 @@ style={{
                                 <div className="min-w-0 flex-1">
                                   <p className="text-[11px] font-semibold text-white truncate drop-shadow-sm">
                                     {stepName}
+                                  </p>
+                                  <p className="text-[9px] font-normal text-white/60 truncate">
+                                    {room.staff?.doctor?.name || ''}
                                   </p>
                                 </div>
                               )}

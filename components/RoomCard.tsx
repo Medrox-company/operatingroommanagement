@@ -225,6 +225,18 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
 
         {/* Bottom Info */}
         <div className="w-full space-y-3 shrink-0">
+          <div className="w-full text-center">
+            <p className={`text-[10px] font-black tracking-[0.2em] truncate uppercase py-2 px-4 rounded-full border transition-all inline-block w-full
+              ${room.isEmergency 
+                ? 'bg-red-600 text-white border-red-500' 
+                : (room.isLocked 
+                    ? 'bg-amber-500 text-white border-amber-600' 
+                    : 'bg-white/5 border-white/5 text-white/50')}
+            `}>
+              {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
+            </p>
+          </div>
+          
             <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
             ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
           `}>
