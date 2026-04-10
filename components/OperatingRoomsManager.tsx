@@ -359,14 +359,14 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       id: newRoom.id,
       name: newRoom.name,
       department: newRoom.department,
-      status: 'free',
+      status: 'FREE',
       queue_count: 0,
       operations_24h: 0,
       current_step_index: 6,
       is_emergency: false,
       is_locked: false,
       is_paused: false,
-      weekly_schedule: newRoom.weeklySchedule,
+      is_septic: false,
       sort_order: roomsList.length,
     });
 

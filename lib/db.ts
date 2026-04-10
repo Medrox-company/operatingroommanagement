@@ -300,12 +300,11 @@ export async function createOperatingRoom(
     is_locked?: boolean;
     is_paused?: boolean;
     is_septic?: boolean;
-    weekly_schedule?: Record<string, any>;
     sort_order?: number;
   }
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
-    console.error('[DB] Supabase not configured');
+    console.error('[DB] Supabase not configured - URL or key missing');
     return false;
   }
   
@@ -318,29 +317,38 @@ export async function createOperatingRoom(
       queue_count: roomData.queue_count || 0,
       operations_24h: roomData.operations_24h || 0,
       current_step_index: roomData.current_step_index ?? 6,
-      is_emergency: roomData.is_emergency || false,
-      is_locked: roomData.is_locked || false,
-      is_paused: roomData.is_paused || false,
-      is_septic: roomData.is_septic || false,
-      sort_order: roomData.sort_order || 0,
+      is_emergency: roomData.is_emergency ?? false,
+      is_locked: roomData.is_locked ?? false,
+      is_paused: roomData.is_paused ?? false,
+      is_septic: roomData.is_septic ?? false,
+      sort_order: roomData.sort_order ?? 0,
     };
     
-    console.log('[DB] Attempting to create room:', insertData.name);
+    console.log('[DB] Attempting to create room:', {
+      id: insertData.id,
+      name: insertData.name,
+      department: insertData.department,
+      status: insertData.status
+    });
     
     const { data, error } = await supabase
       .from('operating_rooms')
-      .insert(insertData)
+      .insert([insertData])
       .select();
     
     if (error) {
-      console.error('[DB] Error creating operating room:', error.message, error.details, error.hint);
+      console.error('[DB] Error creating operating room:');
+      console.error('  Message:', error.message);
+      console.error('  Code:', error.code);
+      console.error('  Details:', error.details);
+      console.error('  Hint:', error.hint);
       return false;
     }
     
-    console.log('[DB] Successfully created operating room:', roomData.name, data);
+    console.log('[DB] Successfully created operating room:', roomData.id);
     return true;
   } catch (err) {
-    console.error('[DB] Exception creating operating room:', err);
+    console.error('[DB] Exception creating operating room:', err instanceof Error ? err.message : err);
     return false;
   }
 }
