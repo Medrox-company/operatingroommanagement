@@ -313,8 +313,8 @@ export async function createOperatingRoom(
     const insertData = {
       id: roomData.id,
       name: roomData.name,
-      department: roomData.department,
-      status: roomData.status || 'free',
+      department: roomData.department || '',
+      status: roomData.status || 'FREE',
       queue_count: roomData.queue_count || 0,
       operations_24h: roomData.operations_24h || 0,
       current_step_index: roomData.current_step_index ?? 6,
@@ -322,10 +322,7 @@ export async function createOperatingRoom(
       is_locked: roomData.is_locked || false,
       is_paused: roomData.is_paused || false,
       is_septic: roomData.is_septic || false,
-      weekly_schedule: roomData.weekly_schedule || null,
       sort_order: roomData.sort_order || 0,
-      completed_operations: [],
-      status_history: [],
     };
     
     console.log('[DB] Attempting to create room:', insertData.name);
