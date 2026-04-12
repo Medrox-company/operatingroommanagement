@@ -47,8 +47,8 @@ const TimeInput: React.FC<{
   onMinuteChange: (m: number) => void;
   disabled?: boolean;
 }> = ({ label, hour, minute, onHourChange, onMinuteChange, disabled }) => (
-  <div className={`flex flex-col gap-1.5 ${disabled ? 'opacity-40' : ''}`}>
-    <span className="text-[10px] font-medium text-text-muted uppercase tracking-wide">{label}</span>
+  <div className={`flex flex-col gap-1 ${disabled ? 'opacity-40' : ''}`}>
+    <span className="text-[9px] font-medium text-white/40 uppercase tracking-wider">{label}</span>
     <div className="flex items-center gap-1">
       <input
         type="number"
@@ -57,9 +57,9 @@ const TimeInput: React.FC<{
         value={hour.toString().padStart(2, '0')}
         onChange={(e) => onHourChange(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="w-12 px-2 py-2 rounded-lg border border-border-default bg-surface-1 text-text-primary text-center text-sm font-mono focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 disabled:cursor-not-allowed transition-all"
+        className="w-12 px-2 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-white text-center text-sm font-mono focus:outline-none focus:border-cyan-500/50 disabled:cursor-not-allowed"
       />
-      <span className="text-text-muted">:</span>
+      <span className="text-white/40">:</span>
       <input
         type="number"
         min={0}
@@ -68,7 +68,7 @@ const TimeInput: React.FC<{
         value={minute.toString().padStart(2, '0')}
         onChange={(e) => onMinuteChange(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="w-12 px-2 py-2 rounded-lg border border-border-default bg-surface-1 text-text-primary text-center text-sm font-mono focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 disabled:cursor-not-allowed transition-all"
+        className="w-12 px-2 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-white text-center text-sm font-mono focus:outline-none focus:border-cyan-500/50 disabled:cursor-not-allowed"
       />
     </div>
   </div>
@@ -81,19 +81,19 @@ const DayScheduleRow: React.FC<{
   onChange: (schedule: DayWorkingHours) => void;
 }> = ({ day, schedule, onChange }) => (
   <div 
-    className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-200 ${
+    className={`flex items-center gap-4 p-3 rounded-xl transition-all ${
       schedule.enabled 
-        ? 'bg-surface-2 border border-border-default' 
-        : 'bg-surface-1 border border-border-subtle'
+        ? 'bg-white/[0.03] border border-white/10' 
+        : 'bg-white/[0.01] border border-white/5'
     }`}
   >
     {/* Day Toggle */}
     <button
       onClick={() => onChange({ ...schedule, enabled: !schedule.enabled })}
-      className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 shrink-0 ${
+      className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all shrink-0 ${
         schedule.enabled 
-          ? 'bg-accent/15 border border-accent/40 text-accent' 
-          : 'bg-surface-2 border border-border-subtle text-text-muted hover:text-text-secondary'
+          ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400' 
+          : 'bg-white/5 border border-white/10 text-white/30'
       }`}
     >
       <Power className="w-4 h-4" />
@@ -101,10 +101,10 @@ const DayScheduleRow: React.FC<{
     
     {/* Day Name */}
     <div className="w-20 shrink-0">
-      <p className={`text-sm font-medium ${schedule.enabled ? 'text-text-primary' : 'text-text-muted'}`}>
+      <p className={`text-sm font-semibold ${schedule.enabled ? 'text-white' : 'text-white/30'}`}>
         {day.label}
       </p>
-      <p className="text-[9px] text-text-muted uppercase tracking-wide">{schedule.enabled ? 'Aktivni' : 'Neaktivni'}</p>
+      <p className="text-[9px] text-white/30 uppercase">{schedule.enabled ? 'Aktivní' : 'Neaktivní'}</p>
     </div>
     
     {/* Time Inputs */}

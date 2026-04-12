@@ -11,6 +11,7 @@ interface MobileNavProps {
 const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) => {
   const { isAdmin, modules } = useAuth();
 
+  // Filter sidebar items based on enabled modules - memoized for performance
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
     if (item.id === 'dashboard') return true;
     if (isAdmin) return true;
@@ -20,8 +21,8 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-around py-2 px-3 pb-[env(safe-area-inset-bottom)] bg-surface-1/95 backdrop-blur-xl border-t border-border-subtle"
-      aria-label="Hlavni navigace"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-around py-2 px-2 pb-[env(safe-area-inset-bottom)] bg-black/80 backdrop-blur-xl border-t border-white/10 safe-area-pb"
+      aria-label="Hlavní navigace"
     >
       {enabledItems.map((item) => {
         const isActive = currentView === item.id;
@@ -32,45 +33,36 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
             aria-current={isActive ? 'page' : undefined}
             aria-label={item.label}
             className={`
-              relative flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-2 px-2 rounded-xl transition-all duration-200
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50
-              ${isActive 
-                ? 'text-text-primary bg-surface-3' 
-                : 'text-text-muted active:bg-surface-2'}
+              relative flex flex-col items-center justify-center gap-1 min-w-[56px] py-2 px-3 rounded-xl transition-all duration-200
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+              ${isActive ? 'text-white bg-white/15' : 'text-white/50 active:bg-white/10'}
             `}
           >
             <item.icon
-              className="w-5 h-5"
-              strokeWidth={isActive ? 2 : 1.5}
+              className="w-6 h-6"
+              strokeWidth={isActive ? 2.5 : 2}
               aria-hidden
             />
-            <span className="text-[8px] font-medium uppercase tracking-wide truncate max-w-[56px]">
+            <span className="text-[9px] font-bold uppercase tracking-wider truncate max-w-[64px]">
               {item.label}
             </span>
-            {isActive && (
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
-            )}
           </button>
         );
       })}
 
+      {/* Admin Button - only for admins */}
       {isAdmin && (
         <button
           onClick={() => onNavigate('admin')}
           aria-label="Admin"
           className={`
-            relative flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-2 px-2 rounded-xl transition-all duration-200
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50
-            ${currentView === 'admin' 
-              ? 'text-accent bg-accent/10' 
-              : 'text-text-muted active:bg-surface-2'}
+            relative flex flex-col items-center justify-center gap-1 min-w-[56px] py-2 px-3 rounded-xl transition-all duration-200
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+            ${currentView === 'admin' ? 'text-[#00D8C1] bg-[#00D8C1]/15' : 'text-white/50 active:bg-white/10'}
           `}
         >
-          <Shield className="w-5 h-5" strokeWidth={currentView === 'admin' ? 2 : 1.5} />
-          <span className="text-[8px] font-medium uppercase tracking-wide">Admin</span>
-          {currentView === 'admin' && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
-          )}
+          <Shield className="w-6 h-6" strokeWidth={currentView === 'admin' ? 2.5 : 2} />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Admin</span>
         </button>
       )}
     </nav>
