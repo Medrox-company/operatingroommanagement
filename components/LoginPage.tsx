@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { Lock, Mail, Eye, EyeOff, AlertCircle, Shield, User } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, AlertCircle, Shield, User, Loader2 } from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
@@ -37,118 +36,93 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     if (result.success) {
       onLoginSuccess?.();
     } else {
-      setError(result.error || 'Přihlášení se nezdařilo');
+      setError(result.error || 'Prihlaseni se nezdarilo');
     }
     
     setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Effects */}
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background gradient */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-200px] left-[-200px] w-[900px] h-[900px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #A855F7 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[-300px] right-[-300px] w-[1000px] h-[1000px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #00D8C1 0%, transparent 70%)' }} />
+        <div className="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] rounded-full bg-accent/5 blur-[100px]" />
+        <div className="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] rounded-full bg-accent/3 blur-[80px]" />
       </div>
 
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 opacity-[0.02]"
+      {/* Grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
         style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
+          backgroundImage: `linear-gradient(hsl(var(--border-subtle)) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--border-subtle)) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
         }}
       />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative z-10"
-      >
+      <div className="w-full max-w-md relative z-10 animate-fade-in">
         {/* Logo & Title */}
         <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-6"
-            style={{ 
-              background: 'linear-gradient(135deg, #00D8C1 0%, #00A896 100%)',
-              boxShadow: '0 0 60px rgba(0,216,193,0.3)'
-            }}
-          >
-            <Shield className="w-10 h-10 text-white" />
-          </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Operační sály</h1>
-          <p className="text-white/40 text-sm tracking-wide">CHIRURGICKÝ BLOK • PŘIHLÁŠENÍ</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent mb-5 shadow-lg shadow-accent/20">
+            <Shield className="w-8 h-8 text-accent-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold text-text-primary mb-1.5">Operacni saly</h1>
+          <p className="text-text-muted text-sm tracking-wide">Chirurgicky blok</p>
         </div>
 
         {/* Login Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-8"
-        >
+        <div className="bg-surface-1 border border-border-subtle rounded-2xl p-6 shadow-xl">
           {/* Quick Role Selection */}
-          <div className="mb-6">
-            <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-3">Rychlé přihlášení</p>
+          <div className="mb-5">
+            <p className="text-text-muted text-xs font-medium uppercase tracking-wider mb-3">Rychle prihlaseni</p>
             <div className="grid grid-cols-2 gap-3">
-              <motion.button
+              <button
                 type="button"
                 onClick={() => handleQuickLogin('admin')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${
+                className={`p-4 rounded-xl border transition-all duration-200 flex flex-col items-center gap-2 ${
                   selectedRole === 'admin'
-                    ? 'bg-[#00D8C1]/20 border-[#00D8C1]/50 text-[#00D8C1]'
-                    : 'bg-white/[0.02] border-white/10 text-white/60 hover:bg-white/[0.05] hover:border-white/20'
+                    ? 'bg-accent/10 border-accent/40 text-accent'
+                    : 'bg-surface-2 border-border-subtle text-text-secondary hover:bg-surface-3 hover:border-border-default'
                 }`}
               >
-                <Shield className="w-6 h-6" />
-                <span className="text-sm font-medium">Administrátor</span>
-              </motion.button>
-              <motion.button
+                <Shield className="w-5 h-5" />
+                <span className="text-sm font-medium">Administrator</span>
+              </button>
+              <button
                 type="button"
                 onClick={() => handleQuickLogin('user')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${
+                className={`p-4 rounded-xl border transition-all duration-200 flex flex-col items-center gap-2 ${
                   selectedRole === 'user'
-                    ? 'bg-[#A855F7]/20 border-[#A855F7]/50 text-[#A855F7]'
-                    : 'bg-white/[0.02] border-white/10 text-white/60 hover:bg-white/[0.05] hover:border-white/20'
+                    ? 'bg-info/10 border-info/40 text-info'
+                    : 'bg-surface-2 border-border-subtle text-text-secondary hover:bg-surface-3 hover:border-border-default'
                 }`}
               >
-                <User className="w-6 h-6" />
-                <span className="text-sm font-medium">Uživatel</span>
-              </motion.button>
+                <User className="w-5 h-5" />
+                <span className="text-sm font-medium">Uzivatel</span>
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-white/30 text-xs uppercase tracking-widest">nebo</span>
-            <div className="flex-1 h-px bg-white/10" />
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-border-subtle" />
+            <span className="text-text-muted text-xs uppercase tracking-wider">nebo</span>
+            <div className="flex-1 h-px bg-border-subtle" />
           </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Input */}
             <div>
-              <label className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 block">
-                E-mail
-              </label>
+              <label className="text-text-secondary text-xs font-medium mb-2 block">E-mail</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="vas@email.cz"
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-[#00D8C1]/50 focus:ring-1 focus:ring-[#00D8C1]/30 transition-all"
+                  className="input pl-10"
                   required
                 />
               </div>
@@ -156,86 +130,67 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {/* Password Input */}
             <div>
-              <label className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 block">
-                Heslo
-              </label>
+              <label className="text-text-secondary text-xs font-medium mb-2 block">Heslo</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-12 pr-12 text-white placeholder:text-white/20 focus:outline-none focus:border-[#00D8C1]/50 focus:ring-1 focus:ring-[#00D8C1]/30 transition-all"
+                  placeholder="........"
+                  className="input pl-10 pr-10"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
             {/* Error Message */}
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm"
-                >
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{error}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-danger/10 border border-danger/20 rounded-xl text-danger text-sm animate-fade-in">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
 
             {/* Submit Button */}
-            <motion.button
+            <button
               type="submit"
               disabled={isLoading || !email || !password}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="w-full py-4 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: 'linear-gradient(135deg, #00D8C1 0%, #00A896 100%)',
-                boxShadow: '0 0 30px rgba(0,216,193,0.3)'
-              }}
+              className="btn btn-primary w-full py-3.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                  />
-                  Přihlašování...
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Prihlasovani...
                 </span>
               ) : (
-                'Přihlásit se'
+                'Prihlasit se'
               )}
-            </motion.button>
+            </button>
           </form>
 
-          {/* Demo Credentials Info */}
-          <div className="mt-6 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-            <p className="text-white/30 text-xs text-center">
-              Demo přístupy: <br />
-              <span className="text-white/50">admin@nemocnice.cz / admin123</span><br />
-              <span className="text-white/50">user@nemocnice.cz / user123</span>
+          {/* Demo Credentials */}
+          <div className="mt-5 p-3 bg-surface-2 border border-border-subtle rounded-xl">
+            <p className="text-text-muted text-xs text-center leading-relaxed">
+              Demo pristupy:<br />
+              <span className="text-text-tertiary">admin@nemocnice.cz / admin123</span><br />
+              <span className="text-text-tertiary">user@nemocnice.cz / user123</span>
             </p>
           </div>
-        </motion.div>
+        </div>
 
         {/* Footer */}
-        <p className="text-center text-white/20 text-xs mt-6">
-          Operační sály v{new Date().getFullYear()} • Všechna práva vyhrazena
+        <p className="text-center text-text-muted text-xs mt-5">
+          Operacni saly {new Date().getFullYear()}
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 };

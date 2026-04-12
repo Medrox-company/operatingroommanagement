@@ -1471,36 +1471,23 @@ interface StatBoxProps {
 
 const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
   <div
-    className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'shadow-lg' : ''}`}
+    className={`relative flex-shrink-0 h-12 rounded-xl px-3.5 py-2 overflow-hidden transition-all duration-200 ${glow ? 'shadow-lg' : ''}`}
     style={{
-      background: glow
-        ? `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`
-        : `linear-gradient(135deg, ${color}12 0%, ${color}04 100%)`,
-      border: glow ? `2px solid ${color}50` : `1px solid ${color}25`,
-      boxShadow: glow ? `0 0 30px ${color}30` : 'none',
+      background: glow ? `${color}15` : `${color}08`,
+      border: glow ? `1px solid ${color}40` : `1px solid ${color}20`,
+      boxShadow: glow ? `0 0 20px ${color}20` : 'none',
     }}
   >
-    {glow && (
+    <div className="relative flex items-center gap-2.5 h-full">
       <div
-        className="absolute inset-0 opacity-50"
-        style={{
-          background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
-        }}
-      />
-    )}
-    <div className="relative flex items-center gap-3 h-full">
-      <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-        style={{
-          background: `${color}20`,
-          border: `1px solid ${color}40`,
-        }}
+        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+        style={{ background: `${color}15` }}
       >
         <span style={{ color }}><Icon className="w-4 h-4" /></span>
       </div>
       <div className="min-w-0">
-        <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
-        <p className="text-sm font-semibold text-white leading-tight">{value}</p>
+        <p className="text-[9px] text-text-muted uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-semibold text-text-primary leading-tight">{value}</p>
       </div>
     </div>
   </div>

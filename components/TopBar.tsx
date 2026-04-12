@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Bell, Globe, ShieldCheck } from 'lucide-react';
+import { Bell, Clock } from 'lucide-react';
 
 interface TopBarProps {
   currentView?: string;
@@ -16,46 +15,61 @@ const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsRese
     return () => clearInterval(timer);
   }, []);
 
+  const formattedDate = time.toLocaleDateString('cs-CZ', { 
+    weekday: 'short', 
+    day: 'numeric', 
+    month: 'short' 
+  });
+
   return (
-    <header className="h-24 px-12 md:px-14 flex items-center justify-between bg-white/5 backdrop-blur-2xl z-30 border-b border-white/10">
-      <div className="flex items-center gap-6">
-         <div className="w-12 h-12 bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md">
-            <ShieldCheck className="w-6 h-6 text-[#00D8C1]" />
-         </div>
-         <div>
-            <p className="text-[9px] font-black tracking-[0.4em] text-white/30 leading-none mb-1.5 uppercase">HOSPITAL SYSTEM</p>
-            <p className="text-sm font-bold text-white uppercase tracking-tight">OPERATINGROOM</p>
-         </div>
+    <header className="h-16 px-6 md:px-8 flex items-center justify-between bg-surface-1/50 backdrop-blur-xl z-30 border-b border-border-subtle">
+      {/* Left - Logo & Title */}
+      <div className="flex items-center gap-4">
+        <div className="w-9 h-9 bg-accent/10 border border-accent/20 rounded-xl flex items-center justify-center">
+          <span className="text-accent font-bold text-xs">OR</span>
+        </div>
+        <div className="hidden sm:block">
+          <p className="text-[10px] font-semibold tracking-widest text-text-muted uppercase">Hospital System</p>
+          <p className="text-sm font-semibold text-text-primary -mt-0.5">Operating Room</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-10">
-        <div className="flex flex-col items-end">
-          <span className="text-4xl font-mono font-bold text-white tracking-tighter tabular-nums leading-none">
-            {time.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-          <div className="flex items-center gap-2 mt-2">
-             <Globe className="w-3 h-3 text-white/20" />
-             <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">LOCAL TIME • GMT+1</span>
+      {/* Right - Time & Actions */}
+      <div className="flex items-center gap-4">
+        {/* Date & Time */}
+        <div className="flex items-center gap-3 px-3 py-2 bg-surface-1 rounded-xl border border-border-subtle">
+          <Clock className="w-4 h-4 text-text-tertiary" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg font-mono font-semibold text-text-primary tabular-nums">
+              {time.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            <span className="text-[10px] text-text-muted uppercase hidden sm:inline">
+              {formattedDate}
+            </span>
           </div>
         </div>
-        
-        <div className="h-10 w-px bg-white/10" />
 
-        <div className="flex items-center gap-8">
-          <div className="relative p-3.5 bg-white/5 border border-white/10 rounded-2xl shadow-2xl cursor-pointer hover:bg-white/10 hover:text-white transition-all group backdrop-blur-md">
-            <Bell className="w-5 h-5 text-white/40 group-hover:text-white" />
-          </div>
+        {/* Divider */}
+        <div className="h-8 w-px bg-border-subtle hidden sm:block" />
 
-          <div className="flex items-center gap-5 cursor-pointer group">
-            <div className="text-right hidden sm:block">
-              <p className="text-[12px] font-black text-white/90 uppercase tracking-tighter leading-none mb-1">Dr. Jan Svěrák</p>
-              <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none">Chief Surgeon</p>
-            </div>
-            <div className="w-14 h-14 bg-[#00D8C1] text-black rounded-2xl flex items-center justify-center font-black text-sm group-hover:scale-105 transition-all shadow-glow shadow-[#00D8C1]/20">
-              JS
-            </div>
+        {/* Notifications */}
+        <button 
+          className="relative p-2.5 bg-surface-1 border border-border-subtle rounded-xl hover:bg-surface-2 hover:border-border-default transition-all duration-200 group"
+          aria-label="Notifikace"
+        >
+          <Bell className="w-4 h-4 text-text-tertiary group-hover:text-text-secondary transition-colors" />
+        </button>
+
+        {/* User Avatar */}
+        <button className="flex items-center gap-3 group">
+          <div className="hidden sm:block text-right">
+            <p className="text-xs font-semibold text-text-primary">Dr. J. Novak</p>
+            <p className="text-[10px] text-text-muted">Chirurg</p>
           </div>
-        </div>
+          <div className="w-9 h-9 bg-accent text-accent-foreground rounded-xl flex items-center justify-center font-semibold text-xs group-hover:scale-105 transition-transform duration-200 shadow-lg shadow-accent/20">
+            JN
+          </div>
+        </button>
       </div>
     </header>
   );

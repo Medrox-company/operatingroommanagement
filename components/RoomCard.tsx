@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
@@ -12,48 +11,36 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
-  // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
-  
-  // workflowStatuses is already filtered (active, non-special) and sorted by context
-  // Add null safety
   const activeStatuses = workflowStatuses || [];
   
-  // Filter completed operations for today (7:00 yesterday/today to 6:59 today/tomorrow)
-  // The window is: if current time >= 7:00, count from 7:00 today to 6:59 tomorrow
-  //                if current time < 7:00, count from 7:00 yesterday to 6:59 today
+  // Calculate today's operation count (7:00-6:59 window)
   const todayOperationCount = useMemo(() => {
     if (!room.completedOperations || room.completedOperations.length === 0) return 0;
     
     const now = new Date();
     const currentHour = now.getHours();
-    
-    // Determine the start of the 24h window based on current time
     const startOfWindow = new Date(now);
+    
     if (currentHour >= 7) {
-      // After 7 AM - window starts at 7:00 today
       startOfWindow.setHours(7, 0, 0, 0);
     } else {
-      // Before 7 AM - window starts at 7:00 yesterday
       startOfWindow.setDate(startOfWindow.getDate() - 1);
       startOfWindow.setHours(7, 0, 0, 0);
     }
     
-    // End of window is 24h after start (6:59:59 next day)
     const endOfWindow = new Date(startOfWindow);
     endOfWindow.setDate(endOfWindow.getDate() + 1);
     endOfWindow.setHours(6, 59, 59, 999);
     
-    const count = room.completedOperations.filter(op => {
-      if (!op.endedAt) return false; // Use endedAt for completed operations
+    return room.completedOperations.filter(op => {
+      if (!op.endedAt) return false;
       const opEnd = new Date(op.endedAt);
       return opEnd >= startOfWindow && opEnd <= endOfWindow;
     }).length;
-    
-    return count;
   }, [room.completedOperations]);
   
-  // Memoize computed values using database statuses
+  // Memoized computed values
   const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
     const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
     const safeIndex = Math.min(Math.max(0, room.currentStepIndex || 0), totalSteps - 1);
@@ -64,251 +51,231 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       color: step?.accent_color || step?.color || '#6B7280',
     };
     
-    const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
+    const themeColor = room.isEmergency ? '#EF4444' : (room.isLocked ? '#F59E0B' : (room.isPaused ? '#06B6D4' : currentStep.color));
     const progressPercent = ((safeIndex + 1) / totalSteps);
     
-    // Don't show time for "Sal priprav*" and "Uklid" statuses (ASCII-safe)
     const statusName = (step?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const isReadyStatus = statusName.includes('priprav');
     const isCleaningStatus = statusName.includes('uklid');
     const shouldShowTime = !isReadyStatus && !isCleaningStatus;
     
-    const radius = 38;
+    const radius = 36;
     const strokeDasharray = 2 * Math.PI * radius;
     const strokeDashoffset = strokeDasharray * (1 - progressPercent);
     
     return { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
   }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
   
-  const radius = 38;
-  const strokeWidth = 4;
-
-  const center = 56;
+  const radius = 36;
+  const strokeWidth = 3;
+  const center = 48;
 
   const handleAction = (e: React.MouseEvent, action?: (e: React.MouseEvent) => void) => {
     e.stopPropagation();
     if (action) action(e);
   };
 
+  // State-based styles
+  const getStateStyles = () => {
+    if (room.isEmergency) {
+      return {
+        card: 'bg-danger/5 border-danger/30 shadow-glow-danger',
+        glow: 'bg-danger/20',
+        text: 'text-danger',
+        textMuted: 'text-danger/60',
+      };
+    }
+    if (room.isLocked) {
+      return {
+        card: 'bg-warning/5 border-warning/30 shadow-glow-warning',
+        glow: 'bg-warning/20',
+        text: 'text-warning',
+        textMuted: 'text-warning/60',
+      };
+    }
+    if (room.isPaused) {
+      return {
+        card: 'bg-info/5 border-info/20',
+        glow: 'bg-info/15',
+        text: 'text-info',
+        textMuted: 'text-info/60',
+      };
+    }
+    return {
+      card: 'bg-surface-1 border-border-subtle hover:bg-surface-2 hover:border-border-default',
+      glow: 'bg-accent/10',
+      text: 'text-text-primary',
+      textMuted: 'text-text-tertiary',
+    };
+  };
+
+  const styles = getStateStyles();
+
   return (
     <div
       onClick={onClick}
-      className="relative group cursor-pointer h-[340px] w-full"
+      className="relative group cursor-pointer h-[320px] w-full"
     >
-      {/* Subtle State Pulse Aura (Emergency or Locked) */}
-      {(room.isEmergency || room.isLocked) && (
-        <div 
-          className={`absolute -inset-1 z-0 rounded-[2.6rem] blur-xl pointer-events-none ${room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10'}`}
-        />
-      )}
-
-      {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
-        ${room.isEmergency 
-          ? 'bg-red-950/20 border-red-500/40' 
-          : (room.isLocked 
-              ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
-              : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]')}
+      {/* Main Card */}
+      <div className={`
+        absolute inset-0 rounded-2xl border backdrop-blur-xl overflow-hidden
+        transition-all duration-300 ${styles.card}
       `}>
-        {room.isEmergency && (
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
-        )}
-        {room.isLocked && (
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
-        )}
-        
-        {/* Static Glow Layer */}
+        {/* Subtle glow */}
         <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
-          style={{ 
-            backgroundColor: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15 
-          }}
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none ${styles.glow}`}
+          style={{ opacity: room.isEmergency || room.isLocked ? 0.4 : 0.2 }}
         />
       </div>
 
-      {/* Content Container */}
-      <div className="relative h-full w-full z-10 p-6 flex flex-col">
+      {/* Content */}
+      <div className="relative h-full w-full z-10 p-5 flex flex-col">
         
-        {/* Header — centered */}
+        {/* Header */}
         <div className="w-full flex flex-col items-center text-center shrink-0">
-          <p className={`text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 transition-colors
-            ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
-          `}>
+          <p className={`text-[9px] font-semibold tracking-widest uppercase mb-1.5 ${styles.textMuted}`}>
             {room.department}
           </p>
-          <h3 className={`text-xl font-bold tracking-tight uppercase leading-none transition-colors
-            ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
-          `}>
+          <h3 className={`text-lg font-bold tracking-tight uppercase ${styles.text}`}>
             {room.name}
           </h3>
         </div>
 
-        {/* Central Content Wrapper */}
+        {/* Central Progress Ring */}
         <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-            <div className="relative flex items-center justify-center">
-                {/* Static glow behind the circle - replaced motion for performance */}
-                <div
-                  className="absolute rounded-full blur-[40px] transition-all duration-500"
-                  style={{ width: 80, height: 80, backgroundColor: themeColor, opacity: 0.25 }}
-                />
-                <svg
-                  className="w-28 h-28 overflow-visible select-none flex-shrink-0"
-                  style={{ transform: 'rotate(-90deg)' }}
-                >
-                    <circle 
-                      cx={center} cy={center} r={radius} 
-                      fill="none" 
-                      stroke="white" 
-                      strokeWidth="1.5" 
-                      className="opacity-[0.03]" 
-                    />
-                    <circle 
-                      cx={center} cy={center} r={radius} 
-                      fill="none"
-                      stroke={themeColor} 
-                      strokeWidth={strokeWidth} 
-                      strokeLinecap="round"
-                      strokeDasharray={strokeDasharray}
-                      strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
-                      className="transition-all duration-500"
-                      style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
-                    />
-                    {room.isPaused ? (
-                      <text
-                        x={center}
-                        y={center}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill="#22D3EE"
-                        className="text-4xl font-black"
-                        style={{ 
-                          transform: 'rotate(90deg)', 
-                          transformOrigin: `${center}px ${center}px`,
-                          fontSize: '28px',
-                          fontWeight: 900,
-                          letterSpacing: '-0.05em'
-                        }}
-                      >
-                        P
-                      </text>
-                    ) : (
-                      <text
-                        x={center}
-                        y={center}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        className={`text-4xl font-black transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
-                        style={{ 
-                            transform: 'rotate(90deg)', 
-                            transformOrigin: `${center}px ${center}px`,
-                            letterSpacing: '-0.05em'
-                        }}
-                      >
-                        {todayOperationCount}
-                      </text>
-                    )}
-                </svg>
-            </div>
-            
-            {room.estimatedEndTime && shouldShowTime && (
-                <div className="-mt-1 text-center">
-                    <div className="flex items-center gap-1.5 justify-center">
-                      <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
-                      <span className="text-lg font-mono font-bold tracking-tight" style={{ color: themeColor }}>
-                          {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                </div>
-            )}
-        </div>
-
-        {/* Bottom Info */}
-        <div className="w-full space-y-3 shrink-0">
-          <div className="w-full text-center">
-            <p className={`text-[10px] font-black tracking-[0.2em] truncate uppercase py-2 px-4 rounded-full border transition-all inline-block w-full
-              ${room.isEmergency 
-                ? 'bg-red-600 text-white border-red-500' 
-                : (room.isLocked 
-                    ? 'bg-amber-500 text-white border-amber-600' 
-                    : 'bg-white/5 border-white/5 text-white/50')}
-            `}>
-              {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
-            </p>
+          <div className="relative flex items-center justify-center">
+            <svg className="w-24 h-24 overflow-visible" style={{ transform: 'rotate(-90deg)' }}>
+              {/* Background circle */}
+              <circle 
+                cx={center} cy={center} r={radius} 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1" 
+                className="text-border-subtle" 
+              />
+              {/* Progress circle */}
+              <circle 
+                cx={center} cy={center} r={radius} 
+                fill="none"
+                stroke={themeColor} 
+                strokeWidth={strokeWidth} 
+                strokeLinecap="round"
+                strokeDasharray={strokeDasharray}
+                strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
+                className="transition-all duration-500"
+                style={{ filter: `drop-shadow(0 0 8px ${themeColor}66)` }}
+              />
+              {/* Center text */}
+              <text
+                x={center}
+                y={center}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="font-bold transition-colors"
+                style={{ 
+                  transform: 'rotate(90deg)', 
+                  transformOrigin: `${center}px ${center}px`,
+                  fontSize: room.isPaused ? '24px' : '28px',
+                  fill: room.isPaused ? '#06B6D4' : 'white',
+                  fontWeight: 700,
+                }}
+              >
+                {room.isPaused ? 'P' : todayOperationCount}
+              </text>
+            </svg>
           </div>
           
-            <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
+          {/* Estimated end time */}
+          {room.estimatedEndTime && shouldShowTime && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
+              <span className="text-sm font-mono font-semibold" style={{ color: themeColor }}>
+                {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Status Badge */}
+        <div className="w-full mb-3">
+          <div className={`
+            w-full py-2 px-3 rounded-xl text-center text-[10px] font-semibold uppercase tracking-wider
+            ${room.isEmergency 
+              ? 'bg-danger text-white' 
+              : room.isLocked 
+                ? 'bg-warning text-black' 
+                : 'bg-surface-2 text-text-secondary border border-border-subtle'}
           `}>
-            {/* Left: avatar + names */}
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className={`w-9 h-9 rounded-xl border overflow-hidden shrink-0 
-                ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : (room.isPaused ? 'border-cyan-500/30' : 'border-white/5'))}
-              `}>
-                <img src={`https://i.pravatar.cc/150?u=${room?.staff?.doctor?.name || 'default'}`} alt="Dr" className="w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <div className="min-w-0 flex flex-col gap-0.5">
-                <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors
-                  ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
-                `}>
-                  {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
-                </span>
-                {room?.staff?.nurse?.name && (
-                  <span className={`text-[9px] font-medium uppercase tracking-tight truncate transition-colors
-                    ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
-                  `}>
-                    {room?.staff?.nurse?.name?.split(' ').pop()}
-                  </span>
-                )}
-              </div>
+            {room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamceno' : currentStep.title}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-border-subtle gap-2">
+          {/* Staff info */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border-subtle overflow-hidden shrink-0">
+              <img 
+                src={`https://i.pravatar.cc/150?u=${room?.staff?.doctor?.name || 'default'}`} 
+                alt="" 
+                className="w-full h-full object-cover grayscale opacity-60 group-hover:opacity-80 transition-opacity" 
+              />
             </div>
-
-            {/* Right: action buttons / status badges */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              {room.isSeptic && (
-                <div className="p-1.5 bg-red-500/10 rounded-xl border border-red-500/20 backdrop-blur-md">
-                  <Biohazard className="w-3.5 h-3.5 text-red-500/70" />
-                </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-text-secondary truncate">
+                {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
+              </p>
+              {room?.staff?.nurse?.name && (
+                <p className="text-[9px] text-text-muted truncate">
+                  {room?.staff?.nurse?.name?.split(' ').pop()}
+                </p>
               )}
-
-              {/* Patient called indicator */}
-              {room.patientCalledAt && !room.patientArrivedAt && (
-                <div className="p-2 rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">
-                  <Phone className="w-4 h-4 text-blue-400" />
-                </div>
-              )}
-
-              {/* Patient arrived indicator */}
-              {room.patientArrivedAt && (
-                <div className="p-2 rounded-xl border transition-all backdrop-blur-md bg-green-500/20 border-green-400/40">
-                  <BedDouble className="w-4 h-4 text-green-400" />
-                </div>
-              )}
-
-              {/* Emergency button */}
-              <button
-                onClick={(e) => handleAction(e, onEmergency)}
-                className={`p-2 rounded-xl border transition-all backdrop-blur-md
-                  ${room.isEmergency
-                    ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
-                    : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
-                `}
-              >
-                <AlertCircle className="w-4 h-4" />
-              </button>
-
-              {/* Lock button */}
-              <button
-                onClick={(e) => handleAction(e, onLock)}
-                className={`p-2 rounded-xl border transition-all backdrop-blur-md
-                  ${room.isLocked
-                    ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
-                    : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
-                `}
-              >
-                <Lock className="w-4 h-4" />
-              </button>
             </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1 shrink-0">
+            {room.isSeptic && (
+              <div className="p-1.5 bg-danger/10 rounded-lg border border-danger/20">
+                <Biohazard className="w-3.5 h-3.5 text-danger/70" />
+              </div>
+            )}
+
+            {room.patientCalledAt && !room.patientArrivedAt && (
+              <div className="p-1.5 bg-info/10 rounded-lg border border-info/30">
+                <Phone className="w-3.5 h-3.5 text-info" />
+              </div>
+            )}
+
+            {room.patientArrivedAt && (
+              <div className="p-1.5 bg-success/10 rounded-lg border border-success/30">
+                <BedDouble className="w-3.5 h-3.5 text-success" />
+              </div>
+            )}
+
+            <button
+              onClick={(e) => handleAction(e, onEmergency)}
+              className={`
+                p-1.5 rounded-lg border transition-all duration-200
+                ${room.isEmergency
+                  ? 'bg-danger text-white border-danger shadow-lg shadow-danger/30'
+                  : 'bg-surface-2 border-border-subtle text-text-muted hover:text-danger hover:border-danger/30 hover:bg-danger/5'}
+              `}
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={(e) => handleAction(e, onLock)}
+              className={`
+                p-1.5 rounded-lg border transition-all duration-200
+                ${room.isLocked
+                  ? 'bg-warning text-black border-warning shadow-lg shadow-warning/30'
+                  : 'bg-surface-2 border-border-subtle text-text-muted hover:text-warning hover:border-warning/30 hover:bg-warning/5'}
+              `}
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
