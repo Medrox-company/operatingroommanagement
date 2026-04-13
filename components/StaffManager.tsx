@@ -538,87 +538,106 @@ export default function StaffManager() {
         </div>
       ) : (
         /* Staff Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {filteredStaff.map((member) => {
             const skillLevel = member.skill_level as SkillLevel | undefined;
             const skillMeta = skillLevel ? SKILL_LEVELS[skillLevel] : null;
             const isSelected = selectedStaffId === member.id;
-            const roleIcon = member.role === 'DOCTOR' ? <Stethoscope className="w-5 h-5 text-violet-400" /> : <Heart className="w-5 h-5 text-emerald-400" />;
-            
+
+            // Unified icon box style
+            const iconBox = "w-7 h-7 rounded-lg border backdrop-blur-sm flex items-center justify-center flex-shrink-0";
+            const iconSize = "w-3.5 h-3.5";
+
             return (
               <motion.button
                 key={member.id}
                 onClick={() => setSelectedStaffId(member.id)}
-                className={`p-4 rounded-2xl border transition-all text-left group ${
+                className={`px-3 py-3 rounded-xl border transition-all text-left group ${
                   isSelected
-                    ? 'bg-[#00D8C1]/10 border-[#00D8C1]/40'
-                    : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
-                } ${!member.is_active ? 'opacity-50' : ''}`}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
+                    ? 'bg-[#00D8C1]/10 border-[#00D8C1]/30'
+                    : 'bg-white/[0.02] border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04]'
+                } ${!member.is_active ? 'opacity-40' : ''}`}
+                whileHover={{ scale: 1.005 }}
+                whileTap={{ scale: 0.995 }}
               >
-                <div className="flex items-start gap-3">
-                  {/* Skill Level Badge */}
-                  {skillMeta && (
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs border ${skillMeta.bgColor} ${skillMeta.color}`}>
-                      {skillMeta.label}
-                    </div>
-                  )}
-                  
-                  {/* Name + Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={`font-semibold truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white'}`}>
-                        {member.name}
-                      </p>
-                      {member.is_recommended && <Star className="w-4 h-4 text-yellow-400 flex-shrink-0" />}
-                    </div>
-                    
-                    {/* Metadata Row */}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {/* Role Badge */}
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-white/5 text-white/60">
-                        {member.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
-                      </span>
-                      
-                      {/* Availability */}
-                      {member.availability !== undefined && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
-                          member.availability === 100 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                          member.availability >= 50 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                          'bg-red-500/20 text-red-300 border-red-500/30'
-                        }`}>
-                          <Percent className="w-3 h-3" />
-                          {member.availability}%
-                        </span>
-                      )}
-                      
-                      {/* External Badge */}
-                      {member.is_external && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-300 border-orange-500/30 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          Externí
-                        </span>
-                      )}
-                      
-                      {/* Sick Leave Badge */}
-                      {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-500/20 text-red-300 border-red-500/30">
-                          PN: {member.sick_leave_days}d
-                        </span>
-                      )}
-                      
-                      {/* Vacation Badge */}
-                      {member.vacation_days !== undefined && member.vacation_days > 0 && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-300 border-blue-500/30">
-                          D: {member.vacation_days}d
-                        </span>
-                      )}
-                    </div>
+                {/* Single row: Role icon + Name + capability icons + active status */}
+                <div className="flex items-center gap-2">
+                  {/* Role icon */}
+                  <div className={`${iconBox} ${
+                    member.role === 'DOCTOR'
+                      ? 'bg-violet-500/10 border-violet-500/20'
+                      : 'bg-emerald-500/10 border-emerald-500/20'
+                  }`}>
+                    {member.role === 'DOCTOR'
+                      ? <Stethoscope className={`${iconSize} text-violet-400`} />
+                      : <Heart className={`${iconSize} text-emerald-400`} />}
                   </div>
 
-                  {/* Status indicator */}
-                  <div className={`flex-shrink-0 w-3 h-3 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  {/* Name + role label */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-medium text-sm truncate leading-tight ${isSelected ? 'text-[#00D8C1]' : 'text-white/90'}`}>
+                      {member.name}
+                    </p>
+                    <p className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">
+                      {member.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
+                    </p>
+                  </div>
+
+                  {/* Capability icons - same row as name */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Skill Level */}
+                    {skillMeta && (
+                      <div className={`${iconBox} ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
+                        <span className={`text-[9px] font-black leading-none ${skillMeta.color}`}>{skillMeta.label}</span>
+                      </div>
+                    )}
+
+                    {/* Recommended */}
+                    {member.is_recommended && (
+                      <div className={`${iconBox} bg-yellow-500/10 border-yellow-500/20`} title="Doporuceny">
+                        <Star className={`${iconSize} text-yellow-400`} />
+                      </div>
+                    )}
+
+                    {/* External */}
+                    {member.is_external && (
+                      <div className={`${iconBox} bg-orange-500/10 border-orange-500/20`} title="Externi">
+                        <MapPin className={`${iconSize} text-orange-400`} />
+                      </div>
+                    )}
+
+                    {/* Availability < 100% */}
+                    {member.availability !== undefined && member.availability < 100 && (
+                      <div className={`${iconBox} ${
+                        member.availability >= 50 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'
+                      }`} title={`Dostupnost: ${member.availability}%`}>
+                        <Percent className={`${iconSize} ${member.availability >= 50 ? 'text-yellow-400' : 'text-red-400'}`} />
+                      </div>
+                    )}
+
+                    {/* Sick Leave */}
+                    {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
+                      <div className={`${iconBox} bg-red-500/10 border-red-500/20`} title={`PN: ${member.sick_leave_days} dni`}>
+                        <Activity className={`${iconSize} text-red-400`} />
+                      </div>
+                    )}
+
+                    {/* Vacation */}
+                    {member.vacation_days !== undefined && member.vacation_days > 0 && (
+                      <div className={`${iconBox} bg-blue-500/10 border-blue-500/20`} title={`Dovolena: ${member.vacation_days} dni`}>
+                        <UserPlus className={`${iconSize} text-blue-400`} />
+                      </div>
+                    )}
+
+                    {/* Active/Inactive status */}
+                    <div className={`${iconBox} ${
+                      member.is_active
+                        ? 'bg-emerald-500/10 border-emerald-500/20'
+                        : 'bg-red-500/10 border-red-500/20'
+                    }`} title={member.is_active ? 'Aktivni' : 'Neaktivni'}>
+                      <div className={`w-2 h-2 rounded-full ${member.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    </div>
+                  </div>
                 </div>
               </motion.button>
             );

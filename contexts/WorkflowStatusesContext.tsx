@@ -121,11 +121,21 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
 
   const updateStatus = useCallback(async (id: string, updates: Partial<WorkflowStatus>) => {
     // IMMEDIATELY update local state for responsive UI
-    setStatuses(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+    // Make sure both color and accent_color are updated together
+    const localUpdates = { ...updates };
+    if (updates.color !== undefined) {
+      localUpdates.accent_color = updates.color;
+    }
+    if (updates.accent_color !== undefined) {
+      localUpdates.color = updates.accent_color;
+    }
+    setStatuses(prev => prev.map(s => s.id === id ? { ...s, ...localUpdates } : s));
 
     try {
       const dbUpdates: Record<string, unknown> = {};
+      // Handle both color and accent_color for DB update
       if (updates.color !== undefined) dbUpdates.accent_color = updates.color;
+      if (updates.accent_color !== undefined) dbUpdates.accent_color = updates.accent_color;
       if (updates.is_active !== undefined) dbUpdates.is_active = updates.is_active;
       if (updates.count_in_statistics !== undefined) dbUpdates.include_in_statistics = updates.count_in_statistics;
       if (updates.default_duration !== undefined) dbUpdates.default_duration_minutes = updates.default_duration;
@@ -133,6 +143,8 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (updates.show_in_room_detail !== undefined) dbUpdates.show_in_room_detail = updates.show_in_room_detail;
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
+
+      console.log('[v0] Updating status in DB:', id, dbUpdates);
 
       const { error: updateError } = await supabase
         .from('workflow_statuses')
