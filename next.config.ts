@@ -7,22 +7,6 @@ const nextConfig: NextConfig = {
     '*.vusercontent.net',
     '*.vercel.app',
   ],
-  
-  // Performance optimizations
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
-  },
-  
-  // Optimize images
-  images: {
-    formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60,
-  },
-  
-  // Experimental features for better performance
-  experimental: {
-    optimizeCss: true,
-  },
 }
 
 export default nextConfig

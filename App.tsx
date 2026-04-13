@@ -1,33 +1,24 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
+import RoomDetail from './components/RoomDetail';
+import TimelineModule from './components/TimelineModule';
+import StatisticsModule from './components/StatisticsModule';
+import StaffManager from './components/StaffManager';
+import SettingsPage from './components/SettingsPage';
+import AdminModule from './components/AdminModule';
+import PlaceholderView from './components/PlaceholderView';
+import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
-import { Activity, LayoutGrid, Shield, Loader2 } from 'lucide-react';
+import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
-
-// Lazy load heavy components for faster initial load
-const RoomDetail = lazy(() => import('./components/RoomDetail'));
-const TimelineModule = lazy(() => import('./components/TimelineModule'));
-const StatisticsModule = lazy(() => import('./components/StatisticsModule'));
-const StaffManager = lazy(() => import('./components/StaffManager'));
-const SettingsPage = lazy(() => import('./components/SettingsPage'));
-const AdminModule = lazy(() => import('./components/AdminModule'));
-const PlaceholderView = lazy(() => import('./components/PlaceholderView'));
-const AnimatedCounter = lazy(() => import('./components/AnimatedCounter'));
-
-// Loading spinner for lazy components
-const LazyLoader = () => (
-  <div className="flex items-center justify-center w-full h-full min-h-[200px]">
-    <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-  </div>
-);
 
 // Main App Content - Operating Rooms Management System
 const DEFAULT_BG_SETTINGS: BackgroundSettings = {
@@ -490,18 +481,16 @@ const AppContent: React.FC = () => {
             {/* Dashboard — room detail */}
             {currentView === 'dashboard' && selectedRoom && (
               <div className="absolute inset-0 z-50">
-                <Suspense fallback={<LazyLoader />}>
-                  <RoomDetail
-                    room={selectedRoom}
-                    allRooms={rooms}
-                    onClose={() => setSelectedRoomId(null)}
-                    onStepChange={(index, stepColor) => updateRoomStep(selectedRoom.id, index, stepColor)}
-                    onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
-                    onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
-                    onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
-                    onPatientStatusChange={(calledAt, arrivedAt) => handlePatientStatusChange(selectedRoom.id, calledAt, arrivedAt)}
-                  />
-                </Suspense>
+                <RoomDetail
+                  room={selectedRoom}
+                  allRooms={rooms}
+                  onClose={() => setSelectedRoomId(null)}
+                  onStepChange={(index, stepColor) => updateRoomStep(selectedRoom.id, index, stepColor)}
+                  onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
+                  onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
+                  onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
+                  onPatientStatusChange={(calledAt, arrivedAt) => handlePatientStatusChange(selectedRoom.id, calledAt, arrivedAt)}
+                />
               </div>
             )}
 
@@ -539,9 +528,7 @@ const AppContent: React.FC = () => {
                             <stat.icon className={`w-4 h-4 ${stat.color}`} />
                             <p className="text-[9px] font-black uppercase tracking-[0.2em]">{stat.label}</p>
                           </div>
-                          <Suspense fallback={<span className="text-5xl font-black">{stat.value}</span>}>
-                            <AnimatedCounter to={stat.value} />
-                          </Suspense>
+                          <AnimatedCounter to={stat.value} />
                         </div>
                       ))}
                     </div>
@@ -566,9 +553,7 @@ const AppContent: React.FC = () => {
             {/* Timeline */}
             {currentView === 'timeline' && (
               <div className="w-full h-full overflow-hidden">
-                <Suspense fallback={<LazyLoader />}>
-                  <TimelineModule rooms={rooms} />
-                </Suspense>
+                <TimelineModule rooms={rooms} />
               </div>
             )}
 
@@ -576,9 +561,7 @@ const AppContent: React.FC = () => {
             {currentView === 'statistics' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
                 <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
-                  <Suspense fallback={<LazyLoader />}>
-                    <StatisticsModule rooms={rooms} />
-                  </Suspense>
+                  <StatisticsModule rooms={rooms} />
                 </div>
               </div>
             )}
@@ -587,9 +570,7 @@ const AppContent: React.FC = () => {
             {currentView === 'staff' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
                 <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
-                  <Suspense fallback={<LazyLoader />}>
-                    <StaffManager />
-                  </Suspense>
+                  <StaffManager />
                 </div>
               </div>
             )}
@@ -597,35 +578,29 @@ const AppContent: React.FC = () => {
             {/* Alerts */}
             {currentView === 'alerts' && (
               <div className="w-full h-full">
-                <Suspense fallback={<LazyLoader />}>
-                  <PlaceholderView
-                    title="Upozornění"
-                    description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
-                  />
-                </Suspense>
+                <PlaceholderView
+                  title="Upozornění"
+                  description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
+                />
               </div>
             )}
 
             {/* Settings */}
             {currentView === 'settings' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <Suspense fallback={<LazyLoader />}>
-                  <SettingsPage 
-                    rooms={rooms} 
-                    onRoomsChange={setRooms} 
-                    onScheduleUpdate={handleUpdateWeeklySchedule}
-                    resetTrigger={settingsResetTrigger} 
-                  />
-                </Suspense>
+                <SettingsPage 
+                  rooms={rooms} 
+                  onRoomsChange={setRooms} 
+                  onScheduleUpdate={handleUpdateWeeklySchedule}
+                  resetTrigger={settingsResetTrigger} 
+                />
               </div>
             )}
 
             {/* Admin - only for admins */}
             {currentView === 'admin' && isAdmin && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <Suspense fallback={<LazyLoader />}>
-                  <AdminModule onClose={() => setCurrentView('dashboard')} />
-                </Suspense>
+                <AdminModule onClose={() => setCurrentView('dashboard')} />
               </div>
             )}
         </main>

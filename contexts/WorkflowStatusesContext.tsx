@@ -144,6 +144,8 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
 
+      console.log('[v0] Updating status in DB:', id, dbUpdates);
+
       const { error: updateError } = await supabase
         .from('workflow_statuses')
         .update(dbUpdates)

@@ -1,25 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { OperatingRoom, RoomStatus, WeeklySchedule, SkillLevel } from '../types';
 
-// Simple in-memory cache for frequently accessed data
-const cache = {
-  staff: null as Map<string, DBStaff> | null,
-  staffTimestamp: 0,
-  STAFF_TTL: 60000, // 1 minute cache for staff data
-};
-
-function getCachedStaff(): Map<string, DBStaff> | null {
-  if (cache.staff && Date.now() - cache.staffTimestamp < cache.STAFF_TTL) {
-    return cache.staff;
-  }
-  return null;
-}
-
-function setCachedStaff(staffMap: Map<string, DBStaff>) {
-  cache.staff = staffMap;
-  cache.staffTimestamp = Date.now();
-}
-
 // Network resilience: Retry wrapper for transient failures
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
@@ -229,28 +210,19 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
   }
 
   try {
-    // Check if we have cached staff data
-    let staffMap = getCachedStaff();
-    
-    // Fetch rooms (always) and staff (only if not cached) in parallel
-    const roomsPromise = supabase
-      .from('operating_rooms')
-      .select('*, completed_operations')
-      .order('sort_order', { ascending: true, nullsFirst: false });
-    
-    const staffPromise = staffMap ? Promise.resolve(null) : supabase.from('staff').select('*');
-    
-    const [roomsRes, staffRes] = await Promise.all([roomsPromise, staffPromise]);
+    // Fetch rooms and staff data in parallel
+    // Explicitly select columns including completed_operations JSONB
+    const [roomsRes, staffRes] = await Promise.all([
+      supabase.from('operating_rooms').select('*, completed_operations').order('name'),
+      supabase.from('staff').select('*'),
+    ]);
 
     if (roomsRes.error) throw roomsRes.error;
     if (!roomsRes.data || roomsRes.data.length === 0) return null;
 
-    // Create staff lookup map (from cache or fresh data)
-    if (!staffMap) {
-      staffMap = new Map<string, DBStaff>();
-      (staffRes?.data || []).forEach((s: DBStaff) => staffMap!.set(s.id, s));
-      setCachedStaff(staffMap);
-    }
+    // Create staff lookup map
+    const staffMap = new Map<string, DBStaff>();
+    (staffRes.data || []).forEach((s: DBStaff) => staffMap.set(s.id, s));
 
     // Empty maps for removed tables
     const patientMap = new Map<string, DBPatient>();
