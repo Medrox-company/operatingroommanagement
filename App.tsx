@@ -130,7 +130,7 @@ const AppContent: React.FC = () => {
 
   // Track recent local updates to ignore duplicate realtime events (prevents flickering)
   const recentLocalUpdates = useRef<Map<string, number>>(new Map());
-  const DEBOUNCE_MS = 3000; // Ignore realtime updates within 3s of local update (increased for v0 sandbox stability)
+  const DEBOUNCE_MS = 2000; // Ignore realtime updates within 2s of local update (increased for stability)
   
   // Cleanup old entries from recentLocalUpdates to prevent memory growth
   useEffect(() => {
@@ -148,44 +148,29 @@ const AppContent: React.FC = () => {
 
   // Subscribe to real-time updates with granular room updates
   useEffect(() => {
-    let isMounted = true;
-    
     const unsubscribe = subscribeToOperatingRooms(
       // Full refresh callback (for INSERT/DELETE)
       async () => {
-        if (!isMounted) return;
-        try {
-          const dbRooms = await fetchOperatingRooms();
-          if (isMounted && dbRooms && dbRooms.length > 0) {
-            setRooms(dbRooms);
-          }
-        } catch (err) {
-          console.error('[v0] Error in realtime full refresh:', err);
+        const dbRooms = await fetchOperatingRooms();
+        if (dbRooms && dbRooms.length > 0) {
+          setRooms(dbRooms);
         }
       },
       // Granular update callback (for UPDATE - instant sync)
       (roomId, dbChanges) => {
-        if (!isMounted) return;
-        try {
-          // Skip if we recently made a local update to this room (prevents double-render flickering)
-          const lastLocalUpdate = recentLocalUpdates.current.get(roomId);
-          if (lastLocalUpdate && Date.now() - lastLocalUpdate < DEBOUNCE_MS) {
-            return; // Ignore this realtime update - we already have the data from optimistic update
-          }
-          
-          const appChanges = transformSingleRoom(dbChanges);
-          if (appChanges && isMounted) {
-            setRooms(prev => prev.map(room =>
-              room.id === roomId ? { ...room, ...appChanges } : room
-            ));
-          }
-        } catch (err) {
-          console.error('[v0] Error in realtime granular update:', err);
+        // Skip if we recently made a local update to this room (prevents double-render flickering)
+        const lastLocalUpdate = recentLocalUpdates.current.get(roomId);
+        if (lastLocalUpdate && Date.now() - lastLocalUpdate < DEBOUNCE_MS) {
+          return; // Ignore this realtime update - we already have the data from optimistic update
         }
+        
+        const appChanges = transformSingleRoom(dbChanges);
+        setRooms(prev => prev.map(room =>
+          room.id === roomId ? { ...room, ...appChanges } : room
+        ));
       }
     );
     return () => {
-      isMounted = false;
       if (unsubscribe) unsubscribe();
     };
   }, []);
