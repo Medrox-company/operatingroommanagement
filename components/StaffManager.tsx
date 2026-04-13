@@ -538,17 +538,21 @@ export default function StaffManager() {
         </div>
       ) : (
         /* Staff Grid */
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {filteredStaff.map((member) => {
             const skillLevel = member.skill_level as SkillLevel | undefined;
             const skillMeta = skillLevel ? SKILL_LEVELS[skillLevel] : null;
             const isSelected = selectedStaffId === member.id;
-            
+
+            // Unified icon box style
+            const iconBox = "w-7 h-7 rounded-lg border backdrop-blur-sm flex items-center justify-center flex-shrink-0";
+            const iconSize = "w-3.5 h-3.5";
+
             return (
               <motion.button
                 key={member.id}
                 onClick={() => setSelectedStaffId(member.id)}
-                className={`px-4 py-3 rounded-xl border transition-all text-left group ${
+                className={`px-3 py-3 rounded-xl border transition-all text-left group ${
                   isSelected
                     ? 'bg-[#00D8C1]/10 border-[#00D8C1]/30'
                     : 'bg-white/[0.02] border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04]'
@@ -556,16 +560,17 @@ export default function StaffManager() {
                 whileHover={{ scale: 1.005 }}
                 whileTap={{ scale: 0.995 }}
               >
-                {/* Radek 1: Ikona role + Jmeno + Status aktivni */}
-                <div className="flex items-center gap-3">
-                  <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center border backdrop-blur-sm ${
+                {/* Row 1: Role icon + Name + Active status */}
+                <div className="flex items-center gap-2">
+                  {/* Role icon */}
+                  <div className={`${iconBox} ${
                     member.role === 'DOCTOR'
                       ? 'bg-violet-500/10 border-violet-500/20'
                       : 'bg-emerald-500/10 border-emerald-500/20'
                   }`}>
                     {member.role === 'DOCTOR'
-                      ? <Stethoscope className="w-3.5 h-3.5 text-violet-400" />
-                      : <Heart className="w-3.5 h-3.5 text-emerald-400" />}
+                      ? <Stethoscope className={`${iconSize} text-violet-400`} />
+                      : <Heart className={`${iconSize} text-emerald-400`} />}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -577,8 +582,8 @@ export default function StaffManager() {
                     </p>
                   </div>
 
-                  {/* Status aktivni/neaktivni vzdy vpravo nahore */}
-                  <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center border backdrop-blur-sm ${
+                  {/* Active/Inactive status */}
+                  <div className={`${iconBox} ${
                     member.is_active
                       ? 'bg-emerald-500/10 border-emerald-500/20'
                       : 'bg-red-500/10 border-red-500/20'
@@ -587,49 +592,49 @@ export default function StaffManager() {
                   </div>
                 </div>
 
-                {/* Radek 2: Vsechny ikony schopnosti */}
-                <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                {/* Row 2: All capability icons - same size squares */}
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                   {/* Skill Level */}
                   {skillMeta && (
-                    <div className={`w-7 h-7 rounded-lg border backdrop-blur-sm flex items-center justify-center ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
+                    <div className={`${iconBox} ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
                       <span className={`text-[9px] font-black leading-none ${skillMeta.color}`}>{skillMeta.label}</span>
                     </div>
                   )}
 
                   {/* Recommended */}
                   {member.is_recommended && (
-                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-yellow-500/10 border-yellow-500/20 flex items-center justify-center" title="Doporuceny">
-                      <Star className="w-3.5 h-3.5 text-yellow-400" />
+                    <div className={`${iconBox} bg-yellow-500/10 border-yellow-500/20`} title="Doporuceny">
+                      <Star className={`${iconSize} text-yellow-400`} />
                     </div>
                   )}
 
                   {/* External */}
                   {member.is_external && (
-                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-orange-500/10 border-orange-500/20 flex items-center justify-center" title="Externi">
-                      <MapPin className="w-3.5 h-3.5 text-orange-400" />
+                    <div className={`${iconBox} bg-orange-500/10 border-orange-500/20`} title="Externi">
+                      <MapPin className={`${iconSize} text-orange-400`} />
                     </div>
                   )}
 
-                  {/* Availability */}
+                  {/* Availability < 100% */}
                   {member.availability !== undefined && member.availability < 100 && (
-                    <div className={`w-7 h-7 rounded-lg border backdrop-blur-sm flex items-center justify-center ${
+                    <div className={`${iconBox} ${
                       member.availability >= 50 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'
                     }`} title={`Dostupnost: ${member.availability}%`}>
-                      <Percent className={`w-3.5 h-3.5 ${member.availability >= 50 ? 'text-yellow-400' : 'text-red-400'}`} />
+                      <Percent className={`${iconSize} ${member.availability >= 50 ? 'text-yellow-400' : 'text-red-400'}`} />
                     </div>
                   )}
 
                   {/* Sick Leave */}
                   {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
-                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-red-500/10 border-red-500/20 flex items-center justify-center" title={`PN: ${member.sick_leave_days} dni`}>
-                      <Activity className="w-3.5 h-3.5 text-red-400" />
+                    <div className={`${iconBox} bg-red-500/10 border-red-500/20`} title={`PN: ${member.sick_leave_days} dni`}>
+                      <Activity className={`${iconSize} text-red-400`} />
                     </div>
                   )}
 
                   {/* Vacation */}
                   {member.vacation_days !== undefined && member.vacation_days > 0 && (
-                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-blue-500/10 border-blue-500/20 flex items-center justify-center" title={`Dovolena: ${member.vacation_days} dni`}>
-                      <UserPlus className="w-3.5 h-3.5 text-blue-400" />
+                    <div className={`${iconBox} bg-blue-500/10 border-blue-500/20`} title={`Dovolena: ${member.vacation_days} dni`}>
+                      <UserPlus className={`${iconSize} text-blue-400`} />
                     </div>
                   )}
                 </div>
