@@ -579,7 +579,7 @@ export default function StaffManager() {
                       {member.name}
                     </p>
                     <p className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">
-                      {member.role === 'DOCTOR' ? 'Lekar' : 'Sestra'}
+                      {member.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
                     </p>
                   </div>
 
