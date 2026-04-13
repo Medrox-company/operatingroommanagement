@@ -673,59 +673,31 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             {/* Staff Section */}
             <div className="grid grid-cols-2 gap-2">
               {/* Doctor */}
-              <div className="relative group">
-                <button
-                  onClick={() => {
-                    setStaffPickerRole('doctor');
-                    setStaffPickerOpen(true);
-                  }}
-                  className="w-full flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                    <Stethoscope className="w-4 h-4 text-violet-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] text-white/40 uppercase tracking-wide">Lékař</p>
-                    <p className="text-xs font-medium text-white/80 truncate">{room?.staff?.doctor?.name || 'Nepřiřazen'}</p>
-                  </div>
-                </button>
-                {room?.staff?.doctor?.name && (
-                  <button
-                    onClick={() => onStaffChange?.('doctor', '', '')}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500/80 border border-red-400/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
-                    title="Odhlásit lékaře ze sálu"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => { setStaffPickerRole('doctor'); setStaffPickerOpen(true); }}
+                className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left w-full"
+              >
+                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                  <Stethoscope className="w-4 h-4 text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wide">Lékař</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room?.staff?.doctor?.name || 'Nepřiřazen'}</p>
+                </div>
+              </button>
               {/* Nurse */}
-              <div className="relative group">
-                <button
-                  onClick={() => {
-                    setStaffPickerRole('nurse');
-                    setStaffPickerOpen(true);
-                  }}
-                  className="w-full flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <Heart className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] text-white/40 uppercase tracking-wide">Sestra</p>
-                    <p className="text-xs font-medium text-white/80 truncate">{room?.staff?.nurse?.name || 'Nepřiřazena'}</p>
-                  </div>
-                </button>
-                {room?.staff?.nurse?.name && (
-                  <button
-                    onClick={() => onStaffChange?.('nurse', '', '')}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500/80 border border-red-400/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
-                    title="Odhlásit sestru ze sálu"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => { setStaffPickerRole('nurse'); setStaffPickerOpen(true); }}
+                className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-[0.98] text-left w-full"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <Heart className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wide">Sestra</p>
+                  <p className="text-xs font-medium text-white/80 truncate">{room?.staff?.nurse?.name || 'Nepřiřazena'}</p>
+                </div>
+              </button>
             </div>
 
           </div>
@@ -826,59 +798,31 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       {/* Staff Names - Top Right next to close button (Desktop only) */}
       <div className="hidden lg:flex absolute top-8 right-40 flex-row gap-3 h-24 z-50">
         {/* Doctor Button */}
-        <div className="relative group">
-          <button
-            onClick={() => {
-              setStaffPickerRole('doctor');
-              setStaffPickerOpen(true);
-            }}
-            className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
-          >
-            <div className="flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-violet-400" />
-              <span className="text-sm font-bold text-violet-300">{room?.staff?.doctor?.name || 'Vybrat lékaře'}</span>
-            </div>
-            {room?.staff?.doctor?.name && (
-              <p className="text-[9px] text-white/30 uppercase tracking-wider">Kliknout pro změnu</p>
-            )}
-          </button>
-          {room?.staff?.doctor?.name && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onStaffChange?.('doctor', '', ''); }}
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500/80 border border-red-400/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:scale-110 z-10"
-              title="Odhlásit lékaře ze sálu"
-            >
-              <X className="w-3.5 h-3.5 text-white" />
-            </button>
-          )}
-        </div>
+        <button
+          onClick={() => { setStaffPickerRole('doctor'); setStaffPickerOpen(true); }}
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
+        >
+          <div className="flex items-center gap-2">
+            <Stethoscope className="w-5 h-5 text-violet-400" />
+            <span className="text-sm font-bold text-violet-300">{room?.staff?.doctor?.name || 'Vybrat lékaře'}</span>
+          </div>
+          <p className="text-[9px] text-white/25 uppercase tracking-wider text-left">
+            {room?.staff?.doctor?.name ? 'Kliknout pro správu' : 'Kliknout pro přiřazení'}
+          </p>
+        </button>
         {/* Nurse Button */}
-        <div className="relative group">
-          <button
-            onClick={() => {
-              setStaffPickerRole('nurse');
-              setStaffPickerOpen(true);
-            }}
-            className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
-          >
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-emerald-400" />
-              <span className="text-sm font-bold text-emerald-300">{room?.staff?.nurse?.name || 'Vybrat sestru'}</span>
-            </div>
-            {room?.staff?.nurse?.name && (
-              <p className="text-[9px] text-white/30 uppercase tracking-wider">Kliknout pro změnu</p>
-            )}
-          </button>
-          {room?.staff?.nurse?.name && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onStaffChange?.('nurse', '', ''); }}
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500/80 border border-red-400/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:scale-110 z-10"
-              title="Odhlásit sestru ze sálu"
-            >
-              <X className="w-3.5 h-3.5 text-white" />
-            </button>
-          )}
-        </div>
+        <button
+          onClick={() => { setStaffPickerRole('nurse'); setStaffPickerOpen(true); }}
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
+        >
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5 text-emerald-400" />
+            <span className="text-sm font-bold text-emerald-300">{room?.staff?.nurse?.name || 'Vybrat sestru'}</span>
+          </div>
+          <p className="text-[9px] text-white/25 uppercase tracking-wider text-left">
+            {room?.staff?.nurse?.name ? 'Kliknout pro správu' : 'Kliknout pro přiřazení'}
+          </p>
+        </button>
       </div>
 
 
@@ -1392,8 +1336,15 @@ const prevStep = activeDbStatuses.length > 0
             onStaffChange(staffPickerRole, staffId, staffName);
           }
         }}
+        onUnassign={() => {
+          if (onStaffChange) {
+            onStaffChange(staffPickerRole, '', '');
+          }
+        }}
+        currentStaffId={staffPickerRole === 'doctor' ? room?.staff?.doctor?.id : room?.staff?.nurse?.id}
+        currentStaffName={staffPickerRole === 'doctor' ? room?.staff?.doctor?.name : room?.staff?.nurse?.name}
         filterRole={staffPickerRole === 'doctor' ? 'DOCTOR' : 'NURSE'}
-        title={staffPickerRole === 'doctor' ? 'Vybrat lékaře' : 'Vybrat sestru'}
+        title={staffPickerRole === 'doctor' ? 'Lékař — výběr a správa' : 'Sestra — výběr a správa'}
         allRooms={allRooms}
         currentRoomId={room.id}
       />
