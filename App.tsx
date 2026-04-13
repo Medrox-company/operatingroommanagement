@@ -371,26 +371,28 @@ const AppContent: React.FC = () => {
 
   const handleStaffChange = useCallback(async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
+    const isUnassigning = !staffId && !staffName;
+
     // Update local state
     setRooms(prev => prev.map(room => {
       if (room.id !== roomId) return room;
       
       const updatedStaff = { ...room.staff };
       if (role === 'doctor') {
-        updatedStaff.doctor = { name: staffName, role: 'DOCTOR' };
+        updatedStaff.doctor = isUnassigning ? { name: null, role: 'DOCTOR' } : { name: staffName, role: 'DOCTOR' };
       } else if (role === 'nurse') {
-        updatedStaff.nurse = { name: staffName, role: 'NURSE' };
+        updatedStaff.nurse = isUnassigning ? { name: null, role: 'NURSE' } : { name: staffName, role: 'NURSE' };
       } else if (role === 'anesthesiologist') {
-        updatedStaff.anesthesiologist = { name: staffName, role: 'ANESTHESIOLOGIST' };
+        updatedStaff.anesthesiologist = isUnassigning ? { name: null, role: 'ANESTHESIOLOGIST' } : { name: staffName, role: 'ANESTHESIOLOGIST' };
       }
       
       return { ...room, staff: updatedStaff };
     }));
 
-    // Update database
+    // Update database - null to unassign
     if (isDbConnected) {
       const dbField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
-      await updateOperatingRoom(roomId, { [dbField]: staffId } as any);
+      await updateOperatingRoom(roomId, { [dbField]: isUnassigning ? null : staffId } as any);
     }
   }, [isDbConnected]);
 

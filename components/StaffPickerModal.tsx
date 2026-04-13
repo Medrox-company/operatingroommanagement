@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus, Star, MapPin, Percent, AlertTriangle, Ban } from 'lucide-react';
+import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus, Star, MapPin, Percent, AlertTriangle, Ban, LogOut } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel, OperatingRoom } from '../types';
 
@@ -23,7 +23,9 @@ interface StaffPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (staffId: string, staffName: string) => void;
+  onUnassign?: () => void;
   currentStaffId?: string | null;
+  currentStaffName?: string | null;
   filterRole?: StaffRole;
   title?: string;
   allRooms?: OperatingRoom[];
@@ -51,7 +53,9 @@ export default function StaffPickerModal({
   isOpen,
   onClose,
   onSelect,
+  onUnassign,
   currentStaffId,
+  currentStaffName,
   filterRole,
   title = 'Vybrat personál',
   allRooms = [],
@@ -60,12 +64,13 @@ export default function StaffPickerModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmUnassign, setConfirmUnassign] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Helper: Check if staff member is on sick leave or vacation
   const getLeaveStatus = (member: StaffMember): { isOnLeave: boolean; reason: string } => {
     if (member.sick_leave_days && member.sick_leave_days > 0) {
-      return { isOnLeave: true, reason: `Pracovní neschopnost (${member.sick_leave_days} dní)` };
+      return { isOnLeave: true, reason: `PN (${member.sick_leave_days} dní)` };
     }
     if (member.vacation_days && member.vacation_days > 0) {
       return { isOnLeave: true, reason: `Dovolená (${member.vacation_days} dní)` };
@@ -76,14 +81,10 @@ export default function StaffPickerModal({
   // Helper: Check if staff member is already assigned to another room
   const getAssignedRoom = (memberId: string): { isAssigned: boolean; roomName: string } => {
     if (!allRooms || allRooms.length === 0) return { isAssigned: false, roomName: '' };
-    
     for (const room of allRooms) {
-      // Skip the current room we're assigning to
       if (room.id === currentRoomId) continue;
-      
-      // Check if this person is already assigned as doctor, nurse, or anesthesiologist
-      if (room.staff?.doctor?.id === memberId || 
-          room.staff?.nurse?.id === memberId || 
+      if (room.staff?.doctor?.id === memberId ||
+          room.staff?.nurse?.id === memberId ||
           room.staff?.anesthesiologist?.id === memberId) {
         return { isAssigned: true, roomName: room.name };
       }
@@ -95,6 +96,7 @@ export default function StaffPickerModal({
   useEffect(() => {
     if (!isOpen) return;
     setSearchQuery('');
+    setConfirmUnassign(false);
     setLoading(true);
 
     async function fetchStaff() {
@@ -121,54 +123,54 @@ export default function StaffPickerModal({
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [isOpen]);
 
-  // Filtered list — only show results when query is typed, max 6
-  const filteredStaff = useMemo(() => {
+  // Free staff — not assigned to any room, not on leave
+  const freeStaff = useMemo(() => {
+    return staff.filter((m) => {
+      if (filterRole && m.role !== filterRole) return false;
+      if (m.id === currentStaffId) return false; // skip current
+      const leaveStatus = getLeaveStatus(m);
+      if (leaveStatus.isOnLeave) return false;
+      const assigned = getAssignedRoom(m.id);
+      if (assigned.isAssigned) return false;
+      return true;
+    });
+  }, [staff, filterRole, currentStaffId, allRooms]);
+
+  // Searched staff — triggered only when query is typed
+  const searchedStaff = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return [];
-
     return staff
       .filter((m) => {
         if (filterRole && m.role !== filterRole) return false;
-        const searchableText = [
-          m.name,
-          m.role === 'DOCTOR' ? 'Lékař MUDr.' : 'Sestra',
-          m.role,
-        ].join(' ').toLowerCase();
-        return searchableText.includes(q);
+        const text = [m.name, m.role === 'DOCTOR' ? 'Lékař MUDr.' : 'Sestra'].join(' ').toLowerCase();
+        return text.includes(q);
       })
-      .slice(0, 6);
+      .slice(0, 8);
   }, [staff, searchQuery, filterRole]);
 
-  // Split counts for header chips
-  const doctorCount = useMemo(
-    () => staff.filter((s) => s.role === 'DOCTOR').length,
-    [staff]
-  );
-  const nurseCount = useMemo(
-    () => staff.filter((s) => s.role === 'NURSE').length,
-    [staff]
-  );
+  const displayStaff = searchQuery.trim() ? searchedStaff : freeStaff;
 
   const handleSelect = (member: StaffMember) => {
-    // Check if member is unavailable
     const leaveStatus = getLeaveStatus(member);
     const assignedRoom = getAssignedRoom(member.id);
-    
-    if (leaveStatus.isOnLeave || assignedRoom.isAssigned) {
-      // Don't allow selection of unavailable staff
-      return;
-    }
-    
+    if (leaveStatus.isOnLeave || assignedRoom.isAssigned) return;
     onSelect(member.id, member.name);
     onClose();
   };
 
-  // Header accent by filterRole
-  const headerAccent = filterRole === 'DOCTOR' 
-    ? { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)' }
-    : filterRole === 'NURSE'
-    ? { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)' }
-    : { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)' };
+  const handleUnassign = () => {
+    if (!confirmUnassign) {
+      setConfirmUnassign(true);
+      return;
+    }
+    onUnassign?.();
+    onClose();
+  };
+
+  const accentColor = filterRole === 'DOCTOR'
+    ? { text: 'text-violet-400', bg: 'bg-violet-500/15', border: 'border-violet-500/25', glow: 'rgba(167,139,250,0.6)' }
+    : { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25', glow: 'rgba(52,211,153,0.6)' };
 
   if (!isOpen) return null;
 
@@ -180,7 +182,7 @@ export default function StaffPickerModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Blurred backdrop */}
+        {/* Backdrop */}
         <motion.div
           className="absolute inset-0 bg-black/70 backdrop-blur-md"
           initial={{ opacity: 0 }}
@@ -189,272 +191,219 @@ export default function StaffPickerModal({
           onClick={onClose}
         />
 
-        {/* Modal panel */}
+        {/* Modal */}
         <motion.div
-          className="relative w-full max-w-3xl flex flex-col rounded-[2rem] overflow-hidden shadow-2xl"
+          className="relative w-full max-w-2xl flex flex-col rounded-[2rem] overflow-hidden shadow-2xl"
           style={{
-            background: 'rgba(10, 10, 18, 0.85)',
+            background: 'rgba(10, 10, 18, 0.92)',
             backdropFilter: 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             border: '1px solid rgba(255,255,255,0.08)',
-            maxHeight: '85vh',
+            maxHeight: '80vh',
           }}
           initial={{ opacity: 0, scale: 0.96, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 24 }}
           transition={{ type: 'spring', damping: 28, stiffness: 320 }}
         >
-          {/* Top glow line */}
+          {/* Top glow */}
           <div
             className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px"
-            style={{
-              background: `linear-gradient(90deg, transparent, ${
-                filterRole === 'DOCTOR' ? 'rgba(167,139,250,0.6)' :
-                filterRole === 'NURSE' ? 'rgba(52,211,153,0.6)' :
-                'rgba(0,216,193,0.6)'
-              }, transparent)`,
-            }}
+            style={{ background: `linear-gradient(90deg, transparent, ${accentColor.glow}, transparent)` }}
           />
 
-          {/* ── Header ─────────────────────────────── */}
-          <div className="px-7 pt-7 pb-5">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <div className="flex items-center gap-2.5 mb-1.5">
-                  {filterRole && (
-                    <div className={`p-1.5 rounded-lg ${filterRole === 'DOCTOR' ? 'bg-violet-500/15' : 'bg-emerald-500/15'}`}>
-                      <RoleIcon role={filterRole} size="sm" />
-                    </div>
-                  )}
-                  <h2 className="text-xl font-black tracking-tight text-white">{title}</h2>
-                </div>
-                {/* Count chips */}
-                <div className="flex gap-2">
-                  {(!filterRole || filterRole === 'DOCTOR') && (
-                    <span className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/20">
-                      <Stethoscope className="w-3 h-3" />
-                      {doctorCount} lékaři
-                    </span>
-                  )}
-                  {(!filterRole || filterRole === 'NURSE') && (
-                    <span className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
-                      <ShieldPlus className="w-3 h-3" />
-                      {nurseCount} sestry
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <button
-                onClick={onClose}
-                className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <X className="w-5 h-5 text-white/50" />
-              </button>
-            </div>
-
-            {/* ── Big search input - glassmorphism card style ────────────────── */}
-            <div 
-              className="relative rounded-2xl overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(88,28,135,0.12) 50%, rgba(59,7,100,0.08) 100%)',
-                border: '1px solid rgba(139,92,246,0.25)',
-                boxShadow: '0 0 40px rgba(139,92,246,0.08), inset 0 1px 0 rgba(255,255,255,0.05)',
-              }}
-            >
-              {/* Top glow accent line */}
-              <div 
-                className="absolute top-0 left-0 right-0 h-[1px]"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(167,139,250,0.5) 50%, transparent 100%)',
-                }}
-              />
-              
-              {/* Search icon container */}
-              <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: 'rgba(139,92,246,0.15)',
-                    border: '1px solid rgba(139,92,246,0.2)',
-                  }}
-                >
-                  <Search className="w-5 h-5 text-violet-400" />
-                </div>
-              </div>
-              
-              {/* Input field */}
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Hledat podle jména nebo specializace..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="relative w-full pl-24 pr-14 py-6 bg-transparent text-white placeholder-white/30 focus:outline-none text-base font-medium tracking-wide"
-                style={{ caretColor: '#a78bfa' }}
-              />
-              
-              {/* Clear button */}
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 right-0 pr-6 flex items-center"
-                >
-                  <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-105"
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                    }}
-                  >
-                    <X className="w-4 h-4 text-white/40" />
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 flex-shrink-0">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                {filterRole && (
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accentColor.bg} border ${accentColor.border}`}>
+                    <RoleIcon role={filterRole} size="sm" />
                   </div>
-                </button>
-              )}
-            </div>
-
-            {/* Live count - only when searching */}
-            {!loading && searchQuery.trim() && (
-              <p className="mt-3 text-[11px] text-white/25 tracking-wider uppercase">
-                {filteredStaff.length === 0
-                  ? 'Žádné výsledky'
-                  : `${filteredStaff.length} z max. 6 výsledků`}
-              </p>
-            )}
-          </div>
-
-          {/* Divider */}
-          <div className="mx-7 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
-
-          {/* ── Staff list ─────────────────────────── */}
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="w-7 h-7 rounded-full border-2 border-white/10 border-t-[#00D8C1] animate-spin" />
-              </div>
-            ) : !searchQuery.trim() ? (
-              /* Empty state — prompt to search */
-              <div className="flex flex-col items-center justify-center py-14 gap-4">
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'rgba(139,92,246,0.10)', border: '1px solid rgba(139,92,246,0.18)' }}
-                >
-                  <Search className="w-7 h-7 text-violet-400/60" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-white/40 mb-1">Začněte psát pro vyhledání</p>
-                  <p className="text-[11px] text-white/20 tracking-wide">
-                    Zobrazí se max. 6 nejbližších shod
+                )}
+                <div>
+                  <h2 className="text-lg font-black tracking-tight text-white">{title}</h2>
+                  <p className="text-[11px] text-white/30 mt-0.5">
+                    {loading ? 'Načítání...' : `${freeStaff.length} volných · kliknutím vyberte`}
                   </p>
                 </div>
               </div>
-            ) : filteredStaff.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-14 gap-3">
-                <UserX className="w-10 h-10 text-white/15" />
+              <button
+                onClick={onClose}
+                className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 border border-white/8 hover:bg-white/10 transition-all"
+              >
+                <X className="w-4 h-4 text-white/50" />
+              </button>
+            </div>
+
+            {/* Currently assigned — unassign button */}
+            {currentStaffName && onUnassign && (
+              <motion.div
+                className="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl border"
+                style={{
+                  background: confirmUnassign ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.03)',
+                  borderColor: confirmUnassign ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.08)',
+                }}
+                layout
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${accentColor.bg} border ${accentColor.border}`}>
+                  <RoleIcon role={filterRole || 'DOCTOR'} size="sm" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-white/35 uppercase tracking-wide">Aktuálně přiřazen/a</p>
+                  <p className="text-sm font-semibold text-white/90 truncate">{currentStaffName}</p>
+                </div>
+                <button
+                  onClick={handleUnassign}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all flex-shrink-0 ${
+                    confirmUnassign
+                      ? 'bg-red-500 text-white border border-red-400 hover:bg-red-600'
+                      : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
+                  }`}
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  {confirmUnassign ? 'Potvrdit' : 'Odhlásit'}
+                </button>
+              </motion.div>
+            )}
+
+            {/* Search input */}
+            <div
+              className="relative rounded-2xl overflow-hidden"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search className="w-4 h-4 text-white/25" />
+              </div>
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Hledat podle jména..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setConfirmUnassign(false); }}
+                className="w-full pl-11 pr-10 py-3.5 bg-transparent text-white placeholder-white/25 focus:outline-none text-sm"
+                style={{ caretColor: '#a78bfa' }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                >
+                  <X className="w-4 h-4 text-white/30 hover:text-white/60 transition-colors" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-6 h-px bg-white/5 flex-shrink-0" />
+
+          {/* Section label */}
+          <div className="px-6 pt-3 pb-1 flex-shrink-0">
+            <p className="text-[10px] text-white/25 uppercase tracking-widest">
+              {searchQuery.trim() ? `Výsledky hledání (${searchedStaff.length})` : `Volný personál (${freeStaff.length})`}
+            </p>
+          </div>
+
+          {/* Staff list */}
+          <div className="flex-1 overflow-y-auto px-4 pb-5">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#00D8C1] animate-spin" />
+              </div>
+            ) : displayStaff.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <UserX className="w-10 h-10 text-white/10" />
                 <p className="text-sm text-white/30">
-                  {`Žádný personál pro "${searchQuery}"`}
+                  {searchQuery.trim() ? `Žádné výsledky pro "${searchQuery}"` : 'Žádný volný personál'}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                {filteredStaff.map((member) => {
+                {displayStaff.map((member) => {
                   const isSelected = member.id === currentStaffId;
                   const skillLevel = member.skill_level as SkillLevel | undefined;
                   const skillMeta = skillLevel ? SKILL_LEVELS[skillLevel] : null;
-                  
-                  // Check availability status
                   const leaveStatus = getLeaveStatus(member);
                   const assignedRoom = getAssignedRoom(member.id);
                   const isUnavailable = leaveStatus.isOnLeave || assignedRoom.isAssigned;
-                  
-                  // Determine unavailability reason
+
                   let unavailableReason = '';
-                  let unavailableIcon = null;
-                  if (leaveStatus.isOnLeave) {
-                    unavailableReason = leaveStatus.reason;
-                    unavailableIcon = <AlertTriangle className="w-3.5 h-3.5" />;
-                  } else if (assignedRoom.isAssigned) {
-                    unavailableReason = `Přiřazen na: ${assignedRoom.roomName}`;
-                    unavailableIcon = <Ban className="w-3.5 h-3.5" />;
-                  }
+                  if (leaveStatus.isOnLeave) unavailableReason = leaveStatus.reason;
+                  else if (assignedRoom.isAssigned) unavailableReason = `Sal: ${assignedRoom.roomName}`;
 
                   return (
                     <motion.button
                       key={member.id}
                       onClick={() => handleSelect(member)}
                       disabled={isUnavailable}
-                      className={`flex flex-col items-start gap-2 px-4 py-3.5 rounded-2xl transition-all group text-left ${
-                        isUnavailable ? 'opacity-50 cursor-not-allowed' : ''
+                      className={`flex flex-col items-start gap-2 px-3.5 py-3 rounded-2xl transition-all text-left ${
+                        isUnavailable ? 'opacity-45 cursor-not-allowed' : 'hover:bg-white/[0.04]'
                       }`}
                       style={{
                         background: isUnavailable
-                          ? 'rgba(239,68,68,0.05)'
+                          ? 'rgba(239,68,68,0.04)'
                           : isSelected
                           ? 'rgba(0,216,193,0.08)'
-                          : 'rgba(255,255,255,0.02)',
+                          : 'rgba(255,255,255,0.025)',
                         border: isUnavailable
-                          ? '1px solid rgba(239,68,68,0.2)'
+                          ? '1px solid rgba(239,68,68,0.15)'
                           : isSelected
-                          ? '1px solid rgba(0,216,193,0.35)'
-                          : '1px solid rgba(255,255,255,0.05)',
+                          ? '1px solid rgba(0,216,193,0.30)'
+                          : '1px solid rgba(255,255,255,0.06)',
                       }}
                       whileHover={isUnavailable ? {} : { scale: 1.01 }}
                       whileTap={isUnavailable ? {} : { scale: 0.985 }}
                     >
-                      {/* Unavailable Banner */}
+                      {/* Unavailable banner */}
                       {isUnavailable && (
-                        <div className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
-                          <span className="text-red-400">{unavailableIcon}</span>
-                          <span className="text-[10px] font-semibold text-red-300 truncate">
-                            {unavailableReason}
-                          </span>
+                        <div className="flex items-center gap-1.5 w-full px-2 py-1 rounded-lg bg-red-500/8 border border-red-500/15">
+                          <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                          <span className="text-[9px] text-red-300 truncate">{unavailableReason}</span>
                         </div>
                       )}
-                      
-                      {/* Top row: Icon + Name + Selected */}
+
+                      {/* Name row */}
                       <div className="flex items-center gap-2 w-full">
-                        {/* Skill Level Badge */}
                         {skillMeta && (
-                          <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] border ${skillMeta.bgColor} ${skillMeta.color}`}>
+                          <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-black text-[9px] border ${skillMeta.bgColor} ${skillMeta.color}`}>
                             {skillMeta.label}
                           </div>
                         )}
-                        <span className={`text-sm font-bold truncate ${
-                          isUnavailable ? 'text-white/40 line-through' :
-                          isSelected ? 'text-[#00D8C1]' : 'text-white'
+                        <span className={`text-sm font-semibold truncate flex-1 ${
+                          isUnavailable ? 'text-white/35 line-through' :
+                          isSelected ? 'text-[#00D8C1]' : 'text-white/90'
                         }`}>
                           {member.name}
                         </span>
                         {member.is_recommended && !isUnavailable && <Star className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />}
-                        {isSelected && !isUnavailable && (
-                          <Check className="w-4 h-4 text-[#00D8C1] flex-shrink-0 ml-auto" />
-                        )}
+                        {isSelected && <Check className="w-4 h-4 text-[#00D8C1] flex-shrink-0" />}
                       </div>
 
-                      {/* Metadata badges */}
-                      <div className="flex items-center gap-1.5 flex-wrap w-full">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${
-                          member.role === 'DOCTOR' 
-                            ? 'bg-violet-500/20 text-violet-300 border-violet-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      {/* Badges */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                          member.role === 'DOCTOR'
+                            ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
+                            : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
                         }`}>
                           {member.role === 'DOCTOR' ? 'MUDr.' : 'Sestra'}
                         </span>
-                        
-                        {member.availability !== undefined && !isUnavailable && (
+                        {member.availability !== undefined && member.availability < 100 && !isUnavailable && (
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${
-                            member.availability === 100 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                            member.availability >= 50 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                            'bg-red-500/20 text-red-300 border-red-500/30'
+                            member.availability >= 50
+                              ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/25'
+                              : 'bg-red-500/15 text-red-300 border-red-500/25'
                           }`}>
                             <Percent className="w-2.5 h-2.5" />
                             {member.availability}%
                           </span>
                         )}
-                        
                         {member.is_external && !isUnavailable && (
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-300 border-orange-500/30 flex items-center gap-0.5">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/15 text-orange-300 border-orange-500/25 flex items-center gap-0.5">
                             <MapPin className="w-2.5 h-2.5" />
                             Ext.
                           </span>
@@ -467,17 +416,17 @@ export default function StaffPickerModal({
             )}
           </div>
 
-          {/* ── Footer ───────────────���─────────────── */}
+          {/* Footer */}
           <div
-            className="px-7 py-4 flex items-center justify-between"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}
+            className="px-6 py-4 flex items-center justify-between flex-shrink-0"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
           >
             <p className="text-[11px] text-white/20 tracking-widest uppercase">
-              Kliknutím vyberte personál
+              {searchQuery.trim() ? 'Všichni · volní i obsazení' : 'Pouze volný personál'}
             </p>
             <button
               onClick={onClose}
-              className="text-[11px] font-semibold text-white/30 hover:text-white/60 transition-colors tracking-wider uppercase"
+              className="text-[11px] font-semibold text-white/25 hover:text-white/60 transition-colors tracking-wider uppercase"
             >
               Zavřít
             </button>
