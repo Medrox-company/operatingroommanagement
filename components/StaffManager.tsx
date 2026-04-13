@@ -556,83 +556,82 @@ export default function StaffManager() {
                 whileHover={{ scale: 1.005 }}
                 whileTap={{ scale: 0.995 }}
               >
+                {/* Radek 1: Ikona role + Jmeno + Status aktivni */}
                 <div className="flex items-center gap-3">
-                  {/* Role Icon */}
-                  <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border backdrop-blur-sm ${
-                    member.role === 'DOCTOR' 
-                      ? 'bg-violet-500/10 border-violet-500/20' 
+                  <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center border backdrop-blur-sm ${
+                    member.role === 'DOCTOR'
+                      ? 'bg-violet-500/10 border-violet-500/20'
                       : 'bg-emerald-500/10 border-emerald-500/20'
                   }`}>
-                    {member.role === 'DOCTOR' 
-                      ? <Stethoscope className="w-4 h-4 text-violet-400" /> 
-                      : <Heart className="w-4 h-4 text-emerald-400" />}
+                    {member.role === 'DOCTOR'
+                      ? <Stethoscope className="w-3.5 h-3.5 text-violet-400" />
+                      : <Heart className="w-3.5 h-3.5 text-emerald-400" />}
                   </div>
-                  
-                  {/* Name + Role */}
+
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium text-sm truncate ${isSelected ? 'text-[#00D8C1]' : 'text-white/90'}`}>
+                    <p className={`font-medium text-sm truncate leading-tight ${isSelected ? 'text-[#00D8C1]' : 'text-white/90'}`}>
                       {member.name}
                     </p>
-                    <p className="text-[10px] text-white/40 uppercase tracking-wide">
+                    <p className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">
                       {member.role === 'DOCTOR' ? 'Lekar' : 'Sestra'}
                     </p>
                   </div>
-                  
-                  {/* Capability Icons - Dashboard style small squares */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {/* Skill Level */}
-                    {skillMeta && (
-                      <div className={`p-1.5 rounded-lg border backdrop-blur-sm ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
-                        <span className={`text-[9px] font-black ${skillMeta.color}`}>{skillMeta.label}</span>
-                      </div>
-                    )}
-                    
-                    {/* Recommended */}
-                    {member.is_recommended && (
-                      <div className="p-1.5 rounded-lg border backdrop-blur-sm bg-yellow-500/10 border-yellow-500/20" title="Doporuceny">
-                        <Star className="w-3.5 h-3.5 text-yellow-400" />
-                      </div>
-                    )}
-                    
-                    {/* External */}
-                    {member.is_external && (
-                      <div className="p-1.5 rounded-lg border backdrop-blur-sm bg-orange-500/10 border-orange-500/20" title="Externi">
-                        <MapPin className="w-3.5 h-3.5 text-orange-400" />
-                      </div>
-                    )}
-                    
-                    {/* Availability */}
-                    {member.availability !== undefined && member.availability < 100 && (
-                      <div className={`p-1.5 rounded-lg border backdrop-blur-sm ${
-                        member.availability >= 50 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'
-                      }`} title={`Dostupnost: ${member.availability}%`}>
-                        <Percent className={`w-3.5 h-3.5 ${member.availability >= 50 ? 'text-yellow-400' : 'text-red-400'}`} />
-                      </div>
-                    )}
-                    
-                    {/* Sick Leave */}
-                    {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
-                      <div className="p-1.5 rounded-lg border backdrop-blur-sm bg-red-500/10 border-red-500/20" title={`PN: ${member.sick_leave_days} dni`}>
-                        <Activity className="w-3.5 h-3.5 text-red-400" />
-                      </div>
-                    )}
-                    
-                    {/* Vacation */}
-                    {member.vacation_days !== undefined && member.vacation_days > 0 && (
-                      <div className="p-1.5 rounded-lg border backdrop-blur-sm bg-blue-500/10 border-blue-500/20" title={`Dovolena: ${member.vacation_days} dni`}>
-                        <UserPlus className="w-3.5 h-3.5 text-blue-400" />
-                      </div>
-                    )}
-                    
-                    {/* Active/Inactive Status */}
-                    <div className={`p-1.5 rounded-lg border backdrop-blur-sm ${
-                      member.is_active 
-                        ? 'bg-emerald-500/10 border-emerald-500/20' 
-                        : 'bg-red-500/10 border-red-500/20'
-                    }`} title={member.is_active ? 'Aktivni' : 'Neaktivni'}>
-                      <div className={`w-2 h-2 rounded-full ${member.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                    </div>
+
+                  {/* Status aktivni/neaktivni vzdy vpravo nahore */}
+                  <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center border backdrop-blur-sm ${
+                    member.is_active
+                      ? 'bg-emerald-500/10 border-emerald-500/20'
+                      : 'bg-red-500/10 border-red-500/20'
+                  }`} title={member.is_active ? 'Aktivni' : 'Neaktivni'}>
+                    <div className={`w-2 h-2 rounded-full ${member.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
                   </div>
+                </div>
+
+                {/* Radek 2: Vsechny ikony schopnosti */}
+                <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                  {/* Skill Level */}
+                  {skillMeta && (
+                    <div className={`w-7 h-7 rounded-lg border backdrop-blur-sm flex items-center justify-center ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
+                      <span className={`text-[9px] font-black leading-none ${skillMeta.color}`}>{skillMeta.label}</span>
+                    </div>
+                  )}
+
+                  {/* Recommended */}
+                  {member.is_recommended && (
+                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-yellow-500/10 border-yellow-500/20 flex items-center justify-center" title="Doporuceny">
+                      <Star className="w-3.5 h-3.5 text-yellow-400" />
+                    </div>
+                  )}
+
+                  {/* External */}
+                  {member.is_external && (
+                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-orange-500/10 border-orange-500/20 flex items-center justify-center" title="Externi">
+                      <MapPin className="w-3.5 h-3.5 text-orange-400" />
+                    </div>
+                  )}
+
+                  {/* Availability */}
+                  {member.availability !== undefined && member.availability < 100 && (
+                    <div className={`w-7 h-7 rounded-lg border backdrop-blur-sm flex items-center justify-center ${
+                      member.availability >= 50 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'
+                    }`} title={`Dostupnost: ${member.availability}%`}>
+                      <Percent className={`w-3.5 h-3.5 ${member.availability >= 50 ? 'text-yellow-400' : 'text-red-400'}`} />
+                    </div>
+                  )}
+
+                  {/* Sick Leave */}
+                  {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
+                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-red-500/10 border-red-500/20 flex items-center justify-center" title={`PN: ${member.sick_leave_days} dni`}>
+                      <Activity className="w-3.5 h-3.5 text-red-400" />
+                    </div>
+                  )}
+
+                  {/* Vacation */}
+                  {member.vacation_days !== undefined && member.vacation_days > 0 && (
+                    <div className="w-7 h-7 rounded-lg border backdrop-blur-sm bg-blue-500/10 border-blue-500/20 flex items-center justify-center" title={`Dovolena: ${member.vacation_days} dni`}>
+                      <UserPlus className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                  )}
                 </div>
               </motion.button>
             );
