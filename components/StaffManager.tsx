@@ -560,7 +560,7 @@ export default function StaffManager() {
                 whileHover={{ scale: 1.005 }}
                 whileTap={{ scale: 0.995 }}
               >
-                {/* Row 1: Role icon + Name + Active status */}
+                {/* Single row: Role icon + Name + capability icons + active status */}
                 <div className="flex items-center gap-2">
                   {/* Role icon */}
                   <div className={`${iconBox} ${
@@ -573,6 +573,7 @@ export default function StaffManager() {
                       : <Heart className={`${iconSize} text-emerald-400`} />}
                   </div>
 
+                  {/* Name + role label */}
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium text-sm truncate leading-tight ${isSelected ? 'text-[#00D8C1]' : 'text-white/90'}`}>
                       {member.name}
@@ -582,61 +583,61 @@ export default function StaffManager() {
                     </p>
                   </div>
 
-                  {/* Active/Inactive status */}
-                  <div className={`${iconBox} ${
-                    member.is_active
-                      ? 'bg-emerald-500/10 border-emerald-500/20'
-                      : 'bg-red-500/10 border-red-500/20'
-                  }`} title={member.is_active ? 'Aktivni' : 'Neaktivni'}>
-                    <div className={`w-2 h-2 rounded-full ${member.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                  </div>
-                </div>
+                  {/* Capability icons - same row as name */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Skill Level */}
+                    {skillMeta && (
+                      <div className={`${iconBox} ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
+                        <span className={`text-[9px] font-black leading-none ${skillMeta.color}`}>{skillMeta.label}</span>
+                      </div>
+                    )}
 
-                {/* Row 2: All capability icons - same size squares */}
-                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                  {/* Skill Level */}
-                  {skillMeta && (
-                    <div className={`${iconBox} ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
-                      <span className={`text-[9px] font-black leading-none ${skillMeta.color}`}>{skillMeta.label}</span>
-                    </div>
-                  )}
+                    {/* Recommended */}
+                    {member.is_recommended && (
+                      <div className={`${iconBox} bg-yellow-500/10 border-yellow-500/20`} title="Doporuceny">
+                        <Star className={`${iconSize} text-yellow-400`} />
+                      </div>
+                    )}
 
-                  {/* Recommended */}
-                  {member.is_recommended && (
-                    <div className={`${iconBox} bg-yellow-500/10 border-yellow-500/20`} title="Doporuceny">
-                      <Star className={`${iconSize} text-yellow-400`} />
-                    </div>
-                  )}
+                    {/* External */}
+                    {member.is_external && (
+                      <div className={`${iconBox} bg-orange-500/10 border-orange-500/20`} title="Externi">
+                        <MapPin className={`${iconSize} text-orange-400`} />
+                      </div>
+                    )}
 
-                  {/* External */}
-                  {member.is_external && (
-                    <div className={`${iconBox} bg-orange-500/10 border-orange-500/20`} title="Externi">
-                      <MapPin className={`${iconSize} text-orange-400`} />
-                    </div>
-                  )}
+                    {/* Availability < 100% */}
+                    {member.availability !== undefined && member.availability < 100 && (
+                      <div className={`${iconBox} ${
+                        member.availability >= 50 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'
+                      }`} title={`Dostupnost: ${member.availability}%`}>
+                        <Percent className={`${iconSize} ${member.availability >= 50 ? 'text-yellow-400' : 'text-red-400'}`} />
+                      </div>
+                    )}
 
-                  {/* Availability < 100% */}
-                  {member.availability !== undefined && member.availability < 100 && (
+                    {/* Sick Leave */}
+                    {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
+                      <div className={`${iconBox} bg-red-500/10 border-red-500/20`} title={`PN: ${member.sick_leave_days} dni`}>
+                        <Activity className={`${iconSize} text-red-400`} />
+                      </div>
+                    )}
+
+                    {/* Vacation */}
+                    {member.vacation_days !== undefined && member.vacation_days > 0 && (
+                      <div className={`${iconBox} bg-blue-500/10 border-blue-500/20`} title={`Dovolena: ${member.vacation_days} dni`}>
+                        <UserPlus className={`${iconSize} text-blue-400`} />
+                      </div>
+                    )}
+
+                    {/* Active/Inactive status */}
                     <div className={`${iconBox} ${
-                      member.availability >= 50 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'
-                    }`} title={`Dostupnost: ${member.availability}%`}>
-                      <Percent className={`${iconSize} ${member.availability >= 50 ? 'text-yellow-400' : 'text-red-400'}`} />
+                      member.is_active
+                        ? 'bg-emerald-500/10 border-emerald-500/20'
+                        : 'bg-red-500/10 border-red-500/20'
+                    }`} title={member.is_active ? 'Aktivni' : 'Neaktivni'}>
+                      <div className={`w-2 h-2 rounded-full ${member.is_active ? 'bg-emerald-400' : 'bg-red-400'}`} />
                     </div>
-                  )}
-
-                  {/* Sick Leave */}
-                  {member.sick_leave_days !== undefined && member.sick_leave_days > 0 && (
-                    <div className={`${iconBox} bg-red-500/10 border-red-500/20`} title={`PN: ${member.sick_leave_days} dni`}>
-                      <Activity className={`${iconSize} text-red-400`} />
-                    </div>
-                  )}
-
-                  {/* Vacation */}
-                  {member.vacation_days !== undefined && member.vacation_days > 0 && (
-                    <div className={`${iconBox} bg-blue-500/10 border-blue-500/20`} title={`Dovolena: ${member.vacation_days} dni`}>
-                      <UserPlus className={`${iconSize} text-blue-400`} />
-                    </div>
-                  )}
+                  </div>
                 </div>
               </motion.button>
             );
