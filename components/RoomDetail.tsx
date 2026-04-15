@@ -1461,9 +1461,9 @@ const prevStep = activeDbStatuses.length > 0
                         whileHover={{ rotate: 90 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <X className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-red-400 group-hover:text-red-300 transition-colors duration-300" strokeWidth={1.5} />
+                        <X className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-white/90 group-hover:text-white transition-colors duration-300" strokeWidth={1.5} />
                       </motion.div>
-                      <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-red-400/80 group-hover:text-red-300 transition-colors duration-300">
+                      <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-white/70 group-hover:text-white transition-colors duration-300">
                         Zrušit
                       </span>
                     </div>
@@ -1542,11 +1542,11 @@ const prevStep = activeDbStatuses.length > 0
                         animate={{ scale: [1, 1.08, 1] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                       >
-                        <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-white/90 group-hover:text-white transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       </motion.div>
-                      <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-emerald-400/90 group-hover:text-emerald-300 transition-colors duration-300">
+                      <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-white/70 group-hover:text-white transition-colors duration-300">
                         Potvrdit
                       </span>
                     </div>
