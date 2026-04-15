@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle, AlertCircle, Clock, MessageSquare, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 
 interface NotificationOverlayProps {
   isOpen: boolean;
@@ -82,31 +82,26 @@ const NOTIFICATION_TYPES = [
   {
     id: 'notify_late_surgeon',
     label: 'Pozdni prichod operatera',
-    icon: AlertTriangle,
     color: '#ef4444',
   },
   {
     id: 'notify_late_anesthesiologist',
     label: 'Pozdni prichod anesteziologa',
-    icon: AlertTriangle,
     color: '#f97316',
   },
   {
     id: 'notify_patient_not_ready',
     label: 'Nepripraveny pacient',
-    icon: AlertCircle,
     color: '#eab308',
   },
   {
     id: 'notify_late_arrival',
     label: 'Pozdni prijezd',
-    icon: Clock,
     color: '#3b82f6',
   },
   {
     id: 'notify_other',
     label: 'Jiny duvod',
-    icon: MessageSquare,
     color: '#a855f7',
   },
 ];
@@ -197,7 +192,6 @@ export default function NotificationOverlay({
               {/* First Row - 3 circles */}
               <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16 mb-4 sm:mb-6 md:mb-10 lg:mb-16">
                 {firstRow.map((notif, index) => {
-                  const Icon = notif.icon;
                   const isLoading = loading === notif.id;
                   return (
                     <motion.button
@@ -253,21 +247,15 @@ export default function NotificationOverlay({
                         }}
                       />
 
-                      {/* Center Content */}
-                      <div className="text-center relative z-20 pointer-events-none flex flex-col items-center justify-center px-2">
-                        <motion.div
-                          animate={isLoading ? { rotate: 360 } : { scale: [1, 1.08, 1] }}
-                          transition={isLoading ? { duration: 1, repeat: Infinity, ease: 'linear' } : { duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90" />
-                          ) : (
-                            <Icon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 group-hover:text-white transition-colors duration-300" strokeWidth={1.5} />
-                          )}
-                        </motion.div>
-                        <span className="mt-2 sm:mt-3 text-[8px] sm:text-[9px] md:text-[10px] font-bold tracking-[0.1em] uppercase text-white/70 group-hover:text-white transition-colors duration-300 text-center leading-tight">
-                          {notif.label}
-                        </span>
+                      {/* Center Content - Text only, centered */}
+                      <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
+                        {isLoading ? (
+                          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
+                        ) : (
+                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight">
+                            {notif.label}
+                          </span>
+                        )}
                       </div>
                     </motion.button>
                   );
@@ -277,7 +265,6 @@ export default function NotificationOverlay({
               {/* Second Row - 2 circles (centered) */}
               <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16">
                 {secondRow.map((notif, index) => {
-                  const Icon = notif.icon;
                   const isLoading = loading === notif.id;
                   return (
                     <motion.button
@@ -349,21 +336,15 @@ export default function NotificationOverlay({
                         }}
                       />
 
-                      {/* Center Content */}
-                      <div className="text-center relative z-20 pointer-events-none flex flex-col items-center justify-center px-2">
-                        <motion.div
-                          animate={isLoading ? { rotate: 360 } : { scale: [1, 1.08, 1] }}
-                          transition={isLoading ? { duration: 1, repeat: Infinity, ease: 'linear' } : { duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90" />
-                          ) : (
-                            <Icon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 group-hover:text-white transition-colors duration-300" strokeWidth={1.5} />
-                          )}
-                        </motion.div>
-                        <span className="mt-2 sm:mt-3 text-[8px] sm:text-[9px] md:text-[10px] font-bold tracking-[0.1em] uppercase text-white/70 group-hover:text-white transition-colors duration-300 text-center leading-tight">
-                          {notif.label}
-                        </span>
+                      {/* Center Content - Text only, centered */}
+                      <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
+                        {isLoading ? (
+                          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
+                        ) : (
+                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight">
+                            {notif.label}
+                          </span>
+                        )}
                       </div>
                     </motion.button>
                   );

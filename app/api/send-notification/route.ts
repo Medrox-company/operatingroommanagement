@@ -64,16 +64,22 @@ export async function POST(request: NextRequest) {
 
     if (!contacts || contacts.length === 0) {
       // Log notification even if no recipients
-      await supabase
-        .from('notifications_log')
-        .insert({
-          room_id: roomId,
-          room_name: roomName,
-          notification_type: type,
-          custom_reason: customReason || null,
-          recipient_count: 0,
-        })
-        .catch((error) => console.error('[v0] Error logging notification:', error));
+      try {
+        const { error: logError } = await supabase
+          .from('notifications_log')
+          .insert({
+            room_id: roomId,
+            room_name: roomName,
+            notification_type: type,
+            custom_reason: customReason || null,
+            recipient_count: 0,
+          });
+        if (logError) {
+          console.error('[v0] Error logging notification:', logError);
+        }
+      } catch (logErr) {
+        console.error('[v0] Error logging notification:', logErr);
+      }
 
       return NextResponse.json({ 
         message: 'Žádný příjemce není nakonfigurován pro tento typ notifikace',
@@ -158,16 +164,22 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter((r) => r.sent).length;
 
     // Log notification in database
-    await supabase
-      .from('notifications_log')
-      .insert({
-        room_id: roomId,
-        room_name: roomName,
-        notification_type: type,
-        custom_reason: customReason || null,
-        recipient_count: successCount,
-      })
-      .catch((error) => console.error('[v0] Error logging notification:', error));
+    try {
+      const { error: logError } = await supabase
+        .from('notifications_log')
+        .insert({
+          room_id: roomId,
+          room_name: roomName,
+          notification_type: type,
+          custom_reason: customReason || null,
+          recipient_count: successCount,
+        });
+      if (logError) {
+        console.error('[v0] Error logging notification:', logError);
+      }
+    } catch (logErr) {
+      console.error('[v0] Error logging notification:', logErr);
+    }
 
     return NextResponse.json({
       success: true,

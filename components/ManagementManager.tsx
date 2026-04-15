@@ -348,10 +348,17 @@ export default function ManagementManager() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold text-white mb-2">MANAGEMENT CONTROL</h2>
-        <p className="text-sm text-white/40">Správa kontaktů pro notifikace</p>
-      </div>
+      <header className="space-y-6">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Shield className="w-4 h-4 text-cyan-400" />
+            <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">MANAGEMENT CONTROL</p>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
+            MANAGEMENT <span className="text-white/20">KONTAKTY</span>
+          </h1>
+        </div>
+      </header>
 
       {/* Stats Bar */}
       <div className="grid grid-cols-3 gap-3">
