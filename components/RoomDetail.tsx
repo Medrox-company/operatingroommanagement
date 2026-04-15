@@ -7,11 +7,12 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
+import NotificationOverlay from './NotificationOverlay';
 
 interface RoomDetailProps {
   room: OperatingRoom;
@@ -49,6 +50,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   const [staffPickerOpen, setStaffPickerOpen] = useState(false);
+  const [notificationOverlayOpen, setNotificationOverlayOpen] = useState(false);
   const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings | null>(null);
   const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
   const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
@@ -800,13 +802,27 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       )}
 
       {/* Right Column Action Buttons - Absolute Positioning */}
-      {/* Close Button - Top Right */}
-      <button 
-        onClick={onClose}
-        className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50"
-      >
-        <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
-      </button>
+      {/* Close Button and Notification Button - Top Right */}
+      <div className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 flex flex-col gap-2 sm:gap-3 md:gap-4 z-50">
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24"
+        >
+          <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
+        </button>
+
+        {/* Notification Button */}
+        <motion.button 
+          onClick={() => setNotificationOverlayOpen(true)}
+          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
+          <span className="hidden sm:block text-[6px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-bold uppercase tracking-wider text-white/40">Notifikace</span>
+        </motion.button>
+      </div>
 
       {/* Staff Names - Top Right next to close button (Desktop only) */}
       <div className="hidden lg:flex absolute top-8 right-40 flex-row gap-3 h-24 z-50">
@@ -1370,6 +1386,17 @@ const prevStep = activeDbStatuses.length > 0
         title={staffPickerRole === 'doctor' ? 'Lékař — výběr a správa' : 'Sestra — výběr a správa'}
         allRooms={allRooms}
         currentRoomId={room.id}
+      />
+
+      {/* Notification Overlay */}
+      <NotificationOverlay
+        isOpen={notificationOverlayOpen}
+        onClose={() => setNotificationOverlayOpen(false)}
+        onSendNotification={async (type) => {
+          // TODO: Implement actual notification sending to management contacts
+          console.log('[v0] Sending notification:', type, 'for room:', room.name);
+        }}
+        roomName={room.name}
       />
     </motion.div>
   );
