@@ -84,7 +84,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             />
           </motion.div>
           <h1 className="text-3xl font-bold text-white mb-2">Operating Room Manager</h1>
-          <p className="text-white/40 text-sm tracking-wide">CHIRURGICKÝ BLOK • PŘIHLÁŠENÍ</p>
+          <p className="text-white/40 text-sm tracking-wide text-[10px] leading-none h-0 overflow-hidden"></p>
         </div>
 
         {/* Login Card */}
