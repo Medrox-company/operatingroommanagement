@@ -16,29 +16,29 @@ interface NotificationRequest {
 
 const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subject: string }> = {
   'notify_late_surgeon': {
-    name: 'Pozdni prichod operatera',
+    name: 'Pozdní příchod chirurga',
     field: 'notify_late_surgeon',
-    subject: 'Upozorneni: Pozdni prichod operatera'
+    subject: 'Upozornění: Pozdní příchod chirurga'
   },
   'notify_late_anesthesiologist': {
-    name: 'Pozdni prichod anesteziologa',
+    name: 'Pozdní příchod anesteziologa',
     field: 'notify_late_anesthesiologist',
-    subject: 'Upozorneni: Pozdni prichod anesteziologa'
+    subject: 'Upozornění: Pozdní příchod anesteziologa'
   },
   'notify_patient_not_ready': {
-    name: 'Nepripraveny pacient',
+    name: 'Nepřipravený pacient',
     field: 'notify_patient_not_ready',
-    subject: 'Upozorneni: Nepripraveny pacient'
+    subject: 'Upozornění: Nepřipravený pacient'
   },
   'notify_late_arrival': {
-    name: 'Pozdni prijezd',
+    name: 'Pozdní příjezd',
     field: 'notify_late_arrival',
-    subject: 'Upozorneni: Pozdni prijezd'
+    subject: 'Upozornění: Pozdní příjezd'
   },
   'notify_other': {
-    name: 'Jiny duvod',
+    name: 'Jiný důvod',
     field: 'notify_other',
-    subject: 'Upozorneni: Jiny duvod'
+    subject: 'Upozornění: Jiný důvod'
   },
 };
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const notificationType = NOTIFICATION_TYPE_MAP[type];
     if (!notificationType) {
       console.log('[v0] Unknown notification type:', type);
-      return NextResponse.json({ error: 'Neznamy typ notifikace' }, { status: 400 });
+      return NextResponse.json({ error: 'Neznámý typ notifikace' }, { status: 400 });
     }
 
     // Get management contacts that want this type of notification
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     if (contactsError) {
       console.error('[v0] Error fetching contacts:', contactsError);
-      return NextResponse.json({ error: 'Chyba pri nacitani kontaktu' }, { status: 500 });
+      return NextResponse.json({ error: 'Chyba při načítání kontaktů' }, { status: 500 });
     }
 
     if (!contacts || contacts.length === 0) {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ 
-        message: 'Zadny prijemce neni nakonfigurovan pro tento typ notifikace',
+        message: 'Žádný příjemce není nakonfigurován pro tento typ notifikace',
         sentTo: [],
         recipientCount: 0
       }, { status: 200 });
@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
       message: customReason || notificationType.name,
       details: {
         'Typ notifikace': notificationType.name,
-        'Sal': roomName,
-        'Cas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
+        'Sál': roomName,
+        'Čas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
         ...(customReason ? { 'Podrobnosti': customReason } : {}),
       },
     });
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Sending email to:', contact.email);
       const result = await sendEmailNotification({
         to: contact.email,
-        subject: `${notificationType.subject} - Sal: ${roomName}`,
+        subject: `${notificationType.subject} - Sál: ${roomName}`,
         html: emailHtml,
         recipientName: contact.name,
       });
@@ -156,8 +156,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: successCount > 0,
       message: successCount > 0 
-        ? `Notifikace byla odeslana ${successCount} prijemcum` 
-        : 'Nepodarilo se odeslat zadnou notifikaci',
+        ? `Notifikace byla odeslána ${successCount} příjemcům` 
+        : 'Nepodařilo se odeslat žádnou notifikaci',
       sentTo: results.filter((r) => r.sent).map((r) => `${r.name} (${r.email})`),
       failedCount: results.filter((r) => !r.sent).length,
       recipientCount: successCount,
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[v0] Error in send-notification:', error);
     return NextResponse.json(
-      { error: 'Interni chyba serveru' },
+      { error: 'Interní chyba serveru' },
       { status: 500 }
     );
   }

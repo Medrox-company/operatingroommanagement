@@ -81,13 +81,13 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      emergency_alert: 'Upozorneni',
-      status_change: 'Zmena stavu',
+      emergency_alert: 'Upozornění',
+      status_change: 'Změna stavu',
       queue_update: 'Aktualizace fronty',
-      maintenance: 'Udrzba',
-      custom: 'Oznameni',
+      maintenance: 'Údržba',
+      custom: 'Oznámení',
     };
-    return labels[type] || 'Oznameni';
+    return labels[type] || 'Oznámení';
   };
 
   let detailsHtml = '';
@@ -110,7 +110,7 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sprava operacnich salu - Oznameni</title>
+        <title>Správa operačních sálů - Oznámení</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         
@@ -124,7 +124,7 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
                 <tr>
                   <td style="padding: 0 0 32px 0; text-align: center;">
                     <h1 style="margin: 0; font-size: 18px; font-weight: 600; color: #0f172a; letter-spacing: -0.3px;">
-                      Sprava operacnich salu
+                      Správa operačních sálů
                     </h1>
                     <div style="margin-top: 8px; width: 48px; height: 3px; background: linear-gradient(90deg, ${accentColor}, ${accentColor}99); border-radius: 2px; display: inline-block;"></div>
                   </td>
@@ -173,8 +173,8 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
                 <!-- Footer -->
                 <tr>
                   <td style="padding: 28px 0 0 0; text-align: center;">
-                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #94a3b8;">
-                      Automaticke oznameni ze systemu Sprava operacnich salu
+                          <p style="margin: 0 0 6px 0; font-size: 13px; color: #94a3b8;">
+                      Automatické oznámení ze systému Správa operačních sálů
                     </p>
                     <p style="margin: 0; font-size: 12px; color: #cbd5e1;">
                       ${data.timestamp || new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' })}
