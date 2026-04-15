@@ -10,6 +10,7 @@ import StatisticsModule from './StatisticsModule';
 import StaffManager from './StaffManager';
 import StatusesManager from './StatusesManager';
 import BackgroundManager from './BackgroundManager';
+import ManagementManager from './ManagementManager';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom } from '../types';
 
@@ -106,6 +107,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       accentColor: '#8B5CF6',
     },
     {
+      id: 'management',
+      title: 'Management',
+      description: 'Správa kontaktů na management',
+      icon: Briefcase,
+      accentColor: '#06B6D4',
+    },
+    {
       id: 'settings',
       title: 'Nastavení',
       description: 'Konfigurace systému a preferencí',
@@ -169,6 +177,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       ) : selectedModule === 'background' ? (
         <ModuleWrapper>
           <BackgroundManager />
+        </ModuleWrapper>
+      ) : selectedModule === 'management' ? (
+        <ModuleWrapper>
+          <ManagementManager />
         </ModuleWrapper>
       ) : (
         <div className="w-full px-8 md:pl-32 md:pr-10 py-10">

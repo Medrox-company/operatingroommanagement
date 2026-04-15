@@ -7,10 +7,12 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
+import StepConfirmationOverlay from './StepConfirmationOverlay';
+import NotificationOverlay from './NotificationOverlay';
 
 interface RoomDetailProps {
   room: OperatingRoom;
@@ -48,6 +50,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   const [staffPickerOpen, setStaffPickerOpen] = useState(false);
+  const [notificationOverlayOpen, setNotificationOverlayOpen] = useState(false);
   const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings | null>(null);
   const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
   const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
@@ -799,13 +802,27 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       )}
 
       {/* Right Column Action Buttons - Absolute Positioning */}
-      {/* Close Button - Top Right */}
-      <button 
-        onClick={onClose}
-        className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 z-50"
-      >
-        <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
-      </button>
+      {/* Close Button and Notification Button - Top Right */}
+      <div className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 flex flex-col gap-2 sm:gap-3 md:gap-4 z-50">
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24"
+        >
+          <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
+        </button>
+
+        {/* Notification Button */}
+        <motion.button 
+          onClick={() => setNotificationOverlayOpen(true)}
+          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
+          <span className="hidden sm:block text-[6px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-bold uppercase tracking-wider text-white/40">Notifikace</span>
+        </motion.button>
+      </div>
 
       {/* Staff Names - Top Right next to close button (Desktop only) */}
       <div className="hidden lg:flex absolute top-8 right-40 flex-row gap-3 h-24 z-50">
@@ -1340,138 +1357,14 @@ const prevStep = activeDbStatuses.length > 0
       </div>{/* end desktop wrapper */}
 
       {/* Step Confirmation Overlay */}
-      <AnimatePresence>
-        {pendingStepIndex !== null && (() => {
-          const pendingStep = activeDbStatuses[Math.min(pendingStepIndex, activeDbStatuses.length - 1)];
-          const pendingColor = pendingStep?.color || '#6B7280';
-          const isReset = pendingStepIndex === 0 && safeStepIndex === validStepCount - 1;
-
-          return (
-            <motion.div
-              key="step-confirm-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="absolute inset-0 z-[200] flex items-center justify-center"
-              style={{ background: 'rgba(5, 5, 12, 0.85)', backdropFilter: 'blur(16px)' }}
-            >
-              {/* Decorative background rings */}
-              <div className="absolute w-[700px] h-[700px] rounded-full border border-white/[0.04]" />
-              <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.025]" />
-
-              <div className="flex flex-col items-center gap-10 relative z-10">
-                {/* Label */}
-                <motion.div
-                  initial={{ opacity: 0, y: -12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-center"
-                >
-                  <p className="text-[11px] font-black tracking-[0.4em] uppercase text-white/30 mb-3">
-                    PŘECHOD NA NOVOU FÁZI
-                  </p>
-                  <p className="text-2xl font-bold text-white/80">
-                    {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
-                  </p>
-                </motion.div>
-
-                {/* Two confirmation circles */}
-                <div className="flex items-center gap-8 sm:gap-12 md:gap-20">
-
-                  {/* ZRUŠIT — red (vlevo) */}
-                  <motion.button
-                    onClick={cancelStepChange}
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.93 }}
-                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
-                  >
-                    {/* Glow */}
-                    <div className="absolute inset-0 rounded-full blur-[60px] opacity-25 group-hover:opacity-45 transition-opacity duration-300 bg-red-500" />
-                    {/* Animated SVG ring */}
-                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
-                      <circle cx="130" cy="130" r="118" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                      <motion.circle
-                        cx="130" cy="130" r="118" fill="none"
-                        stroke="#ef4444" strokeWidth="6" strokeLinecap="round"
-                        strokeDasharray="741"
-                        initial={{ strokeDashoffset: 741 }}
-                        animate={{ strokeDashoffset: 0 }}
-                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ filter: 'drop-shadow(0 0 12px #ef444488)' }}
-                      />
-                    </svg>
-                    {/* Pulse ring */}
-                    <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-red-500/40"
-                      animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.08, 0.4] }}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-                    />
-                    {/* Inner background */}
-                    <div className="absolute inset-4 rounded-full bg-red-500/10" />
-                    {/* Label */}
-                    <div className="relative z-10 text-center pointer-events-none">
-                      <X className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-2 text-red-400" strokeWidth={2.5} />
-                      <p className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-red-400">ZRUŠIT</p>
-                    </div>
-                  </motion.button>
-
-                  {/* POTVRDIT — green (vpravo) */}
-                  <motion.button
-                    onClick={confirmStepChange}
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.22, type: 'spring', stiffness: 260, damping: 20 }}
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.93 }}
-                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
-                  >
-                    {/* Glow */}
-                    <div className="absolute inset-0 rounded-full blur-[60px] opacity-30 group-hover:opacity-50 transition-opacity duration-300 bg-emerald-500" />
-                    {/* Animated SVG ring */}
-                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
-                      <circle cx="130" cy="130" r="118" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                      <motion.circle
-                        cx="130" cy="130" r="118" fill="none"
-                        stroke="#10b981" strokeWidth="6" strokeLinecap="round"
-                        strokeDasharray="741"
-                        initial={{ strokeDashoffset: 741 }}
-                        animate={{ strokeDashoffset: 0 }}
-                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ filter: 'drop-shadow(0 0 12px #10b98188)' }}
-                      />
-                    </svg>
-                    {/* Pulse ring */}
-                    <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-emerald-500/50"
-                      animate={{ scale: [1, 1.08, 1], opacity: [0.5, 0.1, 0.5] }}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                    {/* Inner background */}
-                    <div className="absolute inset-4 rounded-full bg-emerald-500/10" />
-                    {/* Label */}
-                    <div className="relative z-10 text-center pointer-events-none">
-                      <motion.div
-                        animate={{ scale: [1, 1.12, 1] }}
-                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                      >
-                        <svg className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-2 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </motion.div>
-                      <p className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-emerald-400">POTVRDIT</p>
-                    </div>
-                  </motion.button>
-
-                </div>
-              </div>
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
+      <StepConfirmationOverlay
+        pendingStepIndex={pendingStepIndex}
+        activeDbStatuses={activeDbStatuses}
+        safeStepIndex={safeStepIndex}
+        validStepCount={validStepCount}
+        onConfirm={confirmStepChange}
+        onCancel={cancelStepChange}
+      />
 
       {/* Staff Picker Modal */}
       <StaffPickerModal
@@ -1493,6 +1386,32 @@ const prevStep = activeDbStatuses.length > 0
         title={staffPickerRole === 'doctor' ? 'Lékař — výběr a správa' : 'Sestra — výběr a správa'}
         allRooms={allRooms}
         currentRoomId={room.id}
+      />
+
+      {/* Notification Overlay */}
+      <NotificationOverlay
+        isOpen={notificationOverlayOpen}
+        onClose={() => setNotificationOverlayOpen(false)}
+        onSendNotification={async (type, customReason) => {
+          try {
+            const response = await fetch('/api/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type,
+                roomId: room.id,
+                roomName: room.name,
+                customReason,
+              }),
+            });
+            const result = await response.json();
+            console.log('[v0] Notification sent:', result);
+          } catch (error) {
+            console.error('[v0] Error sending notification:', error);
+            throw error;
+          }
+        }}
+        roomName={room.name}
       />
     </motion.div>
   );
