@@ -1339,7 +1339,7 @@ const prevStep = activeDbStatuses.length > 0
       </div>
       </div>{/* end desktop wrapper */}
 
-      {/* Step Confirmation Overlay */}
+      {/* Step Confirmation Overlay - Ultra Premium */}
       <AnimatePresence>
         {pendingStepIndex !== null && (() => {
           const pendingStep = activeDbStatuses[Math.min(pendingStepIndex, activeDbStatuses.length - 1)];
@@ -1352,269 +1352,240 @@ const prevStep = activeDbStatuses.length > 0
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 z-[200] flex items-center justify-center overflow-hidden"
-              style={{ background: 'radial-gradient(ellipse at center, rgba(8,8,18,0.92) 0%, rgba(2,2,8,0.98) 100%)', backdropFilter: 'blur(24px)' }}
+              style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.97) 0%, rgba(5,5,15,0.98) 50%, rgba(0,0,0,0.99) 100%)' }}
             >
-              {/* Animated background gradient orbs */}
+              {/* Subtle grid pattern */}
+              <div 
+                className="absolute inset-0 opacity-[0.015]"
+                style={{
+                  backgroundImage: `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)`,
+                  backgroundSize: '60px 60px'
+                }}
+              />
+
+              {/* Elegant light beams */}
               <motion.div
-                className="absolute w-[600px] h-[600px] rounded-full opacity-20"
-                style={{ background: 'radial-gradient(circle, #ef4444 0%, transparent 70%)', left: '-10%', top: '20%' }}
-                animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute w-[1px] h-[60vh] bg-gradient-to-b from-transparent via-white/10 to-transparent"
+                style={{ left: '30%', top: '20%' }}
+                animate={{ opacity: [0, 0.3, 0], y: [-100, 100] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               />
               <motion.div
-                className="absolute w-[500px] h-[500px] rounded-full opacity-25"
-                style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)', right: '-5%', bottom: '10%' }}
-                animate={{ x: [0, -25, 0], y: [0, 25, 0], scale: [1, 1.15, 1] }}
-                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                className="absolute w-[1px] h-[50vh] bg-gradient-to-b from-transparent via-emerald-500/20 to-transparent"
+                style={{ right: '25%', top: '10%' }}
+                animate={{ opacity: [0, 0.4, 0], y: [-80, 120] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
               />
 
-              {/* Decorative background rings - multiple layers */}
-              <motion.div 
-                className="absolute w-[500px] h-[500px] rounded-full border border-white/[0.03]"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 120, repeat: Infinity, ease: 'linear' }}
-              />
-              <motion.div 
-                className="absolute w-[600px] h-[600px] rounded-full border border-dashed border-white/[0.02]"
-                animate={{ rotate: -360 }}
-                transition={{ duration: 180, repeat: Infinity, ease: 'linear' }}
-              />
-              <motion.div 
-                className="absolute w-[700px] h-[700px] rounded-full border border-white/[0.015]"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 240, repeat: Infinity, ease: 'linear' }}
-              />
+              {/* Central ambient glow */}
+              <div className="absolute w-[800px] h-[800px] rounded-full opacity-[0.08]" style={{ background: `radial-gradient(circle, ${pendingColor} 0%, transparent 70%)` }} />
 
-              {/* Floating particles */}
-              {[...Array(12)].map((_, i) => (
+              <div className="flex flex-col items-center gap-12 md:gap-16 relative z-10 px-4">
+                
+                {/* Premium title section */}
                 <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 rounded-full"
-                  style={{
-                    background: i % 2 === 0 ? '#10b981' : '#ef4444',
-                    left: `${15 + (i * 6)}%`,
-                    top: `${20 + ((i * 7) % 60)}%`,
-                  }}
-                  animate={{
-                    y: [0, -30, 0],
-                    opacity: [0.2, 0.6, 0.2],
-                    scale: [1, 1.5, 1],
-                  }}
-                  transition={{
-                    duration: 3 + (i * 0.3),
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: i * 0.2,
-                  }}
-                />
-              ))}
-
-              <div className="flex flex-col items-center gap-8 md:gap-12 relative z-10">
-                {/* Label with enhanced styling */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+                  initial={{ opacity: 0, y: -30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   className="text-center"
                 >
-                  <motion.p 
-                    className="text-[10px] sm:text-[11px] font-black tracking-[0.5em] uppercase text-white/25 mb-3"
-                    animate={{ opacity: [0.25, 0.4, 0.25] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  >
-                    PŘECHOD NA NOVOU FÁZI
-                  </motion.p>
+                  <p className="text-[9px] sm:text-[10px] font-medium tracking-[0.6em] uppercase text-white/20 mb-6">
+                    POTVRZENI PRECHODU
+                  </p>
                   <div className="relative">
-                    <motion.p 
-                      className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text"
-                      style={{ backgroundImage: `linear-gradient(135deg, ${pendingColor} 0%, white 50%, ${pendingColor} 100%)` }}
-                      animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                    >
-                      {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
-                    </motion.p>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extralight text-white/90 tracking-tight">
+                      {isReset ? 'Novy cyklus' : pendingStep?.name || 'Dalsi faze'}
+                    </h2>
                     <motion.div
-                      className="absolute -inset-4 rounded-2xl opacity-20 blur-xl"
-                      style={{ background: pendingColor }}
-                      animate={{ opacity: [0.1, 0.3, 0.1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                      initial={{ width: 0 }}
+                      animate={{ width: '80%' }}
+                      transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                     />
                   </div>
                 </motion.div>
 
-                {/* Two confirmation circles */}
-                <div className="flex items-center gap-6 sm:gap-10 md:gap-16 lg:gap-24">
+                {/* Elegant button container */}
+                <div className="flex items-center gap-8 sm:gap-12 md:gap-20 lg:gap-32">
 
-                  {/* ZRUŠIT — red (vlevo) */}
+                  {/* ZRUSIT - Minimal elegant red */}
                   <motion.button
                     onClick={cancelStepChange}
-                    initial={{ opacity: 0, scale: 0.5, x: -50 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    transition={{ delay: 0.15, type: 'spring', stiffness: 200, damping: 18 }}
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    className="relative w-[130px] h-[130px] sm:w-[170px] sm:h-[170px] md:w-[210px] md:h-[210px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[280px] lg:h-[280px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
                   >
-                    {/* Multi-layer glow */}
-                    <div className="absolute inset-0 rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-all duration-500 bg-red-500" />
-                    <div className="absolute inset-8 rounded-full blur-[40px] opacity-30 group-hover:opacity-50 transition-all duration-500 bg-red-600" />
+                    {/* Subtle ambient glow on hover */}
+                    <motion.div 
+                      className="absolute inset-0 rounded-full bg-red-500/0 group-hover:bg-red-500/5 transition-all duration-700"
+                      style={{ filter: 'blur(40px)' }}
+                    />
                     
-                    {/* Glass morphism background */}
-                    <div className="absolute inset-3 rounded-full bg-gradient-to-br from-red-950/40 via-red-900/20 to-transparent border border-red-500/20 group-hover:border-red-500/40 transition-all duration-300" />
-                    
-                    {/* Animated SVG rings - multiple */}
-                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
+                    {/* Outer ring - thin elegant */}
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 280">
                       <defs>
-                        <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#fca5a5" />
-                          <stop offset="50%" stopColor="#ef4444" />
-                          <stop offset="100%" stopColor="#b91c1c" />
+                        <linearGradient id="cancelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="rgba(248,113,113,0.6)" />
+                          <stop offset="50%" stopColor="rgba(239,68,68,0.8)" />
+                          <stop offset="100%" stopColor="rgba(185,28,28,0.6)" />
                         </linearGradient>
-                        <filter id="redGlow">
-                          <feGaussianBlur stdDeviation="3" result="blur" />
-                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
                       </defs>
-                      {/* Outer track */}
-                      <circle cx="130" cy="130" r="120" fill="none" stroke="rgba(239,68,68,0.1)" strokeWidth="1" />
-                      {/* Inner track */}
-                      <circle cx="130" cy="130" r="105" fill="none" stroke="rgba(239,68,68,0.05)" strokeWidth="1" strokeDasharray="4 8" />
-                      {/* Main animated ring */}
+                      {/* Background circle */}
+                      <circle cx="140" cy="140" r="135" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                      {/* Main ring with gradient */}
                       <motion.circle
-                        cx="130" cy="130" r="112" fill="none"
-                        stroke="url(#redGrad)" strokeWidth="8" strokeLinecap="round"
-                        strokeDasharray="704"
-                        initial={{ strokeDashoffset: 704 }}
+                        cx="140" cy="140" r="135" fill="none"
+                        stroke="url(#cancelGrad)" strokeWidth="2" strokeLinecap="round"
+                        strokeDasharray="848"
+                        initial={{ strokeDashoffset: 848, rotate: -90 }}
                         animate={{ strokeDashoffset: 0 }}
-                        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                        filter="url(#redGlow)"
+                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+                        style={{ transformOrigin: 'center' }}
+                        transform="rotate(-90 140 140)"
                       />
-                      {/* Orbiting dot */}
-                      <motion.circle
-                        cx="130" cy="18" r="4" fill="#ef4444"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                        style={{ transformOrigin: '130px 130px' }}
-                      />
+                      {/* Inner decorative ring */}
+                      <circle cx="140" cy="140" r="115" fill="none" stroke="rgba(239,68,68,0.08)" strokeWidth="1" strokeDasharray="2 6" />
                     </svg>
+
+                    {/* Glass inner circle */}
+                    <div className="absolute inset-6 sm:inset-8 md:inset-10 rounded-full bg-gradient-to-br from-white/[0.02] to-transparent border border-white/[0.04] group-hover:border-red-500/20 transition-all duration-500" />
                     
-                    {/* Multiple pulse rings */}
+                    {/* Pulsing ring */}
                     <motion.div
-                      className="absolute inset-0 rounded-full border border-red-500/30"
-                      animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                      className="absolute inset-4 rounded-full border border-red-500/0 group-hover:border-red-500/20"
+                      animate={{ scale: [1, 1.05, 1], opacity: [0, 0.5, 0] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
                     />
-                    <motion.div
-                      className="absolute inset-0 rounded-full border border-red-400/20"
-                      animate={{ scale: [1, 1.25, 1], opacity: [0.2, 0, 0.2] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
-                    />
-                    
-                    {/* Label */}
-                    <div className="relative z-10 text-center pointer-events-none">
+
+                    {/* Content */}
+                    <div className="relative z-10 flex flex-col items-center">
                       <motion.div
-                        animate={{ rotate: [0, -5, 5, 0] }}
-                        transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+                        className="mb-3 sm:mb-4"
+                        whileHover={{ rotate: 90 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <X className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 text-red-400 drop-shadow-[0_0_12px_rgba(239,68,68,0.5)]" strokeWidth={2} />
+                        <X className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-red-400/80 group-hover:text-red-400 transition-colors duration-300" strokeWidth={1.5} />
                       </motion.div>
-                      <p className="text-[10px] sm:text-xs md:text-sm font-black tracking-[0.25em] uppercase text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]">ZRUŠIT</p>
+                      <span className="text-[10px] sm:text-xs md:text-sm font-light tracking-[0.3em] uppercase text-white/40 group-hover:text-red-400/80 transition-colors duration-300">
+                        Zrusit
+                      </span>
                     </div>
                   </motion.button>
 
-                  {/* POTVRDIT — green (vpravo) */}
+                  {/* Vertical divider */}
+                  <motion.div 
+                    className="hidden sm:block w-[1px] h-32 md:h-40 bg-gradient-to-b from-transparent via-white/10 to-transparent"
+                    initial={{ opacity: 0, scaleY: 0 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    transition={{ delay: 0.6, duration: 0.5 }}
+                  />
+
+                  {/* POTVRDIT - Minimal elegant green */}
                   <motion.button
                     onClick={confirmStepChange}
-                    initial={{ opacity: 0, scale: 0.5, x: 50 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    transition={{ delay: 0.22, type: 'spring', stiffness: 200, damping: 18 }}
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    className="relative w-[130px] h-[130px] sm:w-[170px] sm:h-[170px] md:w-[210px] md:h-[210px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[280px] lg:h-[280px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
                   >
-                    {/* Multi-layer glow */}
-                    <div className="absolute inset-0 rounded-full blur-[80px] opacity-25 group-hover:opacity-50 transition-all duration-500 bg-emerald-500" />
-                    <div className="absolute inset-8 rounded-full blur-[40px] opacity-35 group-hover:opacity-60 transition-all duration-500 bg-emerald-400" />
+                    {/* Subtle ambient glow on hover */}
+                    <motion.div 
+                      className="absolute inset-0 rounded-full bg-emerald-500/0 group-hover:bg-emerald-500/8 transition-all duration-700"
+                      style={{ filter: 'blur(40px)' }}
+                    />
                     
-                    {/* Glass morphism background */}
-                    <div className="absolute inset-3 rounded-full bg-gradient-to-br from-emerald-950/40 via-emerald-900/20 to-transparent border border-emerald-500/25 group-hover:border-emerald-500/50 transition-all duration-300" />
-                    
-                    {/* Animated SVG rings - multiple */}
-                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
+                    {/* Outer ring - thin elegant */}
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 280">
                       <defs>
-                        <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#6ee7b7" />
-                          <stop offset="50%" stopColor="#10b981" />
-                          <stop offset="100%" stopColor="#047857" />
+                        <linearGradient id="confirmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="rgba(110,231,183,0.6)" />
+                          <stop offset="50%" stopColor="rgba(16,185,129,0.9)" />
+                          <stop offset="100%" stopColor="rgba(4,120,87,0.6)" />
                         </linearGradient>
-                        <filter id="greenGlow">
-                          <feGaussianBlur stdDeviation="3" result="blur" />
-                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
                       </defs>
-                      {/* Outer track */}
-                      <circle cx="130" cy="130" r="120" fill="none" stroke="rgba(16,185,129,0.15)" strokeWidth="1" />
-                      {/* Inner track */}
-                      <circle cx="130" cy="130" r="105" fill="none" stroke="rgba(16,185,129,0.08)" strokeWidth="1" strokeDasharray="4 8" />
-                      {/* Main animated ring */}
+                      {/* Background circle */}
+                      <circle cx="140" cy="140" r="135" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                      {/* Main ring with gradient */}
                       <motion.circle
-                        cx="130" cy="130" r="112" fill="none"
-                        stroke="url(#greenGrad)" strokeWidth="8" strokeLinecap="round"
-                        strokeDasharray="704"
-                        initial={{ strokeDashoffset: 704 }}
+                        cx="140" cy="140" r="135" fill="none"
+                        stroke="url(#confirmGrad)" strokeWidth="3" strokeLinecap="round"
+                        strokeDasharray="848"
+                        initial={{ strokeDashoffset: 848 }}
                         animate={{ strokeDashoffset: 0 }}
-                        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                        filter="url(#greenGlow)"
+                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
+                        transform="rotate(-90 140 140)"
                       />
-                      {/* Orbiting dot */}
-                      <motion.circle
-                        cx="130" cy="18" r="4" fill="#10b981"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                        style={{ transformOrigin: '130px 130px' }}
-                      />
+                      {/* Inner decorative ring */}
+                      <circle cx="140" cy="140" r="115" fill="none" stroke="rgba(16,185,129,0.12)" strokeWidth="1" strokeDasharray="2 6" />
+                      {/* Glowing accent dots */}
+                      {[0, 90, 180, 270].map((angle) => (
+                        <motion.circle
+                          key={angle}
+                          cx={140 + 135 * Math.cos((angle - 90) * Math.PI / 180)}
+                          cy={140 + 135 * Math.sin((angle - 90) * Math.PI / 180)}
+                          r="2"
+                          fill="#10b981"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0.3, 0.8, 0.3] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: angle / 360 }}
+                        />
+                      ))}
                     </svg>
+
+                    {/* Glass inner circle with gradient */}
+                    <div className="absolute inset-6 sm:inset-8 md:inset-10 rounded-full bg-gradient-to-br from-emerald-500/[0.03] to-transparent border border-emerald-500/10 group-hover:border-emerald-500/30 group-hover:from-emerald-500/[0.08] transition-all duration-500" />
                     
-                    {/* Multiple pulse rings */}
+                    {/* Pulsing rings */}
                     <motion.div
-                      className="absolute inset-0 rounded-full border border-emerald-500/40"
-                      animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0, 0.4] }}
+                      className="absolute inset-4 rounded-full border border-emerald-500/20"
+                      animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0, 0.2] }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
                     />
                     <motion.div
-                      className="absolute inset-0 rounded-full border border-emerald-400/25"
-                      animate={{ scale: [1, 1.25, 1], opacity: [0.25, 0, 0.25] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
+                      className="absolute inset-2 rounded-full border border-emerald-400/10"
+                      animate={{ scale: [1, 1.12, 1], opacity: [0.1, 0, 0.1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
                     />
-                    
-                    {/* Label */}
-                    <div className="relative z-10 text-center pointer-events-none">
+
+                    {/* Content */}
+                    <div className="relative z-10 flex flex-col items-center">
                       <motion.div
-                        animate={{ scale: [1, 1.15, 1], y: [0, -3, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                        className="mb-3 sm:mb-4"
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                       >
-                        <svg className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 text-emerald-400 drop-shadow-[0_0_16px_rgba(16,185,129,0.6)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       </motion.div>
-                      <p className="text-[10px] sm:text-xs md:text-sm font-black tracking-[0.25em] uppercase text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">POTVRDIT</p>
+                      <span className="text-[10px] sm:text-xs md:text-sm font-light tracking-[0.3em] uppercase text-emerald-400/80 group-hover:text-emerald-300 transition-colors duration-300">
+                        Potvrdit
+                      </span>
                     </div>
                   </motion.button>
 
                 </div>
 
-                {/* Helper text */}
+                {/* Elegant helper text */}
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-[10px] sm:text-xs text-white/20 tracking-wider uppercase"
+                  transition={{ delay: 0.8, duration: 0.5 }}
+                  className="text-[9px] sm:text-[10px] text-white/15 tracking-[0.4em] uppercase font-light"
                 >
-                  Vyberte akci pro pokračování
+                  Vyberte akci
                 </motion.p>
               </div>
+
+              {/* Bottom gradient fade */}
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
             </motion.div>
           );
         })()}
