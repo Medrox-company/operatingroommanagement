@@ -12,7 +12,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('management_contacts')
       .select('*')
-      .order('position', { ascending: true });
+      .order('sort_order', { ascending: true });
 
     if (error) throw error;
 
@@ -30,7 +30,18 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { position, email, name, notify_status_changes, notify_errors } = body;
+    const { 
+      position, 
+      email, 
+      name, 
+      phone,
+      notes,
+      notify_emergencies, 
+      notify_daily_reports,
+      notify_statistics,
+      is_active,
+      sort_order
+    } = body;
 
     if (!position || !email) {
       return NextResponse.json(
@@ -43,11 +54,17 @@ export async function POST(request: NextRequest) {
       .from('management_contacts')
       .insert([
         {
+          id: `mgmt-${Date.now()}`,
           position,
           email,
           name: name || '',
-          notify_status_changes: notify_status_changes ?? true,
-          notify_errors: notify_errors ?? true,
+          phone: phone || '',
+          notes: notes || '',
+          notify_emergencies: notify_emergencies ?? true,
+          notify_daily_reports: notify_daily_reports ?? false,
+          notify_statistics: notify_statistics ?? false,
+          is_active: is_active ?? true,
+          sort_order: sort_order ?? 0,
         },
       ])
       .select();
@@ -68,7 +85,19 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, position, email, name, notify_status_changes, notify_errors } = body;
+    const { 
+      id, 
+      position, 
+      email, 
+      name, 
+      phone,
+      notes,
+      notify_emergencies, 
+      notify_daily_reports,
+      notify_statistics,
+      is_active,
+      sort_order
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -83,8 +112,13 @@ export async function PUT(request: NextRequest) {
         position,
         email,
         name: name || '',
-        notify_status_changes,
-        notify_errors,
+        phone: phone || '',
+        notes: notes || '',
+        notify_emergencies,
+        notify_daily_reports,
+        notify_statistics,
+        is_active,
+        sort_order,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
