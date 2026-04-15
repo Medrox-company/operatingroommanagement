@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendEmailNotification, generateEmailTemplate } from '@/lib/email';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,54 +16,60 @@ interface NotificationRequest {
 
 const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subject: string }> = {
   'notify_late_surgeon': {
-    name: 'Pozdní příchod operatéra',
+    name: 'Pozdni prichod operatera',
     field: 'notify_late_surgeon',
-    subject: 'Upozornění: Pozdní příchod operatéra'
+    subject: 'Upozorneni: Pozdni prichod operatera'
   },
   'notify_late_anesthesiologist': {
-    name: 'Pozdní příchod anesteziologa',
+    name: 'Pozdni prichod anesteziologa',
     field: 'notify_late_anesthesiologist',
-    subject: 'Upozornění: Pozdní příchod anesteziologa'
+    subject: 'Upozorneni: Pozdni prichod anesteziologa'
   },
   'notify_patient_not_ready': {
-    name: 'Nepřipravený pacient',
+    name: 'Nepripraveny pacient',
     field: 'notify_patient_not_ready',
-    subject: 'Upozornění: Nepřipravený pacient'
+    subject: 'Upozorneni: Nepripraveny pacient'
   },
   'notify_late_arrival': {
-    name: 'Pozdní příjezd',
+    name: 'Pozdni prijezd',
     field: 'notify_late_arrival',
-    subject: 'Upozornění: Pozdní příjezd'
+    subject: 'Upozorneni: Pozdni prijezd'
   },
   'notify_other': {
-    name: 'Jiný důvod',
+    name: 'Jiny duvod',
     field: 'notify_other',
-    subject: 'Upozornění: Jiný důvod'
+    subject: 'Upozorneni: Jiny duvod'
   },
 };
 
 export async function POST(request: NextRequest) {
   try {
     const { type, roomId, roomName, customReason }: NotificationRequest = await request.json();
+    console.log('[v0] send-notification called with:', { type, roomId, roomName, customReason });
 
     const notificationType = NOTIFICATION_TYPE_MAP[type];
     if (!notificationType) {
-      return NextResponse.json({ error: 'Neznámý typ notifikace' }, { status: 400 });
+      console.log('[v0] Unknown notification type:', type);
+      return NextResponse.json({ error: 'Neznamy typ notifikace' }, { status: 400 });
     }
 
     // Get management contacts that want this type of notification
+    console.log('[v0] Fetching contacts with field:', notificationType.field);
     const { data: contacts, error: contactsError } = await supabase
       .from('management_contacts')
       .select('email, name, position')
       .eq(notificationType.field, true)
       .eq('is_active', true);
 
+    console.log('[v0] Contacts query result:', { contacts, contactsError });
+
     if (contactsError) {
       console.error('[v0] Error fetching contacts:', contactsError);
-      return NextResponse.json({ error: 'Chyba při načítání kontaktů' }, { status: 500 });
+      return NextResponse.json({ error: 'Chyba pri nacitani kontaktu' }, { status: 500 });
     }
 
     if (!contacts || contacts.length === 0) {
+      console.log('[v0] No contacts found for notification type:', type);
       // Log notification even if no recipients
       try {
         const { error: logError } = await supabase
@@ -82,85 +89,50 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ 
-        message: 'Žádný příjemce není nakonfigurován pro tento typ notifikace',
+        message: 'Zadny prijemce neni nakonfigurovan pro tento typ notifikace',
         sentTo: [],
         recipientCount: 0
       }, { status: 200 });
     }
 
-    // Send email notifications using Resend
-    const emailPromises = contacts.map((contact) => {
-      return fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: 'notifications@operatingroom.app',
-          to: contact.email,
-          subject: `${notificationType.subject} - Sál: ${roomName}`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <style>
-                  body { font-family: Arial, sans-serif; line-height: 1.6; background: #f5f5f5; }
-                  .container { max-width: 600px; margin: 20px auto; padding: 0; }
-                  .header { background: #0a0a12; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-                  .content { background: white; padding: 20px; }
-                  .room-name { font-size: 22px; font-weight: bold; color: #00d8c1; margin: 10px 0; }
-                  .notification-type { font-size: 16px; font-weight: bold; color: #333; margin: 15px 0; }
-                  .details { background: #f9f9f9; padding: 15px; border-left: 4px solid #00d8c1; margin: 15px 0; border-radius: 4px; }
-                  .custom-reason { background: #fff3cd; padding: 15px; border-left: 4px solid #ff6b6b; margin: 15px 0; border-radius: 4px; color: #333; }
-                  .timestamp { color: #666; font-size: 12px; margin: 10px 0; }
-                  .position { color: #666; font-size: 13px; }
-                  .footer { background: #f5f5f5; padding: 15px; text-align: center; color: #999; font-size: 11px; border-radius: 0 0 8px 8px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <p style="margin: 0;">🏥 Notifikace z operačního sálu</p>
-                  </div>
-                  <div class="content">
-                    <p>Ahoj <strong>${contact.name}</strong>,</p>
-                    <p>Obdrželi jste notifikaci z operačního sálu:</p>
-                    
-                    <div class="details">
-                      <div class="room-name">📍 ${roomName}</div>
-                      <div class="notification-type">⚠️ ${notificationType.name}</div>
-                      ${customReason ? `<div class="custom-reason"><strong>Podrobnosti:</strong><br>${customReason}</div>` : ''}
-                      <div class="timestamp">⏰ ${new Date().toLocaleString('cs-CZ')}</div>
-                    </div>
-
-                    <p class="position">Vaše pozice: <strong>${contact.position}</strong></p>
-                    <p>Prosím věnujte okamžitě pozornost této situaci.</p>
-                  </div>
-                  <div class="footer">
-                    <p>Tato zpráva byla automaticky generována systémem správy operačních sálů.</p>
-                  </div>
-                </div>
-              </body>
-            </html>
-          `,
-        }),
-      })
-        .then((res) => res.json())
-        .then((result) => ({
-          email: contact.email,
-          name: contact.name,
-          sent: !result.error,
-        }))
-        .catch((error) => ({
-          email: contact.email,
-          name: contact.name,
-          sent: false,
-          error: error.message,
-        }));
+    // Generate email HTML using the same template as NotificationsManager
+    const emailHtml = generateEmailTemplate({
+      type: 'emergency_alert',
+      roomName: roomName,
+      message: customReason || notificationType.name,
+      details: {
+        'Typ notifikace': notificationType.name,
+        'Sal': roomName,
+        'Cas': new Date().toLocaleString('cs-CZ'),
+        ...(customReason ? { 'Podrobnosti': customReason } : {}),
+      },
     });
 
-    const results = await Promise.all(emailPromises);
+    // Send emails using the same method as NotificationsManager (via Supabase Edge Function)
+    console.log('[v0] Sending emails to', contacts.length, 'contacts');
+    const results: { email: string; name: string; sent: boolean; error?: string }[] = [];
+    
+    for (const contact of contacts) {
+      console.log('[v0] Sending email to:', contact.email);
+      const result = await sendEmailNotification({
+        to: contact.email,
+        subject: `${notificationType.subject} - Sal: ${roomName}`,
+        html: emailHtml,
+        recipientName: contact.name,
+      });
+      
+      console.log('[v0] Email result for', contact.email, ':', result);
+      results.push({
+        email: contact.email,
+        name: contact.name,
+        sent: result.success,
+        error: result.error,
+      });
+      
+      // Small delay between emails to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     const successCount = results.filter((r) => r.sent).length;
 
     // Log notification in database
@@ -182,16 +154,19 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      success: true,
-      message: `Notifikace byla odeslána ${successCount} příjemcům`,
+      success: successCount > 0,
+      message: successCount > 0 
+        ? `Notifikace byla odeslana ${successCount} prijemcum` 
+        : 'Nepodarilo se odeslat zadnou notifikaci',
       sentTo: results.filter((r) => r.sent).map((r) => `${r.name} (${r.email})`),
       failedCount: results.filter((r) => !r.sent).length,
       recipientCount: successCount,
+      errors: results.filter((r) => !r.sent).map((r) => `${r.email}: ${r.error}`),
     });
   } catch (error) {
     console.error('[v0] Error in send-notification:', error);
     return NextResponse.json(
-      { error: 'Interní chyba serveru' },
+      { error: 'Interni chyba serveru' },
       { status: 500 }
     );
   }
