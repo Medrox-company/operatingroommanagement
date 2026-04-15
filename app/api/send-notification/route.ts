@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       details: {
         'Typ notifikace': notificationType.name,
         'Sal': roomName,
-        'Cas': new Date().toLocaleString('cs-CZ'),
+        'Cas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
         ...(customReason ? { 'Podrobnosti': customReason } : {}),
       },
     });

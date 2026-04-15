@@ -177,7 +177,7 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
                       Automaticke oznameni ze systemu Sprava operacnich salu
                     </p>
                     <p style="margin: 0; font-size: 12px; color: #cbd5e1;">
-                      ${data.timestamp || new Date().toLocaleString('cs-CZ')}
+                      ${data.timestamp || new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' })}
                     </p>
                   </td>
                 </tr>

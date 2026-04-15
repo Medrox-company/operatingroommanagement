@@ -99,7 +99,7 @@ async function sendEmergencyEmailNotification(
       message: '🚨 Emergency alert has been activated in this operating room!',
       details: {
         'Department': room.department,
-        'Time': new Date().toISOString(),
+        'Time': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
         'Status': room.status,
         'Septic': room.isSeptic ? 'Yes' : 'No',
       },
@@ -131,7 +131,7 @@ async function sendStatusChangeEmailNotification(
         'Previous Status': previousStatus,
         'New Status': room.status,
         'Department': room.department,
-        'Time': new Date().toISOString(),
+        'Time': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
       },
     });
 
@@ -162,7 +162,7 @@ async function sendQueueUpdateEmailNotification(
         'New Queue': room.queueCount.toString(),
         'Change': (room.queueCount - previousQueueCount > 0 ? '+' : '') + (room.queueCount - previousQueueCount),
         'Department': room.department,
-        'Time': new Date().toISOString(),
+        'Time': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
       },
     });
 
