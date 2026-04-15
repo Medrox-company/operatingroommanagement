@@ -50,6 +50,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [staffPickerOpen, setStaffPickerOpen] = useState(false);
   const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings | null>(null);
   const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
+  const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
   const [patientCallElapsedTime, setPatientCallElapsedTime] = useState('00:00');
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
@@ -340,7 +341,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     // Prevent loop back if locked
     if (room.isLocked && nextIndex === 0) return;
 
-    changeStep(nextIndex);
+    // Show confirmation overlay instead of immediately changing
+    setPendingStepIndex(nextIndex);
+  };
+
+  const confirmStepChange = () => {
+    if (pendingStepIndex === null) return;
+    changeStep(pendingStepIndex);
+    setPendingStepIndex(null);
+  };
+
+  const cancelStepChange = () => {
+    setPendingStepIndex(null);
   };
   
   const roundUpTo15Min = (date: Date): Date => {
@@ -1326,6 +1338,140 @@ const prevStep = activeDbStatuses.length > 0
         </div>
       </div>
       </div>{/* end desktop wrapper */}
+
+      {/* Step Confirmation Overlay */}
+      <AnimatePresence>
+        {pendingStepIndex !== null && (() => {
+          const pendingStep = activeDbStatuses[Math.min(pendingStepIndex, activeDbStatuses.length - 1)];
+          const pendingColor = pendingStep?.color || '#6B7280';
+          const isReset = pendingStepIndex === 0 && safeStepIndex === validStepCount - 1;
+
+          return (
+            <motion.div
+              key="step-confirm-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="absolute inset-0 z-[200] flex items-center justify-center"
+              style={{ background: 'rgba(5, 5, 12, 0.85)', backdropFilter: 'blur(16px)' }}
+            >
+              {/* Decorative background rings */}
+              <div className="absolute w-[700px] h-[700px] rounded-full border border-white/[0.04]" />
+              <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.025]" />
+
+              <div className="flex flex-col items-center gap-10 relative z-10">
+                {/* Label */}
+                <motion.div
+                  initial={{ opacity: 0, y: -12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-center"
+                >
+                  <p className="text-[11px] font-black tracking-[0.4em] uppercase text-white/30 mb-3">
+                    PŘECHOD NA NOVOU FÁZI
+                  </p>
+                  <p className="text-2xl font-bold text-white/80">
+                    {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
+                  </p>
+                </motion.div>
+
+                {/* Two confirmation circles */}
+                <div className="flex items-center gap-8 sm:gap-12 md:gap-20">
+
+                  {/* POTVRDIT — green */}
+                  <motion.button
+                    onClick={confirmStepChange}
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.93 }}
+                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
+                  >
+                    {/* Glow */}
+                    <div className="absolute inset-0 rounded-full blur-[60px] opacity-30 group-hover:opacity-50 transition-opacity duration-300 bg-emerald-500" />
+                    {/* Animated SVG ring */}
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
+                      <circle cx="130" cy="130" r="118" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                      <motion.circle
+                        cx="130" cy="130" r="118" fill="none"
+                        stroke="#10b981" strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray="741"
+                        initial={{ strokeDashoffset: 741 }}
+                        animate={{ strokeDashoffset: 0 }}
+                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ filter: 'drop-shadow(0 0 12px #10b98188)' }}
+                      />
+                    </svg>
+                    {/* Pulse ring */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-emerald-500/50"
+                      animate={{ scale: [1, 1.08, 1], opacity: [0.5, 0.1, 0.5] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    {/* Inner background */}
+                    <div className="absolute inset-4 rounded-full bg-emerald-500/10" />
+                    {/* Label */}
+                    <div className="relative z-10 text-center pointer-events-none">
+                      <motion.div
+                        animate={{ scale: [1, 1.12, 1] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <svg className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-2 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </motion.div>
+                      <p className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-emerald-400">POTVRDIT</p>
+                    </div>
+                  </motion.button>
+
+                  {/* ZRUŠIT — red */}
+                  <motion.button
+                    onClick={cancelStepChange}
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.22, type: 'spring', stiffness: 260, damping: 20 }}
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.93 }}
+                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
+                  >
+                    {/* Glow */}
+                    <div className="absolute inset-0 rounded-full blur-[60px] opacity-25 group-hover:opacity-45 transition-opacity duration-300 bg-red-500" />
+                    {/* Animated SVG ring */}
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
+                      <circle cx="130" cy="130" r="118" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                      <motion.circle
+                        cx="130" cy="130" r="118" fill="none"
+                        stroke="#ef4444" strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray="741"
+                        initial={{ strokeDashoffset: 741 }}
+                        animate={{ strokeDashoffset: 0 }}
+                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ filter: 'drop-shadow(0 0 12px #ef444488)' }}
+                      />
+                    </svg>
+                    {/* Pulse ring */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-red-500/40"
+                      animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.08, 0.4] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                    />
+                    {/* Inner background */}
+                    <div className="absolute inset-4 rounded-full bg-red-500/10" />
+                    {/* Label */}
+                    <div className="relative z-10 text-center pointer-events-none">
+                      <X className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-2 text-red-400" strokeWidth={2.5} />
+                      <p className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-red-400">ZRUŠIT</p>
+                    </div>
+                  </motion.button>
+
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Staff Picker Modal */}
       <StaffPickerModal
