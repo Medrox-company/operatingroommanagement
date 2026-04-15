@@ -142,8 +142,8 @@ export default function EmailPreviewPage() {
               </div>
 
               {/* Email Content */}
-              <div className="p-8 bg-[#1a1a22] flex justify-center">
-                <div className="w-full max-w-[640px] bg-[#0a0a0f] rounded-lg overflow-hidden shadow-2xl">
+              <div className="p-8 bg-[#EAEEF3] flex justify-center">
+                <div className="w-full max-w-[640px] rounded-lg overflow-hidden shadow-2xl">
                   {renderTemplate()}
                 </div>
               </div>
