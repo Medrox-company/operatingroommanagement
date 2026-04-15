@@ -45,12 +45,12 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
             onClick={(e) => e.stopPropagation()}
             className="bg-black border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl"
           >
-            <h3 className="text-2xl font-bold text-white mb-2">Zadejte duvod</h3>
-            <p className="text-white/40 text-sm mb-6">Popiste duvod notifikace pro management</p>
+            <h3 className="text-2xl font-bold text-white mb-2">Zadejte důvod</h3>
+            <p className="text-white/40 text-sm mb-6">Popište důvod notifikace pro management</p>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Napiste duvod notifikace..."
+              placeholder="Napište důvod notifikace..."
               className="w-full px-5 py-4 rounded-2xl bg-white/[0.03] border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 transition-all resize-none mb-6 text-lg"
               rows={4}
               autoFocus
@@ -60,7 +60,7 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
                 onClick={onClose}
                 className="flex-1 px-6 py-4 bg-white/5 border border-white/10 text-white font-semibold rounded-2xl hover:bg-white/10 transition-all"
               >
-                Zrusit
+                Zrušit
               </button>
               <button
                 onClick={handleSubmit}
@@ -81,27 +81,27 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
 const NOTIFICATION_TYPES = [
   {
     id: 'notify_late_surgeon',
-    label: 'Pozdni prichod operatera',
+    label: 'Pozdní příchod operatéra',
     color: '#ef4444',
   },
   {
     id: 'notify_late_anesthesiologist',
-    label: 'Pozdni prichod anesteziologa',
+    label: 'Pozdní příchod anesteziologa',
     color: '#f97316',
   },
   {
     id: 'notify_patient_not_ready',
-    label: 'Nepripraveny pacient',
+    label: 'Nepřipravený\npacient',
     color: '#eab308',
   },
   {
     id: 'notify_late_arrival',
-    label: 'Pozdni prijezd',
+    label: 'Pozdní příjezd',
     color: '#3b82f6',
   },
   {
     id: 'notify_other',
-    label: 'Jiny duvod',
+    label: 'Jiný důvod',
     color: '#a855f7',
   },
 ];
@@ -252,7 +252,7 @@ export default function NotificationOverlay({
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
                         ) : (
-                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight">
+                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
@@ -341,7 +341,7 @@ export default function NotificationOverlay({
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
                         ) : (
-                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight">
+                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
@@ -350,17 +350,6 @@ export default function NotificationOverlay({
                   );
                 })}
               </div>
-
-              {/* Close hint */}
-              <motion.button
-                onClick={onClose}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="mt-10 md:mt-16 p-3 hover:bg-white/10 rounded-full text-white/30 hover:text-white transition-all border border-white/10 hover:border-white/20"
-              >
-                <X className="w-6 h-6" />
-              </motion.button>
             </div>
           </motion.div>
         )}
