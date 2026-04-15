@@ -1339,7 +1339,7 @@ const prevStep = activeDbStatuses.length > 0
       </div>
       </div>{/* end desktop wrapper */}
 
-      {/* Step Confirmation Overlay - Cinematic */}
+      {/* Step Confirmation Overlay - App Style */}
       <AnimatePresence>
         {pendingStepIndex !== null && (() => {
           const pendingStep = activeDbStatuses[Math.min(pendingStepIndex, activeDbStatuses.length - 1)];
@@ -1352,305 +1352,208 @@ const prevStep = activeDbStatuses.length > 0
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 z-[200] flex items-center justify-center overflow-hidden"
             >
-              {/* Cinematic black background with vignette */}
+              {/* Background - same style as main app */}
               <div className="absolute inset-0 bg-black" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.95)_100%)]" />
+
+              {/* Atmospheric Edge Glows - matching main circle style */}
               <div 
-                className="absolute inset-0"
-                style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, transparent 0%, rgba(0,0,0,0.8) 100%)' }}
+                className="absolute -left-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-25"
+                style={{ backgroundColor: '#ef4444' }}
               />
-
-              {/* Animated aurora/northern lights effect */}
-              <motion.div
-                className="absolute inset-0 opacity-30"
-                style={{
-                  background: `
-                    radial-gradient(ellipse 120% 50% at 20% 20%, rgba(239,68,68,0.15) 0%, transparent 50%),
-                    radial-gradient(ellipse 100% 60% at 80% 80%, rgba(16,185,129,0.2) 0%, transparent 50%)
-                  `
-                }}
-                animate={{
-                  opacity: [0.2, 0.35, 0.2],
-                  scale: [1, 1.05, 1],
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-              />
-
-              {/* Floating orbs */}
-              <motion.div
-                className="absolute w-96 h-96 rounded-full"
-                style={{ 
-                  background: 'radial-gradient(circle, rgba(239,68,68,0.08) 0%, transparent 70%)',
-                  left: '5%',
-                  top: '30%',
-                  filter: 'blur(60px)'
-                }}
-                animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
-                transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-              />
-              <motion.div
-                className="absolute w-[500px] h-[500px] rounded-full"
-                style={{ 
-                  background: 'radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%)',
-                  right: '0%',
-                  bottom: '20%',
-                  filter: 'blur(80px)'
-                }}
-                animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
-                transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-              />
-
-              {/* Subtle noise texture */}
               <div 
-                className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
-                }}
+                className="absolute -right-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-30"
+                style={{ backgroundColor: '#10b981' }}
+              />
+
+              {/* Central glow for pending step color */}
+              <div 
+                className="absolute w-[600px] h-[600px] rounded-full blur-[150px] opacity-15"
+                style={{ backgroundColor: pendingColor }}
               />
 
               {/* Main content */}
               <div className="flex flex-col items-center relative z-10 px-4">
                 
-                {/* Cinematic title */}
+                {/* Title section - matching app typography */}
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-center mb-16 md:mb-24"
+                  transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-center mb-12 md:mb-16"
                 >
-                  <motion.div
-                    className="inline-block mb-6"
-                    initial={{ width: 0 }}
-                    animate={{ width: 60 }}
-                    transition={{ delay: 0.4, duration: 0.8 }}
-                  >
-                    <div className="h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                  </motion.div>
-                  
-                  <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-thin text-white tracking-[0.02em] mb-4">
-                    {isReset ? 'Novy cyklus' : pendingStep?.name || 'Dalsi faze'}
-                  </h2>
-                  
-                  <motion.p 
-                    className="text-[10px] sm:text-xs tracking-[0.5em] uppercase text-white/30 font-light"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                  >
-                    Potvrzeni prechodu
-                  </motion.p>
+                  <p className="text-[10px] sm:text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mb-4">
+                    POTVRZENÍ PŘECHODU
+                  </p>
+                  <AnimatePresence mode="wait">
+                    <motion.h2
+                      key={pendingStep?.name}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white"
+                    >
+                      {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
+                    </motion.h2>
+                  </AnimatePresence>
                 </motion.div>
 
-                {/* Dual orb buttons */}
-                <div className="flex items-center gap-12 sm:gap-20 md:gap-32 lg:gap-44">
+                {/* Two circles container */}
+                <div className="flex items-center gap-8 sm:gap-12 md:gap-20 lg:gap-32">
 
-                  {/* ZRUSIT - Morphing red orb */}
+                  {/* ZRUŠIT - Red circle matching main app style */}
                   <motion.button
                     onClick={cancelStepChange}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="relative w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] md:w-[260px] md:h-[260px] lg:w-[320px] lg:h-[320px] flex items-center justify-center focus:outline-none cursor-pointer group"
+                    transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[240px] md:h-[240px] lg:w-[300px] lg:h-[300px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer"
                   >
-                    {/* Outer glow sphere */}
-                    <motion.div 
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background: 'radial-gradient(circle at 30% 30%, rgba(248,113,113,0.15) 0%, rgba(239,68,68,0.05) 40%, transparent 70%)',
-                        filter: 'blur(20px)',
-                      }}
-                      animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-
-                    {/* Main sphere with 3D gradient */}
+                    {/* Primary Background Glow - matching main circle */}
                     <div 
-                      className="absolute inset-4 sm:inset-6 md:inset-8 rounded-full transition-all duration-500 group-hover:inset-2 sm:group-hover:inset-4 md:group-hover:inset-6"
-                      style={{
-                        background: `
-                          radial-gradient(ellipse 100% 100% at 30% 20%, rgba(248,113,113,0.3) 0%, transparent 50%),
-                          radial-gradient(ellipse 80% 80% at 70% 80%, rgba(127,29,29,0.4) 0%, transparent 50%),
-                          radial-gradient(circle at 50% 50%, rgba(239,68,68,0.1) 0%, rgba(0,0,0,0.3) 100%)
-                        `,
-                        boxShadow: `
-                          inset 0 0 60px rgba(239,68,68,0.1),
-                          0 0 80px rgba(239,68,68,0.1)
-                        `,
-                        border: '1px solid rgba(239,68,68,0.15)',
-                      }}
+                      className="absolute inset-0 rounded-full blur-[100px] transition-all duration-700 opacity-25 group-hover:opacity-40"
+                      style={{ backgroundColor: '#ef4444' }}
                     />
 
-                    {/* Inner highlight */}
-                    <motion.div 
-                      className="absolute top-8 sm:top-10 md:top-12 left-1/2 -translate-x-1/2 w-1/3 h-4 sm:h-5 md:h-6 rounded-full opacity-40 group-hover:opacity-60 transition-opacity duration-500"
-                      style={{
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)',
-                        filter: 'blur(8px)',
-                      }}
+                    {/* Inner Glow Core */}
+                    <div 
+                      className="absolute inset-10 rounded-full blur-[80px] opacity-20 group-hover:opacity-35 transition-all duration-500"
+                      style={{ backgroundColor: '#ef4444' }}
                     />
 
-                    {/* Orbiting ring */}
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
-                      <defs>
-                        <linearGradient id="cancelRing" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="rgba(239,68,68,0)" />
-                          <stop offset="50%" stopColor="rgba(239,68,68,0.6)" />
-                          <stop offset="100%" stopColor="rgba(239,68,68,0)" />
-                        </linearGradient>
-                      </defs>
-                      <motion.circle
-                        cx="160" cy="160" r="150" fill="none"
-                        stroke="url(#cancelRing)" strokeWidth="1" strokeLinecap="round"
-                        strokeDasharray="200 742"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                        style={{ transformOrigin: 'center' }}
+                    {/* Animated Ring - matching main circle SVG style */}
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+                      <circle cx="150" cy="150" r="140" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
+                      <motion.circle 
+                        cx="150" cy="150" r="140" fill="none"
+                        stroke="#ef4444" strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray="880"
+                        initial={{ strokeDashoffset: 880 }}
+                        animate={{ strokeDashoffset: 0 }}
+                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ filter: 'drop-shadow(0 0 15px rgba(239,68,68,0.5))' }}
+                        className="opacity-80"
                       />
                     </svg>
 
-                    {/* Content */}
-                    <div className="relative z-10 flex flex-col items-center">
+                    {/* Pulsing Animation Ring - matching main circle */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2"
+                      style={{ borderColor: '#ef4444' }}
+                      animate={{ 
+                        scale: [1, 1.08, 1],
+                        opacity: [0.4, 0.1, 0.4]
+                      }}
+                      transition={{
+                        duration: 2.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+
+                    {/* Center Content */}
+                    <div className="text-center relative z-20 pointer-events-none flex flex-col items-center">
                       <motion.div
-                        whileHover={{ rotate: 180 }}
-                        transition={{ duration: 0.4 }}
+                        whileHover={{ rotate: 90 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <X className="w-10 h-10 sm:w-14 sm:h-14 md:w-18 md:h-18 lg:w-20 lg:h-20 text-red-400/70 group-hover:text-red-300 transition-colors duration-500" strokeWidth={1} />
+                        <X className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-red-400 group-hover:text-red-300 transition-colors duration-300" strokeWidth={1.5} />
                       </motion.div>
-                      <span className="mt-2 sm:mt-3 text-[9px] sm:text-[10px] md:text-xs tracking-[0.4em] uppercase text-white/30 group-hover:text-red-300/80 transition-colors duration-500 font-light">
-                        Zrusit
+                      <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-red-400/80 group-hover:text-red-300 transition-colors duration-300">
+                        Zrušit
                       </span>
                     </div>
-
-                    {/* Click ripple effect placeholder */}
-                    <motion.div
-                      className="absolute inset-0 rounded-full border border-red-400/0 group-hover:border-red-400/30"
-                      animate={{ scale: [0.8, 1.1], opacity: [0.5, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
                   </motion.button>
 
-                  {/* POTVRDIT - Morphing green orb */}
+                  {/* POTVRDIT - Green circle matching main app style */}
                   <motion.button
                     onClick={confirmStepChange}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="relative w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] md:w-[260px] md:h-[260px] lg:w-[320px] lg:h-[320px] flex items-center justify-center focus:outline-none cursor-pointer group"
+                    transition={{ delay: 0.3, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[240px] md:h-[240px] lg:w-[300px] lg:h-[300px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer"
                   >
-                    {/* Outer glow sphere */}
-                    <motion.div 
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background: 'radial-gradient(circle at 30% 30%, rgba(110,231,183,0.2) 0%, rgba(16,185,129,0.08) 40%, transparent 70%)',
-                        filter: 'blur(20px)',
-                      }}
-                      animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-
-                    {/* Main sphere with 3D gradient */}
+                    {/* Primary Background Glow - matching main circle */}
                     <div 
-                      className="absolute inset-4 sm:inset-6 md:inset-8 rounded-full transition-all duration-500 group-hover:inset-2 sm:group-hover:inset-4 md:group-hover:inset-6"
-                      style={{
-                        background: `
-                          radial-gradient(ellipse 100% 100% at 30% 20%, rgba(110,231,183,0.35) 0%, transparent 50%),
-                          radial-gradient(ellipse 80% 80% at 70% 80%, rgba(4,120,87,0.5) 0%, transparent 50%),
-                          radial-gradient(circle at 50% 50%, rgba(16,185,129,0.15) 0%, rgba(0,0,0,0.3) 100%)
-                        `,
-                        boxShadow: `
-                          inset 0 0 80px rgba(16,185,129,0.15),
-                          0 0 100px rgba(16,185,129,0.15)
-                        `,
-                        border: '1px solid rgba(16,185,129,0.2)',
-                      }}
+                      className="absolute inset-0 rounded-full blur-[100px] transition-all duration-700 opacity-30 group-hover:opacity-50"
+                      style={{ backgroundColor: '#10b981' }}
                     />
 
-                    {/* Inner highlight */}
-                    <motion.div 
-                      className="absolute top-8 sm:top-10 md:top-12 left-1/2 -translate-x-1/2 w-1/3 h-4 sm:h-5 md:h-6 rounded-full opacity-50 group-hover:opacity-70 transition-opacity duration-500"
-                      style={{
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%)',
-                        filter: 'blur(8px)',
-                      }}
+                    {/* Inner Glow Core */}
+                    <div 
+                      className="absolute inset-10 rounded-full blur-[80px] opacity-25 group-hover:opacity-40 transition-all duration-500"
+                      style={{ backgroundColor: '#10b981' }}
                     />
 
-                    {/* Orbiting ring */}
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
-                      <defs>
-                        <linearGradient id="confirmRing" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="rgba(16,185,129,0)" />
-                          <stop offset="50%" stopColor="rgba(16,185,129,0.8)" />
-                          <stop offset="100%" stopColor="rgba(16,185,129,0)" />
-                        </linearGradient>
-                      </defs>
-                      <motion.circle
-                        cx="160" cy="160" r="150" fill="none"
-                        stroke="url(#confirmRing)" strokeWidth="1.5" strokeLinecap="round"
-                        strokeDasharray="250 692"
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-                        style={{ transformOrigin: 'center' }}
+                    {/* Animated Ring - matching main circle SVG style */}
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+                      <circle cx="150" cy="150" r="140" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
+                      <motion.circle 
+                        cx="150" cy="150" r="140" fill="none"
+                        stroke="#10b981" strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray="880"
+                        initial={{ strokeDashoffset: 880 }}
+                        animate={{ strokeDashoffset: 0 }}
+                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ filter: 'drop-shadow(0 0 15px rgba(16,185,129,0.6))' }}
+                        className="opacity-90"
                       />
                     </svg>
 
-                    {/* Pulsing outer rings */}
+                    {/* Pulsing Animation Ring - matching main circle */}
                     <motion.div
-                      className="absolute inset-0 rounded-full border border-emerald-500/20"
-                      animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0, 0.3] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
-                    />
-                    <motion.div
-                      className="absolute inset-0 rounded-full border border-emerald-400/10"
-                      animate={{ scale: [1, 1.35, 1], opacity: [0.2, 0, 0.2] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut', delay: 0.8 }}
+                      className="absolute inset-0 rounded-full border-2"
+                      style={{ borderColor: '#10b981' }}
+                      animate={{ 
+                        scale: [1, 1.08, 1],
+                        opacity: [0.5, 0.15, 0.5]
+                      }}
+                      transition={{
+                        duration: 2.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
                     />
 
-                    {/* Content */}
-                    <div className="relative z-10 flex flex-col items-center">
+                    {/* Second pulsing ring */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full border border-emerald-500/30"
+                      animate={{ 
+                        scale: [1, 1.15, 1],
+                        opacity: [0.3, 0, 0.3]
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeOut",
+                        delay: 0.5
+                      }}
+                    />
+
+                    {/* Center Content */}
+                    <div className="text-center relative z-20 pointer-events-none flex flex-col items-center">
                       <motion.div
-                        animate={{ y: [0, -4, 0] }}
+                        animate={{ scale: [1, 1.08, 1] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                       >
-                        <svg className="w-10 h-10 sm:w-14 sm:h-14 md:w-18 md:h-18 lg:w-20 lg:h-20 text-emerald-400/80 group-hover:text-emerald-300 transition-colors duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                        <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       </motion.div>
-                      <span className="mt-2 sm:mt-3 text-[9px] sm:text-[10px] md:text-xs tracking-[0.4em] uppercase text-emerald-400/60 group-hover:text-emerald-300 transition-colors duration-500 font-light">
+                      <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-emerald-400/90 group-hover:text-emerald-300 transition-colors duration-300">
                         Potvrdit
                       </span>
                     </div>
                   </motion.button>
 
                 </div>
-
-                {/* Keyboard hint */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.2, duration: 0.8 }}
-                  className="mt-16 md:mt-24 flex items-center gap-8 text-white/15"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 rounded border border-white/10 text-[9px] tracking-wider">ESC</span>
-                    <span className="text-[9px] tracking-[0.3em] uppercase">Zrusit</span>
-                  </div>
-                  <div className="w-px h-3 bg-white/10" />
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 rounded border border-white/10 text-[9px] tracking-wider">ENTER</span>
-                    <span className="text-[9px] tracking-[0.3em] uppercase">Potvrdit</span>
-                  </div>
-                </motion.div>
               </div>
-
-              {/* Cinematic bars (optional letterbox effect) */}
-              <div className="absolute top-0 left-0 right-0 h-8 sm:h-12 bg-black pointer-events-none" />
-              <div className="absolute bottom-0 left-0 right-0 h-8 sm:h-12 bg-black pointer-events-none" />
             </motion.div>
           );
         })()}
