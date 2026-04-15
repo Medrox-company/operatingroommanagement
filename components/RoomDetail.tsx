@@ -1379,12 +1379,52 @@ const prevStep = activeDbStatuses.length > 0
                 {/* Two confirmation circles */}
                 <div className="flex items-center gap-8 sm:gap-12 md:gap-20">
 
-                  {/* POTVRDIT — green */}
+                  {/* ZRUŠIT — red (vlevo) */}
+                  <motion.button
+                    onClick={cancelStepChange}
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.93 }}
+                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
+                  >
+                    {/* Glow */}
+                    <div className="absolute inset-0 rounded-full blur-[60px] opacity-25 group-hover:opacity-45 transition-opacity duration-300 bg-red-500" />
+                    {/* Animated SVG ring */}
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
+                      <circle cx="130" cy="130" r="118" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                      <motion.circle
+                        cx="130" cy="130" r="118" fill="none"
+                        stroke="#ef4444" strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray="741"
+                        initial={{ strokeDashoffset: 741 }}
+                        animate={{ strokeDashoffset: 0 }}
+                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ filter: 'drop-shadow(0 0 12px #ef444488)' }}
+                      />
+                    </svg>
+                    {/* Pulse ring */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-red-500/40"
+                      animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.08, 0.4] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                    />
+                    {/* Inner background */}
+                    <div className="absolute inset-4 rounded-full bg-red-500/10" />
+                    {/* Label */}
+                    <div className="relative z-10 text-center pointer-events-none">
+                      <X className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-2 text-red-400" strokeWidth={2.5} />
+                      <p className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-red-400">ZRUŠIT</p>
+                    </div>
+                  </motion.button>
+
+                  {/* POTVRDIT — green (vpravo) */}
                   <motion.button
                     onClick={confirmStepChange}
                     initial={{ opacity: 0, scale: 0.7 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
+                    transition={{ delay: 0.22, type: 'spring', stiffness: 260, damping: 20 }}
                     whileHover={{ scale: 1.06 }}
                     whileTap={{ scale: 0.93 }}
                     className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
@@ -1423,46 +1463,6 @@ const prevStep = activeDbStatuses.length > 0
                         </svg>
                       </motion.div>
                       <p className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-emerald-400">POTVRDIT</p>
-                    </div>
-                  </motion.button>
-
-                  {/* ZRUŠIT — red */}
-                  <motion.button
-                    onClick={cancelStepChange}
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.22, type: 'spring', stiffness: 260, damping: 20 }}
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.93 }}
-                    className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full flex items-center justify-center focus:outline-none cursor-pointer group"
-                  >
-                    {/* Glow */}
-                    <div className="absolute inset-0 rounded-full blur-[60px] opacity-25 group-hover:opacity-45 transition-opacity duration-300 bg-red-500" />
-                    {/* Animated SVG ring */}
-                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet">
-                      <circle cx="130" cy="130" r="118" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                      <motion.circle
-                        cx="130" cy="130" r="118" fill="none"
-                        stroke="#ef4444" strokeWidth="6" strokeLinecap="round"
-                        strokeDasharray="741"
-                        initial={{ strokeDashoffset: 741 }}
-                        animate={{ strokeDashoffset: 0 }}
-                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ filter: 'drop-shadow(0 0 12px #ef444488)' }}
-                      />
-                    </svg>
-                    {/* Pulse ring */}
-                    <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-red-500/40"
-                      animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.08, 0.4] }}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-                    />
-                    {/* Inner background */}
-                    <div className="absolute inset-4 rounded-full bg-red-500/10" />
-                    {/* Label */}
-                    <div className="relative z-10 text-center pointer-events-none">
-                      <X className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-2 text-red-400" strokeWidth={2.5} />
-                      <p className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-red-400">ZRUŠIT</p>
                     </div>
                   </motion.button>
 
