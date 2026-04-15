@@ -1392,9 +1392,24 @@ const prevStep = activeDbStatuses.length > 0
       <NotificationOverlay
         isOpen={notificationOverlayOpen}
         onClose={() => setNotificationOverlayOpen(false)}
-        onSendNotification={async (type) => {
-          // TODO: Implement actual notification sending to management contacts
-          console.log('[v0] Sending notification:', type, 'for room:', room.name);
+        onSendNotification={async (type, customReason) => {
+          try {
+            const response = await fetch('/api/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type,
+                roomId: room.id,
+                roomName: room.name,
+                customReason,
+              }),
+            });
+            const result = await response.json();
+            console.log('[v0] Notification sent:', result);
+          } catch (error) {
+            console.error('[v0] Error sending notification:', error);
+            throw error;
+          }
         }}
         roomName={room.name}
       />
