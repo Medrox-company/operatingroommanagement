@@ -63,41 +63,41 @@ export async function sendEmailNotification(
 
 /**
  * Generate HTML email template based on notification type
- * Design matches the Operating Room Management System dark theme
+ * Clean, elegant, light design with "Sprava operacnich salu" branding
  */
 export function generateEmailTemplate(data: EmailTemplateData): string {
-  const getRoomColor = (type: string) => {
+  const getAccentColor = (type: string) => {
     const colors: Record<string, string> = {
-      emergency_alert: '#ef4444',
-      status_change: '#5B65DC',
-      queue_update: '#8b5cf6',
-      maintenance: '#f59e0b',
-      custom: '#00D8C1',
+      emergency_alert: '#dc2626',
+      status_change: '#2563eb',
+      queue_update: '#7c3aed',
+      maintenance: '#d97706',
+      custom: '#0891b2',
     };
-    return colors[type] || '#00D8C1';
+    return colors[type] || '#0891b2';
   };
 
-  const accentColor = getRoomColor(data.type);
+  const accentColor = getAccentColor(data.type);
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      emergency_alert: 'EMERGENCY ALERT',
-      status_change: 'STATUS CHANGE',
-      queue_update: 'QUEUE UPDATE',
-      maintenance: 'MAINTENANCE',
-      custom: 'SYSTEM NOTIFICATION',
+      emergency_alert: 'Upozorneni',
+      status_change: 'Zmena stavu',
+      queue_update: 'Aktualizace fronty',
+      maintenance: 'Udrzba',
+      custom: 'Oznameni',
     };
-    return labels[type] || 'NOTIFICATION';
+    return labels[type] || 'Oznameni';
   };
 
   let detailsHtml = '';
   if (data.details && Object.keys(data.details).length > 0) {
     detailsHtml = `
-      <table style="width: 100%; border-collapse: collapse; margin-top: 24px;">
+      <table style="width: 100%; border-collapse: collapse; margin-top: 28px; background: #f8fafc; border-radius: 12px; overflow: hidden;">
         ${Object.entries(data.details).map(([key, value]) => `
           <tr>
-            <td style="padding: 12px 16px; font-size: 13px; color: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(255,255,255,0.05); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">${key}</td>
-            <td style="padding: 12px 16px; font-size: 14px; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; font-weight: 500;">${value}</td>
+            <td style="padding: 14px 20px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; font-weight: 500;">${key}</td>
+            <td style="padding: 14px 20px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">${value}</td>
           </tr>
         `).join('')}
       </table>
@@ -110,56 +110,54 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Operating Room Notification</title>
+        <title>Sprava operacnich salu - Oznameni</title>
       </head>
-      <body style="margin: 0; padding: 0; background-color: #000000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         
-        <!-- Outer wrapper with gradient background -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%); min-height: 100vh;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; min-height: 100vh;">
           <tr>
-            <td align="center" style="padding: 40px 20px;">
+            <td align="center" style="padding: 48px 24px;">
               
-              <!-- Main container -->
               <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
                 
-                <!-- Header with accent glow -->
+                <!-- Header -->
                 <tr>
                   <td style="padding: 0 0 32px 0; text-align: center;">
-                    <!-- Logo area with glow effect -->
-                    <div style="display: inline-block; padding: 16px 32px; background: rgba(91, 101, 220, 0.1); border-radius: 40px; border: 1px solid rgba(91, 101, 220, 0.2);">
-                      <span style="font-size: 10px; font-weight: 800; color: #00D8C1; letter-spacing: 3px; text-transform: uppercase;">OPERATINGROOM CONTROL</span>
-                    </div>
+                    <h1 style="margin: 0; font-size: 18px; font-weight: 600; color: #0f172a; letter-spacing: -0.3px;">
+                      Sprava operacnich salu
+                    </h1>
+                    <div style="margin-top: 8px; width: 48px; height: 3px; background: linear-gradient(90deg, ${accentColor}, ${accentColor}99); border-radius: 2px; display: inline-block;"></div>
                   </td>
                 </tr>
 
                 <!-- Main content card -->
                 <tr>
                   <td>
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; overflow: hidden;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04); overflow: hidden;">
                       
-                      <!-- Accent bar at top -->
+                      <!-- Accent bar -->
                       <tr>
-                        <td style="height: 4px; background: linear-gradient(90deg, ${accentColor}, ${accentColor}88);"></td>
+                        <td style="height: 4px; background: ${accentColor};"></td>
                       </tr>
                       
-                      <!-- Content area -->
+                      <!-- Content -->
                       <tr>
-                        <td style="padding: 40px;">
+                        <td style="padding: 40px 36px;">
                           
                           <!-- Type badge -->
-                          <div style="margin-bottom: 24px;">
-                            <span style="display: inline-block; padding: 8px 16px; background: ${accentColor}15; border: 1px solid ${accentColor}40; border-radius: 20px; font-size: 11px; font-weight: 700; color: ${accentColor}; letter-spacing: 1.5px; text-transform: uppercase;">
+                          <div style="margin-bottom: 20px;">
+                            <span style="display: inline-block; padding: 6px 14px; background: ${accentColor}12; border-radius: 6px; font-size: 12px; font-weight: 600; color: ${accentColor}; letter-spacing: 0.3px;">
                               ${getTypeLabel(data.type)}
                             </span>
                           </div>
 
                           <!-- Room name -->
-                          <h1 style="margin: 0 0 16px 0; font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1.2;">
+                          <h2 style="margin: 0 0 12px 0; font-size: 26px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1.3;">
                             ${data.roomName}
-                          </h1>
+                          </h2>
 
                           <!-- Message -->
-                          <p style="margin: 0; font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.7);">
+                          <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #475569;">
                             ${data.message}
                           </p>
 
@@ -174,11 +172,11 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
 
                 <!-- Footer -->
                 <tr>
-                  <td style="padding: 32px 0 0 0; text-align: center;">
-                    <p style="margin: 0 0 8px 0; font-size: 12px; color: rgba(255,255,255,0.3);">
-                      Automatic notification from Operating Room Management System
+                  <td style="padding: 28px 0 0 0; text-align: center;">
+                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #94a3b8;">
+                      Automaticke oznameni ze systemu Sprava operacnich salu
                     </p>
-                    <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.2);">
+                    <p style="margin: 0; font-size: 12px; color: #cbd5e1;">
                       ${data.timestamp || new Date().toLocaleString('cs-CZ')}
                     </p>
                   </td>
