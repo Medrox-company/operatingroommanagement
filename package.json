@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "rm -rf .next && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next node_modules && npm install"
+    "clean": "rm -rf .next node_modules && npm install",
+    "cache:clean": "rm -rf .next out node_modules/.cache"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.43.0",

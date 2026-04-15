@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turbo.build/json-schema/turbo-schema.json",
+  "globalDotEnv": [".env.local", ".env"],
+  "globalPassThroughEnv": [
+    "POSTGRES_URL",
+    "SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  ],
+  "tasks": {
+    "dev": {
+      "cache": false,
+      "interactive": true
+    },
+    "build": {
+      "outputs": [".next/**"],
+      "cache": true
+    },
+    "lint": {
+      "outputs": [],
+      "cache": true
+    }
+  }
+}
