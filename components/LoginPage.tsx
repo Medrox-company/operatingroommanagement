@@ -74,15 +74,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-6"
-            style={{ 
-              background: 'linear-gradient(135deg, #00D8C1 0%, #00A896 100%)',
-              boxShadow: '0 0 60px rgba(0,216,193,0.3)'
-            }}
+            className="inline-flex items-center justify-center mb-4"
           >
-            <Shield className="w-10 h-10 text-white" />
+            <img
+              src="/logo.png"
+              alt="Operating Room Manager logo"
+              className="w-32 h-32 object-contain"
+              style={{ filter: 'drop-shadow(0 0 24px rgba(0,216,193,0.25))' }}
+            />
           </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Operační sály</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Operating Room Manager</h1>
           <p className="text-white/40 text-sm tracking-wide">CHIRURGICKÝ BLOK • PŘIHLÁŠENÍ</p>
         </div>
 
@@ -233,7 +234,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         {/* Footer */}
         <p className="text-center text-white/20 text-xs mt-6">
-          Operační sály v{new Date().getFullYear()} • Všechna práva vyhrazena
+          Operating Room Manager {new Date().getFullYear()} • Všechna práva vyhrazena
         </p>
       </motion.div>
     </div>
