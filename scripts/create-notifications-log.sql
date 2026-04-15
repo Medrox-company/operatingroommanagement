@@ -1,7 +1,7 @@
 -- Create notifications_log table for tracking sent notifications
 CREATE TABLE IF NOT EXISTS notifications_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  room_id UUID NOT NULL REFERENCES operating_rooms(id) ON DELETE CASCADE,
+  room_id TEXT NOT NULL REFERENCES operating_rooms(id) ON DELETE CASCADE,
   room_name TEXT NOT NULL,
   notification_type TEXT NOT NULL,
   custom_reason TEXT,
