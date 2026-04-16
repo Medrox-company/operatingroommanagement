@@ -147,7 +147,7 @@ function calculateRoomWorkflowDistribution(
   const roomDistributions: Record<string, Record<string, number>> = {};
   
   rooms.forEach(room => {
-    const roomHistory = history.filter(e => e.room_id === room.id && e.event_type === 'step_change');
+    const roomHistory = history.filter(e => e.operating_room_id === room.id && e.event_type === 'step_change');
     const stepTotals: Record<string, number> = {};
     
     workflowSteps.forEach(step => {
@@ -191,7 +191,7 @@ function getCombinedWorkingHoursRange(rooms: OperatingRoom[], dayIndex: number):
   return { start: minStart, end: maxEnd };
 }
 
-// ── Tooltip shared style ────────────��──────────────────────────────────────────
+// ── Tooltip shared style ────────────���──────────────────────────────────────────
 const TIP = {
   contentStyle:{ background:'rgba(2,8,23,0.97)', border:`1px solid ${C.border}`, borderRadius:6, fontSize:12 },
   labelStyle:  { color:C.muted },
