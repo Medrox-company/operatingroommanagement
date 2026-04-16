@@ -112,7 +112,25 @@
 
 /* Chart tooltip custom styling */
 .recharts-tooltip-wrapper {
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+}
+
+/* Statistics module enhancements */
+.stat-metric-glow {
+  position: relative;
+}
+.stat-metric-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.1), transparent 50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.stat-metric-glow:hover::after {
+  opacity: 1;
 }
 
 /* Subtle gradient backgrounds for sections */
