@@ -2,160 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* Background hierarchy */
-    --background: 0 0% 0%;
-    --background-secondary: 220 20% 4%;
-    --background-tertiary: 220 18% 6%;
-    
-    /* Surface cards */
-    --surface: 220 16% 8%;
-    --surface-hover: 220 14% 10%;
-    --surface-active: 220 12% 12%;
-    
-    /* Borders */
-    --border: 220 13% 14%;
-    --border-hover: 220 11% 18%;
-    
-    /* Text hierarchy */
-    --foreground: 0 0% 98%;
-    --foreground-muted: 220 8% 56%;
-    --foreground-faint: 220 10% 36%;
-    --foreground-ghost: 220 12% 24%;
-    
-    /* Primary accent - Cyan/Teal */
-    --primary: 174 83% 48%;
-    --primary-foreground: 0 0% 100%;
-    --primary-muted: 174 70% 28%;
-    
-    /* Semantic colors */
-    --success: 160 72% 42%;
-    --success-muted: 160 60% 22%;
-    --warning: 38 92% 50%;
-    --warning-muted: 38 80% 25%;
-    --danger: 0 84% 60%;
-    --danger-muted: 0 70% 30%;
-    --info: 199 89% 48%;
-    --info-muted: 199 70% 25%;
-    
-    /* Chart colors */
-    --chart-1: 174 83% 48%;
-    --chart-2: 160 72% 42%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 24 95% 53%;
-    --chart-5: 280 65% 60%;
-    --chart-6: 199 89% 48%;
-    
-    /* Radius */
-    --radius: 0.5rem;
-    --radius-sm: 0.25rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
-  }
+html {
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
 }
 
-@layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
-  
-  html {
-    font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-    color-scheme: dark;
-  }
-  
-  body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    margin: 0;
-    padding: 0;
-  }
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
 }
 
-/* Scrollbar styling */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Custom scrollbar for visible scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: hsl(var(--background-secondary));
-}
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--border-hover));
-}
-
-/* Stat card glow effects */
-.stat-card-glow {
-  position: relative;
-}
-.stat-card-glow::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, hsl(var(--border-hover)), transparent 50%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* Chart tooltip custom styling */
-.recharts-tooltip-wrapper {
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
-}
-
-/* Statistics module enhancements */
-.stat-metric-glow {
-  position: relative;
-}
-.stat-metric-glow::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.1), transparent 50%);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.stat-metric-glow:hover::after {
-  opacity: 1;
-}
-
-/* Subtle gradient backgrounds for sections */
-.section-gradient {
-  background: linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--background)) 100%);
-}
-
-/* Animated underline for tabs */
-.tab-underline {
-  position: relative;
-}
-.tab-underline::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: hsl(var(--primary));
-  transform: scaleX(0);
-  transition: transform 0.2s ease;
-}
-.tab-underline.active::after {
-  transform: scaleX(1);
-}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { 
