@@ -1190,11 +1190,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             {/* Row: Phase durations + radar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <Card className="p-5">
-                <SectionLabel>Průměrné trvání fází — minuty</SectionLabel>
+                <SectionLabel>Průměrné trvání fází — minuty (z DB)</SectionLabel>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={WORKFLOW_STEPS.map((step,i)=>({
                     name:step.title.split(' ').slice(-1)[0],
-                    min:STEP_DURATIONS[i],
+                    min: dbStats?.averageStepDurations?.[step.title] ?? STEP_DURATIONS[i],
                     color:step.color,
                   }))} layout="vertical" margin={{top:0,right:24,bottom:0,left:0}} barSize={10}>
                     <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -1207,27 +1207,30 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </ResponsiveContainer>
               </Card>
               <Card className="p-5">
-                <SectionLabel>Distribuce fází — % z celkového cyklu</SectionLabel>
+                <SectionLabel>Distribuce fází — % z celkového cyklu (z DB)</SectionLabel>
                 <div className="space-y-3 mt-2">
-                  {workflowAgg.map((seg,i)=>(
-                    <div key={i}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-[2px]" style={{background:seg.color}}/>
-                          <span className="text-xs" style={{color:C.muted}}>{seg.title}</span>
+                  {workflowAgg.map((seg,i)=>{
+                    const realMin = dbStats?.averageStepDurations?.[seg.title] ?? STEP_DURATIONS[i];
+                    return (
+                      <div key={i}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-[2px]" style={{background:seg.color}}/>
+                            <span className="text-xs" style={{color:C.muted}}>{seg.title}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs" style={{color:C.faint}}>{realMin} min</span>
+                            <span className="text-sm font-black w-9 text-right" style={{color:seg.color}}>{seg.pct}%</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs" style={{color:C.faint}}>{STEP_DURATIONS[i]} min</span>
-                          <span className="text-sm font-black w-9 text-right" style={{color:seg.color}}>{seg.pct}%</span>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
+                          <motion.div className="h-full rounded-full" style={{background:seg.color,opacity:0.82}}
+                            initial={{width:0}} animate={{width:`${seg.pct}%`}}
+                            transition={{duration:0.55,delay:i*0.06,ease:'easeOut'}}/>
                         </div>
                       </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
-                        <motion.div className="h-full rounded-full" style={{background:seg.color,opacity:0.82}}
-                          initial={{width:0}} animate={{width:`${seg.pct}%`}}
-                          transition={{duration:0.55,delay:i*0.06,ease:'easeOut'}}/>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </Card>
             </div>
@@ -1281,11 +1284,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </div>
               </Card>
               <Card className="p-5">
-                <SectionLabel>Line — průběh fází (kumulativní trvání)</SectionLabel>
+                <SectionLabel>Line — průběh fází (kumulativní trvání z DB)</SectionLabel>
                 <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={WORKFLOW_STEPS.map((step,i)=>{
-                    const cum=STEP_DURATIONS.slice(0,i+1).reduce((s,d)=>s+d,0);
-                    return{name:step.title.split(' ').slice(-1)[0],min:STEP_DURATIONS[i],cum};
+                    const realDurations = WORKFLOW_STEPS.map((s, idx) => 
+                      dbStats?.averageStepDurations?.[s.title] ?? STEP_DURATIONS[idx]
+                    );
+                    const cum = realDurations.slice(0, i + 1).reduce((s, d) => s + d, 0);
+                    const min = dbStats?.averageStepDurations?.[step.title] ?? STEP_DURATIONS[i];
+                    return { name: step.title.split(' ').slice(-1)[0], min, cum };
                   })} margin={{top:4,right:10,bottom:0,left:-16}}>
                     <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3"/>
                     <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
