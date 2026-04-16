@@ -168,9 +168,9 @@ export default function NotificationOverlay({
             {/* Close button - top right */}
             <button 
               onClick={onClose} 
-              className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-white/[0.08] active:scale-95 transition-all z-20 outline-none select-none"
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 opacity-40 hover:opacity-100 active:scale-95 transition-all z-20 outline-none select-none"
             >
-              <X className="w-5 h-5 sm:w-6 sm:h-6 text-white/60" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
             </button>
 
             {/* Main content */}
