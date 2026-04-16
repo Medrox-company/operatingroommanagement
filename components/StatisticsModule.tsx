@@ -76,6 +76,37 @@ function isWithinWorkingHours(room: OperatingRoom, timestamp: string): boolean {
   return currentMins >= startMins && currentMins <= endMins;
 }
 
+// ── Helper: Calculate average step durations from status history ───────────────
+function calculateAvgStepDurations(
+  history: StatusHistoryRow[], 
+  workflowSteps: { title: string }[]
+): number[] {
+  if (!history || history.length === 0) {
+    // Return default durations if no history
+    return workflowSteps.map(() => 0);
+  }
+
+  const stepDurations: Record<string, number[]> = {};
+  workflowSteps.forEach(step => {
+    stepDurations[step.title] = [];
+  });
+
+  // Collect durations for each step
+  history.filter(e => e.event_type === 'step_change' && e.duration_seconds).forEach(e => {
+    if (e.step_name && stepDurations[e.step_name]) {
+      stepDurations[e.step_name].push(e.duration_seconds || 0);
+    }
+  });
+
+  // Calculate averages in minutes
+  return workflowSteps.map(step => {
+    const durations = stepDurations[step.title];
+    if (durations.length === 0) return 0;
+    const avgSeconds = durations.reduce((sum, d) => sum + d, 0) / durations.length;
+    return Math.round(avgSeconds / 60);
+  });
+}
+
 // ── Helper: Get all rooms' combined working hours range for a day ──────────────
 function getCombinedWorkingHoursRange(rooms: OperatingRoom[], dayIndex: number): { start: number; end: number } {
   let minStart = 24;
@@ -912,6 +943,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return buildHeatmapFromHistory(statusHistory, rooms);
   }, [statusHistory, rooms]);
 
+  // Calculate average step durations from real history data
+  const avgStepDurations = useMemo(() => {
+    return calculateAvgStepDurations(statusHistory, WORKFLOW_STEPS);
+  }, [statusHistory, WORKFLOW_STEPS]);
+
   const avgUtil   = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s,d)=>s+d.v,0)/utilData.length);
   const peakUtil  = Math.max(...utilData.map(d=>d.v));
   const minUtil   = Math.min(...utilData.map(d=>d.v));
@@ -1411,13 +1447,13 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             {/* Row: Phase durations + radar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <Card className="p-5">
-                <SectionLabel>Průměrné trvání fází — minuty</SectionLabel>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={WORKFLOW_STEPS.map((step,i)=>({
-                    name:step.title.split(' ').slice(-1)[0],
-                    min:STEP_DURATIONS[i],
-                    color:step.color,
-                  }))} layout="vertical" margin={{top:0,right:24,bottom:0,left:0}} barSize={10}>
+              <SectionLabel>Průměrné trvání fází — minuty (z reálných dat)</SectionLabel>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={WORKFLOW_STEPS.map((step,i)=>({
+                  name:step.title.split(' ').slice(-1)[0],
+                  min:avgStepDurations[i] || 0,
+                  color:step.color,
+                }))} layout="vertical" margin={{top:0,right:24,bottom:0,left:0}} barSize={10}>
                     <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                     <YAxis type="category" dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} width={52}/>
                     <Tooltip {...TIP} formatter={(v:number)=>[`${v} min`,'Trvání']}/>
@@ -1437,10 +1473,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                           <div className="w-2.5 h-2.5 rounded-[2px]" style={{background:seg.color}}/>
                           <span className="text-xs" style={{color:C.muted}}>{seg.title}</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs" style={{color:C.faint}}>{STEP_DURATIONS[i]} min</span>
-                          <span className="text-sm font-black w-9 text-right" style={{color:seg.color}}>{seg.pct}%</span>
-                        </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs" style={{color:C.faint}}>{avgStepDurations[i] || 0} min</span>
+                        <span className="text-sm font-black w-9 text-right" style={{color:seg.color}}>{seg.pct}%</span>
+                      </div>
                       </div>
                       <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
                         <motion.div className="h-full rounded-full" style={{background:seg.color,opacity:0.82}}
@@ -1502,12 +1538,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </div>
               </Card>
               <Card className="p-5">
-                <SectionLabel>Line — průběh fází (kumulativní trvání)</SectionLabel>
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={WORKFLOW_STEPS.map((step,i)=>{
-                    const cum=STEP_DURATIONS.slice(0,i+1).reduce((s,d)=>s+d,0);
-                    return{name:step.title.split(' ').slice(-1)[0],min:STEP_DURATIONS[i],cum};
-                  })} margin={{top:4,right:10,bottom:0,left:-16}}>
+              <SectionLabel>Line — průběh fází (kumulativní trvání z reálných dat)</SectionLabel>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={WORKFLOW_STEPS.map((step,i)=>{
+                  const cum=avgStepDurations.slice(0,i+1).reduce((s,d)=>s+d,0);
+                  return{name:step.title.split(' ').slice(-1)[0],min:avgStepDurations[i] || 0,cum};
+                })} margin={{top:4,right:10,bottom:0,left:-16}}>
                     <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3"/>
                     <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
                     <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -1528,13 +1564,36 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
             transition={{duration:0.22}} className="space-y-5">
 
-            {/* Peak cards */}
+            {/* Peak cards - calculated from real heatmap data */}
+            {(() => {
+              // Find peak utilization from heatmap
+              const workingHourValues = heatmapData.flat().filter(v => v >= 0);
+              const peakHeatUtil = workingHourValues.length > 0 ? Math.max(...workingHourValues) : 0;
+              const minHeatUtil = workingHourValues.length > 0 ? Math.min(...workingHourValues) : 0;
+              
+              // Find when peak occurs
+              let peakDay = 0, peakHour = 0;
+              heatmapData.forEach((row, di) => {
+                row.forEach((v, hi) => {
+                  if (v === peakHeatUtil && v >= 0) { peakDay = di; peakHour = hi; }
+                });
+              });
+              
+              // Calculate average working hours from rooms
+              const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+              const avgWorkingMins = rooms.length > 0 
+                ? Math.round(rooms.reduce((sum, r) => sum + getRoomWorkingMinutes(r, todayIndex), 0) / rooms.length)
+                : 0;
+              const avgWorkingHours = Math.round(avgWorkingMins / 60);
+              const workingRange = getCombinedWorkingHoursRange(rooms, todayIndex);
+              
+              return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                {l:'Nejvyšší vytížení',     v:'95%', sub:'Úterý 10:00–11:00', c:C.red},
+                {l:'Nejvyšší vytížení',     v:`${peakHeatUtil}%`, sub:`${DAYS[peakDay]} ${peakHour}:00–${peakHour+1}:00`, c:C.red},
                 {l:'Průměrné vytížení',     v:`${avgUtil}%`, sub:'Pracovní dny', c:C.accent},
-                {l:'Nejnižší vytížení',     v:'3%',  sub:'Víkend 00:00–07:00', c:C.green},
-                {l:'Operační hodiny / den', v:'12 h', sub:'07:00–19:00',        c:C.muted},
+                {l:'Nejnižší vytížení',     v:`${minHeatUtil}%`,  sub:'Mimo špičku', c:C.green},
+                {l:'Operační hodiny / den', v:`${avgWorkingHours} h`, sub:`${workingRange.start}:00–${workingRange.end}:00`, c:C.muted},
               ].map(k=>(
                 <Card key={k.l} className="p-4">
                   <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
@@ -1543,6 +1602,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </Card>
               ))}
             </div>
+              );
+            })()}
 
             {/* Heatmap grid */}
             <Card className="p-5">
@@ -1591,11 +1652,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               <SectionLabel>Průměrné hodinové vytížení — pracovní týden (%)</SectionLabel>
               <ResponsiveContainer width="100%" height={160}>
                 <AreaChart
-                  data={Array.from({length:24},(_,h)=>({
-                    h:`${h}`,
-                    prac:Math.round(heatmapData.slice(0,5).reduce((s,d)=>s+d[h],0)/5),
-                    vikend:Math.round(heatmapData.slice(5).reduce((s,d)=>s+d[h],0)/2),
-                  }))}
+                  data={Array.from({length:24},(_,h)=>{
+                    const pracValues = heatmapData.slice(0,5).map(d => d[h]).filter(v => v >= 0);
+                    const vikendValues = heatmapData.slice(5).map(d => d[h]).filter(v => v >= 0);
+                    return {
+                      h:`${h}`,
+                      prac: pracValues.length > 0 ? Math.round(pracValues.reduce((s,v)=>s+v,0)/pracValues.length) : 0,
+                      vikend: vikendValues.length > 0 ? Math.round(vikendValues.reduce((s,v)=>s+v,0)/vikendValues.length) : 0,
+                    };
+                  })}
                   margin={{top:4,right:0,bottom:0,left:-24}}>
                   <defs>
                     <linearGradient id="hg1" x1="0" y1="0" x2="0" y2="1">
@@ -1630,11 +1695,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               <SectionLabel>Denní průměrné vytížení dle dne v týdnu (%)</SectionLabel>
               <ResponsiveContainer width="100%" height={140}>
                 <BarChart
-                  data={DAYS.map((day,di)=>({
-                    day,
-                    avg:Math.round(heatmapData[di].reduce((s,v)=>s+v,0)/24),
-                    peak:Math.max(...heatmapData[di]),
-                  }))}
+                  data={DAYS.map((day,di)=>{
+                    const workingHours = heatmapData[di].filter(v => v >= 0);
+                    return {
+                      day,
+                      avg: workingHours.length > 0 ? Math.round(workingHours.reduce((s,v)=>s+v,0)/workingHours.length) : 0,
+                      peak: workingHours.length > 0 ? Math.max(...workingHours) : 0,
+                    };
+                  })}
                   margin={{top:4,right:0,bottom:0,left:-24}} barSize={20}>
                   <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
                   <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
