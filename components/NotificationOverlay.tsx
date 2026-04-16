@@ -81,12 +81,12 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
 const NOTIFICATION_TYPES = [
   {
     id: 'notify_late_surgeon',
-    label: 'Pozdní příchod operatéra',
+    label: 'Pozdní \npříchod \noperatéra',
     color: '#ef4444',
   },
   {
     id: 'notify_late_anesthesiologist',
-    label: 'Pozdní příchod anesteziologa',
+    label: 'Pozdní \npříchod \nARO',
     color: '#f97316',
   },
   {
@@ -96,7 +96,7 @@ const NOTIFICATION_TYPES = [
   },
   {
     id: 'notify_late_arrival',
-    label: 'Pozdní příjezd z oddělení',
+    label: 'Pozdní \npříjezd z oddělení',
     color: '#3b82f6',
   },
   {
