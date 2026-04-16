@@ -50,28 +50,136 @@ const TIP = {
   itemStyle:   { color:C.accent },
 };
 
-// ── Seeded pseudo-random ───────────────────────────────────────────────────────
-function sr(seed:number,min:number,max:number){ return min+Math.abs(((seed*2654435761)>>>0)%(max-min+1)); }
+// ── Helper: Build utilisation data from status history ─────────────────────────
+function buildUtilDataFromHistory(
+  history: StatusHistoryRow[],
+  period: Period
+): { t: string; v: number; cap: number }[] {
+  if (!history || history.length === 0) {
+    // Return empty data structure based on period
+    if (period === 'den') {
+      return Array.from({ length: 12 }, (_, i) => ({ t: `${7 + i}h`, v: 0, cap: 100 }));
+    }
+    if (period === 'týden') {
+      return DAYS.map(t => ({ t, v: 0, cap: 100 }));
+    }
+    if (period === 'měsíc') {
+      return Array.from({ length: 30 }, (_, i) => ({ t: `${i + 1}`, v: 0, cap: 100 }));
+    }
+    const months = ['Led', 'Únr', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Září', 'Říj', 'Lis', 'Pro'];
+    return months.map(t => ({ t, v: 0, cap: 100 }));
+  }
 
-// ── Period-aware utilisation datasets ─────────────────────────────────────────
-function genDayData()   { return Array.from({length:12},(_,i)=>({ t:`${7+i}h`, v:[62,78,89,94,91,82,76,88,85,70,55,38][i], cap:100 })); }
-function genWeekData()  { return DAYS.map((t,i)=>({ t, v:[92,88,95,87,79,45,30][i], cap:100 })); }
-function genMonthData() { return Array.from({length:30},(_,i)=>({ t:`${i+1}`, v:[88,82,90,74,85,91,78,72,86,93,89,84,77,88,92,70,83,87,79,91,85,74,88,93,80,76,89,82,91,86][i], cap:100 })); }
-function genYearData()  {
-  const months=['Led','Únr','Bře','Dub','Kvě','Čvn','Čvc','Srp','Září','Říj','Lis','Pro'];
-  return months.map((t,i)=>({ t, v:[78,80,85,88,91,87,83,79,88,90,84,76][i], cap:100 }));
+  // Group operations by time interval
+  const operationEvents = history.filter(e => 
+    e.event_type === 'operation_start' || e.event_type === 'step_change'
+  );
+
+  if (period === 'den') {
+    // Group by hour (7-18)
+    const hourCounts: Record<number, number> = {};
+    for (let h = 7; h <= 18; h++) hourCounts[h] = 0;
+    
+    operationEvents.forEach(e => {
+      const hour = new Date(e.timestamp).getHours();
+      if (hour >= 7 && hour <= 18) {
+        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+      }
+    });
+    
+    const maxCount = Math.max(1, ...Object.values(hourCounts));
+    return Array.from({ length: 12 }, (_, i) => ({
+      t: `${7 + i}h`,
+      v: Math.round((hourCounts[7 + i] / maxCount) * 100),
+      cap: 100,
+    }));
+  }
+
+  if (period === 'týden') {
+    // Group by day of week
+    const dayCounts: Record<number, number> = {};
+    for (let d = 0; d < 7; d++) dayCounts[d] = 0;
+    
+    operationEvents.forEach(e => {
+      const day = new Date(e.timestamp).getDay();
+      // Convert Sunday=0 to Monday=0 format
+      const adjustedDay = day === 0 ? 6 : day - 1;
+      dayCounts[adjustedDay] = (dayCounts[adjustedDay] || 0) + 1;
+    });
+    
+    const maxCount = Math.max(1, ...Object.values(dayCounts));
+    return DAYS.map((t, i) => ({
+      t,
+      v: Math.round((dayCounts[i] / maxCount) * 100),
+      cap: 100,
+    }));
+  }
+
+  if (period === 'měsíc') {
+    // Group by day of month
+    const dayCounts: Record<number, number> = {};
+    for (let d = 1; d <= 30; d++) dayCounts[d] = 0;
+    
+    operationEvents.forEach(e => {
+      const day = new Date(e.timestamp).getDate();
+      if (day >= 1 && day <= 30) {
+        dayCounts[day] = (dayCounts[day] || 0) + 1;
+      }
+    });
+    
+    const maxCount = Math.max(1, ...Object.values(dayCounts));
+    return Array.from({ length: 30 }, (_, i) => ({
+      t: `${i + 1}`,
+      v: Math.round((dayCounts[i + 1] / maxCount) * 100),
+      cap: 100,
+    }));
+  }
+
+  // Year - group by month
+  const monthNames = ['Led', 'Únr', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Září', 'Říj', 'Lis', 'Pro'];
+  const monthCounts: Record<number, number> = {};
+  for (let m = 0; m < 12; m++) monthCounts[m] = 0;
+  
+  operationEvents.forEach(e => {
+    const month = new Date(e.timestamp).getMonth();
+    monthCounts[month] = (monthCounts[month] || 0) + 1;
+  });
+  
+  const maxCount = Math.max(1, ...Object.values(monthCounts));
+  return monthNames.map((t, i) => ({
+    t,
+    v: Math.round((monthCounts[i] / maxCount) * 100),
+    cap: 100,
+  }));
 }
 
-// ── Heatmap (7 days × 24 hours) ──────────────────────────────────────────────
-const HEATMAP:number[][] = [
-  [3,3,3,3,3,3,3,8,42,78,93,88,86,83,88,90,86,72,58,38,18,8,3,3],
-  [3,3,3,3,3,3,3,10,48,80,94,89,87,84,89,91,87,74,59,40,20,9,3,3],
-  [3,3,3,3,3,3,3,9,46,77,92,88,86,83,88,90,86,72,57,37,19,8,3,3],
-  [3,3,3,3,3,3,3,10,45,79,91,87,85,82,87,89,85,71,56,36,18,8,3,3],
-  [3,3,3,3,3,3,3,8,38,70,84,80,78,75,80,82,78,64,49,30,14,6,3,3],
-  [3,3,3,3,3,3,3,4,14,28,43,50,46,42,46,48,42,30,20,12,7,4,3,3],
-  [3,3,3,3,3,3,3,3,4,9,16,20,18,16,18,20,16,10,6,4,3,3,3,3],
-];
+// ── Helper: Build heatmap from status history (7 days × 24 hours) ──────────────
+function buildHeatmapFromHistory(history: StatusHistoryRow[]): number[][] {
+  // Initialize empty 7x24 grid
+  const heatmap: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  
+  if (!history || history.length === 0) {
+    return heatmap;
+  }
+
+  // Count operations by day of week and hour
+  const operationEvents = history.filter(e => 
+    e.event_type === 'operation_start' || e.event_type === 'step_change'
+  );
+
+  operationEvents.forEach(e => {
+    const date = new Date(e.timestamp);
+    const day = date.getDay();
+    const hour = date.getHours();
+    // Convert Sunday=0 to Monday=0 format
+    const adjustedDay = day === 0 ? 6 : day - 1;
+    heatmap[adjustedDay][hour] = (heatmap[adjustedDay][hour] || 0) + 1;
+  });
+
+  // Normalize to percentages (0-100)
+  const maxCount = Math.max(1, ...heatmap.flat());
+  return heatmap.map(row => row.map(count => Math.round((count / maxCount) * 100)));
+}
 
 // ── Helper fns ────────────────────────────────────────────────────────────────
 function statusColor(s:RoomStatus){
@@ -218,28 +326,65 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   const dm     = dayMinutes(room);
   const tl     = useMemo(()=>mergeSeg(buildTimeline(room,workflowSteps)),[room,workflowSteps]);
   const dist   = useMemo(()=>buildDist(room,workflowSteps),[room,workflowSteps]);
-  const seed   = parseInt(room.id);
-  const opsDay = Math.max(1,Math.floor(room.operations24h*(dm/1440)));
+  const opsDay = room.operations24h;
   const utilPct= dist.find(d=>d.title==='Chirurgický výkon')?.pct??0;
 
-  // Day utilisation curve
+  // State for room-specific history
+  const [roomHistory, setRoomHistory] = useState<StatusHistoryRow[]>([]);
+  
+  // Load room-specific history
+  useEffect(() => {
+    const loadRoomHistory = async () => {
+      const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const history = await fetchStatusHistory({ 
+        roomId: room.id, 
+        fromDate, 
+        toDate: new Date(),
+        limit: 1000 
+      });
+      if (history) setRoomHistory(history);
+    };
+    loadRoomHistory();
+  }, [room.id]);
+
+  // Day utilisation curve from real data
   const dayCurve=useMemo(()=>{
     const start=ups?0:7; const end=ups?24:19;
+    const hourCounts: Record<number, number> = {};
+    for (let h = start; h < end; h++) hourCounts[h] = 0;
+    
+    roomHistory.filter(e => e.event_type === 'step_change' || e.event_type === 'operation_start')
+      .forEach(e => {
+        const hour = new Date(e.timestamp).getHours();
+        if (hour >= start && hour < end) {
+          hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+        }
+      });
+    
+    const maxCount = Math.max(1, ...Object.values(hourCounts));
     return Array.from({length:end-start},(_,i)=>({
       t:`${start+i}`,
-      v:Math.max(5,Math.min(100,sr(seed*(i+2)*3,30,100))),
+      v: Math.round((hourCounts[start+i] / maxCount) * 100),
     }));
-  },[room,ups,seed]);
+  },[roomHistory,ups]);
 
-  // Weekly stacked data (no names, just percentages per step)
+  // Weekly stacked data from real data
   const weeklyStacked=useMemo(()=>DAYS.map((day,di)=>{
     const base:Record<string,number|string>={day};
-    workflowSteps.forEach((step,si)=>{
-      const dur=si===2&&room.currentProcedure?room.currentProcedure.estimatedDuration:STEP_DURATIONS[si];
-      base[step.title]=di>=5?Math.floor(dur*0.3):Math.max(1,dur+(sr(seed+di+si,0,10)-5));
+    // Count events for this day of week
+    const dayEvents = roomHistory.filter(e => {
+      const eventDay = new Date(e.timestamp).getDay();
+      const adjustedDay = eventDay === 0 ? 6 : eventDay - 1;
+      return adjustedDay === di && e.event_type === 'step_change';
+    });
+    
+    workflowSteps.forEach((step) => {
+      const stepEvents = dayEvents.filter(e => e.step_name === step.title);
+      const totalDuration = stepEvents.reduce((sum, e) => sum + (e.duration_seconds || 0), 0);
+      base[step.title] = Math.round(totalDuration / 60); // Convert to minutes
     });
     return base;
-  }),[room,seed,workflowSteps]);
+  }),[roomHistory,workflowSteps]);
 
   // Hourly bar — utilisation %
   const hourlyUtil=useMemo(()=>dayCurve.map(d=>({
@@ -259,22 +404,40 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   // Pie from dist
   const pieData=dist.filter(d=>d.min>0);
 
-  // Radar
-  const radarData=[
-    {subject:'Využití',   A:utilPct},
-    {subject:'Operace',   A:Math.min(100,opsDay*12)},
-    {subject:'Průchodnost',A:Math.min(100,sr(seed*3,55,98))},
-    {subject:'Plán. plnění',A:Math.min(100,sr(seed*7,65,99))},
-    {subject:'Čistota',   A:Math.min(100,sr(seed*11,70,100))},
-  ];
+  // Radar - based on real data
+  const radarData=useMemo(()=>{
+    const completedOps = roomHistory.filter(e => e.event_type === 'operation_end').length;
+    const totalEvents = roomHistory.length;
+    return [
+      {subject:'Využití',   A:utilPct},
+      {subject:'Operace',   A:Math.min(100, completedOps * 10)},
+      {subject:'Průchodnost',A:Math.min(100, totalEvents > 0 ? Math.round((completedOps / Math.max(1, totalEvents)) * 100) : 0)},
+      {subject:'Aktivita',A:Math.min(100, totalEvents > 0 ? 100 : 0)},
+      {subject:'Efektivita',   A:utilPct},
+    ];
+  },[roomHistory, utilPct]);
 
-  // 30-day cumulative
-  let cum=0;
-  const cumulData=Array.from({length:30},(_,i)=>{
-    const daily=Math.max(0,opsDay+(sr(seed*(i+1),0,3)-1));
-    cum+=daily;
-    return{d:`${i+1}`,daily,cum};
-  });
+  // 30-day cumulative from real data
+  const cumulData=useMemo(()=>{
+    const last30Days: Record<string, number> = {};
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000);
+      last30Days[date.toISOString().split('T')[0]] = 0;
+    }
+    
+    roomHistory.filter(e => e.event_type === 'operation_end').forEach(e => {
+      const day = e.timestamp.split('T')[0];
+      if (last30Days[day] !== undefined) {
+        last30Days[day] = (last30Days[day] || 0) + 1;
+      }
+    });
+    
+    let cum = 0;
+    return Object.entries(last30Days).map(([_, daily], i) => {
+      cum += daily;
+      return { d: `${i + 1}`, daily, cum };
+    });
+  },[roomHistory]);
 
   // Utilisation per status (time-based %)
   const statusUtil=[
@@ -624,12 +787,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     loadStats();
   }, [period]);
 
-  const utilData = useMemo(()=>{
-    if(period==='den')    return genDayData();
-    if(period==='týden')  return genWeekData();
-    if(period==='měsíc')  return genMonthData();
-    return genYearData();
-  },[period]);
+  // Build utilisation data from real database history
+  const utilData = useMemo(() => {
+    return buildUtilDataFromHistory(statusHistory, period);
+  }, [statusHistory, period]);
+
+  // Build heatmap from real database history
+  const heatmapData = useMemo(() => {
+    return buildHeatmapFromHistory(statusHistory);
+  }, [statusHistory]);
 
   const avgUtil   = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s,d)=>s+d.v,0)/utilData.length);
   const peakUtil  = Math.max(...utilData.map(d=>d.v));
@@ -657,7 +823,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     color:statusColor(r.status),
   }));
 
-  // Generate opsTrend from real DB data or fallback to rooms data
+  // Generate opsTrend from real DB data only
   const opsTrend = useMemo(() => {
     if (dbStats?.operationsByDay && Object.keys(dbStats.operationsByDay).length > 0) {
       const days = Object.entries(dbStats.operationsByDay)
@@ -668,12 +834,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         v: count,
       }));
     }
-    // Fallback to calculated from rooms
+    // Empty data - no operations recorded yet
     return [
-      {t:'T-6',v:totalOps},{t:'T-5',v:totalOps},{t:'T-4',v:totalOps},
-      {t:'T-3',v:totalOps},{t:'T-2',v:totalOps},{t:'T-1',v:totalOps},{t:'Dnes',v:totalOps},
+      {t:'T-6',v:0},{t:'T-5',v:0},{t:'T-4',v:0},
+      {t:'T-3',v:0},{t:'T-2',v:0},{t:'T-1',v:0},{t:'Dnes',v:0},
     ];
-  }, [dbStats, totalOps]);
+  }, [dbStats]);
 
   // Status pie data
   const statusPie=[
@@ -1276,7 +1442,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   {DAYS.map((day,di)=>(
                     <div key={di} className="flex items-center gap-1">
                       <span className="w-7 text-xs font-black shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
-                      {HEATMAP[di].map((v,hi)=>(
+                      {heatmapData[di].map((v,hi)=>(
                         <motion.div key={hi} className="w-5 h-5 rounded-[3px] shrink-0"
                           style={{background:heatColor(v)}}
                           initial={{opacity:0,scale:0.5}}
@@ -1312,8 +1478,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 <AreaChart
                   data={Array.from({length:24},(_,h)=>({
                     h:`${h}`,
-                    prac:Math.round(HEATMAP.slice(0,5).reduce((s,d)=>s+d[h],0)/5),
-                    vikend:Math.round(HEATMAP.slice(5).reduce((s,d)=>s+d[h],0)/2),
+                    prac:Math.round(heatmapData.slice(0,5).reduce((s,d)=>s+d[h],0)/5),
+                    vikend:Math.round(heatmapData.slice(5).reduce((s,d)=>s+d[h],0)/2),
                   }))}
                   margin={{top:4,right:0,bottom:0,left:-24}}>
                   <defs>
@@ -1351,8 +1517,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 <BarChart
                   data={DAYS.map((day,di)=>({
                     day,
-                    avg:Math.round(HEATMAP[di].reduce((s,v)=>s+v,0)/24),
-                    peak:Math.max(...HEATMAP[di]),
+                    avg:Math.round(heatmapData[di].reduce((s,v)=>s+v,0)/24),
+                    peak:Math.max(...heatmapData[di]),
                   }))}
                   margin={{top:4,right:0,bottom:0,left:-24}} barSize={20}>
                   <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
