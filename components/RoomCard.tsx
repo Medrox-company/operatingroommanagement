@@ -2,7 +2,7 @@
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -242,10 +242,12 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           `}>
             {/* Left: avatar + names */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className={`w-9 h-9 rounded-xl border overflow-hidden shrink-0 
-                ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : (room.isPaused ? 'border-cyan-500/30' : 'border-white/5'))}
+              <div className={`w-9 h-9 rounded-xl border shrink-0 flex items-center justify-center
+                ${room.isEmergency ? 'border-red-500/30 bg-red-500/10' : (room.isLocked ? 'border-amber-500/30 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/30 bg-cyan-500/10' : 'border-white/10 bg-white/5'))}
               `}>
-                <img src={`https://i.pravatar.cc/150?u=${room?.staff?.doctor?.name || 'default'}`} alt="Dr" className="w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity" />
+                <User className={`w-4 h-4 transition-opacity
+                  ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : (room.isPaused ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/60'))}
+                `} />
               </div>
               <div className="min-w-0 flex flex-col gap-0.5">
                 <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors

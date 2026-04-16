@@ -96,18 +96,18 @@ async function sendEmergencyEmailNotification(
     const html = generateEmailTemplate({
       type: 'emergency_alert',
       roomName: room.name,
-      message: '🚨 Emergency alert has been activated in this operating room!',
+      message: '🚨 V tomto operačním sále byla aktivována pohotovost v nouzi!',
       details: {
-        'Department': room.department,
-        'Time': new Date().toISOString(),
-        'Status': room.status,
-        'Septic': room.isSeptic ? 'Yes' : 'No',
+        'Oddělení': room.department,
+        'Čas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
+        'Stav': room.status,
+        'Septický': room.isSeptic ? 'Ano' : 'Ne',
       },
     });
 
     await sendEmailNotification({
       to: recipientEmail,
-      subject: `🚨 EMERGENCY: ${room.name} - Immediate Action Required`,
+      subject: `🚨 POHOTOVOST: ${room.name} - Vyžaduje se okamžité jednání`,
       html,
     });
 
@@ -126,18 +126,18 @@ async function sendStatusChangeEmailNotification(
     const html = generateEmailTemplate({
       type: 'status_change',
       roomName: room.name,
-      message: `Operating room status has changed from ${previousStatus} to ${room.status}`,
+      message: `Stav operačního sálu se změnil z ${previousStatus} na ${room.status}`,
       details: {
-        'Previous Status': previousStatus,
-        'New Status': room.status,
-        'Department': room.department,
-        'Time': new Date().toISOString(),
+        'Předchozí stav': previousStatus,
+        'Nový stav': room.status,
+        'Oddělení': room.department,
+        'Čas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
       },
     });
 
     await sendEmailNotification({
       to: recipientEmail,
-      subject: `Status Update: ${room.name} - ${previousStatus} → ${room.status}`,
+      subject: `Aktualizace stavu: ${room.name} - ${previousStatus} → ${room.status}`,
       html,
     });
 
@@ -156,19 +156,19 @@ async function sendQueueUpdateEmailNotification(
     const html = generateEmailTemplate({
       type: 'queue_update',
       roomName: room.name,
-      message: `Queue has been updated in the operating room`,
+      message: `Fronta byla aktualizována v operačním sále`,
       details: {
-        'Previous Queue': previousQueueCount.toString(),
-        'New Queue': room.queueCount.toString(),
-        'Change': (room.queueCount - previousQueueCount > 0 ? '+' : '') + (room.queueCount - previousQueueCount),
-        'Department': room.department,
-        'Time': new Date().toISOString(),
+        'Předchozí fronta': previousQueueCount.toString(),
+        'Nová fronta': room.queueCount.toString(),
+        'Změna': (room.queueCount - previousQueueCount > 0 ? '+' : '') + (room.queueCount - previousQueueCount),
+        'Oddělení': room.department,
+        'Čas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
       },
     });
 
     await sendEmailNotification({
       to: recipientEmail,
-      subject: `Queue Update: ${room.name} - ${previousQueueCount} → ${room.queueCount} patients`,
+      subject: `Aktualizace fronty: ${room.name} - ${previousQueueCount} → ${room.queueCount} pacientů`,
       html,
     });
 
