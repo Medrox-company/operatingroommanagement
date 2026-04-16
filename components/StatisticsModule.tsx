@@ -4,7 +4,7 @@ import {
   TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
 } from 'lucide-react';
-import { OperatingRoom, RoomStatus } from '../types';
+import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { STEP_DURATIONS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { fetchRoomStatistics, fetchStatusHistory, RoomStatistics, StatusHistoryRow } from '../lib/db';
@@ -42,6 +42,57 @@ const DEPT_COLORS: Record<string,string> = {
 };
 
 const DAYS = ['Po','Út','St','Čt','Pá','So','Ne'];
+const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+
+// ── Helper: Get working hours for a specific day from room schedule ────────────
+function getRoomWorkingHours(room: OperatingRoom, dayIndex: number): DayWorkingHours {
+  const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+  const dayKey = DAY_KEYS[dayIndex];
+  return schedule[dayKey];
+}
+
+// ── Helper: Calculate total working minutes for a room on a specific day ───────
+function getRoomWorkingMinutes(room: OperatingRoom, dayIndex: number): number {
+  const hours = getRoomWorkingHours(room, dayIndex);
+  if (!hours.enabled) return 0;
+  const startMins = hours.startHour * 60 + hours.startMinute;
+  const endMins = hours.endHour * 60 + hours.endMinute;
+  return Math.max(0, endMins - startMins);
+}
+
+// ── Helper: Check if a timestamp falls within room's working hours ─────────────
+function isWithinWorkingHours(room: OperatingRoom, timestamp: string): boolean {
+  const date = new Date(timestamp);
+  const dayOfWeek = date.getDay();
+  const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert to Monday=0 format
+  const hours = getRoomWorkingHours(room, dayIndex);
+  
+  if (!hours.enabled) return false;
+  
+  const currentMins = date.getHours() * 60 + date.getMinutes();
+  const startMins = hours.startHour * 60 + hours.startMinute;
+  const endMins = hours.endHour * 60 + hours.endMinute;
+  
+  return currentMins >= startMins && currentMins <= endMins;
+}
+
+// ── Helper: Get all rooms' combined working hours range for a day ──────────────
+function getCombinedWorkingHoursRange(rooms: OperatingRoom[], dayIndex: number): { start: number; end: number } {
+  let minStart = 24;
+  let maxEnd = 0;
+  
+  rooms.forEach(room => {
+    const hours = getRoomWorkingHours(room, dayIndex);
+    if (hours.enabled) {
+      minStart = Math.min(minStart, hours.startHour);
+      maxEnd = Math.max(maxEnd, hours.endHour + (hours.endMinute > 0 ? 1 : 0));
+    }
+  });
+  
+  // Fallback to 7-18 if no rooms have schedule
+  if (minStart === 24) return { start: 7, end: 18 };
+  return { start: minStart, end: maxEnd };
+}
 
 // ── Tooltip shared style ───────────────────────────────────────────────────────
 const TIP = {
@@ -50,18 +101,30 @@ const TIP = {
   itemStyle:   { color:C.accent },
 };
 
-// ── Helper: Build utilisation data from status history ─────────────────────────
+// ── Helper: Build utilisation data from status history with room schedules ─────
 function buildUtilDataFromHistory(
   history: StatusHistoryRow[],
-  period: Period
+  period: Period,
+  rooms: OperatingRoom[]
 ): { t: string; v: number; cap: number }[] {
+  // Get today's day index for hourly data
+  const todayDayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  const workingRange = getCombinedWorkingHoursRange(rooms, todayDayIndex);
+  
   if (!history || history.length === 0) {
     // Return empty data structure based on period
     if (period === 'den') {
-      return Array.from({ length: 12 }, (_, i) => ({ t: `${7 + i}h`, v: 0, cap: 100 }));
+      const hourCount = workingRange.end - workingRange.start;
+      return Array.from({ length: hourCount }, (_, i) => ({ 
+        t: `${workingRange.start + i}h`, v: 0, cap: 100 
+      }));
     }
     if (period === 'týden') {
-      return DAYS.map(t => ({ t, v: 0, cap: 100 }));
+      return DAYS.map((t, i) => {
+        // Check if any room is active this day
+        const anyActive = rooms.some(r => getRoomWorkingHours(r, i).enabled);
+        return { t, v: 0, cap: anyActive ? 100 : 0 };
+      });
     }
     if (period === 'měsíc') {
       return Array.from({ length: 30 }, (_, i) => ({ t: `${i + 1}`, v: 0, cap: 100 }));
@@ -70,49 +133,56 @@ function buildUtilDataFromHistory(
     return months.map(t => ({ t, v: 0, cap: 100 }));
   }
 
-  // Group operations by time interval
+  // Group operations by time interval - only count events within working hours
   const operationEvents = history.filter(e => 
     e.event_type === 'operation_start' || e.event_type === 'step_change'
   );
 
   if (period === 'den') {
-    // Group by hour (7-18)
+    // Group by hour within working hours range
     const hourCounts: Record<number, number> = {};
-    for (let h = 7; h <= 18; h++) hourCounts[h] = 0;
+    for (let h = workingRange.start; h < workingRange.end; h++) hourCounts[h] = 0;
     
     operationEvents.forEach(e => {
       const hour = new Date(e.timestamp).getHours();
-      if (hour >= 7 && hour <= 18) {
+      if (hour >= workingRange.start && hour < workingRange.end) {
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
       }
     });
     
     const maxCount = Math.max(1, ...Object.values(hourCounts));
-    return Array.from({ length: 12 }, (_, i) => ({
-      t: `${7 + i}h`,
-      v: Math.round((hourCounts[7 + i] / maxCount) * 100),
+    const hourCount = workingRange.end - workingRange.start;
+    return Array.from({ length: hourCount }, (_, i) => ({
+      t: `${workingRange.start + i}h`,
+      v: Math.round((hourCounts[workingRange.start + i] / maxCount) * 100),
       cap: 100,
     }));
   }
 
   if (period === 'týden') {
-    // Group by day of week
-    const dayCounts: Record<number, number> = {};
-    for (let d = 0; d < 7; d++) dayCounts[d] = 0;
+    // Group by day of week - calculate utilization based on working hours
+    const dayDurations: Record<number, number> = {};
+    const dayCapacities: Record<number, number> = {};
+    
+    for (let d = 0; d < 7; d++) {
+      dayDurations[d] = 0;
+      // Calculate total capacity for this day across all rooms
+      dayCapacities[d] = rooms.reduce((sum, room) => sum + getRoomWorkingMinutes(room, d), 0);
+    }
     
     operationEvents.forEach(e => {
       const day = new Date(e.timestamp).getDay();
-      // Convert Sunday=0 to Monday=0 format
       const adjustedDay = day === 0 ? 6 : day - 1;
-      dayCounts[adjustedDay] = (dayCounts[adjustedDay] || 0) + 1;
+      // Add duration in minutes
+      dayDurations[adjustedDay] += (e.duration_seconds || 0) / 60;
     });
     
-    const maxCount = Math.max(1, ...Object.values(dayCounts));
-    return DAYS.map((t, i) => ({
-      t,
-      v: Math.round((dayCounts[i] / maxCount) * 100),
-      cap: 100,
-    }));
+    return DAYS.map((t, i) => {
+      const capacity = dayCapacities[i];
+      if (capacity === 0) return { t, v: 0, cap: 0 };
+      const utilization = Math.min(100, Math.round((dayDurations[i] / capacity) * 100));
+      return { t, v: utilization, cap: 100 };
+    });
   }
 
   if (period === 'měsíc') {
@@ -153,13 +223,24 @@ function buildUtilDataFromHistory(
   }));
 }
 
-// ── Helper: Build heatmap from status history (7 days × 24 hours) ──────────────
-function buildHeatmapFromHistory(history: StatusHistoryRow[]): number[][] {
+// ── Helper: Build heatmap from status history with room schedules (7 days × 24 hours) ──
+function buildHeatmapFromHistory(history: StatusHistoryRow[], rooms: OperatingRoom[]): number[][] {
   // Initialize empty 7x24 grid
   const heatmap: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
   
+  // Mark non-working hours as -1 (will be displayed differently)
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+    const range = getCombinedWorkingHoursRange(rooms, dayIndex);
+    for (let hour = 0; hour < 24; hour++) {
+      if (hour < range.start || hour >= range.end) {
+        heatmap[dayIndex][hour] = -1; // Outside working hours
+      }
+    }
+  }
+  
   if (!history || history.length === 0) {
-    return heatmap;
+    // Return heatmap with 0 for working hours, -1 for non-working
+    return heatmap.map(row => row.map(v => v === -1 ? -1 : 0));
   }
 
   // Count operations by day of week and hour
@@ -173,12 +254,17 @@ function buildHeatmapFromHistory(history: StatusHistoryRow[]): number[][] {
     const hour = date.getHours();
     // Convert Sunday=0 to Monday=0 format
     const adjustedDay = day === 0 ? 6 : day - 1;
-    heatmap[adjustedDay][hour] = (heatmap[adjustedDay][hour] || 0) + 1;
+    if (heatmap[adjustedDay][hour] !== -1) {
+      heatmap[adjustedDay][hour] = (heatmap[adjustedDay][hour] || 0) + 1;
+    }
   });
 
-  // Normalize to percentages (0-100)
-  const maxCount = Math.max(1, ...heatmap.flat());
-  return heatmap.map(row => row.map(count => Math.round((count / maxCount) * 100)));
+  // Normalize working hours to percentages (0-100), keep -1 for non-working
+  const workingHourValues = heatmap.flat().filter(v => v >= 0);
+  const maxCount = Math.max(1, ...workingHourValues);
+  return heatmap.map(row => row.map(count => 
+    count === -1 ? -1 : Math.round((count / maxCount) * 100)
+  ));
 }
 
 // ── Helper fns ────────────────────────────────────────────────────────────────
@@ -195,6 +281,7 @@ function statusLabel(s:RoomStatus){
   return 'Údržba';
 }
 function heatColor(v:number){
+  if(v===-1) return 'rgba(255,255,255,0.03)'; // Non-working hours
   if(v>=90) return 'rgba(255,59,48,0.88)';
   if(v>=70) return 'rgba(249,115,22,0.78)';
   if(v>=50) return 'rgba(251,191,36,0.68)';
@@ -203,7 +290,17 @@ function heatColor(v:number){
 }
 const UPS_DEPTS=['EMERGENCY','CÉVNÍ','ROBOT'];
 function isUPS(r:OperatingRoom){ return r.isEmergency||UPS_DEPTS.includes(r.department); }
-function dayMinutes(r:OperatingRoom){ return isUPS(r)?1440:720; }
+// Calculate working minutes for today based on room's schedule
+function dayMinutes(r:OperatingRoom){ 
+  if (isUPS(r)) return 1440; // 24 hours for UPS rooms
+  
+  // Get today's day index (Monday=0)
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  const workingMins = getRoomWorkingMinutes(r, todayIndex);
+  
+  // Return actual working minutes, or fallback to 720 (12 hours) if not configured
+  return workingMins > 0 ? workingMins : 720;
+}
 
 type Seg={color:string;title:string;pct:number;min:number};
 type WorkflowStep={name:string;title:string;color:string;organizer:string;status:string};
@@ -347,9 +444,16 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
     loadRoomHistory();
   }, [room.id]);
 
-  // Day utilisation curve from real data
+  // Day utilisation curve from real data using room's weekly schedule
   const dayCurve=useMemo(()=>{
-    const start=ups?0:7; const end=ups?24:19;
+    // Get today's day index (Monday=0)
+    const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    const todayHours = getRoomWorkingHours(room, todayIndex);
+    
+    // Use room's actual working hours, or fallback for UPS rooms
+    const start = ups ? 0 : (todayHours.enabled ? todayHours.startHour : 7);
+    const end = ups ? 24 : (todayHours.enabled ? todayHours.endHour + (todayHours.endMinute > 0 ? 1 : 0) : 16);
+    
     const hourCounts: Record<number, number> = {};
     for (let h = start; h < end; h++) hourCounts[h] = 0;
     
@@ -366,11 +470,22 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
       t:`${start+i}`,
       v: Math.round((hourCounts[start+i] / maxCount) * 100),
     }));
-  },[roomHistory,ups]);
+  },[roomHistory,ups,room]);
 
-  // Weekly stacked data from real data
+  // Weekly stacked data from real data, respecting room's schedule
   const weeklyStacked=useMemo(()=>DAYS.map((day,di)=>{
     const base:Record<string,number|string>={day};
+    const dayHours = getRoomWorkingHours(room, di);
+    
+    // If room doesn't operate this day, return zeros
+    if (!dayHours.enabled) {
+      workflowSteps.forEach((step) => {
+        base[step.title] = 0;
+      });
+      base.inactive = true;
+      return base;
+    }
+    
     // Count events for this day of week
     const dayEvents = roomHistory.filter(e => {
       const eventDay = new Date(e.timestamp).getDay();
@@ -384,7 +499,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
       base[step.title] = Math.round(totalDuration / 60); // Convert to minutes
     });
     return base;
-  }),[roomHistory,workflowSteps]);
+  }),[roomHistory,workflowSteps,room]);
 
   // Hourly bar — utilisation %
   const hourlyUtil=useMemo(()=>dayCurve.map(d=>({
@@ -787,15 +902,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     loadStats();
   }, [period]);
 
-  // Build utilisation data from real database history
+  // Build utilisation data from real database history with room schedules
   const utilData = useMemo(() => {
-    return buildUtilDataFromHistory(statusHistory, period);
-  }, [statusHistory, period]);
+    return buildUtilDataFromHistory(statusHistory, period, rooms);
+  }, [statusHistory, period, rooms]);
 
-  // Build heatmap from real database history
+  // Build heatmap from real database history with room schedules
   const heatmapData = useMemo(() => {
-    return buildHeatmapFromHistory(statusHistory);
-  }, [statusHistory]);
+    return buildHeatmapFromHistory(statusHistory, rooms);
+  }, [statusHistory, rooms]);
 
   const avgUtil   = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s,d)=>s+d.v,0)/utilData.length);
   const peakUtil  = Math.max(...utilData.map(d=>d.v));
