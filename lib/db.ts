@@ -713,24 +713,95 @@ export async function fetchStatusHistory(
   }
 }
 
+// Working hours interface for room schedules
+export interface DayWorkingHours {
+  enabled: boolean;
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+}
+
+export interface WeeklySchedule {
+  monday: DayWorkingHours;
+  tuesday: DayWorkingHours;
+  wednesday: DayWorkingHours;
+  thursday: DayWorkingHours;
+  friday: DayWorkingHours;
+  saturday: DayWorkingHours;
+  sunday: DayWorkingHours;
+}
+
 // Get aggregated statistics from history
 export interface RoomStatistics {
   totalOperations: number;
   averageOperationDuration: number; // in minutes
   averageStepDurations: Record<string, number>; // step_name -> avg duration in minutes
   emergencyCount: number;
-  utilizationRate: number; // percentage
+  utilizationRate: number; // percentage - during working hours
+  utilizationRateUPS: number; // percentage - outside working hours (ÚPS)
   operationsByRoom: Record<string, number>;
   operationsByDay: Record<string, number>; // ISO date -> count
   // Extended statistics for real data
-  hourlyUtilization: { hour: number; utilization: number }[]; // 0-23 hours
+  hourlyUtilization: { hour: number; utilization: number; isWorkingHour: boolean }[]; // 0-23 hours with working hour flag
   heatmapData: number[][]; // 7 days x 24 hours - utilization percentages
+  heatmapWorkingHours: boolean[][]; // 7 days x 24 hours - whether hour is within working hours
   peakUtilization: { value: number; day: string; hour: number };
   minUtilization: { value: number; day: string; hour: number };
   weekdayUtilization: Record<string, number>; // day name -> avg utilization
   operationsByHour: Record<number, number>; // hour -> count
   totalOperationMinutes: number;
-  totalAvailableMinutes: number;
+  totalOperationMinutesUPS: number; // minutes outside working hours
+  totalAvailableMinutes: number; // total working hours minutes
+  totalAvailableMinutesUPS: number; // total UPS hours minutes
+  roomSchedules: Record<string, WeeklySchedule>; // room_id -> schedule
+}
+
+// Helper: Check if a specific hour on a specific day is within working hours for a room
+function isWithinWorkingHours(
+  schedule: WeeklySchedule | undefined,
+  dayOfWeek: number, // 0 = Sunday, 1 = Monday, ...
+  hour: number
+): boolean {
+  if (!schedule) return true; // Default: assume working hours if no schedule
+  
+  const dayKeys: (keyof WeeklySchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const daySchedule = schedule[dayKeys[dayOfWeek]];
+  
+  if (!daySchedule || !daySchedule.enabled) return false;
+  
+  const startMinutes = daySchedule.startHour * 60 + daySchedule.startMinute;
+  const endMinutes = daySchedule.endHour * 60 + daySchedule.endMinute;
+  const hourMinutes = hour * 60;
+  
+  return hourMinutes >= startMinutes && hourMinutes < endMinutes;
+}
+
+// Helper: Calculate total working minutes for a room schedule on a specific day
+function getDayWorkingMinutes(schedule: WeeklySchedule | undefined, dayOfWeek: number): number {
+  if (!schedule) return 12 * 60; // Default: 12 hours
+  
+  const dayKeys: (keyof WeeklySchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const daySchedule = schedule[dayKeys[dayOfWeek]];
+  
+  if (!daySchedule || !daySchedule.enabled) return 0;
+  
+  const startMinutes = daySchedule.startHour * 60 + daySchedule.startMinute;
+  const endMinutes = daySchedule.endHour * 60 + daySchedule.endMinute;
+  
+  return Math.max(0, endMinutes - startMinutes);
+}
+
+// Helper: Get working hours range for a day
+function getDayWorkingHoursRange(schedule: WeeklySchedule | undefined, dayOfWeek: number): { start: number; end: number } | null {
+  if (!schedule) return { start: 7, end: 19 }; // Default
+  
+  const dayKeys: (keyof WeeklySchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const daySchedule = schedule[dayKeys[dayOfWeek]];
+  
+  if (!daySchedule || !daySchedule.enabled) return null;
+  
+  return { start: daySchedule.startHour, end: daySchedule.endHour };
 }
 
 export async function fetchRoomStatistics(
@@ -745,14 +816,30 @@ export async function fetchRoomStatistics(
     const from = fromDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // default 30 days
     const to = toDate || new Date();
 
-    const { data, error } = await supabase
+    // Fetch room status history
+    const { data: historyData, error: historyError } = await supabase
       .from('room_status_history')
       .select('*')
       .gte('timestamp', from.toISOString())
       .lte('timestamp', to.toISOString())
       .order('timestamp', { ascending: true });
 
-    if (error) throw error;
+    if (historyError) throw historyError;
+
+    // Fetch all operating rooms with their schedules
+    const { data: roomsData, error: roomsError } = await supabase
+      .from('operating_rooms')
+      .select('id, name, department, weekly_schedule');
+
+    if (roomsError) throw roomsError;
+
+    // Build room schedules map
+    const roomSchedules: Record<string, WeeklySchedule> = {};
+    (roomsData || []).forEach((room: { id: string; weekly_schedule: WeeklySchedule | null }) => {
+      if (room.weekly_schedule) {
+        roomSchedules[room.id] = room.weekly_schedule;
+      }
+    });
     
     const emptyStats: RoomStatistics = {
       totalOperations: 0,
@@ -760,24 +847,30 @@ export async function fetchRoomStatistics(
       averageStepDurations: {},
       emergencyCount: 0,
       utilizationRate: 0,
+      utilizationRateUPS: 0,
       operationsByRoom: {},
       operationsByDay: {},
-      hourlyUtilization: Array.from({ length: 24 }, (_, i) => ({ hour: i, utilization: 0 })),
+      hourlyUtilization: Array.from({ length: 24 }, (_, i) => ({ hour: i, utilization: 0, isWorkingHour: false })),
       heatmapData: Array.from({ length: 7 }, () => Array(24).fill(0)),
+      heatmapWorkingHours: Array.from({ length: 7 }, () => Array(24).fill(false)),
       peakUtilization: { value: 0, day: '-', hour: 0 },
       minUtilization: { value: 0, day: '-', hour: 0 },
       weekdayUtilization: {},
       operationsByHour: {},
       totalOperationMinutes: 0,
+      totalOperationMinutesUPS: 0,
       totalAvailableMinutes: 0,
+      totalAvailableMinutesUPS: 0,
+      roomSchedules,
     };
     
-    if (!data || data.length === 0) {
+    if (!historyData || historyData.length === 0) {
       return emptyStats;
     }
 
+    const data = historyData;
+
     // Calculate statistics
-    const operationStarts = data.filter((e: StatusHistoryRow) => e.event_type === 'operation_start');
     const operationEnds = data.filter((e: StatusHistoryRow) => e.event_type === 'operation_end');
     const emergencyEvents = data.filter((e: StatusHistoryRow) => e.event_type === 'emergency_on');
     const stepChanges = data.filter((e: StatusHistoryRow) => e.event_type === 'step_change' && e.duration_seconds);
@@ -831,45 +924,92 @@ export async function fetchRoomStatistics(
       operationsByHour[hour] = (operationsByHour[hour] || 0) + 1;
     });
 
-    // Calculate hourly utilization from step changes
-    const hourlyMinutes: Record<number, number> = {};
-    const hourlyCount: Record<number, number> = {};
+    // Calculate hourly utilization from step changes - separate working hours from UPS
+    const hourlyMinutesWorking: Record<number, number> = {};
+    const hourlyMinutesUPS: Record<number, number> = {};
+    
     stepChanges.forEach((e: StatusHistoryRow) => {
       if (e.duration_seconds) {
-        const hour = new Date(e.timestamp).getHours();
-        hourlyMinutes[hour] = (hourlyMinutes[hour] || 0) + (e.duration_seconds / 60);
-        hourlyCount[hour] = (hourlyCount[hour] || 0) + 1;
+        const date = new Date(e.timestamp);
+        const hour = date.getHours();
+        const dayOfWeek = date.getDay();
+        const roomSchedule = roomSchedules[e.operating_room_id];
+        const isWorking = isWithinWorkingHours(roomSchedule, dayOfWeek, hour);
+        
+        if (isWorking) {
+          hourlyMinutesWorking[hour] = (hourlyMinutesWorking[hour] || 0) + (e.duration_seconds / 60);
+        } else {
+          hourlyMinutesUPS[hour] = (hourlyMinutesUPS[hour] || 0) + (e.duration_seconds / 60);
+        }
       }
     });
 
     // Calculate total days for averaging
     const totalDays = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)));
     
-    // Get unique room count from data
-    const uniqueRooms = new Set(data.map((e: StatusHistoryRow) => e.operating_room_id));
-    const roomCount = Math.max(1, uniqueRooms.size);
+    // Get unique room IDs from data
+    const uniqueRoomIds = Array.from(new Set(data.map((e: StatusHistoryRow) => e.operating_room_id)));
+    const roomCount = Math.max(1, uniqueRoomIds.length);
+
+    // Calculate total available minutes based on actual room schedules
+    let totalAvailableMinutes = 0;
+    let totalAvailableMinutesUPS = 0;
     
-    // Hourly utilization (average minutes per hour across days, converted to %)
+    // For each day in the period, calculate available minutes per room
+    const currentDate = new Date(from);
+    while (currentDate <= to) {
+      const dayOfWeek = currentDate.getDay();
+      
+      uniqueRoomIds.forEach(roomId => {
+        const schedule = roomSchedules[roomId];
+        const workingMinutes = getDayWorkingMinutes(schedule, dayOfWeek);
+        totalAvailableMinutes += workingMinutes;
+        // UPS time = 24h minus working hours
+        totalAvailableMinutesUPS += (24 * 60) - workingMinutes;
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Determine aggregate working hours (union of all rooms' schedules)
+    const aggregateWorkingHours: boolean[][] = Array.from({ length: 7 }, () => Array(24).fill(false));
+    const dayOrder = [1, 2, 3, 4, 5, 6, 0]; // Monday first (reordered from Sunday=0)
+    
+    dayOrder.forEach((dayOfWeek, dayIdx) => {
+      for (let hour = 0; hour < 24; hour++) {
+        // Check if ANY room has this hour as working hour
+        const isAnyRoomWorking = uniqueRoomIds.some(roomId => {
+          const schedule = roomSchedules[roomId];
+          return isWithinWorkingHours(schedule, dayOfWeek, hour);
+        });
+        aggregateWorkingHours[dayIdx][hour] = isAnyRoomWorking;
+      }
+    });
+    
+    // Hourly utilization with working hour flag
     const hourlyUtilization = Array.from({ length: 24 }, (_, hour) => {
-      const minutes = hourlyMinutes[hour] || 0;
-      // Max 60 minutes per hour per room per day
+      const workingMinutes = hourlyMinutesWorking[hour] || 0;
+      const upsMinutes = hourlyMinutesUPS[hour] || 0;
+      const totalMinutes = workingMinutes + upsMinutes;
+      
+      // Calculate max possible minutes for this hour across all rooms and days
       const maxMinutes = totalDays * roomCount * 60;
-      const utilization = maxMinutes > 0 ? Math.min(100, Math.round((minutes / maxMinutes) * 100)) : 0;
-      return { hour, utilization };
+      const utilization = maxMinutes > 0 ? Math.min(100, Math.round((totalMinutes / maxMinutes) * 100)) : 0;
+      
+      // Determine if this hour is generally a working hour (for any room on any weekday)
+      const isWorkingHour = dayOrder.some((_, dayIdx) => aggregateWorkingHours[dayIdx][hour]);
+      
+      return { hour, utilization, isWorkingHour };
     });
 
     // Build heatmap data (7 days x 24 hours)
-    const dayNames = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
     const heatmapMinutes: Record<number, Record<number, number>> = {};
-    const heatmapCounts: Record<number, Record<number, number>> = {};
     
     // Initialize
     for (let d = 0; d < 7; d++) {
       heatmapMinutes[d] = {};
-      heatmapCounts[d] = {};
       for (let h = 0; h < 24; h++) {
         heatmapMinutes[d][h] = 0;
-        heatmapCounts[d][h] = 0;
       }
     }
 
@@ -880,54 +1020,76 @@ export async function fetchRoomStatistics(
         const dayOfWeek = date.getDay(); // 0 = Sunday
         const hour = date.getHours();
         heatmapMinutes[dayOfWeek][hour] += e.duration_seconds / 60;
-        heatmapCounts[dayOfWeek][hour] += 1;
       }
     });
 
-    // Convert to percentage (relative to max possible utilization)
-    // Reorder to start with Monday (1,2,3,4,5,6,0 -> Po,Út,St,Čt,Pá,So,Ne)
-    const dayOrder = [1, 2, 3, 4, 5, 6, 0]; // Monday first
+    // Convert to percentage and build heatmap
     const heatmapData: number[][] = dayOrder.map(dayIdx => {
       return Array.from({ length: 24 }, (_, h) => {
         const minutes = heatmapMinutes[dayIdx][h];
-        // Calculate days of this weekday in the period
         const weeksInPeriod = Math.max(1, Math.ceil(totalDays / 7));
         const maxMinutes = weeksInPeriod * roomCount * 60;
         return maxMinutes > 0 ? Math.min(100, Math.round((minutes / maxMinutes) * 100)) : 0;
       });
     });
 
-    // Find peak and min utilization
+    // Find peak and min utilization (only within working hours)
     let peakUtilization = { value: 0, day: '-', hour: 0 };
     let minUtilization = { value: 100, day: '-', hour: 0 };
     const dayLabels = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
     
     heatmapData.forEach((dayData, dayIdx) => {
       dayData.forEach((util, hour) => {
-        if (util > peakUtilization.value) {
-          peakUtilization = { value: util, day: dayLabels[dayIdx], hour };
-        }
-        if (util < minUtilization.value && util >= 0) {
-          minUtilization = { value: util, day: dayLabels[dayIdx], hour };
+        // Only consider working hours for peak/min
+        if (aggregateWorkingHours[dayIdx][hour]) {
+          if (util > peakUtilization.value) {
+            peakUtilization = { value: util, day: dayLabels[dayIdx], hour };
+          }
+          if (util < minUtilization.value) {
+            minUtilization = { value: util, day: dayLabels[dayIdx], hour };
+          }
         }
       });
     });
 
-    // Weekday utilization averages
+    // Weekday utilization averages (only working hours)
     const weekdayUtilization: Record<string, number> = {};
     dayLabels.forEach((label, idx) => {
       const dayData = heatmapData[idx];
-      const avg = dayData.length > 0 
-        ? Math.round(dayData.reduce((a, b) => a + b, 0) / dayData.length) 
+      const workingHourValues = dayData.filter((_, h) => aggregateWorkingHours[idx][h]);
+      const avg = workingHourValues.length > 0 
+        ? Math.round(workingHourValues.reduce((a, b) => a + b, 0) / workingHourValues.length) 
         : 0;
       weekdayUtilization[label] = avg;
     });
 
-    // Utilization rate (simplified: total operation time / total available time)
-    const totalAvailableMinutes = totalDays * 12 * 60 * roomCount; // 12 hours/day per room
-    const totalOperationMinutes = durations.reduce((a, b) => a + b, 0) / 60;
+    // Calculate operation minutes during working hours vs UPS
+    let totalOperationMinutes = 0;
+    let totalOperationMinutesUPS = 0;
+    
+    operationEnds.forEach((e: StatusHistoryRow) => {
+      if (e.duration_seconds) {
+        const date = new Date(e.timestamp);
+        const hour = date.getHours();
+        const dayOfWeek = date.getDay();
+        const roomSchedule = roomSchedules[e.operating_room_id];
+        const isWorking = isWithinWorkingHours(roomSchedule, dayOfWeek, hour);
+        
+        if (isWorking) {
+          totalOperationMinutes += e.duration_seconds / 60;
+        } else {
+          totalOperationMinutesUPS += e.duration_seconds / 60;
+        }
+      }
+    });
+
+    // Utilization rates
     const utilizationRate = totalAvailableMinutes > 0
       ? Math.round((totalOperationMinutes / totalAvailableMinutes) * 100)
+      : 0;
+    
+    const utilizationRateUPS = totalAvailableMinutesUPS > 0
+      ? Math.round((totalOperationMinutesUPS / totalAvailableMinutesUPS) * 100)
       : 0;
 
     return {
@@ -936,16 +1098,21 @@ export async function fetchRoomStatistics(
       averageStepDurations,
       emergencyCount,
       utilizationRate,
+      utilizationRateUPS,
       operationsByRoom,
       operationsByDay,
       hourlyUtilization,
       heatmapData,
+      heatmapWorkingHours: aggregateWorkingHours,
       peakUtilization,
       minUtilization,
       weekdayUtilization,
       operationsByHour,
       totalOperationMinutes,
+      totalOperationMinutesUPS,
       totalAvailableMinutes,
+      totalAvailableMinutesUPS,
+      roomSchedules,
     };
   } catch (error) {
     console.error('[DB] Failed to fetch room statistics:', error);

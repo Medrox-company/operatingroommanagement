@@ -692,9 +692,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   }, [period, dbStats]);
 
   const avgUtil   = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s,d)=>s+d.v,0)/Math.max(1, utilData.length));
+  const avgUtilUPS = dbStats?.utilizationRateUPS ?? 0; // Využití mimo pracovní dobu (ÚPS)
   const peakUtil  = dbStats?.peakUtilization?.value ?? Math.max(...utilData.map(d=>d.v), 0);
   const minUtil   = dbStats?.minUtilization?.value ?? Math.min(...utilData.map(d=>d.v).filter(v => v > 0), 0);
   const totalOps  = dbStats?.totalOperations ?? rooms.reduce((s,r)=>s+r.operations24h,0);
+  // Working hours vs UPS operation time
+  const workingHoursMinutes = dbStats?.totalOperationMinutes ?? 0;
+  const upsMinutes = dbStats?.totalOperationMinutesUPS ?? 0;
+  const availableWorkingMinutes = dbStats?.totalAvailableMinutes ?? 1;
+  const availableUPSMinutes = dbStats?.totalAvailableMinutesUPS ?? 1;
   const busyCount = rooms.filter(r=>r.status===RoomStatus.BUSY).length;
   const freeCount = rooms.filter(r=>r.status===RoomStatus.FREE).length;
   const cleanCount= rooms.filter(r=>r.status===RoomStatus.CLEANING).length;
@@ -866,9 +872,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 {l:'Obsazeno',         v:`${busyCount} / ${rooms.length}`,       c:C.orange},
                 {l:'Volno',            v:`${freeCount} / ${rooms.length}`,       c:C.green},
                 {l:'Úklid + Údržba',  v:`${cleanCount+maintCount}`,             c:C.accent},
-                {l:`Průměr (${period})`,v:`${avgUtil}%`,                         c:C.text},
+                {l:'Využití (prac. doba)',v:`${avgUtil}%`,                       c:C.green},
+                {l:'Využití (ÚPS)',     v:`${avgUtilUPS}%`,                      c:C.orange},
                 {l:'Peak využití',     v:`${peakUtil}%`,                         c:peakUtil>90?C.red:C.orange},
-                {l:'Min využití',      v:`${minUtil}%`,                          c:C.muted},
                 {l:'Výkony / 24 h',   v:totalOps,                              c:C.accent},
               ].map((k,i)=>(
                 <motion.div key={i} className="flex flex-col justify-between px-4 py-4"
@@ -1036,19 +1042,21 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </ResponsiveContainer>
               </Card>
               <Card className="p-5">
-                <SectionLabel>Fronta a kapacita</SectionLabel>
+                <SectionLabel>Využití: Pracovní doba vs. ÚPS</SectionLabel>
                 <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>Prac. doba</p>
+                    <p className="text-3xl font-black" style={{color:C.green}}>{avgUtil}%</p>
+                    <p className="text-[9px] mt-1" style={{color:C.faint}}>{Math.round(workingHoursMinutes)} min / {Math.round(availableWorkingMinutes)} min</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>ÚPS</p>
+                    <p className="text-3xl font-black" style={{color:C.orange}}>{avgUtilUPS}%</p>
+                    <p className="text-[9px] mt-1" style={{color:C.faint}}>{Math.round(upsMinutes)} min / {Math.round(availableUPSMinutes)} min</p>
+                  </div>
                   <div>
                     <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>Celková fronta</p>
                     <p className="text-3xl font-black" style={{color:totalQueue>0?C.yellow:C.green}}>{totalQueue}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>ÚPS sálů</p>
-                    <p className="text-3xl font-black" style={{color:C.accent}}>{upsCnt}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>Zaplněnost</p>
-                    <p className="text-3xl font-black" style={{color:C.text}}>{Math.round((busyCount/Math.max(1,rooms.length))*100)}%</p>
                   </div>
                 </div>
                 <div className="space-y-2.5">
@@ -1318,19 +1326,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 {
-                  l:'Nejvyšší vytížení',
+                  l:'Nejvyšší vytížení (prac.)',
                   v:`${dbStats?.peakUtilization?.value ?? 0}%`,
                   sub: dbStats?.peakUtilization ? `${dbStats.peakUtilization.day} ${dbStats.peakUtilization.hour}:00` : 'Žádná data',
                   c:C.red
                 },
-                {l:'Průměrné vytížení',     v:`${avgUtil}%`, sub:'Pracovní dny', c:C.accent},
+                {l:'Využití prac. doba',     v:`${avgUtil}%`, sub:`${Math.round(availableWorkingMinutes/60)} h dostupných`, c:C.green},
+                {l:'Využití ÚPS',     v:`${avgUtilUPS}%`, sub:`${Math.round(availableUPSMinutes/60)} h dostupných`, c:C.orange},
                 {
-                  l:'Nejnižší vytížení',
+                  l:'Nejnižší využití (prac.)',
                   v:`${dbStats?.minUtilization?.value ?? 0}%`,
                   sub: dbStats?.minUtilization ? `${dbStats.minUtilization.day} ${dbStats.minUtilization.hour}:00` : 'Žádná data',
-                  c:C.green
+                  c:C.accent
                 },
-                {l:'Operační hodiny / den', v:'12 h', sub:'07:00–19:00',        c:C.muted},
               ].map(k=>(
                 <Card key={k.l} className="p-4">
                   <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
@@ -1340,9 +1348,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               ))}
             </div>
 
-            {/* Heatmap grid - real data from DB */}
+            {/* Heatmap grid - real data from DB with working hours indication */}
             <Card className="p-5">
-              <SectionLabel>Heatmapa vytížení — den × hodina (%)</SectionLabel>
+              <SectionLabel>Heatmapa vytížení — den × hodina (%) — plné buňky = pracovní doba, čárkované = ÚPS</SectionLabel>
               {dbStats?.heatmapData && dbStats.heatmapData.length > 0 ? (
                 <div className="overflow-x-auto">
                   <div className="inline-flex flex-col gap-1" style={{minWidth:560}}>
@@ -1351,19 +1359,29 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         <div key={h} className="w-5 text-center text-[9px] font-bold shrink-0" style={{color:C.faint}}>{h}</div>
                       ))}
                     </div>
-                    {DAYS.map((day,di)=>(
-                      <div key={di} className="flex items-center gap-1">
-                        <span className="w-7 text-xs font-black shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
-                        {(dbStats.heatmapData[di] || Array(24).fill(0)).map((v,hi)=>(
-                          <motion.div key={hi} className="w-5 h-5 rounded-[3px] shrink-0"
-                            style={{background:heatColor(v)}}
-                            initial={{opacity:0,scale:0.5}}
-                            animate={{opacity:1,scale:1}}
-                            transition={{duration:0.2,delay:(di*24+hi)*0.003}}
-                            title={`${day} ${hi}:00 — ${v}%`}/>
-                        ))}
-                      </div>
-                    ))}
+                    {DAYS.map((day,di)=>{
+                      const workingHours = dbStats.heatmapWorkingHours?.[di] || Array(24).fill(true);
+                      return (
+                        <div key={di} className="flex items-center gap-1">
+                          <span className="w-7 text-xs font-black shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
+                          {(dbStats.heatmapData[di] || Array(24).fill(0)).map((v,hi)=>{
+                            const isWorkingHour = workingHours[hi];
+                            return (
+                              <motion.div key={hi} className="w-5 h-5 rounded-[3px] shrink-0"
+                                style={{
+                                  background: heatColor(v),
+                                  border: isWorkingHour ? 'none' : '1px dashed rgba(255,255,255,0.3)',
+                                  opacity: isWorkingHour ? 1 : 0.6,
+                                }}
+                                initial={{opacity:0,scale:0.5}}
+                                animate={{opacity: isWorkingHour ? 1 : 0.6, scale:1}}
+                                transition={{duration:0.2,delay:(di*24+hi)*0.003}}
+                                title={`${day} ${hi}:00 — ${v}% ${isWorkingHour ? '(pracovní doba)' : '(ÚPS)'}`}/>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
@@ -1371,7 +1389,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   {isLoadingStats ? 'Načítání dat...' : 'Žádná data za vybrané období'}
                 </div>
               )}
-              <div className="flex items-center gap-4 mt-4">
+              <div className="flex flex-wrap items-center gap-4 mt-4">
                 <span className="text-[10px] font-black uppercase tracking-wider" style={{color:C.muted}}>Legenda</span>
                 {[
                   {c:'rgba(30,41,59,0.45)',l:'< 25%'},
@@ -1385,6 +1403,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     <span className="text-xs" style={{color:C.muted}}>{l.l}</span>
                   </div>
                 ))}
+                <div className="flex items-center gap-1.5 ml-4">
+                  <div className="w-3.5 h-3.5 rounded-[2px]" style={{background:'rgba(30,41,59,0.45)', border:'1px dashed rgba(255,255,255,0.5)'}}/>
+                  <span className="text-xs" style={{color:C.muted}}>= ÚPS</span>
+                </div>
               </div>
             </Card>
 
