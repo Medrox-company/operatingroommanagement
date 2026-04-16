@@ -84,7 +84,6 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({
     isError: false,
   });
   const [testRecipientEmail, setTestRecipientEmail] = useState('');
-  const [showEmailTest, setShowEmailTest] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState('late-arrival');
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [newNotification, setNewNotification] = useState({
@@ -357,137 +356,123 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({
             Přidat novou notifikaci
           </motion.button>
 
-          {/* Email Test Button */}
-          <motion.button
-            onClick={() => setShowEmailTest(!showEmailTest)}
-            className="px-6 py-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 transition-all flex items-center gap-2 font-semibold"
-            whileHover={{ scale: 1.02 }}
-          >
-            <Mail className="w-5 h-5" />
-            Testovat email
-          </motion.button>
+
         </div>
       )}
 
-      {/* Email Test Section */}
-      <AnimatePresence>
-        {showEmailTest && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="mb-8 p-6 rounded-[2.5rem] border border-blue-500/20 bg-blue-500/[0.03] backdrop-blur-[60px]"
-            style={{
-              boxShadow: `0 15px 35px -10px rgba(59, 130, 246, 0.3)`,
-            }}
-          >
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Mail className="w-5 h-5 text-blue-400" />
-              Test Email Notifikace
-            </h3>
 
-            {/* Template Selection */}
-            <div className="mb-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/[0.05]">
-              <label className="text-sm font-semibold text-blue-200 mb-3 block">
-                Vyberte emailovou šablonu:
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {emailTemplateOptions.map((template) => (
-                  <motion.button
-                    key={template.id}
-                    onClick={() => setSelectedTemplateId(template.id)}
-                    className={`p-3 rounded-lg border transition-all text-left ${
-                      selectedTemplateId === template.id
-                        ? 'border-blue-500/80 bg-blue-500/20'
-                        : 'border-blue-500/20 bg-blue-500/[0.05] hover:border-blue-500/40'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <p className="font-semibold text-sm text-white">{template.name}</p>
-                    <p className="text-xs text-white/50 mt-1">{template.description}</p>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
 
-            {/* Template Preview Button */}
-            <div className="mb-6 flex gap-2">
-              <motion.button
-                onClick={() => setShowTemplatePreview(!showTemplatePreview)}
-                className="px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-300 font-semibold hover:bg-purple-500/30 transition-all flex items-center gap-2"
-                whileHover={{ scale: 1.05 }}
-              >
-                <Eye className="w-4 h-4" />
-                {showTemplatePreview ? 'Skrýt náhled' : 'Zobrazit náhled'}
-              </motion.button>
-            </div>
+      {/* Email Templates Section - Always Visible */}
+      <div className="mb-8 p-6 rounded-[2.5rem] border border-purple-500/20 bg-purple-500/[0.03] backdrop-blur-[60px]"
+        style={{
+          boxShadow: `0 15px 35px -10px rgba(168, 85, 247, 0.2)`,
+        }}
+      >
+        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+          <Mail className="w-5 h-5 text-purple-400" />
+          Emailové šablony
+        </h3>
 
-            {/* Template Preview */}
-            <AnimatePresence>
-              {showTemplatePreview && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/[0.03] overflow-hidden"
-                >
-                  <p className="text-sm font-semibold text-purple-200 mb-3">Náhled emailové šablony:</p>
-                  <div className="bg-[#EAEEF3] rounded-lg p-4 overflow-auto max-h-96">
-                    {emailTemplateOptions.find(t => t.id === selectedTemplateId)?.component}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Email Input and Send Button */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <input
-                type="email"
-                placeholder="Email adresa pro test"
-                value={testRecipientEmail}
-                onChange={(e) => setTestRecipientEmail(e.target.value)}
-                className="px-4 py-3 rounded-lg border border-blue-500/30 bg-blue-500/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 md:col-span-2"
-              />
-              <motion.button
-                onClick={handleSendTestEmail}
-                disabled={emailTestState.isLoading}
-                className="px-6 py-3 rounded-lg bg-blue-500/30 border border-blue-500/50 text-blue-100 font-semibold hover:bg-blue-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                whileHover={{ scale: 1.02 }}
-              >
-                {emailTestState.isLoading ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Odesílání...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    Poslat test
-                  </>
+        {/* Template Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {emailTemplateOptions.map((template) => (
+            <motion.div
+              key={template.id}
+              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                selectedTemplateId === template.id
+                  ? 'border-purple-500/60 bg-purple-500/20'
+                  : 'border-purple-500/20 bg-purple-500/[0.05] hover:border-purple-500/40'
+              }`}
+              onClick={() => setSelectedTemplateId(template.id)}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <p className="font-semibold text-white">{template.name}</p>
+                {selectedTemplateId === template.id && (
+                  <Check className="w-4 h-4 text-purple-400" />
                 )}
-              </motion.button>
-            </div>
+              </div>
+              <p className="text-xs text-white/50">{template.description}</p>
+            </motion.div>
+          ))}
+        </div>
 
-            {emailTestState.message && (
+        {/* Preview Section */}
+        <div className="border-t border-purple-500/20 pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold text-purple-200">Náhled vybrané šablony:</p>
+            <motion.button
+              onClick={() => setShowTemplatePreview(!showTemplatePreview)}
+              className="px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-300 text-sm font-semibold hover:bg-purple-500/30 transition-all flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+            >
+              <Eye className="w-4 h-4" />
+              {showTemplatePreview ? 'Skrýt náhled' : 'Zobrazit náhled'}
+            </motion.button>
+          </div>
+
+          <AnimatePresence>
+            {showTemplatePreview && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className={`p-4 rounded-lg ${
-                  emailTestState.isError
-                    ? 'bg-red-500/10 border border-red-500/30 text-red-300'
-                    : 'bg-green-500/10 border border-green-500/30 text-green-300'
-                }`}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
               >
-                {emailTestState.message}
+                <div className="bg-[#EAEEF3] rounded-xl p-4 overflow-auto max-h-[500px]">
+                  {emailTemplateOptions.find(t => t.id === selectedTemplateId)?.component}
+                </div>
               </motion.div>
             )}
+          </AnimatePresence>
+        </div>
 
-            <div className="text-xs text-white/40 mt-4 p-3 bg-white/[0.02] rounded-lg border border-white/5">
-              💡 Tip: Vyberte šablonu, zobrazit si můžete náhled, a poté zadejte svou email adresu. Testovací zpráva bude odeslána přes Resend email service.
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Test Email Section */}
+        <div className="border-t border-purple-500/20 pt-6 mt-6">
+          <p className="text-sm font-semibold text-purple-200 mb-4">Odeslat testovací email:</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+              type="email"
+              placeholder="Email adresa pro test"
+              value={testRecipientEmail}
+              onChange={(e) => setTestRecipientEmail(e.target.value)}
+              className="px-4 py-3 rounded-lg border border-purple-500/30 bg-purple-500/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 md:col-span-2"
+            />
+            <motion.button
+              onClick={handleSendTestEmail}
+              disabled={emailTestState.isLoading}
+              className="px-6 py-3 rounded-lg bg-purple-500/30 border border-purple-500/50 text-purple-100 font-semibold hover:bg-purple-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              whileHover={{ scale: 1.02 }}
+            >
+              {emailTestState.isLoading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Odesílání...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Poslat test
+                </>
+              )}
+            </motion.button>
+          </div>
+
+          {emailTestState.message && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={`mt-4 p-4 rounded-lg ${
+                emailTestState.isError
+                  ? 'bg-red-500/10 border border-red-500/30 text-red-300'
+                  : 'bg-green-500/10 border border-green-500/30 text-green-300'
+              }`}
+            >
+              {emailTestState.message}
+            </motion.div>
+          )}
+        </div>
+      </div>
 
       {/* Notifications List */}
       <div className="space-y-4">
