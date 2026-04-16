@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, X, Check, AlertCircle, Bell, Volume2, Mail, MessageSquare, Send, Loader, Eye } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check, AlertCircle, Bell, Volume2, Mail, MessageSquare, Send, Loader } from 'lucide-react';
 import { sendEmailNotification, generateEmailTemplate } from '../lib/email';
-import { 
-  LateArrivalEmailTemplate, 
-  ScheduleChangeEmailTemplate, 
-  WelcomeEmailTemplate,
-  EmailTemplate 
-} from './EmailTemplate';
 
 interface Notification {
   id: string;
@@ -22,20 +16,6 @@ interface EmailTestState {
   isLoading: boolean;
   message: string;
   isError: boolean;
-}
-
-interface EmailTemplateOption {
-  id: string;
-  name: string;
-  description: string;
-  component: React.ReactNode;
-  testData?: {
-    operatorName?: string;
-    roomName?: string;
-    scheduledTime?: string;
-    changeDescription?: string;
-    recipientName?: string;
-  };
 }
 
 interface NotificationsManagerProps {
@@ -84,55 +64,13 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({
     isError: false,
   });
   const [testRecipientEmail, setTestRecipientEmail] = useState('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('late-arrival');
-  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const [showEmailTest, setShowEmailTest] = useState(false);
   const [newNotification, setNewNotification] = useState({
     type: 'email' as const,
     title: '',
     description: '',
     recipientEmail: '',
   });
-
-  const emailTemplateOptions: EmailTemplateOption[] = [
-    {
-      id: 'late-arrival',
-      name: 'Pozdní příchod operatéra',
-      description: 'Notifikace o zpoždění operatéra v operačním sále',
-      component: <LateArrivalEmailTemplate 
-        operatorName="Jan Novák"
-        roomName="Sál 1"
-        scheduledTime="10:30"
-      />,
-      testData: {
-        operatorName: 'Jan Novák',
-        roomName: 'Sál 1',
-        scheduledTime: '10:30',
-      },
-    },
-    {
-      id: 'schedule-change',
-      name: 'Změna v rozvrhu',
-      description: 'Upozornění na změnu v rozvrhu operačních sálů',
-      component: <ScheduleChangeEmailTemplate 
-        recipientName="Koordinátore"
-        changeDescription="Operační sál č. 1 byl přesunut z 14:00 na 15:00. Prosím proveďte potřebné úpravy."
-      />,
-      testData: {
-        changeDescription: 'Operační sál č. 1 byl přesunut z 14:00 na 15:00.',
-      },
-    },
-    {
-      id: 'welcome',
-      name: 'Vítací email',
-      description: 'Email pro nové uživatele po vytvoření účtu',
-      component: <WelcomeEmailTemplate 
-        recipientName="Petr"
-      />,
-      testData: {
-        recipientName: 'Petr',
-      },
-    },
-  ];
 
   const notificationColors: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
     email: { bg: '#3B82F6', color: '#DBEAFE', icon: <Mail className="w-5 h-5" /> },
@@ -180,48 +118,20 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({
     setEmailTestState({ isLoading: true, message: '', isError: false });
 
     try {
-      const selectedTemplate = emailTemplateOptions.find(t => t.id === selectedTemplateId);
-      let html: string;
-
-      if (selectedTemplateId === 'late-arrival') {
-        html = generateEmailTemplate({
-          type: 'custom',
-          roomName: 'Sál 1',
-          message: 'Operatér Jan Novák má zpoždění. Plánovaný čas příchodu byl 10:30.',
-          details: {
-            'Operatér': 'Jan Novák',
-            'Sál': 'Sál 1',
-            'Plánovaný čas': '10:30',
-            'Čas odeslání': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
-          },
-        });
-      } else if (selectedTemplateId === 'schedule-change') {
-        html = generateEmailTemplate({
-          type: 'custom',
-          roomName: 'Sál 1',
-          message: 'Operační sál č. 1 byl přesunut z 14:00 na 15:00. Prosím proveďte potřebné úpravy.',
-          details: {
-            'Změna': 'Přesunutí na 15:00',
-            'Sál': 'Sál 1',
-            'Čas odeslání': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
-          },
-        });
-      } else {
-        html = generateEmailTemplate({
-          type: 'custom',
-          roomName: 'Test Operační Sál',
-          message: 'Toto je testovací zpráva z Operating Room Management Systému',
-          details: {
-            'Čas odeslání': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
-            'Test typ': 'Email notifikace',
-            'Stav systému': 'Aktivní',
-          },
-        });
-      }
+      const html = generateEmailTemplate({
+        type: 'custom',
+        roomName: 'Test Operační Sál',
+        message: 'Toto je testovací zpráva z Operating Room Management Systému',
+        details: {
+          'Čas odeslání': new Date().toLocaleString('cs-CZ'),
+          'Test typ': 'Email notifikace',
+          'Stav systému': 'Aktivní',
+        },
+      });
 
       const result = await sendEmailNotification({
         to: testRecipientEmail,
-        subject: `Test: ${selectedTemplate?.name || 'Operating Room Management System'} - Email Notifikace`,
+        subject: 'Test: Operating Room Management System - Email Notifikace',
         html,
       });
 
@@ -356,123 +266,82 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({
             Přidat novou notifikaci
           </motion.button>
 
-
+          {/* Email Test Button */}
+          <motion.button
+            onClick={() => setShowEmailTest(!showEmailTest)}
+            className="px-6 py-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 transition-all flex items-center gap-2 font-semibold"
+            whileHover={{ scale: 1.02 }}
+          >
+            <Mail className="w-5 h-5" />
+            Testovat email
+          </motion.button>
         </div>
       )}
 
-
-
-      {/* Email Templates Section - Always Visible */}
-      <div className="mb-8 p-6 rounded-[2.5rem] border border-purple-500/20 bg-purple-500/[0.03] backdrop-blur-[60px]"
-        style={{
-          boxShadow: `0 15px 35px -10px rgba(168, 85, 247, 0.2)`,
-        }}
-      >
-        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-          <Mail className="w-5 h-5 text-purple-400" />
-          Emailové šablony
-        </h3>
-
-        {/* Template Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {emailTemplateOptions.map((template) => (
-            <motion.div
-              key={template.id}
-              className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                selectedTemplateId === template.id
-                  ? 'border-purple-500/60 bg-purple-500/20'
-                  : 'border-purple-500/20 bg-purple-500/[0.05] hover:border-purple-500/40'
-              }`}
-              onClick={() => setSelectedTemplateId(template.id)}
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <p className="font-semibold text-white">{template.name}</p>
-                {selectedTemplateId === template.id && (
-                  <Check className="w-4 h-4 text-purple-400" />
-                )}
-              </div>
-              <p className="text-xs text-white/50">{template.description}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Preview Section */}
-        <div className="border-t border-purple-500/20 pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-purple-200">Náhled vybrané šablony:</p>
-            <motion.button
-              onClick={() => setShowTemplatePreview(!showTemplatePreview)}
-              className="px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-300 text-sm font-semibold hover:bg-purple-500/30 transition-all flex items-center gap-2"
-              whileHover={{ scale: 1.05 }}
-            >
-              <Eye className="w-4 h-4" />
-              {showTemplatePreview ? 'Skrýt náhled' : 'Zobrazit náhled'}
-            </motion.button>
-          </div>
-
-          <AnimatePresence>
-            {showTemplatePreview && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
+      {/* Email Test Section */}
+      <AnimatePresence>
+        {showEmailTest && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8 p-6 rounded-[2.5rem] border border-blue-500/20 bg-blue-500/[0.03] backdrop-blur-[60px]"
+            style={{
+              boxShadow: `0 15px 35px -10px rgba(59, 130, 246, 0.3)`,
+            }}
+          >
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Mail className="w-5 h-5 text-blue-400" />
+              Test Email Notifikace
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <input
+                type="email"
+                placeholder="Email adresa pro test"
+                value={testRecipientEmail}
+                onChange={(e) => setTestRecipientEmail(e.target.value)}
+                className="px-4 py-3 rounded-lg border border-blue-500/30 bg-blue-500/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 md:col-span-2"
+              />
+              <motion.button
+                onClick={handleSendTestEmail}
+                disabled={emailTestState.isLoading}
+                className="px-6 py-3 rounded-lg bg-blue-500/30 border border-blue-500/50 text-blue-100 font-semibold hover:bg-blue-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.02 }}
               >
-                <div className="bg-[#EAEEF3] rounded-xl p-4 overflow-auto max-h-[500px]">
-                  {emailTemplateOptions.find(t => t.id === selectedTemplateId)?.component}
-                </div>
+                {emailTestState.isLoading ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Odesílání...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Poslat test
+                  </>
+                )}
+              </motion.button>
+            </div>
+
+            {emailTestState.message && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className={`p-4 rounded-lg ${
+                  emailTestState.isError
+                    ? 'bg-red-500/10 border border-red-500/30 text-red-300'
+                    : 'bg-green-500/10 border border-green-500/30 text-green-300'
+                }`}
+              >
+                {emailTestState.message}
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
 
-        {/* Test Email Section */}
-        <div className="border-t border-purple-500/20 pt-6 mt-6">
-          <p className="text-sm font-semibold text-purple-200 mb-4">Odeslat testovací email:</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              type="email"
-              placeholder="Email adresa pro test"
-              value={testRecipientEmail}
-              onChange={(e) => setTestRecipientEmail(e.target.value)}
-              className="px-4 py-3 rounded-lg border border-purple-500/30 bg-purple-500/[0.05] text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 md:col-span-2"
-            />
-            <motion.button
-              onClick={handleSendTestEmail}
-              disabled={emailTestState.isLoading}
-              className="px-6 py-3 rounded-lg bg-purple-500/30 border border-purple-500/50 text-purple-100 font-semibold hover:bg-purple-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              whileHover={{ scale: 1.02 }}
-            >
-              {emailTestState.isLoading ? (
-                <>
-                  <Loader className="w-4 h-4 animate-spin" />
-                  Odesílání...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Poslat test
-                </>
-              )}
-            </motion.button>
-          </div>
-
-          {emailTestState.message && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={`mt-4 p-4 rounded-lg ${
-                emailTestState.isError
-                  ? 'bg-red-500/10 border border-red-500/30 text-red-300'
-                  : 'bg-green-500/10 border border-green-500/30 text-green-300'
-              }`}
-            >
-              {emailTestState.message}
-            </motion.div>
-          )}
-        </div>
-      </div>
+            <div className="text-xs text-white/40 mt-4 p-3 bg-white/[0.02] rounded-lg border border-white/5">
+              💡 Tip: Zadejte své email adresu a klikněte na "Poslat test" pro odeslání testovací zprávy. Zpráva bude odeslána přes Resend email service.
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Notifications List */}
       <div className="space-y-4">
