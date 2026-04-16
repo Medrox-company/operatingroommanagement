@@ -96,7 +96,7 @@ const NOTIFICATION_TYPES = [
   },
   {
     id: 'notify_late_arrival',
-    label: 'Pozdní příjezd',
+    label: 'Pozdní příjezd z oddělení',
     color: '#3b82f6',
   },
   {
@@ -260,7 +260,7 @@ export default function NotificationOverlay({
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
                         ) : (
-                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
+                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
@@ -349,7 +349,7 @@ export default function NotificationOverlay({
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
                         ) : (
-                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
+                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
