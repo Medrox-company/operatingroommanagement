@@ -1044,6 +1044,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return Object.entries(m).sort((a,b)=>b[1]-a[1]);
   },[rooms]);
 
+  // Per-room status utilisation from real status history (must be defined before roomBarData)
+  const roomDistributions = useMemo(() => {
+    return calculateRoomWorkflowDistribution(statusHistory, rooms, WORKFLOW_STEPS);
+  }, [statusHistory, rooms, WORKFLOW_STEPS]);
+
   // Room bar data using real status history for utilization
   const roomBarData = useMemo(() => rooms.map(r => {
     const dist = roomDistributions[r.id] || {};
@@ -1118,19 +1123,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     ];
   }, [dbStats]);
 
-  // Scatter: ops24h vs utilPct per room
-  const scatterData=rooms.map(r=>({
-    ops:r.operations24h,
-    util:Math.round(buildDist(r,WORKFLOW_STEPS).find(d=>d.title==='Chirurgický výkon')?.pct??0),
-    queue:r.queueCount,
-    name:r.name,
-  }));
+  // Scatter: ops24h vs utilPct per room using real distributions
+  const scatterData = useMemo(() => rooms.map(r => {
+    const dist = roomDistributions[r.id] || {};
+    const surgicalStep = WORKFLOW_STEPS.find(s => s.title.includes('Chirurgický') || s.title.includes('výkon'));
+    return {
+      ops: r.operations24h,
+      util: surgicalStep ? (dist[surgicalStep.title] ?? 0) : 0,
+      queue: r.queueCount,
+      name: r.name,
+    };
+  }), [rooms, roomDistributions, WORKFLOW_STEPS]);
 
-  // Per-room status utilisation from real status history (stacked bar)
-  const roomDistributions = useMemo(() => {
-    return calculateRoomWorkflowDistribution(statusHistory, rooms, WORKFLOW_STEPS);
-  }, [statusHistory, rooms, WORKFLOW_STEPS]);
-  
+  // Per-room status bar (stacked bar) using roomDistributions defined above
   const roomStatusBar = useMemo(() => rooms.map((r, i) => {
     const dist = roomDistributions[r.id] || {};
     const base: Record<string, number | string> = { name: `S${i + 1}` };
