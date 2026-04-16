@@ -81,12 +81,12 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
 const NOTIFICATION_TYPES = [
   {
     id: 'notify_late_surgeon',
-    label: 'Pozdní příchod operatéra',
+    label: 'Pozdní \npříchod \noperatéra',
     color: '#ef4444',
   },
   {
     id: 'notify_late_anesthesiologist',
-    label: 'Pozdní příchod anesteziologa',
+    label: 'Pozdní \npříchod \nARO',
     color: '#f97316',
   },
   {
@@ -96,7 +96,7 @@ const NOTIFICATION_TYPES = [
   },
   {
     id: 'notify_late_arrival',
-    label: 'Pozdní příjezd',
+    label: 'Pozdní \npříjezd z oddělení',
     color: '#3b82f6',
   },
   {
@@ -164,6 +164,14 @@ export default function NotificationOverlay({
               className="absolute w-[800px] h-[800px] rounded-full blur-[200px] opacity-10"
               style={{ backgroundColor: '#3b82f6' }}
             />
+
+            {/* Close button - top right */}
+            <button 
+              onClick={onClose} 
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 opacity-40 hover:opacity-100 active:scale-95 transition-all z-20 outline-none select-none"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
+            </button>
 
             {/* Main content */}
             <div className="flex flex-col items-center relative z-10 px-4">
@@ -252,7 +260,7 @@ export default function NotificationOverlay({
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
                         ) : (
-                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
+                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
@@ -341,7 +349,7 @@ export default function NotificationOverlay({
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
                         ) : (
-                          <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
+                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
