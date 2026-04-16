@@ -191,7 +191,7 @@ function getCombinedWorkingHoursRange(rooms: OperatingRoom[], dayIndex: number):
   return { start: minStart, end: maxEnd };
 }
 
-// ── Tooltip shared style ───────────────────────────────────────────────────────
+// ── Tooltip shared style ────────────��──────────────────────────────────────────
 const TIP = {
   contentStyle:{ background:'rgba(2,8,23,0.97)', border:`1px solid ${C.border}`, borderRadius:6, fontSize:12 },
   labelStyle:  { color:C.muted },
@@ -524,17 +524,8 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   const sc     = statusColor(room.status);
   const ups    = isUPS(room);
   const dm     = dayMinutes(room);
-  // Calculate room-specific step durations from history first
-  const roomStepDurationsForCalc = useMemo(() => {
-    return calculateAvgStepDurations(roomHistory, workflowSteps);
-  }, [roomHistory, workflowSteps]);
-  
-  const tl     = useMemo(()=>mergeSeg(buildTimeline(room,workflowSteps, roomStepDurationsForCalc)),[room,workflowSteps, roomStepDurationsForCalc]);
-  const dist   = useMemo(()=>buildDist(room,workflowSteps, roomStepDurationsForCalc),[room,workflowSteps, roomStepDurationsForCalc]);
-  const opsDay = room.operations24h;
-  const utilPct= dist.find(d=>d.title==='Chirurgický výkon')?.pct??0;
 
-  // State for room-specific history
+  // State must be declared first - before any useMemo that depends on it
   const [roomHistory, setRoomHistory] = useState<StatusHistoryRow[]>([]);
   
   // Load room-specific history
@@ -551,6 +542,16 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
     };
     loadRoomHistory();
   }, [room.id]);
+
+  // Calculate room-specific step durations from history
+  const roomStepDurationsForCalc = useMemo(() => {
+    return calculateAvgStepDurations(roomHistory, workflowSteps);
+  }, [roomHistory, workflowSteps]);
+  
+  const tl     = useMemo(()=>mergeSeg(buildTimeline(room,workflowSteps, roomStepDurationsForCalc)),[room,workflowSteps, roomStepDurationsForCalc]);
+  const dist   = useMemo(()=>buildDist(room,workflowSteps, roomStepDurationsForCalc),[room,workflowSteps, roomStepDurationsForCalc]);
+  const opsDay = room.operations24h;
+  const utilPct= dist.find(d=>d.title==='Chirurgický výkon')?.pct??0;
 
   // Day utilisation curve from real data using room's weekly schedule
   const dayCurve=useMemo(()=>{
