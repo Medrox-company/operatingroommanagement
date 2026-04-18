@@ -220,11 +220,14 @@ function countOperationsInWorkingHours(
   history: StatusHistoryRow[],
   period: Period
 ): number {
+  if (!room || !history || history.length === 0) return 0;
+  
   const roomHistory = history.filter(e => e.operating_room_id === room.id);
   const operationStarts = roomHistory.filter(e => e.event_type === 'operation_start');
   
   // Filter operations that fall within the room's working hours
   return operationStarts.filter(e => {
+    if (!e.timestamp) return false;
     const date = new Date(e.timestamp);
     const dayOfWeek = date.getDay();
     const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -245,10 +248,13 @@ function calculateActiveTimeInWorkingHours(
   room: OperatingRoom,
   history: StatusHistoryRow[]
 ): number {
+  if (!room || !history || history.length === 0) return 0;
+  
   const roomHistory = history.filter(e => e.operating_room_id === room.id && e.event_type === 'step_change');
   
   // Sum durations that fall within working hours
   return roomHistory.reduce((total, e) => {
+    if (!e.timestamp) return total;
     const date = new Date(e.timestamp);
     const dayOfWeek = date.getDay();
     const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -1157,8 +1163,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   }, [rooms, statusHistory, period]);
   
   const avgUtil   = avgUtilFromWorkingHours || Math.round(utilData.reduce((s,d)=>s+d.v,0)/Math.max(1, utilData.length));
-  const peakUtil  = Math.max(0, ...utilData.map(d=>d.v));
-  const minUtil   = Math.min(100, ...utilData.map(d=>d.v));
+  const utilValues = utilData.length > 0 ? utilData.map(d=>d.v) : [0];
+  const peakUtil  = Math.max(...utilValues);
+  const minUtil   = Math.min(...utilValues);
   const totalOps  = totalOpsInWorkingHours || (dbStats?.totalOperations ?? 0);
   const busyCount = rooms.filter(r=>r.status===RoomStatus.BUSY).length;
   const freeCount = rooms.filter(r=>r.status===RoomStatus.FREE).length;
