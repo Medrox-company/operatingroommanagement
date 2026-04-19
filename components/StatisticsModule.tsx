@@ -4,6 +4,7 @@ import {
   TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
 } from 'lucide-react';
+import PageLayout from './PageLayout';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 // Step durations now calculated from real database history
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
@@ -1300,50 +1301,65 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     {id:'heatmapa',label:'Heatmapa'},
   ];
 
-  return(
-    <div className="w-full">
+  // iOS-style segmented period switcher (right side of header)
+  const headerActions = (
+    <div
+      className="flex items-center gap-1 p-1 rounded-2xl border"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        borderColor: 'rgba(255,255,255,0.08)',
+      }}
+    >
+      {(['den', 'týden', 'měsíc', 'rok'] as Period[]).map((p) => (
+        <button
+          key={p}
+          onClick={() => setPeriod(p)}
+          className="px-3 sm:px-4 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ios-tap"
+          style={{
+            background: period === p ? `${C.accent}22` : 'transparent',
+            color: period === p ? C.accent : C.muted,
+          }}
+        >
+          {p}
+        </button>
+      ))}
+    </div>
+  );
 
-      {/* ── Module header ── */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2 opacity-60">
-          <BarChart3 className="w-4 h-4 text-[#00D8C1]" />
-          <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
-        </div>
-        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-          STATISTIKY
-        </h1>
-      </div>
+  // Toolbar (tabs) below header
+  const toolbar = (
+    <div
+      className="inline-flex items-center gap-1 p-1 rounded-2xl border"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        borderColor: 'rgba(255,255,255,0.08)',
+      }}
+    >
+      {TABS.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => setTab(t.id)}
+          className="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ios-tap"
+          style={{
+            background: tab === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
+            color: tab === t.id ? C.text : C.muted,
+          }}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
 
-      {/* ── Period + Tab navigation ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
-        {/* Tabs */}
-        <div className="flex items-center gap-1 p-1 rounded-lg" style={{background:C.surface,border:`1px solid ${C.border}`}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              className="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
-              style={{
-                background:tab===t.id?'rgba(255,255,255,0.07)':'transparent',
-                color:tab===t.id?C.text:C.muted,
-              }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-        {/* Period switcher */}
-        <div className="flex items-center gap-1.5">
-          {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-            <button key={p} onClick={()=>setPeriod(p)}
-              className="px-3.5 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all"
-              style={{
-                background:period===p?`${C.accent}18`:'transparent',
-                color:period===p?C.accent:C.muted,
-                border:`1px solid ${period===p?C.accent:C.border}`,
-              }}>
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
+  return (
+    <PageLayout
+      title="Statistiky"
+      eyebrow="ANALYTICS"
+      icon={BarChart3}
+      accentColor={C.accent}
+      actions={headerActions}
+      toolbar={toolbar}
+    >
 
       {/* ── Tab content ── */}
       <AnimatePresence mode="wait">
@@ -2039,7 +2055,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
       </AnimatePresence>
 
-    </div>
+    </PageLayout>
   );
 };
 

@@ -6,6 +6,7 @@ import {
   Users, Bell, Power, Check, X, AlertTriangle,
   ChevronRight, Lock
 } from 'lucide-react';
+import PageLayout from './PageLayout';
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
   LayoutGrid,
@@ -28,13 +29,15 @@ const AdminModule: React.FC<AdminModuleProps> = ({ onClose }) => {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-        <div className="text-center">
-          <Lock className="w-16 h-16 text-white/20 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Přístup odepřen</h2>
-          <p className="text-white/50">Tato sekce je dostupná pouze pro administrátory.</p>
+      <PageLayout title="Přístup odepřen" icon={Lock} accentColor="#EF4444">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Lock className="w-16 h-16 text-white/20 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Přístup odepřen</h2>
+            <p className="text-white/50">Tato sekce je dostupná pouze pro administrátory.</p>
+          </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -53,51 +56,25 @@ const AdminModule: React.FC<AdminModuleProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] p-6 lg:p-10">
-      {/* Background Effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full opacity-5"
-          style={{ background: 'radial-gradient(circle, #00D8C1 0%, transparent 70%)' }} />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full opacity-5"
-          style={{ background: 'radial-gradient(circle, #A855F7 0%, transparent 70%)' }} />
-      </div>
-
-      <div className="max-w-4xl mx-auto relative z-10">
-        {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{ 
-                  background: 'linear-gradient(135deg, #00D8C1 0%, #00A896 100%)',
-                  boxShadow: '0 0 30px rgba(0,216,193,0.3)'
-                }}
-              >
-                <Shield className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Administrace</h1>
-                <p className="text-white/40 text-sm">Správa modulů a nastavení systému</p>
-              </div>
-            </div>
-            
-            {onClose && (
-              <motion.button
-                onClick={onClose}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.05] transition-all"
-              >
-                <X className="w-6 h-6" />
-              </motion.button>
-            )}
-          </div>
-        </motion.header>
-
+    <PageLayout
+      title="Administrace"
+      eyebrow="SYSTEM ADMIN"
+      icon={Shield}
+      accentColor="#00D8C1"
+      description="Správa modulů a nastavení systému"
+      actions={
+        onClose && (
+          <button
+            onClick={onClose}
+            className="p-2.5 rounded-2xl bg-white/[0.04] border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.08] transition-all ios-tap"
+            aria-label="Zavřít administraci"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )
+      }
+    >
+      <div className="max-w-4xl mx-auto">
         {/* User Info Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -288,7 +265,7 @@ const AdminModule: React.FC<AdminModuleProps> = ({ onClose }) => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageLayout>
   );
 };
 

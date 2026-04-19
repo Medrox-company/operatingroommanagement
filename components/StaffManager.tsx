@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel } from '../types';
+import PageLayout from './PageLayout';
 
 // Types from database
 interface StaffMember {
@@ -457,77 +458,111 @@ export default function StaffManager() {
     }
   };
 
-  return (
-    <div className="w-full space-y-8">
-      {/* Header */}
-      <header className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Shield className="w-4 h-4 text-[#00D8C1]" />
-            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">PERSONÁL CONTROL</p>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
-            PERSONÁL <span className="text-white/20">MANAGEMENT</span>
-          </h1>
+  // iOS-style stats pill for the header actions area
+  const headerActions = (
+    <div
+      className="flex gap-1 p-1 rounded-2xl border backdrop-blur-xl overflow-x-auto hide-scrollbar"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        borderColor: 'rgba(255,255,255,0.08)',
+      }}
+    >
+      {[
+        { label: 'LÉKAŘI', value: counts.doctors, color: '#A78BFA' },
+        { label: 'SESTRY', value: counts.nurses, color: '#10B981' },
+        { label: 'CELKEM', value: staff.length, color: '#00D8C1' },
+      ].map((stat) => (
+        <div
+          key={stat.label}
+          className="flex flex-col items-center justify-center px-3 sm:px-4 py-1.5 rounded-xl min-w-[70px]"
+        >
+          <p
+            className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.15em] opacity-70"
+            style={{ color: stat.color }}
+          >
+            {stat.label}
+          </p>
+          <p className="text-lg sm:text-xl font-black text-white tabular-nums leading-tight">
+            {stat.value}
+          </p>
         </div>
+      ))}
+    </div>
+  );
 
-        {/* Stats Bar */}
-        <div className="flex gap-2 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2rem] shadow-2xl overflow-x-auto">
-          {[
-            { label: 'LÉKAŘI', value: counts.doctors, icon: Stethoscope, color: 'text-violet-400' },
-            { label: 'SESTRY', value: counts.nurses, icon: Heart, color: 'text-emerald-400' },
-            { label: 'CELKEM', value: staff.length, icon: Users, color: 'text-[#00D8C1]' },
-          ].map((stat) => (
-            <div key={stat.label} className="flex flex-col items-center justify-center px-6 md:px-10 py-4 rounded-2xl hover:bg-white/5 transition-all min-w-[100px]">
-              <div className="flex items-center gap-2 mb-2 opacity-50">
-                <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                <p className="text-[9px] font-black uppercase tracking-[0.15em]">{stat.label}</p>
-              </div>
-              <p className="text-2xl font-black text-white">{stat.value}</p>
-            </div>
-          ))}
-        </div>
-      </header>
-
-      {/* Category Tabs */}
-      <div className="flex gap-2 border-b border-white/5 pb-4 overflow-x-auto">
-        {categories.map(cat => {
-          const isActive = activeCategory === cat.id;
-          const Icon = cat.icon;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
-              className={`flex items-center gap-2 pb-4 px-4 -mb-4 transition-all whitespace-nowrap ${isActive ? 'text-white border-b-2 border-[#00D8C1]' : 'text-white/40 hover:text-white/60'}`}
+  // Toolbar: category tabs (iOS-style segmented control)
+  const toolbar = (
+    <div
+      className="inline-flex gap-1 p-1 rounded-2xl border backdrop-blur-xl overflow-x-auto hide-scrollbar max-w-full"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        borderColor: 'rgba(255,255,255,0.08)',
+      }}
+    >
+      {categories.map((cat) => {
+        const isActive = activeCategory === cat.id;
+        const Icon = cat.icon;
+        return (
+          <button
+            key={cat.id}
+            onClick={() => {
+              setActiveCategory(cat.id);
+              setSelectedStaffId(null);
+            }}
+            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl whitespace-nowrap transition-all ios-tap ${
+              isActive ? 'text-white' : 'text-white/50 hover:text-white/80'
+            }`}
+            style={
+              isActive
+                ? {
+                    background: 'rgba(0,216,193,0.14)',
+                    border: '1px solid rgba(0,216,193,0.3)',
+                  }
+                : undefined
+            }
+          >
+            <Icon className="w-3.5 h-3.5" style={isActive ? { color: '#00D8C1' } : undefined} />
+            <span className="text-xs font-bold">{cat.label}</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold tabular-nums ${
+                isActive ? 'bg-white/15 text-white' : 'bg-white/[0.06] text-white/50'
+              }`}
             >
-              <Icon className="w-4 h-4" />
-              <span className="font-semibold">{cat.label}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-white/10 text-white' : 'bg-white/5 text-white/40'}`}>
-                {cat.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              {cat.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
 
+  return (
+    <PageLayout
+      title="Personál"
+      eyebrow="STAFF MANAGEMENT"
+      icon={Users}
+      accentColor="#00D8C1"
+      actions={headerActions}
+      toolbar={toolbar}
+    >
       {/* Search + Add Button */}
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-3 items-center mb-6">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
           <input
             type="text"
-            placeholder="Hledat..."
+            placeholder="Hledat personál..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/20 transition-all text-sm"
+            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-white/40 focus:outline-none focus:border-[#00D8C1]/40 focus:bg-white/[0.06] transition-all text-sm backdrop-blur-xl"
           />
         </div>
         <button
           onClick={() => setIsAddingNew(true)}
-          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all"
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#00D8C1]/15 hover:bg-[#00D8C1]/25 text-[#00D8C1] font-semibold transition-all ios-tap border border-[#00D8C1]/25 backdrop-blur-xl shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Přidat</span>
+          <span className="hidden sm:inline text-sm">Přidat</span>
         </button>
       </div>
 
@@ -756,6 +791,6 @@ export default function StaffManager() {
           </>
         )}
       </AnimatePresence>
-    </div>
+    </PageLayout>
   );
 }

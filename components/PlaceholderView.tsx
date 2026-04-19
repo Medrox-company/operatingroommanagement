@@ -1,27 +1,50 @@
-import React from 'react';
-import { LucideIcon, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+"use client"
+
+import React from 'react'
+import { LucideIcon, AlertCircle } from 'lucide-react'
+import { motion } from 'framer-motion'
+import PageLayout from './PageLayout'
 
 interface PlaceholderViewProps {
-  icon?: LucideIcon;
-  title: string;
-  description: string;
+  icon?: LucideIcon
+  title: string
+  description: string
 }
 
-const PlaceholderView: React.FC<PlaceholderViewProps> = ({ icon: Icon = AlertCircle, title, description }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="w-full h-full flex items-center justify-center px-8 md:pl-32 md:pr-10 py-8"
+const PlaceholderView: React.FC<PlaceholderViewProps> = ({
+  icon: Icon = AlertCircle,
+  title,
+  description,
+}) => (
+  <PageLayout
+    title={title}
+    icon={Icon}
+    description={description}
   >
-    <div className="max-w-sm w-full text-center">
-      <div className="inline-flex p-6 rounded-3xl bg-white/5 border border-white/10 mb-8">
-        <Icon className="w-16 h-16 text-white/30" strokeWidth={1.5} />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full flex items-center justify-center py-12 md:py-24"
+    >
+      <div className="max-w-md w-full text-center">
+        <div
+          className="inline-flex p-8 rounded-3xl border mb-6 backdrop-blur-md"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            borderColor: 'rgba(255,255,255,0.08)',
+          }}
+        >
+          <Icon className="w-16 h-16 text-white/40" strokeWidth={1.5} />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-bold text-white/90 mb-3">
+          {title}
+        </h2>
+        <p className="text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
+          {description}
+        </p>
       </div>
-      <h2 className="text-2xl font-bold uppercase tracking-tight text-white/90 mb-3">{title}</h2>
-      <p className="text-white/50 text-sm leading-relaxed">{description}</p>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  </PageLayout>
+)
 
-export default PlaceholderView;
+export default PlaceholderView
