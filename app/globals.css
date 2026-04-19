@@ -2,156 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens (iOS-inspired) ──────────────────────────────────────────── */
-:root {
-  /* Primary accent */
-  --accent: #00D8C1;
-  --accent-rgb: 0, 216, 193;
-
-  /* Surface layers (iOS-style translucency) */
-  --surface-1: rgba(255, 255, 255, 0.03);
-  --surface-2: rgba(255, 255, 255, 0.05);
-  --surface-3: rgba(255, 255, 255, 0.08);
-  --surface-4: rgba(255, 255, 255, 0.12);
-
-  /* Borders */
-  --border-1: rgba(255, 255, 255, 0.06);
-  --border-2: rgba(255, 255, 255, 0.08);
-  --border-3: rgba(255, 255, 255, 0.12);
-
-  /* Text */
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-tertiary: rgba(255, 255, 255, 0.5);
-  --text-quaternary: rgba(255, 255, 255, 0.3);
-
-  /* iOS-style radii */
-  --radius-sm: 0.625rem;  /* 10px */
-  --radius-md: 0.875rem;  /* 14px */
-  --radius-lg: 1.25rem;   /* 20px - iOS card */
-  --radius-xl: 1.5rem;    /* 24px */
-  --radius-2xl: 2rem;     /* 32px - iOS modal */
-
-  /* Shadows */
-  --shadow-sm: 0 2px 10px -2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px -6px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
-
-  /* Safe areas (iOS notch / home indicator) */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-}
-
 html {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-    var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   color-scheme: dark;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  /* Prevent elastic scroll on iOS */
-  overscroll-behavior: none;
 }
 
 body {
   margin: 0;
   padding: 0;
   background-color: #000;
-  /* Avoid horizontal scrolling on small screens */
-  overflow-x: hidden;
-  /* iOS-style momentum scrolling in scrollable containers */
-  -webkit-overflow-scrolling: touch;
 }
 
-/* ── Utilities ─────────────────────────────────────────────────────────────── */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* iOS-style subtle scrollbar (desktop only) */
-@media (hover: hover) and (pointer: fine) {
-  .subtle-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  .subtle-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .subtle-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-  }
-  .subtle-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-}
-
-/* iOS-style safe-area padding helpers */
-.safe-area-pt { padding-top: var(--safe-top); }
-.safe-area-pb { padding-bottom: var(--safe-bottom); }
-.safe-area-pl { padding-left: var(--safe-left); }
-.safe-area-pr { padding-right: var(--safe-right); }
-
-/* iOS-style blur surface */
-.ios-surface {
-  background: var(--surface-2);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border-2);
-}
-
-/* iOS-style pill / capsule */
-.ios-pill {
-  border-radius: 9999px;
-  padding: 0.5rem 1rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  font-weight: 600;
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  backdrop-filter: blur(12px);
-}
-
-/* iOS-style tap feedback */
-.ios-tap {
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-.ios-tap:active {
-  transform: scale(0.97);
-}
-
-/* Fluid typography helpers */
-.text-fluid-xs { font-size: clamp(0.625rem, 1vw + 0.4rem, 0.75rem); }
-.text-fluid-sm { font-size: clamp(0.75rem, 1.2vw + 0.5rem, 0.875rem); }
-.text-fluid-base { font-size: clamp(0.875rem, 1.5vw + 0.5rem, 1rem); }
-.text-fluid-lg { font-size: clamp(1rem, 2vw + 0.5rem, 1.25rem); }
-.text-fluid-xl { font-size: clamp(1.25rem, 3vw + 0.5rem, 1.75rem); }
-.text-fluid-2xl { font-size: clamp(1.5rem, 4vw + 0.5rem, 2.5rem); }
-.text-fluid-3xl { font-size: clamp(2rem, 5vw + 0.5rem, 3.5rem); }
-.text-fluid-hero { font-size: clamp(2rem, 6vw + 1rem, 4.5rem); }
-
-/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  *, *::before, *::after { 
+    animation-duration: 0.01ms !important; 
+    animation-iteration-count: 1 !important; 
+    transition-duration: 0.01ms !important; 
   }
 }
-
-/* Prevent text selection on buttons / interactive UI */
-button, [role="button"] {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-/* Smooth focus rings */
-:focus-visible {
-  outline: 2px solid rgba(var(--accent-rgb), 0.6);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-

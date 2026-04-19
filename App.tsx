@@ -10,11 +10,10 @@ import SettingsPage from './components/SettingsPage';
 import AdminModule from './components/AdminModule';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
-import PageLayout from './components/PageLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
-import { Activity, LayoutGrid, Shield, BarChart3, Users, Settings as SettingsIcon, Bell, CalendarDays } from 'lucide-react';
+import { Activity, LayoutGrid, Shield } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
@@ -461,9 +460,12 @@ const AppContent: React.FC = () => {
       }} />
 
       <div className="flex-1 flex flex-col relative z-20 w-full overflow-hidden">
-        <main className="flex-1 overflow-hidden relative">
+        {/* Horní lišta se nezobrazuje – všechny moduly mají plnou stránku jako dashboard */}
+        {/* <TopBar /> */}
 
-            {/* Dashboard — room detail (full screen overlay) */}
+        <main className="flex-1 overflow-hidden relative pb-20 md:pb-0">
+
+            {/* Dashboard — room detail */}
             {currentView === 'dashboard' && selectedRoom && (
               <div className="absolute inset-0 z-50">
                 <RoomDetail
@@ -480,63 +482,62 @@ const AppContent: React.FC = () => {
             )}
 
             {/* Dashboard — room grid */}
-            {currentView === 'dashboard' && !selectedRoom && (() => {
-              const isRoomReady = (room: OperatingRoom) =>
-                room.currentStepIndex === 0 || room.currentStepIndex === 7;
-              const readyRooms = rooms.filter(isRoomReady);
-              const activeRooms = rooms.filter((r) => !isRoomReady(r));
-
-              const dashboardActions = (
-                <div
-                  className="flex items-center gap-1 p-1 rounded-2xl border backdrop-blur-xl"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    borderColor: 'rgba(255,255,255,0.08)',
-                  }}
-                >
-                  {[
-                    { label: 'AKTIVNÍ', value: activeRooms.length, icon: Activity, color: '#EF4444' },
-                    { label: 'PŘIPRAVENO', value: readyRooms.length, icon: LayoutGrid, color: '#00D8C1' },
-                  ].map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="flex flex-col items-center justify-center px-4 sm:px-6 py-2 rounded-xl min-w-[80px] sm:min-w-[110px]"
-                    >
-                      <div className="flex items-center gap-1.5 mb-1 opacity-60">
-                        <stat.icon className="w-3 h-3" style={{ color: stat.color }} />
-                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] text-white/70">
-                          {stat.label}
-                        </p>
+            {currentView === 'dashboard' && !selectedRoom && (
+              <div className="w-full h-full overflow-y-auto hide-scrollbar px-8 md:pl-32 md:pr-10 py-10">
+                <div className="max-w-[2400px] mx-auto w-full">
+                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 mb-16 flex-shrink-0">
+                    <div className="text-center lg:text-left">
+                      <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+                        <Shield className="w-4 h-4 text-[#00D8C1]" />
+                        <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
                       </div>
-                      <AnimatedCounter to={stat.value} />
+                      <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+                        OPERATING <span className="text-white/20">ROOM</span>
+                      </h1>
                     </div>
-                  ))}
-                </div>
-              );
-
-              return (
-                <PageLayout
-                  title="Operační sály"
-                  eyebrow="OPERATINGROOM CONTROL"
-                  icon={Shield}
-                  actions={dashboardActions}
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 sm:gap-6 lg:gap-8">
-                    {rooms.map((room) => (
-                      <RoomCard
-                        key={room.id}
-                        room={room}
-                        onClick={() => setSelectedRoomId(room.id)}
-                        onEmergency={() => toggleEmergency(room.id)}
-                        onLock={() => toggleLock(room.id)}
-                      />
-                    ))}
+                    <div className="flex gap-4 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                      {(() => {
+                        // Check if room is in "ready" status (step index 0 or 7)
+                        const isRoomReady = (room: OperatingRoom) => {
+                          return room.currentStepIndex === 0 || room.currentStepIndex === 7;
+                        };
+                        
+                        const readyRooms = rooms.filter(isRoomReady);
+                        const activeRooms = rooms.filter(r => !isRoomReady(r));
+                        
+                        return [
+                          { label: 'AKTIVNI',    value: activeRooms.length, icon: Activity,   color: 'text-red-500'    },
+                          { label: 'PRIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#00D8C1]'  },
+                        ];
+                      })().map((stat) => (
+                        <div key={stat.label} className="flex flex-col items-center justify-center px-10 py-4 rounded-3xl hover:bg-white/5 transition-all min-w-[150px] z-10">
+                          <div className="flex items-center gap-2.5 mb-2 opacity-40">
+                            <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em]">{stat.label}</p>
+                          </div>
+                          <AnimatedCounter to={stat.value} />
+                        </div>
+                      ))}
+                    </div>
+                  </header>
+                  <div className="pb-20 px-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12">
+                      {rooms.map((room) => (
+                        <RoomCard
+                          key={room.id}
+                          room={room}
+                          onClick={() => setSelectedRoomId(room.id)}
+                          onEmergency={() => toggleEmergency(room.id)}
+                          onLock={() => toggleLock(room.id)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </PageLayout>
-              );
-            })()}
+                </div>
+              </div>
+            )}
 
-            {/* Timeline (full-screen module with its own layout) */}
+            {/* Timeline */}
             {currentView === 'timeline' && (
               <div className="w-full h-full overflow-hidden">
                 <TimelineModule rooms={rooms} />
@@ -545,36 +546,49 @@ const AppContent: React.FC = () => {
 
             {/* Statistics */}
             {currentView === 'statistics' && (
-              <StatisticsModule rooms={rooms} />
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+                <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
+                  <StatisticsModule rooms={rooms} />
+                </div>
+              </div>
             )}
 
             {/* Staff */}
             {currentView === 'staff' && (
-              <StaffManager />
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+                <div className="w-full px-8 md:pl-32 md:pr-10 py-10">
+                  <StaffManager />
+                </div>
+              </div>
             )}
 
             {/* Alerts */}
             {currentView === 'alerts' && (
-              <PlaceholderView
-                icon={Bell}
-                title="Upozornění"
-                description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
-              />
+              <div className="w-full h-full">
+                <PlaceholderView
+                  title="Upozornění"
+                  description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."
+                />
+              </div>
             )}
 
             {/* Settings */}
             {currentView === 'settings' && (
-              <SettingsPage
-                rooms={rooms}
-                onRoomsChange={setRooms}
-                onScheduleUpdate={handleUpdateWeeklySchedule}
-                resetTrigger={settingsResetTrigger}
-              />
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+                <SettingsPage 
+                  rooms={rooms} 
+                  onRoomsChange={setRooms} 
+                  onScheduleUpdate={handleUpdateWeeklySchedule}
+                  resetTrigger={settingsResetTrigger} 
+                />
+              </div>
             )}
 
             {/* Admin - only for admins */}
             {currentView === 'admin' && isAdmin && (
-              <AdminModule onClose={() => setCurrentView('dashboard')} />
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+                <AdminModule onClose={() => setCurrentView('dashboard')} />
+              </div>
             )}
         </main>
       </div>
