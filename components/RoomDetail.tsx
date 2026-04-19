@@ -1272,14 +1272,7 @@ const prevStep = activeDbStatuses.length > 0
                       {currentStep.title}
                     </motion.h2>
 
-                    {/* Time display under title - hide for "ready" status */}
-                    {shouldShowTime && (
-                      <div className="mt-[clamp(0.5rem,2vw,2.5rem)]">
-                        <span className={`text-[clamp(1.25rem,4vw,3rem)] font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-                          {isPaused ? pauseElapsedTime : elapsedTime}
-                        </span>
-                      </div>
-                    )}
+
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1331,14 +1324,14 @@ const prevStep = activeDbStatuses.length > 0
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(2.75rem,5vw,8rem)',
-                height: 'clamp(2.75rem,5vw,8rem)',
+                width: 'clamp(5rem,9vw,14rem)',
+                height: 'clamp(5rem,9vw,14rem)',
                 left: 'clamp(20%,32%,35%)',
-                top: 'calc(50% + clamp(110px, 18vw, 280px))',
+                top: 'calc(50% + clamp(130px, 20vw, 320px))',
               }}
               aria-label="Zkrátit odhadovaný čas"
             >
-              <Minus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Minus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
 
             {/* Plus button - right of center, below circle */}
@@ -1348,14 +1341,14 @@ const prevStep = activeDbStatuses.length > 0
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(2.75rem,5vw,8rem)',
-                height: 'clamp(2.75rem,5vw,8rem)',
+                width: 'clamp(5rem,9vw,14rem)',
+                height: 'clamp(5rem,9vw,14rem)',
                 right: 'clamp(20%,32%,35%)',
-                top: 'calc(50% + clamp(110px, 18vw, 280px))',
+                top: 'calc(50% + clamp(130px, 20vw, 320px))',
               }}
               aria-label="Prodloužit odhadovaný čas"
             >
-              <Plus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Plus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
           </>
         )}
