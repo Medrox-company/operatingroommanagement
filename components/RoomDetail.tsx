@@ -1272,14 +1272,7 @@ const prevStep = activeDbStatuses.length > 0
                       {currentStep.title}
                     </motion.h2>
 
-                    {/* Time display under title - hide for "ready" status */}
-                    {shouldShowTime && (
-                      <div className="mt-[clamp(0.5rem,2vw,2.5rem)]">
-                        <span className={`text-[clamp(1.25rem,4vw,3rem)] font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
-                          {isPaused ? pauseElapsedTime : elapsedTime}
-                        </span>
-                      </div>
-                    )}
+
                   </motion.div>
                 )}
               </AnimatePresence>
