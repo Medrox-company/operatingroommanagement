@@ -483,7 +483,7 @@ const AppContent: React.FC = () => {
 
             {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
                 <div className="max-w-[2400px] mx-auto w-full">
                   <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-4 md:gap-6 mb-8 md:mb-12 lg:mb-16 flex-shrink-0">
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
@@ -547,7 +547,7 @@ const AppContent: React.FC = () => {
             {/* Statistics */}
             {currentView === 'statistics' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10">
+                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
                   <StatisticsModule rooms={rooms} />
                 </div>
               </div>
@@ -556,7 +556,7 @@ const AppContent: React.FC = () => {
             {/* Staff */}
             {currentView === 'staff' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10">
+                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
                   <StaffManager />
                 </div>
               </div>

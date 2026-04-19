@@ -1309,7 +1309,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           <BarChart3 className="w-4 h-4 text-[#00D8C1]" />
           <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
         </div>
-        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
           STATISTIKY
         </h1>
       </div>

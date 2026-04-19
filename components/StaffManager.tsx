@@ -466,7 +466,7 @@ export default function StaffManager() {
             <Shield className="w-4 h-4 text-[#00D8C1]" />
             <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">PERSONÁL CONTROL</p>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
             PERSONÁL <span className="text-white/20">MANAGEMENT</span>
           </h1>
         </div>
