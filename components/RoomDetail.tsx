@@ -472,27 +472,27 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           }}
         />
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col h-full p-4">
+        {/* Content - pb-24 clears fixed MobileNav at bottom, overflow-y-auto prevents cutoff */}
+        <div className="relative z-10 flex flex-col h-full p-[clamp(0.75rem,3vw,1rem)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] overflow-y-auto hide-scrollbar">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-[clamp(1rem,4vw,1.5rem)] gap-2">
             <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
+              className="shrink-0 w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
             >
               <ChevronLeft className="w-5 h-5 text-white/60" />
             </button>
-            <h1 className="text-2xl font-bold text-white">{room.name}</h1>
+            <h1 className="text-[clamp(1.125rem,5vw,1.75rem)] font-bold text-white truncate text-center flex-1 min-w-0">{room.name}</h1>
             <button 
               onClick={onClose} 
-              className="w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
+              className="shrink-0 w-10 h-10 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 flex items-center justify-center active:scale-95 outline-none select-none"
             >
               <X className="w-5 h-5 text-white/60" />
             </button>
           </div>
 
-          {/* Circular Progress with Status */}
-          <div className="flex flex-col items-center relative py-4">
+          {/* Circular Progress with Status - fluid size based on viewport */}
+          <div className="flex flex-col items-center relative py-[clamp(0.5rem,2vw,1rem)]">
             {/* Text in circle - absolute positioning */}
             <motion.div
               className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
@@ -501,15 +501,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="text-center px-8">
+              <div className="text-center px-6">
                 {(room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Uzamčen' : currentStep?.name || 'Status')
                   .split(' ')
-                  .map((word, i) => <div key={i} className="text-2xl font-bold text-white leading-tight">{word}</div>)}
+                  .map((word, i) => <div key={i} className="text-[clamp(1rem,5vw,1.5rem)] font-bold text-white leading-tight break-words">{word}</div>)}
               </div>
             </motion.div>
             
-            {/* Pure SVG circle - no box container */}
-            <svg width="240" height="240" viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
+            {/* Pure SVG circle - fluid size */}
+            <svg
+              viewBox="0 0 100 100"
+              style={{ display: 'block', overflow: 'visible', width: 'min(60vw,240px)', height: 'min(60vw,240px)' }}
+            >
               <defs>
                 <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
@@ -754,8 +757,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         style={{ backgroundColor: activeColor }}
       />
 
-      {/* Header */}
-      <header className="absolute top-12 left-40 right-16 flex justify-between items-start z-50">
+      {/* Content wrapper — creates positioning context offset from Sidebar (96px).
+          All absolute children centered via left-1/2 / flex justify-center will
+          be centered in the true content area, not under the sidebar. */}
+      <div className="content-safe">
+
+      {/* Header — left is wrapper-relative (so 160px total from viewport on desktop) */}
+      <header className="absolute top-4 md:top-8 lg:top-12 left-4 md:left-8 lg:left-16 right-28 md:right-32 lg:right-40 flex justify-between items-start z-50 pointer-events-none">
         <div className="flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div 
@@ -765,28 +773,28 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               exit={{ opacity: 0, y: 10 }}
               className="flex items-center gap-6"
             >
-              <h1 className={`text-6xl font-bold tracking-tight uppercase leading-none 
+              <h1 className={`text-[clamp(1.75rem,4.5vw,3.75rem)] font-bold tracking-tight uppercase leading-none truncate max-w-[60vw]
                 ${room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')}
               `}>
                 {room.name}
               </h1>
               
               {room.isEmergency && (
-                <div className="bg-red-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(239,68,68,0.5)]">
-                  <AlertTriangle className="w-8 h-8" />
-                  <span className="text-2xl font-black uppercase tracking-widest">EMERGENCY</span>
+                <div className="bg-red-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(239,68,68,0.5)]">
+                  <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
+                  <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">EMERGENCY</span>
                 </div>
               )}
               
               {room.isLocked && !room.isEmergency && (
-                <div className="bg-amber-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                  <Lock className="w-7 h-7" />
-                  <span className="text-2xl font-black uppercase tracking-widest">SÁL UZAMČEN</span>
+                <div className="bg-amber-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                  <Lock className="w-[clamp(1rem,1.8vw,1.75rem)] h-[clamp(1rem,1.8vw,1.75rem)]" />
+                  <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">SÁL UZAMČEN</span>
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
-          <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
+          <p className="text-[clamp(8px,0.8vw,11px)] font-black text-white/30 tracking-[0.5em] uppercase mt-[clamp(0.75rem,1.5vw,1.25rem)]">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
       </header>
 
@@ -1021,12 +1029,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       </div>
 
       {/* Main Three-Circle Status Display */}
-      <main className="w-full h-full flex items-center justify-center relative z-20">
-        {/* Background decorative ring */}
-        <div className="absolute w-[700px] h-[700px] rounded-full border border-white/5" />
-        <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/[0.03]" />
+      <main className="w-full h-full flex items-center justify-center relative z-20 px-2 sm:px-4">
+        {/* Background decorative rings — hidden on small screens to avoid overflow */}
+        <div
+          className="hidden lg:block absolute rounded-full border border-white/5 pointer-events-none"
+          style={{ width: 'min(70vw,700px)', height: 'min(70vw,700px)' }}
+        />
+        <div
+          className="hidden lg:block absolute rounded-full border border-dashed border-white/[0.03] pointer-events-none"
+          style={{ width: 'min(75vw,750px)', height: 'min(75vw,750px)' }}
+        />
         
-        <div className="flex items-center justify-center gap-1 sm:gap-3 md:gap-8 lg:gap-20 relative">
+        <div
+          className="flex items-center justify-center relative max-w-full"
+          style={{ gap: 'clamp(0.25rem,4vw,9rem)' }}
+        >
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
 const prevStepIdx = currentStepIndex === 0 ? validStepCount - 1 : currentStepIndex - 1;
@@ -1038,7 +1055,8 @@ const prevStep = activeDbStatuses.length > 0
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center"
+                className="relative flex items-center justify-center shrink-0"
+                style={{ width: 'clamp(90px,16vw,280px)', height: 'clamp(90px,16vw,280px)' }}
               >
                 {/* Gradient Glow - transparent from center */}
                 <div 
@@ -1074,9 +1092,10 @@ const prevStep = activeDbStatuses.length > 0
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className={`relative w-[180px] h-[180px] sm:w-[250px] sm:h-[250px] md:w-[350px] md:h-[350px] lg:w-[500px] lg:h-[500px] flex items-center justify-center rounded-full group transition-all focus:outline-none z-10
+            className={`relative flex items-center justify-center rounded-full group transition-all focus:outline-none z-10 shrink-0
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
+            style={{ width: 'clamp(180px,30vw,500px)', height: 'clamp(180px,30vw,500px)' }}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
             {/* Primary Background Glow - subtle */}
@@ -1148,8 +1167,8 @@ const prevStep = activeDbStatuses.length > 0
                     exit={{ opacity: 0, scale: 0.8 }}
                     className="flex flex-col items-center"
                   >
-                    <Lock className="w-20 h-20 text-white mb-4" />
-                    <h2 className="text-5xl font-black tracking-tighter text-white uppercase">
+                    <Lock className="text-white mb-[clamp(0.5rem,1.5vw,1rem)]" style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} />
+                    <h2 className="text-[clamp(1.5rem,4vw,3rem)] font-black tracking-tighter text-white uppercase">
                       UZAMČENO
                     </h2>
                   </motion.div>
@@ -1160,7 +1179,7 @@ const prevStep = activeDbStatuses.length > 0
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
-                    <h2 className="text-7xl font-black tracking-tighter text-white font-mono">
+                    <h2 className="text-[clamp(2rem,6vw,4.5rem)] font-black tracking-tighter text-white font-mono">
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </h2>
                   </motion.div>
@@ -1171,9 +1190,9 @@ const prevStep = activeDbStatuses.length > 0
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={{ duration: 0.3 }}
-                    className="flex flex-col items-center gap-6"
+                    className="flex flex-col items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
                   >
-                    <p className="text-[10px] font-black tracking-[0.2em] uppercase text-white/25">
+                    <p className="text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] uppercase text-white/25">
                       SPECIÁLNÍ STAV
                     </p>
                     {/* Animované sluchátko */}
@@ -1182,13 +1201,13 @@ const prevStep = activeDbStatuses.length > 0
                       transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.8, ease: 'easeInOut' }}
                       style={{ color: activeColor }}
                     >
-                      <Phone className="w-20 h-20" strokeWidth={1.5} />
+                      <Phone style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} strokeWidth={1.5} />
                     </motion.div>
                     <motion.h2
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="text-5xl font-bold tracking-tight leading-tight text-center text-white"
+                      className="text-[clamp(1.5rem,4vw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
                     >
                       Volání<br/>pacienta
                     </motion.h2>
@@ -1200,9 +1219,9 @@ const prevStep = activeDbStatuses.length > 0
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={{ duration: 0.3 }}
-                    className="flex flex-col items-center gap-6"
+                    className="flex flex-col items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
                   >
-                    <p className="text-[10px] font-black tracking-[0.2em] uppercase text-white/25">
+                    <p className="text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] uppercase text-white/25">
                       SPECIÁLNÍ STAV
                     </p>
                     {/* Animovaná postel s pojezdem */}
@@ -1211,13 +1230,13 @@ const prevStep = activeDbStatuses.length > 0
                       transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.5, ease: 'easeInOut' }}
                       style={{ color: activeColor }}
                     >
-                      <BedDouble className="w-20 h-20" strokeWidth={1.5} />
+                      <BedDouble style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} strokeWidth={1.5} />
                     </motion.div>
                     <motion.h2
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="text-5xl font-bold tracking-tight leading-tight text-center text-white"
+                      className="text-[clamp(1.5rem,4vw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
                     >
                       Příjezd<br/>pacienta
                     </motion.h2>
@@ -1229,7 +1248,7 @@ const prevStep = activeDbStatuses.length > 0
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
-                    <h2 className="text-7xl font-black tracking-tighter text-white uppercase">
+                    <h2 className="text-[clamp(2rem,6vw,4.5rem)] font-black tracking-tighter text-white uppercase">
                       PAUZA
                     </h2>
                   </motion.div>
@@ -1240,7 +1259,7 @@ const prevStep = activeDbStatuses.length > 0
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <p className={`text-[10px] font-black tracking-[0.2em] mb-6 uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
+                    <p className={`text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] mb-[clamp(0.75rem,2vw,1.5rem)] uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
                       PROBÍHAJÍCÍ FÁZE
                     </p>
                     
@@ -1248,15 +1267,15 @@ const prevStep = activeDbStatuses.length > 0
                       key={currentStep.title}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`text-6xl font-bold tracking-tight leading-tight mb-6 ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
+                      className={`text-[clamp(1.5rem,5vw,3.75rem)] font-bold tracking-tight leading-tight mb-[clamp(0.75rem,2vw,1.5rem)] break-words ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
                     >
                       {currentStep.title}
                     </motion.h2>
 
                     {/* Time display under title - hide for "ready" status */}
                     {shouldShowTime && (
-                      <div className="mt-3 sm:mt-6 md:mt-8 lg:mt-10">
-                        <span className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
+                      <div className="mt-[clamp(0.5rem,2vw,2.5rem)]">
+                        <span className={`text-[clamp(1.25rem,4vw,3rem)] font-black tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white')}`}>
                           {isPaused ? pauseElapsedTime : elapsedTime}
                         </span>
                       </div>
@@ -1273,7 +1292,8 @@ const prevStep = activeDbStatuses.length > 0
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[200px] md:h-[200px] lg:w-[280px] lg:h-[280px] flex items-center justify-center cursor-pointer"
+            className="relative flex items-center justify-center cursor-pointer shrink-0"
+            style={{ width: 'clamp(90px,16vw,280px)', height: 'clamp(90px,16vw,280px)' }}
           >
             {/* Glow - gradient transparent from center */}
             <div 
@@ -1301,35 +1321,39 @@ const prevStep = activeDbStatuses.length > 0
           </motion.div>
         </div>
         
-        {/* Time adjustment buttons - positioned between small and center circles on sides */}
+        {/* Time adjustment buttons - positioned below center circle, responsive to circle size */}
         {!isInteractionBlocked && (
           <>
-            {/* Minus button - left side */}
+            {/* Minus button - left of center, below circle */}
             <button 
               onClick={handleDecreaseTime}
-              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50 -translate-x-1/2 -translate-y-1/2"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                left: '30%',
-                top: 'calc(50% + 320px)',
-                transform: 'translateY(-50%)'
+                width: 'clamp(2.75rem,5vw,8rem)',
+                height: 'clamp(2.75rem,5vw,8rem)',
+                left: 'clamp(20%,32%,35%)',
+                top: 'calc(50% + clamp(110px, 18vw, 280px))',
               }}
+              aria-label="Zkrátit odhadovaný čas"
             >
               <Minus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </button>
 
-            {/* Plus button - right side */}
+            {/* Plus button - right of center, below circle */}
             <button 
               onClick={handleIncreaseTime}
-              className="absolute w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50"
+              className="absolute rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50 translate-x-1/2 -translate-y-1/2"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                right: '30%',
-                top: 'calc(50% + 320px)',
-                transform: 'translateY(-50%)'
+                width: 'clamp(2.75rem,5vw,8rem)',
+                height: 'clamp(2.75rem,5vw,8rem)',
+                right: 'clamp(20%,32%,35%)',
+                top: 'calc(50% + clamp(110px, 18vw, 280px))',
               }}
+              aria-label="Prodloužit odhadovaný čas"
             >
               <Plus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
             </button>
@@ -1354,6 +1378,7 @@ const prevStep = activeDbStatuses.length > 0
         ))}
         </div>
       </div>
+      </div>{/* end content-safe wrapper */}
       </div>{/* end desktop wrapper */}
 
       {/* Step Confirmation Overlay */}

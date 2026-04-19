@@ -354,7 +354,7 @@ export default function ManagementManager() {
             <Shield className="w-4 h-4 text-cyan-400" />
             <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">MANAGEMENT CONTROL</p>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
             MANAGEMENT <span className="text-white/20">KONTAKTY</span>
           </h1>
         </div>

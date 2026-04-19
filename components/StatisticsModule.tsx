@@ -191,7 +191,114 @@ function getCombinedWorkingHoursRange(rooms: OperatingRoom[], dayIndex: number):
   return { start: minStart, end: maxEnd };
 }
 
-// ── Tooltip shared style ─────────���──���──────────────────────────────────────────
+// ── Helper: Calculate total working minutes for a room across a period ─────────
+function getRoomTotalWorkingMinutes(room: OperatingRoom, period: Period): number {
+  if (period === 'den') {
+    const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    return getRoomWorkingMinutes(room, todayIndex);
+  }
+  
+  if (period === 'týden') {
+    // Sum working minutes for all 7 days
+    return Array.from({ length: 7 }, (_, i) => getRoomWorkingMinutes(room, i)).reduce((a, b) => a + b, 0);
+  }
+  
+  if (period === 'měsíc') {
+    // Approximate: 4 weeks of working days
+    const weeklyMinutes = Array.from({ length: 7 }, (_, i) => getRoomWorkingMinutes(room, i)).reduce((a, b) => a + b, 0);
+    return weeklyMinutes * 4.3; // ~30 days / 7 = 4.3 weeks
+  }
+  
+  // Year: 52 weeks
+  const weeklyMinutes = Array.from({ length: 7 }, (_, i) => getRoomWorkingMinutes(room, i)).reduce((a, b) => a + b, 0);
+  return weeklyMinutes * 52;
+}
+
+// ── Helper: Count operations within working hours for a room from history ──────
+function countOperationsInWorkingHours(
+  room: OperatingRoom,
+  history: StatusHistoryRow[],
+  period: Period
+): number {
+  if (!room || !history || history.length === 0) return 0;
+  
+  const roomHistory = history.filter(e => e.operating_room_id === room.id);
+  const operationStarts = roomHistory.filter(e => e.event_type === 'operation_start');
+  
+  // Filter operations that fall within the room's working hours
+  return operationStarts.filter(e => {
+    if (!e.timestamp) return false;
+    const date = new Date(e.timestamp);
+    const dayOfWeek = date.getDay();
+    const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const hours = getRoomWorkingHours(room, dayIndex);
+    
+    if (!hours.enabled) return false;
+    
+    const eventMins = date.getHours() * 60 + date.getMinutes();
+    const startMins = hours.startHour * 60 + hours.startMinute;
+    const endMins = hours.endHour * 60 + hours.endMinute;
+    
+    return eventMins >= startMins && eventMins <= endMins;
+  }).length;
+}
+
+// ── Helper: Calculate active time in minutes within working hours ──────────────
+function calculateActiveTimeInWorkingHours(
+  room: OperatingRoom,
+  history: StatusHistoryRow[]
+): number {
+  if (!room || !history || history.length === 0) return 0;
+  
+  const roomHistory = history.filter(e => e.operating_room_id === room.id && e.event_type === 'step_change');
+  
+  // Sum durations that fall within working hours
+  return roomHistory.reduce((total, e) => {
+    if (!e.timestamp) return total;
+    const date = new Date(e.timestamp);
+    const dayOfWeek = date.getDay();
+    const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const hours = getRoomWorkingHours(room, dayIndex);
+    
+    if (!hours.enabled) return total;
+    
+    const eventMins = date.getHours() * 60 + date.getMinutes();
+    const startMins = hours.startHour * 60 + hours.startMinute;
+    const endMins = hours.endHour * 60 + hours.endMinute;
+    
+    // Only count if within working hours
+    if (eventMins >= startMins && eventMins <= endMins) {
+      return total + (e.duration_seconds || 0) / 60;
+    }
+    return total;
+  }, 0);
+}
+
+// ── Helper: Calculate utilization percentage based on working hours ────────────
+function calculateRoomUtilization(
+  room: OperatingRoom,
+  history: StatusHistoryRow[],
+  period: Period
+): number {
+  const totalWorkingMinutes = getRoomTotalWorkingMinutes(room, period);
+  if (totalWorkingMinutes === 0) return 0;
+  
+  const activeMinutes = calculateActiveTimeInWorkingHours(room, history);
+  return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
+}
+
+// ── Helper: Get formatted working hours string for a room ──────────────────────
+function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
+  const hours = getRoomWorkingHours(room, dayIndex);
+  if (!hours.enabled) return 'Zavřeno';
+  
+  const formatTime = (h: number, m: number) => 
+    `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  
+  return `${formatTime(hours.startHour, hours.startMinute)}–${formatTime(hours.endHour, hours.endMinute)}`;
+}
+
+// ── Tooltip shared style ─────────�����──���──────────────────────────────────────────
 const TIP = {
   contentStyle:{ background:'rgba(2,8,23,0.97)', border:`1px solid ${C.border}`, borderRadius:6, fontSize:12 },
   labelStyle:  { color:C.muted },
@@ -440,12 +547,23 @@ function mergeSeg(segs:Seg[]):Seg[]{
 }
 
 // ── Room mini card (extracted so hooks are always called at component level) ──
-interface RoomMiniCardProps { r: OperatingRoom; index: number; onClick: () => void; workflowSteps: WorkflowStep[]; stepDurations: number[]; }
-const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations }) => {
+interface RoomMiniCardProps { 
+  r: OperatingRoom; 
+  index: number; 
+  onClick: () => void; 
+  workflowSteps: WorkflowStep[]; 
+  stepDurations: number[];
+  opsCount: number;
+  utilization: number;
+}
+const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations, opsCount, utilization }) => {
   const sc2   = statusColor(r.status);
   const tl2   = useMemo(() => mergeSeg(buildTimeline(r, workflowSteps, stepDurations)), [r, workflowSteps, stepDurations]);
-  const utilP = buildDist(r, workflowSteps, stepDurations).find(d => d.title === 'Chirurgický výkon')?.pct ?? 0;
   const ups2  = isUPS(r);
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  const workingHoursStr = formatRoomWorkingHours(r, todayIndex);
+  const workingMinutes = getRoomWorkingMinutes(r, todayIndex);
+  
   return (
     <motion.button onClick={onClick}
       className="text-left rounded-lg p-3 w-full group"
@@ -463,7 +581,14 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         </div>
         {ups2 && <span className="text-[8px] font-black px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
       </div>
-      <p className="text-[10px] mb-2 truncate" style={{ color: C.faint }}>{r.department}</p>
+      <p className="text-[10px] mb-1 truncate" style={{ color: C.faint }}>{r.department}</p>
+      {/* Working hours indicator */}
+      <div className="flex items-center gap-1 mb-2">
+        <Clock className="w-2.5 h-2.5" style={{ color: C.muted }} />
+        <span className="text-[9px]" style={{ color: C.muted }}>
+          {workingHoursStr} ({Math.round(workingMinutes / 60)}h)
+        </span>
+      </div>
       {/* Micro timeline */}
       <div className="flex h-1.5 w-full rounded overflow-hidden gap-px mb-2">
         {tl2.map((seg, si) => (
@@ -473,12 +598,12 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div>
-            <p className="text-[8px]" style={{ color: C.ghost }}>Ops</p>
-            <p className="text-sm font-black leading-none" style={{ color: C.accent }}>{r.operations24h}</p>
+            <p className="text-[8px]" style={{ color: C.ghost }}>Ops (prac.)</p>
+            <p className="text-sm font-black leading-none" style={{ color: C.accent }}>{opsCount}</p>
           </div>
           <div>
-            <p className="text-[8px]" style={{ color: C.ghost }}>Výk%</p>
-            <p className="text-sm font-black leading-none" style={{ color: C.text }}>{utilP}%</p>
+            <p className="text-[8px]" style={{ color: C.ghost }}>Využití</p>
+            <p className="text-sm font-black leading-none" style={{ color: C.text }}>{utilization}%</p>
           </div>
         </div>
         <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
@@ -1025,10 +1150,23 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return calculateAvgStepDurations(statusHistory, WORKFLOW_STEPS);
   }, [statusHistory, WORKFLOW_STEPS]);
 
-  const avgUtil   = dbStats?.utilizationRate ?? Math.round(utilData.reduce((s,d)=>s+d.v,0)/utilData.length);
-  const peakUtil  = Math.max(...utilData.map(d=>d.v));
-  const minUtil   = Math.min(...utilData.map(d=>d.v));
-  const totalOps  = dbStats?.totalOperations ?? rooms.reduce((s,r)=>s+r.operations24h,0);
+  // Calculate total operations within working hours across all rooms
+  const totalOpsInWorkingHours = useMemo(() => {
+    return rooms.reduce((sum, r) => sum + countOperationsInWorkingHours(r, statusHistory, period), 0);
+  }, [rooms, statusHistory, period]);
+  
+  // Calculate average utilization based on working hours
+  const avgUtilFromWorkingHours = useMemo(() => {
+    if (rooms.length === 0) return 0;
+    const totalUtil = rooms.reduce((sum, r) => sum + calculateRoomUtilization(r, statusHistory, period), 0);
+    return Math.round(totalUtil / rooms.length);
+  }, [rooms, statusHistory, period]);
+  
+  const avgUtil   = avgUtilFromWorkingHours || Math.round(utilData.reduce((s,d)=>s+d.v,0)/Math.max(1, utilData.length));
+  const utilValues = utilData.length > 0 ? utilData.map(d=>d.v) : [0];
+  const peakUtil  = Math.max(...utilValues);
+  const minUtil   = Math.min(...utilValues);
+  const totalOps  = totalOpsInWorkingHours || (dbStats?.totalOperations ?? 0);
   const busyCount = rooms.filter(r=>r.status===RoomStatus.BUSY).length;
   const freeCount = rooms.filter(r=>r.status===RoomStatus.FREE).length;
   const cleanCount= rooms.filter(r=>r.status===RoomStatus.CLEANING).length;
@@ -1049,19 +1187,25 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return calculateRoomWorkflowDistribution(statusHistory, rooms, WORKFLOW_STEPS);
   }, [statusHistory, rooms, WORKFLOW_STEPS]);
 
-  // Room bar data using real status history for utilization
+  // Room bar data using real status history for utilization within working hours
   const roomBarData = useMemo(() => rooms.map(r => {
-    const dist = roomDistributions[r.id] || {};
-    // Find the surgical step (Chirurgický výkon)
-    const surgicalStep = WORKFLOW_STEPS.find(s => s.title.includes('Chirurgický') || s.title.includes('výkon'));
-    const utilPct = surgicalStep ? (dist[surgicalStep.title] ?? 0) : 0;
+    // Calculate operations count within working hours
+    const opsInWorkingHours = countOperationsInWorkingHours(r, statusHistory, period);
+    // Calculate utilization based on working hours
+    const utilPct = calculateRoomUtilization(r, statusHistory, period);
+    // Get today's working hours for display
+    const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    const workingHoursStr = formatRoomWorkingHours(r, todayIndex);
+    
     return {
       name: r.name.replace('Sál č. ', 'S'),
-      ops: r.operations24h,
+      ops: opsInWorkingHours,
       util: utilPct,
       color: statusColor(r.status),
+      workingHours: workingHoursStr,
+      totalWorkingMinutes: getRoomTotalWorkingMinutes(r, period),
     };
-  }), [rooms, roomDistributions, WORKFLOW_STEPS]);
+  }), [rooms, statusHistory, period]);
 
   // Generate opsTrend from real DB data only
   const opsTrend = useMemo(() => {
@@ -1123,17 +1267,21 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     ];
   }, [dbStats]);
 
-  // Scatter: ops24h vs utilPct per room using real distributions
+  // Scatter: ops vs utilPct per room using real data within working hours
   const scatterData = useMemo(() => rooms.map(r => {
-    const dist = roomDistributions[r.id] || {};
-    const surgicalStep = WORKFLOW_STEPS.find(s => s.title.includes('Chirurgický') || s.title.includes('výkon'));
+    const opsInWorkingHours = countOperationsInWorkingHours(r, statusHistory, period);
+    const utilPct = calculateRoomUtilization(r, statusHistory, period);
+    const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    
     return {
-      ops: r.operations24h,
-      util: surgicalStep ? (dist[surgicalStep.title] ?? 0) : 0,
+      ops: opsInWorkingHours,
+      util: utilPct,
       queue: r.queueCount,
       name: r.name,
+      workingHours: formatRoomWorkingHours(r, todayIndex),
+      workingMinutes: getRoomWorkingMinutes(r, todayIndex),
     };
-  }), [rooms, roomDistributions, WORKFLOW_STEPS]);
+  }), [rooms, statusHistory, period]);
 
   // Per-room status bar (stacked bar) using roomDistributions defined above
   const roomStatusBar = useMemo(() => rooms.map((r, i) => {
@@ -1161,7 +1309,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           <BarChart3 className="w-4 h-4 text-[#00D8C1]" />
           <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
         </div>
-        <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
           STATISTIKY
         </h1>
       </div>
@@ -1212,10 +1360,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 {l:'Obsazeno',         v:`${busyCount} / ${rooms.length}`,       c:C.orange},
                 {l:'Volno',            v:`${freeCount} / ${rooms.length}`,       c:C.green},
                 {l:'Úklid + Údržba',  v:`${cleanCount+maintCount}`,             c:C.accent},
-                {l:`Průměr (${period})`,v:`${avgUtil}%`,                         c:C.text},
+                {l:`Využití (${period})`,v:`${avgUtil}%`,                        c:C.text},
                 {l:'Peak využití',     v:`${peakUtil}%`,                         c:peakUtil>90?C.red:C.orange},
                 {l:'Min využití',      v:`${minUtil}%`,                          c:C.muted},
-                {l:'Výkony / 24 h',   v:totalOps,                              c:C.accent},
+                {l:`Výkony (${period})`,v:totalOps,                             c:C.accent},
               ].map((k,i)=>(
                 <motion.div key={i} className="flex flex-col justify-between px-4 py-4"
                   style={{background:C.surface,borderRight:i<7?`1px solid ${C.border}`:undefined}}
@@ -1412,6 +1560,66 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </Card>
             </div>
 
+            {/* Row 4: Working hours overview per room */}
+            <Card className="p-5">
+              <SectionLabel>Přehled pracovních dob sálů (dnešní den)</SectionLabel>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-4">
+                {rooms.map(r => {
+                  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+                  const hours = getRoomWorkingHours(r, todayIndex);
+                  const workingMins = getRoomWorkingMinutes(r, todayIndex);
+                  const opsInHours = countOperationsInWorkingHours(r, statusHistory, period);
+                  const util = calculateRoomUtilization(r, statusHistory, period);
+                  
+                  return (
+                    <div key={r.id} className="p-3 rounded-lg" style={{ background: C.ghost, border: `1px solid ${C.border}` }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ background: statusColor(r.status) }} />
+                          <span className="text-xs font-black" style={{ color: C.text }}>{r.name}</span>
+                        </div>
+                        {isUPS(r) && (
+                          <span className="text-[8px] font-black px-1 py-0.5 rounded" style={{ background: `${C.accent}15`, color: C.accent }}>24h</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] mb-2" style={{ color: C.faint }}>{r.department}</p>
+                      
+                      {/* Working hours */}
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Clock className="w-3 h-3" style={{ color: hours.enabled ? C.accent : C.faint }} />
+                        <span className="text-xs font-bold" style={{ color: hours.enabled ? C.text : C.faint }}>
+                          {hours.enabled 
+                            ? `${hours.startHour.toString().padStart(2,'0')}:${hours.startMinute.toString().padStart(2,'0')} – ${hours.endHour.toString().padStart(2,'0')}:${hours.endMinute.toString().padStart(2,'0')}`
+                            : 'Zavřeno'}
+                        </span>
+                        {hours.enabled && (
+                          <span className="text-[10px] ml-auto" style={{ color: C.muted }}>
+                            ({Math.round(workingMins / 60)}h {workingMins % 60}m)
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Stats row */}
+                      <div className="flex items-center justify-between pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
+                        <div>
+                          <p className="text-[8px]" style={{ color: C.ghost }}>Operace</p>
+                          <p className="text-sm font-black" style={{ color: C.accent }}>{opsInHours}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px]" style={{ color: C.ghost }}>Využití</p>
+                          <p className="text-sm font-black" style={{ color: util >= 80 ? C.green : util >= 50 ? C.yellow : C.orange }}>{util}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px]" style={{ color: C.ghost }}>Fronta</p>
+                          <p className="text-sm font-black" style={{ color: r.queueCount > 0 ? C.yellow : C.green }}>{r.queueCount}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
           </motion.div>
         )}
 
@@ -1467,7 +1675,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               <SectionLabel>Sály — kliknutím zobrazíte podrobné statistiky</SectionLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                 {rooms.map((r, i) => (
-                  <RoomMiniCard key={r.id} r={r} index={i} onClick={() => setSelectedRoom(r)} workflowSteps={WORKFLOW_STEPS} stepDurations={avgStepDurations} />
+                  <RoomMiniCard 
+                    key={r.id} 
+                    r={r} 
+                    index={i} 
+                    onClick={() => setSelectedRoom(r)} 
+                    workflowSteps={WORKFLOW_STEPS} 
+                    stepDurations={avgStepDurations}
+                    opsCount={countOperationsInWorkingHours(r, statusHistory, period)}
+                    utilization={calculateRoomUtilization(r, statusHistory, period)}
+                  />
                 ))}
               </div>
             </div>
