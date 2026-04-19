@@ -16,6 +16,36 @@ body {
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Safe area for mobile bottom navigation (MobileNav ~ 80px + safe-area-inset-bottom) */
+.pb-mobile-nav {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Layout safe area that respects Sidebar (desktop, 96px) and MobileNav (bottom) */
+.layout-safe-area {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .layout-safe-area {
+    padding-left: 6rem; /* clear desktop sidebar (w-24 = 96px) */
+    padding-bottom: 0;
+  }
+}
+
+/* Content wrapper that creates a positioning context offset from Sidebar.
+   All absolute children inside will position relative to this area, so
+   centered elements (flex justify-center, left-1/2, etc.) are centered
+   in the ACTUAL content area, not under the sidebar. */
+.content-safe {
+  position: absolute;
+  inset: 0;
+}
+@media (min-width: 768px) {
+  .content-safe {
+    left: 6rem; /* 96px = sidebar width */
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { 
     animation-duration: 0.01ms !important; 
