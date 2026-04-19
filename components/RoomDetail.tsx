@@ -1042,7 +1042,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         
         <div
           className="flex items-center justify-center relative max-w-full"
-          style={{ gap: 'clamp(0.25rem,2vw,5rem)' }}
+          style={{ gap: 'clamp(0.25rem,4vw,9rem)' }}
         >
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
