@@ -1324,14 +1324,14 @@ const prevStep = activeDbStatuses.length > 0
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(2.75rem,5vw,8rem)',
-                height: 'clamp(2.75rem,5vw,8rem)',
+                width: 'clamp(3.5rem,6vw,10rem)',
+                height: 'clamp(3.5rem,6vw,10rem)',
                 left: 'clamp(20%,32%,35%)',
-                top: 'calc(50% + clamp(110px, 18vw, 280px))',
+                top: 'calc(50% + clamp(130px, 20vw, 320px))',
               }}
               aria-label="Zkrátit odhadovaný čas"
             >
-              <Minus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Minus className="w-5 h-5 sm:w-7 sm:h-7 md:w-10 md:h-10 lg:w-14 lg:h-14 text-white" strokeWidth={2} />
             </button>
 
             {/* Plus button - right of center, below circle */}
@@ -1341,14 +1341,14 @@ const prevStep = activeDbStatuses.length > 0
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(2.75rem,5vw,8rem)',
-                height: 'clamp(2.75rem,5vw,8rem)',
+                width: 'clamp(3.5rem,6vw,10rem)',
+                height: 'clamp(3.5rem,6vw,10rem)',
                 right: 'clamp(20%,32%,35%)',
-                top: 'calc(50% + clamp(110px, 18vw, 280px))',
+                top: 'calc(50% + clamp(130px, 20vw, 320px))',
               }}
               aria-label="Prodloužit odhadovaný čas"
             >
-              <Plus className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 text-white" strokeWidth={2} />
+              <Plus className="w-5 h-5 sm:w-7 sm:h-7 md:w-10 md:h-10 lg:w-14 lg:h-14 text-white" strokeWidth={2} />
             </button>
           </>
         )}
