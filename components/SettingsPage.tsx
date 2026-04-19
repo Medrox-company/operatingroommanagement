@@ -3,8 +3,6 @@ import { motion } from 'framer-motion';
 import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
-import DepartmentsManager from './DepartmentsManager';
-import ScheduleManager from './ScheduleManager';
 import ShiftScheduleManager from './ShiftScheduleManager';
 import StatisticsModule from './StatisticsModule';
 import StaffManager from './StaffManager';
