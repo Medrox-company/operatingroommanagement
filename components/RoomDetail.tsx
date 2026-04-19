@@ -1324,14 +1324,14 @@ const prevStep = activeDbStatuses.length > 0
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(3.5rem,6vw,10rem)',
-                height: 'clamp(3.5rem,6vw,10rem)',
+                width: 'clamp(4rem,7vw,12rem)',
+                height: 'clamp(4rem,7vw,12rem)',
                 left: 'clamp(20%,32%,35%)',
                 top: 'calc(50% + clamp(130px, 20vw, 320px))',
               }}
               aria-label="Zkrátit odhadovaný čas"
             >
-              <Minus className="w-5 h-5 sm:w-7 sm:h-7 md:w-10 md:h-10 lg:w-14 lg:h-14 text-white" strokeWidth={2} />
+              <Minus className="w-6 h-6 sm:w-8 sm:h-8 md:w-11 md:h-11 lg:w-16 lg:h-16 text-white" strokeWidth={2} />
             </button>
 
             {/* Plus button - right of center, below circle */}
@@ -1341,14 +1341,14 @@ const prevStep = activeDbStatuses.length > 0
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(3.5rem,6vw,10rem)',
-                height: 'clamp(3.5rem,6vw,10rem)',
+                width: 'clamp(4rem,7vw,12rem)',
+                height: 'clamp(4rem,7vw,12rem)',
                 right: 'clamp(20%,32%,35%)',
                 top: 'calc(50% + clamp(130px, 20vw, 320px))',
               }}
               aria-label="Prodloužit odhadovaný čas"
             >
-              <Plus className="w-5 h-5 sm:w-7 sm:h-7 md:w-10 md:h-10 lg:w-14 lg:h-14 text-white" strokeWidth={2} />
+              <Plus className="w-6 h-6 sm:w-8 sm:h-8 md:w-11 md:h-11 lg:w-16 lg:h-16 text-white" strokeWidth={2} />
             </button>
           </>
         )}
