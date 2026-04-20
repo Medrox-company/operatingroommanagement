@@ -51,13 +51,22 @@ function getRoomWorkingHours(room: OperatingRoom, dayIndex: number): DayWorkingH
   return schedule[dayKey];
 }
 
-// ── Helper: Calculate total working minutes for a room on a specific day ───────
+// ── Helper: Get break minutes for a day (defaults to 30 when unset) ────────────
+function getDayBreakMinutes(hours: DayWorkingHours): number {
+  const raw = hours.breakMinutes;
+  if (typeof raw !== 'number' || isNaN(raw) || raw < 0) return 30;
+  return Math.min(raw, Number.MAX_SAFE_INTEGER);
+}
+
+// ── Helper: Calculate net working minutes (gross - break) for a room on a day ──
 function getRoomWorkingMinutes(room: OperatingRoom, dayIndex: number): number {
   const hours = getRoomWorkingHours(room, dayIndex);
   if (!hours.enabled) return 0;
   const startMins = hours.startHour * 60 + hours.startMinute;
   const endMins = hours.endHour * 60 + hours.endMinute;
-  return Math.max(0, endMins - startMins);
+  const gross = Math.max(0, endMins - startMins);
+  const breakMins = Math.min(getDayBreakMinutes(hours), gross);
+  return Math.max(0, gross - breakMins);
 }
 
 // ── Helper: Check if a timestamp falls within room's working hours ─────────────
@@ -340,7 +349,15 @@ function calculateActiveTimeInWorkingHours(
         const overlapStart = Math.max(clippedStart.getTime(), whStart.getTime());
         const overlapEnd   = Math.min(clippedEnd.getTime(),   whEnd.getTime());
         if (overlapEnd > overlapStart) {
-          totalMins += (overlapEnd - overlapStart) / 60000;
+          const rawOverlapMins = (overlapEnd - overlapStart) / 60000;
+          // Pro-rata break deduction: scale active time by (net / gross) so the
+          // configurable daily break is consistently reflected in utilization.
+          const grossMins  = Math.max(0, (whEnd.getTime() - whStart.getTime()) / 60000);
+          const breakMins  = Math.min(getDayBreakMinutes(hours), grossMins);
+          const netMins    = Math.max(0, grossMins - breakMins);
+          const scale      = grossMins > 0 ? netMins / grossMins : 0;
+          const adjusted   = Math.min(rawOverlapMins * scale, netMins);
+          totalMins += adjusted;
         }
       }
 
@@ -1462,6 +1479,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 const activeMins = Math.round(calculateActiveTimeInWorkingHours(r, statusHistory, period));
                 const totalMins = getRoomTotalWorkingMinutes(r, period);
                 const workingHoursToday = formatRoomWorkingHours(r, todayIndex);
+                const todayHours = getRoomWorkingHours(r, todayIndex);
+                const todayBreak = todayHours.enabled ? getDayBreakMinutes(todayHours) : 0;
                 const flags: string[] = [];
                 if (r.isEmergency) flags.push('EMERG');
                 if (r.isSeptic)    flags.push('SEPT');
@@ -1475,8 +1494,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   { l: 'Využití v prac. době',  v: `${util}%`,                     c: util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted },
                   { l: `Výkony (${period})`,    v: opsInHours,                     c: C.accent },
                   { l: 'Pracovní doba',         v: workingHoursToday,              c: workingHoursToday === 'Zavřeno' ? C.faint : C.text },
+                  { l: 'Přestávka',             v: todayHours.enabled ? `${todayBreak} m` : '—', c: todayHours.enabled ? C.text : C.faint },
                   { l: 'Aktivní / Kap.',        v: `${activeMins} / ${Math.round(totalMins)} m`, c: C.text },
-                  { l: 'Fronta',                v: r.queueCount,                   c: r.queueCount > 0 ? C.yellow : C.green },
                   { l: 'Příznaky',              v: flagsLabel,                     c: flagsColor },
                 ];
 

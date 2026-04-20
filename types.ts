@@ -45,7 +45,11 @@ export interface DayWorkingHours {
   startMinute: number;    // Start minute (0-59)
   endHour: number;        // End hour (0-23)
   endMinute: number;      // End minute (0-59)
+  breakMinutes?: number;  // Daily break in minutes (deducted from working capacity), default 30
 }
+
+// Default break (minutes) used when breakMinutes is not set on a day
+export const DEFAULT_DAILY_BREAK_MINUTES = 30;
 
 // Weekly schedule for a room
 export interface WeeklySchedule {
@@ -65,6 +69,7 @@ export const DEFAULT_WORKING_HOURS: DayWorkingHours = {
   startMinute: 0,
   endHour: 15,
   endMinute: 30,
+  breakMinutes: DEFAULT_DAILY_BREAK_MINUTES,
 };
 
 export const DEFAULT_WEEKLY_SCHEDULE: WeeklySchedule = {
@@ -73,8 +78,8 @@ export const DEFAULT_WEEKLY_SCHEDULE: WeeklySchedule = {
   wednesday: { ...DEFAULT_WORKING_HOURS },
   thursday: { ...DEFAULT_WORKING_HOURS },
   friday: { ...DEFAULT_WORKING_HOURS },
-  saturday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0 },
-  sunday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0 },
+  saturday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0, breakMinutes: DEFAULT_DAILY_BREAK_MINUTES },
+  sunday:   { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0, breakMinutes: DEFAULT_DAILY_BREAK_MINUTES },
 };
 
 export interface OperatingRoom {

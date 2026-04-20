@@ -79,73 +79,103 @@ const DayScheduleRow: React.FC<{
   day: typeof DAYS[number];
   schedule: DayWorkingHours;
   onChange: (schedule: DayWorkingHours) => void;
-}> = ({ day, schedule, onChange }) => (
-  <div 
-    className={`flex items-center gap-4 p-3 rounded-xl transition-all ${
-      schedule.enabled 
-        ? 'bg-white/[0.03] border border-white/10' 
-        : 'bg-white/[0.01] border border-white/5'
-    }`}
-  >
-    {/* Day Toggle */}
-    <button
-      onClick={() => onChange({ ...schedule, enabled: !schedule.enabled })}
-      className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all shrink-0 ${
-        schedule.enabled 
-          ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400' 
-          : 'bg-white/5 border border-white/10 text-white/30'
+}> = ({ day, schedule, onChange }) => {
+  const breakMinutes = typeof schedule.breakMinutes === 'number' && schedule.breakMinutes >= 0
+    ? schedule.breakMinutes
+    : 30;
+
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-x-4 gap-y-3 p-3 rounded-xl transition-all ${
+        schedule.enabled
+          ? 'bg-white/[0.03] border border-white/10'
+          : 'bg-white/[0.01] border border-white/5'
       }`}
     >
-      <Power className="w-4 h-4" />
-    </button>
-    
-    {/* Day Name */}
-    <div className="w-20 shrink-0">
-      <p className={`text-sm font-semibold ${schedule.enabled ? 'text-white' : 'text-white/30'}`}>
-        {day.label}
-      </p>
-      <p className="text-[9px] text-white/30 uppercase">{schedule.enabled ? 'Aktivní' : 'Neaktivní'}</p>
-    </div>
-    
-    {/* Time Inputs */}
-    <div className="flex items-center gap-4 flex-1">
-      <TimeInput
-        label="Od"
-        hour={schedule.startHour}
-        minute={schedule.startMinute}
-        onHourChange={(h) => onChange({ ...schedule, startHour: h })}
-        onMinuteChange={(m) => onChange({ ...schedule, startMinute: m })}
-        disabled={!schedule.enabled}
-      />
-      <div className="text-white/20 text-lg">—</div>
-      <TimeInput
-        label="Do"
-        hour={schedule.endHour}
-        minute={schedule.endMinute}
-        onHourChange={(h) => onChange({ ...schedule, endHour: h })}
-        onMinuteChange={(m) => onChange({ ...schedule, endMinute: m })}
-        disabled={!schedule.enabled}
-      />
-    </div>
-    
-    {/* Duration */}
-    {schedule.enabled && (
-      <div className="text-right shrink-0">
-        <p className="text-xs text-white/40">Delka</p>
-        <p className="text-sm font-mono text-cyan-400">
-          {(() => {
-            const startMins = schedule.startHour * 60 + schedule.startMinute;
-            const endMins = schedule.endHour * 60 + schedule.endMinute;
-            const duration = endMins - startMins;
-            const hours = Math.floor(duration / 60);
-            const mins = duration % 60;
-            return `${hours}h ${mins}m`;
-          })()}
+      {/* Day Toggle */}
+      <button
+        onClick={() => onChange({ ...schedule, enabled: !schedule.enabled })}
+        className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all shrink-0 ${
+          schedule.enabled
+            ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400'
+            : 'bg-white/5 border border-white/10 text-white/30'
+        }`}
+      >
+        <Power className="w-4 h-4" />
+      </button>
+
+      {/* Day Name */}
+      <div className="w-20 shrink-0">
+        <p className={`text-sm font-semibold ${schedule.enabled ? 'text-white' : 'text-white/30'}`}>
+          {day.label}
         </p>
+        <p className="text-[9px] text-white/30 uppercase">{schedule.enabled ? 'Aktivní' : 'Neaktivní'}</p>
       </div>
-    )}
-  </div>
-);
+
+      {/* Time Inputs */}
+      <div className="flex items-center gap-4 flex-1 min-w-[260px]">
+        <TimeInput
+          label="Od"
+          hour={schedule.startHour}
+          minute={schedule.startMinute}
+          onHourChange={(h) => onChange({ ...schedule, startHour: h })}
+          onMinuteChange={(m) => onChange({ ...schedule, startMinute: m })}
+          disabled={!schedule.enabled}
+        />
+        <div className="text-white/20 text-lg">—</div>
+        <TimeInput
+          label="Do"
+          hour={schedule.endHour}
+          minute={schedule.endMinute}
+          onHourChange={(h) => onChange({ ...schedule, endHour: h })}
+          onMinuteChange={(m) => onChange({ ...schedule, endMinute: m })}
+          disabled={!schedule.enabled}
+        />
+      </div>
+
+      {/* Break Input */}
+      <div className="flex flex-col gap-1 shrink-0">
+        <label className="text-[9px] text-white/40 uppercase tracking-wider">Přestávka (min)</label>
+        <input
+          type="number"
+          min={0}
+          max={480}
+          step={5}
+          value={breakMinutes}
+          disabled={!schedule.enabled}
+          onChange={(e) => {
+            const raw = parseInt(e.target.value, 10);
+            const next = isNaN(raw) ? 0 : Math.max(0, Math.min(480, raw));
+            onChange({ ...schedule, breakMinutes: next });
+          }}
+          className={`w-20 px-2 py-1.5 rounded-lg text-sm font-mono text-center border transition-all ${
+            schedule.enabled
+              ? 'bg-white/[0.05] border-white/10 text-white focus:outline-none focus:border-cyan-500/50'
+              : 'bg-white/[0.02] border-white/5 text-white/30 cursor-not-allowed'
+          }`}
+        />
+      </div>
+
+      {/* Duration */}
+      {schedule.enabled && (
+        <div className="text-right shrink-0 min-w-[90px]">
+          <p className="text-xs text-white/40">Čistý čas</p>
+          <p className="text-sm font-mono text-cyan-400">
+            {(() => {
+              const startMins = schedule.startHour * 60 + schedule.startMinute;
+              const endMins = schedule.endHour * 60 + schedule.endMinute;
+              const gross = Math.max(0, endMins - startMins);
+              const net = Math.max(0, gross - Math.min(breakMinutes, gross));
+              const hours = Math.floor(net / 60);
+              const mins = net % 60;
+              return `${hours}h ${mins}m`;
+            })()}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* Room Card */
 const RoomCard: React.FC<{
