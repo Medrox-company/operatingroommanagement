@@ -453,14 +453,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         className="md:hidden w-full h-full flex flex-col relative overflow-hidden"
         style={{
           background:
-            'radial-gradient(120% 80% at 50% 0%, #0a2340 0%, #051629 45%, #031018 100%)',
+            'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
         }}
       >
         {/* Ambient glow — subtle */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
             className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, #0099FF 0%, transparent 65%)' }}
+            style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
           />
         </div>
 
@@ -567,7 +567,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               onClick={handleNextStep}
               className="w-full py-4 rounded-full mt-5 mb-6 active:scale-[0.98] outline-none select-none transition-transform"
               style={{
-                background: '#0099FF',
+                background: '#4FEDC7',
                 color: '#062720',
                 boxShadow: '0 10px 30px -10px rgba(79,237,199,0.45)',
                 fontWeight: 600,
@@ -618,7 +618,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   disabled={isInteractionBlocked}
                   className="w-11 h-11 rounded-2xl flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none transition-all"
                   style={{
-                    background: '#0099FF',
+                    background: '#4FEDC7',
                     color: '#062720',
                   }}
                 >
@@ -656,13 +656,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
               >
                 {isPaused ? (
-                  <Play className="w-[22px] h-[22px]"               style={{ color: '#0099FF' }} strokeWidth={1.75} />
+                  <Play className="w-[22px] h-[22px]" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
                 ) : (
                   <Pause className="w-[22px] h-[22px] text-white/70" strokeWidth={1.75} />
                 )}
                 <span
                   className="text-[10px] font-medium tracking-tight"
-                  style={{ color: isPaused ? '#0099FF' : 'rgba(255,255,255,0.55)' }}
+                  style={{ color: isPaused ? '#4FEDC7' : 'rgba(255,255,255,0.55)' }}
                 >
                   {isPaused ? 'Pokračovat' : 'Pauza'}
                 </span>
@@ -741,12 +741,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               >
                 <Phone
                   className="w-[22px] h-[22px]"
-                  style={{ color: patientCalledTime ? '#0099FF' : 'rgba(255,255,255,0.7)' }}
+                  style={{ color: patientCalledTime ? '#4FEDC7' : 'rgba(255,255,255,0.7)' }}
                   strokeWidth={1.75}
                 />
                 <span
                   className="text-[10px] font-medium tracking-tight tabular-nums"
-                  style={{ color: patientCalledTime ? '#0099FF' : 'rgba(255,255,255,0.55)' }}
+                  style={{ color: patientCalledTime ? '#4FEDC7' : 'rgba(255,255,255,0.55)' }}
                 >
                   {patientCalledTime ? patientCallElapsedTime : 'Volat'}
                 </span>
@@ -824,7 +824,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(79,237,199,0.1)' }}
                 >
-                  <Stethoscope className="w-[18px] h-[18px]"               style={{ color: '#0099FF' }} strokeWidth={1.75} />
+                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
@@ -851,7 +851,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(79,237,199,0.1)' }}
                 >
-                  <Heart className="w-[18px] h-[18px]"               style={{ color: '#0099FF' }} strokeWidth={1.75} />
+                  <Heart className="w-[18px] h-[18px]" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
