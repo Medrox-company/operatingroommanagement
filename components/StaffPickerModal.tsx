@@ -184,21 +184,25 @@ export default function StaffPickerModal({
       >
         {/* Backdrop */}
         <motion.div
-          className="absolute inset-0 bg-black/70 backdrop-blur-md"
+          className="absolute inset-0 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
+          style={{
+            background: 'radial-gradient(120% 80% at 50% 0%, rgba(19,48,42,0.95) 0%, rgba(12,31,26,0.95) 45%, rgba(8,21,18,0.95) 100%)',
+          }}
         />
 
         {/* Modal */}
         <motion.div
           className="relative w-full max-w-2xl flex flex-col rounded-[2rem] overflow-hidden shadow-2xl"
           style={{
-            background: 'rgba(10, 10, 18, 0.92)',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
             backdropFilter: 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(79,237,199,0.15)',
+            boxShadow: '0 8px 32px rgba(79,237,199,0.08)',
             maxHeight: '80vh',
           }}
           initial={{ opacity: 0, scale: 0.96, y: 24 }}
@@ -209,7 +213,7 @@ export default function StaffPickerModal({
           {/* Top glow */}
           <div
             className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px"
-            style={{ background: `linear-gradient(90deg, transparent, ${accentColor.glow}, transparent)` }}
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(79,237,199,0.6), transparent)' }}
           />
 
           {/* Header */}

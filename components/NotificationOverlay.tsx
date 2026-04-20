@@ -37,13 +37,22 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4"
           onClick={onClose}
+          style={{
+            background: 'radial-gradient(120% 80% at 50% 0%, rgba(19,48,42,0.95) 0%, rgba(12,31,26,0.95) 45%, rgba(8,21,18,0.95) 100%)',
+          }}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-black border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl"
+            className="rounded-3xl p-8 max-w-lg w-full shadow-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
+              border: '1px solid rgba(79,237,199,0.15)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(79,237,199,0.08)',
+            }}
           >
             <h3 className="text-2xl font-bold text-white mb-2">Zadejte důvod</h3>
             <p className="text-white/40 text-sm mb-6">Popište důvod notifikace pro management</p>
@@ -51,7 +60,7 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Napište důvod notifikace..."
-              className="w-full px-5 py-4 rounded-2xl bg-white/[0.03] border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 transition-all resize-none mb-6 text-lg"
+              className="w-full px-5 py-4 rounded-2xl bg-white/[0.03] border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#4FEDC7]/50 transition-all resize-none mb-6 text-lg"
               rows={4}
               autoFocus
             />
@@ -65,7 +74,12 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
               <button
                 onClick={handleSubmit}
                 disabled={!reason.trim() || loading}
-                className="flex-1 px-6 py-4 bg-purple-500 text-white font-bold rounded-2xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-4 text-white font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #4FEDC7 0%, #4FEDC7dd 100%)',
+                  boxShadow: '0 8px 24px rgba(79,237,199,0.3)',
+                  color: '#062720',
+                }}
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                 Odeslat
@@ -138,32 +152,37 @@ export default function NotificationOverlay({
     <>
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
-          >
-            {/* Background - same style as main app */}
-            <div className="absolute inset-0 bg-black" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.95)_100%)]" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
+      >
+        {/* Background - fintech gradient matching RoomDetail */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
+          }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.85)_100%)]" />
 
-            {/* Atmospheric Edge Glows - matching main circle style */}
-            <div 
-              className="absolute -left-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
-              style={{ backgroundColor: '#ef4444' }}
-            />
-            <div 
-              className="absolute -right-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
-              style={{ backgroundColor: '#a855f7' }}
-            />
+        {/* Atmospheric Edge Glows - matching RoomDetail style */}
+        <div 
+          className="absolute -left-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
+          style={{ backgroundColor: '#4FEDC7' }}
+        />
+        <div 
+          className="absolute -right-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
+          style={{ backgroundColor: '#4FEDC7' }}
+        />
 
-            {/* Central glow */}
-            <div 
-              className="absolute w-[800px] h-[800px] rounded-full blur-[200px] opacity-10"
-              style={{ backgroundColor: '#3b82f6' }}
-            />
+        {/* Central glow */}
+        <div 
+          className="absolute w-[800px] h-[800px] rounded-full blur-[200px] opacity-12"
+          style={{ backgroundColor: '#4FEDC7' }}
+        />
 
             {/* Close button - top right */}
             <button 
