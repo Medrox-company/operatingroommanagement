@@ -35,31 +35,15 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[300] flex items-center justify-center p-4 overflow-hidden"
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4"
           onClick={onClose}
-          style={{
-            background: 'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
-          }}
         >
-          {/* Ambient glow — same as RoomDetail */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div
-              className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
-              style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
-            />
-          </div>
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl p-8 max-w-lg w-full shadow-2xl relative z-10"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
-              border: '1px solid rgba(79,237,199,0.15)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: '0 8px 32px rgba(79,237,199,0.08)',
-            }}
+            className="bg-black border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl"
           >
             <h3 className="text-2xl font-bold text-white mb-2">Zadejte důvod</h3>
             <p className="text-white/40 text-sm mb-6">Popište důvod notifikace pro management</p>
@@ -161,21 +145,25 @@ export default function NotificationOverlay({
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
           >
-            {/* Background - exact same as RoomDetail */}
+            {/* Background - same style as main app */}
+            <div className="absolute inset-0 bg-black" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.95)_100%)]" />
+
+            {/* Atmospheric Edge Glows - matching main circle style */}
             <div 
-              className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
-              }}
+              className="absolute -left-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
+              style={{ backgroundColor: '#ef4444' }}
+            />
+            <div 
+              className="absolute -right-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
+              style={{ backgroundColor: '#a855f7' }}
             />
 
-            {/* Ambient glow — same as RoomDetail */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div
-                className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
-                style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
-              />
-            </div>
+            {/* Central glow */}
+            <div 
+              className="absolute w-[800px] h-[800px] rounded-full blur-[200px] opacity-10"
+              style={{ backgroundColor: '#3b82f6' }}
+            />
 
             {/* Close button - top right */}
             <button 

@@ -833,13 +833,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/40 mb-3 px-1">
               Tým
             </p>
-            <div className="flex flex-row md:flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
                   setStaffPickerRole('doctor');
                   setStaffPickerOpen(true);
                 }}
-                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
+                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left w-full outline-none select-none transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.025)',
                   border: '1px solid rgba(255,255,255,0.06)',
@@ -866,7 +866,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   setStaffPickerRole('nurse');
                   setStaffPickerOpen(true);
                 }}
-                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
+                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left w-full outline-none select-none transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.025)',
                   border: '1px solid rgba(255,255,255,0.06)',
