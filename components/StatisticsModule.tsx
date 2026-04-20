@@ -1375,6 +1375,69 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               ))}
             </div>
 
+            {/* Per-room KPI strips — real operational data per room */}
+            <div className="space-y-3">
+              <SectionLabel>Jednotlivé sály — provozní metriky ({period})</SectionLabel>
+              {rooms.map((r, roomIdx) => {
+                const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+                const opsInHours = countOperationsInWorkingHours(r, statusHistory, period);
+                const util = calculateRoomUtilization(r, statusHistory, period);
+                const activeMins = Math.round(calculateActiveTimeInWorkingHours(r, statusHistory));
+                const totalMins = getRoomTotalWorkingMinutes(r, period);
+                const workingHoursToday = formatRoomWorkingHours(r, todayIndex);
+                const flags: string[] = [];
+                if (r.isEmergency) flags.push('EMERG');
+                if (r.isSeptic)    flags.push('SEPT');
+                if (isUPS(r))      flags.push('ÚPS');
+                const flagsLabel = flags.length > 0 ? flags.join(' · ') : '—';
+                const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : isUPS(r) ? C.accent : C.faint;
+
+                const cells = [
+                  { l: 'Sál',           v: r.name.replace('Sál č. ', 'S'), c: C.text },
+                  { l: 'Stav',          v: statusLabel(r.status),          c: statusColor(r.status) },
+                  { l: 'Oddělení',      v: r.department || '—',            c: DEPT_COLORS[r.department] ?? C.text },
+                  { l: `Využití (${period})`, v: `${util}%`,               c: util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted },
+                  { l: `Výkony (${period})`,  v: opsInHours,               c: C.accent },
+                  { l: 'Pracovní doba',  v: workingHoursToday,              c: workingHoursToday === 'Zavřeno' ? C.faint : C.text },
+                  { l: 'Aktivní / Kap.', v: `${activeMins} / ${Math.round(totalMins)} m`, c: C.text },
+                  { l: 'Fronta',         v: r.queueCount,                   c: r.queueCount > 0 ? C.yellow : C.green },
+                  { l: 'Příznaky',       v: flagsLabel,                     c: flagsColor },
+                ];
+
+                return (
+                  <motion.div
+                    key={r.id}
+                    initial={{opacity:0,y:8}}
+                    animate={{opacity:1,y:0}}
+                    transition={{duration:0.25, delay: Math.min(roomIdx, 10) * 0.03}}
+                    className="grid grid-cols-3 lg:grid-cols-9 rounded-xl overflow-hidden"
+                    style={{border:`1px solid ${C.border}`}}>
+                    {cells.map((k, i) => (
+                      <div
+                        key={i}
+                        className="flex flex-col justify-between px-4 py-3"
+                        style={{
+                          background: C.surface,
+                          borderRight: i < cells.length - 1 ? `1px solid ${C.border}` : undefined,
+                        }}>
+                        <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color: C.muted}}>
+                          {k.l}
+                        </p>
+                        <p className="text-base font-black leading-none truncate" style={{color: k.c}} title={String(k.v)}>
+                          {k.v}
+                        </p>
+                      </div>
+                    ))}
+                  </motion.div>
+                );
+              })}
+              {rooms.length === 0 && (
+                <p className="text-xs py-4 text-center" style={{color: C.faint}}>
+                  Žádné sály k zobrazení.
+                </p>
+              )}
+            </div>
+
             {/* Row 1: Main area + Status pie */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <Card className="lg:col-span-2 p-5">
