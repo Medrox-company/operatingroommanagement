@@ -501,99 +501,65 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             </button>
           </div>
 
-          {/* Hero: Status ring */}
-          <div className="flex flex-col items-center relative py-2">
-            <motion.div
-              className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
-              key={currentStep?.name}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="text-center px-8">
-                <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/40 mb-2">
-                  Aktuální fáze
-                </p>
-                <p className="text-[22px] font-semibold text-white leading-tight tracking-tight text-balance">
-                  {room.isEmergency
-                    ? 'Stav nouze'
-                    : room.isLocked
-                    ? 'Uzamčen'
-                    : currentStep?.name || 'Status'}
-                </p>
-                <p className="text-xs font-mono text-white/50 mt-3 tabular-nums">{elapsedTime}</p>
-              </div>
-            </motion.div>
+          {/* Hero: Current phase card (minimal, no ring) */}
+          <motion.div
+            key={currentStep?.name}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="rounded-3xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            {/* Ambient accent behind text */}
+            <div
+              className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-30"
+              style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 65%)` }}
+            />
 
-            <svg
-              viewBox="0 0 100 100"
-              style={{
-                display: 'block',
-                overflow: 'visible',
-                width: 'min(62vw, 260px)',
-                height: 'min(62vw, 260px)',
-              }}
-            >
-              <defs>
-                <filter id="mobile-glow-ring" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              {/* Background track — subtle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="44"
-                fill="none"
-                stroke="rgba(255,255,255,0.05)"
-                strokeWidth="1.5"
+            <div className="relative flex items-start justify-between gap-3 mb-3">
+              <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/40 leading-none">
+                Aktuální fáze
+              </p>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    background: activeColor,
+                    boxShadow: `0 0 8px ${activeColor}`,
+                  }}
+                />
+                <span className="text-[10px] font-mono font-medium tabular-nums text-white/60 leading-none">
+                  {safeStepIndex + 1}/{validStepCount}
+                </span>
+              </div>
+            </div>
+
+            <p className="relative text-[28px] font-semibold text-white leading-[1.15] tracking-tight text-balance">
+              {room.isEmergency
+                ? 'Stav nouze'
+                : room.isLocked
+                ? 'Uzamčen'
+                : currentStep?.name || 'Status'}
+            </p>
+
+            <p className="relative text-sm font-mono tabular-nums text-white/55 mt-3 leading-none">
+              {elapsedTime}
+            </p>
+
+            {/* Progress bar — thin, minimal */}
+            <div className="relative mt-5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: activeColor, boxShadow: `0 0 10px ${activeColor}80` }}
+                animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
               />
-              {/* Glow layer */}
-              <motion.circle
-                cx="50"
-                cy="50"
-                r="44"
-                fill="none"
-                stroke={activeColor}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                style={{
-                  transformOrigin: '50px 50px',
-                  transform: 'rotate(-90deg)',
-                  filter: 'url(#mobile-glow-ring)',
-                }}
-                animate={{
-                  strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
-                  opacity: [0.25, 0.5, 0.25],
-                }}
-                transition={{
-                  strokeDasharray: { duration: 0.8, ease: 'easeOut' },
-                  opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
-                }}
-              />
-              {/* Main progress */}
-              <motion.circle
-                cx="50"
-                cy="50"
-                r="44"
-                fill="none"
-                stroke={activeColor}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeDasharray={`${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`}
-                style={{ transformOrigin: '50px 50px', transform: 'rotate(-90deg)' }}
-                animate={{
-                  strokeDasharray: `${((safeStepIndex + 1) / validStepCount) * 276.46} 276.46`,
-                }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
-            </svg>
-          </div>
+            </div>
+          </motion.div>
 
           {/* Primary CTA — mint pill */}
           {!isInteractionBlocked && (
