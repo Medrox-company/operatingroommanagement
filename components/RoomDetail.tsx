@@ -453,7 +453,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         className="md:hidden w-full h-full flex flex-col relative overflow-hidden"
         style={{
           background:
-            'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
+            'radial-gradient(120% 80% at 50% 0%, #0a2340 0%, #051629 45%, #031018 100%)',
         }}
       >
         {/* Ambient glow — subtle */}
