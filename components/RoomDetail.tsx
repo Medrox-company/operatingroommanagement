@@ -448,138 +448,156 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT (md:hidden) — Hospital design, clean medical aesthetic ========== */}
+      {/* ========== MOBILE LAYOUT (md:hidden) — Ultra-minimalist fintech style ========== */}
       <div
         className="md:hidden w-full h-full flex flex-col relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #f0f5fa 0%, #e8f1f9 50%, #f5f9fc 100%)',
+          background:
+            'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
         }}
       >
-        {/* Subtle medical accent glow */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Ambient glow — subtle */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
-            className="absolute top-1/4 -right-40 w-[420px] h-[420px] rounded-full opacity-[0.08]"
-            style={{ background: 'radial-gradient(circle, #0066cc 0%, transparent 70%)' }}
+            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
+            style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
           />
         </div>
 
         {/* Content */}
         <div
-          className="relative z-10 flex flex-col h-full px-4 pt-5 overflow-y-auto hide-scrollbar"
+          className="relative z-10 flex flex-col h-full px-5 pt-4 overflow-y-auto hide-scrollbar"
           style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
-          {/* Header: back button + room name */}
-          <div className="flex items-center justify-between mb-7">
+          {/* Header — minimal */}
+          <div className="flex items-center justify-between mb-6">
             <button
               onClick={onClose}
-              className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full active:scale-[0.98] outline-none select-none transition-transform"
-              style={{ background: 'rgba(0, 102, 204, 0.08)' }}
+              className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
             >
-              <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(0, 102, 204, 0.12)' }}>
-                <ChevronLeft className="w-4 h-4" style={{ color: '#0066cc' }} strokeWidth={2} />
-              </span>
-              <span className="text-[13px] font-semibold text-gray-800 truncate max-w-[140px]">
-                {room.name}
-              </span>
+              <ChevronLeft className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
             </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setNotificationOverlayOpen(true)}
-                className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-                style={{ background: 'rgba(0, 102, 204, 0.08)' }}
-              >
-                <Bell className="w-[16px] h-[16px] text-gray-600" strokeWidth={1.75} />
-              </button>
-              <button
-                onClick={onClose}
-                className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-                style={{ background: 'rgba(0, 102, 204, 0.08)' }}
-              >
-                <X className="w-[16px] h-[16px] text-gray-600" strokeWidth={1.75} />
-              </button>
+            <div className="flex flex-col items-center flex-1 min-w-0 px-3">
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/40 leading-none">
+                Operační sál
+              </p>
+              <h1 className="text-lg font-semibold text-white truncate mt-1.5 leading-none">
+                {room.name}
+              </h1>
             </div>
+            <button
+              onClick={() => setNotificationOverlayOpen(true)}
+              className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <Bell className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
+            </button>
           </div>
 
-          {/* Section header: Aktuální stav */}
-          <div className="flex items-end justify-between mb-4 px-1">
-            <h2 className="text-[26px] font-bold text-gray-900 tracking-tight leading-none">
-              Aktuální stav
-            </h2>
-            <p className="text-[11px] font-mono tabular-nums" style={{ color: '#666' }}>
-              {elapsedTime}
-            </p>
-          </div>
-
-          {/* Main status card (light blue medical look) */}
+          {/* Hero: Current phase card (minimal, no ring) */}
           <motion.div
             key={currentStep?.name}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="relative rounded-2xl p-5 flex flex-col justify-between mb-4 overflow-hidden shadow-sm"
+            className="rounded-3xl p-6 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)',
-              border: '1px solid rgba(0, 102, 204, 0.15)',
-              minHeight: '140px',
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(12px)',
             }}
           >
-            {/* Top accent line */}
+            {/* Ambient accent behind text */}
             <div
-              className="absolute top-0 left-0 right-0 h-1 rounded-full"
-              style={{ background: 'linear-gradient(90deg, #0066cc 0%, #00a3ff 100%)' }}
+              className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-30"
+              style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 65%)` }}
             />
 
-            {/* Content */}
-            <div className="pt-1">
-              <p className="text-[10px] font-semibold uppercase leading-none" style={{ color: '#666', letterSpacing: '0.08em' }}>
-                Fáze
+            <div className="relative flex items-start justify-between gap-3 mb-3">
+              <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/40 leading-none">
+                Aktuální fáze
               </p>
-              <p className="text-[18px] font-bold leading-tight mt-2 tracking-tight text-gray-900">
-                {room.isEmergency
-                  ? 'Stav nouze'
-                  : room.isLocked
-                  ? 'Uzamčen'
-                  : currentStep?.name || 'Čekání'}
-              </p>
-              <div className="flex gap-2 mt-3 flex-wrap">
+              <div className="flex items-center gap-1.5">
                 <span
-                  className="px-2.5 py-1 rounded-full text-[10px] font-semibold tabular-nums leading-none"
-                  style={{ background: 'rgba(0, 102, 204, 0.1)', color: '#0066cc' }}
-                >
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    background: activeColor,
+                    boxShadow: `0 0 8px ${activeColor}`,
+                  }}
+                />
+                <span className="text-[10px] font-mono font-medium tabular-nums text-white/60 leading-none">
                   {safeStepIndex + 1}/{validStepCount}
                 </span>
-                {isPaused && (
-                  <span
-                    className="px-2.5 py-1 rounded-full text-[10px] font-semibold leading-none"
-                    style={{ background: 'rgba(255, 152, 0, 0.1)', color: '#ff9800' }}
-                  >
-                    Pozastaveno
-                  </span>
-                )}
               </div>
             </div>
 
-            {/* Progress bar at bottom */}
-            <div className="mt-4 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0, 102, 204, 0.1)' }}>
+            <p className="relative text-[28px] font-semibold text-white leading-[1.15] tracking-tight text-balance">
+              {room.isEmergency
+                ? 'Stav nouze'
+                : room.isLocked
+                ? 'Uzamčen'
+                : currentStep?.name || 'Status'}
+            </p>
+
+            <p className="relative text-sm font-mono tabular-nums text-white/55 mt-3 leading-none">
+              {elapsedTime}
+            </p>
+
+            {/* Progress bar — thin, minimal */}
+            <div className="relative mt-5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #0066cc 0%, #00a3ff 100%)' }}
+                style={{ background: activeColor, boxShadow: `0 0 10px ${activeColor}80` }}
                 animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
               />
             </div>
           </motion.div>
 
-          {/* End time section */}
-          <div className="rounded-2xl p-4 mb-5 shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.7)', border: '1px solid rgba(0, 102, 204, 0.08)' }}>
-            <div className="flex items-end justify-between gap-3">
+          {/* Primary CTA — mint pill */}
+          {!isInteractionBlocked && (
+            <button
+              onClick={handleNextStep}
+              className="w-full py-4 rounded-full mt-5 mb-6 active:scale-[0.98] outline-none select-none transition-transform"
+              style={{
+                background: '#4FEDC7',
+                color: '#062720',
+                boxShadow: '0 10px 30px -10px rgba(79,237,199,0.45)',
+                fontWeight: 600,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {isFinalStep ? 'Nový cyklus' : 'Spustit další fázi'}
+            </button>
+          )}
+
+          {/* End Time Card */}
+          <div
+            className="rounded-3xl p-5 mb-4"
+            style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase text-gray-600 leading-none tracking-[0.08em]">
-                  Odhadovaný konec
+                <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/40 leading-none">
+                  Odhadované ukončení
                 </p>
-                <p className="text-[28px] font-bold text-gray-900 font-mono tabular-nums mt-2 leading-none">
+                <p className="text-[34px] font-semibold text-white font-mono tabular-nums mt-2 leading-none tracking-tight">
                   {estimatedEndTime && shouldShowTime
-                    ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+                    ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
                     : '--:--'}
                 </p>
               </div>
@@ -587,224 +605,35 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 <button
                   onClick={handleDecreaseTime}
                   disabled={isInteractionBlocked || !estimatedEndTime}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none transition-all shadow-sm"
-                  style={{ background: 'rgba(0, 102, 204, 0.08)', border: '1px solid rgba(0, 102, 204, 0.12)' }}
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
                 >
-                  <Minus className="w-[16px] h-[16px] text-gray-700" strokeWidth={2} />
+                  <Minus className="w-[18px] h-[18px] text-white/80" strokeWidth={2.25} />
                 </button>
                 <button
                   onClick={handleIncreaseTime}
                   disabled={isInteractionBlocked}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none transition-all shadow-sm"
-                  style={{ background: '#0066cc', color: 'white' }}
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center disabled:opacity-30 active:scale-95 outline-none select-none transition-all"
+                  style={{
+                    background: '#4FEDC7',
+                    color: '#062720',
+                  }}
                 >
-                  <Plus className="w-[16px] h-[16px]" strokeWidth={2.5} />
+                  <Plus className="w-[18px] h-[18px]" strokeWidth={2.5} />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Primary CTA */}
-          {!isInteractionBlocked && (
-            <button
-              onClick={handleNextStep}
-              className="w-full py-3.5 rounded-xl mb-7 active:scale-[0.98] outline-none select-none transition-transform font-semibold shadow-md"
-              style={{
-                background: 'linear-gradient(135deg, #0066cc 0%, #004399 100%)',
-                color: 'white',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {isFinalStep ? 'Nový cyklus' : 'Pokračovat na další fázi'}
-            </button>
-          )}
-
-          {/* Actions section */}
-          <div className="mb-6">
-            <div className="flex items-end justify-between mb-3 px-1">
-              <h3 className="text-[18px] font-bold text-gray-900 tracking-tight leading-none">Akce</h3>
-              <p className="text-[10px] font-semibold uppercase text-gray-500 leading-none pb-0.5 tracking-[0.12em]">
-                Kontrola
-              </p>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {/* Pause */}
-              <button
-                onClick={async () => {
-                  const newPaused = !isPaused;
-                  setIsPaused(newPaused);
-                  await updateOperatingRoom(room.id, { is_paused: newPaused });
-                  await recordStatusEvent({
-                    operating_room_id: room.id,
-                    event_type: newPaused ? 'pause' : 'resume',
-                    step_index: currentStepIndex,
-                    step_name: currentStep?.name || 'Status',
-                  });
-                }}
-                className="relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 outline-none select-none transition-all shadow-sm"
-                style={{
-                  background: isPaused ? 'rgba(255, 152, 0, 0.1)' : 'rgba(255, 255, 255, 0.5)',
-                  border: isPaused ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid rgba(0, 102, 204, 0.1)',
-                }}
-              >
-                {isPaused ? (
-                  <Play className="w-[18px] h-[18px]" style={{ color: '#ff9800' }} strokeWidth={1.75} />
-                ) : (
-                  <Pause className="w-[18px] h-[18px] text-gray-700" strokeWidth={1.75} />
-                )}
-                <span className="text-[9px] font-semibold tracking-tight" style={{ color: isPaused ? '#ff9800' : '#666' }}>
-                  {isPaused ? 'Pokračovat' : 'Pauza'}
-                </span>
-              </button>
-
-              {/* Hygiene */}
-              <button
-                onClick={async () => {
-                  const newH = !room.isEnhancedHygiene;
-                  onEnhancedHygieneToggle?.(newH);
-                  await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
-                  await recordStatusEvent({
-                    operating_room_id: room.id,
-                    event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
-                    step_index: currentStepIndex,
-                    step_name: currentStep?.name || 'Status',
-                  });
-                }}
-                className="relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 outline-none select-none transition-all shadow-sm"
-                style={{
-                  background: room.isEnhancedHygiene ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.5)',
-                  border: room.isEnhancedHygiene ? '1px solid rgba(76, 175, 80, 0.3)' : '1px solid rgba(0, 102, 204, 0.1)',
-                }}
-              >
-                <ShieldAlert
-                  className="w-[18px] h-[18px]"
-                  style={{ color: room.isEnhancedHygiene ? '#4caf50' : '#666' }}
-                  strokeWidth={1.75}
-                />
-                <span className="text-[9px] font-semibold tracking-tight" style={{ color: room.isEnhancedHygiene ? '#4caf50' : '#666' }}>
-                  Hygiena
-                </span>
-              </button>
-
-              {/* Call patient */}
-              <button
-                onClick={async () => {
-                  if (!patientCalledTime) {
-                    const now = new Date();
-                    setPatientCalledTime(now);
-                    setShowPatientCalledText(true);
-                    setTimeout(() => setShowPatientCalledText(false), 5000);
-                    await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
-                    await recordStatusEvent({
-                      operating_room_id: room.id,
-                      event_type: 'patient_call',
-                      step_index: currentStepIndex,
-                      step_name: currentStep?.name || 'Status',
-                    });
-                    onPatientStatusChange?.(now.toISOString(), null);
-                  }
-                }}
-                disabled={!!patientCalledTime}
-                className="relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 disabled:active:scale-100 outline-none select-none transition-all shadow-sm"
-                style={{
-                  background: patientCalledTime ? 'rgba(0, 102, 204, 0.1)' : 'rgba(255, 255, 255, 0.5)',
-                  border: patientCalledTime ? '1px solid rgba(0, 102, 204, 0.3)' : '1px solid rgba(0, 102, 204, 0.1)',
-                }}
-              >
-                <Phone className="w-[18px] h-[18px]" style={{ color: patientCalledTime ? '#0066cc' : '#666' }} strokeWidth={1.75} />
-                <span className="text-[9px] font-semibold tracking-tight tabular-nums" style={{ color: patientCalledTime ? '#0066cc' : '#666' }}>
-                  {patientCalledTime ? patientCallElapsedTime : 'Volat'}
-                </span>
-              </button>
-
-              {/* Patient arrived */}
-              <button
-                onClick={async () => {
-                  if (patientCalledTime && !patientArrivedTime) {
-                    const now = new Date();
-                    setPatientArrivedTime(now);
-                    setShowPatientArrivedText(true);
-                    await updateOperatingRoom(room.id, { patient_arrived_at: now.toISOString() });
-                    await recordStatusEvent({
-                      operating_room_id: room.id,
-                      event_type: 'patient_arrived',
-                      step_index: currentStepIndex,
-                      step_name: currentStep?.name || 'Status',
-                    });
-                    onPatientStatusChange?.(patientCalledTime!.toISOString(), now.toISOString());
-                    setTimeout(() => setShowPatientArrivedText(false), 5000);
-                  }
-                }}
-                disabled={!patientCalledTime || !!patientArrivedTime}
-                className="relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 disabled:active:scale-100 outline-none select-none transition-all shadow-sm disabled:opacity-40"
-                style={{
-                  background: patientArrivedTime ? 'rgba(156, 39, 176, 0.1)' : 'rgba(255, 255, 255, 0.5)',
-                  border: patientArrivedTime ? '1px solid rgba(156, 39, 176, 0.3)' : '1px solid rgba(0, 102, 204, 0.1)',
-                }}
-              >
-                <BedDouble className="w-[18px] h-[18px]" style={{ color: patientArrivedTime ? '#9c27b0' : '#666' }} strokeWidth={1.75} />
-                <span className="text-[9px] font-semibold tracking-tight" style={{ color: patientArrivedTime ? '#9c27b0' : '#666' }}>
-                  Příjezd
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Team section */}
-          <div>
-            <div className="flex items-end justify-between mb-3 px-1">
-              <h3 className="text-[18px] font-bold text-gray-900 tracking-tight leading-none">Tým</h3>
-              <p className="text-[10px] font-semibold uppercase text-gray-500 leading-none pb-0.5 tracking-[0.12em]">
-                Personál
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setStaffPickerRole('doctor');
-                  setStaffPickerOpen(true);
-                }}
-                className="flex items-center gap-3 p-3 rounded-xl active:scale-[0.99] text-left w-full outline-none select-none transition-all shadow-sm"
-                style={{ background: 'rgba(255, 255, 255, 0.6)', border: '1px solid rgba(0, 102, 204, 0.1)' }}
-              >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0, 102, 204, 0.1)' }}>
-                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#0066cc' }} strokeWidth={1.5} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-600 leading-none">
-                    Lékař
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900 truncate mt-1 leading-none">
-                    {room?.staff?.doctor?.name || 'Nepřiřazen'}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={2} />
-              </button>
-              <button
-                onClick={() => {
-                  setStaffPickerRole('nurse');
-                  setStaffPickerOpen(true);
-                }}
-                className="flex items-center gap-3 p-3 rounded-xl active:scale-[0.99] text-left w-full outline-none select-none transition-all shadow-sm"
-                style={{ background: 'rgba(255, 255, 255, 0.6)', border: '1px solid rgba(0, 102, 204, 0.1)' }}
-              >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0, 102, 204, 0.1)' }}>
-                  <Heart className="w-[18px] h-[18px]" style={{ color: '#0066cc' }} strokeWidth={1.5} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-600 leading-none">
-                    Sestra
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900 truncate mt-1 leading-none">
-                    {room?.staff?.nurse?.name || 'Nepřiřazena'}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={2} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+          {/* Categories — action tiles (2x2 grid, like fintech categories) */}
+          <div className="mb-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/40 mb-3 px-1">
+              Akce
+            </p>
+            <div className="grid grid-cols-4 gap-2.5">
               {/* Pause */}
               <button
                 onClick={async () => {
@@ -1034,6 +863,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </div>
                 <ChevronRight className="w-4 h-4 text-white/30 shrink-0" strokeWidth={2} />
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ========== DESKTOP LAYOUT (hidden on mobile) ========== */}
       <div className="hidden md:block w-full h-full overflow-hidden">
