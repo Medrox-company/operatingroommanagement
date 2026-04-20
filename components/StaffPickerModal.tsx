@@ -182,7 +182,7 @@ export default function StaffPickerModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Backdrop */}
+        {/* Backdrop - exact same as RoomDetail */}
         <motion.div
           className="absolute inset-0 backdrop-blur-md"
           initial={{ opacity: 0 }}
@@ -190,9 +190,17 @@ export default function StaffPickerModal({
           exit={{ opacity: 0 }}
           onClick={onClose}
           style={{
-            background: 'radial-gradient(120% 80% at 50% 0%, rgba(19,48,42,0.95) 0%, rgba(12,31,26,0.95) 45%, rgba(8,21,18,0.95) 100%)',
+            background: 'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
           }}
         />
+
+        {/* Ambient glow — same as RoomDetail */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
+            style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
+          />
+        </div>
 
         {/* Modal */}
         <motion.div

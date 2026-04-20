@@ -833,60 +833,60 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/40 mb-3 px-1">
               Tým
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => {
                   setStaffPickerRole('doctor');
                   setStaffPickerOpen(true);
                 }}
-                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left w-full outline-none select-none transition-all"
+                className="flex-1 flex items-center gap-2.5 p-3 rounded-xl active:scale-[0.99] text-left outline-none select-none transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.025)',
                   border: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(79,237,199,0.1)' }}
                 >
-                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
+                  <Stethoscope className="w-4 h-4" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
+                  <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
                     Lékař
                   </p>
-                  <p className="text-sm font-medium text-white truncate mt-1.5 leading-none">
+                  <p className="text-xs font-medium text-white truncate mt-0.5 leading-none">
                     {room?.staff?.doctor?.name || 'Nepřiřazen'}
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" strokeWidth={2} />
+                <ChevronRight className="w-3.5 h-3.5 text-white/30 shrink-0" strokeWidth={2} />
               </button>
               <button
                 onClick={() => {
                   setStaffPickerRole('nurse');
                   setStaffPickerOpen(true);
                 }}
-                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left w-full outline-none select-none transition-all"
+                className="flex-1 flex items-center gap-2.5 p-3 rounded-xl active:scale-[0.99] text-left outline-none select-none transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.025)',
                   border: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(79,237,199,0.1)' }}
                 >
-                  <Heart className="w-[18px] h-[18px]" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
+                  <Heart className="w-4 h-4" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
+                  <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
                     Sestra
                   </p>
-                  <p className="text-sm font-medium text-white truncate mt-1.5 leading-none">
+                  <p className="text-xs font-medium text-white truncate mt-0.5 leading-none">
                     {room?.staff?.nurse?.name || 'Nepřiřazena'}
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" strokeWidth={2} />
+                <ChevronRight className="w-3.5 h-3.5 text-white/30 shrink-0" strokeWidth={2} />
               </button>
             </div>
           </div>

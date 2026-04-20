@@ -35,18 +35,26 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4 overflow-hidden"
           onClick={onClose}
           style={{
-            background: 'radial-gradient(120% 80% at 50% 0%, rgba(19,48,42,0.95) 0%, rgba(12,31,26,0.95) 45%, rgba(8,21,18,0.95) 100%)',
+            background: 'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
           }}
         >
+          {/* Ambient glow — same as RoomDetail */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div
+              className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
+              style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
+            />
+          </div>
+
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl p-8 max-w-lg w-full shadow-2xl"
+            className="rounded-3xl p-8 max-w-lg w-full shadow-2xl relative z-10"
             style={{
               background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
               border: '1px solid rgba(79,237,199,0.15)',
@@ -159,131 +167,21 @@ export default function NotificationOverlay({
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
       >
-        {/* Background - fintech gradient matching RoomDetail */}
+        {/* Background - exact same as RoomDetail mobile */}
         <div 
           className="absolute inset-0"
           style={{
             background: 'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
           }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.85)_100%)]" />
 
-        {/* Atmospheric Edge Glows - matching RoomDetail style */}
-        <div 
-          className="absolute -left-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
-          style={{ backgroundColor: '#4FEDC7' }}
-        />
-        <div 
-          className="absolute -right-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
-          style={{ backgroundColor: '#4FEDC7' }}
-        />
-
-        {/* Central glow */}
-        <div 
-          className="absolute w-[800px] h-[800px] rounded-full blur-[200px] opacity-12"
-          style={{ backgroundColor: '#4FEDC7' }}
-        />
-
-            {/* Close button - top right */}
-            <button 
-              onClick={onClose} 
-              className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 opacity-40 hover:opacity-100 active:scale-95 transition-all z-20 outline-none select-none"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
-            </button>
-
-            {/* Main content */}
-            <div className="flex flex-col items-center relative z-10 px-4">
-              
-              {/* Title section - matching app typography */}
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="text-center mb-8 md:mb-12"
-              >
-                <p className="text-[10px] sm:text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mb-4">
-                  POSLAT NOTIFIKACI
-                </p>
-                <AnimatePresence mode="wait">
-                  <motion.h2
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white"
-                  >
-                    {roomName}
-                  </motion.h2>
-                </AnimatePresence>
-              </motion.div>
-
-              {/* First Row - 3 circles */}
-              <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16 mb-4 sm:mb-6 md:mb-10 lg:mb-16">
-                {firstRow.map((notif, index) => {
-                  const isLoading = loading === notif.id;
-                  return (
-                    <motion.button
-                      key={notif.id}
-                      onClick={() => handleSendNotification(notif.id)}
-                      disabled={loading !== null}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.2 + index * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.96 }}
-                      className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer disabled:opacity-50"
-                    >
-                      {/* Primary Background Glow - matching main circle */}
-                      <div 
-                        className="absolute inset-0 rounded-full blur-[100px] transition-all duration-700 opacity-25 group-hover:opacity-40"
-                        style={{ backgroundColor: notif.color }}
-                      />
-
-                      {/* Inner Glow Core */}
-                      <div 
-                        className="absolute inset-8 sm:inset-10 rounded-full blur-[80px] opacity-20 group-hover:opacity-35 transition-all duration-500"
-                        style={{ backgroundColor: notif.color }}
-                      />
-
-                      {/* Animated Ring - matching main circle SVG style */}
-                      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">
-                        <circle cx="110" cy="110" r="100" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-                        <motion.circle 
-                          cx="110" cy="110" r="100" fill="none"
-                          stroke={notif.color} strokeWidth="4" strokeLinecap="round"
-                          strokeDasharray="628"
-                          initial={{ strokeDashoffset: 628 }}
-                          animate={{ strokeDashoffset: 0 }}
-                          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                          style={{ filter: `drop-shadow(0 0 15px ${notif.color}80)` }}
-                          className="opacity-80"
-                        />
-                      </svg>
-
-                      {/* Pulsing Animation Ring - matching main circle */}
-                      <motion.div
-                        className="absolute inset-0 rounded-full border-2"
-                        style={{ borderColor: notif.color }}
-                        animate={{ 
-                          scale: [1, 1.08, 1],
-                          opacity: [0.4, 0.1, 0.4]
-                        }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      />
-
-                      {/* Center Content - Text only, centered */}
-                      <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
-                        {isLoading ? (
-                          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
-                        ) : (
-                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
-                            {notif.label}
-                          </span>
-                        )}
-                      </div>
+        {/* Ambient glow — exactly same as RoomDetail */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
+            style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
+          />
+        </div>
                     </motion.button>
                   );
                 })}
