@@ -566,20 +566,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`,
                     boxShadow: `0 12px 32px -8px ${activeColor}40`,
                   }}
-          >
-            <Play className="w-7 h-7 text-black/90 ml-0.5" strokeWidth={1.5} fill="currentColor" />
-          </motion.button>
-        )}
-      </div>
+                >
+                  <Play className="w-7 h-7 text-black/90 ml-0.5" strokeWidth={1.5} fill="currentColor" />
+                </motion.button>
+              )}
+            </div>
 
-      {/* End Time Card — improved design */}
-      <div
-        className="rounded-3xl p-6 mb-6"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(0,212,255,0.05) 100%)',
-          border: '1px solid rgba(0,212,255,0.15)',
-          backdropFilter: 'blur(16px)',
-        }}
+            {/* Progress bar — thin, integrated at bottom */}
+            <div className="relative mt-5 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{
+                  background: `linear-gradient(90deg, ${activeColor} 0%, ${activeColor}aa 100%)`,
+                  boxShadow: `0 0 16px ${activeColor}60`,
+                }}
                 animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
               />
