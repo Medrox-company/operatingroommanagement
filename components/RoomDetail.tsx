@@ -453,14 +453,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         className="md:hidden w-full h-full flex flex-col relative overflow-hidden"
         style={{
           background:
-            'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
+            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
         }}
       >
         {/* Ambient glow — subtle */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
             className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
+            style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
           />
         </div>
 
@@ -566,20 +566,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`,
                     boxShadow: `0 12px 32px -8px ${activeColor}40`,
                   }}
-                >
-                  <Play className="w-7 h-7 text-black/90 ml-0.5" strokeWidth={1.5} fill="currentColor" />
-                </motion.button>
-              )}
-            </div>
+          >
+            <Play className="w-7 h-7 text-black/90 ml-0.5" strokeWidth={1.5} fill="currentColor" />
+          </motion.button>
+        )}
+      </div>
 
-            {/* Progress bar — thin, integrated at bottom */}
-            <div className="relative mt-5 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{
-                  background: `linear-gradient(90deg, ${activeColor} 0%, ${activeColor}aa 100%)`,
-                  boxShadow: `0 0 16px ${activeColor}60`,
-                }}
+      {/* End Time Card — improved design */}
+      <div
+        className="rounded-3xl p-6 mb-6"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(0,212,255,0.05) 100%)',
+          border: '1px solid rgba(0,212,255,0.15)',
+          backdropFilter: 'blur(16px)',
+        }}
                 animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
               />
@@ -630,8 +630,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   whileTap={{ scale: 0.95 }}
                   className="w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 outline-none select-none transition-all shadow-lg"
                   style={{
-                    background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`,
-                    boxShadow: `0 8px 24px -6px ${activeColor}30`,
+                    background: `linear-gradient(135deg, #00d4ff 0%, #00d4ffdd 100%)`,
+                    boxShadow: `0 8px 24px -6px rgba(0,212,255,0.3)`,
                   }}
                 >
                   <Plus className="w-5 h-5 text-black/90" strokeWidth={2.5} />
@@ -664,12 +664,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
                   background: isPaused
-                    ? `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`
+                    ? `linear-gradient(135deg, #00d4ff 0%, #00d4ffdd 100%)`
                     : 'rgba(255,255,255,0.04)',
                   border: isPaused
-                    ? `1px solid ${activeColor}`
+                    ? `1px solid #00d4ff`
                     : '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: isPaused ? `0 8px 24px -6px ${activeColor}30` : 'none',
+                  boxShadow: isPaused ? `0 8px 24px -6px rgba(0,212,255,0.3)` : 'none',
                 }}
               >
                 {isPaused ? (
@@ -763,12 +763,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               >
                 <Phone
                   className="w-6 h-6"
-                  style={{ color: patientCalledTime ? '#4FEDC7' : 'rgba(255,255,255,0.7)' }}
+                style={{
+                  color: patientCalledTime ? '#00d4ff' : 'rgba(255,255,255,0.7)' }}
                   strokeWidth={1.75}
                 />
                 <span
                   className="text-[10px] font-semibold tracking-tight tabular-nums leading-tight"
-                  style={{ color: patientCalledTime ? '#4FEDC7' : 'rgba(255,255,255,0.6)' }}
+                  style={{ color: patientCalledTime ? '#00d4ff' : 'rgba(255,255,255,0.6)' }}
                 >
                   {patientCalledTime ? patientCallElapsedTime : 'Volat'}
                 </span>
@@ -849,7 +850,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(79,237,199,0.1)' }}
                 >
-                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
+                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#00d4ff' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
@@ -876,7 +877,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(79,237,199,0.1)' }}
                 >
-                  <Heart className="w-[18px] h-[18px]" style={{ color: '#4FEDC7' }} strokeWidth={1.75} />
+                  <Heart className="w-[18px] h-[18px]" style={{ color: '#00d4ff' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
