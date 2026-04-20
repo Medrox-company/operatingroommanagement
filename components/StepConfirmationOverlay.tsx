@@ -44,21 +44,30 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         className="absolute inset-0 z-[200] flex items-center justify-center overflow-hidden"
       >
-        {/* Background - exact same as RoomDetail */}
+        {/* Background - fintech gradient matching RoomDetail */}
         <div 
           className="absolute inset-0"
           style={{
             background: 'radial-gradient(120% 80% at 50% 0%, #13302a 0%, #0c1f1a 45%, #081512 100%)',
           }}
         />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.85)_100%)]" />
 
-        {/* Ambient glow — exactly same as RoomDetail */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div
-            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, #4FEDC7 0%, transparent 65%)' }}
-          />
-        </div>
+        {/* Atmospheric Edge Glows - matching RoomDetail style */}
+        <div 
+          className="absolute -left-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
+          style={{ backgroundColor: '#4FEDC7' }}
+        />
+        <div 
+          className="absolute -right-20 top-0 bottom-0 w-64 blur-[140px] z-10 opacity-20"
+          style={{ backgroundColor: '#4FEDC7' }}
+        />
+
+        {/* Central glow for pending step color */}
+        <div 
+          className="absolute w-[600px] h-[600px] rounded-full blur-[150px] opacity-15"
+          style={{ backgroundColor: pendingColor }}
+        />
 
         {/* Main content */}
         <div className="flex flex-col items-center relative z-10 px-4">
