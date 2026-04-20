@@ -243,35 +243,112 @@ function countOperationsInWorkingHours(
   }).length;
 }
 
+// ── Helper: Get period start date (matches loadStats fetch window) ─────────────
+function getPeriodStart(period: Period, now: Date = new Date()): Date {
+  switch (period) {
+    case 'den':    return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    case 'týden':  return new Date(now.getTime() -  7 * 24 * 60 * 60 * 1000);
+    case 'měsíc':  return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    case 'rok':    return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  }
+}
+
+// ── Helper: Build active operation intervals for a room from history ───────────
+// Pairs operation_start with next operation_end; if the room is currently in an
+// operation (operationStartedAt set) and has no matching end, the interval is
+// left open to `now`. This is critical because ongoing operations don't yet
+// have `duration_seconds` recorded on step_change events.
+function buildRoomOperationIntervals(
+  room: OperatingRoom,
+  history: StatusHistoryRow[],
+  now: Date = new Date()
+): { start: Date; end: Date }[] {
+  const events = history
+    .filter(e =>
+      e.operating_room_id === room.id &&
+      (e.event_type === 'operation_start' || e.event_type === 'operation_end')
+    )
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  const intervals: { start: Date; end: Date }[] = [];
+  let currentStart: Date | null = null;
+
+  for (const e of events) {
+    if (e.event_type === 'operation_start') {
+      // If we already had an open start, treat previous as open-ended (shouldn't happen normally)
+      currentStart = new Date(e.timestamp);
+    } else if (e.event_type === 'operation_end' && currentStart) {
+      intervals.push({ start: currentStart, end: new Date(e.timestamp) });
+      currentStart = null;
+    }
+  }
+
+  // Handle currently running operation
+  if (currentStart) {
+    intervals.push({ start: currentStart, end: now });
+  } else if (room.operationStartedAt) {
+    // Fallback: room marked as running but no operation_start event in fetched window
+    const opStart = new Date(room.operationStartedAt);
+    if (!isNaN(opStart.getTime())) {
+      intervals.push({ start: opStart, end: now });
+    }
+  }
+
+  return intervals;
+}
+
 // ── Helper: Calculate active time in minutes within working hours ──────────────
+// Sums the overlap between each operation interval and the room's working hours
+// for every day within the selected period.
 function calculateActiveTimeInWorkingHours(
   room: OperatingRoom,
-  history: StatusHistoryRow[]
+  history: StatusHistoryRow[],
+  period: Period = 'den'
 ): number {
-  if (!room || !history || history.length === 0) return 0;
-  
-  const roomHistory = history.filter(e => e.operating_room_id === room.id && e.event_type === 'step_change');
-  
-  // Sum durations that fall within working hours
-  return roomHistory.reduce((total, e) => {
-    if (!e.timestamp) return total;
-    const date = new Date(e.timestamp);
-    const dayOfWeek = date.getDay();
-    const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const hours = getRoomWorkingHours(room, dayIndex);
-    
-    if (!hours.enabled) return total;
-    
-    const eventMins = date.getHours() * 60 + date.getMinutes();
-    const startMins = hours.startHour * 60 + hours.startMinute;
-    const endMins = hours.endHour * 60 + hours.endMinute;
-    
-    // Only count if within working hours
-    if (eventMins >= startMins && eventMins <= endMins) {
-      return total + (e.duration_seconds || 0) / 60;
+  if (!room) return 0;
+
+  const now = new Date();
+  const periodStart = getPeriodStart(period, now);
+  const intervals = buildRoomOperationIntervals(room, history || [], now);
+  if (intervals.length === 0) return 0;
+
+  let totalMins = 0;
+
+  for (const interval of intervals) {
+    // Clip interval to period window
+    const clippedStart = new Date(Math.max(interval.start.getTime(), periodStart.getTime()));
+    const clippedEnd   = new Date(Math.min(interval.end.getTime(),   now.getTime()));
+    if (clippedEnd.getTime() <= clippedStart.getTime()) continue;
+
+    // Walk day-by-day and intersect with each day's working hours
+    const dayCursor = new Date(clippedStart);
+    dayCursor.setHours(0, 0, 0, 0);
+    const lastDay = new Date(clippedEnd);
+    lastDay.setHours(0, 0, 0, 0);
+
+    while (dayCursor.getTime() <= lastDay.getTime()) {
+      const dayOfWeek = dayCursor.getDay();
+      const dayIndex  = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const hours     = getRoomWorkingHours(room, dayIndex);
+
+      if (hours.enabled) {
+        const whStart = new Date(dayCursor);
+        whStart.setHours(hours.startHour, hours.startMinute, 0, 0);
+        const whEnd = new Date(dayCursor);
+        whEnd.setHours(hours.endHour, hours.endMinute, 0, 0);
+
+        const overlapStart = Math.max(clippedStart.getTime(), whStart.getTime());
+        const overlapEnd   = Math.min(clippedEnd.getTime(),   whEnd.getTime());
+        if (overlapEnd > overlapStart) {
+          totalMins += (overlapEnd - overlapStart) / 60000;
+        }
+      }
+
+      dayCursor.setDate(dayCursor.getDate() + 1);
     }
-    return total;
-  }, 0);
+  }
+
+  return totalMins;
 }
 
 // ── Helper: Calculate utilization percentage based on working hours ────────────
@@ -282,8 +359,8 @@ function calculateRoomUtilization(
 ): number {
   const totalWorkingMinutes = getRoomTotalWorkingMinutes(room, period);
   if (totalWorkingMinutes === 0) return 0;
-  
-  const activeMinutes = calculateActiveTimeInWorkingHours(room, history);
+
+  const activeMinutes = calculateActiveTimeInWorkingHours(room, history, period);
   return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
 }
 
@@ -1382,7 +1459,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
                 const opsInHours = countOperationsInWorkingHours(r, statusHistory, period);
                 const util = calculateRoomUtilization(r, statusHistory, period);
-                const activeMins = Math.round(calculateActiveTimeInWorkingHours(r, statusHistory));
+                const activeMins = Math.round(calculateActiveTimeInWorkingHours(r, statusHistory, period));
                 const totalMins = getRoomTotalWorkingMinutes(r, period);
                 const workingHoursToday = formatRoomWorkingHours(r, todayIndex);
                 const flags: string[] = [];
