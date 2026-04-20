@@ -1393,15 +1393,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : isUPS(r) ? C.accent : C.faint;
 
                 const cells = [
-                  { l: 'Sál',           v: r.name.replace('Sál č. ', 'S'), c: C.text },
-                  { l: 'Stav',          v: statusLabel(r.status),          c: statusColor(r.status) },
-                  { l: 'Oddělení',      v: r.department || '—',            c: DEPT_COLORS[r.department] ?? C.text },
-                  { l: `Využití (${period})`, v: `${util}%`,               c: util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted },
-                  { l: `Výkony (${period})`,  v: opsInHours,               c: C.accent },
-                  { l: 'Pracovní doba',  v: workingHoursToday,              c: workingHoursToday === 'Zavřeno' ? C.faint : C.text },
-                  { l: 'Aktivní / Kap.', v: `${activeMins} / ${Math.round(totalMins)} m`, c: C.text },
-                  { l: 'Fronta',         v: r.queueCount,                   c: r.queueCount > 0 ? C.yellow : C.green },
-                  { l: 'Příznaky',       v: flagsLabel,                     c: flagsColor },
+                  { l: 'Sál',                   v: r.name.replace('Sál č. ', 'S'), c: C.text },
+                  { l: 'Stav',                  v: statusLabel(r.status),          c: statusColor(r.status) },
+                  { l: 'Využití v prac. době',  v: `${util}%`,                     c: util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted },
+                  { l: `Výkony (${period})`,    v: opsInHours,                     c: C.accent },
+                  { l: 'Pracovní doba',         v: workingHoursToday,              c: workingHoursToday === 'Zavřeno' ? C.faint : C.text },
+                  { l: 'Aktivní / Kap.',        v: `${activeMins} / ${Math.round(totalMins)} m`, c: C.text },
+                  { l: 'Fronta',                v: r.queueCount,                   c: r.queueCount > 0 ? C.yellow : C.green },
+                  { l: 'Příznaky',              v: flagsLabel,                     c: flagsColor },
                 ];
 
                 return (
@@ -1410,7 +1409,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     initial={{opacity:0,y:8}}
                     animate={{opacity:1,y:0}}
                     transition={{duration:0.25, delay: Math.min(roomIdx, 10) * 0.03}}
-                    className="grid grid-cols-3 lg:grid-cols-9 rounded-xl overflow-hidden"
+                    className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
                     style={{border:`1px solid ${C.border}`}}>
                     {cells.map((k, i) => (
                       <div
