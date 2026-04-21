@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="cs" className={`${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
       <body className="bg-black text-white antialiased">
         {children}
+        <Analytics />
       </body>
     </html>
   )
