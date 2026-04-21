@@ -506,8 +506,8 @@ const AppContent: React.FC = () => {
                         const activeRooms = rooms.filter(r => !isRoomReady(r));
                         
                         return [
-                          { label: 'AKTIVNI',    value: activeRooms.length, icon: Activity,   color: 'text-red-500'    },
-                          { label: 'PRIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#00D8C1]'  },
+                          { label: 'AKTIVNÍ',    value: activeRooms.length, icon: Activity,   color: 'text-red-500'    },
+                          { label: 'PŘIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#00D8C1]'  },
                         ];
                       })().map((stat) => (
                         <div key={stat.label} className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-3 md:py-4 rounded-3xl hover:bg-white/5 transition-all min-w-[110px] sm:min-w-[130px] md:min-w-[150px] z-10">
