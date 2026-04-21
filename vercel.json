@@ -3,5 +3,5 @@
   "framework": "nextjs",
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "pnpm install --no-frozen-lockfile"
+  "installCommand": "npm install --legacy-peer-deps"
 }
