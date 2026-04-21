@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
-import { Zap, Shield, LogOut } from 'lucide-react';
+import { Shield, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
@@ -8,15 +8,17 @@ interface SidebarProps {
   onNavigate: (viewId: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
-  const { isAdmin, user, logout, modules } = useAuth();
+const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
+  const { isAdmin, logout, modules } = useAuth();
 
   // Filter sidebar items based on enabled modules (admins see all, users see only enabled)
-  const enabledItems = SIDEBAR_ITEMS.filter(item => {
-    if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
+  // Dashboard is always accessible for everyone - memoized for performance
+  const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
+    if (item.id === 'dashboard') return true;
+    if (isAdmin) return true;
     const module = modules.find(m => m.id === item.id);
     return module?.is_enabled !== false;
-  });
+  }), [isAdmin, modules]);
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none">
@@ -80,6 +82,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
       </div>
     </aside>
   );
-};
+});
 
 export default Sidebar;

@@ -6,9 +6,22 @@ export enum RoomStatus {
   MAINTENANCE = 'MAINTENANCE'
 }
 
+export type SkillLevel = 'L3' | 'L2' | 'L1' | 'A' | 'SR' | 'N' | 'S';
+
 export interface Staff {
+  id?: string;
   name: string | null;
   role: 'DOCTOR' | 'NURSE' | 'ANESTHESIOLOGIST';
+  skill_level?: SkillLevel;
+  availability?: number; // 0-100
+  is_external?: boolean;
+  is_recommended?: boolean;
+  is_active?: boolean;
+  sick_leave_days?: number;
+  vacation_days?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Patient {
@@ -32,7 +45,11 @@ export interface DayWorkingHours {
   startMinute: number;    // Start minute (0-59)
   endHour: number;        // End hour (0-23)
   endMinute: number;      // End minute (0-59)
+  breakMinutes?: number;  // Daily break in minutes (deducted from working capacity), default 30
 }
+
+// Default break (minutes) used when breakMinutes is not set on a day
+export const DEFAULT_DAILY_BREAK_MINUTES = 30;
 
 // Weekly schedule for a room
 export interface WeeklySchedule {
@@ -52,6 +69,7 @@ export const DEFAULT_WORKING_HOURS: DayWorkingHours = {
   startMinute: 0,
   endHour: 15,
   endMinute: 30,
+  breakMinutes: DEFAULT_DAILY_BREAK_MINUTES,
 };
 
 export const DEFAULT_WEEKLY_SCHEDULE: WeeklySchedule = {
@@ -60,8 +78,8 @@ export const DEFAULT_WEEKLY_SCHEDULE: WeeklySchedule = {
   wednesday: { ...DEFAULT_WORKING_HOURS },
   thursday: { ...DEFAULT_WORKING_HOURS },
   friday: { ...DEFAULT_WORKING_HOURS },
-  saturday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0 },
-  sunday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0 },
+  saturday: { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0, breakMinutes: DEFAULT_DAILY_BREAK_MINUTES },
+  sunday:   { enabled: false, startHour: 7, startMinute: 0, endHour: 12, endMinute: 0, breakMinutes: DEFAULT_DAILY_BREAK_MINUTES },
 };
 
 export interface OperatingRoom {
@@ -84,10 +102,20 @@ export interface OperatingRoom {
   patientCalledAt?: string | null; // ISO timestamp kdy byl pacient zavolán
   patientArrivedAt?: string | null; // ISO timestamp kdy pacient přijel
   phaseStartedAt?: string | null; // ISO timestamp začátku aktuální fáze
+  operationStartedAt?: string | null; // ISO timestamp kdy začala operace (Příjezd na sál)
+  statusHistory?: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>; // Historie změn statusů
+  completedOperations?: Array<{ 
+    startedAt: string; // ISO timestamp začátku operace
+    endedAt: string; // ISO timestamp konce operace
+    statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>; // Historie změn statusů
+  }>; // Dokončené operace daného dne
   currentStepIndex: number; // Index aktuální fáze workflow (0-7)
   
   // Working hours schedule
   weeklySchedule?: WeeklySchedule;
+  
+  // Display order
+  sort_order?: number;
   
   // Extended details for interactivity
   currentPatient?: Patient;

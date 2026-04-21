@@ -76,7 +76,7 @@ const DepartmentsManager: React.FC = () => {
             <Stethoscope className="w-4 h-4 text-[#00D8C1]" />
             <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">DEPARTMENTS MANAGEMENT</p>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
             ODDELENI <span className="text-white/20">KLINIKY</span>
           </h1>
         </div>
@@ -165,7 +165,7 @@ const DepartmentsManager: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2 py-1 rounded text-xs ${dept.isActive ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-                  {dept.isActive ? 'Aktivni' : 'Neaktivni'}
+                  {dept.isActive ? 'Aktivní' : 'Neaktivní'}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-white/50 transition-transform ${expandedDept === dept.id ? 'rotate-180' : ''}`}

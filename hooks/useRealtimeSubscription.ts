@@ -12,18 +12,9 @@ export function useRealtimeSubscription(
       .on(
         'postgres_changes',
         { event: '*', schema, table },
-        (payload) => {
-          console.log(`[v0] Real-time update on ${table}:`, payload);
-          onUpdate();
-        }
+        () => onUpdate()
       )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`[v0] Subscribed to ${table} real-time updates`);
-        } else if (status === 'CLOSED') {
-          console.log(`[v0] Unsubscribed from ${table}`);
-        }
-      });
+      .subscribe();
 
     return () => {
       subscription.unsubscribe();

@@ -11,7 +11,6 @@ import {
   Syringe,
   Scissors,
   Star,
-  SprayCan,
   Sparkles,
   BarChart3
 } from 'lucide-react';
@@ -105,25 +104,48 @@ export const DEFAULT_DEPARTMENTS: Department[] = [
 ];
 
 
+// Main workflow steps (8 steps) - synchronized with database workflow_statuses
+// Note: "Volání pacienta" and "Příjezd do operačního traktu" are SPECIAL statuses (buttons)
 export const WORKFLOW_STEPS = [
-  { title: "Příjezd na sál", organizer: "Příjmový tým", status: "Probíhá", color: '#2DD4BF', Icon: UserCheck },
-  { title: "Začátek anestezie", organizer: "MUDr. Jelínek", status: "Kritické", color: '#A78BFA', Icon: Syringe },
-  { title: "Chirurgický výkon", organizer: "MUDr. Procházka", status: "Operační fáze", color: '#FF3B30', Icon: Scissors },
-  { title: "Ukončení výkonu", organizer: "MUDr. Procházka", status: "Dokončování", color: '#FBBF24', Icon: Star },
-  { title: "Ukončení anestezie", organizer: "Anest. sestra", status: "Monitoring", color: '#818CF8', Icon: Activity },
-  { title: "Úklid sálu", organizer: "Sanitární tým", status: "Sanitace", color: '#D946EF', Icon: SprayCan },
-  { title: "Sál připraven", organizer: "Vedoucí sestra", status: "Volno", color: '#F97316', Icon: Sparkles },
+  { name: "Sál připraven",                  title: "Sál připraven",                  organizer: "Vedoucí sestra",    status: "Připraven",       color: '#6B7280', Icon: Sparkles  },
+  { name: "Příjezd na sál",                 title: "Příjezd na sál",                 organizer: "Příjmový tým",      status: "Na sále",         color: '#8B5CF6', Icon: UserCheck },
+  { name: "Začátek anestezie",              title: "Začátek anestezie",              organizer: "Anesteziolog",      status: "Anestezie",       color: '#EC4899', Icon: Syringe  },
+  { name: "Začátek chirurgického výkonu",   title: "Chirurgický výkon",              organizer: "Chirurg",           status: "Operace",         color: '#EF4444', Icon: Scissors },
+  { name: "Ukončení chirurgického výkonu",  title: "Ukončení výkonu",                organizer: "Chirurg",           status: "Dokončování",     color: '#F59E0B', Icon: Star     },
+  { name: "Ukončení anestezie",             title: "Ukončení anestezie",             organizer: "Anesteziolog",      status: "Probouzení",      color: '#A855F7', Icon: Activity },
+  { name: "Odjezd ze sálu",                 title: "Odjezd ze sálu",                 organizer: "Příjmový tým",      status: "Odjezd",          color: '#10B981', Icon: Activity },
+  { name: "Úklid sálu",                     title: "Úklid sálu",                     organizer: "Sanitární tým",     status: "Úklid",           color: '#F97316', Icon: Sparkles },
+];
+
+// Special statuses (activated by buttons, not part of main sequential workflow)
+export const SPECIAL_STATUSES = [
+  { id: "status-pause",          name: "Pauza",                       color: '#22D3EE', icon: 'Pause',    special_type: 'pause'               },
+  { id: "status-hygiene",        name: "Hygienický režim",            color: '#FBBF24', icon: 'Shield',   special_type: 'hygiene'             },
+  { id: "status-patient-called", name: "Volání pacienta",             color: '#3B82F6', icon: 'Phone',    special_type: 'patient_called'      },
+  { id: "status-patient-tract",  name: "Příjezd do operačního traktu", color: '#06B6D4', icon: 'Building', special_type: 'patient_arrived_tract' },
 ];
 
 export const STEP_DURATIONS = [
-  15, // Příjezd na sál
-  30, // Začátek anestezie
-  60, // Chirurgický výkon (placeholder, will be overridden by procedure duration)
-  15, // Ukončení výkonu
-  30, // Ukončení anestezie
-  30, // Úklid sálu
-  0   // Sál připraven
+  0,   // Sál připraven (výchozí stav, netrvá)
+  5,   // Příjezd na sál
+  20,  // Začátek anestezie
+  60,  // Začátek chirurgického výkonu (přepsáno délkou procedury)
+  10,  // Ukončení chirurgického výkonu
+  15,  // Ukončení anestezie
+  10,  // Odjezd ze sálu
+  15,  // Úklid sálu
 ];
+
+export const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
+  0: { bg: 'rgba(107,114,128,0.15)', fill: 'rgba(107,114,128,0.35)', border: 'rgba(107,114,128,0.25)', text: '#6B7280', glow: 'rgba(107,114,128,0.2)', solid: '#6B7280' },  // Sál připraven
+  1: { bg: 'rgba(139,92,246,0.15)',  fill: 'rgba(139,92,246,0.35)',  border: 'rgba(139,92,246,0.25)',  text: '#8B5CF6', glow: 'rgba(139,92,246,0.2)',  solid: '#8B5CF6' },  // Příjezd na sál
+  2: { bg: 'rgba(236,72,153,0.15)',  fill: 'rgba(236,72,153,0.35)',  border: 'rgba(236,72,153,0.25)',  text: '#EC4899', glow: 'rgba(236,72,153,0.2)',  solid: '#EC4899' },  // Začátek anestezie
+  3: { bg: 'rgba(239,68,68,0.15)',   fill: 'rgba(239,68,68,0.35)',   border: 'rgba(239,68,68,0.25)',   text: '#EF4444', glow: 'rgba(239,68,68,0.2)',   solid: '#EF4444' },  // Chirurgický výkon
+  4: { bg: 'rgba(245,158,11,0.15)',  fill: 'rgba(245,158,11,0.35)',  border: 'rgba(245,158,11,0.25)',  text: '#F59E0B', glow: 'rgba(245,158,11,0.2)',  solid: '#F59E0B' },  // Ukončení výkonu
+  5: { bg: 'rgba(168,85,247,0.15)',  fill: 'rgba(168,85,247,0.35)',  border: 'rgba(168,85,247,0.25)',  text: '#A855F7', glow: 'rgba(168,85,247,0.2)',  solid: '#A855F7' },  // Ukončení anestezie
+  6: { bg: 'rgba(16,185,129,0.15)',  fill: 'rgba(16,185,129,0.35)',  border: 'rgba(16,185,129,0.25)',  text: '#10B981', glow: 'rgba(16,185,129,0.2)',  solid: '#10B981' },  // Odjezd ze sálu
+  7: { bg: 'rgba(249,115,22,0.15)',  fill: 'rgba(249,115,22,0.35)',  border: 'rgba(249,115,22,0.25)',  text: '#F97316', glow: 'rgba(249,115,22,0.2)',  solid: '#F97316' },  // Úklid sálu
+};
 
 export const SIDEBAR_ITEMS = [
   { icon: LayoutGrid, label: 'Přehled', id: 'dashboard' },
@@ -142,7 +164,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.BUSY,
     queueCount: 0,
     operations24h: 4,
-    currentStepIndex: 2,
+    currentStepIndex: 3, // Chirurgický výkon
     isEmergency: false,
     isLocked: false,
     estimatedEndTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
@@ -171,7 +193,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.BUSY,
     queueCount: 1,
     operations24h: 6,
-    currentStepIndex: 3,
+    currentStepIndex: 4, // Ukončení výkonu
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -199,7 +221,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 3,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -227,7 +249,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 5,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -255,7 +277,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 2,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -283,7 +305,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 3,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -311,7 +333,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 4,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -339,7 +361,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 8,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -367,7 +389,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 4,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -395,7 +417,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 3,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -423,7 +445,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 9,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {
@@ -451,7 +473,7 @@ export const MOCK_ROOMS: OperatingRoom[] = [
     status: RoomStatus.FREE,
     queueCount: 0,
     operations24h: 7,
-    currentStepIndex: 6,
+    currentStepIndex: 0, // Sál připraven
     isEmergency: false,
     isLocked: false,
     staff: {

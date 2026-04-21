@@ -1,5 +1,42 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { OperatingRoom, RoomStatus } from '../types';
+import { OperatingRoom, RoomStatus, WeeklySchedule, SkillLevel } from '../types';
+
+// Network resilience: Retry wrapper for transient failures
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string = 'database operation'
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // Don't retry on non-transient errors
+      const isTransient = 
+        lastError.message.includes('network') ||
+        lastError.message.includes('timeout') ||
+        lastError.message.includes('connection') ||
+        lastError.message.includes('ECONNREFUSED') ||
+        lastError.message.includes('fetch');
+      
+      if (!isTransient || attempt === MAX_RETRIES) {
+        console.error(`[v0] ${operationName} failed after ${attempt} attempt(s):`, lastError.message);
+        throw lastError;
+      }
+      
+      console.warn(`[v0] ${operationName} failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+    }
+  }
+  
+  throw lastError;
+}
 
 // Type for database row
 interface DBOperatingRoom {
@@ -17,6 +54,9 @@ interface DBOperatingRoom {
   patient_called_at: string | null;
   patient_arrived_at: string | null;
   phase_started_at: string | null;
+  operation_started_at: string | null;
+  status_history: any[] | null;
+  completed_operations: any[] | null;
   current_step_index: number;
   estimated_end_time: string | null;
   doctor_id: string | null;
@@ -32,6 +72,15 @@ interface DBStaff {
   name: string;
   role: string;
   is_active: boolean;
+  skill_level?: string;
+  availability?: number;
+  is_external?: boolean;
+  is_recommended?: boolean;
+  sick_leave_days?: number;
+  vacation_days?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface DBPatient {
@@ -62,6 +111,19 @@ function transformRoom(
   const patient = row.current_patient_id ? patientMap.get(row.current_patient_id) : null;
   const procedure = row.current_procedure_id ? procedureMap.get(row.current_procedure_id) : null;
 
+  // Parse completed_operations - Supabase returns JSONB arrays as-is
+  let completedOps: CompletedOperation[] = [];
+  if (Array.isArray(row.completed_operations)) {
+    completedOps = row.completed_operations;
+  } else if (typeof row.completed_operations === 'string') {
+    try {
+      const parsed = JSON.parse(row.completed_operations);
+      completedOps = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      completedOps = [];
+    }
+  }
+
   return {
     id: row.id,
     name: row.name,
@@ -76,15 +138,54 @@ function transformRoom(
     patientCalledAt: row.patient_called_at,
     patientArrivedAt: row.patient_arrived_at,
     phaseStartedAt: row.phase_started_at,
+    operationStartedAt: row.operation_started_at,
+    statusHistory: row.status_history || [],
+    completedOperations: completedOps,
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
-    weeklySchedule: row.weekly_schedule || {},
+    weeklySchedule: row.weekly_schedule as WeeklySchedule | undefined,
     staff: {
-      doctor: { name: doctor?.name || null, role: 'DOCTOR' },
-      nurse: { name: nurse?.name || null, role: 'NURSE' },
+      doctor: { 
+        id: doctor?.id,
+        name: doctor?.name || null, 
+        role: 'DOCTOR',
+        skill_level: doctor?.skill_level as SkillLevel | undefined,
+        availability: doctor?.availability,
+        is_external: doctor?.is_external,
+        is_recommended: doctor?.is_recommended,
+        is_active: doctor?.is_active,
+        sick_leave_days: doctor?.sick_leave_days,
+        vacation_days: doctor?.vacation_days,
+        notes: doctor?.notes,
+      },
+      nurse: { 
+        id: nurse?.id,
+        name: nurse?.name || null, 
+        role: 'NURSE',
+        skill_level: nurse?.skill_level as SkillLevel | undefined,
+        availability: nurse?.availability,
+        is_external: nurse?.is_external,
+        is_recommended: nurse?.is_recommended,
+        is_active: nurse?.is_active,
+        sick_leave_days: nurse?.sick_leave_days,
+        vacation_days: nurse?.vacation_days,
+        notes: nurse?.notes,
+      },
       anesthesiologist: anesthesiologist 
-        ? { name: anesthesiologist.name, role: 'ANESTHESIOLOGIST' }
+        ? { 
+            id: anesthesiologist.id, 
+            name: anesthesiologist.name, 
+            role: 'ANESTHESIOLOGIST',
+            skill_level: anesthesiologist.skill_level as SkillLevel | undefined,
+            availability: anesthesiologist.availability,
+            is_external: anesthesiologist.is_external,
+            is_recommended: anesthesiologist.is_recommended,
+            is_active: anesthesiologist.is_active,
+            sick_leave_days: anesthesiologist.sick_leave_days,
+            vacation_days: anesthesiologist.vacation_days,
+            notes: anesthesiologist.notes,
+          }
         : undefined,
     },
     currentPatient: patient ? {
@@ -110,8 +211,9 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
 
   try {
     // Fetch rooms and staff data in parallel
+    // Explicitly select columns including completed_operations JSONB
     const [roomsRes, staffRes] = await Promise.all([
-      supabase.from('operating_rooms').select('*').order('name'),
+      supabase.from('operating_rooms').select('*, completed_operations').order('name'),
       supabase.from('staff').select('*'),
     ]);
 
@@ -125,11 +227,13 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
     // Empty maps for removed tables
     const patientMap = new Map<string, DBPatient>();
     const procedureMap = new Map<string, DBProcedure>();
-
+    
     // Transform rows
-    return roomsRes.data.map((row: DBOperatingRoom) => 
+    const transformed = roomsRes.data.map((row: DBOperatingRoom) => 
       transformRoom(row, staffMap, patientMap, procedureMap)
     );
+    
+    return transformed;
   } catch (error) {
     console.error('[DB] Failed to fetch operating rooms:', error);
     return null;
@@ -140,6 +244,8 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
 export async function updateOperatingRoom(
   id: string, 
   updates: Partial<{
+    name: string;
+    department: string;
     status: string;
     is_emergency: boolean;
     is_enhanced_hygiene: boolean;
@@ -148,27 +254,279 @@ export async function updateOperatingRoom(
     patient_called_at: string | null;
     patient_arrived_at: string | null;
     phase_started_at: string | null;
+    operation_started_at: string | null;
     current_step_index: number;
     estimated_end_time: string | null;
     weekly_schedule: Record<string, any>;
+    doctor_id: string | null;
+    nurse_id: string | null;
+    anesthesiologist_id: string | null;
+    status_history: any[] | null;
+    completed_operations: any[] | null;
   }>
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
     return false;
   }
-
+  
   try {
     const { error } = await supabase
       .from('operating_rooms')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', id);
-
-    if (error) throw error;
+    
+    if (error) {
+      console.error('Error updating operating room:', error);
+      return false;
+    }
     return true;
-  } catch (error) {
-    console.error('[DB] Failed to update operating room:', error);
+  } catch (err) {
+    console.error('Error updating operating room:', err);
     return false;
   }
+}
+
+// Create a new operating room
+export async function createOperatingRoom(
+  roomData: {
+    id: string;
+    name: string;
+    department: string;
+    status?: string;
+    queue_count?: number;
+    operations_24h?: number;
+    current_step_index?: number;
+    is_emergency?: boolean;
+    is_locked?: boolean;
+    is_paused?: boolean;
+    is_septic?: boolean;
+    sort_order?: number;
+  }
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    console.error('[DB] Supabase not configured - URL or key missing');
+    return false;
+  }
+  
+  try {
+    const insertData = {
+      id: roomData.id,
+      name: roomData.name,
+      department: roomData.department || '',
+      status: roomData.status || 'FREE',
+      queue_count: roomData.queue_count || 0,
+      operations_24h: roomData.operations_24h || 0,
+      current_step_index: roomData.current_step_index ?? 6,
+      is_emergency: roomData.is_emergency ?? false,
+      is_locked: roomData.is_locked ?? false,
+      is_paused: roomData.is_paused ?? false,
+      is_septic: roomData.is_septic ?? false,
+      sort_order: roomData.sort_order ?? 0,
+    };
+    
+    console.log('[DB] Attempting to create room:', {
+      id: insertData.id,
+      name: insertData.name,
+      department: insertData.department,
+      status: insertData.status
+    });
+    
+    const { data, error } = await supabase
+      .from('operating_rooms')
+      .insert([insertData])
+      .select();
+    
+    if (error) {
+      console.error('[DB] Error creating operating room:');
+      console.error('  Message:', error.message);
+      console.error('  Code:', error.code);
+      console.error('  Details:', error.details);
+      console.error('  Hint:', error.hint);
+      return false;
+    }
+    
+    console.log('[DB] Successfully created operating room:', roomData.id);
+    return true;
+  } catch (err) {
+    console.error('[DB] Exception creating operating room:', err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
+// Delete an operating room
+export async function deleteOperatingRoom(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    return false;
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('operating_rooms')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('[DB] Error deleting operating room:', error);
+      return false;
+    }
+    console.log('[DB] Successfully deleted operating room:', id);
+    return true;
+  } catch (err) {
+    console.error('[DB] Error deleting operating room:', err);
+    return false;
+  }
+}
+
+// Fetch completed operations for a specific room on a given day
+export interface CompletedOperation {
+  startedAt: string;
+  endedAt: string;
+  statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>;
+}
+
+// Fetch ALL completed operations for ALL rooms in a single query (fast)
+export async function fetchAllCompletedOperationsForDay(
+  date: Date
+): Promise<Map<string, CompletedOperation[]> | null> {
+  if (!isSupabaseConfigured || !supabase) {
+    return null;
+  }
+
+  try {
+    // Use 7:00 AM window like timeline (7:00 today to 6:59 tomorrow)
+    const startOfWindow = new Date(date);
+    startOfWindow.setHours(7, 0, 0, 0);
+    const endOfWindow = new Date(date);
+    endOfWindow.setDate(endOfWindow.getDate() + 1);
+    endOfWindow.setHours(6, 59, 59, 999);
+
+    const { data, error } = await supabase
+      .from('room_status_history')
+      .select('*')
+      .gte('timestamp', startOfWindow.toISOString())
+      .lte('timestamp', endOfWindow.toISOString())
+      .order('operating_room_id')
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+    if (!data || data.length === 0) return new Map();
+
+    // Group by room
+    const byRoom = new Map<string, StatusHistoryRow[]>();
+    for (const row of data) {
+      const roomId = row.operating_room_id;
+      if (!byRoom.has(roomId)) {
+        byRoom.set(roomId, []);
+      }
+      byRoom.get(roomId)!.push(row);
+    }
+
+    // Build operations for each room
+    const result = new Map<string, CompletedOperation[]>();
+    for (const [roomId, events] of byRoom) {
+      const ops = buildOperationsFromEvents(events);
+      if (ops.length > 0) {
+        result.set(roomId, ops);
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error('[DB] Failed to fetch completed operations:', error);
+    return null;
+  }
+}
+
+// Build operations from a sequence of events for one room
+function buildOperationsFromEvents(events: StatusHistoryRow[]): CompletedOperation[] {
+  const operations: CompletedOperation[] = [];
+  let currentOpEvents: StatusHistoryRow[] = [];
+  let inOperation = false;
+
+  for (const event of events) {
+    // Start of operation: "Příjezd na sál"
+    if (event.event_type === 'step_change' && event.step_name === 'Příjezd na sál') {
+      // If already in operation, close previous one first
+      if (inOperation && currentOpEvents.length > 0) {
+        const op = buildCompletedOperation(currentOpEvents);
+        if (op) operations.push(op);
+      }
+      currentOpEvents = [event];
+      inOperation = true;
+    } 
+    // End of operation: "Úklid sálu" or operation_completed
+    else if (inOperation && (
+      (event.event_type === 'step_change' && event.step_name === 'Úklid sálu') ||
+      event.event_type === 'operation_completed'
+    )) {
+      currentOpEvents.push(event);
+      const op = buildCompletedOperation(currentOpEvents);
+      if (op) operations.push(op);
+      currentOpEvents = [];
+      inOperation = false;
+    }
+    // Middle events
+    else if (inOperation) {
+      currentOpEvents.push(event);
+    }
+  }
+
+  return operations;
+}
+
+// Build a completed operation from events
+function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation | null {
+  if (events.length === 0) return null;
+  
+  // First event should be "Příjezd na sál", last should be "Úklid sálu"
+  const firstEvent = events[0];
+  const lastEvent = events[events.length - 1];
+  
+  if (!firstEvent || !lastEvent) return null;
+  
+  // Collect all step_change events as status history
+  const statusHistory = events
+    .filter(e => e.event_type === 'step_change' && e.step_index !== null)
+    .map(e => ({
+      stepIndex: e.step_index as number,
+      startedAt: e.timestamp,
+      color: getStepColor(e.step_index as number),
+      stepName: e.step_name || ''
+    }))
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+
+  if (statusHistory.length === 0) return null;
+
+  return {
+    startedAt: firstEvent.timestamp,
+    endedAt: lastEvent.timestamp,
+    statusHistory
+  };
+}
+
+// Keep old function for compatibility but make it use new logic
+export async function fetchCompletedOperationsForDay(
+  roomId: string,
+  date: Date
+): Promise<CompletedOperation[] | null> {
+  const allOps = await fetchAllCompletedOperationsForDay(date);
+  if (!allOps) return null;
+  return allOps.get(roomId) || [];
+}
+
+// Get color for a step index - synchronized with STEP_COLORS in constants.ts
+function getStepColor(stepIndex: number): string {
+  const colors: Record<number, string> = {
+    0: '#6B7280', // Sál připraven - gray
+    1: '#8B5CF6', // Příjezd na sál - purple
+    2: '#EC4899', // Začátek anestezie - pink
+    3: '#EF4444', // Chirurgický výkon - red
+    4: '#F59E0B', // Ukončení výkonu - amber
+    5: '#A855F7', // Ukončení anestezie - purple
+    6: '#10B981', // Odjezd ze sálu - green
+    7: '#F97316', // Úklid sálu - orange
+  };
+  return colors[stepIndex] || '#6B7280';
 }
 
 // Subscribe to real-time changes with granular updates
@@ -186,24 +544,46 @@ export function subscribeToOperatingRooms(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'operating_rooms' },
       (payload: { eventType: string; new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
-        console.log('[DB] Realtime payload received:', payload.eventType, payload.new);
-        
         if (payload.eventType === 'UPDATE' && payload.new && onRoomUpdate) {
-          // Granular update - only update the changed room
           const newRecord = payload.new as unknown as DBOperatingRoom;
-          onRoomUpdate(newRecord.id, newRecord);
+          const oldRecord = payload.old as unknown as DBOperatingRoom | null;
+          
+          // Check if staff changed - if so, do full refresh to get staff names
+          // If we don't have old record (REPLICA IDENTITY not FULL), check if staff IDs exist
+          let staffChanged = false;
+          
+          if (oldRecord) {
+            // Compare old and new staff IDs
+            staffChanged = (
+              newRecord.doctor_id !== oldRecord.doctor_id ||
+              newRecord.nurse_id !== oldRecord.nurse_id ||
+              newRecord.anesthesiologist_id !== oldRecord.anesthesiologist_id
+            );
+          } else {
+            // No old record available - check if any staff field is in the payload
+            // This happens when REPLICA IDENTITY is not FULL
+            const changedKeys = Object.keys(payload.new);
+            staffChanged = changedKeys.includes('doctor_id') || 
+                          changedKeys.includes('nurse_id') || 
+                          changedKeys.includes('anesthesiologist_id');
+          }
+          
+          if (staffChanged) {
+            // Staff changed - need full refresh to get updated staff names
+            onFullRefresh();
+          } else {
+            // Granular update - only update the changed room
+            onRoomUpdate(newRecord.id, newRecord);
+          }
         } else {
           // Full refresh for INSERT/DELETE or if no granular handler
           onFullRefresh();
         }
       }
     )
-    .subscribe((status) => {
-      console.log('[DB] Realtime subscription status:', status);
-    });
+    .subscribe();
 
   return () => {
-    console.log('[DB] Unsubscribing from realtime');
     channel.unsubscribe();
   };
 }
@@ -225,10 +605,13 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.patient_called_at !== undefined) result.patientCalledAt = row.patient_called_at;
   if (row.patient_arrived_at !== undefined) result.patientArrivedAt = row.patient_arrived_at;
   if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;
+  if (row.operation_started_at !== undefined) result.operationStartedAt = row.operation_started_at;
+  if (row.status_history !== undefined) result.statusHistory = row.status_history || [];
+  if (row.completed_operations !== undefined) result.completedOperations = row.completed_operations || [];
   if (row.is_locked !== undefined) result.isLocked = row.is_locked;
   if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
   if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
-  if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule || {};
+  if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule as WeeklySchedule | undefined;
   
   return result;
 }
@@ -238,7 +621,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
 export interface StatusHistoryEvent {
   id?: string;
   operating_room_id: string;
-  event_type: 'step_change' | 'pause' | 'resume' | 'patient_call' | 'patient_arrival' | 'emergency_on' | 'emergency_off' | 'lock' | 'unlock' | 'operation_start' | 'operation_end';
+  event_type: 'step_change' | 'pause' | 'resume' | 'patient_call' | 'patient_arrival' | 'patient_arrived' | 'emergency_on' | 'emergency_off' | 'lock' | 'unlock' | 'operation_start' | 'operation_end' | 'enhanced_hygiene_on' | 'enhanced_hygiene_off' | 'staff_change';
   step_index?: number;
   step_name?: string;
   duration_seconds?: number;
@@ -441,5 +824,84 @@ export async function fetchRoomStatistics(
   } catch (error) {
     console.error('[DB] Failed to fetch room statistics:', error);
     return null;
+  }
+}
+
+// ============= BACKGROUND SETTINGS =============
+
+export interface BackgroundSettings {
+  type: 'solid' | 'linear' | 'radial';
+  colors: { color: string; position: number }[];
+  direction: string;
+  opacity: number;
+  imageUrl: string;
+  imageOpacity: number;
+  imageBlur: number;
+}
+
+// Fetch background settings for all users
+export async function fetchBackgroundSettings(): Promise<BackgroundSettings | null> {
+  if (!isSupabaseConfigured || !supabase) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('*')
+      .eq('id', 'global')
+      .single();
+
+    if (error || !data) {
+      // Settings don't exist yet, return null
+      return null;
+    }
+
+    // Map database columns to BackgroundSettings interface
+    return {
+      type: (data.background_type as 'solid' | 'linear' | 'radial') || 'linear',
+      colors: (data.background_colors as { color: string; position: number }[]) || [{ color: '#0a0a12', position: 0 }, { color: '#1a1a2e', position: 100 }],
+      direction: data.background_direction || 'to bottom',
+      opacity: data.background_opacity ?? 100,
+      imageUrl: data.background_image_url || '',
+      imageOpacity: data.background_image_opacity ?? 15,
+      imageBlur: data.background_image_blur ?? 0,
+    };
+  } catch (error) {
+    console.error('[DB] Failed to fetch background settings:', error);
+    return null;
+  }
+}
+
+// Save background settings for all users
+export async function saveBackgroundSettings(settings: BackgroundSettings): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    return false;
+  }
+
+  try {
+    // Map BackgroundSettings to database columns
+    const dbData = {
+      id: 'global',
+      background_type: settings.type,
+      background_colors: settings.colors,
+      background_direction: settings.direction,
+      background_opacity: settings.opacity,
+      background_image_url: settings.imageUrl,
+      background_image_opacity: settings.imageOpacity,
+      background_image_blur: settings.imageBlur,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Upsert - insert or update
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert(dbData, { onConflict: 'id' });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('[DB] Failed to save background settings:', error);
+    return false;
   }
 }

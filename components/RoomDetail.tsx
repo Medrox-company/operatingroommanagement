@@ -1,22 +1,28 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell
 } from 'lucide-react';
-import { recordStatusEvent, updateOperatingRoom } from '../lib/db';
+import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
+import StaffPickerModal, { StaffRole } from './StaffPickerModal';
+import StepConfirmationOverlay from './StepConfirmationOverlay';
+import NotificationOverlay from './NotificationOverlay';
 
 interface RoomDetailProps {
   room: OperatingRoom;
+  allRooms?: OperatingRoom[];
   onClose: () => void;
-  onStepChange: (index: number) => void;
+  onStepChange: (index: number, stepColor?: string) => void;
   onEndTimeChange: (newTime: Date | null) => void;
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
+  onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
+  onPatientStatusChange?: (calledAt: string | null, arrivedAt: string | null) => void;
 }
 
 const usePrevious = (value: number) => {
@@ -27,7 +33,14 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
+  // Get workflow statuses from database context - already filtered and sorted
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  // Add null safety fallback to prevent crashes if context is not ready
+  const activeDbStatuses = workflowStatuses || [];
+
   const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
@@ -36,29 +49,61 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const endTimeTimeoutRef = useRef<number | null>(null);
   const [patientCalledTime, setPatientCalledTime] = useState<Date | null>(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
+  const [staffPickerOpen, setStaffPickerOpen] = useState(false);
+  const [notificationOverlayOpen, setNotificationOverlayOpen] = useState(false);
+  const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings | null>(null);
+  const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
+  const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
   const [patientCallElapsedTime, setPatientCallElapsedTime] = useState('00:00');
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
 
-  const estimatedEndTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+  // Simple local state for estimated end time - initialized from props
+  const [localEndTime, setLocalEndTime] = useState<Date | null>(() => 
+    room.estimatedEndTime ? new Date(room.estimatedEndTime) : null
+  );
+  const updateTimeoutRef = useRef<number | null>(null);
+  const isLocalUpdateRef = useRef(false); // Track if update came from local buttons
+  
+  // Cleanup all timeouts on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
+      if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
+    };
+  }, []);
+  
+  // Sync with props only when not actively editing locally
+  useEffect(() => {
+    if (isLocalUpdateRef.current) return; // Skip if local update in progress
+    const propsTime = room.estimatedEndTime ? new Date(room.estimatedEndTime) : null;
+    setLocalEndTime(propsTime);
+  }, [room.estimatedEndTime]);
+  
+  const estimatedEndTime = localEndTime;
 
+  // Update elapsed time every second
   useEffect(() => {
     if (isPaused) return;
-    const timer = setInterval(() => {
+    
+    const updateElapsedTime = () => {
       const now = new Date();
       const diff = now.getTime() - phaseStartTime.getTime();
-      
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
-      
       setElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updateElapsedTime();
+    const timer = setInterval(updateElapsedTime, 1000);
     
     return () => clearInterval(timer);
   }, [phaseStartTime, isPaused]);
 
+  // Update pause time every second
   useEffect(() => {
     if (!isPaused) {
       setPauseElapsedTime('00:00');
@@ -66,30 +111,53 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
 
     const pauseStartTime = new Date();
-    const timer = setInterval(() => {
+    const updatePauseTime = () => {
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       setPauseElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updatePauseTime();
+    const timer = setInterval(updatePauseTime, 1000);
 
     return () => clearInterval(timer);
   }, [isPaused]);
 
-  // Patient call timer
+  // Load background settings and listen for changes
+  useEffect(() => {
+    const loadBackgroundSettings = async () => {
+      const settings = await fetchBackgroundSettings();
+      if (settings) setBackgroundSettings(settings);
+    };
+    loadBackgroundSettings();
+
+    const handleBackgroundChange = (e: CustomEvent<BackgroundSettings>) => {
+      setBackgroundSettings(e.detail);
+    };
+    window.addEventListener('backgroundSettingsChanged', handleBackgroundChange as EventListener);
+    return () => {
+      window.removeEventListener('backgroundSettingsChanged', handleBackgroundChange as EventListener);
+    };
+  }, []);
+
+  // Patient call timer - update every second
   useEffect(() => {
     if (!patientCalledTime || patientArrivedTime) return;
 
-    patientCallTimerRef.current = window.setInterval(() => {
+    const updatePatientCallTime = () => {
       const now = new Date();
       const diff = now.getTime() - patientCalledTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
       const seconds = String(totalSeconds % 60).padStart(2, '0');
       setPatientCallElapsedTime(`${minutes}:${seconds}`);
-    }, 1000);
+    };
+    
+    updatePatientCallTime();
+    patientCallTimerRef.current = window.setInterval(updatePatientCallTime, 1000);
 
     return () => {
       if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
@@ -102,16 +170,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     }
   }, [patientArrivedTime]);
 
+  // Track if we're in the middle of a local reset to prevent sync overwriting
+  const isResettingRef = useRef(false);
+
   // Sync local state with room object (for real-time updates from other devices)
   useEffect(() => {
     setIsPaused(room.isPaused || false);
   }, [room.isPaused]);
 
   useEffect(() => {
+    // Don't sync if we're resetting locally
+    if (isResettingRef.current) return;
     setPatientCalledTime(room.patientCalledAt ? new Date(room.patientCalledAt) : null);
   }, [room.patientCalledAt]);
 
   useEffect(() => {
+    // Don't sync if we're resetting locally
+    if (isResettingRef.current) return;
     setPatientArrivedTime(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   }, [room.patientArrivedAt]);
 
@@ -119,12 +194,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   const currentStepIndex = room.currentStepIndex;
   const prevStepIndex = usePrevious(currentStepIndex);
   
-  const [rotation, setRotation] = useState(-currentStepIndex * (360 / WORKFLOW_STEPS.length));
+  // Use active statuses count for rotation calculation
+  const stepsCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+  const [rotation, setRotation] = useState(-Math.min(currentStepIndex, stepsCount - 1) * (360 / stepsCount));
 
   useEffect(() => {
     if (prevStepIndex === undefined) return;
 
-    const anglePerStep = 360 / WORKFLOW_STEPS.length;
+    const anglePerStep = 360 / stepsCount;
     const stepDiff = currentStepIndex - prevStepIndex;
 
     if (stepDiff === 1 || stepDiff < -1) {
@@ -132,92 +209,153 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
     } else {
       setRotation(r => r + anglePerStep);
     }
-  }, [currentStepIndex]);
+  }, [currentStepIndex, stepsCount]);
 
-  const currentStep = WORKFLOW_STEPS[currentStepIndex];
-  const nextStep = WORKFLOW_STEPS[(currentStepIndex + 1) % WORKFLOW_STEPS.length];
+  // Use database statuses - don't fallback to WORKFLOW_STEPS
+  const safeStepIndex = activeDbStatuses.length > 0 
+    ? Math.min(room.currentStepIndex, activeDbStatuses.length - 1)
+    : 0;
+  
+  const currentStep = activeDbStatuses.length > 0
+    ? activeDbStatuses[safeStepIndex]
+    : { name: 'Waiting', color: '#6B7280', title: 'Waiting' };
+  
+  const nextStepIndex = (safeStepIndex + 1) % Math.max(activeDbStatuses.length, 1);
+  const nextStep = activeDbStatuses.length > 0
+    ? activeDbStatuses[nextStepIndex]
+    : currentStep;
   
   // Logic to determine if actions are allowed even if locked
-  const isFinalStep = currentStepIndex === WORKFLOW_STEPS.length - 1;
+  const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
+  const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
+  
+  // Don't show time only for "Sal priprav*" status (ASCII-safe)
+  // Normalize string to remove diacritics for comparison
+  const statusName = (currentStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const isReadyStatus = statusName.includes('priprav');
+  const shouldShowTime = !isReadyStatus;
 
   // Dynamic theme color based on status
   const activeColor = room.isEmergency 
     ? '#FF3B30' 
     : (room.isLocked 
         ? '#FBBF24' 
-        : (isPaused ? '#06b6d4' : currentStep.color));
+        : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280')));
 
   const changeStep = async (newIndex: number) => {
     if (isInteractionBlocked) return;
     
     // SEQUENTIAL STEP RESTRICTION: Only allow next step (+1) or reset to 0 (from final step)
-    const isNextStep = newIndex === currentStepIndex + 1;
-    const isResetToStart = newIndex === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1;
+    const isNextStep = newIndex === safeStepIndex + 1;
+    const isResetToStart = newIndex === 0 && safeStepIndex === validStepCount - 1;
     
-    if (!isNextStep && !isResetToStart) {
-      return; // Block skipping steps
-    }
+    if (!isNextStep && !isResetToStart) return; // Block skipping steps
     
     // Additional security for locked state: only allow forward progression
     if (room.isLocked) {
-      if (newIndex <= currentStepIndex && !isFinalStep) return;
+      if (newIndex <= safeStepIndex && !isFinalStep) return;
       if (newIndex === 0) return; // Never allow starting over if locked
     }
 
     // Calculate duration of previous step
     const now = new Date();
     const durationSeconds = Math.floor((now.getTime() - phaseStartTime.getTime()) / 1000);
-    const previousStep = WORKFLOW_STEPS[currentStepIndex];
-    const newStep = WORKFLOW_STEPS[newIndex];
+    const previousStep = activeDbStatuses.length > 0 ? activeDbStatuses[safeStepIndex] : currentStep;
+    const newStep = activeDbStatuses.length > 0 ? activeDbStatuses[Math.min(newIndex, activeDbStatuses.length - 1)] : nextStep;
 
     // Record step change to database
     await recordStatusEvent({
       operating_room_id: room.id,
       event_type: 'step_change',
       step_index: newIndex,
-      step_name: newStep.title,
+      step_name: previousStep?.name || 'Status',
       duration_seconds: durationSeconds,
       metadata: { 
-        previous_step: previousStep.title,
+        previous_step: previousStep?.name || 'Status',
         previous_step_index: currentStepIndex,
       },
     });
 
     // Record operation start/end events
     if (newIndex === 1 && currentStepIndex === 0) {
-      // Starting operation (moving from "Volný sál" to first active step)
+      // Starting operation (transitioning to "Příjezd na sál")
       await recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_start',
         step_index: newIndex,
-        step_name: newStep.title,
+        step_name: newStep?.name || 'Status',
       });
-    } else if (newIndex === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1) {
+      
+      // Set default estimated end time: current time + 60 minutes, rounded to 15 min
+      const defaultEndTime = roundUpTo15Min(new Date(now.getTime() + 60 * 60 * 1000));
+      onEndTimeChange(defaultEndTime);
+    } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
       // Ending operation (completing last step)
       await recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_end',
+        step_index: currentStepIndex,
+        step_name: 'Operation End',
         duration_seconds: durationSeconds,
-        metadata: { completed_step: previousStep.title },
+        metadata: { 
+          completed_step: previousStep?.name || 'Status',
+          previous_step: previousStep?.name || 'Status',
+        },
       });
+      
+      // Reset estimated end time when returning to "ready" status
+      onEndTimeChange(null);
     }
 
-    onStepChange(newIndex);
-    setPhaseStartTime(new Date());
+    // Reset patient call/arrival status only when transitioning to "Příjezd na sál"
+    // (patient is no longer waiting in pre-OR area)
+    const newStepName = (newStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isArrivalToOR = newStepName.includes('prijezd na sal') || newStepName.includes('arrival');
+    if (isArrivalToOR && (patientCalledTime || patientArrivedTime)) {
+      // Prevent sync effects from overwriting during reset - keep flag on longer
+      isResettingRef.current = true;
+      // Update local state first (immediate)
+      setPatientCalledTime(null);
+      setPatientArrivedTime(null);
+      setPatientCallElapsedTime('00:00');
+      // Optimistic update in App.tsx (immediate, before DB)
+      onPatientStatusChange?.(null, null);
+      // Then persist to database (async, don't await to avoid blocking)
+      updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
+      // Allow sync again after realtime update has likely arrived
+      setTimeout(() => { isResettingRef.current = false; }, 1500);
+    }
+
+  // Pass the color of the new status for history tracking
+  const newStepColor = newStep?.color || '#6B7280';
+  onStepChange(newIndex, newStepColor);
+  setPhaseStartTime(new Date());
   };
 
   const handleNextStep = () => {
     if (isInteractionBlocked) return;
-    let nextIndex = currentStepIndex + 1;
-    if (nextIndex >= WORKFLOW_STEPS.length) {
+    
+    let nextIndex = safeStepIndex + 1;
+    if (nextIndex >= validStepCount) {
       nextIndex = 0;
     }
     
     // Prevent loop back if locked
     if (room.isLocked && nextIndex === 0) return;
 
-    changeStep(nextIndex);
+    // Show confirmation overlay instead of immediately changing
+    setPendingStepIndex(nextIndex);
+  };
+
+  const confirmStepChange = () => {
+    if (pendingStepIndex === null) return;
+    changeStep(pendingStepIndex);
+    setPendingStepIndex(null);
+  };
+
+  const cancelStepChange = () => {
+    setPendingStepIndex(null);
   };
   
   const roundUpTo15Min = (date: Date): Date => {
@@ -244,46 +382,62 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
   
   const handleIncreaseTime = () => {
     if (isInteractionBlocked) return;
+    
+    // Mark that we're doing a local update
+    isLocalUpdateRef.current = true;
   
-    let newTime;
-    if (estimatedEndTime === null) {
-      // First press: round up current time to next 15-min boundary
-      newTime = roundUpTo15Min(new Date());
-    } else {
-      // Snap current time to 15-min floor, then add 15 minutes
-      const snapped = snapTo15Min(estimatedEndTime);
-      newTime = new Date(snapped.getTime() + 15 * 60 * 1000);
-    }
-    onEndTimeChange(newTime);
+    setLocalEndTime(prev => {
+      let newTime;
+      if (prev === null) {
+        newTime = roundUpTo15Min(new Date());
+      } else {
+        newTime = new Date(prev.getTime() + 15 * 60 * 1000);
+      }
+      
+      // Debounce propagation to parent
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = window.setTimeout(() => {
+        onEndTimeChange(newTime);
+        // Allow props sync after debounce completes
+        setTimeout(() => { isLocalUpdateRef.current = false; }, 100);
+      }, 300);
+      
+      return newTime;
+    });
   
-    if (endTimeTimeoutRef.current) {
-      clearTimeout(endTimeTimeoutRef.current);
-    }
+    if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
     setShowEndTime(true);
-    endTimeTimeoutRef.current = window.setTimeout(() => {
-      setShowEndTime(false);
-    }, 2000);
+    endTimeTimeoutRef.current = window.setTimeout(() => setShowEndTime(false), 2000);
   };
   
   const handleDecreaseTime = () => {
-    if (isInteractionBlocked || estimatedEndTime === null) return;
-  
-    // Simple: subtract 15 minutes, allow down to current time
-    const newTime = new Date(estimatedEndTime.getTime() - 15 * 60 * 1000);
-    const now = new Date();
+    if (isInteractionBlocked || localEndTime === null) return;
     
-    // Only block if new time would be in the past
-    if (newTime <= now) return;
+    // Mark that we're doing a local update
+    isLocalUpdateRef.current = true;
+
+    setLocalEndTime(prev => {
+      if (prev === null) return null;
+      
+      const newTime = new Date(prev.getTime() - 15 * 60 * 1000);
+      
+      // Block if new time would be before or equal to phase start time
+      if (newTime <= phaseStartTime) return prev;
+      
+      // Debounce propagation to parent
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = window.setTimeout(() => {
+        onEndTimeChange(newTime);
+        // Allow props sync after debounce completes
+        setTimeout(() => { isLocalUpdateRef.current = false; }, 100);
+      }, 300);
+      
+      return newTime;
+    });
   
-    onEndTimeChange(newTime);
-  
-    if (endTimeTimeoutRef.current) {
-      clearTimeout(endTimeTimeoutRef.current);
-    }
+    if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
     setShowEndTime(true);
-    endTimeTimeoutRef.current = window.setTimeout(() => {
-      setShowEndTime(false);
-    }, 2000);
+    endTimeTimeoutRef.current = window.setTimeout(() => setShowEndTime(false), 2000);
   };
 
   return (
@@ -294,141 +448,448 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT (md:hidden) ========== */}
-      <div className="md:hidden w-full h-full overflow-y-auto">
-        {/* mobile bg */}
-        <div className="fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-zinc-950" />
-          <div className="absolute inset-0" style={{ backgroundColor: activeColor, opacity: 0.04 }} />
-          {room.isEnhancedHygiene && (
-            <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 55%, rgba(239,68,68,0.08) 80%, rgba(239,68,68,0.18) 100%)', boxShadow: 'inset 0 0 80px rgba(239,68,68,0.12)' }} />
-          )}
+      {/* ========== MOBILE LAYOUT (md:hidden) — Ultra-minimalist fintech style ========== */}
+      <div
+        className="md:hidden w-full h-full flex flex-col relative overflow-hidden"
+        style={{
+          background:
+            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
+        }}
+      >
+        {/* Ambient glow — subtle */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
+            style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+          />
         </div>
 
-        <div className="relative z-10 flex flex-col gap-3 p-4 pb-8">
-          {/* Mobile Header */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex flex-col">
-              <p className="text-[9px] font-black tracking-[0.3em] uppercase text-white/30">UNIT {room.department}</p>
-              <h1 className={`text-2xl font-black tracking-tight uppercase leading-none ${room.isEmergency ? 'text-red-400' : room.isLocked ? 'text-amber-400' : 'text-white'}`}>
+        {/* Content */}
+        <div
+          className="relative z-10 flex flex-col h-full px-5 pt-4 overflow-y-auto hide-scrollbar"
+          style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          {/* Header — minimal */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={onClose}
+              className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <ChevronLeft className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
+            </button>
+            <div className="flex flex-col items-center flex-1 min-w-0 px-3">
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/40 leading-none">
+                Operační sál
+              </p>
+              <h1 className="text-lg font-semibold text-white truncate mt-1.5 leading-none">
                 {room.name}
               </h1>
             </div>
-            <button onClick={onClose} className="p-3 bg-white/5 border border-white/10 rounded-2xl">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Status badge */}
-          <div className="rounded-2xl px-4 py-3 flex items-center justify-between border" style={{ backgroundColor: `${activeColor}15`, borderColor: `${activeColor}30` }}>
-            <div>
-              <p className="text-[9px] font-black tracking-[0.25em] uppercase text-white/40 mb-0.5">Aktivní fáze</p>
-              <p className="text-base font-black uppercase tracking-wide" style={{ color: activeColor }}>
-                {room.isEmergency ? 'STAV NOUZE' : room.isLocked ? 'SÁL UZAMČEN' : WORKFLOW_STEPS[currentStepIndex].title}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[9px] font-black tracking-[0.25em] uppercase text-white/40 mb-0.5">Čas ve fázi</p>
-              <p className="text-xl font-mono font-black text-white">{elapsedTime}</p>
-            </div>
-          </div>
-
-          {/* Next phase button - prominent on mobile */}
-          {!isInteractionBlocked && (
             <button
-              onClick={() => {
-                const isFinalStep = currentStepIndex === WORKFLOW_STEPS.length - 1;
-                const nextIndex = isFinalStep ? 0 : currentStepIndex + 1;
-                onStepChange(nextIndex);
+              onClick={() => setNotificationOverlayOpen(true)}
+              className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
               }}
-              className="w-full rounded-2xl py-6 font-black text-base tracking-[0.2em] uppercase border transition-all"
-              style={{ backgroundColor: `${activeColor}20`, borderColor: `${activeColor}40`, color: activeColor }}
             >
-              {currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'Nový cyklus' : 'Spustit další fázi'} →
+              <Bell className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
             </button>
-          )}
+          </div>
 
-          {/* Time + Staff row */}
-          <div className="grid grid-cols-2 gap-2">
-            {/* Estimated end time */}
-            <div className="rounded-2xl p-3 border border-white/5 bg-white/[0.03]">
-              <p className="text-[9px] font-black tracking-widest uppercase text-white/30 mb-2">Ukončení</p>
-              <div className="flex items-center gap-2">
-                <button onClick={handleDecreaseTime} disabled={isInteractionBlocked || !estimatedEndTime} className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center disabled:opacity-30">
-                  <Minus className="w-3 h-3" />
-                </button>
-                <p className="flex-1 text-center text-lg font-mono font-black text-white">
-                  {estimatedEndTime && currentStepIndex !== 6
-                    ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+          {/* Hero: Current phase card with integrated play button */}
+          <motion.div
+            key={currentStep?.name}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="rounded-3xl p-6 relative overflow-hidden mb-6"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
+              border: '1px solid rgba(79,237,199,0.15)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(79,237,199,0.08)',
+            }}
+          >
+            {/* Ambient accent behind text */}
+            <div
+              className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-20"
+              style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 65%)` }}
+            />
+
+            {/* Header row: Label + step counter */}
+            <div className="relative flex items-start justify-between gap-3 mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40 leading-none">
+                Aktuální fáze
+              </p>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    background: activeColor,
+                    boxShadow: `0 0 12px ${activeColor}`,
+                  }}
+                />
+                <span className="text-[10px] font-mono font-semibold tabular-nums text-white/60 leading-none">
+                  {safeStepIndex + 1}/{validStepCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Content row: Phase name + play button */}
+            <div className="relative flex items-end justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-[32px] font-bold text-white leading-[1.1] tracking-tight text-balance">
+                  {room.isEmergency
+                    ? 'Stav nouze'
+                    : room.isLocked
+                    ? 'Uzamčen'
+                    : currentStep?.name || 'Status'}
+                </p>
+                <p className="text-sm font-mono tabular-nums text-white/50 mt-3 leading-none">
+                  Uplynulo: {elapsedTime}
+                </p>
+              </div>
+
+              {/* Play button — circular, integrated into card */}
+              {!isInteractionBlocked && (
+                <motion.button
+                  onClick={handleNextStep}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all shadow-lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`,
+                    boxShadow: `0 12px 32px -8px ${activeColor}40`,
+                  }}
+                >
+                  <Play className="w-7 h-7 text-black/90 ml-0.5" strokeWidth={1.5} fill="currentColor" />
+                </motion.button>
+              )}
+            </div>
+
+            {/* Progress bar — thin, integrated at bottom */}
+            <div className="relative mt-5 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{
+                  background: `linear-gradient(90deg, ${activeColor} 0%, ${activeColor}aa 100%)`,
+                  boxShadow: `0 0 16px ${activeColor}60`,
+                }}
+                animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              />
+            </div>
+          </motion.div>
+
+          {/* End Time Card — improved design */}
+          <div
+            className="rounded-3xl p-6 mb-6"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(16px)',
+            }}
+          >
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40 leading-none">
+                  Odhadovaný konec
+                </p>
+                <p className="text-[40px] font-bold text-white font-mono tabular-nums mt-3 leading-none tracking-tight">
+                  {estimatedEndTime && shouldShowTime
+                    ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
                     : '--:--'}
                 </p>
-                <button onClick={handleIncreaseTime} disabled={isInteractionBlocked} className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center disabled:opacity-30">
-                  <Plus className="w-3 h-3" />
-                </button>
               </div>
-            </div>
-
-            {/* Staff */}
-            <div className="rounded-2xl p-3 border border-white/5 bg-white/[0.03]">
-              <p className="text-[9px] font-black tracking-widest uppercase text-white/30 mb-2">Personál</p>
-              <div className="flex flex-col gap-1">
-                <p className="text-[11px] font-bold text-white/80 truncate">{room.staff.doctor.name}</p>
-                <p className="text-[10px] text-white/40 truncate">{room.staff.nurse.name}</p>
-                {room.staff.anesthesiologist?.name && (
-                  <p className="text-[10px] text-white/40 truncate">{room.staff.anesthesiologist.name}</p>
-                )}
+              <div className="flex items-center gap-2">
+                <motion.button
+                  onClick={handleDecreaseTime}
+                  disabled={isInteractionBlocked || !estimatedEndTime}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 outline-none select-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <Minus className="w-5 h-5 text-white/70" strokeWidth={2.25} />
+                </motion.button>
+                <motion.button
+                  onClick={handleIncreaseTime}
+                  disabled={isInteractionBlocked}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 outline-none select-none transition-all shadow-lg"
+                  style={{
+                    background: `linear-gradient(135deg, #00d4ff 0%, #00d4ffdd 100%)`,
+                    boxShadow: `0 8px 24px -6px rgba(0,212,255,0.3)`,
+                  }}
+                >
+                  <Plus className="w-5 h-5 text-black/90" strokeWidth={2.5} />
+                </motion.button>
               </div>
             </div>
           </div>
 
-          {/* Action buttons row */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Pause */}
-            <button
-              onClick={async () => {
-                const newPaused = !isPaused;
-                setIsPaused(newPaused);
-                await updateOperatingRoom(room.id, { is_paused: newPaused });
-                await recordStatusEvent({ operating_room_id: room.id, event_type: newPaused ? 'pause' : 'resume', step_index: currentStepIndex, step_name: WORKFLOW_STEPS[currentStepIndex].title });
-              }}
-              className={`rounded-2xl py-4 flex flex-col items-center gap-1.5 border transition-all ${isPaused ? 'bg-cyan-500/20 border-cyan-500/40' : 'bg-white/5 border-white/10'}`}
-            >
-              {isPaused ? <Play className="w-5 h-5 text-cyan-300" /> : <Pause className="w-5 h-5 text-white/60" />}
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white/50">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
-            </button>
+          {/* Categories — action tiles section */}
+          <div className="mb-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40 mb-4 px-1">
+              Akce
+            </p>
+            <div className="grid grid-cols-4 gap-3">
+              {/* Pause */}
+              <motion.button
+                onClick={async () => {
+                  const newPaused = !isPaused;
+                  setIsPaused(newPaused);
+                  await updateOperatingRoom(room.id, { is_paused: newPaused });
+                  await recordStatusEvent({
+                    operating_room_id: room.id,
+                    event_type: newPaused ? 'pause' : 'resume',
+                    step_index: currentStepIndex,
+                    step_name: currentStep?.name || 'Status',
+                  });
+                }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
+                style={{
+                  background: isPaused
+                    ? `linear-gradient(135deg, #00d4ff 0%, #00d4ffdd 100%)`
+                    : 'rgba(255,255,255,0.04)',
+                  border: isPaused
+                    ? `1px solid #00d4ff`
+                    : '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: isPaused ? `0 8px 24px -6px rgba(0,212,255,0.3)` : 'none',
+                }}
+              >
+                {isPaused ? (
+                  <Play className="w-6 h-6 text-black/90" strokeWidth={1.75} fill="currentColor" />
+                ) : (
+                  <Pause className="w-6 h-6 text-white/70" strokeWidth={1.75} />
+                )}
+                <span
+                  className="text-[10px] font-semibold tracking-tight leading-tight"
+                  style={{ color: isPaused ? '#062720' : 'rgba(255,255,255,0.6)' }}
+                >
+                  {isPaused ? 'Pokračovat' : 'Pauza'}
+                </span>
+              </motion.button>
 
-            {/* Hygiene */}
-            <button
-              onClick={async () => {
-                const newH = !room.isEnhancedHygiene;
-                onEnhancedHygieneToggle?.(newH);
-                await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
-                await recordStatusEvent({ operating_room_id: room.id, event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off', step_index: currentStepIndex, step_name: WORKFLOW_STEPS[currentStepIndex].title });
-              }}
-              className={`rounded-2xl py-4 flex flex-col items-center gap-1.5 border transition-all ${room.isEnhancedHygiene ? 'bg-orange-500/20 border-orange-500/40' : 'bg-white/5 border-white/10'}`}
-            >
-              <ShieldAlert className={`w-5 h-5 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white/50">Hygiena</span>
-            </button>
+              {/* Hygiene */}
+              <motion.button
+                onClick={async () => {
+                  const newH = !room.isEnhancedHygiene;
+                  onEnhancedHygieneToggle?.(newH);
+                  await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
+                  await recordStatusEvent({
+                    operating_room_id: room.id,
+                    event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+                    step_index: currentStepIndex,
+                    step_name: currentStep?.name || 'Status',
+                  });
+                }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
+                style={{
+                  background: room.isEnhancedHygiene
+                    ? 'rgba(251,146,60,0.15)'
+                    : 'rgba(255,255,255,0.04)',
+                  border: room.isEnhancedHygiene
+                    ? '1px solid rgba(251,146,60,0.5)'
+                    : '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                <ShieldAlert
+                  className="w-6 h-6"
+                  style={{
+                    color: room.isEnhancedHygiene ? '#fb923c' : 'rgba(255,255,255,0.7)',
+                  }}
+                  strokeWidth={1.75}
+                />
+                <span
+                  className="text-[10px] font-semibold tracking-tight leading-tight"
+                  style={{
+                    color: room.isEnhancedHygiene ? '#fb923c' : 'rgba(255,255,255,0.6)',
+                  }}
+                >
+                  Hygiena
+                </span>
+              </motion.button>
 
-            {/* Patient call */}
-            <button
-              onClick={async () => {
-                if (!patientCalledTime) {
-                  const now = new Date();
-                  setPatientCalledTime(now);
-                  await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
-                  await recordStatusEvent({ operating_room_id: room.id, event_type: 'patient_call', step_index: currentStepIndex, step_name: WORKFLOW_STEPS[currentStepIndex].title });
-                }
-              }}
-              disabled={!!patientCalledTime}
-              className={`rounded-2xl py-4 flex flex-col items-center gap-1.5 border transition-all ${patientCalledTime ? 'bg-green-500/20 border-green-500/40' : 'bg-white/5 border-white/10'}`}
-            >
-              <Phone className={`w-5 h-5 ${patientCalledTime ? 'text-green-300' : 'text-white/60'}`} />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white/50">
-                {patientCalledTime ? patientCallElapsedTime : 'Volat'}
-              </span>
-            </button>
+              {/* Call patient */}
+              <motion.button
+                onClick={async () => {
+                  if (!patientCalledTime) {
+                    const now = new Date();
+                    setPatientCalledTime(now);
+                    setShowPatientCalledText(true);
+                    setTimeout(() => setShowPatientCalledText(false), 5000);
+                    await updateOperatingRoom(room.id, {
+                      patient_called_at: now.toISOString(),
+                    });
+                    await recordStatusEvent({
+                      operating_room_id: room.id,
+                      event_type: 'patient_call',
+                      step_index: currentStepIndex,
+                      step_name: currentStep?.name || 'Status',
+                    });
+                    onPatientStatusChange?.(now.toISOString(), null);
+                  }
+                }}
+                disabled={!!patientCalledTime}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
+                style={{
+                  background: patientCalledTime
+                    ? 'rgba(79,237,199,0.15)'
+                    : 'rgba(255,255,255,0.04)',
+                  border: patientCalledTime
+                    ? '1px solid rgba(79,237,199,0.5)'
+                    : '1px solid rgba(255,255,255,0.1)',
+                  opacity: patientCalledTime ? 1 : 1,
+                }}
+              >
+                <Phone
+                  className="w-6 h-6"
+                style={{
+                  color: patientCalledTime ? '#00d4ff' : 'rgba(255,255,255,0.7)' }}
+                  strokeWidth={1.75}
+                />
+                <span
+                  className="text-[10px] font-semibold tracking-tight tabular-nums leading-tight"
+                  style={{ color: patientCalledTime ? '#00d4ff' : 'rgba(255,255,255,0.6)' }}
+                >
+                  {patientCalledTime ? patientCallElapsedTime : 'Volat'}
+                </span>
+              </motion.button>
+
+              {/* Patient arrived */}
+              <motion.button
+                onClick={async () => {
+                  if (patientCalledTime && !patientArrivedTime) {
+                    const now = new Date();
+                    setPatientArrivedTime(now);
+                    setShowPatientArrivedText(true);
+                    await updateOperatingRoom(room.id, {
+                      patient_arrived_at: now.toISOString(),
+                    });
+                    await recordStatusEvent({
+                      operating_room_id: room.id,
+                      event_type: 'patient_arrived',
+                      step_index: currentStepIndex,
+                      step_name: currentStep?.name || 'Status',
+                    });
+                    onPatientStatusChange?.(
+                      patientCalledTime!.toISOString(),
+                      now.toISOString(),
+                    );
+                    setTimeout(() => {
+                      setShowPatientArrivedText(false);
+                    }, 5000);
+                  }
+                }}
+                disabled={!patientCalledTime || !!patientArrivedTime}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
+                style={{
+                  background: patientArrivedTime
+                    ? 'rgba(168,85,247,0.15)'
+                    : 'rgba(255,255,255,0.04)',
+                  border: patientArrivedTime
+                    ? '1px solid rgba(168,85,247,0.5)'
+                    : '1px solid rgba(255,255,255,0.1)',
+                  opacity: !patientCalledTime ? 0.5 : 1,
+                }}
+              >
+                <BedDouble
+                  className="w-6 h-6"
+                  style={{ color: patientArrivedTime ? '#c084fc' : 'rgba(255,255,255,0.7)' }}
+                  strokeWidth={1.75}
+                />
+                <span
+                  className="text-[10px] font-semibold tracking-tight leading-tight"
+                  style={{ color: patientArrivedTime ? '#c084fc' : 'rgba(255,255,255,0.6)' }}
+                >
+                  Příjezd
+                </span>
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Staff — clean rows */}
+          <div className="mb-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/40 mb-3 px-1">
+              Tým
+            </p>
+            <div className="flex flex-row gap-2">
+              <button
+                onClick={() => {
+                  setStaffPickerRole('doctor');
+                  setStaffPickerOpen(true);
+                }}
+                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(79,237,199,0.1)' }}
+                >
+                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#00d4ff' }} strokeWidth={1.75} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
+                    Lékař
+                  </p>
+                  <p className="text-sm font-medium text-white truncate mt-1.5 leading-none">
+                    {room?.staff?.doctor?.name || 'Nepřiřazen'}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" strokeWidth={2} />
+              </button>
+              <button
+                onClick={() => {
+                  setStaffPickerRole('nurse');
+                  setStaffPickerOpen(true);
+                }}
+                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(79,237,199,0.1)' }}
+                >
+                  <Heart className="w-[18px] h-[18px]" style={{ color: '#00d4ff' }} strokeWidth={1.75} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
+                    Sestra
+                  </p>
+                  <p className="text-sm font-medium text-white truncate mt-1.5 leading-none">
+                    {room?.staff?.nurse?.name || 'Nepřiřazena'}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" strokeWidth={2} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -446,9 +907,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       {/* Background Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <img 
-          src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000" 
+          src={backgroundSettings?.imageUrl || "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000"} 
           alt="Operating Environment" 
-          className="w-full h-full object-cover opacity-20 grayscale scale-105"
+          className="w-full h-full object-cover grayscale scale-105"
+          style={{ 
+            opacity: (backgroundSettings?.imageOpacity ?? 20) / 100,
+            filter: `blur(${backgroundSettings?.imageBlur ?? 0}px) grayscale(1)`
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/80" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.9)_100%)]" />
@@ -464,8 +929,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
         style={{ backgroundColor: activeColor }}
       />
 
-      {/* Header */}
-      <header className="absolute top-12 left-40 right-16 flex justify-between items-start z-50">
+      {/* Content wrapper — creates positioning context offset from Sidebar (96px).
+          All absolute children centered via left-1/2 / flex justify-center will
+          be centered in the true content area, not under the sidebar. */}
+      <div className="content-safe">
+
+      {/* Header — left is wrapper-relative (so 160px total from viewport on desktop) */}
+      <header className="absolute top-4 md:top-8 lg:top-12 left-4 md:left-8 lg:left-16 right-28 md:right-32 lg:right-40 flex justify-between items-start z-50 pointer-events-none">
         <div className="flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div 
@@ -475,28 +945,28 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               exit={{ opacity: 0, y: 10 }}
               className="flex items-center gap-6"
             >
-              <h1 className={`text-6xl font-bold tracking-tight uppercase leading-none 
+              <h1 className={`text-[clamp(1.75rem,4.5vw,3.75rem)] font-bold tracking-tight uppercase leading-none truncate max-w-[60vw]
                 ${room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')}
               `}>
                 {room.name}
               </h1>
               
               {room.isEmergency && (
-                <div className="bg-red-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(239,68,68,0.5)]">
-                  <AlertTriangle className="w-8 h-8" />
-                  <span className="text-2xl font-black uppercase tracking-widest">EMERGENCY</span>
+                <div className="bg-red-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(239,68,68,0.5)]">
+                  <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
+                  <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">EMERGENCY</span>
                 </div>
               )}
               
               {room.isLocked && !room.isEmergency && (
-                <div className="bg-amber-500 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                  <Lock className="w-7 h-7" />
-                  <span className="text-2xl font-black uppercase tracking-widest">SÁL UZAMČEN</span>
+                <div className="bg-amber-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                  <Lock className="w-[clamp(1rem,1.8vw,1.75rem)] h-[clamp(1rem,1.8vw,1.75rem)]" />
+                  <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">SÁL UZAMČEN</span>
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
-          <p className="text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mt-5">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
+          <p className="text-[clamp(8px,0.8vw,11px)] font-black text-white/30 tracking-[0.5em] uppercase mt-[clamp(0.75rem,1.5vw,1.25rem)]">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
       </header>
 
@@ -512,280 +982,295 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
       )}
 
       {/* Right Column Action Buttons - Absolute Positioning */}
-      {/* Close Button - Top Right */}
-      <button 
-        onClick={onClose}
-        className="absolute top-8 right-8 p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-24 w-24 z-50"
-      >
-        <X className="w-8 h-8" />
-      </button>
+      {/* Close Button and Notification Button - Top Right */}
+      <div className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 flex flex-col gap-2 sm:gap-3 md:gap-4 z-50">
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24"
+        >
+          <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
+        </button>
 
-      {/* ARO Staff Names - Top Right next to close button */}
-      <div className="absolute top-8 right-40 flex flex-row gap-3 h-24 z-40">
-        {room.staff.anesthesiologist?.name && (
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
-            <div className="flex items-center gap-2">
-              <Stethoscope className="w-5 h-5" style={{ color: activeColor }} />
-              <span className="text-sm font-bold" style={{ color: activeColor }}>{room.staff.anesthesiologist.name}</span>
-            </div>
-          </div>
-        )}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-2">
+        {/* Notification Button */}
+        <motion.button 
+          onClick={() => setNotificationOverlayOpen(true)}
+          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
+          <span className="hidden sm:block text-[6px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-bold uppercase tracking-wider text-white/40">Notifikace</span>
+        </motion.button>
+      </div>
+
+      {/* Staff Names - Top Right next to close button (Desktop only) */}
+      <div className="hidden lg:flex absolute top-8 right-40 flex-row gap-3 h-24 z-50">
+        {/* Doctor Button */}
+        <button
+          onClick={() => { setStaffPickerRole('doctor'); setStaffPickerOpen(true); }}
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
+        >
           <div className="flex items-center gap-2">
-            <Heart className="w-5 h-5" style={{ color: '#c0bdb7' }} />
-            <span className="text-sm font-bold" style={{ color: '#c0bdb7' }}>{room.staff.nurse.name}</span>
+            <Stethoscope className="w-5 h-5 text-violet-400" />
+            <span className="text-sm font-bold text-violet-300">{room?.staff?.doctor?.name || 'Vybrat lékaře'}</span>
           </div>
+          <p className="text-[9px] text-white/25 uppercase tracking-wider text-left">
+            {room?.staff?.doctor?.name ? 'Kliknout pro správu' : 'Kliknout pro přiřazení'}
+          </p>
+        </button>
+        {/* Nurse Button */}
+        <button
+          onClick={() => { setStaffPickerRole('nurse'); setStaffPickerOpen(true); }}
+          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
+        >
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5 text-emerald-400" />
+            <span className="text-sm font-bold text-emerald-300">{room?.staff?.nurse?.name || 'Vybrat sestru'}</span>
+          </div>
+          <p className="text-[9px] text-white/25 uppercase tracking-wider text-left">
+            {room?.staff?.nurse?.name ? 'Kliknout pro správu' : 'Kliknout pro přiřazení'}
+          </p>
+        </button>
+      </div>
+
+
+      {/* Right Side Buttons Container - All 4 buttons in one row */}
+      <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 flex flex-row gap-2 sm:gap-3 md:gap-4 z-50">
+        {/* VOLAT and PŘÍJEZD Container - Vertical */}
+        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
+          {/* Volat Button */}
+  <motion.button
+            onClick={async () => {
+              if (!patientCalledTime) {
+                const now = new Date();
+                setPatientCalledTime(now);
+                setShowPatientCalledText(true);
+                setTimeout(() => setShowPatientCalledText(false), 5000);
+                await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: 'patient_call',
+                  step_index: currentStepIndex,
+                  step_name: currentStep.title,
+                });
+                onPatientStatusChange?.(now.toISOString(), null);
+              }
+            }}
+            disabled={!!patientCalledTime}
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+              patientCalledTime && !patientArrivedTime
+                ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+                : patientArrivedTime
+                ? 'bg-white/5 border-white/10 opacity-60'
+                : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <AnimatePresence mode="wait">
+              {patientCalledTime && !patientArrivedTime ? (
+                <motion.div
+                  key="call-timer"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <Phone className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-green-300" strokeWidth={2} />
+                  <span className="text-xs sm:text-sm md:text-base lg:text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
+                    {patientCallElapsedTime}
+                  </span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="call-idle"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <Phone className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
+                  <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">Volat</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+
+          {/* Příjezd Button */}
+          <motion.button
+            onClick={async () => {
+              if (patientCalledTime && !patientArrivedTime) {
+                const arrivalTime = new Date();
+                const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
+                setPatientArrivedTime(arrivalTime);
+                await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
+                setShowPatientArrivedText(true);
+                onPatientStatusChange?.(patientCalledTime.toISOString(), arrivalTime.toISOString());
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: 'patient_arrival',
+                  step_index: currentStepIndex,
+                  step_name: currentStep.title,
+                  duration_seconds: waitDuration,
+                  metadata: { call_time: patientCalledTime.toISOString() },
+                });
+                // Just hide the text after 5 seconds, keep patient status in database
+                // Patient status will be reset when moving to next step
+                setTimeout(() => {
+                  setShowPatientArrivedText(false);
+                }, 5000);
+              }
+            }}
+            disabled={!patientCalledTime || !!patientArrivedTime}
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+              patientArrivedTime
+                ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+                : !patientCalledTime
+                ? 'bg-white/5 border-white/10 opacity-40'
+                : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <UserCheck className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
+            <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
+          </motion.button>
+        </div>
+
+        {/* HYGIENA and PAUZA Container - Vertical */}
+        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
+          {/* Enhanced Hygiene Mode Toggle */}
+          <motion.button
+            onClick={async () => {
+              const newHygieneState = !room.isEnhancedHygiene;
+              onEnhancedHygieneToggle?.(newHygieneState);
+              await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
+              await recordStatusEvent({
+                operating_room_id: room.id,
+                event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+                step_index: currentStepIndex,
+                step_name: currentStep.title,
+              });
+            }}
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+              room.isEnhancedHygiene
+                ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
+                : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
+            <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
+              Hygien.
+            </span>
+          </motion.button>
+
+          {/* Pause Button */}
+          {!(room.isLocked && isFinalStep) && (
+            <motion.button
+              onClick={async () => {
+                const newPaused = !isPaused;
+                setIsPaused(newPaused);
+                await updateOperatingRoom(room.id, { is_paused: newPaused });
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: newPaused ? 'pause' : 'resume',
+                  step_index: currentStepIndex,
+                  step_name: currentStep.title,
+                });
+              }}
+              className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+                isPaused
+                  ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
+                  : 'bg-white/5 border-white/10'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isPaused ? (
+                <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
+              ) : (
+                <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
+              )}
+                <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
+            </motion.button>
+          )}
         </div>
       </div>
 
-
-      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3 z-50">
-        <motion.button
-          onClick={async () => {
-            if (!patientCalledTime) {
-              setPatientCalledTime(new Date());
-              setShowPatientCalledText(true);
-              setTimeout(() => setShowPatientCalledText(false), 3000);
-              await recordStatusEvent({
-                operating_room_id: room.id,
-                event_type: 'patient_call',
-                step_index: currentStepIndex,
-                step_name: WORKFLOW_STEPS[currentStepIndex].title,
-              });
-            }
-          }}
-          disabled={!!patientCalledTime}
-          className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 h-24 w-24 disabled:cursor-not-allowed border ${
-            patientCalledTime && !patientArrivedTime
-              ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
-              : patientArrivedTime
-              ? 'bg-white/5 border-white/10 opacity-60'
-              : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-          }`}
+      {/* Main Three-Circle Status Display */}
+      <main className="w-full h-full flex items-center justify-center relative z-20 px-2 sm:px-4">
+        {/* Background decorative rings — hidden on small screens to avoid overflow */}
+        <div
+          className="hidden lg:block absolute rounded-full border border-white/5 pointer-events-none"
+          style={{ width: 'min(70vw,700px)', height: 'min(70vw,700px)' }}
+        />
+        <div
+          className="hidden lg:block absolute rounded-full border border-dashed border-white/[0.03] pointer-events-none"
+          style={{ width: 'min(75vw,750px)', height: 'min(75vw,750px)' }}
+        />
+        
+        <div
+          className="flex items-center justify-center relative max-w-full"
+          style={{ gap: 'clamp(0.25rem,4vw,9rem)' }}
         >
-          <AnimatePresence mode="wait">
-            {patientCalledTime && !patientArrivedTime ? (
+          {/* Previous Step - Left Circle (smaller) */}
+          {(() => {
+const prevStepIdx = currentStepIndex === 0 ? validStepCount - 1 : currentStepIndex - 1;
+const prevStep = activeDbStatuses.length > 0 
+  ? activeDbStatuses[Math.min(prevStepIdx, activeDbStatuses.length - 1)]
+  : currentStep;
+            return (
               <motion.div
-                key="call-timer"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-1"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="relative flex items-center justify-center shrink-0"
+                style={{ width: 'clamp(90px,16vw,280px)', height: 'clamp(90px,16vw,280px)' }}
               >
-                <Phone className="w-5 h-5 text-green-300" strokeWidth={2} />
-                <span className="text-lg font-black tracking-tighter font-mono tabular-nums text-green-300 leading-none">
-                  {patientCallElapsedTime}
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="call-idle"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col items-center gap-2"
-              >
-                <Phone className={`w-8 h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Volat</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
-
-        {/* Patient Arrival Button */}
-        <motion.button
-          onClick={async () => {
-            if (patientCalledTime && !patientArrivedTime) {
-              const arrivalTime = new Date();
-              const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
-              setPatientArrivedTime(arrivalTime);
-              await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
-              setShowPatientArrivedText(true);
-              
-              await recordStatusEvent({
-                operating_room_id: room.id,
-                event_type: 'patient_arrival',
-                step_index: currentStepIndex,
-                step_name: WORKFLOW_STEPS[currentStepIndex].title,
-                duration_seconds: waitDuration,
-                metadata: { call_time: patientCalledTime.toISOString() },
-              });
-              
-              setTimeout(() => {
-                setShowPatientArrivedText(false);
-                // Reset call state so Volat can be used again
-                setPatientCalledTime(null);
-                setPatientArrivedTime(null);
-                updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-                setPatientCallElapsedTime('00:00');
-              }, 3000);
-            }
-          }}
-          disabled={!patientCalledTime || !!patientArrivedTime}
-          className={`rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 h-24 w-24 disabled:opacity-60 disabled:cursor-not-allowed ${
-            patientArrivedTime
-              ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
-              : ''
-          }`}
-        >
-          <UserCheck className={`w-8 h-8 ${patientArrivedTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Příjezd</span>
-        </motion.button>
-      </div>
-
-      {/* Pause Button - Bottom Right */}
-      {!(room.isLocked && isFinalStep) && (
-        <motion.button
-          onClick={async () => {
-            const newPaused = !isPaused;
-            setIsPaused(newPaused);
-            await updateOperatingRoom(room.id, { is_paused: newPaused });
-            await recordStatusEvent({
-              operating_room_id: room.id,
-              event_type: newPaused ? 'pause' : 'resume',
-              step_index: currentStepIndex,
-              step_name: WORKFLOW_STEPS[currentStepIndex].title,
-            });
-          }}
-          className={`absolute bottom-8 right-8 rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
-            isPaused
-              ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-              : 'bg-white/5 border-white/10'
-          }`}
-        >
-          {isPaused ? (
-            <Play className={`w-8 h-8 text-cyan-300`} strokeWidth={2} />
-          ) : (
-            <Pause className={`w-8 h-8 text-white/60`} strokeWidth={2} />
-          )}
-          <span className="text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokr.' : 'Pauza'}</span>
-        </motion.button>
-      )}
-
-      {/* Enhanced Hygiene Mode Toggle - Bottom Right, next to Pause */}
-      <motion.button
-        onClick={async () => {
-          const newHygieneState = !room.isEnhancedHygiene;
-          onEnhancedHygieneToggle?.(newHygieneState);
-          await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
-          await recordStatusEvent({
-            operating_room_id: room.id,
-            event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
-            step_index: currentStepIndex,
-            step_name: WORKFLOW_STEPS[currentStepIndex].title,
-          });
-        }}
-        className={`absolute bottom-8 right-40 rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-24 w-24 z-50 ${
-          room.isEnhancedHygiene
-            ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
-            : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
-        }`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <ShieldAlert className={`w-8 h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-        <span className={`text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
-          {room.isEnhancedHygiene ? 'Hygienický\nrežim' : 'Hygien.\nrežim'}
-        </span>
-      </motion.button>
-
-      {/* Main Immersive Dial */}
-      <main className="w-full h-full flex items-center justify-center relative z-20">
-        <div className="relative w-[650px] h-[650px] flex items-center justify-center">
-          
-          {/* Static Rings */}
-          <div className="absolute inset-0 border border-white/5 rounded-full" />
-          <div className="absolute inset-10 border border-dashed border-white/5 rounded-full" />
-
-          {/* Workflow Icons Outer Ring */}
-          <motion.div 
-            className="absolute inset-0 z-30 pointer-events-none"
-            animate={{ rotate: rotation }}
-            transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-          >
-            {WORKFLOW_STEPS.map((step, index) => {
-              const angle = (index / WORKFLOW_STEPS.length) * 360;
-              const isActive = index === currentStepIndex;
-              
-              // Only allow next step (+1) or reset to start (from final step)
-              const isNextStep = index === currentStepIndex + 1;
-              const isResetToStart = index === 0 && currentStepIndex === WORKFLOW_STEPS.length - 1 && !room.isLocked;
-              const isSelectable = !isPaused && (isNextStep || isResetToStart);
-              
-              return (
-                <div key={index} className="absolute w-full h-full" style={{ transform: `rotate(${angle}deg)` }}>
-                  <motion.div 
-                    className="absolute top-[-30px] left-1/2 -ml-6 w-12 h-12 flex items-center justify-center"
-                    animate={{ rotate: -angle - rotation }}
-                    transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                  >
-                    <button 
-                      onClick={() => isSelectable && changeStep(index)}
-                      disabled={!isSelectable}
-                      className={`w-full h-full rounded-2xl border flex items-center justify-center transition-all duration-500 backdrop-blur-md pointer-events-auto
-                        ${isActive ? 'bg-white/10 shadow-lg scale-125' : (isSelectable ? 'bg-white/5 opacity-40 hover:opacity-100' : 'bg-white/5 opacity-5 cursor-not-allowed')}
-                      `}
-                      style={{ 
-                        borderColor: isActive ? activeColor : 'rgba(255,255,255,0.1)',
-                        boxShadow: isActive ? `0 0 20px ${activeColor}44` : 'none'
-                      }}
-                    >
-                      <step.Icon className="w-5 h-5" style={{ color: isActive ? activeColor : 'white' }} />
-                    </button>
-                  </motion.div>
+                {/* Gradient Glow - transparent from center */}
+                <div 
+                  className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+                  style={{
+                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                  }}
+                />
+                
+                {/* Ring */}
+                <div 
+                  className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+                  style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+                />
+                
+                {/* Inner content */}
+                <div className="relative z-10 text-center px-4">
+                  <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
+                    DOKONČENÁ FÁZE
+                  </p>
+                  <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
+                    {prevStep.title}
+                  </h3>
                 </div>
-              );
-            })}
-          </motion.div>
+              </motion.div>
+            );
+          })()}
 
-          {/* Navigation Controls */}
-          {!isInteractionBlocked && (
-            <>
-              <div className="absolute left-[-180px] top-1/2 -translate-y-1/2 z-50">
-                <motion.button 
-                  onClick={handleDecreaseTime}
-                  className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
-                  style={{
-                    borderColor: `${activeColor}44`,
-                    boxShadow: `0 0 20px ${activeColor}33`
-                  }}
-                  whileHover={{ scale: 1.1, x: -5 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div className="absolute inset-0 bg-white/5" />
-                  <Minus className="w-12 h-12 text-white relative z-10" strokeWidth={1.5} />
-                </motion.button>
-              </div>
-
-              <div className="absolute right-[-180px] top-1/2 -translate-y-1/2 z-50">
-                <motion.button 
-                  onClick={handleIncreaseTime}
-                  className="w-32 h-32 rounded-full border flex items-center justify-center opacity-70 hover:opacity-100 transition-all cursor-pointer backdrop-blur-md shadow-2xl overflow-hidden"
-                  style={{
-                    borderColor: `${activeColor}44`,
-                    boxShadow: `0 0 20px ${activeColor}33`
-                  }}
-                  whileHover={{ scale: 1.1, x: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div className="absolute inset-0 bg-white/5" />
-                  <Plus className="w-12 h-12 text-white relative z-10" strokeWidth={1.5} />
-                </motion.button>
-              </div>
-            </>
-          )}
-
-          {/* Core Visual Elements - INTERACTIVE BUTTON CENTER */}
-          <motion.button 
+          {/* Current Step - Center Circle (large, interactive) */}
+          <motion.button
             onClick={handleNextStep}
             disabled={isInteractionBlocked}
-            className={`relative w-[480px] h-[480px] flex items-center justify-center rounded-full group transition-all focus:outline-none 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className={`relative flex items-center justify-center rounded-full group transition-all focus:outline-none z-10 shrink-0
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
-            whileHover={isInteractionBlocked ? {} : { scale: 1.05 }}
+            style={{ width: 'clamp(180px,30vw,500px)', height: 'clamp(180px,30vw,500px)' }}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
-            {/* Primary Background Glow - static */}
+            {/* Primary Background Glow - subtle */}
             <div 
               className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
               style={{ 
@@ -794,28 +1279,44 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               }}
             />
 
-            {/* Inner Glow Core */}
+            {/* Inner Glow Core - subtle */}
             <div 
               className="absolute inset-10 rounded-full blur-[80px] opacity-20 transition-colors duration-500"
               style={{ backgroundColor: activeColor }}
             />
 
-            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.1]">
-               <circle cx="240" cy="240" r="210" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-               <motion.circle 
-                  key={currentStepIndex}
-                  cx="240" cy="240" r="210" fill="none"
-                  stroke={activeColor} strokeWidth="8" strokeLinecap="round"
-                  strokeDasharray="1320"
-                  initial={{ strokeDashoffset: 1320 }}
-                  animate={{ strokeDashoffset: 0 }}
-                  transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
-                  className="opacity-80"
-               />
+            {/* Animated Ring */}
+            <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.0]" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
+              <circle cx="250" cy="250" r="230" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
+              <motion.circle 
+                key={currentStepIndex}
+                cx="250" cy="250" r="230" fill="none"
+                stroke={activeColor} strokeWidth="8" strokeLinecap="round"
+                strokeDasharray="1447"
+                initial={{ strokeDashoffset: 1447 }}
+                animate={{ strokeDashoffset: 0 }}
+                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                style={{ filter: `drop-shadow(0 0 15px ${activeColor}88)` }}
+                className="opacity-80"
+              />
             </svg>
 
-            {/* ENHANCED HYGIENE MODE - Only subtle glow */}
+            {/* Subtle Pulsing Animation Ring */}
+            <motion.div
+              className="absolute inset-0 rounded-full border-2"
+              style={{ borderColor: activeColor }}
+              animate={{ 
+                scale: [1, 1.08, 1],
+                opacity: [0.4, 0.1, 0.4]
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+
+            {/* Enhanced Hygiene subtle indicator */}
             <AnimatePresence>
               {room.isEnhancedHygiene && (
                 <div
@@ -827,9 +1328,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
               )}
             </AnimatePresence>
 
-
-
-            <div className="text-center relative z-20 pointer-events-none">
+            {/* Center Content */}
+            <div className="text-center relative z-20 pointer-events-none px-8">
               <AnimatePresence mode="wait">
                 {room.isLocked && isFinalStep ? (
                   <motion.div
@@ -839,46 +1339,79 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     exit={{ opacity: 0, scale: 0.8 }}
                     className="flex flex-col items-center"
                   >
-                    <Lock className="w-24 h-24 text-white mb-6" />
-                    <h2 className="text-6xl font-black tracking-tighter text-white uppercase">
+                    <Lock className="text-white mb-[clamp(0.5rem,1.5vw,1rem)]" style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} />
+                    <h2 className="text-[clamp(1.5rem,4vw,3rem)] font-black tracking-tighter text-white uppercase">
                       UZAMČENO
                     </h2>
                   </motion.div>
-                ) : showEndTime && estimatedEndTime ? (
+                ) : showEndTime && estimatedEndTime && shouldShowTime ? (
                   <motion.div
                     key="end-time-text"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
-                    <h2 className="text-8xl font-black tracking-tighter text-white font-mono">
+                    <h2 className="text-[clamp(2rem,6vw,4.5rem)] font-black tracking-tighter text-white font-mono">
                       {estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </h2>
                   </motion.div>
                 ) : showPatientCalledText ? (
                   <motion.div
                     key="patient-called-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex flex-col items-center gap-4"
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
                   >
-                    <Phone className="w-16 h-16" strokeWidth={1.5} />
-                    <h2 className="text-5xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
-                      Volání pacienta
-                    </h2>
+                    <p className="text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] uppercase text-white/25">
+                      SPECIÁLNÍ STAV
+                    </p>
+                    {/* Animované sluchátko */}
+                    <motion.div
+                      animate={{ rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.1, 1.1, 1.1, 1.1, 1] }}
+                      transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.8, ease: 'easeInOut' }}
+                      style={{ color: activeColor }}
+                    >
+                      <Phone style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} strokeWidth={1.5} />
+                    </motion.div>
+                    <motion.h2
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-[clamp(1.5rem,4vw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
+                    >
+                      Volání<br/>pacienta
+                    </motion.h2>
                   </motion.div>
                 ) : showPatientArrivedText ? (
                   <motion.div
                     key="patient-arrived-text"
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="h-36 flex items-center justify-center"
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
                   >
-                    <h2 className="text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl">
-                      Příjezd pacienta
-                    </h2>
+                    <p className="text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] uppercase text-white/25">
+                      SPECIÁLNÍ STAV
+                    </p>
+                    {/* Animovaná postel s pojezdem */}
+                    <motion.div
+                      animate={{ x: [0, 14, 0] }}
+                      transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.5, ease: 'easeInOut' }}
+                      style={{ color: activeColor }}
+                    >
+                      <BedDouble style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} strokeWidth={1.5} />
+                    </motion.div>
+                    <motion.h2
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-[clamp(1.5rem,4vw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
+                    >
+                      Příjezd<br/>pacienta
+                    </motion.h2>
                   </motion.div>
                 ) : isPaused ? (
                   <motion.div
@@ -887,112 +1420,189 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, onClose, onStepChange, on
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
-                    <h2 className="text-8xl font-black tracking-tighter text-white uppercase">
+                    <h2 className="text-[clamp(2rem,6vw,4.5rem)] font-black tracking-tighter text-white uppercase">
                       PAUZA
                     </h2>
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="run-text"
+                    key="current-status"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <p className={`text-[12px] font-black tracking-[0.4em] mb-6 uppercase group-hover:text-white/40 transition-colors ${room.isEmergency ? 'text-red-400' : 'text-white/20'}`}>
-                      {room.isLocked ? 'DOKONČIT DO FÁZE PŘIPRAVEN' : (currentStepIndex === WORKFLOW_STEPS.length - 1 ? 'SPUSTIT FÁZI' : 'SPUSTIT DALŠÍ FÁZI')}
+                    <p className={`text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] mb-[clamp(0.75rem,2vw,1.5rem)] uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
+                      PROBÍHAJÍCÍ FÁZE
                     </p>
                     
-                    <motion.div
-                      key={nextStep.title}
-                      initial={{ opacity: 0, filter: 'blur(10px)', y: 10 }}
-                      animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-                      exit={{ opacity: 0, filter: 'blur(10px)', y: -10 }}
-                      transition={{ duration: 0.4 }}
-                      className="h-36 flex items-center justify-center mb-4"
+                    <motion.h2
+                      key={currentStep.title}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`text-[clamp(1.5rem,5vw,3.75rem)] font-bold tracking-tight leading-tight mb-[clamp(0.75rem,2vw,1.5rem)] break-words ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
                     >
-                      <h2 className={`text-6xl font-bold tracking-tight leading-tight text-center max-w-xs drop-shadow-2xl ${room.isEmergency ? 'text-red-400' : ''}`}>
-                        {nextStep.title}
-                      </h2>
-                    </motion.div>
-    
-                    <div className="flex items-center justify-center gap-3">
-                      <p className={`text-sm font-bold tracking-widest uppercase ${room.isEmergency ? 'text-red-300' : 'text-white/40'}`}>
-                        {currentStep.title}
-                      </p>
-                      <div className="group-hover:block hidden">
-                        <ChevronRight className="w-5 h-5" style={{ color: activeColor }} />
-                      </div>
-                    </div>
+                      {currentStep.title}
+                    </motion.h2>
+
+
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </motion.button>
+
+          {/* Next Step - Right Circle */}
+          <motion.div
+            onClick={handleNextStep}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative flex items-center justify-center cursor-pointer shrink-0"
+            style={{ width: 'clamp(90px,16vw,280px)', height: 'clamp(90px,16vw,280px)' }}
+          >
+            {/* Glow - gradient transparent from center */}
+            <div 
+              className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
+              style={{
+                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+              }}
+            />
+            
+            {/* Ring */}
+            <div 
+              className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
+              style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+            />
+            
+            {/* Inner content */}
+            <div className="relative z-10 text-center px-4">
+              <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
+                {isFinalStep ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'}
+              </p>
+              <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
+                {nextStep.title}
+              </h3>
+            </div>
+          </motion.div>
         </div>
+        
+        {/* Time adjustment buttons - positioned below center circle, responsive to circle size */}
+        {!isInteractionBlocked && (
+          <>
+            {/* Minus button - left of center, below circle */}
+            <button 
+              onClick={handleDecreaseTime}
+              className="absolute rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50 -translate-x-1/2 -translate-y-1/2"
+              style={{
+                borderColor: `${activeColor}66`,
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                width: 'clamp(5rem,9vw,14rem)',
+                height: 'clamp(5rem,9vw,14rem)',
+                left: 'clamp(20%,32%,35%)',
+                top: 'calc(50% + clamp(130px, 20vw, 320px))',
+              }}
+              aria-label="Zkrátit odhadovaný čas"
+            >
+              <Minus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
+            </button>
+
+            {/* Plus button - right of center, below circle */}
+            <button 
+              onClick={handleIncreaseTime}
+              className="absolute rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50 translate-x-1/2 -translate-y-1/2"
+              style={{
+                borderColor: `${activeColor}66`,
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                width: 'clamp(5rem,9vw,14rem)',
+                height: 'clamp(5rem,9vw,14rem)',
+                right: 'clamp(20%,32%,35%)',
+                top: 'calc(50% + clamp(130px, 20vw, 320px))',
+              }}
+              aria-label="Prodloužit odhadovaný čas"
+            >
+              <Plus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
+            </button>
+          </>
+        )}
       </main>
 
-      {/* Left Info Panel */}
-      <div className="absolute left-32 bottom-16 space-y-10 z-50">
-        <div className="space-y-6">
-          <AnimatePresence mode="wait">
-            <motion.div 
-              key={`badge-${currentStepIndex}-${isPaused}-${room.isEmergency}-${room.isLocked}`}
-              className="px-6 py-2.5 rounded-full border inline-block text-[12px] font-black uppercase tracking-[0.2em] backdrop-blur-md"
-              style={{ 
-                borderColor: `${activeColor}66`, 
-                backgroundColor: `${activeColor}15`, 
-                color: activeColor 
-              }}
-            >
-              {room.isEmergency ? 'EMERGENCY AKTIVNÍ' : (room.isLocked ? (isFinalStep ? 'SÁL UZAM��EN' : 'DOKONČOVÁNÍ PŘED UZAMČENÍM') : (isPaused ? 'POZASTAVENO' : currentStep.status))}
-            </motion.div>
-          </AnimatePresence>
-          
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-widest mb-2" style={{ color: '#c0bdb7' }}>
-              {isPaused ? 'DOBA TRVÁNÍ PAUZY' : 'DOBA TRVÁNÍ FÁZE'}
-            </p>
-            <div className="flex items-center gap-5">
-                <span className={`text-5xl font-bold tracking-tighter font-mono tabular-nums ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : '')}`}>
-                  {isPaused ? pauseElapsedTime : elapsedTime}
-                </span>
-            </div>
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.h3
-              key={`title-${currentStepIndex}-${isPaused}-${room.isLocked}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`text-6xl font-bold tracking-tight ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/95')}`}
-            >
-              {room.isEmergency ? 'Urgentní příjem' : (room.isLocked && isFinalStep ? 'Sál uzamčen' : (isPaused ? 'Probíhá pauza' : currentStep.title))}
-            </motion.h3>
-          </AnimatePresence>
-        </div>
-
-
-
-        {/* Patient Status Indicators */}
-        {/* Patient status info removed */}
-      </div>
-
-      {/* Navigation Indicators */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-4">
-        {WORKFLOW_STEPS.map((_, i) => (
+      {/* Bottom Center - Phase Duration & Navigation */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
+        {/* Navigation Indicators - only show active statuses */}
+        <div className="flex gap-3">
+        {activeDbStatuses.map((status, index) => (
           <div 
-            key={i} 
-            className="h-2 rounded-full transition-all duration-500"
+            key={status.id} 
+            className="h-1.5 rounded-full transition-all duration-500"
             style={{
-              width: i === currentStepIndex ? 36 : 10,
-              backgroundColor: i === currentStepIndex ? activeColor : 'rgba(255,255,255,0.1)',
-              opacity: i === currentStepIndex ? 1 : 0.3
+              width: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 32 : 8,
+              backgroundColor: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? activeColor : 'rgba(255,255,255,0.15)',
+              opacity: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 1 : 0.4
             }}
           />
         ))}
+        </div>
       </div>
+      </div>{/* end content-safe wrapper */}
       </div>{/* end desktop wrapper */}
+
+      {/* Step Confirmation Overlay */}
+      <StepConfirmationOverlay
+        pendingStepIndex={pendingStepIndex}
+        activeDbStatuses={activeDbStatuses}
+        safeStepIndex={safeStepIndex}
+        validStepCount={validStepCount}
+        onConfirm={confirmStepChange}
+        onCancel={cancelStepChange}
+      />
+
+      {/* Staff Picker Modal */}
+      <StaffPickerModal
+        isOpen={staffPickerOpen}
+        onClose={() => setStaffPickerOpen(false)}
+        onSelect={(staffId, staffName) => {
+          if (onStaffChange) {
+            onStaffChange(staffPickerRole, staffId, staffName);
+          }
+        }}
+        onUnassign={() => {
+          if (onStaffChange) {
+            onStaffChange(staffPickerRole, '', '');
+          }
+        }}
+        currentStaffId={staffPickerRole === 'doctor' ? room?.staff?.doctor?.id : room?.staff?.nurse?.id}
+        currentStaffName={staffPickerRole === 'doctor' ? room?.staff?.doctor?.name : room?.staff?.nurse?.name}
+        filterRole={staffPickerRole === 'doctor' ? 'DOCTOR' : 'NURSE'}
+        title={staffPickerRole === 'doctor' ? 'Lékař — výběr a správa' : 'Sestra — výběr a správa'}
+        allRooms={allRooms}
+        currentRoomId={room.id}
+      />
+
+      {/* Notification Overlay */}
+      <NotificationOverlay
+        isOpen={notificationOverlayOpen}
+        onClose={() => setNotificationOverlayOpen(false)}
+        onSendNotification={async (type, customReason) => {
+          try {
+            const response = await fetch('/api/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type,
+                roomId: room.id,
+                roomName: room.name,
+                customReason,
+              }),
+            });
+            const result = await response.json();
+            console.log('[v0] Notification sent:', result);
+          } catch (error) {
+            console.error('[v0] Error sending notification:', error);
+            throw error;
+          }
+        }}
+        roomName={room.name}
+      />
     </motion.div>
   );
 };

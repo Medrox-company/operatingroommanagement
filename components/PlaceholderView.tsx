@@ -1,14 +1,14 @@
 import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface PlaceholderViewProps {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   title: string;
   description: string;
 }
 
-const PlaceholderView: React.FC<PlaceholderViewProps> = ({ icon: Icon, title, description }) => (
+const PlaceholderView: React.FC<PlaceholderViewProps> = ({ icon: Icon = AlertCircle, title, description }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}

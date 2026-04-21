@@ -1,22 +1,23 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
-import { Shield, LogOut } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 interface MobileNavProps {
   currentView: string;
   onNavigate: (viewId: string) => void;
 }
 
-const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate }) => {
-  const { isAdmin, logout, modules } = useAuth();
+const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) => {
+  const { isAdmin, modules } = useAuth();
 
-  // Filter sidebar items based on enabled modules (admins see all, users see only enabled)
-  const enabledItems = SIDEBAR_ITEMS.filter(item => {
-    if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
+  // Filter sidebar items based on enabled modules - memoized for performance
+  const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
+    if (item.id === 'dashboard') return true;
+    if (isAdmin) return true;
     const module = modules.find(m => m.id === item.id);
     return module?.is_enabled !== false;
-  }).slice(0, isAdmin ? 4 : 5); // Leave room for admin button if admin
+  }).slice(0, isAdmin ? 4 : 5), [isAdmin, modules]);
 
   return (
     <nav
@@ -66,6 +67,6 @@ const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate }) => {
       )}
     </nav>
   );
-};
+});
 
 export default MobileNav;

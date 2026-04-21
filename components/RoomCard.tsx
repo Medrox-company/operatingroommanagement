@@ -1,9 +1,8 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
-import { Biohazard, Clock, AlertCircle, Lock } from 'lucide-react';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
+import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -12,15 +11,77 @@ interface RoomCardProps {
   onLock?: (e: React.MouseEvent) => void;
 }
 
-const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock }) => {
-  const currentStep = WORKFLOW_STEPS[room.currentStepIndex];
-  const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : currentStep.color);
+const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
+  // Get workflow statuses from database context - already filtered and sorted
+  const { workflowStatuses } = useWorkflowStatusesContext();
   
-  const progressPercent = ((room.currentStepIndex + 1) / WORKFLOW_STEPS.length);
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  // Add null safety
+  const activeStatuses = workflowStatuses || [];
+  
+  // Filter completed operations for today (7:00 yesterday/today to 6:59 today/tomorrow)
+  // The window is: if current time >= 7:00, count from 7:00 today to 6:59 tomorrow
+  //                if current time < 7:00, count from 7:00 yesterday to 6:59 today
+  const todayOperationCount = useMemo(() => {
+    if (!room.completedOperations || room.completedOperations.length === 0) return 0;
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Determine the start of the 24h window based on current time
+    const startOfWindow = new Date(now);
+    if (currentHour >= 7) {
+      // After 7 AM - window starts at 7:00 today
+      startOfWindow.setHours(7, 0, 0, 0);
+    } else {
+      // Before 7 AM - window starts at 7:00 yesterday
+      startOfWindow.setDate(startOfWindow.getDate() - 1);
+      startOfWindow.setHours(7, 0, 0, 0);
+    }
+    
+    // End of window is 24h after start (6:59:59 next day)
+    const endOfWindow = new Date(startOfWindow);
+    endOfWindow.setDate(endOfWindow.getDate() + 1);
+    endOfWindow.setHours(6, 59, 59, 999);
+    
+    const count = room.completedOperations.filter(op => {
+      if (!op.endedAt) return false; // Use endedAt for completed operations
+      const opEnd = new Date(op.endedAt);
+      return opEnd >= startOfWindow && opEnd <= endOfWindow;
+    }).length;
+    
+    return count;
+  }, [room.completedOperations]);
+  
+  // Memoize computed values using database statuses
+  const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
+    const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+    const safeIndex = Math.min(Math.max(0, room.currentStepIndex || 0), totalSteps - 1);
+    const step = activeStatuses[safeIndex] || null;
+    
+    const currentStep = {
+      title: step?.title || step?.name || 'Status',
+      color: step?.accent_color || step?.color || '#6B7280',
+    };
+    
+    const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
+    const progressPercent = ((safeIndex + 1) / totalSteps);
+    
+    // Don't show time for "Sal priprav*" and "Uklid" statuses (ASCII-safe)
+    const statusName = (step?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isReadyStatus = statusName.includes('priprav');
+    const isCleaningStatus = statusName.includes('uklid');
+    const shouldShowTime = !isReadyStatus && !isCleaningStatus;
+    
+    const radius = 38;
+    const strokeDasharray = 2 * Math.PI * radius;
+    const strokeDashoffset = strokeDasharray * (1 - progressPercent);
+    
+    return { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
+  }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
+  
   const radius = 38;
   const strokeWidth = 4;
-  const strokeDasharray = 2 * Math.PI * radius;
-  const strokeDashoffset = strokeDasharray * (1 - progressPercent);
 
   const center = 56;
 
@@ -69,71 +130,31 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
       {/* Content Container */}
       <div className="relative h-full w-full z-10 p-6 flex flex-col">
         
-        {/* Header */}
-        <div className="w-full flex justify-between items-start min-w-0 gap-2 shrink-0">
-          <div className="flex flex-col min-w-0 flex-1">
-            <p className={`text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors
-              ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
-            `}>
-              UNIT {room.department}
-            </p>
-            <h3 className={`text-xl font-bold tracking-tight uppercase leading-none transition-colors truncate
-              ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
-            `}>
-              {room.name}
-            </h3>
-          </div>
-          
-          <div className="flex items-center gap-2 shrink-0">
-            {room.isSeptic && (
-              <div className="p-1.5 bg-red-500/10 rounded-xl border border-red-500/20 backdrop-blur-md">
-                <Biohazard className="w-3.5 h-3.5 text-red-500/70" />
-              </div>
-            )}
-            
-            {/* Emergency Action */}
-            <button
-              onClick={(e) => handleAction(e, onEmergency)}
-              className={`p-2.5 rounded-xl border transition-all backdrop-blur-md
-                ${room.isEmergency 
-                  ? 'bg-red-600 text-white border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]' 
-                  : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
-              `}
-            >
-              <AlertCircle className="w-5 h-5" />
-            </button>
-
-            {/* Lock Action */}
-            <button
-              onClick={(e) => handleAction(e, onLock)}
-              className={`p-2.5 rounded-xl border transition-all backdrop-blur-md
-                ${room.isLocked
-                  ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
-                  : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
-              `}
-            >
-              <Lock className="w-5 h-5" />
-            </button>
-          </div>
+        {/* Header — centered */}
+        <div className="w-full flex flex-col items-center text-center shrink-0">
+          <p className={`text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 transition-colors
+            ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
+          `}>
+            {room.department}
+          </p>
+          <h3 className={`text-xl font-bold tracking-tight uppercase leading-none transition-colors
+            ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
+          `}>
+            {room.name}
+          </h3>
         </div>
 
         {/* Central Content Wrapper */}
         <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <div className="relative flex items-center justify-center">
-                {/* Animated glow behind the circle */}
-                <motion.div
-                  className="absolute rounded-full blur-[40px]"
-                  style={{ width: 80, height: 80, backgroundColor: themeColor }}
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 0.25, scale: 1 }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                {/* Static glow behind the circle - replaced motion for performance */}
+                <div
+                  className="absolute rounded-full blur-[40px] transition-all duration-500"
+                  style={{ width: 80, height: 80, backgroundColor: themeColor, opacity: 0.25 }}
                 />
-                <motion.svg
+                <svg
                   className="w-28 h-28 overflow-visible select-none flex-shrink-0"
-                  style={{ rotate: '-90deg' }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.7, ease: 'easeOut' }}
+                  style={{ transform: 'rotate(-90deg)' }}
                 >
                     <circle 
                       cx={center} cy={center} r={radius} 
@@ -142,36 +163,55 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
                       strokeWidth="1.5" 
                       className="opacity-[0.03]" 
                     />
-                    <motion.circle 
+                    <circle 
                       cx={center} cy={center} r={radius} 
                       fill="none"
                       stroke={themeColor} 
                       strokeWidth={strokeWidth} 
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
-                      initial={{ strokeDashoffset: strokeDasharray }}
-                      animate={{ strokeDashoffset: strokeDashoffset }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
+                      strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
+                      className="transition-all duration-500"
                       style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
                     />
-                    <text
-                      x={center}
-                      y={center}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      className={`text-4xl font-black transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
-                      style={{ 
+                    {room.isPaused ? (
+                      <text
+                        x={center}
+                        y={center}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill="#22D3EE"
+                        className="text-4xl font-black"
+                        style={{ 
                           transform: 'rotate(90deg)', 
                           transformOrigin: `${center}px ${center}px`,
+                          fontSize: '28px',
+                          fontWeight: 900,
                           letterSpacing: '-0.05em'
-                      }}
-                    >
-                      {room.operations24h}
-                    </text>
-                </motion.svg>
+                        }}
+                      >
+                        P
+                      </text>
+                    ) : (
+                      <text
+                        x={center}
+                        y={center}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        className={`text-4xl font-black transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
+                        style={{ 
+                            transform: 'rotate(90deg)', 
+                            transformOrigin: `${center}px ${center}px`,
+                            letterSpacing: '-0.05em'
+                        }}
+                      >
+                        {todayOperationCount}
+                      </text>
+                    )}
+                </svg>
             </div>
             
-            {room.estimatedEndTime && room.currentStepIndex !== 6 && (
+            {room.estimatedEndTime && shouldShowTime && (
                 <div className="-mt-1 text-center">
                     <div className="flex items-center gap-1.5 justify-center">
                       <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
@@ -197,35 +237,85 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick, onEmergency, onLock 
             </p>
           </div>
           
-          <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : 'border-white/5')}
+            <div className={`flex items-center justify-between pt-3 border-t gap-2 transition-colors
+            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
           `}>
-            <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-9 h-9 rounded-xl border overflow-hidden shrink-0 
-                ${room.isEmergency ? 'border-red-500/30' : (room.isLocked ? 'border-amber-500/30' : 'border-white/5')}
+            {/* Left: avatar + names */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className={`w-9 h-9 rounded-xl border shrink-0 flex items-center justify-center
+                ${room.isEmergency ? 'border-red-500/30 bg-red-500/10' : (room.isLocked ? 'border-amber-500/30 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/30 bg-cyan-500/10' : 'border-white/10 bg-white/5'))}
               `}>
-                <img src={`https://i.pravatar.cc/150?u=${room.staff.doctor.name}`} alt="Dr" className="w-full h-full object-cover grayscale opacity-70 group-hover:opacity-100 transition-opacity" />
+                <User className={`w-4 h-4 transition-opacity
+                  ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : (room.isPaused ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/60'))}
+                `} />
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors
-                ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : 'text-white/40 group-hover:text-white/60')}
-              `}>
-                {room.staff.doctor.name?.split(' ').pop()}
-              </span>
-            </div>
-            
-            {!room.estimatedEndTime && (
-              <div className="flex items-center gap-1.5 opacity-40 group-hover:opacity-80 transition-opacity shrink-0">
-                <Clock className="w-3.5 h-3.5 text-white" />
-                <span className="text-[11px] font-mono font-bold text-white">
-                  {room.currentProcedure?.startTime || '--:--'}
+              <div className="min-w-0 flex flex-col gap-0.5">
+                <span className={`text-[10px] font-bold uppercase tracking-tight truncate transition-colors
+                  ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
+                `}>
+                  {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
                 </span>
+                {room?.staff?.nurse?.name && (
+                  <span className={`text-[9px] font-medium uppercase tracking-tight truncate transition-colors
+                    ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
+                  `}>
+                    {room?.staff?.nurse?.name?.split(' ').pop()}
+                  </span>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* Right: action buttons / status badges */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {room.isSeptic && (
+                <div className="p-1.5 bg-red-500/10 rounded-xl border border-red-500/20 backdrop-blur-md">
+                  <Biohazard className="w-3.5 h-3.5 text-red-500/70" />
+                </div>
+              )}
+
+              {/* Patient called indicator */}
+              {room.patientCalledAt && !room.patientArrivedAt && (
+                <div className="p-2 rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">
+                  <Phone className="w-4 h-4 text-blue-400" />
+                </div>
+              )}
+
+              {/* Patient arrived indicator */}
+              {room.patientArrivedAt && (
+                <div className="p-2 rounded-xl border transition-all backdrop-blur-md bg-green-500/20 border-green-400/40">
+                  <BedDouble className="w-4 h-4 text-green-400" />
+                </div>
+              )}
+
+              {/* Emergency button */}
+              <button
+                onClick={(e) => handleAction(e, onEmergency)}
+                className={`p-2 rounded-xl border transition-all backdrop-blur-md
+                  ${room.isEmergency
+                    ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
+                    : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
+                `}
+              >
+                <AlertCircle className="w-4 h-4" />
+              </button>
+
+              {/* Lock button */}
+              <button
+                onClick={(e) => handleAction(e, onLock)}
+                className={`p-2 rounded-xl border transition-all backdrop-blur-md
+                  ${room.isLocked
+                    ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
+                    : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
+                `}
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-};
+});
 
 export default RoomCard;

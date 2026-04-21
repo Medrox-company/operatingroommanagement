@@ -1,551 +1,210 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
-import { WORKFLOW_STEPS } from '../constants';
+import { STEP_DURATIONS, STEP_COLORS } from '../constants';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle
 } from 'lucide-react';
+
+// ========== CONSTANTS ==========
+const TIMELINE_START_HOUR = 7;
+const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
+const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
+const ROOM_LABEL_WIDTH = 200;
+const MIN_ROW_HEIGHT = 40; // Minimum row height
+const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
+const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
+
+const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
+
+const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
+  orange: { bg: '#FB923C', border: '#FDBA74', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(251,146,60,0.2)' },
+  purple: { bg: '#C084FC', border: '#D8B4FE', stripe: '#E9D5FF', text: '#FFF', glow: 'rgba(192,132,252,0.2)' },
+  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.2)' },
+  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.2)' },
+  green: { bg: '#4ADE80', border: '#86EFAC', stripe: '#BBF7D0', text: '#FFF', glow: 'rgba(74,222,128,0.2)' },
+  red: { bg: '#F87171', border: '#FCA5A5', stripe: '#FECACA', text: '#FFF', glow: 'rgba(248,113,113,0.2)' },
+  cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
+};
+
+// Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
+const STEP_INDEX_COLORS: Record<number, string> = {
+  0: '#6b7280',
+  1: '#8b5cf6',
+  2: '#ec4899',
+  3: '#ef4444',
+  4: '#f59e0b',
+  5: '#a855f7',
+  6: '#10b981',
+  7: '#f97316',
+};
+
+// ========== HELPER FUNCTIONS ==========
+const getTimePercent = (date: Date): number => {
+  const hours = date.getHours() + date.getMinutes() / 60;
+  let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
+  if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
+  // Return percent clamped to valid timeline range
+  return Math.max(0, Math.min(100, percent));
+};
+
+const parseTimeToDate = (timeString: string): Date => {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+};
+
+const hourLabel = (hour: number): string => {
+  // Convert timeline hour (0-24) to actual 24-hour format (7:00 to 7:00 next day)
+  const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+  const displayHour = actualHour % 24; // Display as 7-23, 0-6
+  return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
+};
+
+const isNextDayHour = (hour: number): boolean => hour >= 24;
+
+// Check if operation should be displayed in current 24-hour window (7:00 today to 7:00 tomorrow)
+// Rules:
+// - SHOW operations that started OR ended within the current 24h window (7:00 - 7:00)
+// - SHOW continuing operations that started before 7:00 but end after 7:00 (still running)
+// - DO NOT show operations that fully ended before the window start (yesterday's old ops)
+const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date): boolean => {
+  // Get current window start: 7:00 of the current day
+  const windowStart = new Date(currentTime);
+  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
+    windowStart.setDate(windowStart.getDate() - 1);
+  }
+  // Window ends at 7:00 next day
+  const windowEnd = new Date(windowStart);
+  windowEnd.setDate(windowEnd.getDate() + 1);
+
+  // Show if operation overlaps with the 24h window at all
+  // (operation ends after window start AND starts before window end)
+  return endDate > windowStart && startDate < windowEnd;
+};
+
+// Check if operation exceeds 24 hours
+const exceedsT24Hours = (startDate: Date, endDate: Date): boolean => {
+  const durationMs = endDate.getTime() - startDate.getTime();
+  const durationHours = durationMs / (1000 * 60 * 60);
+  return durationHours > 24;
+};
+
+// Get time percent for timeline display
+// Timeline runs from 7:00 (0%) to 7:00 next day (100%)
+// Operations that cross 7:00 will extend beyond 100%
+const getTimePercentForTimeline = (date: Date, referenceStart: Date): number => {
+  const diffMs = date.getTime() - referenceStart.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  return (diffHours / TIMELINE_HOURS) * 100;
+};
+
+// Get operation position on timeline (single continuous bar, even if crossing 7:00)
+const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {
+  left: number, 
+  width: number, 
+  exceedsBoundary: boolean,
+  isContinuing: boolean  // True if operation started before 7:00 (from previous day)
+} => {
+  // Calculate window start (7:00 of the current day)
+  const windowStart = new Date(currentTime);
+  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+  
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
+    windowStart.setDate(windowStart.getDate() - 1);
+  }
+  
+  // Calculate position relative to window start
+  let leftPct = getTimePercentForTimeline(startDate, windowStart);
+  let endPct = getTimePercentForTimeline(endDate, windowStart);
+  
+  // Check if operation started before window (continuing from previous day)
+  const isContinuing = leftPct < 0;
+  
+  // Clamp left to 0 if operation started before window
+  if (leftPct < 0) leftPct = 0;
+  
+  // Check if operation exceeds timeline boundary (past 7:00 next day = 100%)
+  const exceedsBoundary = endPct > 100;
+  
+  // Clamp end to 100 for display (but track if it exceeds)
+  if (endPct > 100) endPct = 100;
+  
+  const width = Math.max(0, endPct - leftPct);
+  
+  return {
+    left: leftPct,
+    width: width,
+    exceedsBoundary: exceedsBoundary,
+    isContinuing: isContinuing
+  };
+};
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
 
-/* --- Layout constants --- */
-const ROOM_LABEL_WIDTH = 200;
-const TIMELINE_START_HOUR = 7;  // Timeline starts at 7:00
-const TIMELINE_HOURS = 24;      // 24 hours displayed (7:00 to 7:00 next day)
-const TIME_MARKERS = Array.from({ length: TIMELINE_HOURS + 1 }, (_, i) => (TIMELINE_START_HOUR + i) % 24); // 7, 8, 9... 23, 0, 1, 2, 3, 4, 5, 6, 7
-const SHIFT_START_HOUR = 7;  // 7:00 AM
-const SHIFT_END_HOUR = 19;   // 7:00 PM
-const ROW_HEIGHT = 56;
-
-// Get minutes from timeline start (7:00)
-const getMinutesFromTimelineStart = (date: Date) => {
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  // Calculate minutes from 7:00
-  let totalMinutes = (hours * 60 + minutes) - (TIMELINE_START_HOUR * 60);
-  // If negative (before 7:00), it's next day portion
-  if (totalMinutes < 0) {
-    totalMinutes += 24 * 60;
-  }
-  return totalMinutes;
-};
-
-// Convert time to percentage of 24h timeline (from 7:00 to 7:00)
-const getTimePercent = (date: Date) => {
-  const minutesFromStart = getMinutesFromTimelineStart(date);
-  return (minutesFromStart / (TIMELINE_HOURS * 60)) * 100;
-};
-
-// Parse time string "HH:MM" to Date object (today)
-const parseTimeToDate = (timeStr: string): Date => {
-  const parts = timeStr.split(':');
-  const date = new Date();
-  date.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
-  return date;
-};
-
-// Get hour label with next day indicator
-const hourLabel = (h: number, showNextDay = false) => {
-  const hour = h % 24;
-  const label = `${hour < 10 ? '0' : ''}${hour}:00`;
-  // Hours 0-6 are next day when timeline starts at 7:00
-  if (showNextDay && hour >= 0 && hour < TIMELINE_START_HOUR) {
-    return label + ' +1';
-  }
-  return label;
-};
-
-// Check if hour is in "next day" portion of timeline
-const isNextDayHour = (h: number) => h >= 0 && h < TIMELINE_START_HOUR;
-
-/* --- Room colors by priority/activity --- */
-const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#F97316', border: '#FB923C', stripe: '#FDBA74', text: '#FFF', glow: 'rgba(249,115,22,0.4)' },
-  purple: { bg: '#A855F7', border: '#C084FC', stripe: '#D8B4FE', text: '#FFF', glow: 'rgba(168,85,247,0.4)' },
-  pink: { bg: '#EC4899', border: '#F472B6', stripe: '#F9A8D4', text: '#FFF', glow: 'rgba(236,72,153,0.4)' },
-  blue: { bg: '#3B82F6', border: '#60A5FA', stripe: '#93C5FD', text: '#FFF', glow: 'rgba(59,130,246,0.4)' },
-  green: { bg: '#22C55E', border: '#4ADE80', stripe: '#86EFAC', text: '#FFF', glow: 'rgba(34,197,94,0.4)' },
-  red: { bg: '#EF4444', border: '#F87171', stripe: '#FCA5A5', text: '#FFF', glow: 'rgba(239,68,68,0.4)' },
-  cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#67E8F9', text: '#FFF', glow: 'rgba(6,182,212,0.4)' },
-};
-
-const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'];
-
-/* --- Step colors matching WORKFLOW_STEPS --- */
-const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
-  0: { bg: 'rgba(45,212,191,0.25)', fill: 'rgba(45,212,191,0.50)', border: 'rgba(45,212,191,0.35)', text: '#2DD4BF', glow: 'rgba(45,212,191,0.45)', solid: '#2DD4BF' },
-  1: { bg: 'rgba(167,139,250,0.25)', fill: 'rgba(167,139,250,0.50)', border: 'rgba(167,139,250,0.35)', text: '#A78BFA', glow: 'rgba(167,139,250,0.45)', solid: '#A78BFA' },
-  2: { bg: 'rgba(255,59,48,0.25)', fill: 'rgba(255,59,48,0.50)', border: 'rgba(255,59,48,0.35)', text: '#FF3B30', glow: 'rgba(255,59,48,0.45)', solid: '#FF3B30' },
-  3: { bg: 'rgba(251,191,36,0.25)', fill: 'rgba(251,191,36,0.50)', border: 'rgba(251,191,36,0.35)', text: '#FBBF24', glow: 'rgba(251,191,36,0.45)', solid: '#FBBF24' },
-  4: { bg: 'rgba(129,140,248,0.25)', fill: 'rgba(129,140,248,0.50)', border: 'rgba(129,140,248,0.35)', text: '#818CF8', glow: 'rgba(129,140,248,0.45)', solid: '#818CF8' },
-  5: { bg: 'rgba(217,70,239,0.25)', fill: 'rgba(217,70,239,0.50)', border: 'rgba(217,70,239,0.35)', text: '#D946EF', glow: 'rgba(217,70,239,0.45)', solid: '#D946EF' },
-  6: { bg: 'rgba(249,115,22,0.25)', fill: 'rgba(249,115,22,0.50)', border: 'rgba(249,115,22,0.35)', text: '#F97316', glow: 'rgba(249,115,22,0.45)', solid: '#F97316' },
-};
-
-/* ============================== */
-/* Room Detail Popup Component    */
-/* ============================== */
-const RoomDetailPopup: React.FC<{ room: OperatingRoom; onClose: () => void; currentTime: Date }> = ({ room, onClose, currentTime }) => {
-  const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
-  const step = WORKFLOW_STEPS[stepIndex];
-  const colors = STEP_COLORS[stepIndex] || STEP_COLORS[6];
-  const isActive = stepIndex < 6;
-  const nextStep = stepIndex < WORKFLOW_STEPS.length - 1 ? WORKFLOW_STEPS[stepIndex + 1] : null;
-  const nextColors = stepIndex < 6 ? (STEP_COLORS[stepIndex + 1] || STEP_COLORS[6]) : null;
-
-  const startParts = room.currentProcedure?.startTime?.split(':');
-  let elapsedStr = '--:--:--';
-  if (startParts && startParts.length === 2 && isActive) {
-    const startDate = new Date();
-    startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
-    const elapsed = Math.max(0, Math.floor((currentTime.getTime() - startDate.getTime()) / 1000));
-    const h = Math.floor(elapsed / 3600);
-    const m = Math.floor((elapsed % 3600) / 60);
-    const s = elapsed % 60;
-    elapsedStr = `${h < 10 ? '0' : ''}${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-  }
-
-  let endTimeStr = '--:--';
-  if (room.estimatedEndTime) {
-    endTimeStr = new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-  } else if (room.currentProcedure?.estimatedDuration && startParts && startParts.length === 2) {
-    const sd = new Date();
-    sd.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
-    endTimeStr = new Date(sd.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  const progress = room.currentProcedure?.progress || 0;
-  const themeColor = room.isEmergency ? '#FF3B30' : room.isLocked ? '#FBBF24' : colors.text;
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <motion.div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-2xl" 
-        onClick={onClose}
-        initial={{ backdropFilter: 'blur(0px)' }}
-        animate={{ backdropFilter: 'blur(32px)' }}
-        exit={{ backdropFilter: 'blur(0px)' }}
-      />
-
-      <motion.div
-        className="relative w-full max-w-[900px] rounded-3xl border shadow-2xl overflow-hidden"
-        style={{ 
-          background: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 0 80px ${themeColor}15`
-        }}
-        initial={{ scale: 0.9, y: 30, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.95, y: 20, opacity: 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <motion.div 
-          className="absolute top-0 left-0 right-0 h-[2px]" 
-          style={{ 
-            background: `linear-gradient(90deg, transparent 0%, ${themeColor} 50%, transparent 100%)`,
-            filter: `drop-shadow(0 0 8px ${themeColor})`
-          }}
-          animate={{ opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: themeColor }} />
-        <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none" style={{ background: themeColor }} />
-
-        <motion.div 
-          className="flex items-center justify-between px-7 py-5 border-b relative"
-          style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.2)' }}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-        >
-          <div className="flex items-center gap-5">
-            <motion.div 
-              className="relative w-16 h-16 flex-shrink-0"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.2, duration: 0.6, type: 'spring', bounce: 0.4 }}
-            >
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-                <motion.circle 
-                  cx="32" cy="32" r="26" fill="none"
-                  stroke={themeColor}
-                  strokeWidth="3" strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 26}`}
-                  initial={{ strokeDashoffset: `${2 * Math.PI * 26}` }}
-                  animate={{ strokeDashoffset: `${2 * Math.PI * 26 * (1 - progress / 100)}` }}
-                  transition={{ delay: 0.3, duration: 1.2, ease: 'easeOut' }}
-                  style={{ filter: `drop-shadow(0 0 6px ${themeColor}60)` }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.span 
-                  className="text-sm font-black text-white"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5, duration: 0.3 }}
-                >
-                  {progress}%
-                </motion.span>
-              </div>
-            </motion.div>
-
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <motion.h2 
-                  className="text-2xl font-black tracking-tight text-white"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
-                >
-                  {room.name}
-                </motion.h2>
-                {isActive && (
-                  <motion.span 
-                    className="px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider border" 
-                    style={{ color: themeColor, borderColor: `${themeColor}40`, backgroundColor: `${themeColor}15` }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3, duration: 0.3 }}
-                  >
-                    {step.title}
-                  </motion.span>
-                )}
-                {room.isEmergency && (
-                  <motion.span 
-                    className="px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider bg-red-500/20 text-red-400 border border-red-500/40"
-                    animate={{ boxShadow: ['0 0 0 rgba(239,68,68,0)', '0 0 20px rgba(239,68,68,0.4)', '0 0 0 rgba(239,68,68,0)'] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    EMERGENCY
-                  </motion.span>
-                )}
-                {room.isLocked && (
-                  <span className="px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40">UZAMCENO</span>
-                )}
-              </div>
-              <p className="text-xs font-medium text-white/30 tracking-wider uppercase">{room.department} &middot; Krok {stepIndex + 1} z {WORKFLOW_STEPS.length}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-5">
-            {isActive && (
-              <motion.div 
-                className="text-right"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-              >
-                <p className="text-[8px] font-bold text-white/25 tracking-[0.15em] uppercase mb-1">DOBA OPERACE</p>
-                <motion.p 
-                  className="text-2xl font-black font-mono tracking-widest" 
-                  style={{ color: themeColor, textShadow: `0 0 20px ${themeColor}40` }}
-                  animate={{ opacity: [1, 0.7, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  {elapsedStr}
-                </motion.p>
-              </motion.div>
-            )}
-            <motion.button
-              onClick={onClose}
-              className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all"
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.05)', 
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(10px)'
-              }}
-              whileHover={{ 
-                scale: 1.05, 
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderColor: 'rgba(255, 255, 255, 0.2)'
-              }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, rotate: -90 }}
-              animate={{ opacity: 1, rotate: 0 }}
-              transition={{ delay: 0.4, duration: 0.3 }}
-            >
-              <X className="w-4 h-4 text-white/50" />
-            </motion.button>
-          </div>
-        </motion.div>
-
-        <div className="px-7 py-5 space-y-5">
-          {isActive && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-            >
-              <div className="flex items-center gap-2.5 mb-3">
-                <Activity className="w-4 h-4 text-white/30" />
-                <h3 className="text-[10px] font-black tracking-[0.15em] uppercase text-white/50">Postup operace</h3>
-              </div>
-              <div className="flex gap-3 items-stretch">
-                <motion.div 
-                  className="flex-1 rounded-2xl p-4 border relative overflow-hidden"
-                  style={{ backgroundColor: `${themeColor}10`, borderColor: `${themeColor}25`, backdropFilter: 'blur(20px)' }}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3, duration: 0.4 }}
-                  whileHover={{ scale: 1.02, borderColor: `${themeColor}40` }}
-                >
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-2">
-                      <motion.div 
-                        className="w-2 h-2 rounded-full" 
-                        style={{ backgroundColor: themeColor, boxShadow: `0 0 10px ${themeColor}` }} 
-                        animate={{ opacity: [1, 0.4, 1], scale: [1, 1.2, 1] }} 
-                        transition={{ duration: 1.5, repeat: Infinity }} 
-                      />
-                      <span className="text-[9px] font-black tracking-[0.12em] uppercase" style={{ color: themeColor }}>PRAVE PROBIHA</span>
-                    </div>
-                    <span className="text-[9px] font-bold px-2 py-1 rounded-lg" style={{ color: themeColor, backgroundColor: `${themeColor}15` }}>
-                      Krok {stepIndex + 1}/{WORKFLOW_STEPS.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center border"
-                      style={{ backgroundColor: `${themeColor}15`, borderColor: `${themeColor}30` }}
-                    >
-                      <step.Icon className="w-5 h-5" style={{ color: themeColor }} />
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-white">{step.title}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Clock className="w-3 h-3 text-white/20" />
-                        <span className="text-[10px] text-white/30">{room.currentProcedure?.startTime || '--:--'}</span>
-                        <span className="text-[10px] font-bold" style={{ color: themeColor }}>{elapsedStr.slice(0, 5)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {nextStep && nextColors && (
-                  <>
-                    <div className="flex items-center flex-shrink-0">
-                      <motion.div 
-                        className="w-9 h-9 rounded-full flex items-center justify-center border"
-                        style={{ backgroundColor: `${nextColors.text}12`, borderColor: `${nextColors.text}25` }}
-                        animate={{ x: [0, 5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                      >
-                        <ChevronRight className="w-4 h-4" style={{ color: nextColors.text }} />
-                      </motion.div>
-                    </div>
-                    <motion.div
-                      className="flex-1 rounded-2xl p-4 border"
-                      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4, duration: 0.4 }}
-                      whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,255,0.15)' }}
-                    >
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-white/15" />
-                          <span className="text-[9px] font-black tracking-[0.12em] uppercase text-white/35">NASLEDUJICI</span>
-                        </div>
-                        <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-white/25 bg-white/[0.05]">
-                          Krok {stepIndex + 2}/{WORKFLOW_STEPS.length}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center border bg-white/[0.04] border-white/[0.08]">
-                          <nextStep.Icon className="w-5 h-5 text-white/30" />
-                        </div>
-                        <div>
-                          <p className="text-base font-bold text-white/50">{nextStep.title}</p>
-                          <p className="text-[10px] text-white/20 mt-1">Ceka na zahajeni</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          <motion.div 
-            className="flex gap-4"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.4 }}
-          >
-            <div className="flex-1">
-              <div className="flex items-center gap-2.5 mb-3">
-                <Users className="w-4 h-4 text-white/30" />
-                <h3 className="text-[10px] font-black tracking-[0.15em] uppercase text-white/50">Tym</h3>
-              </div>
-              <div className="flex gap-2.5">
-                {[
-                  { label: 'ANESTEZIOLOG', name: room.staff?.anesthesiologist?.name, color: '#A78BFA', icon: Syringe },
-                  { label: 'SESTRA', name: room.staff?.nurse?.name, color: '#2DD4BF', icon: Users },
-                ].map((member, idx) => (
-                  <motion.div 
-                    key={member.label} 
-                    className="flex-1 flex items-center gap-3 px-3.5 py-3 rounded-xl border transition-all"
-                    style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + idx * 0.1, duration: 0.3 }}
-                    whileHover={{ scale: 1.03, borderColor: `${member.color}30`, background: `${member.color}05` }}
-                  >
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0" style={{ backgroundColor: `${member.color}10`, borderColor: `${member.color}25` }}>
-                      <member.icon className="w-4 h-4" style={{ color: member.color }} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[8px] font-black tracking-[0.12em] uppercase text-white/30">{member.label}</p>
-                      <p className={`text-xs font-bold truncate ${member.name ? 'text-white/70' : 'text-white/20 italic'}`}>
-                        {member.name || 'Neprirazeno'}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <div className="flex items-center gap-2.5 mb-3">
-                <Clock className="w-4 h-4 text-white/30" />
-                <h3 className="text-[10px] font-black tracking-[0.15em] uppercase text-white/50">Casy</h3>
-              </div>
-              <div className="flex gap-2.5">
-                {[
-                  { label: 'ZACATEK', value: room.currentProcedure?.startTime || '--:--', color: 'text-white/70' },
-                  { label: 'ODHAD', value: endTimeStr, color: isActive ? '' : 'text-white/30', highlight: isActive }
-                ].map((time, idx) => (
-                  <motion.div 
-                    key={time.label}
-                    className="rounded-xl border px-5 py-3 text-center min-w-[100px]"
-                    style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.6 + idx * 0.1, duration: 0.3 }}
-                    whileHover={{ scale: 1.05, borderColor: time.highlight ? `${themeColor}40` : 'rgba(255,255,255,0.15)' }}
-                  >
-                    <p className="text-[8px] font-black tracking-[0.12em] uppercase text-white/25 mb-1">{time.label}</p>
-                    <p 
-                      className={`text-2xl font-black font-mono tracking-wider ${time.color}`} 
-                      style={time.highlight ? { color: themeColor, textShadow: `0 0 15px ${themeColor}30` } : {}}
-                    >
-                      {time.value}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-
-/* ============================== */
-/* Status Badge Component          */
-/* ============================== */
-const StatusBadge: React.FC<{ 
-  icon: React.ElementType; 
-  label: string; 
-  value: number; 
-  color?: string;
-  variant?: 'default' | 'outline';
-}> = ({ icon: Icon, label, value, color, variant = 'default' }) => {
-  const isOutline = variant === 'outline';
-  return (
-    <div 
-      className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-all ${
-        isOutline ? 'bg-transparent' : 'bg-white/[0.04]'
-      }`}
-      style={{ borderColor: color ? `${color}40` : 'rgba(255,255,255,0.1)' }}
-    >
-      <div 
-        className="w-5 h-5 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: color ? `${color}20` : 'rgba(255,255,255,0.1)' }}
-      >
-        <Icon className="w-3 h-3" style={{ color: color || 'rgba(255,255,255,0.5)' }} />
-      </div>
-      <span className="text-sm font-bold" style={{ color: color || 'rgba(255,255,255,0.9)' }}>
-        {value}
-      </span>
-      <span className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
-        {label}
-      </span>
-    </div>
-  );
-};
-
-
-/* ============================== */
-/* Stat Box Component             */
-/* ============================== */
-const StatBox: React.FC<{
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  color: string;
-  glow?: boolean;
-}> = ({ icon: Icon, label, value, color, glow }) => (
-  <div
-    className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'animate-pulse' : ''}`}
-    style={{
-      background: `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`,
-      border: `1px solid ${color}40`,
-      boxShadow: `0 0 20px ${color}15`,
-    }}
-  >
-    <div
-      className="absolute inset-0 opacity-40"
-      style={{
-        background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
-      }}
-    />
-    <div className="relative flex items-center gap-3 h-full">
-      <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-        style={{
-          background: `linear-gradient(135deg, ${color}40 0%, ${color}15 100%)`,
-          border: `1px solid ${color}50`,
-        }}
-      >
-        <Icon className="w-4 h-4" style={{ color }} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[9px] text-zinc-500 uppercase tracking-wider">{label}</p>
-        <p className="text-sm font-semibold leading-tight" style={{ color }}>{value}</p>
-      </div>
-    </div>
-  </div>
-);
-
-/* ============================== */
-/* Timeline Module                */
-/* ============================== */
-const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
-  const [currentTime, setCurrentTime] = useState(new Date());
+export default function TimelineModule({ rooms }: TimelineModuleProps) {
+  // Get workflow statuses from database context - already filtered and sorted
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  const activeStatuses = workflowStatuses;
+  
+  // Lookup mapa pro rychlý přístup k statusu podle order_index (room.currentStepIndex)
+  const statusByOrderIndex = useMemo(() => {
+    const map: Record<number, typeof activeStatuses[number]> = {};
+    activeStatuses.forEach((s) => {
+      map[s.order_index] = s;
+    });
+    return map;
+  }, [activeStatuses]);
+  
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
   const [showLegend, setShowLegend] = useState(false);
-  const timelineRef = useRef<HTMLDivElement>(null);
+  const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const rowsContainerRef = useRef<HTMLDivElement>(null);
 
+
+
+  // Update current time every second
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(interval);
   }, []);
+  
+  // Calculate responsive row height based on container height and number of rooms
+  useEffect(() => {
+    const calculateRowHeight = () => {
+      if (rowsContainerRef.current && rooms.length > 0) {
+        const containerHeight = rowsContainerRef.current.clientHeight;
+        const calculatedHeight = Math.floor(containerHeight / rooms.length);
+        // Clamp between MIN and MAX
+        const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
+        setRowHeight(clampedHeight);
+      }
+    };
+    
+    calculateRowHeight();
+    
+    // Recalculate on resize
+    const resizeObserver = new ResizeObserver(calculateRowHeight);
+    if (rowsContainerRef.current) {
+      resizeObserver.observe(rowsContainerRef.current);
+    }
+    
+    return () => resizeObserver.disconnect();
+  }, [rooms.length]);
 
   // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
   // useEffect(() => {
@@ -568,9 +227,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     const cleaning = rooms.filter(r => r.currentStepIndex === 5 && !r.isEmergency && !r.isLocked).length;
     const free = rooms.filter(r => r.currentStepIndex >= 6 && !r.isEmergency && !r.isLocked).length;
     const completed = rooms.reduce((acc, r) => r.currentStepIndex >= 6 ? acc + r.operations24h : acc, 0);
-    const doctorsWorking = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex < 6).length;
+    const doctorsWorking = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex > 0).length;
     const doctorsFree = rooms.filter(r => r.staff?.doctor?.name && r.currentStepIndex >= 6).length;
-    const nursesWorking = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex < 6).length;
+    const nursesWorking = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex > 0).length;
     const nursesFree = rooms.filter(r => r.staff?.nurse?.name && r.currentStepIndex >= 6).length;
     const emergencyCount = rooms.filter(r => r.isEmergency).length;
     return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
@@ -648,10 +307,9 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
   };
 
   // Calculate shift line positions (as percentage of 24-hour view from 7:00)
-  // Shift start (7:00) is at 0% of timeline
-  const shiftStartPercent = 0;
-  // Shift end (19:00) is 12 hours from start = 50%
-  const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
+  // These are no longer used but kept for reference
+  // const shiftStartPercent = 0;
+  // const shiftEndPercent = ((SHIFT_END_HOUR - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
 
   // Get remaining time for room
   const getRemainingTime = (room: OperatingRoom): string => {
@@ -669,7 +327,15 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
     }
     
     const remainingMs = endTime.getTime() - currentTime.getTime();
-    if (remainingMs <= 0) return 'Dokonceno';
+    
+    // Pokud čas přesáhl odhad ale výkon stále probíhá (currentStepIndex < 6), zobrazíme překročený čas
+    if (remainingMs <= 0) {
+      // Výkon stále běží - zobrazíme záporný čas (překročení)
+      const overMs = Math.abs(remainingMs);
+      const overHours = Math.floor(overMs / (1000 * 60 * 60));
+      const overMinutes = Math.floor((overMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `-${overHours}h ${overMinutes < 10 ? '0' : ''}${overMinutes}m`;
+    }
     
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -701,12 +367,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
 
       {/* ======== MOBILE VIEW (md:hidden) ======== */}
       <div className="md:hidden w-full h-full overflow-y-auto flex flex-col">
-        {/* Mobile header */}
-        <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 px-4 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-[9px] font-black tracking-[0.3em] uppercase text-[#00D8C1]/60">TIMELINE OVERVIEW</p>
-            <h1 className="text-2xl font-black tracking-tighter uppercase">Přehled sálů</h1>
-          </div>
+  {/* Mobile header */}
+  <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 px-4 py-4 flex items-center justify-between">
+  <div>
+  <h1 className="text-2xl font-black tracking-tighter uppercase">Přehled sálů</h1>
+  </div>
           <div className="text-right">
             <p className="text-[9px] uppercase tracking-wider text-white/30">Čas</p>
             <p className="text-lg font-mono font-black text-white tabular-nums">
@@ -734,10 +399,14 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
         {/* Mobile room cards list */}
         <div className="flex flex-col gap-2 px-4 pb-6">
           {sortedRooms.map((room) => {
-            const step = WORKFLOW_STEPS[room.currentStepIndex];
-            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : step.color;
+            // Use statusByOrderIndex lookup for correct status mapping
+            const step = statusByOrderIndex[room.currentStepIndex];
+            const color = room.isEmergency ? '#EF4444' : room.isLocked ? '#FBBF24' : (step?.accent_color || step?.color || '#6B7280');
+            const statusName = step?.title || step?.name || 'Status';
             const remaining = getRemainingTime(room);
-            const isFree = room.currentStepIndex >= 6;
+            const totalSteps = activeStatuses.length || 1;
+            const stepIndex = room.currentStepIndex;
+            const isFree = stepIndex >= totalSteps - 1;
             return (
               <button
                 key={room.id}
@@ -751,6 +420,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     <p className="text-base font-black text-white uppercase tracking-tight">{room.name}</p>
                     {room.isEmergency && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">EMERGENCY</span>}
                     {room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 uppercase">UZAMČEN</span>}
+                    {room.isPaused && !room.isEmergency && !room.isLocked && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 uppercase">PAUZA</span>}
                   </div>
                   {remaining && !isFree && (
                     <span className="text-[11px] font-mono font-bold" style={{ color }}>{remaining}</span>
@@ -759,8 +429,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{step.title}</p>
-                    <p className="text-[10px] text-white/40 mt-0.5">{room.staff.doctor.name}</p>
+                    <p className="text-[10px] text-white/40">{room?.staff?.doctor?.name || 'Neurčeno'}</p>
                   </div>
                   {room.estimatedEndTime && !isFree && (
                     <div className="text-right">
@@ -775,7 +444,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${((room.currentStepIndex + 1) / WORKFLOW_STEPS.length) * 100}%`, backgroundColor: color, opacity: 0.6 }}
+                    style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%`, backgroundColor: color, opacity: 0.6 }}
                   />
                 </div>
               </button>
@@ -790,42 +459,31 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
       {/* ======== Header with Title and Stats ======== */}
       <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
         <div className="px-8 md:pl-32 md:pr-10 py-6">
-          {/* Title Section - Matching Dashboard Style */}
-          <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 mb-6">
-            <div className="text-center lg:text-left">
-              <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-                <Clock className="w-4 h-4 text-[#00D8C1]" />
-                <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">TIMELINE OVERVIEW</p>
-              </div>
-              <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
-                TIMELINE <span className="text-white/20">VIEW</span>
-              </h1>
-            </div>
-          </header>
+
 
           {/* Stats Boxes Row */}
           <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
             <StatBox 
               icon={Activity} 
-              label="Aktivni" 
-              value={`${stats.operations} operaci`} 
+              label="Aktivní" 
+              value={`${stats.operations} operací`} 
               color="#22C55E" 
             />
             <StatBox 
               icon={Loader2} 
-              label="Uklid" 
-              value={`${stats.cleaning} salu`} 
+              label="Úklid" 
+              value={`${stats.cleaning} sálů`} 
               color="#F97316" 
             />
             <StatBox 
               icon={Stethoscope} 
-              label="Volne" 
-              value={`${stats.free} salu`} 
+              label="Volné" 
+              value={`${stats.free} sálů`} 
               color="#22D3EE" 
             />
             <StatBox 
               icon={Shield} 
-              label="Dokonceno" 
+              label="Dokončeno" 
               value={`${stats.completed} dnes`} 
               color="#22D3EE" 
             />
@@ -867,8 +525,8 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     <Clock className="w-4 h-4 text-red-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PRESAH</p>
-                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} salu</p>
+                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PŘESAH</p>
+                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} sálů</p>
                   </div>
                 </div>
               </div>
@@ -973,9 +631,11 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
-                const displayHour = hour % 24;
+                // Convert timeline hour (0-24) to actual 24-hour format (7-31 represents 7:00 to 7:00 next day)
+                const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+                const displayHour = actualHour % 24; // 7-23, 0-6 for next day hours
                 const isNightHour = displayHour >= 19 || displayHour < 7;
-                const isNextDay = isNextDayHour(hour);
+                const isNextDay = actualHour >= 24;
                 const isCurrentHour = displayHour === currentHour && !isLast;
                 
                 return (
@@ -988,13 +648,13 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     {!isLast && (
                       isCurrentHour ? (
                         <div 
-                          className="ml-2 px-2.5 py-1 rounded-lg shadow-lg"
+                          className="ml-2 px-2 py-0.5 rounded-md"
                           style={{ 
-                            background: '#00D8C1', 
-                            boxShadow: '0 0 16px rgba(0,216,193,0.5)' 
+                            background: 'rgba(94,234,212,0.9)', 
+                            boxShadow: '0 1px 6px rgba(94,234,212,0.25)' 
                           }}
                         >
-                          <span className="text-[11px] font-mono font-black text-black tracking-wider">
+                          <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
                             {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
                           </span>
                         </div>
@@ -1003,11 +663,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                           <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
                             {hourLabel(hour)}
                           </span>
-                          {isNextDay && (
-                            <span className="text-[8px] font-bold text-cyan-400/60 px-1 py-0.5 rounded bg-cyan-400/10">
-                              +1
-                            </span>
-                          )}
                         </div>
                       )
                     )}
@@ -1018,10 +673,10 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
           </div>
         </div>
 
-        {/* Room Rows - No scroll, full width */}
-        <div className="flex-1 min-h-0 overflow-hidden" ref={scrollContainerRef}>
-          <div className="relative w-full h-full">
-            {/* Now indicator - cyan glow line */}
+        {/* Room Rows - Responsive height, no scroll */}
+        <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
+          <div className="relative w-full h-full" ref={scrollContainerRef}>
+            {/* Now indicator - subtle cyan line */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <motion.div 
@@ -1030,61 +685,23 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  <div className="absolute -left-6 top-0 bottom-0 w-12 opacity-20 blur-xl" style={{ background: '#00D8C1' }} />
+                  <div className="absolute -left-3 top-0 bottom-0 w-6 opacity-10 blur-md" style={{ background: '#5EEAD4' }} />
                   <div 
-                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ background: 'linear-gradient(to bottom, #00D8C1 0%, #00D8C180 50%, #00D8C140 100%)' }} 
+                    className="absolute -left-px top-0 bottom-0 w-[1.5px]" 
+                    style={{ background: 'linear-gradient(to bottom, #5EEAD4 0%, #5EEAD480 50%, #5EEAD430 100%)' }} 
                   />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Shift start line (7:00) - blue dashed */}
-            <div 
-              className="absolute top-0 bottom-0 z-20 pointer-events-none" 
-              style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})` }}
-            >
-              <div 
-                className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #3B82F6 0px, #3B82F6 6px, transparent 6px, transparent 12px)' }} 
-              />
-            </div>
-
-            {/* Shift end line (19:00) - orange dashed */}
-            <div 
-              className="absolute top-0 bottom-0 z-20 pointer-events-none" 
-              style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})` }}
-            >
-              <div 
-                className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #F97316 0px, #F97316 6px, transparent 6px, transparent 12px)' }} 
-              />
-            </div>
-
-            {/* Night zone overlay (19:00-07:00) */}
-            <div 
-              className="absolute top-0 bottom-0 z-10 pointer-events-none" 
-              style={{ 
-                left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${shiftEndPercent / 100})`, 
-                width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${(100 - shiftEndPercent) / 100})`,
-                background: 'rgba(11, 17, 32, 0.6)'
-              }} 
-            />
-            <div 
-              className="absolute top-0 bottom-0 z-10 pointer-events-none" 
-              style={{ 
-                left: ROOM_LABEL_WIDTH, 
-                width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${shiftStartPercent / 100})`,
-                background: 'rgba(11, 17, 32, 0.6)'
-              }} 
-            />
-
             {/* Room Rows */}
             {sortedRooms.map((room, roomIndex) => {
-              const stepIndex = Math.min(room.currentStepIndex, WORKFLOW_STEPS.length - 1);
-              const isActive = stepIndex < 6;
-              const isCleaning = stepIndex === 5;
-              const isFree = stepIndex >= 6;
+              // Get current workflow step info from database context
+              const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+              const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
+              const isActive = stepIndex > 0; // index 0 = "Sál připraven"
+              const isCleaning = stepIndex === totalSteps - 2; // Second to last step
+              const isFree = stepIndex === 0;
               
               // Only increment counter for active (non-free) rooms
               if (isActive && !room.isEmergency && !room.isLocked) {
@@ -1096,56 +713,79 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get current workflow step info for status display
-              const currentStep = WORKFLOW_STEPS[stepIndex] || WORKFLOW_STEPS[6];
-              const stepColor = currentStep.color;
-              const StepIcon = currentStep.Icon;
+              // Get status from database context - použít lookup mapu podle order_index
+              const currentStep = statusByOrderIndex[room.currentStepIndex];
+              // If paused, override color to pause color (cyan)
+              const PAUSE_COLOR = '#22D3EE';
+              const stepColor = room.isPaused 
+                ? PAUSE_COLOR 
+                : (currentStep?.accent_color || currentStep?.color || '#6B7280');
+              const stepName = room.isPaused 
+                ? 'Pauza' 
+                : (currentStep?.title || currentStep?.name || 'Status');
+              const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
-              // Use currentProcedure if available, otherwise generate fallback values for active rooms
+              // Use currentProcedure if available, otherwise use phaseStartedAt or current time as fallback
               const startParts = room.currentProcedure?.startTime?.split(':');
               let boxLeftPct = 0;
               let boxWidthPct = 0;
               let progressPct = 0;
+              let startDate: Date = new Date();
+              let endDate: Date = new Date();
+              
+              // Show status bar if active - use operationStartedAt (arrival to OR) as the fixed start point
+              const hasRealData = startParts && startParts.length === 2;
+              const hasOperationStart = room.operationStartedAt;
+              const shouldShowBar = isActive; // Always show for active rooms
 
               if (isActive) {
-                let startDate: Date;
-                let endDate: Date;
-                
-                if (startParts && startParts.length === 2) {
-                  // Use actual procedure start time
+                // Determine start time - ALWAYS use operationStartedAt (arrival to OR) as the reference point
+                if (hasOperationStart) {
+                  startDate = new Date(room.operationStartedAt);
+                } else if (hasRealData) {
                   startDate = new Date();
                   startDate.setHours(parseInt(startParts[0], 10), parseInt(startParts[1], 10), 0, 0);
+                } else if (room.phaseStartedAt) {
+                  startDate = new Date(room.phaseStartedAt);
                 } else {
-                  // Fallback: generate a start time based on room index (staggered starts from 7:00-12:00)
-                  startDate = new Date();
-                  const baseHour = 7 + (roomIndex % 6); // Start between 7:00 and 12:00
-                  const baseMinute = (roomIndex * 17) % 60; // Stagger by ~17 min
-                  startDate.setHours(baseHour, baseMinute, 0, 0);
+                  startDate = new Date(currentTime.getTime() - 30 * 60 * 1000);
                 }
-                
-                boxLeftPct = getTimePercent(startDate);
-                
+
+                // Calculate window start: 7:00 today (or yesterday if before 7:00)
+                const activeWindowStart = new Date(currentTime);
+                activeWindowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+                if (currentTime.getHours() < TIMELINE_START_HOUR) {
+                  activeWindowStart.setDate(activeWindowStart.getDate() - 1);
+                }
+
+                // Use date-aware percent calculation
+                const rawLeftPct = getTimePercentForTimeline(startDate, activeWindowStart);
+                // If operation started before window (continuing), clamp to 0
+                boxLeftPct = Math.max(0, rawLeftPct);
+
                 if (room.estimatedEndTime) {
-                  endDate = new Date(room.estimatedEndTime);
+                  const estimatedEnd = new Date(room.estimatedEndTime);
+                  // Pokud operace stále probíhá a aktuální čas přesahuje odhadovaný konec,
+                  // prodloužíme zobrazení na aktuální čas (výkon dosud neskončil)
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 } else if (room.currentProcedure?.estimatedDuration) {
-                  endDate = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                  const estimatedEnd = new Date(startDate.getTime() + room.currentProcedure.estimatedDuration * 60 * 1000);
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 } else {
-                  // Fallback: generate duration based on step (longer for surgery steps)
-                  const fallbackDurations = [30, 20, 120, 60, 30, 45, 0]; // minutes per step
-                  const duration = fallbackDurations[Math.min(stepIndex, 6)] || 90;
-                  endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+                  const fallbackDurations = [30, 20, 120, 60, 30, 45, 0];
+                  const duration = fallbackDurations[Math.min(stepIndex, 5)] || 90;
+                  const estimatedEnd = new Date(startDate.getTime() + duration * 60 * 1000);
+                  endDate = currentTime > estimatedEnd ? currentTime : estimatedEnd;
                 }
-                
-                const boxRightPct = getTimePercent(endDate);
-                // Handle cases where operation spans past midnight (end is before start on timeline)
-                if (boxRightPct < boxLeftPct) {
-                  // Operation ends next day - extend to end of timeline
-                  boxWidthPct = Math.max(2, (100 - boxLeftPct) + boxRightPct);
-                } else {
-                  boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
-                }
-                progressPct = Math.max(0, Math.min(100, ((nowPercent - boxLeftPct) / boxWidthPct) * 100));
+
+                const rawRightPct = getTimePercentForTimeline(endDate, activeWindowStart);
+                // Clamp right to 100 (timeline boundary)
+                const boxRightPct = Math.min(100, rawRightPct);
+                boxWidthPct = Math.max(2, boxRightPct - boxLeftPct);
+                // nowWindowPct for progress calculation
+                const nowWindowPct = getTimePercentForTimeline(currentTime, activeWindowStart);
+                progressPct = Math.max(0, Math.min(100, ((nowWindowPct - boxLeftPct) / boxWidthPct) * 100));
               }
 
               /* Emergency row */
@@ -1154,55 +794,38 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   <div
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
-                      <div className="w-7 h-7 rounded-full bg-red-500/30 flex items-center justify-center border border-red-500/50">
-                        <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                      <div className="w-6 h-6 rounded-full bg-red-400/15 flex items-center justify-center border border-red-400/30">
+                        <AlertTriangle className="w-3 h-3 text-red-300/70" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold tracking-tight text-red-400 truncate">{room.name}</p>
-                        <p className="text-[9px] font-medium text-red-400/60">EMERGENCY</p>
+                        <p className="text-sm font-medium tracking-tight text-red-300/80 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-red-300/50">EMERGENCY</p>
                       </div>
                     </div>
-                    {/* Emergency timeline box */}
+                    {/* Emergency timeline box - softer */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden">
-                        {/* Outer glow */}
-                        <div 
-                          className="absolute -inset-2 blur-xl opacity-40"
-                          style={{ background: '#EF4444' }}
-                        />
-                        {/* Main background */}
+                      <div className="absolute inset-y-1 left-2 right-2 rounded-lg overflow-hidden">
+                        {/* Main background - softer */}
                         <div 
                           className="absolute inset-0 rounded-xl"
                           style={{ 
-                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
-                            border: '1px solid rgba(239, 68, 68, 0.5)',
-                            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                            background: 'linear-gradient(135deg, rgba(252, 165, 165, 0.15) 0%, rgba(252, 165, 165, 0.08) 100%)',
+                            border: '1px solid rgba(252, 165, 165, 0.3)'
                           }}
                         />
-                        {/* Top radial glow */}
-                        <div 
-                          className="absolute inset-0 opacity-70"
-                          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(239, 68, 68, 0.4) 0%, transparent 70%)' }}
-                        />
-                        {/* Diagonal stripes */}
-                        <div 
-                          className="absolute inset-0 opacity-20"
-                          style={{ backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)' }}
-                        />
                         {/* Content */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-3">
-                          <AlertTriangle className="w-4 h-4 text-white/80" />
-                          <span className="text-sm font-black tracking-[0.25em] text-white uppercase select-none">
+                        <div className="absolute inset-0 flex items-center justify-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-300/70" />
+                          <span className="text-xs font-bold tracking-[0.15em] text-red-300/80 uppercase select-none">
                             EMERGENCY
                           </span>
-                          <AlertTriangle className="w-4 h-4 text-white/80" />
                         </div>
                       </div>
                     </div>
@@ -1216,68 +839,36 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   <div
                     key={room.id}
                     className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                    style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
                       className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                     >
-                      <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center border border-amber-500/50">
-                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <div className="w-6 h-6 rounded-full bg-amber-400/15 flex items-center justify-center border border-amber-400/25">
+                        <Lock className="w-3 h-3 text-amber-300/60" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold tracking-tight text-amber-400 truncate">{room.name}</p>
-                        <p className="text-[9px] font-medium text-amber-400/60">UZAMCENO</p>
+                        <p className="text-sm font-medium tracking-tight text-amber-300/70 truncate">{room.name}</p>
+                        <p className="text-[9px] font-medium text-amber-300/50">UZAMCENO</p>
                       </div>
                     </div>
-                    {/* Locked timeline box - Premium design */}
+                    {/* Locked timeline box - softer */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-1.5 left-1 right-1 rounded-xl overflow-hidden">
-                        {/* Outer subtle glow */}
+                      <div className="absolute inset-y-1 left-2 right-2 rounded-lg overflow-hidden">
+                        {/* Main background - softer */}
                         <div 
-                          className="absolute -inset-1 blur-lg opacity-30"
-                          style={{ background: '#F59E0B' }}
-                        />
-                        
-                        {/* Main background with gradient */}
-                        <div 
-                          className="absolute inset-0 rounded-xl"
+                          className="absolute inset-0 rounded-lg"
                           style={{ 
-                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
-                            border: '1px solid rgba(245, 158, 11, 0.4)',
-                            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+                            background: 'linear-gradient(135deg, rgba(253, 224, 71, 0.12) 0%, rgba(253, 224, 71, 0.06) 100%)',
+                            border: '1px solid rgba(253, 224, 71, 0.25)'
                           }}
                         />
-                        
-                        {/* Top radial glow */}
-                        <div 
-                          className="absolute inset-0 opacity-60"
-                          style={{ 
-                            background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245, 158, 11, 0.3) 0%, transparent 70%)'
-                          }}
-                        />
-                        
-                        {/* Diagonal stripes pattern */}
-                        <div 
-                          className="absolute inset-0 opacity-15"
-                          style={{ 
-                            backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px)'
-                          }}
-                        />
-                        
                         {/* Content */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-3">
-                          <div
-                            className="w-6 h-6 rounded-lg flex items-center justify-center"
-                            style={{
-                              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.1) 100%)',
-                              border: '1px solid rgba(245, 158, 11, 0.4)'
-                            }}
-                          >
-                            <Lock className="w-3.5 h-3.5 text-white/80" />
-                          </div>
-                          <span className="text-sm font-black tracking-[0.25em] text-white uppercase select-none">
+                        <div className="absolute inset-0 flex items-center justify-center gap-2">
+                          <Lock className="w-3.5 h-3.5 text-amber-300/60" />
+                          <span className="text-xs font-bold tracking-[0.15em] text-amber-300/70 uppercase select-none">
                             UZAMCENO
                           </span>
                         </div>
@@ -1295,7 +886,7 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
                   className="flex items-stretch border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
-                  style={{ height: ROW_HEIGHT, borderColor: 'rgba(255,255,255,0.04)' }}
+                  style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
                   onClick={() => setSelectedRoom(room)}
                 >
                   {/* Room Label - Sticky */}
@@ -1303,79 +894,92 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                     className="flex-shrink-0 flex items-center gap-2 px-3 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
                     style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
                   >
-                    {/* ARO Overtime Badge - shows priority position for overtime rooms */}
+                    {/* ARO Overtime Badge - softer */}
                     {(() => {
                       const aroPosition = getAroPosition(room.id);
                       const overtimeInfo = getOvertimeInfo(room.id);
                       
                       if (aroPosition && overtimeInfo) {
-                        return (
-                          <div 
-                            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
-                            style={{ 
-                              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
-                              border: '1px solid rgba(239, 68, 68, 0.4)',
-                              boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)'
-                            }}
+  return (
+  <div
+className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+style={{
+  background: 'rgba(132, 255, 0, 0.1)',
+  border: '1px solid rgba(132, 255, 0, 0.96)'
+}}
                           >
-                            <span className="text-[8px] font-bold text-red-400 tracking-wider">ARO</span>
-                            <span className="text-sm font-black text-white">{aroPosition}</span>
-                            <span className="text-[7px] font-medium text-red-300">+{overtimeInfo.overtimeMinutes}m</span>
+                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
+                            <span className="text-xs font-bold text-white/80">{aroPosition}</span>
+                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
                           </div>
                         );
                       }
                       return null;
                     })()}
                     
-                    {/* Numbered badge for active rooms */}
+                    {/* Numbered badge for active rooms - softer */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {isActive && !getAroPosition(room.id) && (
                         <div 
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg"
-                          style={{ background: roomColor.bg, boxShadow: `0 0 12px ${roomColor.glow}` }}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white/90"
+                          style={{ background: `${roomColor.bg}90`, boxShadow: `0 1px 4px ${roomColor.glow}` }}
                         >
                           {currentRoomNumber}
                         </div>
                       )}
-                      <div 
-                        className="w-8 h-8 rounded-full flex items-center justify-center border" 
-                        style={{ 
-                          background: isActive ? `${roomColor.bg}25` : 'rgba(255,255,255,0.05)',
-                          borderColor: isActive ? `${roomColor.border}40` : 'rgba(255,255,255,0.1)'
-                        }}
-                      >
-                        {isActive ? (
-                          <Activity className="w-4 h-4" style={{ color: roomColor.bg }} />
-                        ) : (
-                          <div className="w-2 h-2 rounded-full bg-white/20" />
-                        )}
-                      </div>
                     </div>
 
                     {/* Room info */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold tracking-tight text-white/80 truncate">
+                        <p className="text-sm font-medium tracking-tight text-white/70 truncate">
                           {room.name}
                         </p>
                         {room.isSeptic && (
-                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 uppercase flex-shrink-0">SEPTIKA</span>
+                          <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-purple-400/10 text-purple-300/60 uppercase flex-shrink-0">SEPTIKA</span>
+                        )}
+                        {room.isPaused && !room.isEmergency && !room.isLocked && (
+                          <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-cyan-400/15 text-cyan-300/80 uppercase flex-shrink-0 flex items-center gap-1">
+                            <Pause className="w-2 h-2" />
+                            PAUZA
+                          </span>
+                        )}
+                        {/* Patient called indicator */}
+                        {room.patientCalledAt && !room.patientArrivedAt && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="p-1 rounded-md bg-blue-500/20 border border-blue-400/40"
+                            title="Pacient volán"
+                          >
+                            <Phone className="w-3 h-3 text-blue-400" />
+                          </motion.div>
+                        )}
+                        {/* Patient arrived indicator */}
+                        {room.patientArrivedAt && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="p-1 rounded-md bg-green-500/20 border border-green-400/40"
+                            title="Pacient v operačním traktu"
+                          >
+                            <BedDouble className="w-3 h-3 text-green-400" />
+                          </motion.div>
                         )}
                       </div>
                       {isFree ? (
-                        <p className="text-[9px] font-medium text-white/30 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
+                        <p className="text-[9px] font-medium text-white/25 flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
                           Volny
                         </p>
-                      ) : remainingTime && stepIndex !== 6 ? (
+                      ) : remainingTime && stepIndex !== 0 ? (
                         <p 
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-md inline-block" 
-                          style={{ color: roomColor.bg, backgroundColor: `${roomColor.bg}15` }}
+                          className="text-[9px] font-medium text-white/50" 
                         >
                           {remainingTime}
                         </p>
                       ) : (
-                        <p className="text-[9px] font-medium text-white/30">{room.department}</p>
+                        <p className="text-[9px] font-medium text-white/25">{room.department}</p>
                       )}
                     </div>
                   </div>
@@ -1398,197 +1002,404 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                       );
                     })}
 
-                    {/* Active operation bar - Premium Design with workflow step color */}
-                    {isActive && boxWidthPct > 0 && (
+                    {/* Completed operations - soft gray inactive bars */}
+                    {(() => {
+                      // Use completedOperations from room data
+                      const opsToRender = room.completedOperations || [];
+                      
+                      if (opsToRender.length === 0) return null;
+                      
+                      const filteredOps = opsToRender.filter(operation => {
+                        const opStartDate = new Date(operation.startedAt);
+                        const opEndDate = new Date(operation.endedAt);
+                        const inWindow = isOperationInWindow(opStartDate, opEndDate, currentTime);
+                        return inWindow;
+                      });
+                      
+                      if (filteredOps.length === 0) return null;
+                      
+                      return filteredOps.map((operation, opIdx) => {
+                        const opStartDate = new Date(operation.startedAt);
+                        const opEndDate = new Date(operation.endedAt);
+                        const exceedsDay = exceedsT24Hours(opStartDate, opEndDate);
+                        
+                        // Get single continuous position (even if crossing 7:00)
+                        const position = getOperationPosition(opStartDate, opEndDate, currentTime);
+                        
+                        // Skip if width is 0
+                        if (position.width <= 0) return null;
+                        
+                        // Check if this is a continuing operation (started before 7:00)
+                        const isContinuingOp = position.isContinuing;
+                        
+                        return (
+                          <div
+                            key={`completed-${opIdx}`}
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
+                            style={{ 
+                              left: `${position.left}%`, 
+                              width: `${Math.max(0.3, position.width)}%`,
+                              // Green background for continuing operations, gray for completed
+                              background: isContinuingOp ? 'rgba(34, 197, 94, 0.3)' : 'rgba(107, 114, 128, 0.4)',
+                              border: '1px solid rgba(107, 114, 128, 0.5)',
+                            }}
+                          >
+                              {/* Completed operation segments with colors from database context */}
+                              {!isContinuingOp && operation.statusHistory && operation.statusHistory.length > 0 && (
+                                <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                                  {(() => {
+                                    // Build color lookup from activeStatuses
+                                    // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                                    const stepColorMap: Record<number, string> = {};
+                                    activeStatuses.forEach((s) => {
+                                      stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
+                                    });
+
+                                    const opStart = new Date(operation.startedAt).getTime();
+                                    const opEnd = new Date(operation.endedAt).getTime();
+                                    const opDuration = Math.max(1, opEnd - opStart);
+
+                                    return operation.statusHistory.map((entry, idx) => {
+                                      const segStart = new Date(entry.startedAt).getTime();
+                                      const nextEntry = operation.statusHistory[idx + 1];
+                                      const segEnd = nextEntry
+                                        ? new Date(nextEntry.startedAt).getTime()
+                                        : opEnd;
+                                      const segDuration = Math.max(0, segEnd - segStart);
+                                      const segWidthPct = (segDuration / opDuration) * 100;
+                                      const segLeftPct = ((segStart - opStart) / opDuration) * 100;
+                                      if (segWidthPct <= 0) return undefined;
+                                      const phaseColor = entry.color
+                                        || stepColorMap[entry.stepIndex]
+                                        || STEP_INDEX_COLORS[entry.stepIndex]
+                                        || '#6b7280';
+
+                                      return (
+                                        <div
+                                          key={`seg-${idx}`}
+                                          className="absolute top-0 bottom-0"
+                                          style={{
+                                            left: `${Math.max(0, segLeftPct)}%`,
+                                            width: `${Math.max(0.5, segWidthPct)}%`,
+                                            background: `${phaseColor}50`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
+                                          }}
+                                          title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                        />
+                                      );
+                                    }).filter(Boolean);
+                                  })()}
+                                </div>
+                              )}
+                              
+                              {/* Label for operation */}
+                              <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                                {position.width > 6 && (
+                                  <span className={`text-[10px] font-semibold truncate uppercase tracking-wide ${
+                                    isContinuingOp ? 'text-white' : 'text-white/50'
+                                  }`}>
+                                    {isContinuingOp ? 'POKRAČUJÍCÍ VÝKON' : 'Dokončeno'}
+                                  </span>
+                                )}
+                              </div>
+                          </div>
+                        );
+                      })
+                    })()}
+
+                    {/* Continuing operation bar (green):
+                        Displayed ONLY when the current window starts at 7:00 today and the operation
+                        started BEFORE that 7:00 (i.e. it ran overnight and is still active).
+                        The bar goes from 0% (7:00 today) to the estimated end time position.
+                    */}
+                    {isActive && room.operationStartedAt && room.estimatedEndTime && (() => {
+                      const opStart = new Date(room.operationStartedAt);
+                      const opEnd   = new Date(room.estimatedEndTime);
+
+                      // Window start = 7:00 of the current calendar day (never yesterday)
+                      const windowStart = new Date(currentTime);
+                      windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+
+                      // Only show when op started BEFORE today's 7:00 → it's a true overnight carry-over
+                      if (opStart >= windowStart) return null;
+
+                      // Position of estimated end on today's timeline (0% = 7:00, 100% = 7:00 tomorrow)
+                      const endPct = getTimePercentForTimeline(opEnd, windowStart);
+                      // Cap to visible area (7:00-7:00)
+                      const displayWidthPct = Math.max(2, Math.min(endPct, 100));
+
+                      // Format end time for display
+                      const endHours   = opEnd.getHours().toString().padStart(2, '0');
+                      const endMinutes = opEnd.getMinutes().toString().padStart(2, '0');
+
+                      return (
+                        <div
+                          className="absolute top-1 bottom-1 rounded-lg flex items-center justify-between px-3"
+                          style={{
+                            left: '0%',
+                            width: `${displayWidthPct}%`,
+                            background: 'rgba(34, 197, 94, 0.35)',
+                            borderRight: '2px solid rgba(34, 197, 94, 0.8)',
+                            zIndex: 1,
+                          }}
+                        >
+                          <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
+                            POKRAČUJÍCÍ VÝKON
+                          </span>
+                          <span className="text-[10px] font-medium text-green-300 ml-2 whitespace-nowrap">
+                            do {endHours}:{endMinutes}
+                          </span>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Active operation bar */}
+                    {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.6, delay: roomIndex * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl group/bar"
+                        transition={{ duration: 0.4, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
                           transformOrigin: 'left center'
                         }}
                       >
-                        {/* Outer glow effect */}
-                        <div 
-                          className="absolute -inset-1 rounded-xl blur-md opacity-50"
-                          style={{ background: stepColor }}
-                        />
+                        {/* Multi-segment colored bar: one full cycle = all phases colored by status */}
+                        <div className="absolute inset-0 flex overflow-hidden rounded-lg">
+                          {(() => {
+                            const history = room.statusHistory || [];
+                            const operationStart = room.operationStartedAt
+                              ? new Date(room.operationStartedAt).getTime()
+                              : room.phaseStartedAt
+                                ? new Date(room.phaseStartedAt).getTime()
+                                : Date.now() - 30 * 60 * 1000;
+                            const estimatedEndTime = room.estimatedEndTime
+                              ? new Date(room.estimatedEndTime).getTime()
+                              : operationStart + 120 * 60 * 1000;
+                            const now = Date.now();
+                            // Pokud operace přesáhla odhadovaný čas, použijeme aktuální čas jako koncový bod
+                            const effectiveEndTime = Math.max(estimatedEndTime, now);
+                            const totalDuration = Math.max(1, effectiveEndTime - operationStart);
 
-                        {/* Main container with gradient border */}
-                        <div 
-                          className="absolute inset-0 rounded-xl"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${stepColor}30 0%, ${stepColor}10 100%)`,
-                            border: `1px solid ${stepColor}60`,
-                            boxShadow: `0 4px 20px ${stepColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`
-                          }}
-                        />
+                            // Build color lookup from activeStatuses (database-driven)
+                            // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                            const stepColorMap: Record<number, string> = {};
+                            activeStatuses.forEach((s) => {
+                              stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
+                            });
 
-                        {/* Top highlight reflection */}
-                        <div 
-                          className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl opacity-30"
-                          style={{ 
-                            background: `linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)`
-                          }}
-                        />
+                            // If we have real status history → render exact segments
+                            if (history.length > 0) {
+                              return history.map((entry, idx) => {
+                                const segStart = new Date(entry.startedAt).getTime();
+                                const nextEntry = history[idx + 1];
+                                const isCurrentSeg = idx === history.length - 1;
+                                
+                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
+                                const segEnd = nextEntry
+                                  ? new Date(nextEntry.startedAt).getTime()
+                                  : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
+                                
+                                const segDuration = Math.max(0, segEnd - segStart);
+                                const segWidthPct = (segDuration / totalDuration) * 100;
+                                const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
+                                if (segWidthPct <= 0) return null;
+                                
+                                const phaseColor = entry.color
+                                  || stepColorMap[entry.stepIndex]
+                                  || STEP_INDEX_COLORS[entry.stepIndex]
+                                  || '#6b7280';
 
-                        {/* Radial glow from top */}
-                        <div 
-                          className="absolute inset-0 opacity-60"
-                          style={{ 
-                            background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${stepColor}40 0%, transparent 70%)`
-                          }}
-                        />
+                                // For current segment, calculate progress within the segment
+                                const progressWithinSeg = isCurrentSeg 
+                                  ? Math.max(0, Math.min(100, ((now - segStart) / (segEnd - segStart)) * 100))
+                                  : 100;
 
-                        {/* Completed section with animated shine */}
-                        <div 
-                          className="absolute inset-0 rounded-xl overflow-hidden" 
-                          style={{ clipPath: `inset(0 ${100 - progressPct}% 0 0)` }}
-                        >
-                          {/* Solid progress fill */}
-                          <div 
-                            className="absolute inset-0"
-                            style={{ 
-                              background: `linear-gradient(135deg, ${stepColor} 0%, ${stepColor}CC 100%)`
-                            }}
-                          />
-                          
-                          {/* Diagonal stripes pattern */}
-                          <div 
-                            className="absolute inset-0 opacity-20" 
-                            style={{ 
-                              backgroundImage: `repeating-linear-gradient(
-                                -45deg,
-                                transparent,
-                                transparent 4px,
-                                rgba(255,255,255,0.4) 4px,
-                                rgba(255,255,255,0.4) 8px
-                              )`
-                            }} 
-                          />
-                          
-                          {/* Animated shine sweep */}
-                          <motion.div
-                            className="absolute inset-0"
-                            style={{
-                              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
-                              width: '50%'
-                            }}
-                            animate={{ x: ['-100%', '300%'] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
-                          />
+                                return (
+                                  <motion.div
+                                    key={`seg-${idx}`}
+                                    className="absolute top-0 bottom-0 overflow-hidden"
+                                    style={{
+                                      left: `${Math.max(0, segLeftPct)}%`,
+                                      width: `${Math.max(0.5, segWidthPct)}%`,
+                                      background: isCurrentSeg
+                                        ? `${phaseColor}40` // Lighter background for remaining time
+                                        : `${phaseColor}bb`,
+                                    }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.04 * idx }}
+                                  >
+                                    {/* For current segment: show completed portion with full color */}
+                                    {isCurrentSeg && (
+                                      <div 
+                                        className="absolute top-0 bottom-0 left-0"
+                                        style={{
+                                          width: `${progressWithinSeg}%`,
+                                          background: phaseColor,
+                                        }}
+                                      />
+                                    )}
+                                    {/* Subtle separator between segments */}
+                                    {idx < history.length - 1 && (
+                                      <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/40 z-10" />
+                                    )}
+                                    {/* Show phase label if segment is wide enough */}
+                                    {segWidthPct > 8 && (
+                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
+                                        <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
+                                          {statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                );
+                              });
+                            }
+
+                            // Fallback: no history → show estimated future segments
+                            // Split total duration proportionally by default step durations
+                            const stepDurations = activeStatuses.map((_, i) => STEP_DURATIONS[i] || 15);
+                            const completedDuration = stepDurations
+                              .slice(0, stepIndex)
+                              .reduce((a, b) => a + b, 0);
+                            const remainingDuration = stepDurations
+                              .slice(stepIndex)
+                              .reduce((a, b) => a + b, 0);
+                            const scaleFactor = totalDuration / Math.max(1, (completedDuration + remainingDuration) * 60 * 1000);
+
+                            let cursor = 0;
+                            return activeStatuses.map((step, i) => {
+                              const rawDur = (STEP_DURATIONS[step.order_index] || 15) * 60 * 1000 * scaleFactor;
+                              const segWidthPct = (rawDur / totalDuration) * 100;
+                              const segLeftPct = cursor;
+                              cursor += segWidthPct;
+                              const isPast = step.order_index < stepIndex;
+                              const isCurrent = step.order_index === stepIndex;
+                              const phaseColor = stepColorMap[step.order_index] || '#6b7280';
+
+                              return (
+                                <motion.div
+                                  key={`est-${i}`}
+                                  className="absolute top-0 bottom-0"
+                                  style={{
+                                    left: `${Math.max(0, segLeftPct)}%`,
+                                    width: `${Math.max(0.5, segWidthPct)}%`,
+                                    background: isCurrent
+                                      ? phaseColor
+                                      : isPast
+                                        ? `${phaseColor}bb`
+                                        : `${phaseColor}33`,
+                                  }}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.03 * i }}
+                                >
+                                  {i < activeStatuses.length - 1 && (
+                                    <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/35 z-10" />
+                                  )}
+                                  {segWidthPct > 7 && (
+                                    <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
+                                      <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
+                                        {step.title || step.name}
+                                      </span>
+                                    </div>
+                                  )}
+                                </motion.div>
+                              );
+                            });
+                          })()}
                         </div>
 
-                        {/* Current position indicator - glowing line */}
-                        {progressPct > 0 && progressPct < 100 && (
+                        {/* Current position indicator */}
+                        {progressPct > 0 && progressPct < 100 && !room.isPaused && (
                           <>
-                            {/* Glow behind the line */}
-                            <motion.div 
-                              className="absolute top-0 bottom-0 w-4 -translate-x-1/2 blur-sm"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: `linear-gradient(90deg, transparent, ${stepColor}, transparent)`
-                              }}
-                              animate={{ opacity: [0.5, 1, 0.5] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
-                            />
-                            {/* Main line */}
-                            <motion.div 
+                            <div 
                               className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: '#FFF',
-                                boxShadow: `0 0 10px #FFF, 0 0 20px ${stepColor}`
+                                background: 'rgba(255,255,255,0.9)'
                               }}
-                              animate={{ opacity: [1, 0.7, 1] }}
-                              transition={{ duration: 1, repeat: Infinity }}
                             />
-                            {/* Top dot */}
-                            <motion.div 
-                              className="absolute -top-0.5 w-2 h-2 rounded-full -translate-x-1/2"
+                            <div 
+                              className="absolute -top-0.5 w-2 h-2 -translate-x-1/2 rounded-full"
                               style={{ 
                                 left: `${progressPct}%`,
-                                background: '#FFF',
-                                boxShadow: `0 0 8px #FFF, 0 0 16px ${stepColor}`
+                                background: 'white'
                               }}
-                              animate={{ scale: [1, 1.2, 1] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
                             />
                           </>
                         )}
 
-                        {/* Content overlay - step icon, title and status */}
-                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none gap-2">
-                          {/* Step Icon */}
-                          <div 
-                            className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center"
-                            style={{ 
-                              background: `${stepColor}40`,
-                              border: `1px solid ${stepColor}60`
-                            }}
-                          >
-                            <StepIcon className="w-3.5 h-3.5 text-white" />
-                          </div>
-                          
-                          {/* Step title and status */}
-                          {boxWidthPct > 12 && (
-                            <div className="min-w-0 flex-1">
-                              <p 
-                                className="text-[10px] font-bold text-white truncate"
-                                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                              >
-                                {currentStep.title}
-                              </p>
-                              <p 
-                                className="text-[8px] font-medium truncate"
-                                style={{ color: stepColor, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
-                              >
-                                {currentStep.status}
-                              </p>
+
+
+                        {/* Content overlay - refined typography */}
+                        <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
+                          {room.isPaused ? (
+                            /* Pause state - elegant pause display */
+                            <div className="min-w-0 flex-1 flex items-center gap-2">
+                              {boxWidthPct > 5 && (
+                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                  <Pause className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                              {boxWidthPct > 12 && (
+                                <div>
+                                  <p className="text-[11px] font-bold text-white uppercase tracking-wider">
+                                    PAUZA
+                                  </p>
+                                  {boxWidthPct > 20 && (
+                                    <p className="text-[8px] text-white/60">
+                                      Operace pozastavena
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          
-                          {/* Remaining time badge */}
-                          {boxWidthPct > 18 && remainingTime && stepIndex !== 6 && (
-                            <div 
-                              className="flex-shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold text-white"
-                              style={{ 
-                                background: 'rgba(0,0,0,0.3)',
-                                backdropFilter: 'blur(4px)'
-                              }}
-                            >
-                              {remainingTime}
-                            </div>
+                          ) : (
+                            /* Normal state - refined step info */
+                            <>
+                              {boxWidthPct > 8 && (
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] font-semibold text-white truncate drop-shadow-sm">
+                                    {stepName}
+                                  </p>
+                                  <p className="text-[9px] font-normal text-white/60 truncate">
+                                    {room.staff?.doctor?.name || ''}
+                                  </p>
+                                </div>
+                              )}
+                              {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
+                                <div
+                                  className="flex-shrink-0 px-2 py-1 rounded-md text-[9px] font-semibold text-white/90 backdrop-blur-sm"
+                                  style={{ 
+                                    background: 'rgba(0,0,0,0.25)',
+                                    border: '1px solid rgba(255,255,255,0.1)'
+                                  }}
+                                >
+                                  {remainingTime}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </motion.div>
                     )}
 
-                    {/* Free room indicator - with workflow step styling */}
+                    {/* Free room indicator - elegant glass style */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center gap-3 overflow-hidden"
+                        className="absolute inset-y-1.5 left-1.5 right-1.5 rounded-xl flex items-center justify-center overflow-hidden"
                         style={{ 
-                          background: `linear-gradient(135deg, ${stepColor}08 0%, ${stepColor}03 100%)`,
-                          border: `1px dashed ${stepColor}30`
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                          border: '1px dashed rgba(255,255,255,0.1)',
+                          backdropFilter: 'blur(4px)'
                         }}
                       >
-                        {/* Step icon */}
-                        <div 
-                          className="w-6 h-6 rounded-lg flex items-center justify-center"
-                          style={{ 
-                            background: `${stepColor}20`,
-                            border: `1px solid ${stepColor}30`
-                          }}
-                        >
-                          <StepIcon className="w-3.5 h-3.5" style={{ color: stepColor }} />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-[10px] font-bold" style={{ color: stepColor }}>{currentStep.title}</p>
-                          <p className="text-[8px] font-medium text-white/30">{currentStep.status}</p>
+                        <div className="text-center px-3">
+                          <p className="text-[10px] font-medium text-white/25 uppercase tracking-wide">{stepName}</p>
                         </div>
                       </div>
                     )}
@@ -1631,7 +1442,6 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                            {isNextDayEnd && <span className="text-[6px] text-cyan-400">+1</span>}
                           </div>
                         </div>
                       );
@@ -1644,68 +1454,342 @@ const TimelineModule: React.FC<TimelineModuleProps> = ({ rooms }) => {
         </div>
       </div>
 
-      {/* ======== Legend Footer ======== */}
-      <footer className="relative z-10 flex items-center justify-between gap-4 px-8 md:pl-32 md:pr-10 py-4 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-4 flex-wrap">
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-4 rounded bg-white/10" />
-            <span className="text-[10px] font-medium text-white/40">Dokoncene</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #3B82F6 0px, #3B82F6 4px, transparent 4px, transparent 8px)' }} />
-            <span className="text-[10px] font-medium text-white/40">Zacatek smeny</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-[2px]" style={{ backgroundImage: 'repeating-linear-gradient(to right, #F97316 0px, #F97316 4px, transparent 4px, transparent 8px)' }} />
-            <span className="text-[10px] font-medium text-white/40">Konec smeny</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(249, 115, 22, 0.05)', border: '1px solid rgba(249, 115, 22, 0.15)' }}
-          >
-            <div className="w-0.5 h-4 rounded-full" style={{ background: '#F97316' }} />
-            <span className="text-[10px] font-medium text-orange-400/60">Konec prac. doby salu</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div className="w-4 h-4 rounded-full border-2 border-red-500/50" />
-            <span className="text-[10px] font-medium text-white/40">Presah</span>
-          </div>
-          <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
-          >
-            <div 
-              className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-red-400"
-              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
-            >
-              1
-            </div>
-            <span className="text-[10px] font-medium text-red-400/70">ARO poradi stridani</span>
-          </div>
-        </div>
-        <div 
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          <Info className="w-3.5 h-3.5 text-white/30" />
-          <span className="text-[10px] font-medium text-white/30">Kliknete na sal pro zobrazeni detailu</span>
-        </div>
-      </footer>
+
       </div>{/* end desktop wrapper */}
     </div>
   );
+}
+
+// Helper Component - Stat Box
+interface StatBoxProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  color: string;
+  glow?: boolean;
+}
+
+const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
+  <div
+    className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'shadow-lg' : ''}`}
+    style={{
+      background: glow
+        ? `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`
+        : `linear-gradient(135deg, ${color}12 0%, ${color}04 100%)`,
+      border: glow ? `2px solid ${color}50` : `1px solid ${color}25`,
+      boxShadow: glow ? `0 0 30px ${color}30` : 'none',
+    }}
+  >
+    {glow && (
+      <div
+        className="absolute inset-0 opacity-50"
+        style={{
+          background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
+        }}
+      />
+    )}
+    <div className="relative flex items-center gap-3 h-full">
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        style={{
+          background: `${color}20`,
+          border: `1px solid ${color}40`,
+        }}
+      >
+        <span style={{ color }}><Icon className="w-4 h-4" /></span>
+      </div>
+      <div className="min-w-0">
+        <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-semibold text-white leading-tight">{value}</p>
+      </div>
+    </div>
+  </div>
+);
+
+// Helper Component - Room Detail Popup (Design matching screenshot)
+interface RoomDetailPopupProps {
+  room: OperatingRoom;
+  onClose: () => void;
+  currentTime: Date;
+}
+
+const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
+  // Get workflow statuses from database context - already filtered and sorted
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  
+  // workflowStatuses is already filtered (active, non-special) and sorted by context
+  const activeStatuses = workflowStatuses;
+  
+  // Lookup mapa pro správné mapování podle order_index
+  const statusByOrderIndex = useMemo(() => {
+    const map: Record<number, typeof activeStatuses[number]> = {};
+    activeStatuses.forEach((s) => {
+      map[s.order_index] = s;
+    });
+    return map;
+  }, [activeStatuses]);
+  
+  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
+  const stepIndex = room.currentStepIndex;
+  const nextStepIndex = stepIndex + 1;
+  
+  // Použít lookup mapu pro správné mapování barvy a statusu
+  const currentStatus = statusByOrderIndex[stepIndex] || null;
+  const nextStatus = statusByOrderIndex[nextStepIndex] || null;
+  
+  const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
+  const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
+
+  // Calculate elapsed time from phaseStartedAt
+  const getElapsedTime = (): string => {
+    if (!room.phaseStartedAt) return '--:--';
+    const phaseStartTime = new Date(room.phaseStartedAt);
+    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
+    if (elapsedMs < 0) return '--:--';
+    
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours === 0) {
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-3xl overflow-hidden max-w-2xl w-full"
+        style={{
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        {/* Header */}
+        <div className="px-6 py-5 flex items-center justify-between">
+          {/* Left side - Progress circle and room info */}
+          <div className="flex items-center gap-4">
+            {/* Progress circle */}
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <svg className="w-14 h-14 -rotate-90">
+                <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
+                <circle 
+                  cx="28" cy="28" r="24" fill="none" stroke={stepColor} strokeWidth="4"
+                  strokeDasharray={`${progressPercent * 1.5} 150`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="absolute text-sm font-bold text-white">{progressPercent}%</span>
+            </div>
+            
+            {/* Room name and status */}
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-white">{room.name}</h2>
+                <span 
+                  className="px-3 py-1 rounded-full text-xs font-bold"
+                  style={{ backgroundColor: `${stepColor}30`, color: stepColor }}
+                >
+                  {currentStatus?.name || 'Status'}
+                </span>
+              </div>
+              <p className="text-white/50 text-sm mt-0.5">
+                {room.department} · KROK {stepIndex + 1} Z {totalSteps}
+              </p>
+            </div>
+          </div>
+          
+          {/* Right side - Step dots, time display and close */}
+          <div className="flex items-center gap-6">
+            {/* Step progress dots */}
+            <div>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
+              <div className="flex items-center gap-1">
+                {activeStatuses.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center gap-0.5"
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
+                    />
+                    <div
+                      className="w-0.5 h-2"
+                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            >
+              <X className="w-5 h-5 text-white/60" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 pb-6 space-y-5">
+          {/* Operation progress section */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4 text-white/40" />
+              <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">POSTUP OPERACE</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {/* Current step */}
+              <div 
+                className="flex-1 rounded-2xl p-4 border"
+                style={{ 
+                  backgroundColor: `${stepColor}15`,
+                  borderColor: `${stepColor}40`
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stepColor }} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: stepColor }}>
+                      PRAVE PROBIHA
+                    </span>
+                  </div>
+                  <span 
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    style={{ backgroundColor: `${stepColor}30`, color: stepColor }}
+                  >
+                    Krok {stepIndex + 1}/{totalSteps}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${stepColor}20` }}
+                  >
+                    <span style={{ color: stepColor }}><Stethoscope className="w-5 h-5" /></span>
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold">{currentStatus?.name || 'Status'}</p>
+                    <p className="text-white/40 text-xs flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3 h-3" /> {getElapsedTime()} --:--
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: `${stepColor}30` }}
+              >
+                <span style={{ color: stepColor }}><ChevronRight className="w-5 h-5" /></span>
+              </div>
+
+              {/* Next step */}
+              <div className="flex-1 rounded-2xl p-4 bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-white/30" />
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+                      NASLEDUJICI
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40">
+                    Krok {nextStepIndex + 1}/{totalSteps}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/10">
+                    <Sparkles className="w-5 h-5 text-white/40" />
+                  </div>
+                  <div>
+                    <p className="text-white/80 font-semibold">{nextStatus?.name || 'Další krok'}</p>
+                    <p className="text-white/30 text-xs mt-0.5">Ceka na zahajeni</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom row - Team and Times */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Team section */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="w-4 h-4 text-white/40" />
+                <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">TYM</p>
+              </div>
+              <div className="flex gap-3">
+                {/* Doctor */}
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-500/20">
+                      <Stethoscope className="w-4 h-4 text-violet-400" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-white/40 uppercase tracking-wider">ANESTEZIOLOG</p>
+                      <p className="text-sm font-semibold text-white">{room.staff?.doctor?.name || 'MUDr. --'}</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Nurse */}
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/20">
+                      <Users className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-white/40 uppercase tracking-wider">SESTRA</p>
+                      <p className="text-sm font-semibold text-white">{room.staff?.nurse?.name || 'Bc. --'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Times section */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-4 h-4 text-white/40" />
+                <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">CASY</p>
+              </div>
+              <div className="flex gap-3">
+                {/* Start time */}
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ZACATEK</p>
+                  <p className="text-xl font-mono font-bold text-white/60">--:--</p>
+                </div>
+                {/* Estimated end */}
+                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
+                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ODHAD</p>
+                  <p className="text-xl font-mono font-bold" style={{ color: stepColor }}>
+                    {room.estimatedEndTime 
+                      ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+                      : '--:--'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
 };
 
-export default TimelineModule;
