@@ -485,17 +485,17 @@ const AppContent: React.FC = () => {
             {currentView === 'dashboard' && !selectedRoom && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
                 <div className="max-w-[2400px] mx-auto w-full">
-                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-4 md:gap-6 mb-8 md:mb-12 lg:mb-16 flex-shrink-0">
+                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-12 lg:mb-16 flex-shrink-0">
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
-                      <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-                        <Shield className="w-4 h-4 text-[#00D8C1]" />
-                        <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+                      <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
+                        <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#00D8C1]" />
+                        <p className="text-[9px] sm:text-[10px] font-black text-[#00D8C1] tracking-[0.3em] sm:tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
                       </div>
-                      <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none truncate">
+                      <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none truncate">
                         OPERATING <span className="text-white/20">ROOM</span>
                       </h1>
                     </div>
-                    <div className="flex gap-2 md:gap-4 p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                    <div className="flex gap-1.5 md:gap-4 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
                       {(() => {
                         // Check if room is in "ready" status (step index 0 or 7)
                         const isRoomReady = (room: OperatingRoom) => {
@@ -510,10 +510,10 @@ const AppContent: React.FC = () => {
                           { label: 'PŘIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#00D8C1]'  },
                         ];
                       })().map((stat) => (
-                        <div key={stat.label} className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-3 md:py-4 rounded-3xl hover:bg-white/5 transition-all min-w-[110px] sm:min-w-[130px] md:min-w-[150px] z-10">
-                          <div className="flex items-center gap-2.5 mb-2 opacity-40">
-                            <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em]">{stat.label}</p>
+                        <div key={stat.label} className="flex flex-col items-center justify-center px-3 sm:px-6 md:px-10 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[130px] md:min-w-[150px] z-10">
+                          <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2 opacity-40">
+                            <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
+                            <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em]">{stat.label}</p>
                           </div>
                           <AnimatedCounter to={stat.value} />
                         </div>
@@ -521,7 +521,7 @@ const AppContent: React.FC = () => {
                     </div>
                   </header>
                   <div className="pb-20 px-0 sm:px-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-4 sm:gap-x-6 md:gap-x-8 gap-y-6 sm:gap-y-8 md:gap-y-12">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-2 sm:gap-x-6 md:gap-x-8 gap-y-3 sm:gap-y-8 md:gap-y-12">
                       {rooms.map((room) => (
                         <RoomCard
                           key={room.id}
