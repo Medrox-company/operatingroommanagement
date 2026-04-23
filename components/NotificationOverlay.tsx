@@ -207,24 +207,6 @@ export default function NotificationOverlay({
                 <div className="w-11 h-11 shrink-0" aria-hidden="true" />
               </div>
 
-              {/* Hint card */}
-              <div
-                className="rounded-3xl p-5 mb-5"
-                style={{
-                  background:
-                    'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(16px)',
-                }}
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40 leading-none">
-                  Vyberte důvod
-                </p>
-                <p className="text-sm text-white/70 mt-3 leading-snug text-pretty">
-                  Upozornění bude obratem odesláno managementu e‑mailem s časem a názvem sálu.
-                </p>
-              </div>
-
               {/* Section label */}
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40 mb-3 px-1">
                 Typ notifikace
