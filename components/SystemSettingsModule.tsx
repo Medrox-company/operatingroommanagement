@@ -28,6 +28,12 @@ import {
   ClipboardList,
   User as UserIcon,
   SlidersHorizontal,
+  Download,
+  Upload,
+  FileJson,
+  HardDriveDownload,
+  HardDriveUpload,
+  RotateCcw,
 } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
 
@@ -61,6 +67,23 @@ const SystemSettingsModule: React.FC = () => {
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<{ success: boolean; message: string; details?: Record<string, unknown> } | null>(null);
+
+  // Export / Import state
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportMessage, setExportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreview, setImportPreview] = useState<{
+    version?: string;
+    exportedAt?: string;
+    exportedBy?: string;
+    facility?: { name?: string | null; ico?: string | null };
+    totalRows: number;
+    tableCount: number;
+  } | null>(null);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
+  const [importConfirmText, setImportConfirmText] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Load facility info
   useEffect(() => {
@@ -119,11 +142,11 @@ const SystemSettingsModule: React.FC = () => {
     try {
       const res = await fetch('/api/admin/reset-data', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: resetMode,
           confirmation: resetConfirmText,
-          userEmail: user?.email,
         }),
       });
       const data = await res.json();
@@ -156,6 +179,137 @@ const SystemSettingsModule: React.FC = () => {
     setResetMode(null);
     setResetConfirmText('');
     setResetResult(null);
+  };
+
+  // ---- Export ---------------------------------------------------------------
+  const handleExport = useCallback(async () => {
+    setExportLoading(true);
+    setExportMessage(null);
+    try {
+      const res = await fetch('/api/admin/export-data', { credentials: 'include' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Export selhal (${res.status})`);
+      }
+      const blob = await res.blob();
+
+      // Vytáhni filename z Content-Disposition, s fallbackem
+      const cd = res.headers.get('Content-Disposition') || '';
+      const match = cd.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] || `or-backup_${new Date().toISOString().slice(0, 10)}.json`;
+
+      // Stáhni
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+
+      setExportMessage({ type: 'success', text: `Záloha stažena: ${filename}` });
+    } catch (e: unknown) {
+      setExportMessage({ type: 'error', text: e instanceof Error ? e.message : 'Chyba při exportu.' });
+    } finally {
+      setExportLoading(false);
+    }
+  }, [user?.email]);
+
+  // ---- Import: načti soubor, ukaž náhled -----------------------------------
+  const handleImportFile = useCallback(async (file: File | null) => {
+    setImportFile(file);
+    setImportPreview(null);
+    setImportResult(null);
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as {
+        version?: string;
+        exportedAt?: string;
+        exportedBy?: string;
+        facility?: { name?: string | null; ico?: string | null };
+        tables?: Record<string, unknown[]>;
+      };
+
+      if (!parsed.tables || typeof parsed.tables !== 'object') {
+        throw new Error('Soubor neobsahuje platnou strukturu zálohy (chybí "tables").');
+      }
+
+      const tableCount = Object.keys(parsed.tables).length;
+      const totalRows = Object.values(parsed.tables).reduce(
+        (sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0),
+        0
+      );
+
+      setImportPreview({
+        version: parsed.version,
+        exportedAt: parsed.exportedAt,
+        exportedBy: parsed.exportedBy,
+        facility: parsed.facility,
+        totalRows,
+        tableCount,
+      });
+    } catch (e: unknown) {
+      setImportFile(null);
+      setImportPreview(null);
+      setImportResult({
+        success: false,
+        message: e instanceof Error ? e.message : 'Soubor nelze přečíst.',
+      });
+    }
+  }, []);
+
+  // ---- Import: potvrď a odešli na server -----------------------------------
+  const handleImportConfirm = useCallback(async () => {
+    if (!importFile) return;
+    if (importConfirmText !== 'OBNOVIT DATA') return;
+
+    setImportLoading(true);
+    setImportResult(null);
+
+    try {
+      const text = await importFile.text();
+      const backup = JSON.parse(text);
+
+      const res = await fetch('/api/admin/import-data', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmation: importConfirmText,
+          backup,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setImportResult({
+          success: true,
+          message: 'Data byla úspěšně obnovena ze zálohy. Obnovte stránku pro načtení nových dat.',
+        });
+        setTimeout(() => {
+          setImportConfirmOpen(false);
+          setImportConfirmText('');
+        }, 1500);
+      } else {
+        setImportResult({ success: false, message: data.error || 'Obnova selhala.' });
+      }
+    } catch (e: unknown) {
+      setImportResult({
+        success: false,
+        message: e instanceof Error ? e.message : 'Chyba při obnově.',
+      });
+    } finally {
+      setImportLoading(false);
+    }
+  }, [importFile, importConfirmText, user?.email]);
+
+  const closeImportDialog = () => {
+    if (importLoading) return;
+    setImportConfirmOpen(false);
+    setImportConfirmText('');
+    setImportResult(null);
   };
 
   // ==========================================================================
@@ -279,6 +433,22 @@ const SystemSettingsModule: React.FC = () => {
                   setResetConfirmText('');
                 }}
                 lastResult={resetResult}
+                exportLoading={exportLoading}
+                exportMessage={exportMessage}
+                onExport={handleExport}
+                importFile={importFile}
+                importPreview={importPreview}
+                onImportFile={handleImportFile}
+                onRequestImport={() => {
+                  setImportConfirmOpen(true);
+                  setImportConfirmText('');
+                  setImportResult(null);
+                }}
+                onClearImport={() => {
+                  setImportFile(null);
+                  setImportPreview(null);
+                  setImportResult(null);
+                }}
               />
             </motion.div>
           )}
@@ -309,6 +479,21 @@ const SystemSettingsModule: React.FC = () => {
             result={resetResult}
             onConfirm={handleResetConfirm}
             onClose={closeResetDialog}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Import confirmation modal */}
+      <AnimatePresence>
+        {importConfirmOpen && importPreview && (
+          <ImportConfirmModal
+            preview={importPreview}
+            confirmText={importConfirmText}
+            onConfirmTextChange={setImportConfirmText}
+            loading={importLoading}
+            result={importResult}
+            onConfirm={handleImportConfirm}
+            onClose={closeImportDialog}
           />
         )}
       </AnimatePresence>
@@ -475,13 +660,42 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
 // Panel: Database
 // ============================================================================
 
+interface ImportPreview {
+  version?: string;
+  exportedAt?: string;
+  exportedBy?: string;
+  facility?: { name?: string | null; ico?: string | null };
+  totalRows: number;
+  tableCount: number;
+}
+
 interface DatabasePanelProps {
   isAdmin: boolean;
   onRequestReset: (mode: 'operational' | 'full') => void;
   lastResult: { success: boolean; message: string; details?: Record<string, unknown> } | null;
+  exportLoading: boolean;
+  exportMessage: { type: 'success' | 'error'; text: string } | null;
+  onExport: () => void;
+  importFile: File | null;
+  importPreview: ImportPreview | null;
+  onImportFile: (file: File | null) => void;
+  onRequestImport: () => void;
+  onClearImport: () => void;
 }
 
-const DatabasePanel: React.FC<DatabasePanelProps> = ({ isAdmin, onRequestReset, lastResult }) => {
+const DatabasePanel: React.FC<DatabasePanelProps> = ({
+  isAdmin,
+  onRequestReset,
+  lastResult,
+  exportLoading,
+  exportMessage,
+  onExport,
+  importFile,
+  importPreview,
+  onImportFile,
+  onRequestImport,
+  onClearImport,
+}) => {
   return (
     <div className="space-y-6">
       <div>
@@ -599,6 +813,173 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({ isAdmin, onRequestReset, 
         </div>
       )}
 
+      {/* ---------- Backup & Restore ---------- */}
+      {isAdmin && (
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
+              Záloha a obnova
+            </span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Export */}
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-5 flex flex-col">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <HardDriveDownload className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Exportovat databázi</h3>
+                  <p className="text-xs text-emerald-300/70 uppercase tracking-wider font-bold">
+                    Stáhnout zálohu
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-white/60 leading-relaxed mb-4 flex-1">
+                Stáhne kompletní zálohu databáze jako JSON soubor. Obsahuje veškerou konfiguraci i provozní data — s
+                výjimkou hesel uživatelů. Záloha je připravena pro pozdější obnovu.
+              </p>
+
+              <ul className="text-xs text-white/50 space-y-1.5 mb-5">
+                <li className="flex items-center gap-2">
+                  <FileJson className="w-3 h-3 text-emerald-400" />
+                  Všechny tabulky v jednom JSON souboru
+                </li>
+                <li className="flex items-center gap-2">
+                  <Download className="w-3 h-3 text-emerald-400" />
+                  Automatické stažení do prohlížeče
+                </li>
+                <li className="flex items-center gap-2">
+                  <Shield className="w-3 h-3 text-emerald-400" />
+                  Hesla uživatelů jsou vyloučena
+                </li>
+              </ul>
+
+              <button
+                onClick={onExport}
+                disabled={exportLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm bg-emerald-500 hover:bg-emerald-600 transition-colors disabled:opacity-50"
+              >
+                {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {exportLoading ? 'Exportuji…' : 'Exportovat databázi'}
+              </button>
+
+              {exportMessage && (
+                <div
+                  className={`mt-3 flex items-start gap-2 p-3 rounded-xl text-xs ${
+                    exportMessage.type === 'success'
+                      ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+                      : 'bg-red-500/10 border border-red-500/30 text-red-300'
+                  }`}
+                >
+                  {exportMessage.type === 'success' ? (
+                    <Check className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  )}
+                  <span>{exportMessage.text}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Import */}
+            <div className="rounded-2xl border border-[#0EA5E9]/20 bg-[#0EA5E9]/[0.04] p-5 flex flex-col">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/20 flex items-center justify-center">
+                  <HardDriveUpload className="w-5 h-5 text-[#0EA5E9]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Obnovit ze zálohy</h3>
+                  <p className="text-xs text-[#0EA5E9]/70 uppercase tracking-wider font-bold">
+                    Nahrát JSON soubor
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-white/60 leading-relaxed mb-4">
+                Nahrajte dříve vyexportovaný JSON soubor. Stávající data budou{' '}
+                <strong className="text-white/80">přepsána</strong> obsahem zálohy. Uživatelské účty zůstanou zachovány.
+              </p>
+
+              {/* File picker / preview */}
+              {!importFile ? (
+                <label className="mb-5 flex-1 flex flex-col items-center justify-center gap-2 py-6 px-4 rounded-xl border-2 border-dashed border-white/15 hover:border-[#0EA5E9]/50 hover:bg-white/[0.02] cursor-pointer transition-all">
+                  <Upload className="w-6 h-6 text-white/30" />
+                  <span className="text-sm text-white/60 font-medium">Vyberte JSON soubor se zálohou</span>
+                  <span className="text-[11px] text-white/30">Klikněte pro výběr nebo přetáhněte soubor sem</span>
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={e => onImportFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              ) : (
+                <div className="mb-5 flex-1">
+                  <div className="rounded-xl bg-white/[0.03] border border-white/10 p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileJson className="w-5 h-5 text-[#0EA5E9] flex-shrink-0" />
+                        <span className="text-sm text-white font-medium truncate">{importFile.name}</span>
+                      </div>
+                      <button
+                        onClick={onClearImport}
+                        aria-label="Odebrat soubor"
+                        className="text-white/40 hover:text-white/80 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {importPreview && (
+                      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2 border-t border-white/5 text-xs">
+                        <dt className="text-white/40">Tabulek:</dt>
+                        <dd className="text-white text-right font-mono">{importPreview.tableCount}</dd>
+                        <dt className="text-white/40">Záznamů:</dt>
+                        <dd className="text-white text-right font-mono">{importPreview.totalRows.toLocaleString('cs-CZ')}</dd>
+                        {importPreview.facility?.name && (
+                          <>
+                            <dt className="text-white/40">Zařízení:</dt>
+                            <dd className="text-white text-right truncate">{importPreview.facility.name}</dd>
+                          </>
+                        )}
+                        {importPreview.exportedAt && (
+                          <>
+                            <dt className="text-white/40">Vytvořeno:</dt>
+                            <dd className="text-white text-right font-mono text-[11px]">
+                              {new Date(importPreview.exportedAt).toLocaleString('cs-CZ')}
+                            </dd>
+                          </>
+                        )}
+                        {importPreview.exportedBy && (
+                          <>
+                            <dt className="text-white/40">Autor:</dt>
+                            <dd className="text-white text-right truncate">{importPreview.exportedBy}</dd>
+                          </>
+                        )}
+                      </dl>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={onRequestImport}
+                disabled={!importFile || !importPreview}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm bg-[#0EA5E9] hover:bg-[#0284C7] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Obnovit data ze zálohy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {lastResult?.success && (
         <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 flex items-start gap-3">
           <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
@@ -612,9 +993,10 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({ isAdmin, onRequestReset, 
       <div className="flex items-start gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-sm">
         <Info className="w-4 h-4 text-white/40 mt-0.5 flex-shrink-0" />
         <p className="text-white/50 leading-relaxed">
-          Mazání probíhá přes bezpečnou server-side API s service role klíčem. Akce je zaznamenána s identitou přihlášeného
-          administrátora. Pro potvrzení budete muset přesně zadat text{' '}
-          <code className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono text-xs">SMAZAT DATA</code>.
+          Mazání i obnova probíhají přes bezpečnou server-side API s service role klíčem. Akce je zaznamenána s identitou
+          přihlášeného administrátora. Pro potvrzení budete muset přesně zadat text{' '}
+          <code className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono text-xs">SMAZAT DATA</code> nebo{' '}
+          <code className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono text-xs">OBNOVIT DATA</code>.
         </p>
       </div>
     </div>
@@ -1085,6 +1467,135 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleM
         </span>
       </div>
     </div>
+  );
+};
+
+// ============================================================================
+// Import confirmation modal
+// ============================================================================
+
+interface ImportConfirmModalProps {
+  preview: ImportPreview;
+  confirmText: string;
+  onConfirmTextChange: (v: string) => void;
+  loading: boolean;
+  result: { success: boolean; message: string } | null;
+  onConfirm: () => void;
+  onClose: () => void;
+}
+
+const ImportConfirmModal: React.FC<ImportConfirmModalProps> = ({
+  preview,
+  confirmText,
+  onConfirmTextChange,
+  loading,
+  result,
+  onConfirm,
+  onClose,
+}) => {
+  const accent = '#0EA5E9';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-md rounded-3xl border bg-[#0f0f14] p-6"
+        style={{ borderColor: `${accent}40` }}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            style={{ background: `${accent}20` }}
+          >
+            <HardDriveUpload className="w-6 h-6" style={{ color: accent }} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Obnovit data ze zálohy</h3>
+            <p className="text-xs text-white/40">Tuto akci nelze vrátit</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-white/60 leading-relaxed mb-4">
+          Stávající obsah databáze bude <strong className="text-white/80">smazán</strong> a nahrazen daty ze zálohy.
+          Uživatelské účty zůstanou zachovány.
+        </p>
+
+        {/* Preview summary */}
+        <div className="mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-1.5">
+          <div className="flex justify-between text-xs">
+            <span className="text-white/40">Tabulek v záloze:</span>
+            <span className="text-white font-mono">{preview.tableCount}</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-white/40">Celkem záznamů:</span>
+            <span className="text-white font-mono">{preview.totalRows.toLocaleString('cs-CZ')}</span>
+          </div>
+          {preview.facility?.name && (
+            <div className="flex justify-between text-xs">
+              <span className="text-white/40">Zdroj:</span>
+              <span className="text-white truncate">{preview.facility.name}</span>
+            </div>
+          )}
+        </div>
+
+        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">
+          Pro potvrzení zadejte přesně: <span className="text-white">OBNOVIT DATA</span>
+        </label>
+        <input
+          type="text"
+          value={confirmText}
+          onChange={e => onConfirmTextChange(e.target.value)}
+          disabled={loading || !!result?.success}
+          placeholder="OBNOVIT DATA"
+          className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none transition-all disabled:opacity-50 font-mono tracking-widest"
+          style={{ borderColor: confirmText === 'OBNOVIT DATA' ? accent : undefined }}
+        />
+
+        {result && !result.success && (
+          <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+            <AlertTriangle className="w-4 h-4" />
+            <span>{result.message}</span>
+          </div>
+        )}
+
+        {result?.success && (
+          <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm">
+            <Check className="w-4 h-4" />
+            <span>{result.message}</span>
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors disabled:opacity-50"
+          >
+            {result?.success ? 'Zavřít' : 'Zrušit'}
+          </button>
+          {!result?.success && (
+            <button
+              onClick={onConfirm}
+              disabled={loading || confirmText !== 'OBNOVIT DATA'}
+              className="flex-1 py-3 rounded-xl text-white font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{ background: accent }}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              <span>Obnovit nyní</span>
+            </button>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

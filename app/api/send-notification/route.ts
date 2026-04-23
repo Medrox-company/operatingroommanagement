@@ -1,11 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmailNotification, generateEmailTemplate } from '@/lib/email';
+import { getSupabaseAdmin } from '@/lib/supabase-server';
+import { requireSession } from '@/lib/auth/server';
+import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export const runtime = 'nodejs';
 
 interface NotificationRequest {
   type: string;
@@ -43,33 +42,53 @@ const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subje
 };
 
 export async function POST(request: NextRequest) {
+  // AuthN — pouze přihlášení uživatelé mohou spouštět odesílání e-mailů
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+
+  // Rate limit — max 20 odeslání / 1 minuta / uživatel (ochrana proti zneužití)
+  const rl = rateLimit(`notify:${auth.user.sub}:${getClientIdentifier(request.headers)}`, {
+    limit: 20,
+    windowMs: 60 * 1000,
+  });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Příliš mnoho notifikací v krátkém čase. Zkuste za chvíli.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
+    );
+  }
+
+  const supabase = getSupabaseAdmin();
+
   try {
     const { type, roomId, roomName, customReason }: NotificationRequest = await request.json();
-    console.log('[v0] send-notification called with:', { type, roomId, roomName, customReason });
 
     const notificationType = NOTIFICATION_TYPE_MAP[type];
     if (!notificationType) {
-      console.log('[v0] Unknown notification type:', type);
       return NextResponse.json({ error: 'Neznámý typ notifikace' }, { status: 400 });
     }
 
+    // Validuj payload
+    if (typeof roomId !== 'string' || !roomId || typeof roomName !== 'string' || !roomName) {
+      return NextResponse.json({ error: 'Chybí roomId nebo roomName' }, { status: 400 });
+    }
+    if (customReason !== undefined && (typeof customReason !== 'string' || customReason.length > 2000)) {
+      return NextResponse.json({ error: 'Neplatný customReason' }, { status: 400 });
+    }
+
     // Get management contacts that want this type of notification
-    console.log('[v0] Fetching contacts with field:', notificationType.field);
     const { data: contacts, error: contactsError } = await supabase
       .from('management_contacts')
       .select('email, name, position')
       .eq(notificationType.field, true)
       .eq('is_active', true);
 
-    console.log('[v0] Contacts query result:', { contacts, contactsError });
-
     if (contactsError) {
-      console.error('[v0] Error fetching contacts:', contactsError);
+      console.error('[send-notification] Error fetching contacts:', contactsError);
       return NextResponse.json({ error: 'Chyba při načítání kontaktů' }, { status: 500 });
     }
 
     if (!contacts || contacts.length === 0) {
-      console.log('[v0] No contacts found for notification type:', type);
       // Log notification even if no recipients
       try {
         const { error: logError } = await supabase
@@ -82,13 +101,13 @@ export async function POST(request: NextRequest) {
             recipient_count: 0,
           });
         if (logError) {
-          console.error('[v0] Error logging notification:', logError);
+          console.error('[send-notification] Error logging notification:', logError);
         }
       } catch (logErr) {
-        console.error('[v0] Error logging notification:', logErr);
+        console.error('[send-notification] Error logging notification:', logErr);
       }
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: 'Žádný příjemce není nakonfigurován pro tento typ notifikace',
         sentTo: [],
         recipientCount: 0
@@ -108,20 +127,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send emails using the same method as NotificationsManager (via Supabase Edge Function)
-    console.log('[v0] Sending emails to', contacts.length, 'contacts');
+    // Send emails
     const results: { email: string; name: string; sent: boolean; error?: string }[] = [];
-    
+
     for (const contact of contacts) {
-      console.log('[v0] Sending email to:', contact.email);
       const result = await sendEmailNotification({
         to: contact.email,
         subject: `${notificationType.subject} - Sál: ${roomName}`,
         html: emailHtml,
         recipientName: contact.name,
       });
-      
-      console.log('[v0] Email result for', contact.email, ':', result);
+
       results.push({
         email: contact.email,
         name: contact.name,
@@ -147,10 +163,10 @@ export async function POST(request: NextRequest) {
           recipient_count: successCount,
         });
       if (logError) {
-        console.error('[v0] Error logging notification:', logError);
+        console.error('[send-notification] Error logging notification:', logError);
       }
     } catch (logErr) {
-      console.error('[v0] Error logging notification:', logErr);
+      console.error('[send-notification] Error logging notification:', logErr);
     }
 
     return NextResponse.json({
@@ -164,7 +180,7 @@ export async function POST(request: NextRequest) {
       errors: results.filter((r) => !r.sent).map((r) => `${r.email}: ${r.error}`),
     });
   } catch (error) {
-    console.error('[v0] Error in send-notification:', error);
+    console.error('[send-notification] Error:', error);
     return NextResponse.json(
       { error: 'Interní chyba serveru' },
       { status: 500 }
