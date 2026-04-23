@@ -9,6 +9,7 @@ import StaffManager from './StaffManager';
 import StatusesManager from './StatusesManager';
 import BackgroundManager from './BackgroundManager';
 import ManagementManager from './ManagementManager';
+import SystemSettingsModule from './SystemSettingsModule';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom } from '../types';
 
@@ -179,6 +180,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       ) : selectedModule === 'management' ? (
         <ModuleWrapper>
           <ManagementManager />
+        </ModuleWrapper>
+      ) : selectedModule === 'settings' ? (
+        <ModuleWrapper>
+          <SystemSettingsModule />
         </ModuleWrapper>
       ) : (
         <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
