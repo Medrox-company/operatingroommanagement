@@ -7,7 +7,6 @@ import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
 import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
-import AdminModule from './components/AdminModule';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -35,7 +34,7 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, isAdmin, modules } = useAuth();
+  const { isAuthenticated, isAdmin, modules, user } = useAuth();
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -177,13 +176,18 @@ const AppContent: React.FC = () => {
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
 
-  // Check if module is enabled (admins always have access, users check module settings)
+  // Check if module is enabled AND the current user's role is allowed to see it.
   const isModuleEnabled = useCallback((moduleId: string) => {
     if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
     if (moduleId === 'dashboard') return true; // Dashboard je vždy přístupný
     const module = modules.find(m => m.id === moduleId);
-    return module?.is_enabled !== false;
-  }, [isAdmin, modules]);
+    if (!module || module.is_enabled === false) return false;
+    // allowed_roles NULL / [] => admin-only
+    const allowed = module.allowed_roles;
+    if (!allowed || allowed.length === 0) return false;
+    const currentRole = user?.role;
+    return !!currentRole && allowed.includes(currentRole);
+  }, [isAdmin, modules, user]);
 
   // Guard: If current view is not enabled, redirect to dashboard
   useEffect(() => {
@@ -584,12 +588,6 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
-            {/* Admin - only for admins */}
-            {currentView === 'admin' && isAdmin && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <AdminModule onClose={() => setCurrentView('dashboard')} />
-              </div>
-            )}
         </main>
       </div>
     </div>

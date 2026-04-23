@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
+export type UserRole = 'admin' | 'user' | 'aro' | 'cos' | 'management' | 'primar';
+
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: UserRole;
   is_active: boolean;
 }
 
@@ -17,6 +19,7 @@ export interface AppModule {
   icon: string | null;
   accent_color: string | null;
   sort_order: number;
+  allowed_roles?: string[] | null;
 }
 
 interface AuthContextType {
@@ -29,7 +32,19 @@ interface AuthContextType {
   logout: () => void;
   refreshModules: () => Promise<void>;
   toggleModule: (moduleId: string, enabled: boolean) => Promise<boolean>;
+  toggleModuleRole: (moduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
+  hasModuleAccess: (moduleId: string) => boolean;
 }
+
+// Demo credentials — works both with and without Supabase. In production use bcrypt server-side.
+const DEMO_CREDENTIALS: Record<string, { password: string; role: UserRole; name: string; id: string }> = {
+  'admin@nemocnice.cz':      { password: 'admin123',  role: 'admin',      name: 'Administrátor',          id: 'demo-admin' },
+  'user@nemocnice.cz':       { password: 'user123',   role: 'user',       name: 'Uživatel',               id: 'demo-user' },
+  'aro@nemocnice.cz':        { password: 'aro123',    role: 'aro',        name: 'ARO oddělení',           id: 'demo-aro' },
+  'cos@nemocnice.cz':        { password: 'cos123',    role: 'cos',        name: 'Centrální operační sály', id: 'demo-cos' },
+  'management@nemocnice.cz': { password: 'mgmt123',   role: 'management', name: 'Management',             id: 'demo-mgmt' },
+  'primar@nemocnice.cz':     { password: 'primar123', role: 'primar',     name: 'Primariát',              id: 'demo-primar' },
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -55,14 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshModules = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
-      // Default modules if no Supabase
+      // Default modules if no Supabase (mirrors DB defaults seeded in scripts/09-add-hospital-roles.sql)
       setModules([
-        { id: 'dashboard', name: 'Dashboard', description: 'Operating rooms overview', is_enabled: true, icon: 'LayoutGrid', accent_color: '#00D8C1', sort_order: 1 },
-        { id: 'timeline', name: 'Timeline', description: 'Operations timeline', is_enabled: true, icon: 'Calendar', accent_color: '#A855F7', sort_order: 2 },
-        { id: 'statistics', name: 'Statistics', description: 'Statistics and analytics', is_enabled: true, icon: 'BarChart3', accent_color: '#06B6D4', sort_order: 3 },
-        { id: 'staff', name: 'Staff', description: 'Staff management', is_enabled: true, icon: 'Users', accent_color: '#10B981', sort_order: 4 },
-        { id: 'alerts', name: 'Alerts', description: 'Alert system', is_enabled: true, icon: 'Bell', accent_color: '#EC4899', sort_order: 5 },
-        { id: 'settings', name: 'Settings', description: 'System configuration', is_enabled: true, icon: 'Settings', accent_color: '#64748B', sort_order: 6 },
+        { id: 'dashboard',  name: 'Dashboard',  description: 'Operating rooms overview',     is_enabled: true, icon: 'LayoutGrid', accent_color: '#00D8C1', sort_order: 1, allowed_roles: ['aro','cos','management','primar','user'] },
+        { id: 'timeline',   name: 'Timeline',   description: 'Operations timeline',          is_enabled: true, icon: 'Calendar',   accent_color: '#A855F7', sort_order: 2, allowed_roles: ['aro','cos','management','primar','user'] },
+        { id: 'statistics', name: 'Statistics', description: 'Statistics and analytics',     is_enabled: true, icon: 'BarChart3',  accent_color: '#06B6D4', sort_order: 3, allowed_roles: ['management','primar','cos','user'] },
+        { id: 'staff',      name: 'Staff',      description: 'Staff management',             is_enabled: true, icon: 'Users',      accent_color: '#10B981', sort_order: 4, allowed_roles: ['cos','management','user'] },
+        { id: 'alerts',     name: 'Alerts',     description: 'Alert system',                 is_enabled: true, icon: 'Bell',       accent_color: '#EC4899', sort_order: 5, allowed_roles: ['aro','cos','management','primar','user'] },
+        { id: 'settings',   name: 'Settings',   description: 'System configuration',         is_enabled: true, icon: 'Settings',   accent_color: '#64748B', sort_order: 6, allowed_roles: null },
       ]);
       return;
     }
@@ -81,60 +96,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // For demo purposes, allow simple password check
-    // In production, use proper bcrypt comparison on server side
-    
-    if (!isSupabaseConfigured || !supabase) {
-      // Demo mode - allow admin/user login
-      if (email === 'admin@nemocnice.cz' && password === 'admin123') {
-        const demoUser: User = { id: '1', email, name: 'Administrator', role: 'admin', is_active: true };
-        setUser(demoUser);
-        localStorage.setItem('app_user', JSON.stringify(demoUser));
-        return { success: true };
-      }
-      if (email === 'user@nemocnice.cz' && password === 'user123') {
-        const demoUser: User = { id: '2', email, name: 'User', role: 'user', is_active: true };
-        setUser(demoUser);
-        localStorage.setItem('app_user', JSON.stringify(demoUser));
-        return { success: true };
-      }
-      return { success: false, error: 'Invalid credentials' };
+    // Demo auth: compare against DEMO_CREDENTIALS map (client-side).
+    // In production use bcrypt comparison on server side via Supabase Auth or an API route.
+    const normalizedEmail = email.trim().toLowerCase();
+    const creds = DEMO_CREDENTIALS[normalizedEmail];
+
+    if (!creds || creds.password !== password) {
+      return { success: false, error: 'Neplatný email nebo heslo' };
     }
 
-    try {
-      // Fetch user from database
-      const { data, error } = await supabase
-        .from('app_users')
-        .select('*')
-        .eq('email', email)
-        .eq('is_active', true)
-        .single();
+    // If Supabase is configured, try to fetch the real user record so we get the DB id + active flag.
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data } = await supabase
+          .from('app_users')
+          .select('id, email, name, role, is_active')
+          .eq('email', normalizedEmail)
+          .eq('is_active', true)
+          .maybeSingle();
 
-      if (error || !data) {
-        return { success: false, error: 'Invalid credentials' };
+        if (data) {
+          const loggedInUser: User = {
+            id: data.id,
+            email: data.email,
+            name: data.name,
+            role: data.role as UserRole,
+            is_active: data.is_active,
+          };
+          setUser(loggedInUser);
+          localStorage.setItem('app_user', JSON.stringify(loggedInUser));
+          await refreshModules();
+          return { success: true };
+        }
+      } catch (error) {
+        console.error('[Auth] Supabase lookup failed, falling back to demo user:', error);
       }
-
-      // For demo, accept any password that matches the simple check
-      // In production, implement proper bcrypt comparison
-      if (password === 'admin123' || password === 'user123') {
-        const loggedInUser: User = {
-          id: data.id,
-          email: data.email,
-          name: data.name,
-          role: data.role,
-          is_active: data.is_active,
-        };
-        setUser(loggedInUser);
-        localStorage.setItem('app_user', JSON.stringify(loggedInUser));
-        await refreshModules();
-        return { success: true };
-      }
-
-      return { success: false, error: 'Invalid credentials' };
-    } catch (error) {
-      console.error('[Auth] Login error:', error);
-      return { success: false, error: 'Login error' };
     }
+
+    // Fallback / pure demo mode
+    const demoUser: User = {
+      id: creds.id,
+      email: normalizedEmail,
+      name: creds.name,
+      role: creds.role,
+      is_active: true,
+    };
+    setUser(demoUser);
+    localStorage.setItem('app_user', JSON.stringify(demoUser));
+    await refreshModules();
+    return { success: true };
   }, [refreshModules]);
 
   const logout = useCallback(() => {
@@ -164,6 +174,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshModules]);
 
+  // Per-role toggle — add/remove role from allowed_roles array
+  const toggleModuleRole = useCallback(async (moduleId: string, role: UserRole, enabled: boolean): Promise<boolean> => {
+    const compute = (current: string[] | null | undefined): string[] => {
+      const set = new Set(current ?? []);
+      if (enabled) set.add(role); else set.delete(role);
+      return Array.from(set);
+    };
+
+    if (!isSupabaseConfigured || !supabase) {
+      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, allowed_roles: compute(m.allowed_roles) } : m));
+      return true;
+    }
+
+    try {
+      const current = modules.find(m => m.id === moduleId)?.allowed_roles ?? [];
+      const next = compute(current);
+      const { error } = await supabase
+        .from('app_modules')
+        .update({ allowed_roles: next, updated_at: new Date().toISOString() })
+        .eq('id', moduleId);
+
+      if (error) throw error;
+      // Optimistic update so UI reacts immediately
+      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, allowed_roles: next } : m));
+      return true;
+    } catch (error) {
+      console.error('[Auth] Failed to toggle module role:', error);
+      return false;
+    }
+  }, [modules]);
+
+  // Determine whether the current user can see a given module
+  const hasModuleAccess = useCallback((moduleId: string): boolean => {
+    if (!user) return false;
+    if (user.role === 'admin') return true; // admin vidí vše
+    const mod = modules.find(m => m.id === moduleId);
+    if (!mod) return false;
+    if (mod.is_enabled === false) return false;
+    // allowed_roles NULL / [] => admin-only
+    if (!mod.allowed_roles || mod.allowed_roles.length === 0) return false;
+    return mod.allowed_roles.includes(user.role);
+  }, [user, modules]);
+
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     user,
@@ -175,7 +228,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     refreshModules,
     toggleModule,
-  }), [user, isLoading, modules, login, logout, refreshModules, toggleModule]);
+    toggleModuleRole,
+    hasModuleAccess,
+  }), [user, isLoading, modules, login, logout, refreshModules, toggleModule, toggleModuleRole, hasModuleAccess]);
 
   return (
     <AuthContext.Provider value={contextValue}>
