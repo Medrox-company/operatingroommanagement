@@ -347,6 +347,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     try {
       const response = await fetch('/api/operating-rooms/reorder', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rooms })
       });

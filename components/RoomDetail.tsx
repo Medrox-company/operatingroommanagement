@@ -1365,7 +1365,7 @@ const prevStep = activeDbStatuses.length > 0
                     className="flex flex-col items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
                   >
                     <p className="text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] uppercase text-white/25">
-                      SPECIÁLNÍ STAV
+                      SPECI��LNÍ STAV
                     </p>
                     {/* Animované sluchátko */}
                     <motion.div
@@ -1586,6 +1586,7 @@ const prevStep = activeDbStatuses.length > 0
           try {
             const response = await fetch('/api/send-notification', {
               method: 'POST',
+              credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 type,
@@ -1594,10 +1595,12 @@ const prevStep = activeDbStatuses.length > 0
                 customReason,
               }),
             });
-            const result = await response.json();
-            console.log('[v0] Notification sent:', result);
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              throw new Error(result?.error || `Odeslání selhalo (${response.status})`);
+            }
           } catch (error) {
-            console.error('[v0] Error sending notification:', error);
+            console.error('[RoomDetail] Error sending notification:', error);
             throw error;
           }
         }}
