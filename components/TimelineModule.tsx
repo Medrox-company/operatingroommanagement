@@ -1069,8 +1069,11 @@ style={{
                                       const segWidthPct = (segDuration / opDuration) * 100;
                                       const segLeftPct = ((segStart - opStart) / opDuration) * 100;
                                       if (segWidthPct <= 0) return undefined;
-                                      const phaseColor = entry.color
-                                        || stepColorMap[entry.stepIndex]
+                                      // Preferujeme AKTUÁLNÍ barvu ze Statusů (live z DB),
+                                      // aby byla časová osa vždy konzistentní s modulem Statusy.
+                                      // entry.color je jen fallback pro stavy, které už v DB neexistují.
+                                      const phaseColor = stepColorMap[entry.stepIndex]
+                                        || entry.color
                                         || STEP_INDEX_COLORS[entry.stepIndex]
                                         || '#6b7280';
 
@@ -1207,8 +1210,10 @@ style={{
                                 const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
                                 if (segWidthPct <= 0) return null;
                                 
-                                const phaseColor = entry.color
-                                  || stepColorMap[entry.stepIndex]
+                                // Preferujeme AKTUÁLNÍ barvu ze Statusů (live z DB),
+                                // aby byla časová osa vždy konzistentní s modulem Statusy.
+                                const phaseColor = stepColorMap[entry.stepIndex]
+                                  || entry.color
                                   || STEP_INDEX_COLORS[entry.stepIndex]
                                   || '#6b7280';
 
