@@ -9,16 +9,15 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
-  const { isAdmin, logout, modules } = useAuth();
+  const { isAdmin, logout, hasModuleAccess } = useAuth();
 
-  // Filter sidebar items based on enabled modules (admins see all, users see only enabled)
-  // Dashboard is always accessible for everyone - memoized for performance
+  // Filter sidebar items based on role + module access.
+  // Dashboard is always accessible for everyone.
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
     if (item.id === 'dashboard') return true;
     if (isAdmin) return true;
-    const module = modules.find(m => m.id === item.id);
-    return module?.is_enabled !== false;
-  }), [isAdmin, modules]);
+    return hasModuleAccess(item.id);
+  }), [isAdmin, hasModuleAccess]);
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none">

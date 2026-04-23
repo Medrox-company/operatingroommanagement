@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { Lock, Mail, Eye, EyeOff, AlertCircle, Shield, User } from 'lucide-react';
+import {
+  Lock, Mail, Eye, EyeOff, AlertCircle,
+  Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
+} from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
 }
+
+type QuickRoleId = 'admin' | 'user' | 'aro' | 'cos' | 'management' | 'primar';
+
+const QUICK_ROLES: Array<{
+  id: QuickRoleId;
+  label: string;
+  email: string;
+  password: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}> = [
+  { id: 'admin',      label: 'Administrátor', email: 'admin@nemocnice.cz',      password: 'admin123',  icon: Shield,        color: '#00D8C1' },
+  { id: 'aro',        label: 'ARO',           email: 'aro@nemocnice.cz',        password: 'aro123',    icon: Activity,      color: '#EF4444' },
+  { id: 'cos',        label: 'COS',           email: 'cos@nemocnice.cz',        password: 'cos123',    icon: Stethoscope,   color: '#06B6D4' },
+  { id: 'management', label: 'Management',    email: 'management@nemocnice.cz', password: 'mgmt123',   icon: Briefcase,     color: '#F59E0B' },
+  { id: 'primar',     label: 'Primariát',     email: 'primar@nemocnice.cz',     password: 'primar123', icon: ClipboardList, color: '#A855F7' },
+  { id: 'user',       label: 'Uživatel',      email: 'user@nemocnice.cz',       password: 'user123',   icon: User,          color: '#64748B' },
+];
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const { login } = useAuth();
@@ -14,17 +35,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'user' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<QuickRoleId | null>(null);
 
-  const handleQuickLogin = (role: 'admin' | 'user') => {
-    setSelectedRole(role);
-    if (role === 'admin') {
-      setEmail('admin@nemocnice.cz');
-      setPassword('admin123');
-    } else {
-      setEmail('user@nemocnice.cz');
-      setPassword('user123');
-    }
+  const handleQuickLogin = (roleId: QuickRoleId) => {
+    const role = QUICK_ROLES.find(r => r.id === roleId);
+    if (!role) return;
+    setSelectedRole(roleId);
+    setEmail(role.email);
+    setPassword(role.password);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,35 +115,29 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Quick Role Selection */}
           <div className="mb-6">
             <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-3">Rychlé přihlášení</p>
-            <div className="grid grid-cols-2 gap-3">
-              <motion.button
-                type="button"
-                onClick={() => handleQuickLogin('admin')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${
-                  selectedRole === 'admin'
-                    ? 'bg-[#00D8C1]/20 border-[#00D8C1]/50 text-[#00D8C1]'
-                    : 'bg-white/[0.02] border-white/10 text-white/60 hover:bg-white/[0.05] hover:border-white/20'
-                }`}
-              >
-                <Shield className="w-6 h-6" />
-                <span className="text-sm font-medium">Administrátor</span>
-              </motion.button>
-              <motion.button
-                type="button"
-                onClick={() => handleQuickLogin('user')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${
-                  selectedRole === 'user'
-                    ? 'bg-[#A855F7]/20 border-[#A855F7]/50 text-[#A855F7]'
-                    : 'bg-white/[0.02] border-white/10 text-white/60 hover:bg-white/[0.05] hover:border-white/20'
-                }`}
-              >
-                <User className="w-6 h-6" />
-                <span className="text-sm font-medium">Uživatel</span>
-              </motion.button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+              {QUICK_ROLES.map((role) => {
+                const Icon = role.icon;
+                const isSelected = selectedRole === role.id;
+                return (
+                  <motion.button
+                    key={role.id}
+                    type="button"
+                    onClick={() => handleQuickLogin(role.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="p-3 rounded-2xl border transition-all flex flex-col items-center gap-1.5 min-h-[84px]"
+                    style={{
+                      background: isSelected ? `${role.color}22` : 'rgba(255,255,255,0.02)',
+                      borderColor: isSelected ? `${role.color}80` : 'rgba(255,255,255,0.1)',
+                      color: isSelected ? role.color : 'rgba(255,255,255,0.6)',
+                    }}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-[11px] font-medium leading-tight text-center">{role.label}</span>
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
 
@@ -224,10 +236,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
           {/* Demo Credentials Info */}
           <div className="mt-6 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-            <p className="text-white/30 text-xs text-center">
-              Demo přístupy: <br />
-              <span className="text-white/50">admin@nemocnice.cz / admin123</span><br />
-              <span className="text-white/50">user@nemocnice.cz / user123</span>
+            <p className="text-white/30 text-[11px] text-center leading-relaxed">
+              Demo přístupy (klikni výše pro rychlé vyplnění):<br />
+              <span className="text-white/50">admin · aro · cos · management · primar · user</span><br />
+              <span className="text-white/40">@nemocnice.cz — heslo: <code>role123</code> (mgmt123 pro management)</span>
             </p>
           </div>
         </motion.div>

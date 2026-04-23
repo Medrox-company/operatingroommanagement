@@ -9,15 +9,14 @@ interface MobileNavProps {
 }
 
 const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) => {
-  const { isAdmin, modules } = useAuth();
+  const { isAdmin, hasModuleAccess } = useAuth();
 
-  // Filter sidebar items based on enabled modules - memoized for performance
+  // Filter sidebar items based on role + module access - memoized for performance
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
     if (item.id === 'dashboard') return true;
     if (isAdmin) return true;
-    const module = modules.find(m => m.id === item.id);
-    return module?.is_enabled !== false;
-  }).slice(0, isAdmin ? 4 : 5), [isAdmin, modules]);
+    return hasModuleAccess(item.id);
+  }).slice(0, isAdmin ? 4 : 5), [isAdmin, hasModuleAccess]);
 
   return (
     <nav
