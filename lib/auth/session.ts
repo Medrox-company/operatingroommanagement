@@ -74,13 +74,20 @@ export function verifySession(token: string | null | undefined): SessionPayload 
 
 /**
  * HTTP-Only Set-Cookie hodnota. Použij přes NextResponse.cookies.set(...).
+ *
+ * SameSite=None + Secure=true: aplikace běží v náhledu v0 uvnitř iframu, kde
+ * prohlížeč jakékoli požadavky (zejm. POST) vnímá jako cross-site a u
+ * SameSite=Lax cookie neposílá. SameSite=None vyžaduje Secure=true, což funguje
+ * přes HTTPS (preview i produkce). Pro čistý localhost HTTP dev je k dispozici
+ * proměnná ALLOW_INSECURE_COOKIE=1, která secure vypne (jen vývoj bez HTTPS).
  */
 export function getSessionCookieOptions(ttlMs: number = SESSION_TTL_MS) {
+  const allowInsecure = process.env.ALLOW_INSECURE_COOKIE === '1';
   return {
     name: SESSION_COOKIE_NAME,
     httpOnly: true as const,
-    sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none' as const,
+    secure: !allowInsecure,
     path: '/',
     maxAge: Math.floor(ttlMs / 1000),
   };
