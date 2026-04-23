@@ -32,6 +32,7 @@ interface AuthContextType {
   logout: () => void;
   refreshModules: () => Promise<void>;
   toggleModule: (moduleId: string, enabled: boolean) => Promise<boolean>;
+  toggleModuleRole: (moduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
   hasModuleAccess: (moduleId: string) => boolean;
 }
 
@@ -173,6 +174,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshModules]);
 
+  // Per-role toggle — add/remove role from allowed_roles array
+  const toggleModuleRole = useCallback(async (moduleId: string, role: UserRole, enabled: boolean): Promise<boolean> => {
+    const compute = (current: string[] | null | undefined): string[] => {
+      const set = new Set(current ?? []);
+      if (enabled) set.add(role); else set.delete(role);
+      return Array.from(set);
+    };
+
+    if (!isSupabaseConfigured || !supabase) {
+      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, allowed_roles: compute(m.allowed_roles) } : m));
+      return true;
+    }
+
+    try {
+      const current = modules.find(m => m.id === moduleId)?.allowed_roles ?? [];
+      const next = compute(current);
+      const { error } = await supabase
+        .from('app_modules')
+        .update({ allowed_roles: next, updated_at: new Date().toISOString() })
+        .eq('id', moduleId);
+
+      if (error) throw error;
+      // Optimistic update so UI reacts immediately
+      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, allowed_roles: next } : m));
+      return true;
+    } catch (error) {
+      console.error('[Auth] Failed to toggle module role:', error);
+      return false;
+    }
+  }, [modules]);
+
   // Determine whether the current user can see a given module
   const hasModuleAccess = useCallback((moduleId: string): boolean => {
     if (!user) return false;
@@ -196,8 +228,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     refreshModules,
     toggleModule,
+    toggleModuleRole,
     hasModuleAccess,
-  }), [user, isLoading, modules, login, logout, refreshModules, toggleModule, hasModuleAccess]);
+  }), [user, isLoading, modules, login, logout, refreshModules, toggleModule, toggleModuleRole, hasModuleAccess]);
 
   return (
     <AuthContext.Provider value={contextValue}>

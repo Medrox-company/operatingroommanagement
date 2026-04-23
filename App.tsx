@@ -7,7 +7,6 @@ import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
 import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
-import AdminModule from './components/AdminModule';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -589,12 +588,6 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
-            {/* Admin - only for admins */}
-            {currentView === 'admin' && isAdmin && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <AdminModule onClose={() => setCurrentView('dashboard')} />
-              </div>
-            )}
         </main>
       </div>
     </div>
