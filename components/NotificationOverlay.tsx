@@ -2,7 +2,18 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Stethoscope,
+  Activity,
+  BedDouble,
+  Truck,
+  MessageSquare,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface NotificationOverlayProps {
   isOpen: boolean;
@@ -106,6 +117,15 @@ const NOTIFICATION_TYPES = [
   },
 ];
 
+// Ikony používané v mobilní variantě (karty se seznamem akcí)
+const MOBILE_ICON_MAP: Record<string, LucideIcon> = {
+  notify_late_surgeon: Stethoscope,
+  notify_late_anesthesiologist: Activity,
+  notify_patient_not_ready: BedDouble,
+  notify_late_arrival: Truck,
+  notify_other: MessageSquare,
+};
+
 export default function NotificationOverlay({
   isOpen,
   onClose,
@@ -139,11 +159,146 @@ export default function NotificationOverlay({
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            key="notif-mobile"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden fixed inset-0 z-[200] flex flex-col overflow-hidden"
+            style={{
+              background:
+                'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
+            }}
+          >
+            {/* Ambient glow — matching RoomDetail mobile */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div
+                className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
+                style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+              />
+            </div>
+
+            {/* Content */}
+            <div
+              className="relative z-10 flex flex-col h-full px-5 pt-4 overflow-y-auto hide-scrollbar"
+              style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
+            >
+              {/* Header — ChevronLeft + centered title (same pattern as RoomDetail) */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={onClose}
+                  className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  <ChevronLeft className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
+                </button>
+                <div className="flex flex-col items-center flex-1 min-w-0 px-3">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/40 leading-none">
+                    Poslat notifikaci
+                  </p>
+                  <h1 className="text-lg font-semibold text-white truncate mt-1.5 leading-none">
+                    {roomName}
+                  </h1>
+                </div>
+                {/* Spacer to keep title perfectly centered */}
+                <div className="w-11 h-11 shrink-0" aria-hidden="true" />
+              </div>
+
+              {/* Hint card */}
+              <div
+                className="rounded-3xl p-5 mb-5"
+                style={{
+                  background:
+                    'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  backdropFilter: 'blur(16px)',
+                }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40 leading-none">
+                  Vyberte důvod
+                </p>
+                <p className="text-sm text-white/70 mt-3 leading-snug text-pretty">
+                  Upozornění bude obratem odesláno managementu e‑mailem s časem a názvem sálu.
+                </p>
+              </div>
+
+              {/* Section label */}
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40 mb-3 px-1">
+                Typ notifikace
+              </p>
+
+              {/* List of notification actions — full-width cards */}
+              <div className="flex flex-col gap-3">
+                {NOTIFICATION_TYPES.map((notif, index) => {
+                  const isLoading = loading === notif.id;
+                  const Icon = MOBILE_ICON_MAP[notif.id] ?? MessageSquare;
+                  const label = notif.label.replace(/\s+/g, ' ').trim();
+                  const isDisabled = loading !== null && !isLoading;
+
+                  return (
+                    <motion.button
+                      key={notif.id}
+                      onClick={() => handleSendNotification(notif.id)}
+                      disabled={loading !== null}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 * index, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center gap-4 rounded-3xl p-5 outline-none select-none transition-all disabled:opacity-60"
+                      style={{
+                        background: `linear-gradient(135deg, ${notif.color}14 0%, rgba(255,255,255,0.02) 100%)`,
+                        border: `1px solid ${notif.color}33`,
+                        backdropFilter: 'blur(16px)',
+                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {/* Colored icon tile */}
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                        style={{
+                          background: `linear-gradient(135deg, ${notif.color} 0%, ${notif.color}cc 100%)`,
+                          boxShadow: `0 8px 24px -6px ${notif.color}55`,
+                        }}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-5 h-5 text-black/80 animate-spin" strokeWidth={2.25} />
+                        ) : (
+                          <Icon className="w-5 h-5 text-black/80" strokeWidth={2} />
+                        )}
+                      </div>
+
+                      {/* Label */}
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-[15px] font-semibold text-white leading-tight text-balance">
+                          {label}
+                        </p>
+                      </div>
+
+                      <ChevronRight
+                        className="w-5 h-5 text-white/30 shrink-0"
+                        strokeWidth={2}
+                      />
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="notif-desktop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
+            className="hidden md:flex fixed inset-0 z-[200] items-center justify-center overflow-hidden"
           >
             {/* Background - same style as main app */}
             <div className="absolute inset-0 bg-black" />
