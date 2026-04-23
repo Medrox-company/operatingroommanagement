@@ -90,7 +90,7 @@ const SystemSettingsModule: React.FC = () => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/admin/facility');
+        const res = await fetch('/api/admin/facility', { credentials: 'include' });
         const data = await res.json();
         if (!cancelled && res.ok) {
           setFacility(data.facility || {});
@@ -117,6 +117,7 @@ const SystemSettingsModule: React.FC = () => {
     try {
       const res = await fetch('/api/admin/facility', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(facility),
       });
