@@ -392,7 +392,7 @@ function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   return `${formatTime(hours.startHour, hours.startMinute)}–${formatTime(hours.endHour, hours.endMinute)}`;
 }
 
-// ── Tooltip shared style ─────────�����──���──────────────────────────────────────────
+// ── Tooltip shared style ─────────�����─������──────────────────────────────────────────
 const TIP = {
   contentStyle:{ background:'rgba(2,8,23,0.97)', border:`1px solid ${C.border}`, borderRadius:6, fontSize:12 },
   labelStyle:  { color:C.muted },
@@ -566,6 +566,26 @@ function buildHeatmapFromHistory(history: StatusHistoryRow[], rooms: OperatingRo
 }
 
 // ── Helper fns ────────────────────────────────────────────────────────────────
+// Determine if room is busy based on currentStepIndex (0 or 7 = ready/free, anything else = busy)
+function isRoomBusyByStep(r: OperatingRoom): boolean {
+  return r.currentStepIndex !== 0 && r.currentStepIndex !== 7;
+}
+
+// Get status color based on currentStepIndex (primary) or fallback to RoomStatus for cleaning/maintenance
+function roomStatusColor(r: OperatingRoom): string {
+  if (r.status === RoomStatus.CLEANING) return C.accent;
+  if (r.status === RoomStatus.MAINTENANCE) return C.faint;
+  return isRoomBusyByStep(r) ? C.orange : C.green;
+}
+
+// Get status label based on currentStepIndex (primary) or fallback to RoomStatus for cleaning/maintenance
+function roomStatusLabel(r: OperatingRoom): string {
+  if (r.status === RoomStatus.CLEANING) return 'Úklid';
+  if (r.status === RoomStatus.MAINTENANCE) return 'Údržba';
+  return isRoomBusyByStep(r) ? 'Obsazeno' : 'Volné';
+}
+
+// Legacy functions for backwards compatibility (some places still use RoomStatus enum directly)
 function statusColor(s:RoomStatus){
   if(s===RoomStatus.BUSY)     return C.orange;
   if(s===RoomStatus.FREE)     return C.green;
@@ -651,7 +671,8 @@ interface RoomMiniCardProps {
   utilization: number;
 }
 const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations, opsCount, utilization }) => {
-  const sc2   = statusColor(r.status);
+  const sc2   = roomStatusColor(r);
+  const isBusy = isRoomBusyByStep(r);
   const tl2   = useMemo(() => mergeSeg(buildTimeline(r, workflowSteps, stepDurations)), [r, workflowSteps, stepDurations]);
   const ups2  = isUPS(r);
   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
@@ -662,8 +683,8 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
     <motion.button onClick={onClick}
       className="text-left rounded-lg p-3 w-full group"
       style={{
-        background: r.status === RoomStatus.BUSY ? `${sc2}08` : C.surface,
-        border: `1px solid ${r.status === RoomStatus.BUSY ? `${sc2}30` : C.border}`,
+        background: isBusy ? `${sc2}08` : C.surface,
+        border: `1px solid ${isBusy ? `${sc2}30` : C.border}`,
       }}
       initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.18, delay: index * 0.025 }}
@@ -702,7 +723,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         </div>
         <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
           style={{ background: `${sc2}14`, color: sc2 }}>
-          {statusLabel(r.status).slice(0, 3)}
+          {roomStatusLabel(r).slice(0, 3)}
         </span>
       </div>
     </motion.button>
@@ -740,7 +761,7 @@ function TrendBadge({v}:{v:number}){
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
-  const sc     = statusColor(room.status);
+  const sc     = roomStatusColor(room);
   const ups    = isUPS(room);
   const dm     = dayMinutes(room);
 
@@ -1261,8 +1282,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const peakUtil  = Math.max(...utilValues);
   const minUtil   = Math.min(...utilValues);
   const totalOps  = totalOpsInWorkingHours || (dbStats?.totalOperations ?? 0);
-  const busyCount = rooms.filter(r=>r.status===RoomStatus.BUSY).length;
-  const freeCount = rooms.filter(r=>r.status===RoomStatus.FREE).length;
+  // Determine busy/free based on currentStepIndex (0 or 7 = ready/free, anything else = busy)
+  // This matches the logic in App.tsx header stats
+  const isRoomBusy = (r: OperatingRoom) => r.currentStepIndex !== 0 && r.currentStepIndex !== 7;
+  const busyCount = rooms.filter(isRoomBusy).length;
+  const freeCount = rooms.filter(r => !isRoomBusy(r)).length;
   const cleanCount= rooms.filter(r=>r.status===RoomStatus.CLEANING).length;
   const maintCount= rooms.filter(r=>r.status===RoomStatus.MAINTENANCE).length;
   const totalQueue= rooms.reduce((s,r)=>s+r.queueCount,0);
@@ -1295,7 +1319,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       name: r.name.replace('Sál č. ', 'S'),
       ops: opsInWorkingHours,
       util: utilPct,
-      color: statusColor(r.status),
+      color: roomStatusColor(r),
       workingHours: workingHoursStr,
       totalWorkingMinutes: getRoomTotalWorkingMinutes(r, period),
     };
@@ -1490,7 +1514,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
                 const cells = [
                   { l: 'Sál',                   v: r.name.replace('Sál č. ', 'S'), c: C.text },
-                  { l: 'Stav',                  v: statusLabel(r.status),          c: statusColor(r.status) },
+                  { l: 'Stav',                  v: roomStatusLabel(r),             c: roomStatusColor(r) },
                   { l: 'Využití v prac. době',  v: `${util}%`,                     c: util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted },
                   { l: `Výkony (${period})`,    v: opsInHours,                     c: C.accent },
                   { l: 'Pracovní doba',         v: workingHoursToday,              c: workingHoursToday === 'Zavřeno' ? C.faint : C.text },
@@ -1707,7 +1731,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   {rooms.filter(r=>r.queueCount>0).slice(0,5).map(r=>(
                     <div key={r.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{background:statusColor(r.status)}}/>
+                        <div className="w-1.5 h-1.5 rounded-full" style={{background:roomStatusColor(r)}}/>
                         <span className="text-xs" style={{color:C.muted}}>{r.name}</span>
                       </div>
                       <span className="text-xs font-black" style={{color:C.yellow}}>{r.queueCount} pac.</span>
@@ -1733,7 +1757,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     <div key={r.id} className="p-3 rounded-lg" style={{ background: C.ghost, border: `1px solid ${C.border}` }}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ background: statusColor(r.status) }} />
+                          <div className="w-2 h-2 rounded-full" style={{ background: roomStatusColor(r) }} />
                           <span className="text-xs font-black" style={{ color: C.text }}>{r.name}</span>
                         </div>
                         {isUPS(r) && (
