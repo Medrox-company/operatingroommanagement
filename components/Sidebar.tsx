@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
-import { Shield, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
@@ -53,21 +53,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
       </nav>
 
       <div className="mt-auto flex flex-col items-center gap-4 pb-4 w-full px-4 pointer-events-auto flex-shrink-0">
-        {/* Admin Button - only for admins */}
-        {isAdmin && (
-          <button 
-            onClick={() => onNavigate('admin')}
-            className={`w-full aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-300 group relative
-              ${currentView === 'admin' ? 'bg-[#00D8C1]/20 text-[#00D8C1]' : 'bg-white/5 text-white/30 hover:text-[#00D8C1] hover:bg-white/10'}
-            `}
-          >
-            <Shield className="w-6 h-6 transition-transform group-hover:scale-110" />
-            <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
-              Admin
-            </span>
-          </button>
-        )}
-
         {/* Logout Button */}
         <button 
           onClick={logout}
