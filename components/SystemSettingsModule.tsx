@@ -142,11 +142,11 @@ const SystemSettingsModule: React.FC = () => {
     try {
       const res = await fetch('/api/admin/reset-data', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: resetMode,
           confirmation: resetConfirmText,
-          userEmail: user?.email,
         }),
       });
       const data = await res.json();
@@ -186,8 +186,7 @@ const SystemSettingsModule: React.FC = () => {
     setExportLoading(true);
     setExportMessage(null);
     try {
-      const url = `/api/admin/export-data${user?.email ? `?userEmail=${encodeURIComponent(user.email)}` : ''}`;
-      const res = await fetch(url);
+      const res = await fetch('/api/admin/export-data', { credentials: 'include' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Export selhal (${res.status})`);
@@ -276,10 +275,10 @@ const SystemSettingsModule: React.FC = () => {
 
       const res = await fetch('/api/admin/import-data', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           confirmation: importConfirmText,
-          userEmail: user?.email,
           backup,
         }),
       });

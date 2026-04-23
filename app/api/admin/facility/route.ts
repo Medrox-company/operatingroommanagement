@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
+import { requireSession, requireAdmin } from '@/lib/auth/server';
+
+export const runtime = 'nodejs';
 
 /**
- * GET  /api/admin/facility  — vrátí informace o zdravotnickém zařízení
- * POST /api/admin/facility  — uloží informace o zdravotnickém zařízení
+ * GET  /api/admin/facility  — vrátí informace o zdravotnickém zařízení (pro všechny přihlášené)
+ * POST /api/admin/facility  — uloží informace o zdravotnickém zařízení (jen admin)
  *
  * Informace jsou uloženy v tabulce app_settings (řádek id='default').
  */
-
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const FACILITY_FIELDS = [
   'facility_name',
@@ -24,19 +24,16 @@ const FACILITY_FIELDS = [
   'facility_notes',
 ] as const;
 
-function getAdminClient() {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return null;
-  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
 export async function GET() {
-  const admin = getAdminClient();
-  if (!admin) {
+  // Čtení informací smí každý přihlášený uživatel
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+
+  if (!isSupabaseAdminConfigured()) {
     return NextResponse.json({ error: 'Supabase není nakonfigurován' }, { status: 500 });
   }
 
+  const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from('app_settings')
     .select(FACILITY_FIELDS.join(','))
@@ -46,13 +43,15 @@ export async function GET() {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
   return NextResponse.json({ facility: data ?? {} });
 }
 
 export async function POST(req: NextRequest) {
-  const admin = getAdminClient();
-  if (!admin) {
+  // Úpravy jen admin
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+
+  if (!isSupabaseAdminConfigured()) {
     return NextResponse.json({ error: 'Supabase není nakonfigurován' }, { status: 500 });
   }
 
@@ -63,21 +62,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Neplatné tělo požadavku' }, { status: 400 });
   }
 
-  // Vyber jen bezpečná pole
+  // Allowlist bezpečných polí — libovolná další pole se tiše ignorují
   const payload: Record<string, unknown> = { id: 'default' };
   for (const key of FACILITY_FIELDS) {
     if (key in body) {
       const value = body[key];
-      payload[key] = typeof value === 'string' ? value.trim() || null : value ?? null;
+      if (typeof value === 'string') {
+        if (value.length > 2000) {
+          return NextResponse.json(
+            { error: `Pole "${key}" je příliš dlouhé (max 2000 znaků).` },
+            { status: 400 }
+          );
+        }
+        payload[key] = value.trim() || null;
+      } else if (value === null || typeof value === 'undefined') {
+        payload[key] = null;
+      } else {
+        return NextResponse.json(
+          { error: `Pole "${key}" musí být textové.` },
+          { status: 400 }
+        );
+      }
     }
   }
   payload.updated_at = new Date().toISOString();
 
+  const admin = getSupabaseAdmin();
   const { error } = await admin.from('app_settings').upsert(payload, { onConflict: 'id' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
   return NextResponse.json({ success: true });
 }

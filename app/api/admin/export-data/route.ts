@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/auth/server';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/admin/export-data?userEmail=...
@@ -38,36 +40,19 @@ const STRIPPED_COLUMNS: Record<string, string[]> = {
   app_users: ['password_hash', 'password'],
 };
 
-export async function GET(req: NextRequest) {
-  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+export async function GET() {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+  const sessionUser = authResult.user;
 
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
       { error: 'Supabase není správně nakonfigurován (chybí service role klíč)' },
       { status: 500 }
     );
   }
 
-  const userEmail = req.nextUrl.searchParams.get('userEmail');
-
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  if (userEmail) {
-    const { data: userRow } = await admin
-      .from('app_users')
-      .select('role, is_active')
-      .eq('email', userEmail)
-      .maybeSingle();
-    if (!userRow || userRow.role !== 'admin' || !userRow.is_active) {
-      return NextResponse.json(
-        { error: 'Akce je povolena pouze pro aktivního administrátora' },
-        { status: 403 }
-      );
-    }
-  }
+  const admin = getSupabaseAdmin();
 
   const tables: Record<string, unknown[]> = {};
   const errors: Record<string, string> = {};
@@ -99,7 +84,7 @@ export async function GET(req: NextRequest) {
   const payload = {
     version: '1.0',
     exportedAt: new Date().toISOString(),
-    exportedBy: userEmail ?? 'unknown',
+    exportedBy: sessionUser.email,
     facility: {
       name: facilityRow.facility_name ?? null,
       ico: facilityRow.facility_ico ?? null,

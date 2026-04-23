@@ -12,6 +12,13 @@ interface LoginPageProps {
 
 type QuickRoleId = 'admin' | 'user' | 'aro' | 'cos' | 'management' | 'primar';
 
+/**
+ * DEMO účty — jen pro ukázku. Přihlašování probíhá server-side (rate-limited
+ * /api/auth/login) proti bcrypt hashím v DB, takže i kdyby někdo tato hesla
+ * zneužil, jsou chráněna limitem pokusů. V PRODUKCI je nutné:
+ *   1) tyto účty deaktivovat (app_users.is_active = false) nebo změnit hesla,
+ *   2) odstranit QUICK_ROLES níže, aby se demo hesla nevystavovala v UI.
+ */
 const QUICK_ROLES: Array<{
   id: QuickRoleId;
   label: string;

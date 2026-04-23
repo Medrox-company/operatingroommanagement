@@ -29,22 +29,12 @@ interface AuthContextType {
   isAdmin: boolean;
   modules: AppModule[];
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshModules: () => Promise<void>;
   toggleModule: (moduleId: string, enabled: boolean) => Promise<boolean>;
   toggleModuleRole: (moduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
   hasModuleAccess: (moduleId: string) => boolean;
 }
-
-// Demo credentials — works both with and without Supabase. In production use bcrypt server-side.
-const DEMO_CREDENTIALS: Record<string, { password: string; role: UserRole; name: string; id: string }> = {
-  'admin@nemocnice.cz':      { password: 'admin123',  role: 'admin',      name: 'Administrátor',          id: 'demo-admin' },
-  'user@nemocnice.cz':       { password: 'user123',   role: 'user',       name: 'Uživatel',               id: 'demo-user' },
-  'aro@nemocnice.cz':        { password: 'aro123',    role: 'aro',        name: 'ARO oddělení',           id: 'demo-aro' },
-  'cos@nemocnice.cz':        { password: 'cos123',    role: 'cos',        name: 'Centrální operační sály', id: 'demo-cos' },
-  'management@nemocnice.cz': { password: 'mgmt123',   role: 'management', name: 'Management',             id: 'demo-mgmt' },
-  'primar@nemocnice.cz':     { password: 'primar123', role: 'primar',     name: 'Primariát',              id: 'demo-primar' },
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -53,24 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [modules, setModules] = useState<AppModule[]>([]);
 
-  // Check for existing session on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('app_user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        setUser(parsed);
-      } catch {
-        localStorage.removeItem('app_user');
-      }
-    }
-    setIsLoading(false);
-    refreshModules();
-  }, []);
-
   const refreshModules = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
-      // Default modules if no Supabase (mirrors DB defaults seeded in scripts/09-add-hospital-roles.sql)
       setModules([
         { id: 'dashboard',  name: 'Dashboard',  description: 'Operating rooms overview',     is_enabled: true, icon: 'LayoutGrid', accent_color: '#00D8C1', sort_order: 1, allowed_roles: ['aro','cos','management','primar','user'] },
         { id: 'timeline',   name: 'Timeline',   description: 'Operations timeline',          is_enabled: true, icon: 'Calendar',   accent_color: '#A855F7', sort_order: 2, allowed_roles: ['aro','cos','management','primar','user'] },
@@ -95,148 +69,154 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // Demo auth: compare against DEMO_CREDENTIALS map (client-side).
-    // In production use bcrypt comparison on server side via Supabase Auth or an API route.
-    const normalizedEmail = email.trim().toLowerCase();
-    const creds = DEMO_CREDENTIALS[normalizedEmail];
-
-    if (!creds || creds.password !== password) {
-      return { success: false, error: 'Neplatný email nebo heslo' };
-    }
-
-    // If Supabase is configured, try to fetch the real user record so we get the DB id + active flag.
-    if (isSupabaseConfigured && supabase) {
+  // Bootstrap: obnov session z HttpOnly cookie přes /api/auth/me
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       try {
-        const { data } = await supabase
-          .from('app_users')
-          .select('id, email, name, role, is_active')
-          .eq('email', normalizedEmail)
-          .eq('is_active', true)
-          .maybeSingle();
-
-        if (data) {
-          const loggedInUser: User = {
-            id: data.id,
-            email: data.email,
-            name: data.name,
-            role: data.role as UserRole,
-            is_active: data.is_active,
-          };
-          setUser(loggedInUser);
-          localStorage.setItem('app_user', JSON.stringify(loggedInUser));
-          await refreshModules();
-          return { success: true };
+        const res = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (!cancelled && json.user) {
+            setUser(json.user as User);
+          }
         }
-      } catch (error) {
-        console.error('[Auth] Supabase lookup failed, falling back to demo user:', error);
+      } catch {
+        // Ignore — žádná session
+      } finally {
+        if (!cancelled) setIsLoading(false);
+        refreshModules();
       }
-    }
-
-    // Fallback / pure demo mode
-    const demoUser: User = {
-      id: creds.id,
-      email: normalizedEmail,
-      name: creds.name,
-      role: creds.role,
-      is_active: true,
+    })();
+    return () => {
+      cancelled = true;
     };
-    setUser(demoUser);
-    localStorage.setItem('app_user', JSON.stringify(demoUser));
-    await refreshModules();
-    return { success: true };
   }, [refreshModules]);
 
-  const logout = useCallback(() => {
+  const login = useCallback(
+    async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.user) {
+          return {
+            success: false,
+            error: (typeof json?.error === 'string' && json.error) || 'Přihlášení se nezdařilo',
+          };
+        }
+        setUser(json.user as User);
+        await refreshModules();
+        return { success: true };
+      } catch (error) {
+        console.error('[Auth] Login failed:', error);
+        return { success: false, error: 'Chyba při komunikaci se serverem' };
+      }
+    },
+    [refreshModules],
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // Ignore
+    }
     setUser(null);
-    localStorage.removeItem('app_user');
   }, []);
 
-  const toggleModule = useCallback(async (moduleId: string, enabled: boolean): Promise<boolean> => {
-    if (!isSupabaseConfigured || !supabase) {
-      // Demo mode - update local state
-      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, is_enabled: enabled } : m));
-      return true;
-    }
+  const toggleModule = useCallback(
+    async (moduleId: string, enabled: boolean): Promise<boolean> => {
+      if (!isSupabaseConfigured || !supabase) {
+        setModules(prev => prev.map(m => (m.id === moduleId ? { ...m, is_enabled: enabled } : m)));
+        return true;
+      }
+      try {
+        const { error } = await supabase
+          .from('app_modules')
+          .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
+          .eq('id', moduleId);
 
-    try {
-      const { error } = await supabase
-        .from('app_modules')
-        .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
-        .eq('id', moduleId);
-
-      if (error) throw error;
-      await refreshModules();
-      return true;
-    } catch (error) {
-      console.error('[Auth] Failed to toggle module:', error);
-      return false;
-    }
-  }, [refreshModules]);
-
-  // Per-role toggle — add/remove role from allowed_roles array
-  const toggleModuleRole = useCallback(async (moduleId: string, role: UserRole, enabled: boolean): Promise<boolean> => {
-    const compute = (current: string[] | null | undefined): string[] => {
-      const set = new Set(current ?? []);
-      if (enabled) set.add(role); else set.delete(role);
-      return Array.from(set);
-    };
-
-    if (!isSupabaseConfigured || !supabase) {
-      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, allowed_roles: compute(m.allowed_roles) } : m));
-      return true;
-    }
-
-    try {
-      const current = modules.find(m => m.id === moduleId)?.allowed_roles ?? [];
-      const next = compute(current);
-      const { error } = await supabase
-        .from('app_modules')
-        .update({ allowed_roles: next, updated_at: new Date().toISOString() })
-        .eq('id', moduleId);
-
-      if (error) throw error;
-      // Optimistic update so UI reacts immediately
-      setModules(prev => prev.map(m => m.id === moduleId ? { ...m, allowed_roles: next } : m));
-      return true;
-    } catch (error) {
-      console.error('[Auth] Failed to toggle module role:', error);
-      return false;
-    }
-  }, [modules]);
-
-  // Determine whether the current user can see a given module
-  const hasModuleAccess = useCallback((moduleId: string): boolean => {
-    if (!user) return false;
-    if (user.role === 'admin') return true; // admin vidí vše
-    const mod = modules.find(m => m.id === moduleId);
-    if (!mod) return false;
-    if (mod.is_enabled === false) return false;
-    // allowed_roles NULL / [] => admin-only
-    if (!mod.allowed_roles || mod.allowed_roles.length === 0) return false;
-    return mod.allowed_roles.includes(user.role);
-  }, [user, modules]);
-
-  // Memoize context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
-    modules,
-    login,
-    logout,
-    refreshModules,
-    toggleModule,
-    toggleModuleRole,
-    hasModuleAccess,
-  }), [user, isLoading, modules, login, logout, refreshModules, toggleModule, toggleModuleRole, hasModuleAccess]);
-
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+        if (error) throw error;
+        await refreshModules();
+        return true;
+      } catch (error) {
+        console.error('[Auth] Failed to toggle module:', error);
+        return false;
+      }
+    },
+    [refreshModules],
   );
+
+  const toggleModuleRole = useCallback(
+    async (moduleId: string, role: UserRole, enabled: boolean): Promise<boolean> => {
+      const compute = (current: string[] | null | undefined): string[] => {
+        const set = new Set(current ?? []);
+        if (enabled) set.add(role); else set.delete(role);
+        return Array.from(set);
+      };
+
+      if (!isSupabaseConfigured || !supabase) {
+        setModules(prev =>
+          prev.map(m => (m.id === moduleId ? { ...m, allowed_roles: compute(m.allowed_roles) } : m)),
+        );
+        return true;
+      }
+
+      try {
+        const current = modules.find(m => m.id === moduleId)?.allowed_roles ?? [];
+        const next = compute(current);
+        const { error } = await supabase
+          .from('app_modules')
+          .update({ allowed_roles: next, updated_at: new Date().toISOString() })
+          .eq('id', moduleId);
+
+        if (error) throw error;
+        setModules(prev => prev.map(m => (m.id === moduleId ? { ...m, allowed_roles: next } : m)));
+        return true;
+      } catch (error) {
+        console.error('[Auth] Failed to toggle module role:', error);
+        return false;
+      }
+    },
+    [modules],
+  );
+
+  const hasModuleAccess = useCallback(
+    (moduleId: string): boolean => {
+      if (!user) return false;
+      if (user.role === 'admin') return true;
+      const mod = modules.find(m => m.id === moduleId);
+      if (!mod) return false;
+      if (mod.is_enabled === false) return false;
+      if (!mod.allowed_roles || mod.allowed_roles.length === 0) return false;
+      return mod.allowed_roles.includes(user.role);
+    },
+    [user, modules],
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      user,
+      isLoading,
+      isAuthenticated: !!user,
+      isAdmin: user?.role === 'admin',
+      modules,
+      login,
+      logout,
+      refreshModules,
+      toggleModule,
+      toggleModuleRole,
+      hasModuleAccess,
+    }),
+    [user, isLoading, modules, login, logout, refreshModules, toggleModule, toggleModuleRole, hasModuleAccess],
+  );
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/auth/server';
+
+export const runtime = 'nodejs';
 
 /**
  * POST /api/admin/reset-data
@@ -21,24 +24,26 @@ import { createClient } from '@supabase/supabase-js';
  *   - zaznamená identitu volajícího (userEmail) — pro budoucí audit log
  */
 export async function POST(req: NextRequest) {
-  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // AuthN/AuthZ — pouze přihlášený admin (ze session cookie)
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+  const sessionUser = authResult.user;
 
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
       { error: 'Supabase není správně nakonfigurován (chybí service role klíč)' },
       { status: 500 }
     );
   }
 
-  let body: { mode?: string; confirmation?: string; userEmail?: string };
+  let body: { mode?: string; confirmation?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Neplatné tělo požadavku' }, { status: 400 });
   }
 
-  const { mode, confirmation, userEmail } = body;
+  const { mode, confirmation } = body;
 
   if (confirmation !== 'SMAZAT DATA') {
     return NextResponse.json(
@@ -54,24 +59,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  // Ověř, že volající je admin
-  if (userEmail) {
-    const { data: userRow, error: userErr } = await admin
-      .from('app_users')
-      .select('role, is_active')
-      .eq('email', userEmail)
-      .maybeSingle();
-    if (userErr || !userRow || userRow.role !== 'admin' || !userRow.is_active) {
-      return NextResponse.json(
-        { error: 'Akce je povolena pouze pro aktivního administrátora' },
-        { status: 403 }
-      );
-    }
-  }
+  const admin = getSupabaseAdmin();
 
   const deletedCounts: Record<string, number | string> = {};
 
@@ -146,7 +134,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     mode,
-    performedBy: userEmail ?? 'unknown',
+    performedBy: sessionUser.email,
     timestamp: new Date().toISOString(),
     deleted: deletedCounts,
   });
