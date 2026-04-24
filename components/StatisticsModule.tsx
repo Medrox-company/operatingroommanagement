@@ -14,6 +14,12 @@ import {
   LineChart, Line, CartesianGrid, ComposedChart,
   ScatterChart, Scatter, ZAxis,
 } from 'recharts';
+import {
+  MobileHeader,
+  MobileCard,
+  MobilePillTabs,
+  MobileSectionLabel,
+} from './mobile/MobileShell';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
@@ -381,7 +387,7 @@ function calculateRoomUtilization(
   return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
 }
 
-// ── Helper: Get formatted working hours string for a room ──────────────────────
+// ── Helper: Get formatted working hours string for a room ────────────────��─────
 function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   const hours = getRoomWorkingHours(room, dayIndex);
   if (!hours.enabled) return 'Zavřeno';
@@ -392,7 +398,7 @@ function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   return `${formatTime(hours.startHour, hours.startMinute)}–${formatTime(hours.endHour, hours.endMinute)}`;
 }
 
-// ── Tooltip shared style ─────────�����─������──────────────────────────────────────────
+// ── Tooltip shared style ─────────�����─��������──────────────────────────────────────────
 const TIP = {
   contentStyle:{ background:'rgba(2,8,23,0.97)', border:`1px solid ${C.border}`, borderRadius:6, fontSize:12 },
   labelStyle:  { color:C.muted },
@@ -755,9 +761,9 @@ function TrendBadge({v}:{v:number}){
   return <span className="text-[10px]" style={{color:C.ghost}}>—</span>;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ═══════���══════════════════════════════════════════════════════════════════════
 // ROOM DETAIL PANEL
-// ══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════��═���════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
@@ -1419,7 +1425,346 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   ];
 
   return(
-    <div className="w-full">
+    <>
+      {/* Mobile background — unified with RoomDetail / Timeline / Staff */}
+      <div
+        aria-hidden
+        className="fixed inset-0 md:hidden pointer-events-none"
+        style={{
+          zIndex: 0,
+          background:
+            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
+        }}
+      />
+      <div
+        aria-hidden
+        className="fixed inset-0 md:hidden pointer-events-none overflow-hidden"
+        style={{ zIndex: 0 }}
+      >
+        <div
+          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+        />
+      </div>
+
+      {/* ========== MOBILE (md:hidden) ========== */}
+      <div className="md:hidden w-full relative" style={{ zIndex: 1 }}>
+        <div className="flex flex-col gap-5">
+          <MobileHeader
+            kicker="Statistiky"
+            title="Provozní přehled"
+          />
+
+          {/* Period toggle */}
+          <div>
+            <MobileSectionLabel className="mb-2">Období</MobileSectionLabel>
+            <MobilePillTabs<Period>
+              tabs={[
+                { id: 'den', label: 'Den' },
+                { id: 'týden', label: 'Týden' },
+                { id: 'měsíc', label: 'Měsíc' },
+                { id: 'rok', label: 'Rok' },
+              ]}
+              value={period}
+              onChange={setPeriod}
+            />
+          </div>
+
+          {/* Tab toggle */}
+          <MobilePillTabs<Tab>
+            tabs={[
+              { id: 'prehled', label: 'Přehled' },
+              { id: 'saly', label: 'Sály' },
+              { id: 'faze', label: 'Fáze' },
+              { id: 'heatmapa', label: 'Heatmapa' },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+
+          {/* ── Přehled ── */}
+          {tab === 'prehled' && (
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { l: 'Obsazeno', v: `${busyCount}/${rooms.length}`, c: C.orange },
+                  { l: 'Volno', v: `${freeCount}/${rooms.length}`, c: C.green },
+                  { l: `Výkony (${period})`, v: totalOps, c: C.accent },
+                  { l: `Využití (${period})`, v: `${avgUtil}%`, c: C.text },
+                ].map(k => (
+                  <div
+                    key={k.l}
+                    className="rounded-2xl p-4"
+                    style={{
+                      background: `linear-gradient(135deg, ${k.c}14 0%, rgba(255,255,255,0.02) 100%)`,
+                      border: `1px solid ${k.c}2b`,
+                      backdropFilter: 'blur(12px)',
+                    }}
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50 leading-none">
+                      {k.l}
+                    </p>
+                    <p className="text-2xl font-semibold mt-2 tabular-nums" style={{ color: k.c }}>
+                      {k.v}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mini trend chart */}
+              <MobileCard>
+                <MobileSectionLabel className="mb-3">Trend vytížení</MobileSectionLabel>
+                <div style={{ width: '100%', height: 160 }}>
+                  <ResponsiveContainer>
+                    <AreaChart data={utilData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+                      <defs>
+                        <linearGradient id="mobile-util-grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={C.accent} stopOpacity={0.4} />
+                          <stop offset="100%" stopColor={C.accent} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis
+                        dataKey="t"
+                        tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={28}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'rgba(10,10,18,0.95)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12,
+                          fontSize: 11,
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="v"
+                        stroke={C.accent}
+                        strokeWidth={2}
+                        fill="url(#mobile-util-grad)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-white/50 mt-2 px-1">
+                  <span>Peak: <span className="text-white/80 font-semibold">{peakUtil}%</span></span>
+                  <span>Min: <span className="text-white/80 font-semibold">{minUtil}%</span></span>
+                </div>
+              </MobileCard>
+            </div>
+          )}
+
+          {/* ── Sály ── */}
+          {tab === 'saly' && (
+            <div className="flex flex-col gap-2.5">
+              <MobileSectionLabel>Sály ({rooms.length})</MobileSectionLabel>
+              {rooms.map(r => {
+                const util = calculateRoomUtilization(r, statusHistory, period);
+                const ops = countOperationsInWorkingHours(r, statusHistory, period);
+                const utilColor =
+                  util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted;
+                return (
+                  <MobileCard key={r.id} accent={utilColor} onClick={() => setSelectedRoom(r)}>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 leading-none">
+                          {roomStatusLabel(r)}
+                        </p>
+                        <h3 className="text-base font-semibold text-white mt-1.5 leading-tight truncate">
+                          {r.name}
+                        </h3>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 leading-none">
+                          Výkony
+                        </p>
+                        <p className="text-sm font-semibold text-white tabular-nums mt-1">{ops}</p>
+                      </div>
+                    </div>
+
+                    {/* Utilization bar */}
+                    <div
+                      className="h-1.5 rounded-full overflow-hidden"
+                      style={{ background: 'rgba(255,255,255,0.06)' }}
+                    >
+                      <div
+                        className="h-full rounded-full transition-[width] duration-500"
+                        style={{
+                          width: `${Math.min(100, util)}%`,
+                          background: `linear-gradient(90deg, ${utilColor} 0%, ${utilColor}aa 100%)`,
+                          boxShadow: `0 0 8px ${utilColor}55`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] mt-2">
+                      <span className="text-white/40">Využití</span>
+                      <span className="font-semibold tabular-nums" style={{ color: utilColor }}>
+                        {util}%
+                      </span>
+                    </div>
+                  </MobileCard>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Fáze ── */}
+          {tab === 'faze' && (
+            <div className="flex flex-col gap-2.5">
+              <MobileSectionLabel>Průměrné trvání fází ({period})</MobileSectionLabel>
+              <MobileCard>
+                <div className="flex flex-col gap-3.5">
+                  {(() => {
+                    // avgStepDurations je number[] indexovaný shodně s WORKFLOW_STEPS
+                    const durations: number[] = avgStepDurations;
+                    const steps = WORKFLOW_STEPS
+                      .map((s, i) => ({ step: s, index: i, mins: durations[i] ?? 0 }))
+                      .filter(x => x.mins > 0);
+                    if (steps.length === 0) {
+                      return (
+                        <p className="text-sm text-white/50 text-center py-6">
+                          Zatím nejsou k dispozici data.
+                        </p>
+                      );
+                    }
+                    const max = Math.max(1, ...steps.map(x => x.mins));
+                    return steps.map(({ step: s, index, mins }) => {
+                      const rounded = Math.round(mins);
+                      const pct = (mins / max) * 100;
+                      const color = s.color || C.accent;
+                      return (
+                        <div key={`${s.name}-${index}`}>
+                          <div className="flex items-center justify-between text-xs mb-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}99` }}
+                              />
+                              <span className="text-white/80 font-medium truncate">
+                                {s.title}
+                              </span>
+                            </div>
+                            <span
+                              className="font-semibold tabular-nums shrink-0 ml-3"
+                              style={{ color }}
+                            >
+                              {rounded} m
+                            </span>
+                          </div>
+                          <div
+                            className="h-1.5 rounded-full overflow-hidden"
+                            style={{ background: 'rgba(255,255,255,0.05)' }}
+                          >
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${pct}%`,
+                                background: `linear-gradient(90deg, ${color} 0%, ${color}aa 100%)`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </MobileCard>
+            </div>
+          )}
+
+          {/* ── Heatmapa ── */}
+          {tab === 'heatmapa' && (
+            <div className="flex flex-col gap-3">
+              <MobileSectionLabel>Heatmapa 7 × 24 h</MobileSectionLabel>
+              <MobileCard>
+                {(() => {
+                  const matrix = heatmapData as number[][] | undefined;
+                  const rows = matrix && matrix.length === 7 ? matrix : Array.from({ length: 7 }, () => Array(24).fill(0));
+                  const flat = rows.flat();
+                  const max = Math.max(1, ...flat);
+                  return (
+                    <div className="flex flex-col gap-1">
+                      {/* Hour axis */}
+                      <div className="grid grid-cols-[28px_1fr] items-end gap-2">
+                        <div />
+                        <div className="grid grid-cols-24">
+                          <div
+                            className="grid gap-[2px]"
+                            style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
+                          >
+                            {Array.from({ length: 24 }, (_, h) => (
+                              <span
+                                key={h}
+                                className="text-[8px] text-white/30 text-center tabular-nums leading-none"
+                              >
+                                {h % 6 === 0 ? h : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      {rows.map((row, di) => (
+                        <div
+                          key={di}
+                          className="grid grid-cols-[28px_1fr] items-center gap-2"
+                        >
+                          <span className="text-[10px] font-semibold text-white/60 tabular-nums">
+                            {DAYS[di]}
+                          </span>
+                          <div
+                            className="grid gap-[2px]"
+                            style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
+                          >
+                            {row.map((v, hi) => {
+                              const intensity = v / max;
+                              return (
+                                <div
+                                  key={hi}
+                                  className="aspect-square rounded-[3px]"
+                                  style={{
+                                    background:
+                                      v === 0
+                                        ? 'rgba(255,255,255,0.03)'
+                                        : `rgba(6,182,212,${0.15 + intensity * 0.75})`,
+                                  }}
+                                  title={`${DAYS[di]} ${hi}:00 — ${v}`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between text-[10px] text-white/40 mt-3 px-1">
+                        <span>méně</span>
+                        <div className="flex gap-0.5">
+                          {[0.15, 0.35, 0.55, 0.75, 0.9].map(i => (
+                            <div
+                              key={i}
+                              className="w-3 h-3 rounded-sm"
+                              style={{ background: `rgba(6,182,212,${i})` }}
+                            />
+                          ))}
+                        </div>
+                        <span>více</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </MobileCard>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ========== DESKTOP (hidden md:block) ========== */}
+      <div className="hidden md:block w-full">
 
       {/* ── Module header ── */}
       <div className="mb-8">
@@ -2214,14 +2559,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
       </AnimatePresence>
 
-      {/* ── Room detail panel ── */}
+      </div>
+      {/* ── Room detail panel (shared mobile + desktop) ── */}
       <AnimatePresence>
         {selectedRoom&&(
           <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>
         )}
       </AnimatePresence>
-
-    </div>
+    </>
   );
 };
 

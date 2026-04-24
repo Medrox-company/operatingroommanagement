@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel } from '../types';
+import MobileStaffView from './mobile/MobileStaffView';
 
 // Types from database
 interface StaffMember {
@@ -458,7 +459,23 @@ export default function StaffManager() {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <>
+      {/* ========== MOBILE (md:hidden) ========== */}
+      <MobileStaffView
+        staffAll={staff}
+        filteredStaff={filteredStaff}
+        activeCategory={activeCategory}
+        onCategoryChange={(c) => { setActiveCategory(c); setSelectedStaffId(null); }}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        loading={loading}
+        onEditStaff={(id) => setSelectedStaffId(id)}
+        onDeleteStaff={handleDeleteStaff}
+        onAddNew={() => setIsAddingNew(true)}
+      />
+
+      {/* ========== DESKTOP (hidden md:block) ========== */}
+      <div className="hidden md:block w-full space-y-8">
       {/* Header */}
       <header className="space-y-6">
         <div className="space-y-3">
@@ -653,6 +670,8 @@ export default function StaffManager() {
           )}
         </div>
       )}
+      </div>
+      {/* ========== SHARED MODALS (desktop + mobile Upravit flow) ========== */}
 
       {/* Detail Modal */}
       <AnimatePresence>
@@ -756,6 +775,6 @@ export default function StaffManager() {
           </>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
