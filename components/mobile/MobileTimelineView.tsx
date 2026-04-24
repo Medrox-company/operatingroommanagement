@@ -354,6 +354,8 @@ const MobileTimelineView: React.FC<Props> = ({
           <AxisView
             rooms={rooms}
             statusByOrderIndex={statusByOrderIndex}
+            activeStatuses={activeStatuses}
+            currentTime={currentTime}
             windowStart={windowStart}
             nowPercent={nowPercent}
             onSelectRoom={onSelectRoom}
@@ -370,11 +372,28 @@ const MobileTimelineView: React.FC<Props> = ({
 const AxisView: React.FC<{
   rooms: OperatingRoom[];
   statusByOrderIndex: Record<number, WorkflowStatus | undefined>;
+  activeStatuses: WorkflowStatus[];
+  currentTime: Date;
   windowStart: Date;
   nowPercent: number;
   onSelectRoom: (room: OperatingRoom) => void;
-}> = ({ rooms, statusByOrderIndex, windowStart, nowPercent, onSelectRoom }) => {
+}> = ({
+  rooms,
+  statusByOrderIndex,
+  activeStatuses,
+  currentTime,
+  windowStart,
+  nowPercent,
+  onSelectRoom,
+}) => {
   const hours = Array.from({ length: TIMELINE_HOURS + 1 }, (_, i) => i);
+
+  // Živé barvy statusů z DB (stejně jako desktop Timeline)
+  const stepColorMap: Record<number, string> = {};
+  activeStatuses.forEach((s) => {
+    stepColorMap[s.order_index] = s.accent_color || s.color || '#6b7280';
+  });
+  const windowEndMs = windowStart.getTime() + TIMELINE_HOURS * 60 * 60 * 1000;
 
   return (
     <div>
@@ -423,27 +442,74 @@ const AxisView: React.FC<{
         {/* Řady sálů */}
         <div className="flex flex-col gap-2 mt-2">
           {rooms.map(room => {
-            const step = statusByOrderIndex[room.currentStepIndex];
-            const color =
+            const currentStep = statusByOrderIndex[room.currentStepIndex];
+            const currentColor =
               room.isEmergency
                 ? '#EF4444'
                 : room.isLocked
                   ? '#FBBF24'
-                  : step?.accent_color || step?.color || '#6B7280';
-            const range = getRoomRange(room, windowStart);
+                  : currentStep?.accent_color || currentStep?.color || '#6B7280';
 
-            let barStyle: React.CSSProperties | null = null;
-            if (range) {
-              const leftPct = Math.max(0, toAxisPercent(range.start, windowStart));
-              const endPct = Math.min(100, toAxisPercent(range.end, windowStart));
-              const width = Math.max(0, endPct - leftPct);
-              if (width > 0) {
-                barStyle = {
-                  left: `${leftPct}%`,
-                  width: `${width}%`,
-                  background: `linear-gradient(90deg, ${color} 0%, ${color}cc 100%)`,
-                  boxShadow: `0 0 12px ${color}66`,
-                };
+            // Segmenty statusů z historie (stejně jako desktop Timeline).
+            // Každý segment se omezí na viditelné okno 7:00–7:00.
+            const history = room.statusHistory || [];
+            const nowMs = currentTime.getTime();
+            const windowStartMs = windowStart.getTime();
+
+            type Segment = {
+              leftPct: number;
+              widthPct: number;
+              color: string;
+              isCurrent: boolean;
+            };
+            const segments: Segment[] = [];
+
+            if (history.length > 0) {
+              history.forEach((entry, idx) => {
+                const segStartRaw = new Date(entry.startedAt).getTime();
+                const nextEntry = history[idx + 1];
+                const isCurrent = idx === history.length - 1;
+                const segEndRaw = nextEntry
+                  ? new Date(nextEntry.startedAt).getTime()
+                  : nowMs;
+
+                const segStart = Math.max(segStartRaw, windowStartMs);
+                const segEnd = Math.min(segEndRaw, windowEndMs);
+                if (segEnd <= segStart) return;
+
+                const leftPct =
+                  ((segStart - windowStartMs) / (windowEndMs - windowStartMs)) * 100;
+                const widthPct =
+                  ((segEnd - segStart) / (windowEndMs - windowStartMs)) * 100;
+                if (widthPct <= 0) return;
+
+                const phaseColor =
+                  stepColorMap[entry.stepIndex] ||
+                  entry.color ||
+                  '#6b7280';
+
+                segments.push({
+                  leftPct: Math.max(0, leftPct),
+                  widthPct: Math.max(0.3, widthPct),
+                  color: phaseColor,
+                  isCurrent,
+                });
+              });
+            } else {
+              // Fallback: jeden bar dle aktuální operace (pokud není history)
+              const range = getRoomRange(room, windowStart);
+              if (range) {
+                const leftPct = Math.max(0, toAxisPercent(range.start, windowStart));
+                const endPct = Math.min(100, toAxisPercent(range.end, windowStart));
+                const width = Math.max(0, endPct - leftPct);
+                if (width > 0) {
+                  segments.push({
+                    leftPct,
+                    widthPct: width,
+                    color: currentColor,
+                    isCurrent: true,
+                  });
+                }
               }
             }
 
@@ -459,8 +525,8 @@ const AxisView: React.FC<{
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0"
                       style={{
-                        backgroundColor: color,
-                        boxShadow: `0 0 6px ${color}99`,
+                        backgroundColor: currentColor,
+                        boxShadow: `0 0 6px ${currentColor}99`,
                       }}
                     />
                     <span className="text-[11px] font-semibold text-white truncate">
@@ -490,13 +556,27 @@ const AxisView: React.FC<{
                         }}
                       />
                     ))}
-                    {/* Operation bar */}
-                    {barStyle && (
+                    {/* Status segments (stejné jako desktop Timeline) */}
+                    {segments.map((seg, i) => (
                       <div
-                        className="absolute top-1.5 bottom-1.5 rounded-md"
-                        style={barStyle}
+                        key={i}
+                        className="absolute top-1.5 bottom-1.5"
+                        style={{
+                          left: `${seg.leftPct}%`,
+                          width: `${seg.widthPct}%`,
+                          background: seg.isCurrent
+                            ? `linear-gradient(90deg, ${seg.color} 0%, ${seg.color}dd 100%)`
+                            : `${seg.color}cc`,
+                          boxShadow: seg.isCurrent ? `0 0 10px ${seg.color}66` : 'none',
+                          borderLeft:
+                            i > 0 ? '1.5px solid rgba(0,0,0,0.35)' : 'none',
+                          borderTopLeftRadius: i === 0 ? 6 : 0,
+                          borderBottomLeftRadius: i === 0 ? 6 : 0,
+                          borderTopRightRadius: i === segments.length - 1 ? 6 : 0,
+                          borderBottomRightRadius: i === segments.length - 1 ? 6 : 0,
+                        }}
                       />
-                    )}
+                    ))}
                     {/* Now marker */}
                     <div
                       className="absolute top-0 bottom-0"
