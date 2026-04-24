@@ -387,7 +387,7 @@ function calculateRoomUtilization(
   return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
 }
 
-// ── Helper: Get formatted working hours string for a room ──────────────────────
+// ── Helper: Get formatted working hours string for a room ────────────────��─────
 function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   const hours = getRoomWorkingHours(room, dayIndex);
   if (!hours.enabled) return 'Zavřeno';
@@ -763,7 +763,7 @@ function TrendBadge({v}:{v:number}){
 
 // ═══════���══════════════════════════════════════════════════════════════════════
 // ROOM DETAIL PANEL
-// ═════════════════════════════════════════════════════════���════════════════════
+// ═══════════════════════════════════════════════════════��═���════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
@@ -1622,9 +1622,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               <MobileCard>
                 <div className="flex flex-col gap-3.5">
                   {(() => {
-                    const durations = avgStepDurations as Record<string, number>;
-                    const steps = WORKFLOW_STEPS.filter(s => (durations[s.title] ?? 0) > 0);
-                    const max = Math.max(1, ...steps.map(s => durations[s.title] || 0));
+                    // avgStepDurations je number[] indexovaný shodně s WORKFLOW_STEPS
+                    const durations: number[] = avgStepDurations;
+                    const steps = WORKFLOW_STEPS
+                      .map((s, i) => ({ step: s, index: i, mins: durations[i] ?? 0 }))
+                      .filter(x => x.mins > 0);
                     if (steps.length === 0) {
                       return (
                         <p className="text-sm text-white/50 text-center py-6">
@@ -1632,12 +1634,13 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         </p>
                       );
                     }
-                    return steps.map(s => {
-                      const mins = Math.round(durations[s.title] || 0);
+                    const max = Math.max(1, ...steps.map(x => x.mins));
+                    return steps.map(({ step: s, index, mins }) => {
+                      const rounded = Math.round(mins);
                       const pct = (mins / max) * 100;
                       const color = s.color || C.accent;
                       return (
-                        <div key={s.name}>
+                        <div key={`${s.name}-${index}`}>
                           <div className="flex items-center justify-between text-xs mb-1.5">
                             <div className="flex items-center gap-2 min-w-0">
                               <span
@@ -1652,7 +1655,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                               className="font-semibold tabular-nums shrink-0 ml-3"
                               style={{ color }}
                             >
-                              {mins} m
+                              {rounded} m
                             </span>
                           </div>
                           <div
