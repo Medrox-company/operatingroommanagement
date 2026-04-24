@@ -121,11 +121,8 @@ const MobileStaffView: React.FC<Props> = ({
   );
 
   return (
-    <div
-      className="md:hidden h-full w-full overflow-y-auto hide-scrollbar"
-      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
-    >
-      <div className="flex flex-col gap-5 px-5 pt-5">
+    <div className="md:hidden w-full">
+      <div className="flex flex-col gap-5">
         {/* Header */}
         <MobileHeader
           kicker="Personál"

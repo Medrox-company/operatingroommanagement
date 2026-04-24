@@ -763,7 +763,7 @@ function TrendBadge({v}:{v:number}){
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ROOM DETAIL PANEL
-// ══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════��════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
@@ -1427,11 +1427,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   return(
     <>
       {/* ========== MOBILE (md:hidden) ========== */}
-      <div
-        className="md:hidden w-full h-full overflow-y-auto hide-scrollbar"
-        style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
-      >
-        <div className="flex flex-col gap-5 px-5 pt-5">
+      <div className="md:hidden w-full">
+        <div className="flex flex-col gap-5">
           <MobileHeader
             kicker="Statistiky"
             title="Provozní přehled"
@@ -1553,7 +1550,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 const utilColor =
                   util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted;
                 return (
-                  <MobileCard key={r.id} accent={utilColor}>
+                  <MobileCard key={r.id} accent={utilColor} onClick={() => setSelectedRoom(r)}>
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 leading-none">
@@ -2538,14 +2535,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
       </AnimatePresence>
 
-      {/* ── Room detail panel ── */}
+      </div>
+      {/* ── Room detail panel (shared mobile + desktop) ── */}
       <AnimatePresence>
         {selectedRoom&&(
           <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>
         )}
       </AnimatePresence>
-
-    </div>
+    </>
   );
 };
 
