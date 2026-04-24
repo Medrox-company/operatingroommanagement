@@ -121,8 +121,30 @@ const MobileStaffView: React.FC<Props> = ({
   );
 
   return (
-    <div className="md:hidden w-full">
-      <div className="flex flex-col gap-5">
+    <>
+      {/* Mobile background — unified with RoomDetail / NotificationOverlay */}
+      <div
+        aria-hidden
+        className="fixed inset-0 md:hidden pointer-events-none"
+        style={{
+          zIndex: 0,
+          background:
+            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
+        }}
+      />
+      <div
+        aria-hidden
+        className="fixed inset-0 md:hidden pointer-events-none overflow-hidden"
+        style={{ zIndex: 0 }}
+      >
+        <div
+          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+        />
+      </div>
+
+      <div className="md:hidden w-full relative" style={{ zIndex: 1 }}>
+        <div className="flex flex-col gap-5">
         {/* Header */}
         <MobileHeader
           kicker="Personál"
@@ -404,7 +426,8 @@ const MobileStaffView: React.FC<Props> = ({
           </div>
         )}
       </MobileSheet>
-    </div>
+      </div>
+    </>
   );
 };
 

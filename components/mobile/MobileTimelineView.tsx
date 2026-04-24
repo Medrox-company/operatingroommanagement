@@ -129,11 +129,37 @@ const MobileTimelineView: React.FC<Props> = ({
   ];
 
   return (
-    <div
-      className="md:hidden h-full w-full overflow-y-auto hide-scrollbar"
-      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
-    >
-      <div className="flex flex-col gap-5 px-5 pt-5">
+    <>
+      {/* Mobile background — unified with RoomDetail / NotificationOverlay */}
+      <div
+        aria-hidden
+        className="fixed inset-0 md:hidden pointer-events-none"
+        style={{
+          zIndex: 0,
+          background:
+            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
+        }}
+      />
+      {/* Ambient cyan glow */}
+      <div
+        aria-hidden
+        className="fixed inset-0 md:hidden pointer-events-none overflow-hidden"
+        style={{ zIndex: 0 }}
+      >
+        <div
+          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+        />
+      </div>
+
+      <div
+        className="md:hidden h-full w-full overflow-y-auto hide-scrollbar relative"
+        style={{
+          zIndex: 1,
+          paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        <div className="flex flex-col gap-5 px-5 pt-5">
         {/* Header */}
         <MobileHeader
           kicker="Časová osa"
@@ -491,7 +517,8 @@ const AxisView: React.FC<{
           Posuňte prstem vodorovně pro zobrazení celé 24 h osy.
         </p>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
