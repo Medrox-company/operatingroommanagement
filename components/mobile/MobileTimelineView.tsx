@@ -360,7 +360,8 @@ const MobileTimelineView: React.FC<Props> = ({
           />
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
@@ -517,8 +518,7 @@ const AxisView: React.FC<{
           Posuňte prstem vodorovně pro zobrazení celé 24 h osy.
         </p>
       </div>
-      </div>
-    </>
+    </div>
   );
 };
 
