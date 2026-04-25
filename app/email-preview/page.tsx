@@ -103,7 +103,7 @@ export default function EmailPreviewPage() {
                     onClick={() => setSelectedTemplate(template.id)}
                     className={`w-full px-4 py-3 rounded-xl text-left transition-all ${
                       selectedTemplate === template.id
-                        ? 'bg-[#00D8C1]/20 text-[#00D8C1] border border-[#00D8C1]/30'
+                        ? 'bg-[#FBBF24]/20 text-[#FBBF24] border border-[#FBBF24]/30'
                         : 'text-white/60 hover:bg-white/5 border border-transparent'
                     }`}
                   >

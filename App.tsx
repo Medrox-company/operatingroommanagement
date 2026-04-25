@@ -492,10 +492,10 @@ const AppContent: React.FC = () => {
                   <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-12 lg:mb-16 flex-shrink-0">
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
                       <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
-                        <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#00D8C1]" />
-                        <p className="text-[9px] sm:text-[10px] font-black text-[#00D8C1] tracking-[0.3em] sm:tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+                        <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
+                        <p className="text-[9px] sm:text-[10px] font-black text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
                       </div>
-                      <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none truncate">
+                      <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate">
                         OPERATING <span className="text-white/20">ROOM</span>
                       </h1>
                     </div>
@@ -511,7 +511,7 @@ const AppContent: React.FC = () => {
                         
                         return [
                           { label: 'AKTIVNÍ',    value: activeRooms.length, icon: Activity,   color: 'text-red-500'    },
-                          { label: 'PŘIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#00D8C1]'  },
+                          { label: 'PŘIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#FBBF24]'  },
                         ];
                       })().map((stat) => (
                         <div key={stat.label} className="flex flex-col items-center justify-center px-3 sm:px-6 md:px-10 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[130px] md:min-w-[150px] z-10">

@@ -312,7 +312,7 @@ export default function StaffPickerModal({
           <div className="flex-1 overflow-y-auto px-4 pb-5">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#00D8C1] animate-spin" />
+                <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#FBBF24] animate-spin" />
               </div>
             ) : displayStaff.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -347,12 +347,12 @@ export default function StaffPickerModal({
                         background: isUnavailable
                           ? 'rgba(239,68,68,0.04)'
                           : isSelected
-                          ? 'rgba(0,216,193,0.08)'
+                          ? 'rgba(251,191,36,0.08)'
                           : 'rgba(255,255,255,0.025)',
                         border: isUnavailable
                           ? '1px solid rgba(239,68,68,0.15)'
                           : isSelected
-                          ? '1px solid rgba(0,216,193,0.30)'
+                          ? '1px solid rgba(251,191,36,0.30)'
                           : '1px solid rgba(255,255,255,0.06)',
                       }}
                       whileHover={isUnavailable ? {} : { scale: 1.01 }}
@@ -375,12 +375,12 @@ export default function StaffPickerModal({
                         )}
                         <span className={`text-sm font-semibold truncate flex-1 ${
                           isUnavailable ? 'text-white/35 line-through' :
-                          isSelected ? 'text-[#00D8C1]' : 'text-white/90'
+                          isSelected ? 'text-[#FBBF24]' : 'text-white/90'
                         }`}>
                           {member.name}
                         </span>
                         {member.is_recommended && !isUnavailable && <Star className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />}
-                        {isSelected && <Check className="w-4 h-4 text-[#00D8C1] flex-shrink-0" />}
+                        {isSelected && <Check className="w-4 h-4 text-[#FBBF24] flex-shrink-0" />}
                       </div>
 
                       {/* Badges */}

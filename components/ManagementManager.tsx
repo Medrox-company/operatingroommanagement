@@ -100,7 +100,7 @@ function DetailEditModal({
             type="text"
             value={formData.position}
             onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all"
             placeholder="Vedoucí operací"
           />
         </div>
@@ -112,7 +112,7 @@ function DetailEditModal({
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all"
             placeholder="Jméno a příjmení"
           />
         </div>
@@ -124,7 +124,7 @@ function DetailEditModal({
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all"
             placeholder="email@company.com"
           />
         </div>
@@ -136,7 +136,7 @@ function DetailEditModal({
             type="tel"
             value={formData.phone || ''}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all"
             placeholder="+420 123 456 789"
           />
         </div>
@@ -217,7 +217,7 @@ function DetailEditModal({
         <textarea
           value={formData.notes || ''}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all resize-none"
+          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all resize-none"
           placeholder="Zadejte dodatečné poznámky..."
           rows={2}
         />
@@ -247,7 +247,7 @@ function DetailEditModal({
         <button
           onClick={handleSave}
           disabled={saving || !formData.position.trim() || !formData.email.trim()}
-          className="flex-1 px-4 py-3 bg-[#00D8C1] text-black font-bold rounded-xl hover:bg-[#00D8C1]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-3 bg-[#FBBF24] text-black font-bold rounded-xl hover:bg-[#FBBF24]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
           {saving ? (
             <>
@@ -354,7 +354,7 @@ export default function ManagementManager() {
             <Shield className="w-4 h-4 text-cyan-400" />
             <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">MANAGEMENT CONTROL</p>
           </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             MANAGEMENT <span className="text-white/20">KONTAKTY</span>
           </h1>
         </div>
@@ -406,7 +406,7 @@ export default function ManagementManager() {
             placeholder="Hledat jméno, pozici, email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+            className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all"
           />
         </div>
         <motion.button
@@ -433,7 +433,7 @@ export default function ManagementManager() {
           }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="px-6 py-3 bg-[#00D8C1] text-black font-bold rounded-xl hover:bg-[#00D8C1]/90 transition-all flex items-center gap-2"
+          className="px-6 py-3 bg-[#FBBF24] text-black font-bold rounded-xl hover:bg-[#FBBF24]/90 transition-all flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Přidat
@@ -466,8 +466,8 @@ export default function ManagementManager() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00D8C1]/20 flex items-center justify-center">
-                      <Briefcase className="w-5 h-5 text-[#00D8C1]" />
+                    <div className="w-10 h-10 rounded-lg bg-[#FBBF24]/20 flex items-center justify-center">
+                      <Briefcase className="w-5 h-5 text-[#FBBF24]" />
                     </div>
                     <div>
                       <p className="font-semibold text-white">{contact.name || contact.position}</p>

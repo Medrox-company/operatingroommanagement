@@ -196,7 +196,7 @@ const BackgroundManager: React.FC = () => {
       <header className="mb-8">
         <div className="flex items-center justify-between">
           <div className="mb-4">
-            <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+            <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
               NASTAVENÍ <span className="text-white/20">POZADÍ</span>
             </h1>
           </div>

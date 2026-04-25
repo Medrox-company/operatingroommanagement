@@ -155,9 +155,9 @@ const MobileStaffView: React.FC<Props> = ({
               aria-label="Přidat personál"
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform active:scale-95"
               style={{
-                background: 'linear-gradient(135deg, rgba(0,216,193,0.25), rgba(0,216,193,0.1))',
-                border: '1px solid rgba(0,216,193,0.35)',
-                color: '#00D8C1',
+                background: 'linear-gradient(135deg, rgba(251,191,36,0.25), rgba(251,191,36,0.1))',
+                border: '1px solid rgba(251,191,36,0.35)',
+                color: '#FBBF24',
               }}
             >
               <Plus className="w-4.5 h-4.5" strokeWidth={2.25} />
@@ -170,7 +170,7 @@ const MobileStaffView: React.FC<Props> = ({
           {[
             { label: 'Lékaři', value: counts.doctors, color: '#C084FC', icon: Stethoscope },
             { label: 'Sestry', value: counts.nurses, color: '#34d399', icon: Heart },
-            { label: 'Celkem', value: staffAll.length, color: '#00D8C1', icon: Users },
+            { label: 'Celkem', value: staffAll.length, color: '#FBBF24', icon: Users },
           ].map(k => {
             const Icon = k.icon;
             return (
@@ -223,7 +223,7 @@ const MobileStaffView: React.FC<Props> = ({
               <p className="text-sm text-white/50 text-center">
                 {searchQuery
                   ? `Nenalezeno pro "${searchQuery}"`
-                  : 'V této kategorii zatím nikdo není.'}
+                  : 'V této kategorii zatím nikdo nen��.'}
               </p>
             </div>
           </MobileCard>
@@ -398,9 +398,9 @@ const MobileStaffView: React.FC<Props> = ({
                 }}
                 className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(0,216,193,0.22), rgba(0,216,193,0.08))',
-                  border: '1px solid rgba(0,216,193,0.35)',
-                  color: '#00D8C1',
+                  background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
+                  border: '1px solid rgba(251,191,36,0.35)',
+                  color: '#FBBF24',
                 }}
               >
                 <Pencil className="w-4 h-4" strokeWidth={2.25} />
