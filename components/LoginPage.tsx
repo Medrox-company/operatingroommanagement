@@ -5,7 +5,7 @@ import {
   Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft,
   Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
   LogIn, Sparkles, KeyRound, Zap, HeartPulse, ChevronRight,
-  Server, Database, Wifi, CheckCircle2,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -927,27 +927,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <p className="text-[10px] text-white/25 font-medium tracking-[0.18em] uppercase">
           © {new Date().getFullYear()} OperatingRoom Manager
         </p>
-
-        {/* Status micro-indicators */}
-        <div className="flex items-center gap-3">
-          {[
-            { icon: Server,   label: 'API',  ok: true },
-            { icon: Database, label: 'DB',   ok: true },
-            { icon: Wifi,     label: 'Auth', ok: true },
-          ].map(s => (
-            <span key={s.label} className="inline-flex items-center gap-1.5 text-[9.5px] text-white/30 font-mono tracking-[0.2em] uppercase">
-              <s.icon className="w-3 h-3" strokeWidth={2.25} />
-              <span>{s.label}</span>
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{
-                  background: s.ok ? '#34d399' : '#ef4444',
-                  boxShadow: `0 0 6px ${s.ok ? '#34d39980' : '#ef444480'}`,
-                }}
-              />
-            </span>
-          ))}
-        </div>
       </footer>
     </div>
   );
