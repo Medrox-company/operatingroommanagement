@@ -182,14 +182,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.35 }}
-                className="relative font-bold tracking-tight leading-[0.95]"
-                style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)' }}
+                className="relative font-bold tracking-tight leading-[0.95] text-balance"
+                style={{ fontSize: 'clamp(1.875rem, 7vw, 4.5rem)' }}
               >
-                <span className="block text-white">
+                <span className="block text-white break-words">
                   OPERATINGROOM
                 </span>
                 <span
-                  className="block"
+                  className="block break-words"
                   style={{ color: C.yellow }}
                 >
                   MANAGER
