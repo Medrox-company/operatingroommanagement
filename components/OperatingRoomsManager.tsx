@@ -432,16 +432,54 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
   const handleUpdateRoom = async () => {
     if (!editingRoom) return;
-    
-    // Update in database
+
+    // 1) Update name + department in DB
     await updateOperatingRoom(editingRoom.id, {
       name: editingRoom.name,
       department: editingRoom.department,
     });
-    
-    const updatedRooms = roomsList.map(r =>
-      r.id === editingRoom.id ? editingRoom : r
+
+    // 2) Resolve display order — swap when target slot is occupied
+    const original = roomsList.find(r => r.id === editingRoom.id);
+    const originalOrder = original?.sort_order ?? 0;
+    const requestedOrder = editingRoom.sort_order ?? originalOrder;
+    // Clamp to valid range [0, length-1]
+    const targetOrder = Math.max(0, Math.min(roomsList.length - 1, requestedOrder));
+
+    let updatedRooms: OperatingRoom[];
+
+    if (targetOrder !== originalOrder) {
+      // Find any room currently occupying the target slot (other than the edited one)
+      const occupant = roomsList.find(
+        r => r.id !== editingRoom.id && (r.sort_order ?? 0) === targetOrder
+      );
+
+      updatedRooms = roomsList.map(r => {
+        if (r.id === editingRoom.id) {
+          // Edited room takes the requested slot + carries name/department changes
+          return { ...editingRoom, sort_order: targetOrder };
+        }
+        if (occupant && r.id === occupant.id) {
+          // Displaced room moves to the slot the edited room just vacated
+          return { ...r, sort_order: originalOrder };
+        }
+        return r;
+      });
+
+      // Persist new order for both rooms (and any others) in one batch
+      saveRoomOrder(updatedRooms);
+    } else {
+      // No reordering — just propagate name/department changes
+      updatedRooms = roomsList.map(r =>
+        r.id === editingRoom.id ? { ...editingRoom, sort_order: originalOrder } : r
+      );
+    }
+
+    // Always keep list visually sorted by sort_order
+    updatedRooms = [...updatedRooms].sort(
+      (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
     );
+
     setRoomsList(updatedRooms);
     onRoomsChange?.(updatedRooms);
     setEditingRoom(null);
