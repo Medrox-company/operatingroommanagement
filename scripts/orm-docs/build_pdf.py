@@ -1,3 +1,13 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "reportlab>=4.2.0",
+#     "matplotlib>=3.9.0",
+#     "networkx>=3.3",
+#     "Pillow>=10.4.0",
+#     "numpy>=2.0.0",
+# ]
+# ///
 """Generuje finální PDF dokumentaci aplikace OperatingRoom Manager.
 
 Výstupní PDF je v dark designu sjednoceném s LoginPage:
@@ -12,8 +22,15 @@ Výstup: public/orm-documentation.pdf
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from datetime import datetime
+
+# Zajistí, aby se diagrams.py našel ve stejném adresáři jako tento skript,
+# i když uv spustí skript z jiné cwd.
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
 
 from reportlab.lib.colors import HexColor, Color
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
@@ -27,7 +44,7 @@ from reportlab.platypus import (
     TableOfContents, NextPageTemplate, FrameBreak, HRFlowable,
 )
 
-from diagrams import render_all
+from diagrams import render_all  # noqa: E402  (import po sys.path setupu)
 
 # ============================================================================
 # Design tokens — sladěno s LoginPage.tsx
@@ -1233,7 +1250,7 @@ def section_glossary(styles, story):
 
     terms = [
         ("ARO",  "Anesteziologicko-resuscitační oddělení."),
-        ("COS",  "Centrální operační sály — útvar řídící provoz operačních traktů."),
+        ("COS",  "Centrální operační sály — útvar ř��dící provoz operačních traktů."),
         ("RBAC", "Role-Based Access Control — přístupy řízené rolemi."),
         ("RLS",  "Row Level Security — Postgres mechanismus pro kontrolu řádkového přístupu."),
         ("CDC",  "Change Data Capture — Supabase Realtime emituje změny v DB jako události."),
