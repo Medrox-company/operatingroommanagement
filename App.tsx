@@ -217,7 +217,7 @@ const AppContent: React.FC = () => {
       current_step_index: number;
       phase_started_at: string;
       operation_started_at: string | null;
-      status_history: Array<{ stepIndex: number; startedAt: string; color: string }>;
+      status_history: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>;
       completed_operations: Array<{ startedAt: string; endedAt: string; statusHistory: any[] }>;
     } | null = null;
 
