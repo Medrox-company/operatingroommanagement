@@ -139,13 +139,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [hoveredRole, setHoveredRole] = useState<QuickRoleId | null>(null);
 
-  // Live time chip — gives the page a real-time feel
-  const [now, setNow] = useState<Date>(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
   // Pointer-follow spotlight on hero
   const heroRef = useRef<HTMLElement | null>(null);
   const [spot, setSpot] = useState<{ x: number; y: number } | null>(null);
@@ -191,12 +184,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setSpot({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
-
-  const formattedTime = now.toLocaleTimeString('cs-CZ', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
 
   return (
     <div className="min-h-screen w-full text-white relative overflow-hidden flex flex-col font-sans">
@@ -285,30 +272,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </AnimatePresence>
         </div>
 
-        {/* Right: live status chip */}
-        <div
-          className="hidden sm:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(12px)',
-          }}
-        >
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span
-              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-              style={{ background: '#34d399' }}
-            />
-            <span
-              className="relative inline-flex rounded-full h-2 w-2"
-              style={{ background: '#34d399' }}
-            />
-          </span>
-          <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/70">
-            Systém online
-          </span>
-          <span className="text-[10px] font-mono text-white/40 tabular-nums">{formattedTime}</span>
-        </div>
+
       </header>
 
       {/* ═════════════════════════ MAIN ═════════════════════════ */}
