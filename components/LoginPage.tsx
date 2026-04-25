@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft,
   Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
   LogIn, Sparkles, KeyRound, Zap, Globe, HeartPulse, ChevronRight,
+  Server, Database, Wifi, TrendingUp, Users, CheckCircle2,
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -27,8 +28,10 @@ const QUICK_ROLES: Array<{
   color: string;
   /** Krátký popis */
   description: string;
+  /** Označení nejdoporučenější role */
+  featured?: boolean;
 }> = [
-  { id: 'admin',      label: 'Administrátor', email: 'admin@nemocnice.cz',      password: 'admin123',  icon: Shield,         color: '#FBBF24', description: 'Plný přístup ke všem funkcím' },
+  { id: 'admin',      label: 'Administrátor', email: 'admin@nemocnice.cz',      password: 'admin123',  icon: Shield,         color: '#FBBF24', description: 'Plný přístup ke všem funkcím', featured: true },
   { id: 'aro',        label: 'ARO',           email: 'aro@nemocnice.cz',        password: 'aro123',    icon: Activity,       color: '#00d4ff', description: 'Anesteziologicko-resuscitační oddělení' },
   { id: 'cos',        label: 'COS',           email: 'cos@nemocnice.cz',        password: 'cos123',    icon: Stethoscope,    color: '#34d399', description: 'Centrální operační sály' },
   { id: 'management', label: 'Management',    email: 'management@nemocnice.cz', password: 'mgmt123',   icon: Briefcase,      color: '#a78bfa', description: 'Vedení nemocnice' },
@@ -47,6 +50,156 @@ const FEATURES: Array<{
   { icon: Zap,        title: 'Rychlé rozhodování',   description: 'Statistiky a analýza výkonu',      color: '#34d399' },
 ];
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATED EKG WAVE — subtle medical motif behind hero
+   ═══════════════════════════════════════════════════════════════════════════ */
+const EkgWave: React.FC = () => (
+  <svg
+    aria-hidden
+    className="absolute left-0 right-0 top-1/2 -translate-y-1/2 w-full h-32 md:h-40 pointer-events-none opacity-[0.35]"
+    viewBox="0 0 1200 120"
+    preserveAspectRatio="none"
+    style={{ filter: 'blur(0.5px)' }}
+  >
+    <defs>
+      <linearGradient id="ekgFade" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor={CYAN} stopOpacity="0" />
+        <stop offset="20%" stopColor={CYAN} stopOpacity="0.6" />
+        <stop offset="50%" stopColor={CYAN} stopOpacity="1" />
+        <stop offset="80%" stopColor={CYAN} stopOpacity="0.6" />
+        <stop offset="100%" stopColor={CYAN} stopOpacity="0" />
+      </linearGradient>
+    </defs>
+    <motion.path
+      d="M0,60 L200,60 L240,60 L260,30 L280,90 L300,15 L320,105 L340,60 L500,60 L540,60 L560,40 L580,80 L600,60 L900,60 L940,60 L960,30 L980,90 L1000,15 L1020,105 L1040,60 L1200,60"
+      fill="none"
+      stroke="url(#ekgFade)"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 2.5, ease: 'easeInOut' }}
+    />
+  </svg>
+);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOATING PARTICLES — ambient cyan dots drifting up
+   ═══════════════════════════════════════════════════════════════════════════ */
+const PARTICLES = [
+  { left: '8%',  delay: 0,   size: 3,   dur: 14 },
+  { left: '22%', delay: 4,   size: 2,   dur: 18 },
+  { left: '40%', delay: 8,   size: 4,   dur: 16 },
+  { left: '58%', delay: 2,   size: 2,   dur: 20 },
+  { left: '76%', delay: 6,   size: 3,   dur: 15 },
+  { left: '92%', delay: 10,  size: 2,   dur: 17 },
+];
+
+const FloatingParticles: React.FC = () => (
+  <div aria-hidden className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+    {PARTICLES.map((p, i) => (
+      <motion.span
+        key={i}
+        className="absolute rounded-full"
+        style={{
+          left: p.left,
+          bottom: '-20px',
+          width: p.size,
+          height: p.size,
+          background: i % 3 === 0 ? ACCENT : CYAN,
+          boxShadow: `0 0 12px ${i % 3 === 0 ? ACCENT : CYAN}80`,
+        }}
+        animate={{ y: ['-10vh', '-110vh'], opacity: [0, 0.7, 0.7, 0] }}
+        transition={{
+          duration: p.dur,
+          delay: p.delay,
+          repeat: Infinity,
+          ease: 'linear',
+          times: [0, 0.05, 0.95, 1],
+        }}
+      />
+    ))}
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIVE METRICS TICKER — fake-but-believable medical dashboard stats
+   ═══════════════════════════════════════════════════════════════════════════ */
+const LiveMetrics: React.FC = () => {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(x => x + 1), 4000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Slight live jitter so values feel alive
+  const operations = 142 + (tick % 5);
+  const occupancy = 78 + ((tick * 3) % 9);
+  const staff = 24 + (tick % 3);
+
+  const items = [
+    { icon: Activity,    label: 'Operací dnes',   value: operations.toString(),    color: CYAN,     suffix: '' },
+    { icon: TrendingUp,  label: 'Vytížení sálů',  value: occupancy.toString(),     color: ACCENT,   suffix: '%' },
+    { icon: Users,       label: 'Personál na dir.',value: staff.toString(),         color: '#34d399',suffix: '' },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.55, duration: 0.4 }}
+      className="relative flex items-center justify-center gap-3 sm:gap-4 flex-wrap mt-12"
+    >
+      {items.map((item, i) => (
+        <div
+          key={item.label}
+          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            style={{
+              background: `${item.color}12`,
+              border: `1px solid ${item.color}25`,
+            }}
+          >
+            <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} strokeWidth={2.5} />
+          </div>
+          <div className="flex flex-col items-start leading-tight">
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={item.value}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.18 }}
+                className="text-base font-bold tabular-nums"
+                style={{ color: item.color }}
+              >
+                {item.value}{item.suffix}
+              </motion.span>
+            </AnimatePresence>
+            <span className="text-[9px] font-semibold tracking-[0.18em] uppercase text-white/40">
+              {item.label}
+            </span>
+          </div>
+          {i < items.length - 1 && (
+            <span className="hidden sm:block w-px h-6 bg-white/[0.06] ml-1" aria-hidden />
+          )}
+        </div>
+      ))}
+    </motion.div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════════════════════ */
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const { login } = useAuth();
   const [screen, setScreen] = useState<Screen>('intro');
@@ -58,6 +211,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [hoveredRole, setHoveredRole] = useState<QuickRoleId | null>(null);
 
   // Live time chip — gives the page a real-time feel
   const [now, setNow] = useState<Date>(() => new Date());
@@ -65,6 +219,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Pointer-follow spotlight on hero
+  const heroRef = useRef<HTMLElement | null>(null);
+  const [spot, setSpot] = useState<{ x: number; y: number } | null>(null);
 
   const submitCredentials = async (mail: string, pwd: string) => {
     setError(null);
@@ -103,6 +261,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const handleHeroPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSpot({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   const formattedTime = now.toLocaleTimeString('cs-CZ', {
     hour: '2-digit',
     minute: '2-digit',
@@ -111,7 +274,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen w-full text-white relative overflow-hidden flex flex-col font-sans">
-      {/* ========= BACKGROUND LAYERS ========= */}
+      {/* ═════════════════════════ BACKGROUND LAYERS ═════════════════════════ */}
       {/* Deep navy radial */}
       <div
         aria-hidden
@@ -145,6 +308,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         />
       </div>
 
+      {/* Floating particles */}
+      <FloatingParticles />
+
       {/* Subtle grid */}
       <div
         aria-hidden
@@ -167,7 +333,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         }}
       />
 
-      {/* ========= HEADER ========= */}
+      {/* ═════════════════════════ HEADER ═════════════════════════ */}
       <header className="relative z-10 px-6 md:px-10 py-5 flex items-center justify-between gap-4">
         {/* Left: back button (only when not on intro) */}
         <div className="min-w-[110px]">
@@ -219,19 +385,41 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
       </header>
 
-      {/* ========= MAIN ========= */}
+      {/* ═════════════════════════ MAIN ═════════════════════════ */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-10 py-6">
         <AnimatePresence mode="wait">
-          {/* ============================ INTRO ============================ */}
+          {/* ════════════════════════════ INTRO ════════════════════════════ */}
           {screen === 'intro' && (
             <motion.section
               key="intro"
+              ref={heroRef}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
+              onPointerMove={handleHeroPointerMove}
+              onPointerLeave={() => setSpot(null)}
               className="w-full max-w-3xl text-center relative"
             >
+              {/* Cursor-follow spotlight (subtle) */}
+              {spot && (
+                <div
+                  aria-hidden
+                  className="absolute pointer-events-none rounded-full transition-opacity duration-300"
+                  style={{
+                    left: spot.x - 200,
+                    top: spot.y - 200,
+                    width: 400,
+                    height: 400,
+                    background: `radial-gradient(circle, ${CYAN}18 0%, transparent 60%)`,
+                    filter: 'blur(20px)',
+                  }}
+                />
+              )}
+
+              {/* EKG wave behind title */}
+              <EkgWave />
+
               {/* Ghost watermark "ORM" with conic ring */}
               <div
                 aria-hidden
@@ -279,14 +467,26 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     border: `1px solid ${CYAN}30`,
                   }}
                 >
-                  <HeartPulse className="w-3.5 h-3.5" style={{ color: CYAN }} strokeWidth={2.5} />
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <HeartPulse className="w-3.5 h-3.5" style={{ color: CYAN }} strokeWidth={2.5} />
+                  </motion.div>
                 </div>
                 <span className="text-[10px] font-semibold tracking-[0.32em] uppercase text-white/70">
                   Operating Room Manager
                 </span>
+                <span className="w-px h-3 bg-white/10" aria-hidden />
+                <span
+                  className="text-[10px] font-semibold tracking-[0.2em] uppercase"
+                  style={{ color: '#34d399' }}
+                >
+                  v1.0
+                </span>
               </motion.div>
 
-              {/* Title */}
+              {/* Title — outline + fill stacked */}
               <motion.h1
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -344,16 +544,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               >
                 <button
                   onClick={() => goToScreen('form')}
-                  className="group inline-flex items-center gap-2.5 px-7 md:px-9 py-3.5 rounded-2xl font-semibold text-[13px] tracking-[0.18em] uppercase transition-all duration-200 active:scale-[0.98] hover:scale-[1.02]"
+                  className="group relative overflow-hidden inline-flex items-center gap-2.5 px-7 md:px-9 py-3.5 rounded-2xl font-semibold text-[13px] tracking-[0.18em] uppercase transition-all duration-200 active:scale-[0.98] hover:scale-[1.02]"
                   style={{
                     background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT}e0 100%)`,
                     color: '#0a0f1a',
                     boxShadow: `0 14px 40px -10px ${ACCENT}80, 0 0 0 1px ${ACCENT}40 inset`,
                   }}
                 >
-                  <LogIn className="w-4 h-4" strokeWidth={2.5} />
-                  <span>Přihlášení</span>
-                  <ChevronRight className="w-4 h-4 -ml-1 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+                  {/* Sweep sheen */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%)',
+                    }}
+                  />
+                  <LogIn className="relative w-4 h-4" strokeWidth={2.5} />
+                  <span className="relative">Přihlášení</span>
+                  <ChevronRight className="relative w-4 h-4 -ml-1 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
                 </button>
 
                 <button
@@ -370,12 +578,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </button>
               </motion.div>
 
-              {/* Trust chips — under CTA */}
+              {/* Live metrics ticker */}
+              <LiveMetrics />
+
+              {/* Trust chips — under metrics */}
               <motion.div
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-                className="relative mt-10 flex items-center justify-center gap-2 flex-wrap"
+                transition={{ delay: 0.65, duration: 0.4 }}
+                className="relative mt-7 flex items-center justify-center gap-2 flex-wrap"
               >
                 {[
                   { icon: Shield, label: '256-bit šifrování' },
@@ -395,20 +606,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </span>
                 ))}
               </motion.div>
-
-              {/* Footer hint */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.4 }}
-                className="relative mt-12 text-[10px] font-medium tracking-[0.28em] uppercase text-white/25"
-              >
-                v1.0 · Secure auth · Encrypted session
-              </motion.p>
             </motion.section>
           )}
 
-          {/* ============================ FORM ============================ */}
+          {/* ════════════════════════════ FORM ════════════════════════════ */}
           {screen === 'form' && (
             <motion.section
               key="form"
@@ -419,7 +620,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               className="w-full max-w-5xl"
             >
               <div className="grid lg:grid-cols-[1.05fr_1fr] gap-6 lg:gap-8 items-stretch">
-                {/* ===== Left: feature panel (hidden on mobile) ===== */}
+                {/* ═══════ Left: feature panel (hidden on mobile) ═══════ */}
                 <div
                   className="hidden lg:flex flex-col justify-between rounded-3xl p-10 relative overflow-hidden"
                   style={{
@@ -435,6 +636,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     className="absolute -top-32 -left-32 w-72 h-72 rounded-full opacity-[0.18] pointer-events-none"
                     style={{ background: `radial-gradient(circle, ${CYAN} 0%, transparent 65%)` }}
                   />
+
+                  {/* Decorative ORM watermark */}
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-10 -right-6 font-black tracking-tighter leading-none pointer-events-none select-none"
+                    style={{
+                      fontSize: '12rem',
+                      color: 'rgba(255,255,255,0.02)',
+                    }}
+                  >
+                    ORM
+                  </span>
 
                   <div className="relative">
                     <div
@@ -484,9 +697,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       </motion.li>
                     ))}
                   </ul>
+
+                  {/* Bottom signature row */}
+                  <div className="relative mt-10 pt-6 border-t border-white/[0.06] flex items-center justify-between">
+                    <span className="text-[10px] font-semibold tracking-[0.22em] uppercase text-white/40">
+                      Nasazeno · Stable
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-white/35">
+                      <CheckCircle2 className="w-3 h-3" style={{ color: '#34d399' }} strokeWidth={2.5} />
+                      <span>Verze 1.0.0</span>
+                    </span>
+                  </div>
                 </div>
 
-                {/* ===== Right: form ===== */}
+                {/* ═══════ Right: form ═══════ */}
                 <div
                   className="rounded-3xl p-8 md:p-10 relative overflow-hidden"
                   style={{
@@ -648,29 +872,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         )}
                       </AnimatePresence>
 
-                      {/* Submit */}
+                      {/* Submit with sweep sheen */}
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-semibold text-[13px] tracking-[0.2em] uppercase transition-all duration-200 active:scale-[0.99] hover:scale-[1.01] disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100"
+                        className="group relative overflow-hidden w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-semibold text-[13px] tracking-[0.2em] uppercase transition-all duration-200 active:scale-[0.99] hover:scale-[1.01] disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100"
                         style={{
                           background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT}dd 100%)`,
                           color: '#0a0f1a',
                           boxShadow: `0 12px 32px -12px ${ACCENT}80, 0 0 0 1px ${ACCENT}40 inset`,
                         }}
                       >
+                        <span
+                          aria-hidden
+                          className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out pointer-events-none"
+                          style={{
+                            background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%)',
+                          }}
+                        />
                         {isLoading ? (
                           <>
                             <span
-                              className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"
+                              className="relative w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"
                               aria-hidden
                             />
-                            <span>Přihlašuji…</span>
+                            <span className="relative">Přihlašuji…</span>
                           </>
                         ) : (
                           <>
-                            <LogIn className="w-4 h-4" strokeWidth={2.5} />
-                            <span>Přihlásit se</span>
+                            <LogIn className="relative w-4 h-4" strokeWidth={2.5} />
+                            <span className="relative">Přihlásit se</span>
                           </>
                         )}
                       </button>
@@ -695,7 +926,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </motion.section>
           )}
 
-          {/* ============================ DEMO ============================ */}
+          {/* ════════════════════════════ DEMO ════════════════════════════ */}
           {screen === 'demo' && (
             <motion.section
               key="demo"
@@ -734,6 +965,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {QUICK_ROLES.map((role, i) => {
                   const Icon = role.icon;
+                  const isHovered = hoveredRole === role.id;
                   return (
                     <motion.button
                       key={role.id}
@@ -741,27 +973,45 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04, duration: 0.25 }}
                       onClick={() => handleQuickLogin(role.id)}
+                      onMouseEnter={() => setHoveredRole(role.id)}
+                      onMouseLeave={() => setHoveredRole(null)}
                       disabled={isLoading}
                       className="group relative text-left rounded-2xl p-5 transition-all duration-200 disabled:opacity-50 disabled:cursor-wait active:scale-[0.99] hover:-translate-y-0.5 overflow-hidden"
                       style={{
-                        background:
-                          'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: isHovered
+                          ? `linear-gradient(135deg, ${role.color}10 0%, rgba(255,255,255,0.02) 100%)`
+                          : 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+                        border: `1px solid ${isHovered ? `${role.color}50` : 'rgba(255,255,255,0.08)'}`,
                         backdropFilter: 'blur(16px)',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.borderColor = `${role.color}50`;
-                        e.currentTarget.style.background =
-                          `linear-gradient(135deg, ${role.color}10 0%, rgba(255,255,255,0.02) 100%)`;
-                        e.currentTarget.style.boxShadow = `0 16px 40px -16px ${role.color}40`;
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                        e.currentTarget.style.background =
-                          'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)';
-                        e.currentTarget.style.boxShadow = 'none';
+                        boxShadow: isHovered ? `0 16px 40px -16px ${role.color}40` : 'none',
                       }}
                     >
+                      {/* "Doporučeno" badge for featured role */}
+                      {role.featured && (
+                        <span
+                          className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8.5px] font-bold tracking-[0.18em] uppercase z-10"
+                          style={{
+                            background: `${role.color}1a`,
+                            border: `1px solid ${role.color}45`,
+                            color: role.color,
+                          }}
+                        >
+                          <Sparkles className="w-2.5 h-2.5" strokeWidth={2.5} />
+                          Top
+                        </span>
+                      )}
+
+                      {/* Watermark icon — large faded role icon in background */}
+                      <Icon
+                        aria-hidden
+                        className="absolute -bottom-3 -right-3 w-24 h-24 pointer-events-none transition-opacity duration-300"
+                        style={{
+                          color: role.color,
+                          opacity: isHovered ? 0.08 : 0.03,
+                        }}
+                        strokeWidth={1.25}
+                      />
+
                       {/* glow corner — role-tinted */}
                       <div
                         aria-hidden
@@ -784,9 +1034,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p
-                            className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45 leading-none mb-1.5"
-                          >
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45 leading-none mb-1.5">
                             Role
                           </p>
                           <h3 className="text-[15px] font-semibold text-white leading-tight">
@@ -851,12 +1099,32 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </AnimatePresence>
       </main>
 
-      {/* ========= FOOTER ========= */}
-      <footer className="relative z-10 px-6 md:px-10 py-5 flex items-center justify-center gap-2.5">
-        <HeartPulse className="w-3 h-3 text-white/25" strokeWidth={2.5} />
-        <p className="text-[10px] text-white/25 font-medium tracking-[0.18em] uppercase text-center">
+      {/* ═════════════════════════ FOOTER ═════════════════════════ */}
+      <footer className="relative z-10 px-6 md:px-10 py-5 flex items-center justify-between gap-4 flex-wrap">
+        <p className="text-[10px] text-white/25 font-medium tracking-[0.18em] uppercase">
           © {new Date().getFullYear()} OperatingRoom Manager
         </p>
+
+        {/* Status micro-indicators */}
+        <div className="flex items-center gap-3">
+          {[
+            { icon: Server,   label: 'API',  ok: true },
+            { icon: Database, label: 'DB',   ok: true },
+            { icon: Wifi,     label: 'Auth', ok: true },
+          ].map(s => (
+            <span key={s.label} className="inline-flex items-center gap-1.5 text-[9.5px] text-white/30 font-mono tracking-[0.2em] uppercase">
+              <s.icon className="w-3 h-3" strokeWidth={2.25} />
+              <span>{s.label}</span>
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: s.ok ? '#34d399' : '#ef4444',
+                  boxShadow: `0 0 6px ${s.ok ? '#34d39980' : '#ef444480'}`,
+                }}
+              />
+            </span>
+          ))}
+        </div>
       </footer>
     </div>
   );
