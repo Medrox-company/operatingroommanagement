@@ -374,44 +374,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </span>
               </div>
 
-              {/* Brand mark — pill above title */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="relative inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full mb-6"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(12px)',
-                }}
-              >
-                <div
-                  className="w-6 h-6 rounded-md flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${CYAN}30 0%, ${ACCENT}20 100%)`,
-                    border: `1px solid ${CYAN}30`,
-                  }}
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <HeartPulse className="w-3.5 h-3.5" style={{ color: CYAN }} strokeWidth={2.5} />
-                  </motion.div>
-                </div>
-                <span className="text-[10px] font-semibold tracking-[0.32em] uppercase text-white/70">
-                  Operating Room Manager
-                </span>
-                <span className="w-px h-3 bg-white/10" aria-hidden />
-                <span
-                  className="text-[10px] font-semibold tracking-[0.2em] uppercase"
-                  style={{ color: '#34d399' }}
-                >
-                  v1.0
-                </span>
-              </motion.div>
-
               {/* Title — outline + fill stacked */}
               <motion.h1
                 initial={{ opacity: 0, y: 12 }}
