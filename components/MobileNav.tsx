@@ -1,7 +1,7 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
-import { Shield } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 interface MobileNavProps {
   currentView: string;
@@ -9,14 +9,23 @@ interface MobileNavProps {
 }
 
 const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) => {
-  const { isAdmin, hasModuleAccess } = useAuth();
+  const { isAdmin, hasModuleAccess, logout } = useAuth();
 
   // Filter sidebar items based on role + module access - memoized for performance
+  // Admins keep all 5 items; logout button replaces the Admin tab.
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
     if (item.id === 'dashboard') return true;
     if (isAdmin) return true;
     return hasModuleAccess(item.id);
-  }).slice(0, isAdmin ? 4 : 5), [isAdmin, hasModuleAccess]);
+  }).slice(0, 5), [isAdmin, hasModuleAccess]);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('[v0] Mobile logout failed', err);
+    }
+  }, [logout]);
 
   return (
     <nav
@@ -49,21 +58,19 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
         );
       })}
 
-      {/* Admin Button - only for admins */}
-      {isAdmin && (
-        <button
-          onClick={() => onNavigate('admin')}
-          aria-label="Admin"
-          className={`
-            relative flex flex-col items-center justify-center gap-1 min-w-[56px] py-2 px-3 rounded-xl transition-all duration-200
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
-            ${currentView === 'admin' ? 'text-[#00D8C1] bg-[#00D8C1]/15' : 'text-white/50 active:bg-white/10'}
-          `}
-        >
-          <Shield className="w-6 h-6" strokeWidth={currentView === 'admin' ? 2.5 : 2} />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Admin</span>
-        </button>
-      )}
+      {/* Logout Button — visible to every authenticated user */}
+      <button
+        onClick={handleLogout}
+        aria-label="Odhlásit se"
+        className="
+          relative flex flex-col items-center justify-center gap-1 min-w-[56px] py-2 px-3 rounded-xl transition-all duration-200
+          text-white/50 active:bg-red-500/15 active:text-red-300
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+        "
+      >
+        <LogOut className="w-6 h-6" strokeWidth={2} aria-hidden />
+        <span className="text-[9px] font-bold uppercase tracking-wider">Odhlásit</span>
+      </button>
     </nav>
   );
 });
