@@ -158,15 +158,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         {/* Logo */}
         <div className="flex items-center gap-2.5">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden"
             style={{
               background: C.glass,
               border: `1px solid ${C.border}`,
             }}
           >
-            <span className="text-[10px] font-black tracking-tight" style={{ color: C.accent }}>
-              ORM
-            </span>
+            <img
+              src="/images/logo.png"
+              alt="OperatingRoom Manager"
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
 
