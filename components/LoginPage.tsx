@@ -5,7 +5,7 @@ import {
   Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft,
   Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
   LogIn, Sparkles, KeyRound, Zap, Globe, HeartPulse, ChevronRight,
-  Server, Database, Wifi, TrendingUp, Users, CheckCircle2,
+  Server, Database, Wifi, CheckCircle2,
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -122,80 +122,6 @@ const FloatingParticles: React.FC = () => (
     ))}
   </div>
 );
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   LIVE METRICS TICKER — fake-but-believable medical dashboard stats
-   ═══════════════════════════════════════════════════════════════════════════ */
-const LiveMetrics: React.FC = () => {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setTick(x => x + 1), 4000);
-    return () => clearInterval(t);
-  }, []);
-
-  // Slight live jitter so values feel alive
-  const operations = 142 + (tick % 5);
-  const occupancy = 78 + ((tick * 3) % 9);
-  const staff = 24 + (tick % 3);
-
-  const items = [
-    { icon: Activity,    label: 'Operací dnes',   value: operations.toString(),    color: CYAN,     suffix: '' },
-    { icon: TrendingUp,  label: 'Vytížení sálů',  value: occupancy.toString(),     color: ACCENT,   suffix: '%' },
-    { icon: Users,       label: 'Personál na dir.',value: staff.toString(),         color: '#34d399',suffix: '' },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.55, duration: 0.4 }}
-      className="relative flex items-center justify-center gap-3 sm:gap-4 flex-wrap mt-12"
-    >
-      {items.map((item, i) => (
-        <div
-          key={item.label}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            backdropFilter: 'blur(16px)',
-          }}
-        >
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{
-              background: `${item.color}12`,
-              border: `1px solid ${item.color}25`,
-            }}
-          >
-            <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} strokeWidth={2.5} />
-          </div>
-          <div className="flex flex-col items-start leading-tight">
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={item.value}
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.18 }}
-                className="text-base font-bold tabular-nums"
-                style={{ color: item.color }}
-              >
-                {item.value}{item.suffix}
-              </motion.span>
-            </AnimatePresence>
-            <span className="text-[9px] font-semibold tracking-[0.18em] uppercase text-white/40">
-              {item.label}
-            </span>
-          </div>
-          {i < items.length - 1 && (
-            <span className="hidden sm:block w-px h-6 bg-white/[0.06] ml-1" aria-hidden />
-          )}
-        </div>
-      ))}
-    </motion.div>
-  );
-};
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -578,10 +504,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </button>
               </motion.div>
 
-              {/* Live metrics ticker */}
-              <LiveMetrics />
-
-              {/* Trust chips — under metrics */}
+              {/* Trust chips */}
               <motion.div
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
