@@ -18,7 +18,8 @@ type Screen = 'intro' | 'form' | 'demo';
    DESIGN TOKENS — matching the rest of the app
    ═══════════════════════════════════════════════════════════════════════════ */
 const C = {
-  accent: '#06B6D4',
+  accent: '#FBBF24',
+  cyan: '#06B6D4',
   yellow: '#FBBF24',
   green: '#10B981',
   orange: '#F97316',
@@ -42,7 +43,7 @@ const QUICK_ROLES: Array<{
   description: string;
 }> = [
   { id: 'admin',      label: 'Administrátor', email: 'admin@nemocnice.cz',      password: 'admin123',  icon: Shield,         color: C.yellow, description: 'Plný přístup' },
-  { id: 'aro',        label: 'ARO',           email: 'aro@nemocnice.cz',        password: 'aro123',    icon: Activity,       color: C.accent, description: 'Anestezie' },
+  { id: 'aro',        label: 'ARO',           email: 'aro@nemocnice.cz',        password: 'aro123',    icon: Activity,       color: C.cyan, description: 'Anestezie' },
   { id: 'cos',        label: 'COS',           email: 'cos@nemocnice.cz',        password: 'cos123',    icon: Stethoscope,    color: C.green,  description: 'Operační sály' },
   { id: 'management', label: 'Management',    email: 'management@nemocnice.cz', password: 'mgmt123',   icon: Briefcase,      color: C.purple, description: 'Vedení' },
   { id: 'primar',     label: 'Primariát',     email: 'primar@nemocnice.cz',     password: 'primar123', icon: ClipboardList,  color: C.pink,   description: 'Primář' },
