@@ -121,24 +121,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       {/* Header strip — branding */}
       <header className="relative z-10 px-6 md:px-10 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(12px)',
-            }}
-          >
-            <span className="text-[11px] font-black tracking-tight" style={{ color: ACCENT }}>
-              ORM
-            </span>
-          </div>
-          <span className="text-[10px] font-semibold tracking-[0.32em] uppercase text-white/45">
-            OperatingRoom
-          </span>
-        </div>
-
         <AnimatePresence>
           {screen !== 'intro' && (
             <motion.button
