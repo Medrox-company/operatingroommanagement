@@ -190,23 +190,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </span>
               </div>
 
-              {/* Kicker */}
-              <motion.p
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05, duration: 0.3 }}
-                className="relative text-[10px] md:text-[11px] font-semibold uppercase tracking-[0.45em] mb-7"
-                style={{ color: CYAN }}
-              >
-                <span className="inline-block px-3 py-1.5 rounded-full"
-                  style={{
-                    background: `${CYAN}10`,
-                    border: `1px solid ${CYAN}25`,
-                    backdropFilter: 'blur(12px)',
-                  }}>
-                  Operating Room Management
-                </span>
-              </motion.p>
+
 
               {/* Title */}
               <motion.h1
