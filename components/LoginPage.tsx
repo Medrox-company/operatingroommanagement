@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Lock, Mail, Eye, EyeOff, AlertCircle,
+  Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft,
   Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
 } from 'lucide-react';
 
@@ -11,13 +11,12 @@ interface LoginPageProps {
 }
 
 type QuickRoleId = 'admin' | 'user' | 'aro' | 'cos' | 'management' | 'primar';
+type Screen = 'intro' | 'form' | 'demo';
 
 /**
- * DEMO účty — jen pro ukázku. Přihlašování probíhá server-side (rate-limited
- * /api/auth/login) proti bcrypt hashím v DB, takže i kdyby někdo tato hesla
- * zneužil, jsou chráněna limitem pokusů. V PRODUKCI je nutné:
- *   1) tyto účty deaktivovat (app_users.is_active = false) nebo změnit hesla,
- *   2) odstranit QUICK_ROLES níže, aby se demo hesla nevystavovala v UI.
+ * DEMO účty — přihlašování probíhá server-side (rate-limited /api/auth/login)
+ * proti bcrypt hashím v DB. V PRODUKCI: deaktivovat tyto účty nebo odstranit
+ * QUICK_ROLES, aby se demo hesla nevystavovala v UI.
  */
 const QUICK_ROLES: Array<{
   id: QuickRoleId;
@@ -25,239 +24,423 @@ const QUICK_ROLES: Array<{
   email: string;
   password: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: string;
 }> = [
-  { id: 'admin',      label: 'Administrátor', email: 'admin@nemocnice.cz',      password: 'admin123',  icon: Shield,        color: '#00D8C1' },
-  { id: 'aro',        label: 'ARO',           email: 'aro@nemocnice.cz',        password: 'aro123',    icon: Activity,      color: '#EF4444' },
-  { id: 'cos',        label: 'COS',           email: 'cos@nemocnice.cz',        password: 'cos123',    icon: Stethoscope,   color: '#06B6D4' },
-  { id: 'management', label: 'Management',    email: 'management@nemocnice.cz', password: 'mgmt123',   icon: Briefcase,     color: '#F59E0B' },
-  { id: 'primar',     label: 'Primariát',     email: 'primar@nemocnice.cz',     password: 'primar123', icon: ClipboardList, color: '#A855F7' },
-  { id: 'user',       label: 'Uživatel',      email: 'user@nemocnice.cz',       password: 'user123',   icon: User,          color: '#64748B' },
+  { id: 'admin',      label: 'ADMINISTRÁTOR', email: 'admin@nemocnice.cz',      password: 'admin123',  icon: Shield },
+  { id: 'aro',        label: 'ARO',           email: 'aro@nemocnice.cz',        password: 'aro123',    icon: Activity },
+  { id: 'cos',        label: 'COS',           email: 'cos@nemocnice.cz',        password: 'cos123',    icon: Stethoscope },
+  { id: 'management', label: 'MANAGEMENT',    email: 'management@nemocnice.cz', password: 'mgmt123',   icon: Briefcase },
+  { id: 'primar',     label: 'PRIMARIÁT',     email: 'primar@nemocnice.cz',     password: 'primar123', icon: ClipboardList },
+  { id: 'user',       label: 'UŽIVATEL',      email: 'user@nemocnice.cz',       password: 'user123',   icon: User },
 ];
+
+const ACCENT = '#FBBF24'; // brutalist yellow
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const { login } = useAuth();
+  const [screen, setScreen] = useState<Screen>('intro');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<QuickRoleId | null>(null);
 
-  const handleQuickLogin = (roleId: QuickRoleId) => {
-    const role = QUICK_ROLES.find(r => r.id === roleId);
-    if (!role) return;
-    setSelectedRole(roleId);
-    setEmail(role.email);
-    setPassword(role.password);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitCredentials = async (mail: string, pwd: string) => {
     setError(null);
     setIsLoading(true);
-
-    const result = await login(email, password);
-    
+    const result = await login(mail, pwd);
+    setIsLoading(false);
     if (result.success) {
       onLoginSuccess?.();
     } else {
       setError(result.error || 'Přihlášení se nezdařilo');
     }
-    
-    setIsLoading(false);
+    return result.success;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submitCredentials(email, password);
+  };
+
+  const handleQuickLogin = async (roleId: QuickRoleId) => {
+    const role = QUICK_ROLES.find(r => r.id === roleId);
+    if (!role) return;
+    setEmail(role.email);
+    setPassword(role.password);
+    await submitCredentials(role.email, role.password);
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-200px] left-[-200px] w-[900px] h-[900px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #A855F7 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[-300px] right-[-300px] w-[1000px] h-[1000px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #00D8C1 0%, transparent 70%)' }} />
-      </div>
-
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 opacity-[0.02]"
+    <div className="min-h-screen w-full bg-black text-white relative overflow-hidden flex flex-col font-sans">
+      {/* Subtle grid pattern */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.025] pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
+          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+          backgroundSize: '64px 64px',
         }}
       />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative z-10"
-      >
-        {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center justify-center mb-4"
-          >
-            <img
-              src="/logo.png"
-              alt="Operating Room Manager logo"
-              className="w-32 h-32 object-contain"
-              style={{ filter: 'drop-shadow(0 0 24px rgba(0,216,193,0.25))' }}
-            />
-          </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Operating Room Manager</h1>
-          <p className="text-white/40 text-sm tracking-wide text-[10px] leading-none h-0 overflow-hidden"></p>
+      {/* Top bar */}
+      <header className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-6">
+        <div className="flex items-center gap-2 text-[10px] sm:text-xs font-mono uppercase tracking-[0.4em] text-white/40">
+          <span
+            className="inline-block w-1.5 h-1.5 rounded-full"
+            style={{ background: ACCENT, boxShadow: `0 0 8px ${ACCENT}` }}
+          />
+          <span>OPERATINGROOM / V1</span>
         </div>
-
-        {/* Login Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-8"
-        >
-          {/* Quick Role Selection */}
-          <div className="mb-6">
-            <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-3">Rychlé přihlášení</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-              {QUICK_ROLES.map((role) => {
-                const Icon = role.icon;
-                const isSelected = selectedRole === role.id;
-                return (
-                  <motion.button
-                    key={role.id}
-                    type="button"
-                    onClick={() => handleQuickLogin(role.id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="p-3 rounded-2xl border transition-all flex flex-col items-center gap-1.5 min-h-[84px]"
-                    style={{
-                      background: isSelected ? `${role.color}22` : 'rgba(255,255,255,0.02)',
-                      borderColor: isSelected ? `${role.color}80` : 'rgba(255,255,255,0.1)',
-                      color: isSelected ? role.color : 'rgba(255,255,255,0.6)',
-                    }}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-[11px] font-medium leading-tight text-center">{role.label}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-white/30 text-xs uppercase tracking-widest">nebo</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Input */}
-            <div>
-              <label className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 block">
-                E-mail
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vas@email.cz"
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-[#00D8C1]/50 focus:ring-1 focus:ring-[#00D8C1]/30 transition-all"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <label className="text-white/50 text-xs font-medium uppercase tracking-widest mb-2 block">
-                Heslo
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-12 pr-12 text-white placeholder:text-white/20 focus:outline-none focus:border-[#00D8C1]/50 focus:ring-1 focus:ring-[#00D8C1]/30 transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Error Message */}
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm"
-                >
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{error}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Submit Button */}
+        <AnimatePresence>
+          {screen !== 'intro' && (
             <motion.button
-              type="submit"
-              disabled={isLoading || !email || !password}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="w-full py-4 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: 'linear-gradient(135deg, #00D8C1 0%, #00A896 100%)',
-                boxShadow: '0 0 30px rgba(0,216,193,0.3)'
+              key="back"
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 8 }}
+              onClick={() => {
+                setScreen('intro');
+                setError(null);
               }}
+              className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.3em] text-white/50 hover:text-white transition-colors"
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                  />
-                  Přihlašování...
-                </span>
-              ) : (
-                'Přihlásit se'
-              )}
+              <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2.5} />
+              ZPĚT
             </motion.button>
-          </form>
+          )}
+        </AnimatePresence>
+      </header>
 
-          {/* Demo Credentials Info */}
-          <div className="mt-6 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-            <p className="text-white/30 text-[11px] text-center leading-relaxed">
-              Demo přístupy (klikni výše pro rychlé vyplnění):<br />
-              <span className="text-white/50">admin · aro · cos · management · primar · user</span><br />
-              <span className="text-white/40">@nemocnice.cz — heslo: <code>role123</code> (mgmt123 pro management)</span>
-            </p>
-          </div>
-        </motion.div>
+      {/* Content */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-6 sm:px-10 py-8">
+        <AnimatePresence mode="wait">
+          {screen === 'intro' && (
+            <IntroScreen
+              key="intro"
+              onLogin={() => setScreen('form')}
+              onDemo={() => setScreen('demo')}
+            />
+          )}
+          {screen === 'form' && (
+            <FormScreen
+              key="form"
+              email={email}
+              password={password}
+              showPassword={showPassword}
+              isLoading={isLoading}
+              error={error}
+              onEmail={setEmail}
+              onPassword={setPassword}
+              onTogglePassword={() => setShowPassword(p => !p)}
+              onSubmit={handleSubmit}
+            />
+          )}
+          {screen === 'demo' && (
+            <DemoScreen
+              key="demo"
+              isLoading={isLoading}
+              error={error}
+              onQuickLogin={handleQuickLogin}
+            />
+          )}
+        </AnimatePresence>
+      </main>
 
-        {/* Footer */}
-        <p className="text-center text-white/20 text-xs mt-6">
-          Operating Room Manager {new Date().getFullYear()} • Všechna práva vyhrazena
-        </p>
-      </motion.div>
+      {/* Footer */}
+      <footer className="relative z-10 px-6 sm:px-10 py-5 flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.3em] text-white/25">
+        <span>© {new Date().getFullYear()} OPERATINGROOM MANAGER</span>
+        <span className="hidden sm:inline">SECURE LOGIN · BCRYPT · RATE LIMITED</span>
+      </footer>
     </div>
   );
 };
+
+/* ─── Intro screen ──────────────────────────────────────────────────────── */
+
+const IntroScreen: React.FC<{ onLogin: () => void; onDemo: () => void }> = ({
+  onLogin,
+  onDemo,
+}) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.35 }}
+    className="relative w-full max-w-5xl flex flex-col items-center text-center"
+  >
+    {/* Ghost watermark "ORM" */}
+    <span
+      aria-hidden
+      className="pointer-events-none select-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black tracking-tighter text-white/[0.035] leading-[0.85]"
+      style={{
+        fontSize: 'clamp(18rem, 42vw, 36rem)',
+        letterSpacing: '-0.06em',
+      }}
+    >
+      ORM
+    </span>
+
+    {/* Headline */}
+    <motion.h1
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.1, duration: 0.5 }}
+      className="relative font-black tracking-tighter uppercase leading-[0.88]"
+      style={{ fontSize: 'clamp(3rem, 11vw, 9rem)' }}
+    >
+      <span className="block text-white text-balance">OPERATINGROOM</span>
+      <span
+        className="block text-balance"
+        style={{ color: ACCENT, textShadow: `0 0 60px ${ACCENT}30` }}
+      >
+        MANAGER
+      </span>
+    </motion.h1>
+
+    {/* Subtitle */}
+    <motion.p
+      initial={{ y: 12, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.25, duration: 0.4 }}
+      className="relative mt-8 sm:mt-10 text-[11px] sm:text-xs font-mono uppercase tracking-[0.4em] text-white/55"
+    >
+      Aplikace pro řízení operačních sálů
+    </motion.p>
+
+    {/* CTAs */}
+    <motion.div
+      initial={{ y: 16, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.4, duration: 0.4 }}
+      className="relative mt-10 sm:mt-12 flex items-center gap-4"
+    >
+      <button
+        type="button"
+        onClick={onLogin}
+        className="group relative px-8 sm:px-10 py-4 font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-black transition-transform duration-150 hover:translate-y-[-1px] active:translate-y-[1px]"
+        style={{ background: ACCENT, boxShadow: `0 0 0 0 ${ACCENT}` }}
+      >
+        PŘIHLÁŠENÍ
+      </button>
+
+      <button
+        type="button"
+        onClick={onDemo}
+        className="px-8 sm:px-10 py-4 font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-white border-2 border-white/90 hover:bg-white hover:text-black transition-colors duration-150"
+      >
+        DEMO
+      </button>
+    </motion.div>
+  </motion.div>
+);
+
+/* ─── Form screen ───────────────────────────────────────────────────────── */
+
+const FormScreen: React.FC<{
+  email: string;
+  password: string;
+  showPassword: boolean;
+  isLoading: boolean;
+  error: string | null;
+  onEmail: (v: string) => void;
+  onPassword: (v: string) => void;
+  onTogglePassword: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+}> = ({
+  email, password, showPassword, isLoading, error,
+  onEmail, onPassword, onTogglePassword, onSubmit,
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -12 }}
+    transition={{ duration: 0.3 }}
+    className="w-full max-w-md"
+  >
+    {/* Section label */}
+    <div className="mb-8">
+      <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-white/40 mb-3">
+        / 01 · AUTHENTICATION
+      </p>
+      <h2
+        className="font-black uppercase tracking-tighter leading-none"
+        style={{ fontSize: 'clamp(2.5rem, 7vw, 4rem)' }}
+      >
+        <span className="block text-white">PŘIHLÁŠENÍ</span>
+      </h2>
+      <div
+        className="mt-4 h-[3px] w-16"
+        style={{ background: ACCENT }}
+      />
+    </div>
+
+    <form onSubmit={onSubmit} className="space-y-5">
+      {/* Email */}
+      <div>
+        <label className="block text-[10px] font-mono uppercase tracking-[0.4em] text-white/50 mb-2">
+          E-MAIL
+        </label>
+        <div className="relative">
+          <Mail
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"
+            strokeWidth={2}
+          />
+          <input
+            type="email"
+            value={email}
+            onChange={e => onEmail(e.target.value)}
+            placeholder="vas@email.cz"
+            autoComplete="email"
+            required
+            className="w-full bg-transparent border-0 border-b border-white/20 pl-7 pr-2 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#FBBF24] transition-colors font-mono text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Password */}
+      <div>
+        <label className="block text-[10px] font-mono uppercase tracking-[0.4em] text-white/50 mb-2">
+          HESLO
+        </label>
+        <div className="relative">
+          <Lock
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30"
+            strokeWidth={2}
+          />
+          <input
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={e => onPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            required
+            className="w-full bg-transparent border-0 border-b border-white/20 pl-7 pr-9 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#FBBF24] transition-colors font-mono text-sm"
+          />
+          <button
+            type="button"
+            onClick={onTogglePassword}
+            aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
+            className="absolute right-0 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Error */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-start gap-2 px-3 py-2.5 border border-red-500/40 bg-red-500/5 text-red-300 text-xs font-mono"
+          >
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-px" />
+            <span className="leading-relaxed">{error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Submit */}
+      <button
+        type="submit"
+        disabled={isLoading || !email || !password}
+        className="w-full mt-2 py-4 font-mono text-xs font-bold uppercase tracking-[0.3em] text-black transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:translate-y-[-1px] enabled:active:translate-y-[1px]"
+        style={{ background: ACCENT }}
+      >
+        {isLoading ? (
+          <span className="inline-flex items-center justify-center gap-2.5">
+            <motion.span
+              animate={{ rotate: 360 }}
+              transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+              className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full"
+            />
+            PŘIHLAŠUJI
+          </span>
+        ) : (
+          'PŘIHLÁSIT SE'
+        )}
+      </button>
+    </form>
+  </motion.div>
+);
+
+/* ─── Demo screen ───────────────────────────────────────────────────────── */
+
+const DemoScreen: React.FC<{
+  isLoading: boolean;
+  error: string | null;
+  onQuickLogin: (id: QuickRoleId) => void;
+}> = ({ isLoading, error, onQuickLogin }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -12 }}
+    transition={{ duration: 0.3 }}
+    className="w-full max-w-3xl"
+  >
+    <div className="mb-8 text-center">
+      <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-white/40 mb-3">
+        / 02 · DEMO ACCESS
+      </p>
+      <h2
+        className="font-black uppercase tracking-tighter leading-none"
+        style={{ fontSize: 'clamp(2.5rem, 7vw, 4rem)' }}
+      >
+        <span className="block text-white">VYBERTE</span>
+        <span className="block" style={{ color: ACCENT }}>ROLI</span>
+      </h2>
+      <p className="mt-5 text-[11px] font-mono uppercase tracking-[0.3em] text-white/40">
+        Klikněte pro přímé přihlášení
+      </p>
+    </div>
+
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {QUICK_ROLES.map(role => {
+        const Icon = role.icon;
+        return (
+          <button
+            key={role.id}
+            type="button"
+            onClick={() => onQuickLogin(role.id)}
+            disabled={isLoading}
+            className="group relative p-5 sm:p-6 border-2 border-white/15 hover:border-[#FBBF24] bg-white/[0.02] hover:bg-[#FBBF24] transition-colors duration-150 text-left disabled:opacity-50 disabled:cursor-wait"
+          >
+            <Icon
+              className="w-5 h-5 text-white/60 group-hover:text-black transition-colors mb-4"
+              strokeWidth={2}
+            />
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-white group-hover:text-black transition-colors leading-tight">
+              {role.label}
+            </p>
+            <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.15em] text-white/35 group-hover:text-black/60 transition-colors truncate">
+              {role.email.split('@')[0]}
+            </p>
+          </button>
+        );
+      })}
+    </div>
+
+    <AnimatePresence>
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          className="mt-6 flex items-start gap-2 px-3 py-2.5 border border-red-500/40 bg-red-500/5 text-red-300 text-xs font-mono"
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-px" />
+          <span className="leading-relaxed">{error}</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    <p className="mt-8 text-center text-[10px] font-mono uppercase tracking-[0.3em] text-white/25">
+      Hesla: role123 · mgmt123 pro management
+    </p>
+  </motion.div>
+);
 
 export default LoginPage;
