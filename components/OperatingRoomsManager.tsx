@@ -3,10 +3,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_WORKING_HOURS } from '../types';
 import { MOCK_ROOMS } from '../constants';
 import { updateOperatingRoom, createOperatingRoom, deleteOperatingRoom } from '../lib/db';
-import { 
-  Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar, 
-  Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft
+import {
+  Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar,
+  Building2, ChevronDown, ChevronUp, Settings, Power, ArrowLeft, GripVertical,
 } from 'lucide-react';
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface OperatingRoomsManagerProps {
   rooms?: OperatingRoom[];
@@ -321,6 +338,89 @@ const RoomCard: React.FC<{
   );
 };
 
+/* Sortable wrapper around RoomCard — adds drag handle + up/down arrows */
+const SortableRoomCard: React.FC<{
+  room: OperatingRoom;
+  index: number;
+  total: number;
+  onEdit: () => void;
+  onDelete: () => void;
+  onScheduleEdit: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}> = ({ room, index, total, onEdit, onDelete, onScheduleEdit, onMoveUp, onMoveDown }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: room.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 'auto',
+    opacity: isDragging ? 0.85 : 1,
+  };
+
+  const canMoveUp = index > 0;
+  const canMoveDown = index < total - 1;
+
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? 'cursor-grabbing' : ''}>
+      {/* Reorder controls bar */}
+      <div className="flex items-center justify-between gap-2 px-1 mb-1.5">
+        {/* Drag handle */}
+        <button
+          type="button"
+          aria-label={`Přetáhnout ${room.name}`}
+          {...attributes}
+          {...listeners}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-white/40 hover:text-cyan-300 hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors cursor-grab active:cursor-grabbing touch-none"
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+          <span className="text-[10px] font-mono uppercase tracking-wider">
+            #{index + 1}
+          </span>
+        </button>
+
+        {/* Arrow buttons */}
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={!canMoveUp}
+            aria-label="Posunout nahoru"
+            title="Posunout nahoru"
+            className="p-1.5 rounded-md transition-all bg-white/[0.03] border border-white/10 text-white/60 hover:bg-white/[0.08] hover:text-white disabled:opacity-25 disabled:hover:bg-white/[0.03] disabled:hover:text-white/60 disabled:cursor-not-allowed"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={!canMoveDown}
+            aria-label="Posunout dolů"
+            title="Posunout dolů"
+            className="p-1.5 rounded-md transition-all bg-white/[0.03] border border-white/10 text-white/60 hover:bg-white/[0.08] hover:text-white disabled:opacity-25 disabled:hover:bg-white/[0.03] disabled:hover:text-white/60 disabled:cursor-not-allowed"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <RoomCard
+        room={room}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onScheduleEdit={onScheduleEdit}
+      />
+    </div>
+  );
+};
+
 /* Main Component */
 const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   rooms: initialRooms,
@@ -432,20 +532,83 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
   const handleUpdateRoom = async () => {
     if (!editingRoom) return;
-    
-    // Update in database
+
     await updateOperatingRoom(editingRoom.id, {
       name: editingRoom.name,
       department: editingRoom.department,
     });
-    
+
+    const original = roomsList.find(r => r.id === editingRoom.id);
+    const originalOrder = original?.sort_order ?? 0;
+
     const updatedRooms = roomsList.map(r =>
-      r.id === editingRoom.id ? editingRoom : r
+      r.id === editingRoom.id
+        ? { ...editingRoom, sort_order: originalOrder }
+        : r
     );
+
     setRoomsList(updatedRooms);
     onRoomsChange?.(updatedRooms);
     setEditingRoom(null);
   };
+
+  /**
+   * Reorder a room by a single step (used by ↑/↓ arrows on each card).
+   * Re-stamps sort_order to match array index and persists to DB.
+   */
+  const moveRoom = useCallback(
+    (id: string, direction: 'up' | 'down') => {
+      setRoomsList(prev => {
+        const idx = prev.findIndex(r => r.id === id);
+        if (idx < 0) return prev;
+        const target = direction === 'up' ? idx - 1 : idx + 1;
+        if (target < 0 || target >= prev.length) return prev;
+
+        const next = arrayMove(prev, idx, target).map((r, i) => ({
+          ...r,
+          sort_order: i,
+        }));
+
+        onRoomsChange?.(next);
+        saveRoomOrder(next);
+        return next;
+      });
+    },
+    [onRoomsChange, saveRoomOrder]
+  );
+
+  /**
+   * Drag-and-drop reorder. Same persistence pipeline as moveRoom().
+   */
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      setRoomsList(prev => {
+        const oldIndex = prev.findIndex(r => r.id === active.id);
+        const newIndex = prev.findIndex(r => r.id === over.id);
+        if (oldIndex < 0 || newIndex < 0) return prev;
+
+        const next = arrayMove(prev, oldIndex, newIndex).map((r, i) => ({
+          ...r,
+          sort_order: i,
+        }));
+
+        onRoomsChange?.(next);
+        saveRoomOrder(next);
+        return next;
+      });
+    },
+    [onRoomsChange, saveRoomOrder]
+  );
+
+  // Sensors: small activation distance prevents drag triggering on plain clicks
+  // (so the inner ↑/↓ + edit/delete buttons keep working).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const handleUpdateSchedule = (roomId: string, newSchedule: WeeklySchedule) => {
     const updatedRooms = roomsList.map(r =>
@@ -564,18 +727,33 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         </button>
       )}
 
-      {/* Rooms Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {roomsList.map((room) => (
-          <RoomCard
-            key={room.id}
-            room={room}
-            onEdit={() => setEditingRoom(room)}
-            onDelete={() => setDeleteConfirm(room.id)}
-            onScheduleEdit={() => setScheduleEditRoom(room)}
-          />
-        ))}
-      </div>
+      {/* Rooms Grid — drag & drop reordering */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={roomsList.map(r => r.id)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roomsList.map((room, idx) => (
+              <SortableRoomCard
+                key={room.id}
+                room={room}
+                index={idx}
+                total={roomsList.length}
+                onEdit={() => setEditingRoom(room)}
+                onDelete={() => setDeleteConfirm(room.id)}
+                onScheduleEdit={() => setScheduleEditRoom(room)}
+                onMoveUp={() => moveRoom(room.id, 'up')}
+                onMoveDown={() => moveRoom(room.id, 'down')}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Empty State */}
       {roomsList.length === 0 && (
@@ -716,16 +894,9 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Pořadí zobrazení</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={(editingRoom.sort_order ?? 0) + 1}
-                    onChange={(e) => setEditingRoom({ ...editingRoom, sort_order: Math.max(0, parseInt(e.target.value) || 1) - 1 })}
-                    className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
-                  />
-                </div>
+                <p className="text-[11px] text-white/40 leading-relaxed">
+                  Pořadí zobrazení změníte přímo na kartách sálů — táhnutím za ikonu vlevo nahoře nebo šipkami vpravo nahoře.
+                </p>
               </div>
               <div className="flex gap-3">
                 <button
