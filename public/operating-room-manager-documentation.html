@@ -1,0 +1,2188 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="OperatingRoom Manager — kompletní dokumentace aplikace, architektury, API, databáze a uživatelských workflow." />
+<title>OperatingRoom Manager — Kompletní dokumentace</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================================
+   DESIGN TOKENS — sjednoceno s LoginPage / aplikací
+   ============================================================ */
+:root {
+  --bg:           #020617;
+  --bg-2:         #0a0f1f;
+  --surface:      rgba(255,255,255,0.025);
+  --glass:        rgba(255,255,255,0.04);
+  --border:       rgba(255,255,255,0.07);
+  --border-2:     rgba(255,255,255,0.12);
+  --text:         rgba(255,255,255,0.92);
+  --text-soft:    rgba(255,255,255,0.7);
+  --muted:        rgba(255,255,255,0.45);
+  --muted-2:      rgba(255,255,255,0.3);
+
+  --accent:       #FBBF24; /* yellow — brand z LoginPage */
+  --accent-soft:  rgba(251,191,36,0.16);
+  --accent-bg:    rgba(251,191,36,0.06);
+
+  --cyan:         #06B6D4;
+  --green:        #10B981;
+  --red:          #EF4444;
+  --orange:       #F97316;
+  --purple:       #A855F7;
+  --pink:         #EC4899;
+  --blue:         #3B82F6;
+
+  --radius-sm:    8px;
+  --radius:       14px;
+  --radius-lg:    22px;
+  --radius-xl:    28px;
+
+  --font-sans:    "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+
+  --shadow-glow:  0 0 0 1px rgba(251,191,36,0.18), 0 12px 48px -12px rgba(251,191,36,0.18);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(251,191,36,0.08), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(6,182,212,0.05), transparent 60%),
+    var(--bg);
+}
+
+/* Subtle grain pro tisk */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 25% 30%, rgba(251,191,36,0.06), transparent 35%),
+    radial-gradient(circle at 75% 70%, rgba(6,182,212,0.04), transparent 35%);
+  z-index: 0;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+::selection { background: var(--accent); color: #020617; }
+
+/* ============================================================
+   HEADER (sticky, hidden při tisku)
+   ============================================================ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(2,6,23,0.78);
+  border-bottom: 1px solid var(--border);
+}
+.app-header__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  flex: 1; min-width: 0;
+}
+.brand__icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(251,191,36,0.25);
+  display: grid; place-items: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.brand__title {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.brand__sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: var(--muted);
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--glass); }
+.btn--primary {
+  background: var(--accent);
+  color: #020617;
+  border-color: var(--accent);
+}
+.btn--primary:hover { filter: brightness(1.1); }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.shell {
+  position: relative; z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 36px;
+}
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; padding: 16px 16px 64px; }
+  .toc { display: none; }
+}
+
+/* ============================================================
+   TABLE OF CONTENTS (sidebar)
+   ============================================================ */
+.toc {
+  position: sticky; top: 84px;
+  align-self: start;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.toc__heading {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+  font-weight: 700;
+}
+.toc__list { list-style: none; padding: 0; margin: 0; }
+.toc__link {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-soft);
+  border-left: 2px solid transparent;
+}
+.toc__link:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  text-decoration: none;
+}
+.toc__num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 20px;
+}
+.toc__meta {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   COVER PAGE
+   ============================================================ */
+.cover {
+  position: relative;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-2);
+  background:
+    linear-gradient(135deg, rgba(251,191,36,0.10) 0%, rgba(2,6,23,1) 70%);
+  padding: 64px 48px;
+  overflow: hidden;
+  margin-bottom: 56px;
+}
+.cover::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(251,191,36,0.18) 1px, transparent 0);
+  background-size: 40px 40px;
+  opacity: 0.25;
+}
+.cover__inner { position: relative; z-index: 1; }
+.cover__eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 24px;
+}
+.cover__title {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0 0 20px;
+}
+.cover__title em {
+  font-style: normal;
+  color: var(--accent);
+}
+.cover__lede {
+  max-width: 640px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-soft);
+  margin: 0 0 28px;
+}
+.cover__metrics {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+@media (max-width: 720px) {
+  .cover { padding: 40px 24px; }
+  .cover__metrics { grid-template-columns: repeat(2, 1fr); }
+}
+.metric__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.metric__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+.badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+}
+.badge--accent { background: var(--accent-soft); color: var(--accent); border-color: rgba(251,191,36,0.32); }
+.badge--cyan   { background: rgba(6,182,212,0.12);  color: var(--cyan);   border-color: rgba(6,182,212,0.3); }
+.badge--green  { background: rgba(16,185,129,0.12); color: var(--green);  border-color: rgba(16,185,129,0.3); }
+.badge--red    { background: rgba(239,68,68,0.12);  color: var(--red);    border-color: rgba(239,68,68,0.3); }
+.badge--orange { background: rgba(249,115,22,0.12); color: var(--orange); border-color: rgba(249,115,22,0.3); }
+.badge--purple { background: rgba(168,85,247,0.12); color: var(--purple); border-color: rgba(168,85,247,0.3); }
+.badge--blue   { background: rgba(59,130,246,0.12); color: var(--blue);   border-color: rgba(59,130,246,0.3); }
+.badge--pink   { background: rgba(236,72,153,0.12); color: var(--pink);   border-color: rgba(236,72,153,0.3); }
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.section {
+  margin: 0 0 80px;
+  scroll-margin-top: 80px;
+}
+.section__head { margin-bottom: 32px; }
+.section__num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.section__title {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0 0 16px;
+}
+.section__lede {
+  max-width: 720px;
+  color: var(--text-soft);
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ============================================================
+   CARDS / GRIDS
+   ============================================================ */
+.card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+}
+.card--accent {
+  border-color: rgba(251,191,36,0.25);
+  background: linear-gradient(135deg, rgba(251,191,36,0.05), rgba(255,255,255,0.02));
+}
+.card__heading {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.card__title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+.card__body { color: var(--text-soft); }
+.card__body p { margin: 0 0 12px; }
+.card__body p:last-child { margin-bottom: 0; }
+
+.grid { display: grid; gap: 16px; }
+.grid--2 { grid-template-columns: repeat(2, 1fr); }
+.grid--3 { grid-template-columns: repeat(3, 1fr); }
+.grid--4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 800px) {
+  .grid--2, .grid--3, .grid--4 { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+h2.h-heading {
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 32px 0 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+h3.h-sub {
+  font-size: 16px; font-weight: 700;
+  margin: 24px 0 10px;
+  letter-spacing: -0.005em;
+}
+.kicker {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+p.lead { font-size: 15px; color: var(--text-soft); }
+ul.list, ol.list {
+  padding-left: 20px;
+  color: var(--text-soft);
+}
+ul.list li, ol.list li { margin: 6px 0; }
+.muted { color: var(--muted); }
+strong { color: var(--text); font-weight: 700; }
+
+/* ============================================================
+   CODE / TABLES
+   ============================================================ */
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text);
+}
+pre {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  overflow-x: auto;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+pre code { background: none; border: none; padding: 0; }
+.kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 13px;
+}
+.tbl thead {
+  background: rgba(255,255,255,0.05);
+}
+.tbl th, .tbl td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.tbl th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+}
+.tbl td { color: var(--text-soft); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(255,255,255,0.02); }
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ============================================================
+   METHOD chips for API
+   ============================================================ */
+.method {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+.method-GET    { background: rgba(16,185,129,0.18); color: var(--green); }
+.method-POST   { background: rgba(59,130,246,0.18); color: var(--blue); }
+.method-PUT    { background: rgba(249,115,22,0.18); color: var(--orange); }
+.method-PATCH  { background: rgba(245,158,11,0.18); color: var(--accent); }
+.method-DELETE { background: rgba(239,68,68,0.18);  color: var(--red); }
+
+/* ============================================================
+   STEP / WORKFLOW
+   ============================================================ */
+.steps {
+  display: grid;
+  gap: 12px;
+}
+.step {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+.step__num {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 800; font-size: 13px;
+}
+.step__name { font-weight: 700; font-size: 14px; }
+.step__by   { font-size: 12px; color: var(--muted); }
+.step__time {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+/* ============================================================
+   DIAGRAM containers (Mermaid)
+   ============================================================ */
+.diagram {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram .mermaid {
+  display: inline-block;
+  min-width: 100%;
+  text-align: left;
+}
+.diagram__caption {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* ============================================================
+   ROLE / MODULE CARDS
+   ============================================================ */
+.role {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.role__dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.role__name { font-weight: 700; font-size: 14px; }
+.role__desc { font-size: 12.5px; color: var(--text-soft); margin-top: 2px; }
+
+/* ============================================================
+   PRINT STYLES → PDF tisk
+   ============================================================ */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #0a0f1f !important;
+    font-size: 10.5pt !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-scheme: light;
+  }
+  body::before { display: none !important; }
+
+  .app-header, .toc, .no-print { display: none !important; }
+  .shell {
+    grid-template-columns: 1fr !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    gap: 0 !important;
+  }
+  .cover {
+    background: #f8fafc !important;
+    color: #0a0f1f !important;
+    border: 2px solid var(--accent) !important;
+    page-break-after: always;
+  }
+  .cover::before { display: none !important; }
+  .cover__title { color: #0a0f1f !important; }
+  .cover__title em { color: #b45309 !important; }
+  .cover__lede { color: #1e293b !important; }
+  .cover__eyebrow { color: #b45309 !important; }
+  .metric__value { color: #b45309 !important; }
+  .metric__label { color: #475569 !important; }
+
+  .section {
+    page-break-inside: avoid;
+    margin-bottom: 32px;
+  }
+  .section__title { color: #0a0f1f !important; }
+  .section__num   { color: #b45309 !important; }
+  .section__lede  { color: #334155 !important; }
+
+  .card, .step, .role, .toc, .diagram, table.tbl {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0a0f1f !important;
+  }
+  .card__title, h2.h-heading, h3.h-sub { color: #0a0f1f !important; }
+  .card__body, .role__desc, .tbl td, p, ul.list li, ol.list li { color: #1e293b !important; }
+  .card__heading, .toc__heading, .kicker, .tbl th { color: #b45309 !important; }
+  .muted, .toc__meta, .step__by { color: #64748b !important; }
+  code, pre, .mono, .kbd {
+    background: #e2e8f0 !important;
+    color: #0a0f1f !important;
+    border-color: #cbd5e1 !important;
+  }
+  a { color: #b45309 !important; text-decoration: underline; }
+  .badge { border-color: #cbd5e1 !important; background: #f1f5f9 !important; color: #0a0f1f !important; }
+
+  /* Force page breaks before each section */
+  section.section { page-break-before: auto; break-before: auto; }
+  section.section.section--break { page-break-before: always; break-before: page; }
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.flex      { display: flex; }
+.flex-col  { flex-direction: column; }
+.gap-2     { gap: 8px; }
+.gap-3     { gap: 12px; }
+.gap-4     { gap: 16px; }
+.mt-2      { margin-top: 8px; }
+.mt-3      { margin-top: 12px; }
+.mt-4      { margin-top: 16px; }
+.mt-6      { margin-top: 24px; }
+.mb-2      { margin-bottom: 8px; }
+.mb-4      { margin-bottom: 16px; }
+.mb-6      { margin-bottom: 24px; }
+.text-center { text-align: center; }
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0;
+}
+</style>
+</head>
+<body>
+
+<!-- ========================================================
+     STICKY HEADER
+     ======================================================== -->
+<header class="app-header no-print">
+  <div class="app-header__inner">
+    <div class="brand">
+      <div class="brand__icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div>
+        <div class="brand__sub">Documentation</div>
+        <div class="brand__title">OperatingRoom Manager</div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="window.print()" aria-label="Tisk / Uložit jako PDF">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Tisk
+    </button>
+    <button class="btn btn--primary" onclick="window.print()" aria-label="Stáhnout jako PDF">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Stáhnout PDF
+    </button>
+  </div>
+</header>
+
+<!-- ========================================================
+     SHELL: TOC + Main
+     ======================================================== -->
+<div class="shell">
+  <!-- TOC -->
+  <aside class="toc no-print">
+    <div class="toc__heading">Obsah</div>
+    <ul class="toc__list">
+      <li><a class="toc__link" href="#cover"><span class="toc__num">00</span><span>Úvod</span></a></li>
+      <li><a class="toc__link" href="#prehled"><span class="toc__num">01</span><span>Přehled aplikace</span></a></li>
+      <li><a class="toc__link" href="#architektura"><span class="toc__num">02</span><span>Architektura</span></a></li>
+      <li><a class="toc__link" href="#autentizace"><span class="toc__num">03</span><span>Autentizace &amp; role</span></a></li>
+      <li><a class="toc__link" href="#moduly"><span class="toc__num">04</span><span>Moduly aplikace</span></a></li>
+      <li><a class="toc__link" href="#workflow"><span class="toc__num">05</span><span>Workflow &amp; stavy</span></a></li>
+      <li><a class="toc__link" href="#api"><span class="toc__num">06</span><span>API Reference</span></a></li>
+      <li><a class="toc__link" href="#databaze"><span class="toc__num">07</span><span>Databáze</span></a></li>
+      <li><a class="toc__link" href="#zavislosti"><span class="toc__num">08</span><span>Závislosti diagram</span></a></li>
+      <li><a class="toc__link" href="#technologie"><span class="toc__num">09</span><span>Technologie &amp; ENV</span></a></li>
+      <li><a class="toc__link" href="#navod"><span class="toc__num">10</span><span>Návod k používání</span></a></li>
+      <li><a class="toc__link" href="#bezpecnost"><span class="toc__num">11</span><span>Bezpečnost</span></a></li>
+      <li><a class="toc__link" href="#troubleshooting"><span class="toc__num">12</span><span>Troubleshooting</span></a></li>
+    </ul>
+    <div class="toc__meta">
+      v1.0.0 &middot; <span id="today"></span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- ============== COVER ============== -->
+    <section id="cover" class="cover">
+      <div class="cover__inner">
+        <div class="cover__eyebrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span>OperatingRoom Manager</span>
+        </div>
+        <h1 class="cover__title">Kompletní<br/><em>dokumentace</em></h1>
+        <p class="cover__lede">
+          Podrobný technický referenční dokument popisující architekturu, moduly,
+          workflow operačních sálů, API, databázi, role uživatelů a kompletní
+          návod k používání. Obsahuje dependency diagramy, ER schéma databáze
+          a popis všech 12 modulů aplikace s vazbami na 15 databázových tabulek.
+        </p>
+        <div class="badges">
+          <span class="badge badge--accent">v1.0.0</span>
+          <span class="badge badge--cyan">Next.js 15.2</span>
+          <span class="badge badge--green">Supabase</span>
+          <span class="badge badge--purple">React 18</span>
+          <span class="badge badge--orange">TypeScript 5.8</span>
+          <span class="badge">12 sekcí</span>
+          <span class="badge">7 diagramů</span>
+        </div>
+        <div class="cover__metrics">
+          <div>
+            <div class="metric__label">Verze</div>
+            <div class="metric__value">1.0.0</div>
+          </div>
+          <div>
+            <div class="metric__label">DB tabulek</div>
+            <div class="metric__value">15</div>
+          </div>
+          <div>
+            <div class="metric__label">API endpointů</div>
+            <div class="metric__value">12</div>
+          </div>
+          <div>
+            <div class="metric__label">Modulů</div>
+            <div class="metric__value">12</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== 01 PŘEHLED ============== -->
+    <section id="prehled" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">01 — Přehled</div>
+        <h2 class="section__title">Co aplikace dělá</h2>
+        <p class="section__lede">
+          OperatingRoom Manager je real-time systém pro řízení operačních sálů ve
+          zdravotnickém zařízení. Sleduje workflow operací krok za krokem, koordinuje
+          personál, generuje statistiky a notifikace pro management. Změny se synchronizují
+          přes Supabase Realtime na všechna zařízení do 2 sekund.
+        </p>
+      </div>
+
+      <div class="grid grid--3 mb-4">
+        <div class="card card--accent">
+          <div class="card__heading">Real-time stav</div>
+          <h3 class="card__title">Stav sálů</h3>
+          <p class="card__body">
+            Aktuální fáze workflow každého sálu (8 hlavních fází + 4 speciální stavy),
+            informace o pacientovi, personálu, výkonu a odhadovaný čas dokončení.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Plánování</div>
+          <h3 class="card__title">Timeline a směny</h3>
+          <p class="card__body">
+            Plán operací po hodinách na týdenním pohledu, rozvrh směn personálu
+            a obsazení sálů s pravidelnými/speciálními pracovními hodinami.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Analytika</div>
+          <h3 class="card__title">Statistiky</h3>
+          <p class="card__body">
+            Vytíženost sálů, počet operací podle oddělení, průměrné délky fází,
+            nedělané operace, exporty dat. Filtrace podle data, oddělení, sálu.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Personál</div>
+          <h3 class="card__title">Správa zaměstnanců</h3>
+          <p class="card__body">
+            Lékaři, sestry, anesteziologové, jejich dovednostní úrovně (L1–L3, A, SR, N, S),
+            externí spolupráce, dostupnost, dovolené, neschopenky.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Notifikace</div>
+          <h3 class="card__title">Automatické alerty</h3>
+          <p class="card__body">
+            Email upozornění managementu na pozdní příjezd, urgentní operace,
+            denní report, nedostupnost personálu nebo pacienta.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Konfigurace</div>
+          <h3 class="card__title">Admin režim</h3>
+          <p class="card__body">
+            Kompletní konfigurace oddělení, sálů, statusů workflow, modulů
+            přístupu pro role, vzhledu a integrace e-mailů.
+          </p>
+        </div>
+      </div>
+
+      <h2 class="h-heading">Klíčové funkce</h2>
+      <ul class="list">
+        <li><strong>8-stupňový workflow</strong> operace: Sál připraven → Příjezd na sál → Začátek anestezie → Chirurgický výkon → Ukončení výkonu → Ukončení anestezie → Odjezd ze sálu → Úklid sálu.</li>
+        <li><strong>4 speciální stavy:</strong> Pauza, Hygienický režim, Volání pacienta, Příjezd do operačního traktu.</li>
+        <li><strong>Real-time synchronizace</strong> přes Supabase Realtime — změna stavu se objeví na všech klientech do 2 sekund.</li>
+        <li><strong>Optimistické UI</strong> — UI se mění okamžitě, server potvrdí v pozadí, debounce 2 s zabraňuje flickeringu z duplicitních realtime událostí.</li>
+        <li><strong>Audio alarm</strong> pro urgentní operace, automaticky zastaví po deaktivaci.</li>
+        <li><strong>Mobilní aplikace</strong> přes responsive layout (MobileShell) s vyhrazenými pohledy pro tablet/mobil.</li>
+        <li><strong>Role-based access</strong> — 6 rolí (admin, primar, management, cos, aro, user), každá s vlastním seznamem povolených modulů.</li>
+        <li><strong>Per-module řízení</strong> — administrátor může povolit/zakázat moduly nebo přístup rolí přímo z UI.</li>
+        <li><strong>Drag &amp; drop</strong> řazení sálů (perzistuje v <code>operating_rooms.sort_order</code>).</li>
+        <li><strong>Týdenní rozvrhy sálů</strong> s konfigurovatelnými hodinami pro každý den.</li>
+        <li><strong>PDF/HTML export</strong> dokumentace pomocí <code>html2canvas</code> + <code>jsPDF</code>.</li>
+        <li><strong>Customizovatelné pozadí</strong> — solid/linear/radial gradient, image overlay, blur, opacity (uložené v DB).</li>
+      </ul>
+
+      <h2 class="h-heading">Cíloví uživatelé</h2>
+      <div class="grid grid--3">
+        <div class="role"><span class="role__dot" style="background: var(--accent);"></span><div><div class="role__name">Administrátor</div><div class="role__desc">Plný přístup, konfigurace systému, správa uživatelů.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: var(--purple);"></span><div><div class="role__name">Primariát</div><div class="role__desc">Vedení oddělení, vidí dashboard, timeline, statistiky.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: var(--blue);"></span><div><div class="role__name">Management</div><div class="role__desc">Strategický přehled, statistiky, denní reporty, notifikace.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: var(--cyan);"></span><div><div class="role__name">COS</div><div class="role__desc">Centrální operační sály — koordinace všech operačních sálů.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: var(--pink);"></span><div><div class="role__name">ARO</div><div class="role__desc">Anesteziologie — fáze anestezie, urgentní operace.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: var(--green);"></span><div><div class="role__name">User</div><div class="role__desc">Zdravotní personál sálu — vlastní pohled na vybrané sály.</div></div></div>
+      </div>
+    </section>
+
+    <!-- ============== 02 ARCHITEKTURA ============== -->
+    <section id="architektura" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">02 — Architektura</div>
+        <h2 class="section__title">Vrstvy a komunikace</h2>
+        <p class="section__lede">
+          Aplikace běží jako Next.js 15 App Router na Vercel infrastruktuře. Prezentační vrstva
+          používá React 18 s Framer Motion, datová vrstva je Supabase Postgres + Realtime,
+          autentizace přes vlastní JWT session v HTTP-only cookie.
+        </p>
+      </div>
+
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    classDef client fill:#0a0f1f,stroke:#FBBF24,stroke-width:2px,color:#fff;
+    classDef server fill:#0a0f1f,stroke:#06B6D4,stroke-width:2px,color:#fff;
+    classDef db     fill:#0a0f1f,stroke:#10B981,stroke-width:2px,color:#fff;
+    classDef ext    fill:#0a0f1f,stroke:#A855F7,stroke-width:2px,color:#fff;
+
+    subgraph CLIENT["Klient (prohlížeč)"]
+      App["App.tsx<br/>(root state)"]:::client
+      Auth["AuthContext<br/>WorkflowStatusesContext"]:::client
+      Modules["12× moduly UI"]:::client
+      Hooks["Hooks:<br/>useRealtimeSubscription<br/>useEmergencyAlert<br/>useEmailNotifications<br/>useWorkflowStatuses"]:::client
+    end
+
+    subgraph EDGE["Next.js Edge / Node Runtime"]
+      Pages["app/page.tsx<br/>app/docs/page.tsx<br/>app/email-preview"]:::server
+      API["app/api/**<br/>12 endpointů"]:::server
+      Lib["lib/auth/session<br/>lib/auth/rate-limit<br/>lib/db<br/>lib/email"]:::server
+    end
+
+    subgraph SUPA["Supabase"]
+      DB[("Postgres<br/>15 tabulek<br/>RLS aktivní")]:::db
+      RT["Realtime channel<br/>(pg_notify)"]:::db
+      RPC["RPC<br/>verify_user_password<br/>(bcrypt)"]:::db
+    end
+
+    subgraph EXT["Externí služby"]
+      Mail["Resend API<br/>(volitelné)"]:::ext
+      Vercel["Vercel<br/>Hosting + Analytics"]:::ext
+    end
+
+    App --> Auth
+    Auth --> Modules
+    Modules --> Hooks
+    Hooks --> API
+    Auth -- "fetch /api/auth/*" --> API
+    API --> Lib
+    Lib --> DB
+    Lib --> RPC
+    Hooks --> RT
+    RT --> Hooks
+    API --> Mail
+    Pages --> Vercel
+        </pre>
+        <div class="diagram__caption">Diagram 1 — Systémová architektura</div>
+      </div>
+
+      <h2 class="h-heading">Struktura projektu</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th style="width:32%">Cesta</th><th>Popis</th></tr></thead>
+        <tbody>
+          <tr><td><code>app/</code></td><td>Next.js App Router — root layout, page, /docs, /email-preview, /api/**</td></tr>
+          <tr><td><code>app/api/auth/</code></td><td>Autentizace: login, logout, me</td></tr>
+          <tr><td><code>app/api/admin/</code></td><td>Admin operace: facility, export-data, import-data, reset-data</td></tr>
+          <tr><td><code>app/api/rooms/</code></td><td>GET seznam sálů (čtení s retry + transformace)</td></tr>
+          <tr><td><code>app/api/operating-rooms/reorder/</code></td><td>POST přeuspořádání sálů (sort_order batch update)</td></tr>
+          <tr><td><code>app/api/management-contacts/</code></td><td>GET/POST/PUT/DELETE management kontaktů</td></tr>
+          <tr><td><code>app/api/workflow-statuses/</code></td><td>GET/POST/PUT/DELETE konfigurace stavů workflow</td></tr>
+          <tr><td><code>app/api/send-notification/</code></td><td>POST odeslání e-mail notifikace přes Resend</td></tr>
+          <tr><td><code>components/</code></td><td>Hlavní UI moduly (LoginPage, Sidebar, RoomCard, RoomDetail, Timeline…)</td></tr>
+          <tr><td><code>components/docs/</code></td><td>In-app dokumentace s 10 sekcemi a 5 diagramy</td></tr>
+          <tr><td><code>components/mobile/</code></td><td>Mobilní pohledy: MobileShell, MobileStaffView, MobileTimelineView</td></tr>
+          <tr><td><code>contexts/</code></td><td>AuthContext (uživatel, modul access), WorkflowStatusesContext</td></tr>
+          <tr><td><code>hooks/</code></td><td>useRealtimeSubscription, useEmergencyAlert, useEmailNotifications, useWorkflowStatuses</td></tr>
+          <tr><td><code>lib/</code></td><td>db.ts (CRUD + transformace), supabase.ts/-server.ts, auth/session.ts, auth/rate-limit.ts, email.ts</td></tr>
+          <tr><td><code>scripts/</code></td><td>SQL migrace, seed data, hesla bcrypt</td></tr>
+          <tr><td><code>public/</code></td><td>Statická aktiva: logo, ikona, tato HTML dokumentace</td></tr>
+          <tr><td><code>constants.ts</code></td><td>WORKFLOW_STEPS, SPECIAL_STATUSES, STEP_DURATIONS, DEFAULT_DEPARTMENTS</td></tr>
+          <tr><td><code>types.ts</code></td><td>OperatingRoom, RoomStatus, Staff, Patient, WeeklySchedule, …</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2 class="h-heading">Datový tok</h2>
+      <ol class="list">
+        <li><strong>Client mount</strong> → AuthProvider → fetch <code>/api/auth/me</code> (HttpOnly session cookie) → uživatel + dostupné moduly z <code>app_modules</code>.</li>
+        <li><strong>Initial fetch</strong> → <code>fetch('/api/rooms')</code> → server volá <code>fetchOperatingRooms()</code> z <code>lib/db.ts</code> → Postgres přes Supabase JS klient → JSON.</li>
+        <li><strong>Realtime subscription</strong> → <code>subscribeToOperatingRooms(...)</code> v <code>App.tsx</code> → naslouchá UPDATE/INSERT/DELETE na <code>operating_rooms</code>, <code>schedules</code>, <code>staff</code>.</li>
+        <li><strong>UI mutace</strong> → optimistická úprava lokálního state → <code>updateOperatingRoom(id, changes)</code> → DB UPDATE → realtime echo se ignoruje díky <code>recentLocalUpdates</code> (debounce 2 s).</li>
+        <li><strong>Background settings</strong> → <code>app_settings</code> tabulka (1 řádek) → custom event <code>backgroundSettingsChanged</code> propaguje napříč moduly bez fetch round-tripu.</li>
+      </ol>
+    </section>
+
+    <!-- ============== 03 AUTENTIZACE ============== -->
+    <section id="autentizace" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">03 — Autentizace</div>
+        <h2 class="section__title">Login flow a role</h2>
+        <p class="section__lede">
+          Hesla jsou hashovaná v Postgres pomocí <code>pgcrypto</code> bcrypt. Server-side
+          ověření přes Supabase RPC <code>verify_user_password</code>. Session je vlastní
+          podepsaný JWT token v <strong>HTTP-only Secure cookie</strong> (žádný localStorage).
+        </p>
+      </div>
+
+      <div class="diagram">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as Uživatel
+    participant L as LoginPage
+    participant API as /api/auth/login
+    participant RL as Rate Limit (memory)
+    participant SB as Supabase RPC<br/>verify_user_password
+    participant CK as HttpOnly Cookie
+    participant App as AppContent
+    U->>L: zadá e-mail + heslo
+    L->>API: POST { email, password }
+    API->>RL: kontrola IP (10× / 5 min)
+    RL-->>API: OK
+    API->>SB: verify_user_password(email, password)
+    SB->>SB: bcrypt compare s app_users.password_hash
+    SB-->>API: { id, email, role, name } | null
+    API->>API: signSession(JWT HMAC-SHA256)
+    API->>CK: Set-Cookie: session=… HttpOnly Secure SameSite=Lax
+    API-->>L: { user }
+    L->>App: navigace do dashboardu
+    App->>API: fetch /api/auth/me (každý mount)
+    API->>CK: ověř session
+    API-->>App: { user }
+        </pre>
+        <div class="diagram__caption">Diagram 2 — Autentizační sekvence</div>
+      </div>
+
+      <h2 class="h-heading">Endpointy</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Metoda</th><th>Endpoint</th><th>Popis</th><th>Rate limit</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/auth/login</code></td><td>Ověří email + heslo, vystaví session cookie</td><td>10 / 5 min / IP</td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/auth/logout</code></td><td>Smaže session cookie</td><td>—</td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/auth/me</code></td><td>Vrátí aktuálního uživatele ze session</td><td>—</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2 class="h-heading">Role &amp; výchozí přístupy</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Role</th><th>ID</th><th>Výchozí moduly</th><th>Popis</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge--accent">Administrátor</span></td><td><code>admin</code></td><td>Vše (override)</td><td>Plný přístup, ignoruje <code>allowed_roles</code>.</td></tr>
+          <tr><td><span class="badge badge--purple">Primariát</span></td><td><code>primar</code></td><td>Dashboard, Timeline, Statistiky, Alerty</td><td>Vedení oddělení.</td></tr>
+          <tr><td><span class="badge badge--blue">Management</span></td><td><code>management</code></td><td>Dashboard, Timeline, Statistiky, Personál, Alerty</td><td>Strategický přehled.</td></tr>
+          <tr><td><span class="badge badge--cyan">COS</span></td><td><code>cos</code></td><td>Dashboard, Timeline, Statistiky, Personál, Alerty</td><td>Centrální op. sály.</td></tr>
+          <tr><td><span class="badge badge--pink">ARO</span></td><td><code>aro</code></td><td>Dashboard, Timeline, Alerty</td><td>Anesteziologie.</td></tr>
+          <tr><td><span class="badge badge--green">User</span></td><td><code>user</code></td><td>Dashboard, Timeline, Statistiky, Personál, Alerty</td><td>Standard.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2 class="h-heading">Demo účty</h2>
+      <p class="lead">
+        Tlačítka „Demo“ na LoginPage předvyplní reálné účty z DB tabulky <code>app_users</code>.
+        Hesla je nutné v produkci změnit přes Admin → Správa uživatelů, případně SQL UPDATE
+        s bcrypt hashem.
+      </p>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>E-mail</th><th>Role</th><th>Heslo (demo)</th></tr></thead>
+        <tbody>
+          <tr><td><code>admin@nemocnice.cz</code></td><td>admin</td><td><code>admin123</code></td></tr>
+          <tr><td><code>primar@nemocnice.cz</code></td><td>primar</td><td><code>primar123</code></td></tr>
+          <tr><td><code>management@nemocnice.cz</code></td><td>management</td><td><code>management123</code></td></tr>
+          <tr><td><code>cos@nemocnice.cz</code></td><td>cos</td><td><code>cos123</code></td></tr>
+          <tr><td><code>aro@nemocnice.cz</code></td><td>aro</td><td><code>aro123</code></td></tr>
+          <tr><td><code>user@nemocnice.cz</code></td><td>user</td><td><code>user123</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2 class="h-heading">Bezpečnostní opatření</h2>
+      <ul class="list">
+        <li><strong>bcrypt hash</strong> hesel s pgcrypto, ne otevřená v DB.</li>
+        <li><strong>HttpOnly Secure cookie</strong> — token nelze přečíst z JavaScriptu, není uložen v <code>localStorage</code>.</li>
+        <li><strong>SameSite=Lax</strong> — ochrana proti CSRF u většiny scénářů.</li>
+        <li><strong>JWT s HMAC-SHA256</strong>, podepsaný <code>SUPABASE_JWT_SECRET</code>; serverová validace v <code>lib/auth/session.ts</code>.</li>
+        <li><strong>Rate limit 10 pokusů / 5 min / IP</strong> v <code>lib/auth/rate-limit.ts</code>.</li>
+        <li><strong>Validace vstupu</strong> — délka e-mailu ≤ 255, hesla ≤ 512, regex pro e-mail formát.</li>
+        <li><strong>Row Level Security</strong> aktivní na všech 14 aplikačních tabulkách.</li>
+      </ul>
+    </section>
+
+    <!-- ============== 04 MODULY ============== -->
+    <section id="moduly" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">04 — Moduly</div>
+        <h2 class="section__title">12 modulů aplikace</h2>
+        <p class="section__lede">
+          Každý modul je samostatná React komponenta v <code>components/</code> s vlastním
+          stavem, vstupními props a vazbami na databázi. Standardní moduly vidí všichni
+          uživatelé podle role; admin moduly viditelné pouze administrátorům.
+        </p>
+      </div>
+
+      <h2 class="h-heading">Standardní moduly</h2>
+      <div class="grid grid--2 mb-4">
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--accent);">Dashboard</span> &middot; <code>dashboard</code></div>
+          <h3 class="card__title">Přehled sálů</h3>
+          <p class="card__body">
+            Mřížka <code>RoomCard</code> komponent zobrazujících aktuální stav, fázi workflow,
+            personál, pacienta a výkon. Klik na kartu otevře <code>RoomDetail</code> s
+            kompletními akčními tlačítky pro posun ve workflow.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">RoomCard.tsx</span>
+            <span class="badge">RoomDetail.tsx</span>
+            <span class="badge">App.tsx</span>
+            <span class="badge badge--green">operating_rooms</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--purple);">Timeline</span> &middot; <code>timeline</code></div>
+          <h3 class="card__title">Časová osa operací</h3>
+          <p class="card__body">
+            Horizontální Gantt-like pohled — sály na ose Y, hodiny dne na ose X.
+            Bloky operací s barvou podle aktuální fáze, drag pro úpravu času, kliknutím detail.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">TimelineModule.tsx</span>
+            <span class="badge">MobileTimelineView.tsx</span>
+            <span class="badge badge--green">operating_rooms</span>
+            <span class="badge badge--green">schedules</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--cyan);">Statistiky</span> &middot; <code>statistics</code></div>
+          <h3 class="card__title">Analytický modul</h3>
+          <p class="card__body">
+            Vytíženost sálů, počet operací, průměrné délky fází, přehled podle oddělení.
+            Filtry: datum (den / týden / měsíc / rok / custom), oddělení, sál, lékař.
+            Recharts vizualizace, export do CSV.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">StatisticsModule.tsx</span>
+            <span class="badge">recharts</span>
+            <span class="badge badge--green">operating_rooms</span>
+            <span class="badge badge--green">room_status_history</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--green);">Personál</span> &middot; <code>staff</code></div>
+          <h3 class="card__title">Správa personálu</h3>
+          <p class="card__body">
+            Lékaři, sestry, anesteziologové. Skill levely L1–L3 + A, SR, N, S. Externí
+            spolupráce, dovolená, neschopenka. Picker pro přiřazení k operaci.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">StaffManager.tsx</span>
+            <span class="badge">StaffPickerModal.tsx</span>
+            <span class="badge">MobileStaffView.tsx</span>
+            <span class="badge badge--green">staff</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--pink);">Upozornění</span> &middot; <code>alerts</code></div>
+          <h3 class="card__title">Notifikace &amp; e-maily</h3>
+          <p class="card__body">
+            Konfigurace e-mailových upozornění managementu — pozdní příjezd lékaře/anesteziologa,
+            urgentní operace, denní report, statistiky, jiné. Log odeslaných notifikací.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">NotificationsManager.tsx</span>
+            <span class="badge">EmailTemplate.tsx</span>
+            <span class="badge">/api/send-notification</span>
+            <span class="badge badge--green">notifications_log</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--muted);">Nastavení</span> &middot; <code>settings</code></div>
+          <h3 class="card__title">Uživatelské nastavení</h3>
+          <p class="card__body">
+            Pozadí aplikace (typ gradientu, barvy, obrázek, blur, opacity), informace o
+            zařízení, jazyk a další osobní preference.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">SettingsPage.tsx</span>
+            <span class="badge">BackgroundManager.tsx</span>
+            <span class="badge badge--green">app_settings</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="h-heading">Admin moduly (pouze admin)</h2>
+      <div class="grid grid--2 mb-4">
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--accent);">Operační sály</span></div>
+          <h3 class="card__title">OperatingRoomsManager</h3>
+          <p class="card__body">
+            CRUD operačních sálů, přiřazení k oddělení, drag &amp; drop pořadí, septický /
+            urgentní režim, týdenní pracovní hodiny pro každý sál.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">@dnd-kit/sortable</span>
+            <span class="badge">/api/operating-rooms/reorder</span>
+            <span class="badge badge--green">operating_rooms</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--accent);">Oddělení</span></div>
+          <h3 class="card__title">DepartmentsManager</h3>
+          <p class="card__body">
+            Definice oddělení a sub-oddělení (HPB, cévní, dětské, mammo, prokto…), barevný
+            akcent, popis. <code>departments</code> + <code>sub_departments</code>.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge badge--green">departments</span>
+            <span class="badge badge--green">sub_departments</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--accent);">Stavy workflow</span></div>
+          <h3 class="card__title">StatusesManager</h3>
+          <p class="card__body">
+            Konfigurace 8 hlavních fází + speciálních stavů — barva, ikona, default trvání,
+            zobrazit ve Timeline / detailu / statistikách.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">/api/workflow-statuses</span>
+            <span class="badge badge--green">workflow_statuses</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--accent);">Plány směn</span></div>
+          <h3 class="card__title">ShiftScheduleManager</h3>
+          <p class="card__body">
+            Rozvrh směn personálu — kdo na jakém sále v který den. Rezervace, výměny směn,
+            přehled disponibility.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge badge--green">shift_schedules</span>
+            <span class="badge badge--green">staff</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--accent);">Management kontakty</span></div>
+          <h3 class="card__title">ManagementManager</h3>
+          <p class="card__body">
+            E-mailové kontakty managementu pro automatické notifikace s granularním nastavením
+            kterých typů notifikací chce dostávat.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">/api/management-contacts</span>
+            <span class="badge badge--green">management_contacts</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__heading"><span style="color: var(--accent);">Systémová nastavení</span></div>
+          <h3 class="card__title">SystemSettingsModule</h3>
+          <p class="card__body">
+            Globální nastavení — povolené moduly per-role, údaje o zařízení (název, IČO,
+            adresa, kontakty), reset / export / import dat.
+          </p>
+          <div class="badges mt-3">
+            <span class="badge">/api/admin/facility</span>
+            <span class="badge">/api/admin/export-data</span>
+            <span class="badge">/api/admin/import-data</span>
+            <span class="badge">/api/admin/reset-data</span>
+            <span class="badge badge--green">app_modules</span>
+            <span class="badge badge--green">app_settings</span>
+            <span class="badge badge--green">app_users</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== 05 WORKFLOW ============== -->
+    <section id="workflow" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">05 — Workflow</div>
+        <h2 class="section__title">Životní cyklus operace</h2>
+        <p class="section__lede">
+          Workflow má 8 sekvenčních fází (definované v <code>constants.ts</code> ve <code>WORKFLOW_STEPS</code>)
+          a 4 speciální stavy spouštěné samostatnými tlačítky. Aktuální fáze sálu je
+          <code>operating_rooms.current_step_index</code> (0–7).
+        </p>
+      </div>
+
+      <div class="diagram">
+        <pre class="mermaid">
+stateDiagram-v2
+    direction LR
+    [*] --> Pripraven : sál inicializován
+    Pripraven --> Prijezd : Pacient na sále
+    Prijezd --> Anestezie : Začátek anestezie
+    Anestezie --> Operace : Začátek chir. výkonu
+    Operace --> UkonceniVykonu : Konec chir. výkonu
+    UkonceniVykonu --> UkonceniAnestezie : Probouzení
+    UkonceniAnestezie --> Odjezd : Pacient odjíždí
+    Odjezd --> Uklid : Sanitární tým
+    Uklid --> Pripraven : Sál připraven na další
+
+    Operace --> Pauza : speciální
+    Pauza --> Operace : pokračuj
+    Operace --> Hygiena : speciální
+    Hygiena --> Operace : zpět
+        </pre>
+        <div class="diagram__caption">Diagram 3 — Konečný automat workflow</div>
+      </div>
+
+      <h2 class="h-heading">8 hlavních fází</h2>
+      <div class="steps mb-4">
+        <div class="step"><div class="step__num" style="background: rgba(107,114,128,0.18); color:#9ca3af;">0</div><div><div class="step__name">Sál připraven</div><div class="step__by">Vedoucí sestra · výchozí stav po úklidu</div></div><div class="step__time">—</div></div>
+        <div class="step"><div class="step__num" style="background: rgba(139,92,246,0.18); color:#8B5CF6;">1</div><div><div class="step__name">Příjezd na sál</div><div class="step__by">Příjmový tým · pacient přivezen</div></div><div class="step__time">~5 min</div></div>
+        <div class="step"><div class="step__num" style="background: rgba(236,72,153,0.18); color:#EC4899;">2</div><div><div class="step__name">Začátek anestezie</div><div class="step__by">Anesteziolog · příprava + úvod</div></div><div class="step__time">~20 min</div></div>
+        <div class="step"><div class="step__num" style="background: rgba(239,68,68,0.18); color:#EF4444;">3</div><div><div class="step__name">Chirurgický výkon</div><div class="step__by">Chirurg · vlastní operace</div></div><div class="step__time">dle procedury</div></div>
+        <div class="step"><div class="step__num" style="background: rgba(245,158,11,0.18); color:#F59E0B;">4</div><div><div class="step__name">Ukončení výkonu</div><div class="step__by">Chirurg · šití, zavření</div></div><div class="step__time">~10 min</div></div>
+        <div class="step"><div class="step__num" style="background: rgba(168,85,247,0.18); color:#A855F7;">5</div><div><div class="step__name">Ukončení anestezie</div><div class="step__by">Anesteziolog · probouzení</div></div><div class="step__time">~15 min</div></div>
+        <div class="step"><div class="step__num" style="background: rgba(16,185,129,0.18); color:#10B981;">6</div><div><div class="step__name">Odjezd ze sálu</div><div class="step__by">Příjmový tým · transport na dospávárnu</div></div><div class="step__time">~10 min</div></div>
+        <div class="step"><div class="step__num" style="background: rgba(249,115,22,0.18); color:#F97316;">7</div><div><div class="step__name">Úklid sálu</div><div class="step__by">Sanitární tým · příprava na další</div></div><div class="step__time">~15 min</div></div>
+      </div>
+
+      <h2 class="h-heading">Speciální stavy</h2>
+      <div class="grid grid--2">
+        <div class="role"><span class="role__dot" style="background: #22D3EE;"></span><div><div class="role__name">Pauza</div><div class="role__desc">Operace pozastavena (např. čekání na výsledek vyšetření). Tlačítko v <code>RoomDetail</code>.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: #FBBF24;"></span><div><div class="role__name">Hygienický režim</div><div class="role__desc">Zvýšený hygienický standard po septické operaci.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: #3B82F6;"></span><div><div class="role__name">Volání pacienta</div><div class="role__desc">Pacient byl povolán na sál — uloží <code>patient_called_at</code>.</div></div></div>
+        <div class="role"><span class="role__dot" style="background: #06B6D4;"></span><div><div class="role__name">Příjezd do operačního traktu</div><div class="role__desc">Pacient dorazil do operačního traktu — <code>patient_arrived_at</code>.</div></div></div>
+      </div>
+
+      <h2 class="h-heading">Příznaky stavů sálu</h2>
+      <ul class="list">
+        <li><code>is_emergency</code> — urgentní operace, spustí audio alarm na všech klientech přes <code>useEmergencyAlert</code> hook.</li>
+        <li><code>is_septic</code> — septická operace, vyžaduje speciální úklid + hygienický režim.</li>
+        <li><code>is_locked</code> — sál uzamčen (např. údržba), nelze plánovat operace.</li>
+        <li><code>is_paused</code> — operace pozastavena, čas se nezapočítává do statistik fáze.</li>
+      </ul>
+
+      <h2 class="h-heading">Audit historie</h2>
+      <p class="lead">
+        Každá změna fáze je zaznamenána do <code>operating_rooms.status_history</code> (jsonb pole)
+        a paralelně do <code>room_status_history</code> tabulky pro statistiky.
+        Ukončené operace se ukládají do <code>completed_operations</code> jsonb pole pro denní přehled.
+      </p>
+    </section>
+
+    <!-- ============== 06 API ============== -->
+    <section id="api" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">06 — API</div>
+        <h2 class="section__title">API Reference</h2>
+        <p class="section__lede">
+          Všechny endpointy běží na Next.js runtime <code>nodejs</code>, vyžadují platnou
+          session cookie (kromě <code>/api/auth/login</code>) a vrací <code>application/json</code>.
+        </p>
+      </div>
+
+      <h2 class="h-heading">Auth</h2>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-POST">POST</span><code>/api/auth/login</code></p>
+        <div class="card__body mt-2">
+          <p>Body: <code>{ email: string, password: string }</code></p>
+          <p>Odpověď 200: <code>{ user: {...} }</code> + cookie <code>session=...</code></p>
+          <p>Chyby: 400 (bad input), 401 (špatné údaje), 429 (rate limit), 503 (DB).</p>
+        </div>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-POST">POST</span><code>/api/auth/logout</code></p>
+        <p class="card__body mt-2">Smaže session cookie. Odpověď: <code>{ success: true }</code>.</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-GET">GET</span><code>/api/auth/me</code></p>
+        <p class="card__body mt-2">Pokud platná session, vrací <code>{ user }</code>; jinak 401.</p>
+      </div>
+
+      <h2 class="h-heading">Operační sály</h2>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-GET">GET</span><code>/api/rooms</code></p>
+        <p class="card__body mt-2">Vrátí pole <code>OperatingRoom[]</code> seřazené podle <code>sort_order</code>, fallback <code>name</code>. Network resilience: 3 retry na transient error.</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-POST">POST</span><code>/api/operating-rooms/reorder</code></p>
+        <p class="card__body mt-2">Body: <code>{ rooms: [{ id, sort_order }] }</code> — atomicky aktualizuje pořadí všech sálů.</p>
+      </div>
+
+      <h2 class="h-heading">Workflow statusy</h2>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-GET">GET</span><code>/api/workflow-statuses</code></p>
+        <p class="card__body mt-2">Konfigurace všech stavů (8 hlavních + 4 speciální).</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-POST">POST</span><code>/api/workflow-statuses</code></p>
+        <p class="card__body mt-2">Vytvoří nový status. Pouze admin role.</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-PUT">PUT</span><code>/api/workflow-statuses</code></p>
+        <p class="card__body mt-2">Aktualizuje stav podle <code>id</code>.</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-DELETE">DELETE</span><code>/api/workflow-statuses?id=…</code></p>
+        <p class="card__body mt-2">Smaže status (kromě defaultních systémových).</p>
+      </div>
+
+      <h2 class="h-heading">Management kontakty &amp; Notifikace</h2>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-GET">GET</span><code>/api/management-contacts</code> &middot; <span class="method method-POST">POST</span> &middot; <span class="method method-PUT">PUT</span> &middot; <span class="method method-DELETE">DELETE</span></p>
+        <p class="card__body mt-2">CRUD nad <code>management_contacts</code> včetně granularních notify_* příznaků.</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-POST">POST</span><code>/api/send-notification</code></p>
+        <p class="card__body mt-2">Body: <code>{ type, roomId, customReason? }</code>. Odešle e-mail vybraným kontaktům s <code>notify_&lt;type&gt; = true</code>. Log do <code>notifications_log</code>.</p>
+      </div>
+
+      <h2 class="h-heading">Admin</h2>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-GET">GET</span> / <span class="method method-PUT">PUT</span><code>/api/admin/facility</code></p>
+        <p class="card__body mt-2">Údaje o zařízení (název, IČO, adresa, kontakty).</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-GET">GET</span><code>/api/admin/export-data</code></p>
+        <p class="card__body mt-2">Exportuje všechna data (sály, personál, oddělení, statusy) jako JSON soubor.</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-POST">POST</span><code>/api/admin/import-data</code></p>
+        <p class="card__body mt-2">Naimportuje JSON dump zpět do databáze (validace, transakce).</p>
+      </div>
+      <div class="card mb-4">
+        <p class="mono"><span class="method method-POST">POST</span><code>/api/admin/reset-data</code></p>
+        <p class="card__body mt-2">Resetuje runtime data (zachová konfiguraci) — pro demo / testovací prostředí.</p>
+      </div>
+    </section>
+
+    <!-- ============== 07 DATABÁZE ============== -->
+    <section id="databaze" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">07 — Databáze</div>
+        <h2 class="section__title">Postgres schéma</h2>
+        <p class="section__lede">
+          15 tabulek v public schématu, RLS aktivní na 14 z nich (kromě interní
+          <code>schema_migrations</code>). Politiky pokrývají SELECT/INSERT/UPDATE/DELETE pro
+          autentizovaného uživatele, mutace přes <code>service_role</code> klienta na serveru.
+        </p>
+      </div>
+
+      <div class="diagram">
+        <pre class="mermaid">
+erDiagram
+    APP_USERS         ||--o{ APP_SETTINGS              : "1 řádek konfig"
+    APP_USERS         ||--o{ APP_MODULES               : "role v allowed_roles"
+    DEPARTMENTS       ||--o{ SUB_DEPARTMENTS           : "obsahuje"
+    DEPARTMENTS       ||--o{ OPERATING_ROOMS           : "department_id"
+    OPERATING_ROOMS   ||--o{ EQUIPMENT                 : "operating_room_id"
+    OPERATING_ROOMS   ||--o{ SCHEDULES                 : "operating_room_id"
+    OPERATING_ROOMS   ||--o{ SHIFT_SCHEDULES           : "operating_room_id"
+    OPERATING_ROOMS   ||--o{ ROOM_STATUS_HISTORY       : "operating_room_id"
+    OPERATING_ROOMS   ||--o{ NOTIFICATIONS_LOG         : "room_id"
+    STAFF             ||--o{ SHIFT_SCHEDULES           : "staff_id"
+    STAFF             ||--o{ OPERATING_ROOMS           : "doctor_id/nurse_id/anesth_id"
+    WORKFLOW_STATUSES ||--o{ ROOM_STATUS_HISTORY       : "step_index"
+    MANAGEMENT_CONTACTS ||--o{ NOTIFICATIONS_LOG       : "recipient"
+
+    APP_USERS {
+        uuid id PK
+        text email UK
+        text password_hash
+        text name
+        text role
+        bool is_active
+    }
+    APP_MODULES {
+        text id PK
+        text name
+        bool is_enabled
+        text[] allowed_roles
+        int sort_order
+    }
+    APP_SETTINGS {
+        text id PK
+        text facility_name
+        jsonb background_colors
+        text background_image_url
+    }
+    DEPARTMENTS {
+        text id PK
+        text name
+        text accent_color
+        bool is_active
+    }
+    SUB_DEPARTMENTS {
+        text id PK
+        text department_id FK
+        text name
+        bool is_active
+    }
+    OPERATING_ROOMS {
+        text id PK
+        text name
+        text department FK
+        text status
+        int current_step_index
+        bool is_emergency
+        bool is_septic
+        jsonb status_history
+        jsonb completed_operations
+        jsonb weekly_schedule
+        int sort_order
+        text doctor_id FK
+        text nurse_id FK
+        text anesthesiologist_id FK
+    }
+    STAFF {
+        text id PK
+        text name
+        text role
+        text skill_level
+        int availability
+        bool is_external
+        bool is_active
+    }
+    EQUIPMENT {
+        text id PK
+        text operating_room_id FK
+        text name
+        text type
+        bool is_available
+    }
+    SCHEDULES {
+        text id PK
+        text operating_room_id FK
+        date scheduled_date
+        time scheduled_time
+        int duration_minutes
+        text status
+    }
+    SHIFT_SCHEDULES {
+        text id PK
+        text operating_room_id FK
+        text staff_id FK
+        date shift_date
+        time start_time
+        time end_time
+        text shift_type
+    }
+    ROOM_STATUS_HISTORY {
+        uuid id PK
+        text operating_room_id FK
+        timestamptz timestamp
+        int step_index
+        text step_name
+        int duration_seconds
+    }
+    WORKFLOW_STATUSES {
+        text id PK
+        text name
+        text accent_color
+        text icon
+        int default_duration_minutes
+        bool is_special
+        bool show_in_timeline
+    }
+    MANAGEMENT_CONTACTS {
+        text id PK
+        text name
+        text email
+        text phone
+        bool notify_late_arrival
+        bool notify_emergencies
+        bool notify_daily_reports
+    }
+    NOTIFICATIONS_LOG {
+        uuid id PK
+        text room_id FK
+        text notification_type
+        int recipient_count
+        timestamptz created_at
+    }
+        </pre>
+        <div class="diagram__caption">Diagram 4 — ER schéma databáze</div>
+      </div>
+
+      <h2 class="h-heading">Přehled tabulek</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Tabulka</th><th>Účel</th><th>Klíčové sloupce</th><th>RLS</th></tr></thead>
+        <tbody>
+          <tr><td><code>app_users</code></td><td>Uživatelé aplikace</td><td>id, email, password_hash, role</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>app_modules</code></td><td>Moduly + allowed_roles</td><td>id, is_enabled, allowed_roles[]</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>app_settings</code></td><td>Globální konfigurace (1 řádek)</td><td>facility_name, background_*</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>departments</code></td><td>Oddělení (TRA, CHIR, …)</td><td>id, name, accent_color</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>sub_departments</code></td><td>Pod-oddělení (HPB, cévní…)</td><td>id, department_id</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>operating_rooms</code></td><td>Operační sály + workflow stav</td><td>current_step_index, status_history, sort_order</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>staff</code></td><td>Personál nemocnice</td><td>name, role, skill_level, availability</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>equipment</code></td><td>Vybavení sálů</td><td>operating_room_id, type, is_available</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>schedules</code></td><td>Plánované operace</td><td>operating_room_id, scheduled_date, status</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>shift_schedules</code></td><td>Rozvrh směn personálu</td><td>operating_room_id, staff_id, shift_date</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>workflow_statuses</code></td><td>Konfigurace 12 stavů</td><td>name, accent_color, default_duration_minutes</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>room_status_history</code></td><td>Audit log fází (statistiky)</td><td>operating_room_id, step_index, duration_seconds</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>management_contacts</code></td><td>Příjemci notifikací</td><td>email, notify_*</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>notifications_log</code></td><td>Historie odeslaných notifikací</td><td>notification_type, recipient_count</td><td><span class="badge badge--green">on</span></td></tr>
+          <tr><td><code>schema_migrations</code></td><td>Interní (Supabase)</td><td>version, statements[]</td><td><span class="badge">off</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2 class="h-heading">Indexy a omezení</h2>
+      <ul class="list">
+        <li><code>app_users.email</code> — UNIQUE, citlivý na velikost (vždy se ukládá lower-case).</li>
+        <li><code>operating_rooms.sort_order</code> — používá se v ORDER BY pro přehled, fallback <code>name</code>.</li>
+        <li><code>app_modules.allowed_roles</code> — Postgres ARRAY, dotaz přes <code>@&gt;</code> nebo client-side filter.</li>
+        <li><code>operating_rooms.status_history</code> — JSONB pole, append-only z client-side workflow.</li>
+        <li>Foreign keys: <code>departments.id</code> ← <code>sub_departments</code>, <code>operating_rooms</code>; <code>staff.id</code> ← <code>shift_schedules</code>, <code>operating_rooms.{doctor_id, nurse_id, anesthesiologist_id}</code>.</li>
+        <li>RPC funkce: <code>verify_user_password(p_email, p_password)</code> — používá pgcrypto bcrypt compare.</li>
+      </ul>
+    </section>
+
+    <!-- ============== 08 ZÁVISLOSTI DIAGRAM ============== -->
+    <section id="zavislosti" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">08 — Závislosti</div>
+        <h2 class="section__title">Diagram závislostí kódu</h2>
+        <p class="section__lede">
+          Mapa, jak komponenty, hooky, kontexty, lib moduly a databázové tabulky závisí na sobě.
+          Klíč: žluté uzly = entry pointy, fialové = state contexty, zelené = DB tabulky,
+          modré = API routes, šedé = utility.
+        </p>
+      </div>
+
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+    classDef entry  fill:#0a0f1f,stroke:#FBBF24,stroke-width:2px,color:#fff;
+    classDef ctx    fill:#0a0f1f,stroke:#A855F7,stroke-width:2px,color:#fff;
+    classDef hook   fill:#0a0f1f,stroke:#EC4899,stroke-width:2px,color:#fff;
+    classDef api    fill:#0a0f1f,stroke:#3B82F6,stroke-width:2px,color:#fff;
+    classDef lib    fill:#0a0f1f,stroke:#06B6D4,stroke-width:2px,color:#fff;
+    classDef ui     fill:#0a0f1f,stroke:#FFFFFF,stroke-width:1px,color:#fff;
+    classDef db     fill:#0a0f1f,stroke:#10B981,stroke-width:2px,color:#fff;
+
+    %% Entry
+    Page["app/page.tsx"]:::entry
+    AppRoot["App.tsx"]:::entry
+    DocsPage["app/docs/page.tsx"]:::entry
+
+    %% Contexts
+    Auth["AuthContext"]:::ctx
+    WSCtx["WorkflowStatusesContext"]:::ctx
+
+    %% Hooks
+    URS["useRealtimeSubscription"]:::hook
+    UEA["useEmergencyAlert"]:::hook
+    UEN["useEmailNotifications"]:::hook
+    UWS["useWorkflowStatuses"]:::hook
+
+    %% Components
+    Login["LoginPage"]:::ui
+    Side["Sidebar"]:::ui
+    Top["TopBar"]:::ui
+    MNav["MobileNav"]:::ui
+    Mobile["MobileShell"]:::ui
+    RC["RoomCard"]:::ui
+    RD["RoomDetail"]:::ui
+    TM["TimelineModule"]:::ui
+    SM["StatisticsModule"]:::ui
+    StM["StaffManager"]:::ui
+    SP["SettingsPage"]:::ui
+    BM["BackgroundManager"]:::ui
+    SSM["SystemSettingsModule"]:::ui
+    ORM["OperatingRoomsManager"]:::ui
+    DM["DepartmentsManager"]:::ui
+    StatM["StatusesManager"]:::ui
+    SSchM["ShiftScheduleManager"]:::ui
+    MM["ManagementManager"]:::ui
+    NM["NotificationsManager"]:::ui
+    SPM["StaffPickerModal"]:::ui
+    EB["ErrorBoundary"]:::ui
+
+    %% Lib
+    LibDB["lib/db.ts"]:::lib
+    LibSrv["lib/supabase.ts<br/>lib/supabase-server.ts"]:::lib
+    LibSess["lib/auth/session.ts<br/>lib/auth/rate-limit.ts"]:::lib
+    LibMail["lib/email.ts<br/>lib/realtime-notifications.ts"]:::lib
+
+    %% API
+    A1["/api/auth/login"]:::api
+    A2["/api/auth/me"]:::api
+    A3["/api/auth/logout"]:::api
+    A4["/api/rooms"]:::api
+    A5["/api/operating-rooms/reorder"]:::api
+    A6["/api/workflow-statuses"]:::api
+    A7["/api/management-contacts"]:::api
+    A8["/api/send-notification"]:::api
+    A9["/api/admin/*"]:::api
+
+    %% DB
+    DB[("Supabase Postgres<br/>15 tabulek")]:::db
+
+    %% Edges
+    Page --> AppRoot
+    AppRoot --> Auth
+    AppRoot --> WSCtx
+    Auth --> A1
+    Auth --> A2
+    Auth --> A3
+
+    AppRoot --> Login
+    AppRoot --> Side
+    AppRoot --> Top
+    AppRoot --> MNav
+    AppRoot --> Mobile
+    AppRoot --> EB
+    AppRoot --> RC
+    AppRoot --> RD
+    AppRoot --> TM
+    AppRoot --> SM
+    AppRoot --> StM
+    AppRoot --> SP
+    AppRoot --> SSM
+    AppRoot --> ORM
+    AppRoot --> DM
+    AppRoot --> StatM
+    AppRoot --> SSchM
+    AppRoot --> MM
+    AppRoot --> NM
+
+    SP --> BM
+
+    StM --> SPM
+
+    AppRoot --> URS
+    AppRoot --> UEA
+    AppRoot --> UEN
+    WSCtx --> UWS
+
+    URS --> LibSrv
+    LibDB --> LibSrv
+
+    A1 --> LibSess
+    A1 --> LibSrv
+    A2 --> LibSess
+    A4 --> LibDB
+    A5 --> LibDB
+    A6 --> LibDB
+    A7 --> LibDB
+    A8 --> LibMail
+    A8 --> LibDB
+    A9 --> LibDB
+
+    LibSrv --> DB
+    LibDB  --> DB
+    URS    --> DB
+
+    DocsPage --> AppRoot
+        </pre>
+        <div class="diagram__caption">Diagram 5 — Dependency graph komponent, hooků, API a databáze</div>
+      </div>
+
+      <h2 class="h-heading">Klíčové vazby modul → DB</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Modul</th><th>Hlavní tabulky</th><th>API endpointy</th></tr></thead>
+        <tbody>
+          <tr><td>App.tsx (Dashboard)</td><td><code>operating_rooms</code>, <code>app_settings</code></td><td>/api/rooms</td></tr>
+          <tr><td>RoomDetail</td><td><code>operating_rooms</code>, <code>staff</code>, <code>room_status_history</code></td><td>/api/send-notification</td></tr>
+          <tr><td>TimelineModule</td><td><code>operating_rooms</code>, <code>schedules</code></td><td>/api/rooms</td></tr>
+          <tr><td>StatisticsModule</td><td><code>operating_rooms</code>, <code>room_status_history</code></td><td>—</td></tr>
+          <tr><td>StaffManager</td><td><code>staff</code></td><td>—</td></tr>
+          <tr><td>NotificationsManager</td><td><code>notifications_log</code>, <code>management_contacts</code></td><td>/api/send-notification, /api/management-contacts</td></tr>
+          <tr><td>OperatingRoomsManager</td><td><code>operating_rooms</code>, <code>departments</code></td><td>/api/operating-rooms/reorder</td></tr>
+          <tr><td>DepartmentsManager</td><td><code>departments</code>, <code>sub_departments</code></td><td>—</td></tr>
+          <tr><td>StatusesManager</td><td><code>workflow_statuses</code></td><td>/api/workflow-statuses</td></tr>
+          <tr><td>ShiftScheduleManager</td><td><code>shift_schedules</code>, <code>staff</code>, <code>operating_rooms</code></td><td>—</td></tr>
+          <tr><td>ManagementManager</td><td><code>management_contacts</code></td><td>/api/management-contacts</td></tr>
+          <tr><td>SystemSettingsModule</td><td><code>app_modules</code>, <code>app_settings</code>, <code>app_users</code></td><td>/api/admin/*</td></tr>
+          <tr><td>BackgroundManager</td><td><code>app_settings</code></td><td>—</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- ============== 09 TECHNOLOGIE ============== -->
+    <section id="technologie" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">09 — Technologie</div>
+        <h2 class="section__title">Technologický stack &amp; ENV</h2>
+        <p class="section__lede">
+          Plně serverless deploy na Vercel, datová vrstva v Supabase. Žádný vlastní backend
+          běžící mimo Vercel/Supabase, žádný cron — periodické úlohy řešeny client-side
+          intervaly s cleanup v <code>useEffect</code>.
+        </p>
+      </div>
+
+      <h2 class="h-heading">Runtime &amp; produkční dependencies</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Balíček</th><th>Verze</th><th>Účel</th></tr></thead>
+        <tbody>
+          <tr><td><code>next</code></td><td>^15.2.4</td><td>App Router, server functions, edge runtime</td></tr>
+          <tr><td><code>react</code> + <code>react-dom</code></td><td>^18.3.1</td><td>UI vrstva</td></tr>
+          <tr><td><code>@supabase/supabase-js</code></td><td>^2.43</td><td>Postgres + Realtime + RPC klient</td></tr>
+          <tr><td><code>framer-motion</code></td><td>^11.11</td><td>Animace, transitions, layout animations</td></tr>
+          <tr><td><code>recharts</code></td><td>^2.13</td><td>Grafy ve StatisticsModule</td></tr>
+          <tr><td><code>lucide-react</code></td><td>^0.454</td><td>Ikony (3000+ v stylu Feather)</td></tr>
+          <tr><td><code>@dnd-kit/core</code> + <code>sortable</code> + <code>utilities</code></td><td>^6.3 / ^10 / ^3.2</td><td>Drag &amp; drop pro řazení sálů</td></tr>
+          <tr><td><code>swr</code></td><td>^2.4</td><td>Cache &amp; revalidation pro data fetching</td></tr>
+          <tr><td><code>html2canvas</code></td><td>^1.4</td><td>Export DOM → canvas → PNG</td></tr>
+          <tr><td><code>jspdf</code></td><td>^4.2</td><td>PNG → PDF (in-app dokumentace)</td></tr>
+          <tr><td><code>tailwindcss</code></td><td>^3.4</td><td>Utility-first CSS</td></tr>
+          <tr><td><code>typescript</code></td><td>~5.8</td><td>Type checking + IDE intellisense</td></tr>
+          <tr><td><code>@vercel/analytics</code></td><td>^2.0</td><td>Web vitals pro produkci</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2 class="h-heading">Environment variables</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Proměnná</th><th>Použití</th><th>Povinné</th></tr></thead>
+        <tbody>
+          <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>Klient — URL Supabase projektu</td><td><span class="badge badge--red">ano</span></td></tr>
+          <tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td>Klient — anon key (RLS)</td><td><span class="badge badge--red">ano</span></td></tr>
+          <tr><td><code>SUPABASE_URL</code></td><td>Server — URL pro service role klient</td><td><span class="badge badge--red">ano</span></td></tr>
+          <tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>Server — bypass RLS pro admin operace</td><td><span class="badge badge--red">ano</span></td></tr>
+          <tr><td><code>SUPABASE_JWT_SECRET</code></td><td>HMAC-SHA256 podpis vlastní session JWT</td><td><span class="badge badge--red">ano</span></td></tr>
+          <tr><td><code>POSTGRES_*</code></td><td>Přímé Postgres DSN — pro Drizzle/Prisma (nepoužito)</td><td><span class="badge">ne</span></td></tr>
+          <tr><td><code>RESEND_API_KEY</code></td><td>Odesílání e-mail notifikací (volitelné)</td><td><span class="badge">ne</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2 class="h-heading">Skripty &amp; build</h2>
+      <pre><code>pnpm dev      # Lokální vývoj (Next.js + HMR)
+pnpm build    # Produkční build (.next)
+pnpm start    # Spustí produkční build
+pnpm lint     # Next ESLint check</code></pre>
+
+      <h2 class="h-heading">Deploy na Vercel</h2>
+      <ol class="list">
+        <li>Připoj GitHub repo k Vercel projektu.</li>
+        <li>Přidej Supabase integraci (automaticky napíše <code>NEXT_PUBLIC_SUPABASE_*</code> + <code>SUPABASE_*</code> ENV).</li>
+        <li>Doplň ručně <code>SUPABASE_JWT_SECRET</code> (32+ znaků náhodně).</li>
+        <li>Po prvním buildu spusť SQL skripty ze <code>scripts/</code> složky pro vytvoření tabulek a seed dat.</li>
+        <li>Vytvoř první admin účet — INSERT do <code>app_users</code> s bcrypt hashem.</li>
+      </ol>
+    </section>
+
+    <!-- ============== 10 NÁVOD ============== -->
+    <section id="navod" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">10 — Návod</div>
+        <h2 class="section__title">Jak používat aplikaci</h2>
+        <p class="section__lede">
+          Krok-za-krokem návody pro každou roli a typický workflow den na operačním sále.
+          Pro detailní informace o jednotlivých fázích viz sekce 05 Workflow.
+        </p>
+      </div>
+
+      <h2 class="h-heading">A. První přihlášení</h2>
+      <ol class="list">
+        <li>Otevři aplikaci v prohlížeči (Chrome / Edge / Safari, JS povolen).</li>
+        <li>Na úvodní obrazovce klikni <strong>„Přihlášení do systému“</strong>.</li>
+        <li>Zadej e-mail a heslo (viz sekce 03 — Demo účty), nebo použij rychlé tlačítko jedné z 6 rolí.</li>
+        <li>Po úspěšném přihlášení se otevře <strong>Dashboard</strong> s aktuálním stavem všech sálů.</li>
+        <li>V mobilním zobrazení (≤ 768 px) je layout zjednodušený s bottom navigation a optimalizovaný pro dotyk.</li>
+      </ol>
+
+      <h2 class="h-heading">B. Standardní workflow operace (pohled COS / sálová sestra)</h2>
+      <ol class="list">
+        <li><strong>Klikni na kartu sálu</strong> v Dashboardu — otevře se <code>RoomDetail</code>.</li>
+        <li><strong>Tlačítko „Volání pacienta“</strong> — záznam <code>patient_called_at</code>, čas se objeví v hlavičce.</li>
+        <li><strong>„Příjezd do operačního traktu“</strong> — pacient přijel, <code>patient_arrived_at</code>.</li>
+        <li><strong>„Příjezd na sál“</strong> — posun fáze 0 → 1, začíná <code>operation_started_at</code>.</li>
+        <li>Postupně odklikávej tlačítka pro fáze 2–7 (anestezie → operace → ukončení → odjezd → úklid).</li>
+        <li>Pro <strong>urgentní operaci</strong> aktivuj přepínač <code>is_emergency</code> — spustí audio alarm na všech klientech.</li>
+        <li>Pro <strong>septickou operaci</strong> přepni <code>is_septic</code> — automaticky zařadí hygienický režim po skončení.</li>
+        <li><strong>Pauza</strong> — speciální stav, čas se nezapočítává do statistik aktuální fáze.</li>
+      </ol>
+
+      <h2 class="h-heading">C. Plánování (pohled management / primariát)</h2>
+      <ol class="list">
+        <li>V <strong>Sidebar</strong> klikni na <strong>Timeline</strong>.</li>
+        <li>Zobrazí se Gantt-like plán dne / týdne s sály jako řádky a hodinami jako sloupce.</li>
+        <li>Filtruj podle oddělení (TRA, CHIR, …) v hlavičce.</li>
+        <li>Klikni na blok pro náhled detailu, drag pro úpravu času (pokud má role oprávnění).</li>
+      </ol>
+
+      <h2 class="h-heading">D. Statistiky (pohled management)</h2>
+      <ol class="list">
+        <li>Sidebar → <strong>Statistiky</strong>.</li>
+        <li>Vyber časové období (Den / Týden / Měsíc / Rok / Custom).</li>
+        <li>KPI karty: počet operací, průměrná délka, vytíženost sálů, septické / urgentní / pauzy.</li>
+        <li>Graf po hodinách / dnech, breakdown podle oddělení a sálu.</li>
+        <li>Tlačítko <strong>Export CSV</strong> stáhne data pro Excel / další zpracování.</li>
+      </ol>
+
+      <h2 class="h-heading">E. Notifikace (pohled admin / management)</h2>
+      <ol class="list">
+        <li>Admin → <strong>Management kontakty</strong> — přidej e-maily managementu.</li>
+        <li>Pro každý kontakt nastav granularně, které notifikace chce dostávat (notify_late_arrival, notify_emergencies, notify_daily_reports, …).</li>
+        <li>Notifikace odešle <code>POST /api/send-notification</code> automaticky podle workflow událostí.</li>
+        <li>Historie odeslaných notifikací v tabulce <code>notifications_log</code>.</li>
+        <li>Pro povolení e-mailů nastav <code>RESEND_API_KEY</code> ENV, jinak se notifikace pouze logují.</li>
+      </ol>
+
+      <h2 class="h-heading">F. Administrace (pouze role admin)</h2>
+      <ol class="list">
+        <li><strong>Operační sály</strong> — přidat / přejmenovat / smazat sály, drag &amp; drop pořadí.</li>
+        <li><strong>Oddělení</strong> — definice TRA / CHIR / NEUROCHIR…, sub-oddělení (HPB, cévní, dětské, mammo, prokto).</li>
+        <li><strong>Workflow statusy</strong> — barva, ikona, default trvání, viditelnost ve Timeline / Detail / Statistikách.</li>
+        <li><strong>Plány směn</strong> — kdo na jakém sále kdy.</li>
+        <li><strong>Systémová nastavení</strong> — povolení modulů per-role (např. zakázat ARO Statistics), údaje o zařízení, export / import / reset dat.</li>
+      </ol>
+
+      <h2 class="h-heading">G. Klávesové zkratky (desktop)</h2>
+      <ul class="list">
+        <li><span class="kbd">Esc</span> — zavřít otevřený dialog / RoomDetail / picker.</li>
+        <li><span class="kbd">⌘ / Ctrl</span> + <span class="kbd">K</span> — quick navigation (pokud aktivní).</li>
+        <li><span class="kbd">⌘ / Ctrl</span> + <span class="kbd">P</span> — tisk aktuálního pohledu.</li>
+      </ul>
+    </section>
+
+    <!-- ============== 11 BEZPEČNOST ============== -->
+    <section id="bezpecnost" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">11 — Bezpečnost</div>
+        <h2 class="section__title">Bezpečnostní opatření</h2>
+        <p class="section__lede">
+          Aplikace zpracovává citlivá zdravotnická data — autentizace, hesla, RLS, rate
+          limiting a defense-in-depth jsou nastavené na všech vrstvách.
+        </p>
+      </div>
+
+      <div class="grid grid--2 mb-4">
+        <div class="card">
+          <div class="card__heading">Hesla</div>
+          <h3 class="card__title">Hashování bcrypt</h3>
+          <p class="card__body">
+            Postgres extension <code>pgcrypto</code> s bcrypt cost 10. Heslo nikdy neopustí
+            DB v plain textu — RPC <code>verify_user_password</code> dělá compare server-side.
+            Aplikační kód <strong>nikdy</strong> nečte <code>password_hash</code>.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Session</div>
+          <h3 class="card__title">JWT v HttpOnly cookie</h3>
+          <p class="card__body">
+            HMAC-SHA256 podepsaný JWT se ukládá do <code>HttpOnly Secure SameSite=Lax</code>
+            cookie. Žádný localStorage. Ochrana proti XSS odcizení tokenu.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Rate limit</div>
+          <h3 class="card__title">10 / 5 min / IP</h3>
+          <p class="card__body">
+            <code>lib/auth/rate-limit.ts</code> in-memory token bucket per IP.
+            Po překročení vrací 429 s <code>Retry-After</code> hlavičkou.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">RLS</div>
+          <h3 class="card__title">Row Level Security</h3>
+          <p class="card__body">
+            Na všech 14 aplikačních tabulkách je RLS aktivní. Klient anon key vidí pouze data
+            povolená politikami; serverové mutace přes <code>service_role</code> bypassují RLS,
+            ale jsou validovány v API vrstvě.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Vstupy</div>
+          <h3 class="card__title">Validace</h3>
+          <p class="card__body">
+            Email regex, max-length kontroly (255 / 512), trim + lower-case před comparison.
+            Vrácené chybové hlášky neodhalují informace o existenci účtu.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card__heading">Transport</div>
+          <h3 class="card__title">HTTPS only</h3>
+          <p class="card__body">
+            Vercel deployment automaticky vynucuje HTTPS, HSTS hlavičky, Secure cookie flag.
+            Žádné mixed-content scénáře.
+          </p>
+        </div>
+      </div>
+
+      <h2 class="h-heading">Doporučené produkční nastavení</h2>
+      <ul class="list">
+        <li>Po prvním deployu <strong>změň výchozí hesla</strong> všech demo účtů (<code>admin123</code> apod.).</li>
+        <li>Zúž RLS politiky podle organizační struktury, pokud aplikaci používá více oddělení.</li>
+        <li>Aktivuj Supabase audit log v Dashboardu pro sledování DB operací.</li>
+        <li>Nastav Vercel Web Application Firewall (WAF) pro pokročilou ochranu.</li>
+        <li>Pravidelný backup Postgres (Supabase v Pro plánu má daily PITR).</li>
+        <li>Vyžaduj 2FA pro admin účty (Supabase managed nebo vlastní implementace).</li>
+      </ul>
+    </section>
+
+    <!-- ============== 12 TROUBLESHOOTING ============== -->
+    <section id="troubleshooting" class="section section--break">
+      <div class="section__head">
+        <div class="section__num">12 — Troubleshooting</div>
+        <h2 class="section__title">Časté problémy &amp; řešení</h2>
+      </div>
+
+      <div class="grid grid--2 mb-4">
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">Nelze se přihlásit (401)</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> špatné heslo, neaktivní účet, nebo špatný formát e-mailu.</p>
+            <p><strong>Řešení:</strong> ověř velká/malá písmena, zkontroluj <code>app_users.is_active = true</code>,
+            ověř <code>SUPABASE_JWT_SECRET</code> ENV.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">429 Too Many Requests</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> 10 neúspěšných pokusů o přihlášení během 5 minut z téže IP.</p>
+            <p><strong>Řešení:</strong> počkej 5 minut, nebo restartuj server (in-memory bucket se resetuje).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">Realtime updates se neaktualizují</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> nepovolený Supabase Realtime na tabulce, vypršený WebSocket.</p>
+            <p><strong>Řešení:</strong> Supabase Dashboard → Database → Replication → zaškrtni
+            <code>operating_rooms</code> a <code>schedules</code>; refresh stránky obnoví připojení.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">Pořadí sálů se po refreshi resetuje</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> chyběl mapping <code>sort_order</code> v <code>transformRoom</code> nebo
+            <code>.order('name')</code> místo <code>'sort_order'</code>.</p>
+            <p><strong>Řešení:</strong> opraveno v aktuální verzi <code>lib/db.ts</code>;
+            ověř, že <code>operating_rooms.sort_order</code> má hodnoty (ne NULL).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">E-mail notifikace se neodesílají</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> chybí <code>RESEND_API_KEY</code>, nebo příjemce nemá
+            <code>notify_&lt;type&gt; = true</code>.</p>
+            <p><strong>Řešení:</strong> nastav ENV; v Admin → Management kontakty zaškrtni požadované notifikace.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">Bílá obrazovka po deployi</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> chybí <code>NEXT_PUBLIC_SUPABASE_URL</code> nebo <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.</p>
+            <p><strong>Řešení:</strong> Vercel → Project → Settings → Environment Variables — přidej a redeploy.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">Audio alarm nehraje na iPhone</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> Safari blokuje autoplay audio bez user gesture.</p>
+            <p><strong>Řešení:</strong> klepni kdekoli v aplikaci po načtení (jednorázové gesture
+            stačí pro celou session).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__heading">Problém</div>
+          <h3 class="card__title">Pomalé načítání statistik</h3>
+          <div class="card__body">
+            <p><strong>Příčina:</strong> velký <code>room_status_history</code> bez indexů.</p>
+            <p><strong>Řešení:</strong> přidej index <code>CREATE INDEX ON room_status_history (operating_room_id, timestamp)</code>;
+            archivuj řádky starší 12 měsíců.</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="h-heading">Diagnostika v prohlížeči</h2>
+      <ul class="list">
+        <li><strong>DevTools → Network</strong> — zkontroluj <code>/api/auth/me</code>, <code>/api/rooms</code> 200 OK.</li>
+        <li><strong>DevTools → Application → Cookies</strong> — ověř existenci cookie <code>session</code> s HttpOnly flagem.</li>
+        <li><strong>Console</strong> — chyby s prefixem <code>[v0]</code> nebo <code>[Auth]</code> indikují fail-soft scénáře.</li>
+        <li><strong>Supabase Logs</strong> — Dashboard → Logs → API / Auth / Database.</li>
+      </ul>
+    </section>
+
+    <!-- ============== END ============== -->
+    <section class="section">
+      <div class="card text-center">
+        <div class="card__heading" style="justify-content: center;">End of document</div>
+        <p class="lead" style="margin: 0;">OperatingRoom Manager — kompletní dokumentace</p>
+        <p class="muted mono mt-2" style="font-size: 11px;">
+          © <span id="year"></span> &middot; v1.0.0 &middot; vygenerováno <span id="now"></span>
+        </p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ========================================================
+     Mermaid (CDN) — diagramy se vykreslují v dark theme
+     ======================================================== -->
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      darkMode: true,
+      background: "#0a0f1f",
+      primaryColor: "#0a0f1f",
+      primaryTextColor: "#FFFFFF",
+      primaryBorderColor: "#FBBF24",
+      lineColor: "rgba(255,255,255,0.4)",
+      secondaryColor: "#1e293b",
+      tertiaryColor: "#0a0f1f",
+      mainBkg: "#0a0f1f",
+      secondBkg: "#0f172a",
+      tertiaryBkg: "#1e293b",
+      noteBkgColor: "#1e293b",
+      noteTextColor: "#FBBF24",
+      fontFamily: "Inter, system-ui, sans-serif",
+      fontSize: "13px",
+      labelTextColor: "#FFFFFF",
+      titleColor: "#FBBF24",
+      nodeTextColor: "#FFFFFF",
+      edgeLabelBackground: "#0a0f1f",
+      classText: "#FFFFFF",
+      // ER diagram
+      attributeBackgroundColorEven: "#0a0f1f",
+      attributeBackgroundColorOdd: "#1e293b",
+      // Sequence diagram
+      actorBkg: "#0a0f1f",
+      actorTextColor: "#FFFFFF",
+      actorLineColor: "#FBBF24",
+      signalColor: "#FFFFFF",
+      signalTextColor: "#FFFFFF",
+      // State diagram
+      transitionColor: "#FBBF24",
+      transitionLabelColor: "#FBBF24"
+    },
+    flowchart: {
+      curve: "basis",
+      padding: 20,
+      htmlLabels: true,
+      useMaxWidth: true
+    },
+    sequence: {
+      actorMargin: 50,
+      width: 150,
+      height: 60,
+      messageMargin: 35,
+      mirrorActors: false,
+      bottomMarginAdj: 1
+    },
+    er: {
+      diagramPadding: 20,
+      layoutDirection: "TB",
+      minEntityWidth: 100,
+      minEntityHeight: 75,
+      entityPadding: 15,
+      stroke: "#FBBF24",
+      fill: "#0a0f1f",
+      fontSize: 12
+    }
+  });
+</script>
+
+<!-- ========================================================
+     Drobnosti: dynamické datum, smooth-scroll active highlight
+     ======================================================== -->
+<script>
+  (function () {
+    var t = new Date();
+    var fmt = t.toLocaleDateString("cs-CZ", { day: "2-digit", month: "2-digit", year: "numeric" });
+    var fmtNow = t.toLocaleString("cs-CZ");
+    var elToday = document.getElementById("today");   if (elToday) elToday.textContent = fmt;
+    var elNow   = document.getElementById("now");     if (elNow)   elNow.textContent = fmtNow;
+    var elYear  = document.getElementById("year");    if (elYear)  elYear.textContent = t.getFullYear();
+  })();
+</script>
+
+</body>
+</html>
