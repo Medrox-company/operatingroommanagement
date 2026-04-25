@@ -243,15 +243,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         ? '#FBBF24' 
         : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280')));
 
-  const changeStep = async (newIndex: number) => {
+  const changeStep = (newIndex: number) => {
     if (isInteractionBlocked) return;
-    
+
     // SEQUENTIAL STEP RESTRICTION: Only allow next step (+1) or reset to 0 (from final step)
     const isNextStep = newIndex === safeStepIndex + 1;
     const isResetToStart = newIndex === 0 && safeStepIndex === validStepCount - 1;
-    
+
     if (!isNextStep && !isResetToStart) return; // Block skipping steps
-    
+
     // Additional security for locked state: only allow forward progression
     if (room.isLocked) {
       if (newIndex <= safeStepIndex && !isFinalStep) return;
@@ -263,74 +263,77 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     const durationSeconds = Math.floor((now.getTime() - phaseStartTime.getTime()) / 1000);
     const previousStep = activeDbStatuses.length > 0 ? activeDbStatuses[safeStepIndex] : currentStep;
     const newStep = activeDbStatuses.length > 0 ? activeDbStatuses[Math.min(newIndex, activeDbStatuses.length - 1)] : nextStep;
+    const newStepColor = newStep?.color || '#6B7280';
 
-    // Record step change to database
-    await recordStatusEvent({
+    // ============================================================
+    // OPTIMISTIC UI UPDATE — fire IMMEDIATELY, do not await DB
+    // ============================================================
+    // 1) Propagate step change to App (this triggers optimistic setRooms + DB write in App)
+    onStepChange(newIndex, newStepColor);
+    // 2) Reset local phase timer immediately so the elapsed counter starts from zero
+    setPhaseStartTime(new Date());
+
+    // Update estimated end time hints (purely local UI state)
+    if (newIndex === 1 && currentStepIndex === 0) {
+      // Default estimated end time: current time + 60 minutes, rounded to 15 min
+      const defaultEndTime = roundUpTo15Min(new Date(now.getTime() + 60 * 60 * 1000));
+      onEndTimeChange(defaultEndTime);
+    } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
+      onEndTimeChange(null);
+    }
+
+    // Reset patient call/arrival status when transitioning to "Příjezd na sál"
+    const newStepName = (newStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isArrivalToOR = newStepName.includes('prijezd na sal') || newStepName.includes('arrival');
+    if (isArrivalToOR && (patientCalledTime || patientArrivedTime)) {
+      isResettingRef.current = true;
+      setPatientCalledTime(null);
+      setPatientArrivedTime(null);
+      setPatientCallElapsedTime('00:00');
+      onPatientStatusChange?.(null, null);
+      // Fire-and-forget DB persist
+      updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null }).catch(() => {});
+      setTimeout(() => { isResettingRef.current = false; }, 1500);
+    }
+
+    // ============================================================
+    // FIRE-AND-FORGET ANALYTICS — never block UI
+    // ============================================================
+    // These writes go to room_status_history (analytics only). They are not
+    // required for correctness of the room state, so we run them in the
+    // background without awaiting. Errors are logged but never surfaced.
+    void recordStatusEvent({
       operating_room_id: room.id,
       event_type: 'step_change',
       step_index: newIndex,
       step_name: previousStep?.name || 'Status',
       duration_seconds: durationSeconds,
-      metadata: { 
+      metadata: {
         previous_step: previousStep?.name || 'Status',
         previous_step_index: currentStepIndex,
       },
-    });
+    }).catch((err) => console.error('[v0] step_change event failed', err));
 
-    // Record operation start/end events
     if (newIndex === 1 && currentStepIndex === 0) {
-      // Starting operation (transitioning to "Příjezd na sál")
-      await recordStatusEvent({
+      void recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_start',
         step_index: newIndex,
         step_name: newStep?.name || 'Status',
-      });
-      
-      // Set default estimated end time: current time + 60 minutes, rounded to 15 min
-      const defaultEndTime = roundUpTo15Min(new Date(now.getTime() + 60 * 60 * 1000));
-      onEndTimeChange(defaultEndTime);
+      }).catch((err) => console.error('[v0] operation_start event failed', err));
     } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
-      // Ending operation (completing last step)
-      await recordStatusEvent({
+      void recordStatusEvent({
         operating_room_id: room.id,
         event_type: 'operation_end',
         step_index: currentStepIndex,
         step_name: 'Operation End',
         duration_seconds: durationSeconds,
-        metadata: { 
+        metadata: {
           completed_step: previousStep?.name || 'Status',
           previous_step: previousStep?.name || 'Status',
         },
-      });
-      
-      // Reset estimated end time when returning to "ready" status
-      onEndTimeChange(null);
+      }).catch((err) => console.error('[v0] operation_end event failed', err));
     }
-
-    // Reset patient call/arrival status only when transitioning to "Příjezd na sál"
-    // (patient is no longer waiting in pre-OR area)
-    const newStepName = (newStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const isArrivalToOR = newStepName.includes('prijezd na sal') || newStepName.includes('arrival');
-    if (isArrivalToOR && (patientCalledTime || patientArrivedTime)) {
-      // Prevent sync effects from overwriting during reset - keep flag on longer
-      isResettingRef.current = true;
-      // Update local state first (immediate)
-      setPatientCalledTime(null);
-      setPatientArrivedTime(null);
-      setPatientCallElapsedTime('00:00');
-      // Optimistic update in App.tsx (immediate, before DB)
-      onPatientStatusChange?.(null, null);
-      // Then persist to database (async, don't await to avoid blocking)
-      updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null });
-      // Allow sync again after realtime update has likely arrived
-      setTimeout(() => { isResettingRef.current = false; }, 1500);
-    }
-
-  // Pass the color of the new status for history tracking
-  const newStepColor = newStep?.color || '#6B7280';
-  onStepChange(newIndex, newStepColor);
-  setPhaseStartTime(new Date());
   };
 
   const handleNextStep = () => {

@@ -196,112 +196,91 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, isModuleEnabled]);
 
-  const updateRoomStep = useCallback(async (roomId: string, newStepIndex: number, stepColor?: string) => {
+  const updateRoomStep = useCallback((roomId: string, newStepIndex: number, stepColor?: string) => {
     // Mark this room as recently updated locally to prevent realtime flicker
     recentLocalUpdates.current.set(roomId, Date.now());
-    
+
     const now = new Date().toISOString();
-    
+
     // Check if operation is being completed (transitioning to "Sál připraven po úklidu" - index 7, or back to index 0)
-    // Operation is complete when: resetting to 0, or moving to index 7 (after cleanup)
     const isOperationComplete = (currentIndex: number, nextIndex: number) => {
-      // Reset to ready state
       if (nextIndex === 0) return true;
-      // Moving to "Sál připraven po úklidu" (index 7) after úklid sálu (index 6)
       if (nextIndex === 7 && currentIndex >= 1) return true;
       return false;
     };
-    
+
+    // Compute the new room state using a functional updater. We do the heavy lifting
+    // inside the reducer so we always have access to the latest `room` data (no stale
+    // closure on `rooms`), and we capture the DB payload via a ref-style local var
+    // so we can persist it AFTER React has applied the optimistic update.
+    let dbPayload: {
+      current_step_index: number;
+      phase_started_at: string;
+      operation_started_at: string | null;
+      status_history: Array<{ stepIndex: number; startedAt: string; color: string }>;
+      completed_operations: Array<{ startedAt: string; endedAt: string; statusHistory: any[] }>;
+    } | null = null;
+
     setRooms(prev => prev.map(room => {
       if (room.id !== roomId) return room;
-      
+
       // Save completed operation when transitioning to ready state
       let updatedCompletedOps = room.completedOperations || [];
-      // Check if operation is being completed (going to index 0 or 7)
-      // We need operationStartedAt to track when operation began
-      const shouldSaveOperation = isOperationComplete(room.currentStepIndex, newStepIndex) && 
-        room.operationStartedAt;
-        
+      const shouldSaveOperation =
+        isOperationComplete(room.currentStepIndex, newStepIndex) && !!room.operationStartedAt;
+
       if (shouldSaveOperation) {
-        console.log("[v0] Saving completed operation for room:", room.name, {
-          from: room.currentStepIndex,
-          to: newStepIndex,
-          startedAt: room.operationStartedAt,
-          historyLength: room.statusHistory?.length || 0
-        });
         updatedCompletedOps = [
           ...updatedCompletedOps,
           {
             startedAt: room.operationStartedAt!,
             endedAt: now,
-            statusHistory: room.statusHistory ? [...room.statusHistory] : []
-          }
+            statusHistory: room.statusHistory ? [...room.statusHistory] : [],
+          },
         ];
       }
-      
+
       // Build status history - reset when going back to ready state
       const shouldResetHistory = newStepIndex === 0 || newStepIndex === 7;
       const currentHistory = room.statusHistory || [];
       const newHistory = shouldResetHistory
-        ? [] 
+        ? []
         : [...currentHistory, { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' }];
-      
-      // Set operationStartedAt when transitioning to first active status (index 1)
-      const operationStartedAt = newStepIndex === 1 && (room.currentStepIndex === 0 || room.currentStepIndex === 7)
-        ? now 
-        : (shouldResetHistory ? null : room.operationStartedAt);
-      
-      return { 
-        ...room, 
-        currentStepIndex: newStepIndex, 
-        phaseStartedAt: now,
-        operationStartedAt,
-        statusHistory: newHistory,
-        completedOperations: updatedCompletedOps
-      };
-    }));
-    
-    if (isDbConnected) {
-      const room = rooms.find(r => r.id === roomId);
-      
-      // Save completed operation
-      let updatedCompletedOps = room?.completedOperations || [];
-      const shouldSaveOperation = isOperationComplete(room?.currentStepIndex || 0, newStepIndex) && 
-        room?.operationStartedAt;
-        
-      if (shouldSaveOperation) {
-        console.log("[v0] DB: Saving completed operation for room:", room?.name, {
-          from: room?.currentStepIndex,
-          to: newStepIndex
-        });
-        updatedCompletedOps = [
-          ...updatedCompletedOps,
-          {
-            startedAt: room!.operationStartedAt!,
-            endedAt: now,
-            statusHistory: room?.statusHistory ? [...room.statusHistory] : []
-          }
-        ];
-      }
-      
-      const shouldResetHistory = newStepIndex === 0 || newStepIndex === 7;
-      const currentHistory = room?.statusHistory || [];
-      const newHistory = shouldResetHistory
-        ? [] 
-        : [...currentHistory, { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' }];
-      const operationStartedAt = newStepIndex === 1 && (room?.currentStepIndex === 0 || room?.currentStepIndex === 7)
-        ? now 
-        : (shouldResetHistory ? null : room?.operationStartedAt);
-      
-      await updateOperatingRoom(roomId, { 
-        current_step_index: newStepIndex, 
+
+      const operationStartedAt =
+        newStepIndex === 1 && (room.currentStepIndex === 0 || room.currentStepIndex === 7)
+          ? now
+          : shouldResetHistory
+            ? null
+            : room.operationStartedAt;
+
+      // Capture payload for DB write (computed from authoritative `prev` snapshot)
+      dbPayload = {
+        current_step_index: newStepIndex,
         phase_started_at: now,
         operation_started_at: operationStartedAt,
         status_history: newHistory,
-        completed_operations: updatedCompletedOps
-      });
+        completed_operations: updatedCompletedOps,
+      };
+
+      return {
+        ...room,
+        currentStepIndex: newStepIndex,
+        phaseStartedAt: now,
+        operationStartedAt,
+        statusHistory: newHistory,
+        completedOperations: updatedCompletedOps,
+      };
+    }));
+
+    // Fire-and-forget DB persist. UI has already updated optimistically — we don't
+    // block on the network roundtrip. Errors are logged but never surfaced.
+    if (isDbConnected && dbPayload) {
+      updateOperatingRoom(roomId, dbPayload).catch((err) =>
+        console.error('[v0] updateRoomStep DB persist failed', err)
+      );
     }
-  }, [isDbConnected, rooms]);
+  }, [isDbConnected]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
