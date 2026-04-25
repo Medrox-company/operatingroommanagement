@@ -5,6 +5,7 @@ import {
   Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft,
   Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
   LogIn, Sparkles, ChevronRight,
+  type LucideIcon,
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -38,7 +39,7 @@ const QUICK_ROLES: Array<{
   label: string;
   email: string;
   password: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   color: string;
   description: string;
 }> = [
