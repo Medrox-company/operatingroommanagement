@@ -211,13 +211,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)' }}
               >
                 <span className="block text-white">
-                  Operating Room
+                  OPERATINGROOM
                 </span>
                 <span
                   className="block"
                   style={{ color: C.yellow }}
                 >
-                  Manager
+                  MANAGER
                 </span>
               </motion.h1>
 
