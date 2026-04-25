@@ -157,10 +157,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <img
+          <motion.img
             src="/images/logo.png"
             alt="OperatingRoom Manager"
-            className="w-16 h-16 object-contain"
+            className="w-28 h-28 object-contain drop-shadow-[0_0_24px_rgba(6,182,212,0.25)]"
+            initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+            animate={{
+              opacity: 1,
+              scale: [1, 1.03, 1],
+              rotate: [0, 2, -2, 0],
+            }}
+            transition={{
+              opacity: { duration: 0.4 },
+              scale: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
+              rotate: { duration: 6, repeat: Infinity, ease: 'easeInOut' },
+            }}
           />
         </div>
 
