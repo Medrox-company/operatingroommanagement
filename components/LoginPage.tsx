@@ -176,11 +176,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
               {/* Title */}
               <motion.h1
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.35 }}
-                className="relative font-black tracking-tighter leading-[0.85] uppercase"
-                style={{ fontSize: 'clamp(3rem, 9.5vw, 7rem)' }}
+                className="relative font-bold tracking-tighter leading-[0.85] uppercase"
+                style={{ fontSize: '80px' }}
               >
                 <span className="block text-white text-balance drop-shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
                   Operating
@@ -191,6 +191,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   style={{
                     color: ACCENT,
                     textShadow: `0 4px 32px ${ACCENT}33`,
+                    fontSize: '80px',
                   }}
                 >
                   Manager
@@ -202,7 +203,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.18, duration: 0.3 }}
-                className="relative mt-8 text-sm md:text-base text-white/55 font-mono tracking-wide"
+                className="relative mt-8 text-sm md:text-base text-white/55 tracking-wide"
               >
                 Aplikace pro řízení operačních sálů
               </motion.p>
