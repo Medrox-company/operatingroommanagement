@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft,
   Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
-  LogIn, Sparkles, KeyRound, Zap, Globe, HeartPulse, ChevronRight,
+  LogIn, Sparkles, KeyRound, Zap, HeartPulse, ChevronRight,
   Server, Database, Wifi, CheckCircle2,
 } from 'lucide-react';
 
@@ -465,32 +465,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <span>Vyzkoušet demo</span>
                 </button>
               </motion.div>
-
-              {/* Trust chips */}
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.65, duration: 0.4 }}
-                className="relative mt-7 flex items-center justify-center gap-2 flex-wrap"
-              >
-                {[
-                  { icon: Shield, label: '256-bit šifrování' },
-                  { icon: Globe,  label: 'GDPR compliant' },
-                  { icon: KeyRound, label: 'Bcrypt hash' },
-                ].map(item => (
-                  <span
-                    key={item.label}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium tracking-[0.12em] uppercase text-white/45"
-                    style={{
-                      background: 'rgba(255,255,255,0.025)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                    }}
-                  >
-                    <item.icon className="w-3 h-3" strokeWidth={2.25} />
-                    <span>{item.label}</span>
-                  </span>
-                ))}
-              </motion.div>
             </motion.section>
           )}
 
@@ -811,7 +785,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </motion.section>
           )}
 
-          {/* ════════════════════════════ DEMO ════════════════════════════ */}
+          {/* ════════════════════════════ DEMO ══════════���═════════════════ */}
           {screen === 'demo' && (
             <motion.section
               key="demo"
