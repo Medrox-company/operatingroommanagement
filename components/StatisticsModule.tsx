@@ -763,7 +763,7 @@ function TrendBadge({v}:{v:number}){
 
 // ═══════���══════════════════════════════════════════════════════════════════════
 // ROOM DETAIL PANEL
-// ═══════════════════════════════════════════════════════��═���════════════════════
+// ══════════════════════════════════════════════════════����═���════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
@@ -1769,10 +1769,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       {/* ── Module header ── */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2 opacity-60">
-          <BarChart3 className="w-4 h-4 text-[#00D8C1]" />
-          <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+          <BarChart3 className="w-4 h-4 text-[#FBBF24]" />
+          <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
         </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
           STATISTIKY
         </h1>
       </div>

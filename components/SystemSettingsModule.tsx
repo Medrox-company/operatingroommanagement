@@ -326,7 +326,7 @@ const SystemSettingsModule: React.FC = () => {
             <SettingsIcon className="w-4 h-4 text-[#64748B]" />
             <p className="text-[10px] font-black text-[#64748B] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
           </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             NASTAVENÍ <span className="text-white/20">SYSTÉMU</span>
           </h1>
         </div>
@@ -1044,7 +1044,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, faci
               value={
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    isAdmin ? 'bg-[#00D8C1]/20 text-[#00D8C1]' : 'bg-white/10 text-white/60'
+                    isAdmin ? 'bg-[#FBBF24]/20 text-[#FBBF24]' : 'bg-white/10 text-white/60'
                   }`}
                 >
                   {isAdmin ? 'Administrátor' : 'Uživatel'}
@@ -1083,8 +1083,8 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, faci
         </div>
       </div>
 
-      <div className="flex items-start gap-2 p-4 rounded-xl bg-[#00D8C1]/5 border border-[#00D8C1]/20 text-sm">
-        <Shield className="w-4 h-4 text-[#00D8C1] mt-0.5 flex-shrink-0" />
+      <div className="flex items-start gap-2 p-4 rounded-xl bg-[#FBBF24]/5 border border-[#FBBF24]/20 text-sm">
+        <Shield className="w-4 h-4 text-[#FBBF24] mt-0.5 flex-shrink-0" />
         <p className="text-white/60 leading-relaxed">
           Chystaná funkce: <strong className="text-white/80">multi-tenant přihlášení</strong> — jedna instance aplikace
           umožní výběr nemocnice přímo při přihlášení, s oddělenými daty pro každé zařízení.

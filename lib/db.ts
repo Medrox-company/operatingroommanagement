@@ -65,6 +65,7 @@ interface DBOperatingRoom {
   current_patient_id: string | null;
   current_procedure_id: string | null;
   weekly_schedule: Record<string, any> | null;
+  sort_order: number | null;
 }
 
 interface DBStaff {
@@ -128,6 +129,7 @@ function transformRoom(
     id: row.id,
     name: row.name,
     department: row.department,
+    sort_order: typeof row.sort_order === 'number' ? row.sort_order : undefined,
     status: (row.status as RoomStatus) || RoomStatus.FREE,
     queueCount: row.queue_count,
     operations24h: row.operations_24h,
@@ -213,7 +215,11 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
     // Fetch rooms and staff data in parallel
     // Explicitly select columns including completed_operations JSONB
     const [roomsRes, staffRes] = await Promise.all([
-      supabase.from('operating_rooms').select('*, completed_operations').order('name'),
+      supabase
+        .from('operating_rooms')
+        .select('*, completed_operations')
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('name', { ascending: true }),
       supabase.from('staff').select('*'),
     ]);
 

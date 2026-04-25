@@ -195,7 +195,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                   <SettingsIcon className="w-4 h-4 text-[#8B5CF6]" />
                   <p className="text-[10px] font-black text-[#8B5CF6] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
                 </div>
-                <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+                <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
                   NASTAVENÍ <span className="text-white/20">SYSTÉMU</span>
                 </h1>
               </div>

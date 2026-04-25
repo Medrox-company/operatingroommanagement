@@ -626,10 +626,10 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <Building2 className="w-4 h-4 text-[#00D8C1]" />
-            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">OPERAČNÍ SÁLY MANAGEMENT</p>
+            <Building2 className="w-4 h-4 text-[#FBBF24]" />
+            <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">OPERAČNÍ SÁLY MANAGEMENT</p>
           </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             OPERAČNÍ <span className="text-white/20">SÁLY</span>
           </h1>
         </div>
@@ -662,8 +662,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             <div 
               className="p-6 rounded-2xl"
               style={{ 
-                background: 'linear-gradient(135deg, rgba(0, 216, 193, 0.08) 0%, rgba(0, 216, 193, 0.02) 100%)',
-                border: '1px solid rgba(0, 216, 193, 0.2)'
+                background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%)',
+                border: '1px solid rgba(251, 191, 36, 0.2)'
               }}
             >
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">

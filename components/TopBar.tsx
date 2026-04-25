@@ -20,7 +20,7 @@ const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsRese
     <header className="h-24 px-12 md:px-14 flex items-center justify-between bg-white/5 backdrop-blur-2xl z-30 border-b border-white/10">
       <div className="flex items-center gap-6">
          <div className="w-12 h-12 bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md">
-            <ShieldCheck className="w-6 h-6 text-[#00D8C1]" />
+            <ShieldCheck className="w-6 h-6 text-[#FBBF24]" />
          </div>
          <div>
             <p className="text-[9px] font-black tracking-[0.4em] text-white/30 leading-none mb-1.5 uppercase">HOSPITAL SYSTEM</p>
@@ -51,7 +51,7 @@ const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsRese
               <p className="text-[12px] font-black text-white/90 uppercase tracking-tighter leading-none mb-1">Dr. Jan Svěrák</p>
               <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none">Chief Surgeon</p>
             </div>
-            <div className="w-14 h-14 bg-[#00D8C1] text-black rounded-2xl flex items-center justify-center font-black text-sm group-hover:scale-105 transition-all shadow-glow shadow-[#00D8C1]/20">
+            <div className="w-14 h-14 bg-[#FBBF24] text-black rounded-2xl flex items-center justify-center font-black text-sm group-hover:scale-105 transition-all shadow-glow shadow-[#FBBF24]/20">
               JS
             </div>
           </div>

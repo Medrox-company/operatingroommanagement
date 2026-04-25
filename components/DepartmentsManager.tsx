@@ -11,7 +11,7 @@ const DepartmentsManager: React.FC = () => {
   const [deleteSubConfirm, setDeleteSubConfirm] = useState<string | null>(null);
   const [newSubDeptName, setNewSubDeptName] = useState<{ [key: string]: string }>({});
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [newDeptData, setNewDeptData] = useState({ name: '', description: '', accentColor: '#00D8C1' });
+  const [newDeptData, setNewDeptData] = useState({ name: '', description: '', accentColor: '#FBBF24' });
 
   const handleAddDepartment = () => {
     if (!newDeptData.name) return;
@@ -24,7 +24,7 @@ const DepartmentsManager: React.FC = () => {
       accentColor: newDeptData.accentColor,
     };
     setDepartments([...departments, newDept]);
-    setNewDeptData({ name: '', description: '', accentColor: '#00D8C1' });
+    setNewDeptData({ name: '', description: '', accentColor: '#FBBF24' });
     setIsAddingNew(false);
   };
 
@@ -73,10 +73,10 @@ const DepartmentsManager: React.FC = () => {
       <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <Stethoscope className="w-4 h-4 text-[#00D8C1]" />
-            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">DEPARTMENTS MANAGEMENT</p>
+            <Stethoscope className="w-4 h-4 text-[#FBBF24]" />
+            <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">DEPARTMENTS MANAGEMENT</p>
           </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             ODDELENI <span className="text-white/20">KLINIKY</span>
           </h1>
         </div>

@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshModules = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
       setModules([
-        { id: 'dashboard',  name: 'Dashboard',  description: 'Operating rooms overview',     is_enabled: true, icon: 'LayoutGrid', accent_color: '#00D8C1', sort_order: 1, allowed_roles: ['aro','cos','management','primar','user'] },
+        { id: 'dashboard',  name: 'Dashboard',  description: 'Operating rooms overview',     is_enabled: true, icon: 'LayoutGrid', accent_color: '#FBBF24', sort_order: 1, allowed_roles: ['aro','cos','management','primar','user'] },
         { id: 'timeline',   name: 'Timeline',   description: 'Operations timeline',          is_enabled: true, icon: 'Calendar',   accent_color: '#A855F7', sort_order: 2, allowed_roles: ['aro','cos','management','primar','user'] },
         { id: 'statistics', name: 'Statistics', description: 'Statistics and analytics',     is_enabled: true, icon: 'BarChart3',  accent_color: '#06B6D4', sort_order: 3, allowed_roles: ['management','primar','cos','user'] },
         { id: 'staff',      name: 'Staff',      description: 'Staff management',             is_enabled: true, icon: 'Users',      accent_color: '#10B981', sort_order: 4, allowed_roles: ['cos','management','user'] },

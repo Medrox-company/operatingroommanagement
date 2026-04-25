@@ -93,7 +93,7 @@ function DetailEditModal({
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all"
+          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all"
           placeholder="Zadejte jméno..."
         />
       </div>
@@ -163,7 +163,7 @@ function DetailEditModal({
           step="10"
           value={formData.availability ?? 100}
           onChange={(e) => setFormData({ ...formData, availability: parseInt(e.target.value) })}
-          className="w-full mt-2 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00D8C1]"
+          className="w-full mt-2 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#FBBF24]"
         />
         <div className="flex justify-between text-[10px] text-white/30 mt-1">
           <span>0%</span>
@@ -248,7 +248,7 @@ function DetailEditModal({
         <textarea
           value={formData.notes ?? ''}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#00D8C1]/50 transition-all resize-none"
+          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all resize-none"
           placeholder="Zadejte dodatečné poznámky..."
           rows={3}
         />
@@ -284,7 +284,7 @@ function DetailEditModal({
         <button
           onClick={handleSave}
           disabled={saving || !formData.name.trim()}
-          className="flex-1 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3 rounded-xl bg-[#FBBF24]/20 hover:bg-[#FBBF24]/30 text-[#FBBF24] font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Uložit změny
@@ -480,10 +480,10 @@ export default function StaffManager() {
       <header className="space-y-6">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <Shield className="w-4 h-4 text-[#00D8C1]" />
-            <p className="text-[10px] font-black text-[#00D8C1] tracking-[0.4em] uppercase">PERSONÁL CONTROL</p>
+            <Shield className="w-4 h-4 text-[#FBBF24]" />
+            <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">PERSONÁL CONTROL</p>
           </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-black tracking-tighter uppercase leading-none">
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             PERSONÁL <span className="text-white/20">MANAGEMENT</span>
           </h1>
         </div>
@@ -493,7 +493,7 @@ export default function StaffManager() {
           {[
             { label: 'LÉKAŘI', value: counts.doctors, icon: Stethoscope, color: 'text-violet-400' },
             { label: 'SESTRY', value: counts.nurses, icon: Heart, color: 'text-emerald-400' },
-            { label: 'CELKEM', value: staff.length, icon: Users, color: 'text-[#00D8C1]' },
+            { label: 'CELKEM', value: staff.length, icon: Users, color: 'text-[#FBBF24]' },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center justify-center px-6 md:px-10 py-4 rounded-2xl hover:bg-white/5 transition-all min-w-[100px]">
               <div className="flex items-center gap-2 mb-2 opacity-50">
@@ -515,7 +515,7 @@ export default function StaffManager() {
             <button
               key={cat.id}
               onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
-              className={`flex items-center gap-2 pb-4 px-4 -mb-4 transition-all whitespace-nowrap ${isActive ? 'text-white border-b-2 border-[#00D8C1]' : 'text-white/40 hover:text-white/60'}`}
+              className={`flex items-center gap-2 pb-4 px-4 -mb-4 transition-all whitespace-nowrap ${isActive ? 'text-white border-b-2 border-[#FBBF24]' : 'text-white/40 hover:text-white/60'}`}
             >
               <Icon className="w-4 h-4" />
               <span className="font-semibold">{cat.label}</span>
@@ -541,7 +541,7 @@ export default function StaffManager() {
         </div>
         <button
           onClick={() => setIsAddingNew(true)}
-          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all"
+          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#FBBF24]/20 hover:bg-[#FBBF24]/30 text-[#FBBF24] font-semibold transition-all"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Přidat</span>
@@ -571,7 +571,7 @@ export default function StaffManager() {
                 onClick={() => setSelectedStaffId(member.id)}
                 className={`px-3 py-3 rounded-xl border transition-all text-left group ${
                   isSelected
-                    ? 'bg-[#00D8C1]/10 border-[#00D8C1]/30'
+                    ? 'bg-[#FBBF24]/10 border-[#FBBF24]/30'
                     : 'bg-white/[0.02] border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04]'
                 } ${!member.is_active ? 'opacity-40' : ''}`}
                 whileHover={{ scale: 1.005 }}
@@ -592,7 +592,7 @@ export default function StaffManager() {
 
                   {/* Name + role label */}
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium text-sm truncate leading-tight ${isSelected ? 'text-[#00D8C1]' : 'text-white/90'}`}>
+                    <p className={`font-medium text-sm truncate leading-tight ${isSelected ? 'text-[#FBBF24]' : 'text-white/90'}`}>
                       {member.name}
                     </p>
                     <p className="text-[10px] text-white/40 uppercase tracking-wide leading-tight">
@@ -729,7 +729,7 @@ export default function StaffManager() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <UserPlus className="w-5 h-5 text-[#00D8C1]" />
+                    <UserPlus className="w-5 h-5 text-[#FBBF24]" />
                     <h3 className="text-lg font-bold text-white">
                       Přidat {activeCategory === 'doctors' ? 'lékaře' : activeCategory === 'nurses' ? 'sestru' : 'anesteziologa'}
                     </h3>
@@ -764,7 +764,7 @@ export default function StaffManager() {
                   <button
                     onClick={handleAddStaff}
                     disabled={saving || !newStaffName.trim()}
-                    className="flex-1 py-3 rounded-xl bg-[#00D8C1]/20 hover:bg-[#00D8C1]/30 text-[#00D8C1] font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 py-3 rounded-xl bg-[#FBBF24]/20 hover:bg-[#FBBF24]/30 text-[#FBBF24] font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     Přidat
