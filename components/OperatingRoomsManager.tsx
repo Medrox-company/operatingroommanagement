@@ -446,6 +446,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     // Clamp to valid range [0, length-1]
     const targetOrder = Math.max(0, Math.min(roomsList.length - 1, requestedOrder));
 
+    // Build the new logical state (with possibly-swapped sort_order values)
     let updatedRooms: OperatingRoom[];
 
     if (targetOrder !== originalOrder) {
@@ -465,9 +466,6 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         }
         return r;
       });
-
-      // Persist new order for both rooms (and any others) in one batch
-      saveRoomOrder(updatedRooms);
     } else {
       // No reordering — just propagate name/department changes
       updatedRooms = roomsList.map(r =>
@@ -475,14 +473,24 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       );
     }
 
-    // Always keep list visually sorted by sort_order
-    updatedRooms = [...updatedRooms].sort(
+    // CRITICAL: the /reorder API persists sort_order from the ARRAY INDEX,
+    // not from the sort_order field. We must therefore sort the array by the
+    // desired sort_order BEFORE sending it. Otherwise the swap is reverted.
+    const orderedRooms = [...updatedRooms].sort(
       (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
     );
 
-    setRoomsList(updatedRooms);
-    onRoomsChange?.(updatedRooms);
+    // Re-stamp sort_order to be exactly the array index, so local state and DB agree.
+    const normalizedRooms = orderedRooms.map((r, i) => ({ ...r, sort_order: i }));
+
+    setRoomsList(normalizedRooms);
+    onRoomsChange?.(normalizedRooms);
     setEditingRoom(null);
+
+    if (targetOrder !== originalOrder) {
+      // Persist whole order (server writes sort_order = index in this array)
+      saveRoomOrder(normalizedRooms);
+    }
   };
 
   const handleUpdateSchedule = (roomId: string, newSchedule: WeeklySchedule) => {
