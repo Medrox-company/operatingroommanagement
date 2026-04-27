@@ -13,7 +13,8 @@ import {
   Star,
   Sparkles,
   BarChart3,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 
 export interface SubDepartment {
@@ -151,6 +152,7 @@ export const STEP_COLORS: Record<number, { bg: string; fill: string; border: str
   export const SIDEBAR_ITEMS = [
   { icon: LayoutGrid, label: 'Přehled', id: 'dashboard' },
   { icon: CalendarDays, label: 'Timeline', id: 'timeline' },
+  { icon: Users, label: 'Pacienti', id: 'patients' },
   { icon: ShieldCheck, label: 'Checklist', id: 'safety' },
   { icon: BarChart3, label: 'Statistiky', id: 'statistics' },
   { icon: User, label: 'Personál', id: 'staff' },

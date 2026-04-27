@@ -4,6 +4,7 @@ import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
 import TimelineModule from './components/TimelineModule';
+import PatientTrackingBoard from './components/PatientTrackingBoard';
 import SafetyChecklistModule from './components/SafetyChecklistModule';
 import StatisticsModule from './components/StatisticsModule';
 import StaffManager from './components/StaffManager';
@@ -525,6 +526,13 @@ const AppContent: React.FC = () => {
             {currentView === 'timeline' && (
               <div className="w-full h-full overflow-hidden">
                 <TimelineModule rooms={rooms} />
+              </div>
+            )}
+
+            {/* Patient Tracking Board - real-time patient journey tracking */}
+            {currentView === 'patients' && (
+              <div className="w-full h-full overflow-hidden">
+                <PatientTrackingBoard rooms={rooms} />
               </div>
             )}
 
