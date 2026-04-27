@@ -299,15 +299,20 @@ const AppContent: React.FC = () => {
   }, [isDbConnected, rooms]);
 
   const handleAcuteCaseSubmit = useCallback(async (data: AcuteCaseData) => {
-    const { selectedRoomId, procedureName, estimatedDuration } = data;
+    const { selectedRoomId, procedureName, estimatedDuration, urgency } = data;
     
     recentLocalUpdates.current.set(selectedRoomId, Date.now());
     
     const now = new Date();
     const estEnd = new Date(now.getTime() + estimatedDuration * 60 * 1000);
     
+    // Emergentní a urgentní akutní výkony aktivují stav nouze;
+    // odložitelné a elektivní jsou jen označené úrovní urgence (zbarvení sálu).
+    const isEmergencyLevel = urgency === 'immediate' || urgency === 'urgent';
+    
     const updatedFields = {
-      isEmergency: true,
+      isEmergency: isEmergencyLevel,
+      urgencyLevel: urgency,
       isLocked: false,
       currentProcedure: {
         name: procedureName,
@@ -327,7 +332,7 @@ const AppContent: React.FC = () => {
     
     if (isDbConnected) {
       await updateOperatingRoom(selectedRoomId, {
-        is_emergency: true,
+        is_emergency: isEmergencyLevel,
         estimated_end_time: estEnd.toISOString(),
       });
     }

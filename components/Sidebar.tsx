@@ -1,5 +1,4 @@
 import React, { memo, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { SIDEBAR_ITEMS } from '../constants';
 import { LogOut, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -55,46 +54,22 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onAcute
       </nav>
 
       <div className="mt-auto flex flex-col items-center gap-4 pb-4 w-full px-4 pointer-events-auto flex-shrink-0">
-        {/* Acute Case Button - Notifikace o akutním výkonu */}
+        {/* Acute Case Button - same design as nav icons */}
         {onAcuteCase && (
-          <motion.button
+          <button
             onClick={onAcuteCase}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             aria-label="Akutní výkon"
-            className="relative w-full aspect-square rounded-2xl flex flex-col items-center justify-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60"
-            style={{
-              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-              boxShadow: '0 8px 24px rgba(239,68,68,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset, 0 1px 0 rgba(255,255,255,0.2) inset',
-            }}
+            className="relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-2xl text-white/40 hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
-            {/* Pulsing ring */}
-            <motion.span
-              animate={{ scale: [1, 1.25, 1], opacity: [0.55, 0, 0.55] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
-              className="absolute inset-0 rounded-2xl pointer-events-none"
-              style={{ background: 'rgba(239,68,68,0.6)', filter: 'blur(10px)' }}
+            <Zap
+              className="w-6 h-6 transition-all duration-300 group-hover:-translate-y-0.5"
+              strokeWidth={2}
             />
 
-            {/* Icon */}
-            <motion.div
-              animate={{ rotate: [0, -8, 8, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.2 }}
-              className="relative z-10"
-            >
-              <Zap className="w-6 h-6 text-white drop-shadow-lg" strokeWidth={2.5} />
-            </motion.div>
-
-            {/* Label below icon */}
-            <span className="relative z-10 mt-1 text-[8px] font-bold text-white uppercase tracking-[0.15em] drop-shadow">
+            <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
               Akutní
             </span>
-
-            {/* Hover tooltip */}
-            <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
-              Akutní výkon
-            </span>
-          </motion.button>
+          </button>
         )}
 
         {/* Logout Button */}

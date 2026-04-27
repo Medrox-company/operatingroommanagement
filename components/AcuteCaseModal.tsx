@@ -32,7 +32,7 @@ interface AcuteCaseModalProps {
   onSubmit: (data: AcuteCaseData) => void;
 }
 
-const URGENCY_CONFIG: Record<UrgencyLevel, { 
+export const URGENCY_CONFIG: Record<UrgencyLevel, { 
   label: string; 
   description: string;
   timeWindow: string;
@@ -40,28 +40,28 @@ const URGENCY_CONFIG: Record<UrgencyLevel, {
   bgColor: string;
 }> = {
   immediate: {
-    label: 'Immediate',
+    label: 'EMERGENTNÍ',
     description: 'Bezprostřední ohrožení života',
     timeWindow: '< 1 hod',
     color: '#ef4444',
     bgColor: 'rgba(239,68,68,0.15)',
   },
   urgent: {
-    label: 'Urgent',
+    label: 'URGENTNÍ',
     description: 'Akutní stav, hrozba poškození',
     timeWindow: '< 6 hod',
     color: '#f97316',
     bgColor: 'rgba(249,115,22,0.15)',
   },
   expedited: {
-    label: 'Expedited',
+    label: 'ODLOŽITELNÝ',
     description: 'Brzké řešení nezbytné',
     timeWindow: '< 24 hod',
     color: '#eab308',
     bgColor: 'rgba(234,179,8,0.15)',
   },
   elective: {
-    label: 'Elective',
+    label: 'ELEKTIVNÍ',
     description: 'Plánovaný výkon',
     timeWindow: '> 24 hod',
     color: '#3b82f6',
