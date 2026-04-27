@@ -856,14 +856,16 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky with LoginPage hover */}
+                  {/* Room Label - Sticky LEFT column with HIGHER Z-INDEX to stay above timeline */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-30" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
                       borderRight: `1px solid ${C.border}`,
-                      background: 'rgba(11,17,32,0.95)',
+                      background: 'rgba(11,17,32,0.98)',
+                      backdropFilter: 'blur(8px)',
+                      boxShadow: '4px 0 12px rgba(0,0,0,0.4)',
                     }}
                   >
                     {/* ARO Overtime Badge - softer */}
@@ -901,9 +903,9 @@ style={{
                       )}
                     </div>
 
-                    {/* Room info - Rounded glassmorph card like timeline */}
+                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN, always visible */}
                     <div 
-                      className="min-w-0 flex-1 rounded-xl p-3 backdrop-blur-md transition-all duration-200"
+                      className="flex-shrink-0 flex-1 max-w-xs rounded-xl p-3 backdrop-blur-md transition-all duration-200"
                       style={{ 
                         background: C.glass, 
                         border: `1px solid ${C.border}`,
@@ -964,7 +966,7 @@ style={{
                     </div>
                   </div>
 
-                  {/* Timeline */}
+                  {/* Timeline section - RIGHT side, scrollable */}
                   <div className="relative flex-1 overflow-hidden">
                     {/* Hour grid lines */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
