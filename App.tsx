@@ -298,6 +298,24 @@ const AppContent: React.FC = () => {
     }
   }, [isDbConnected, rooms]);
 
+  // Potvrzení přijetí akutního výkonu — odstraní zbarvení sálu (urgencyLevel) i emergency stav.
+  // Probíhající procedura zůstává; ruší se pouze "akutní notifikace".
+  const handleAcceptAcuteCase = useCallback(async (roomId: string) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
+
+    setRooms(prev => prev.map(r =>
+      r.id === roomId
+        ? { ...r, urgencyLevel: undefined, isEmergency: false }
+        : r
+    ));
+
+    if (isDbConnected) {
+      await updateOperatingRoom(roomId, {
+        is_emergency: false,
+      });
+    }
+  }, [isDbConnected]);
+
   const handleAcuteCaseSubmit = useCallback(async (data: AcuteCaseData) => {
     const { selectedRoomId, procedureName, estimatedDuration, urgency } = data;
     
@@ -510,6 +528,7 @@ const AppContent: React.FC = () => {
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
                   onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
                   onPatientStatusChange={(calledAt, arrivedAt) => handlePatientStatusChange(selectedRoom.id, calledAt, arrivedAt)}
+                  onAcceptAcuteCase={() => handleAcceptAcuteCase(selectedRoom.id)}
                 />
               </div>
             )}

@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Check
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
@@ -23,6 +23,8 @@ interface RoomDetailProps {
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
   onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
   onPatientStatusChange?: (calledAt: string | null, arrivedAt: string | null) => void;
+  /** Potvrzení přijetí akutního výkonu — vyresetuje urgencyLevel + isEmergency a tím zruší zbarvení sálu */
+  onAcceptAcuteCase?: () => void;
 }
 
 // NCEPOD urgency theme — synchronizováno s RoomCard / AcuteCaseModal.
@@ -67,7 +69,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange, onAcceptAcuteCase }) => {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -626,6 +628,24 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               )}
             </div>
 
+            {/* Accept acute case — viditelné jen při aktivním urgency tématu */}
+            {urgencyTheme && onAcceptAcuteCase && (
+              <motion.button
+                onClick={onAcceptAcuteCase}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative mt-5 w-full bg-white/95 hover:bg-white text-[#0B1120] rounded-2xl py-3.5 flex items-center justify-center gap-2.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6)' }}
+                aria-label="Přijmout akutní výkon"
+              >
+                <Check className="w-5 h-5" strokeWidth={3} />
+                <span className="text-sm font-black uppercase tracking-[0.18em]">
+                  Přijmout výkon
+                </span>
+              </motion.button>
+            )}
+
             {/* Progress bar — thin, integrated at bottom */}
             <div className="relative mt-5 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
               <motion.div
@@ -1016,20 +1036,39 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
               {/* Urgency badge má prioritu — překrývá EMERGENCY i SÁL UZAMČEN */}
               {urgencyTheme ? (
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)]"
-                  style={{
-                    backgroundColor: urgencyTheme.color,
-                    boxShadow: urgencyTheme.badgeShadow,
-                  }}
-                >
-                  <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
-                  <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">
-                    {urgencyTheme.label}
-                  </span>
-                </motion.div>
+                <>
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)]"
+                    style={{
+                      backgroundColor: urgencyTheme.color,
+                      boxShadow: urgencyTheme.badgeShadow,
+                    }}
+                  >
+                    <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
+                    <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">
+                      {urgencyTheme.label}
+                    </span>
+                  </motion.div>
+                  {onAcceptAcuteCase && (
+                    <motion.button
+                      onClick={onAcceptAcuteCase}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="pointer-events-auto bg-white/95 hover:bg-white text-[#0B1120] px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] backdrop-blur-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                      style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6)' }}
+                      aria-label="Přijmout akutní výkon"
+                    >
+                      <Check className="w-[clamp(1rem,1.8vw,1.75rem)] h-[clamp(1rem,1.8vw,1.75rem)]" strokeWidth={3} />
+                      <span className="text-[clamp(0.875rem,1.6vw,1.25rem)] font-black uppercase tracking-widest">
+                        Přijmout
+                      </span>
+                    </motion.button>
+                  )}
+                </>
               ) : room.isEmergency ? (
                 <div className="bg-red-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(239,68,68,0.5)]">
                   <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
