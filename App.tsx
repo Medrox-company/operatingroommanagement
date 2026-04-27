@@ -19,6 +19,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
+import { useUrgencyAlert } from './hooks/useUrgencyAlert';
 
 // Main App Content - Operating Rooms Management System
 const DEFAULT_BG_SETTINGS: BackgroundSettings = {
@@ -96,8 +97,10 @@ const AppContent: React.FC = () => {
     return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${colorStops})`;
   }, [bgSettings]);
 
-  // Emergency alert sound - plays when any room's emergency status is activated
+  // Emergency alert sound - harsh siren pro 'immediate' / EMERGENTNÍ
   useEmergencyAlert(rooms, selectedRoomId);
+  // Urgency alert sound - jemný chime pro 'urgent' / 'expedited' / 'elective'
+  useUrgencyAlert(rooms);
 
   // Load rooms from API on mount - separated for stability
   useEffect(() => {
