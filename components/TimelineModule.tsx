@@ -1464,9 +1464,9 @@ style={{
               );
             })}
             </div>
+          </div>
         </div>
       </div>
-
 
       </div>{/* end desktop wrapper */}
     </div>
