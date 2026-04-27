@@ -900,7 +900,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
                       >
                         <Lock className="w-3.5 h-3.5" style={{ color: C.accent }} />
-                      </div>
+                      </motion.div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}dd` }}>{room.name}</p>
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.accent}90` }}>UZAMCENO</p>
