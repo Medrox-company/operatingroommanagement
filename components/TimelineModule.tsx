@@ -47,8 +47,22 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
-// Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
-const STEP_INDEX_COLORS: Record<number, string> = {
+  // NCEPOD urgency theme — synchronizováno s RoomCard / RoomDetail / AcuteCaseModal.
+  // Tintuje řádek sálu na timeline po registraci akutního výkonu.
+  const URGENCY_THEME: Record<'immediate' | 'urgent' | 'expedited' | 'elective', {
+    label: string;
+    color: string;        // hlavní barva
+    bgSoft: string;       // jemné pozadí (např. řádek)
+    border: string;       // border tone
+  }> = {
+    immediate: { label: 'EMERGENTNÍ',  color: '#ef4444', bgSoft: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.35)' },
+    urgent:    { label: 'URGENTNÍ',    color: '#f97316', bgSoft: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.35)' },
+    expedited: { label: 'ODLOŽITELNÝ', color: '#eab308', bgSoft: 'rgba(234,179,8,0.07)',  border: 'rgba(234,179,8,0.30)' },
+    elective:  { label: 'ELEKTIVNÍ',   color: '#3b82f6', bgSoft: 'rgba(59,130,246,0.07)', border: 'rgba(59,130,246,0.30)' },
+  };
+
+  // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
+  const STEP_INDEX_COLORS: Record<number, string> = {
   0: '#6b7280',
   1: '#8b5cf6',
   2: '#ec4899',
@@ -764,8 +778,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 progressPct = Math.max(0, Math.min(100, ((nowWindowPct - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Emergency row - LoginPage style */
+              /* Urgency row — full-banner pro immediate/urgent (isEmergency aktivní);
+                 tintuje se podle NCEPOD úrovně, fallback red pro legacy emergency bez urgencyLevel */
               if (room.isEmergency) {
+                const urgencyTheme = room.urgencyLevel ? URGENCY_THEME[room.urgencyLevel] : null;
+                const bannerColor = urgencyTheme ? urgencyTheme.color : C.red;
+                const bannerLabel = urgencyTheme ? urgencyTheme.label : 'EMERGENCY';
+                const shouldPulse = !urgencyTheme || room.urgencyLevel === 'immediate' || room.urgencyLevel === 'urgent';
                 return (
                   <div
                     key={room.id}
@@ -779,33 +798,38 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     >
                       <div 
                         className="w-7 h-7 rounded-xl flex items-center justify-center"
-                        style={{ background: `${C.red}15`, border: `1px solid ${C.red}30` }}
+                        style={{ background: `${bannerColor}26`, border: `1px solid ${bannerColor}55` }}
                       >
-                        <AlertTriangle className="w-3.5 h-3.5" style={{ color: C.red }} />
+                        <AlertTriangle className="w-3.5 h-3.5" style={{ color: bannerColor }} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.red}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.red}80` }}>EMERGENCY</p>
+                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
                       </div>
                     </div>
-                    {/* Emergency timeline box - LoginPage glassmorph */}
+                    {/* Urgency timeline box - tinted glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden animate-pulse">
+                      <div className={`absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
                         {/* Main background */}
                         <div 
                           className="absolute inset-0 rounded-xl backdrop-blur-md"
                           style={{ 
-                            background: `linear-gradient(135deg, ${C.red}20 0%, ${C.red}08 100%)`,
-                            border: `1px solid ${C.red}35`,
+                            background: `linear-gradient(135deg, ${bannerColor}20 0%, ${bannerColor}08 100%)`,
+                            border: `1px solid ${bannerColor}55`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
                           }}
                         />
                         {/* Content */}
                         <div className="absolute inset-0 flex items-center justify-center gap-2">
-                          <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
-                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${C.red}dd` }}>
-                            EMERGENCY
+                          <AlertTriangle className="w-4 h-4" style={{ color: bannerColor }} />
+                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${bannerColor}ee` }}>
+                            {bannerLabel}
                           </span>
+                          {room.currentProcedure?.name && (
+                            <span className="text-xs font-medium tracking-wide truncate max-w-[40ch]" style={{ color: `${bannerColor}cc` }}>
+                              · {room.currentProcedure.name}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -863,16 +887,34 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               }
 
               /* Active / Free row */
+              const softUrgency = (room.urgencyLevel === 'expedited' || room.urgencyLevel === 'elective')
+                ? URGENCY_THEME[room.urgencyLevel]
+                : null;
               return (
                 <motion.div
                   key={room.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
-                  className="flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
-                  style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
+                  className="relative flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
+                  style={{
+                    height: rowHeight,
+                    borderBottom: `1px solid ${C.border}`,
+                    background: softUrgency ? softUrgency.bgSoft : undefined,
+                  }}
                   onClick={() => setSelectedRoom(room)}
                 >
+                  {/* Side-stripe marker pro registrovaný akutní výkon — viditelný při scrollování */}
+                  {softUrgency && (
+                    <div
+                      className="absolute left-0 top-0 bottom-0 z-30 pointer-events-none"
+                      style={{
+                        width: 3,
+                        background: softUrgency.color,
+                        boxShadow: `0 0 12px ${softUrgency.color}aa`,
+                      }}
+                    />
+                  )}
                   {/* Room Label - Sticky LEFT column with uniform padding on all sides */}
                   <div 
                     className="flex-shrink-0 flex items-center gap-2 px-2 py-2 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
@@ -939,6 +981,23 @@ style={{
                             <Pause className="w-2.5 h-2.5" />
                             PAUZA
                           </span>
+                        )}
+                        {/* Urgency badge — pro expedited / elective (immediate/urgent jsou v Emergency rowu) */}
+                        {room.urgencyLevel && (room.urgencyLevel === 'expedited' || room.urgencyLevel === 'elective') && (
+                          <motion.span
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="text-[8px] font-semibold px-2 py-1 rounded-lg uppercase flex-shrink-0 flex items-center gap-1"
+                            style={{
+                              background: URGENCY_THEME[room.urgencyLevel].bgSoft,
+                              color: URGENCY_THEME[room.urgencyLevel].color,
+                              border: `1px solid ${URGENCY_THEME[room.urgencyLevel].border}`,
+                            }}
+                            title={`Akutní výkon — ${URGENCY_THEME[room.urgencyLevel].label}`}
+                          >
+                            <AlertTriangle className="w-2.5 h-2.5" />
+                            {URGENCY_THEME[room.urgencyLevel].label}
+                          </motion.span>
                         )}
                         {/* Patient called indicator */}
                         {room.patientCalledAt && !room.patientArrivedAt && (
