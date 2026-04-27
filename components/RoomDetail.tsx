@@ -990,7 +990,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24"
+          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24"
         >
           <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
         </button>
@@ -998,7 +998,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         {/* Notification Button */}
         <motion.button 
           onClick={() => setNotificationOverlayOpen(true)}
-          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40"
+          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -1065,8 +1065,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               patientCalledTime && !patientArrivedTime
                 ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
                 : patientArrivedTime
-                ? 'bg-white/5 border-white/10 opacity-60'
-                : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+                ? 'bg-white/5 border-white/50 opacity-60'
+                : 'bg-white/5 border-white/50 opacity-40 hover:opacity-100'
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1130,7 +1130,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               patientArrivedTime
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
                 : !patientCalledTime
-                ? 'bg-white/5 border-white/10 opacity-40'
+                ? 'bg-white/5 border-white/50 opacity-40'
                 : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
             }`}
             whileHover={{ scale: 1.05 }}
@@ -1159,7 +1159,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
               room.isEnhancedHygiene
                 ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
-                : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'
+                : 'bg-white/5 border-white/50 opacity-40 hover:opacity-100'
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1187,7 +1187,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-                  : 'bg-white/5 border-white/10'
+                  : 'bg-white/5 border-white/50'
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
