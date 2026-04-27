@@ -193,7 +193,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
               <div className="text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
                   <SettingsIcon className="w-4 h-4 text-[#8B5CF6]" />
-                  <p className="text-[10px] font-black text-[#8B5CF6] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
+                  <p className="text-[10px] font-bold text-[#8B5CF6] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
                 </div>
                 <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
                   NASTAVENÍ <span className="text-white/20">SYSTÉMU</span>
@@ -287,7 +287,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                         <div className="w-full flex justify-center items-center min-w-0 gap-2 shrink-0 mb-4">
                           <div className="flex flex-col min-w-0 flex-1 text-center">
                             <motion.p 
-                              className="text-[9px] font-black tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors"
+                              className="text-[9px] font-bold tracking-[0.3em] uppercase leading-none mb-2 truncate transition-colors"
                               initial={{ color: '#64748B' }}
                               whileHover={{ color: setting.accentColor }}
                             >

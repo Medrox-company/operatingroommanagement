@@ -990,20 +990,22 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24"
+          aria-label="Zavřít detail sálu"
+          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
         >
-          <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
+          <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/70" />
         </button>
 
         {/* Notification Button */}
         <motion.button 
           onClick={() => setNotificationOverlayOpen(true)}
-          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40"
+          aria-label="Otevřít notifikace"
+          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Bell className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
-          <span className="hidden sm:block text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-wider text-white">Notifikace</span>
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/70" />
+          <span className="hidden sm:block text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-wider text-white/70">Notifikace</span>
         </motion.button>
       </div>
 
@@ -1061,7 +1063,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               }
             }}
             disabled={!!patientCalledTime}
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+            aria-label="Volat pacienta"
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
               patientCalledTime && !patientArrivedTime
                 ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
                 : patientArrivedTime
@@ -1093,8 +1096,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   exit={{ opacity: 0, scale: 0.8 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <Phone className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/60'}`} strokeWidth={2} />
-                  <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">Volat</span>
+                  <Phone className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-white/30' : 'text-white/70'}`} strokeWidth={2} />
+                  <span className={`text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest ${patientArrivedTime ? 'text-white/30' : 'text-white/70'}`}>Volat</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1126,7 +1129,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               }
             }}
             disabled={!patientCalledTime || !!patientArrivedTime}
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed ${
+            aria-label="Potvrdit příjezd pacienta"
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
               patientArrivedTime
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
                 : !patientCalledTime
@@ -1136,8 +1140,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <UserCheck className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/60'}`} strokeWidth={2} />
-            <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest text-white/60">Příjezd</span>
+            <UserCheck className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/70'}`} strokeWidth={2} />
+            <span className={`text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest ${patientArrivedTime ? 'text-blue-300' : patientCalledTime ? 'text-blue-300' : 'text-white/70'}`}>Příjezd</span>
           </motion.button>
         </div>
 
@@ -1156,7 +1160,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 step_name: currentStep.title,
               });
             }}
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+            aria-label={room.isEnhancedHygiene ? 'Vypnout hygienický režim' : 'Zapnout hygienický režim'}
+            aria-pressed={room.isEnhancedHygiene}
+            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
               room.isEnhancedHygiene
                 ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
                 : 'bg-white/5 border-white/50 opacity-40 hover:opacity-100'
@@ -1164,8 +1170,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-            <span className={`text-[5px] sm:text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white'}`}>
+            <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/70'}`} strokeWidth={2} />
+            <span className={`text-[5px] sm:text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/70'}`}>
               Hygienický<br />režim
             </span>
           </motion.button>
@@ -1184,10 +1190,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   step_name: currentStep.title,
                 });
               }}
-              className={`rounded-2xl transition-all backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 ${
+              aria-label={isPaused ? 'Pokračovat ve fázi' : 'Pozastavit fázi'}
+              aria-pressed={isPaused}
+              className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-                  : 'bg-white/5 border-white/50'
+                  : 'bg-white/5 border-white/50 opacity-40 hover:opacity-100'
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -1195,9 +1203,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               {isPaused ? (
                 <Play className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-cyan-300`} strokeWidth={2} />
               ) : (
-                <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/60`} strokeWidth={2} />
+                <Pause className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 text-white/70`} strokeWidth={2} />
               )}
-                <span className="text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">{isPaused ? 'Pokračovat' : 'Pauza'}</span>
+                <span className={`text-[6px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-widest ${isPaused ? 'text-cyan-300' : 'text-white/70'}`}>{isPaused ? 'Pokračovat' : 'Pauza'}</span>
             </motion.button>
           )}
         </div>
@@ -1367,8 +1375,8 @@ const prevStep = activeDbStatuses.length > 0
                     transition={{ duration: 0.3 }}
                     className="flex flex-col items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
                   >
-                    <p className="text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] uppercase text-white/25">
-                      SPECI��LNÍ STAV
+                    <p className="text-[clamp(8px,0.8vw,10px)] font-semibold tracking-[0.3em] uppercase text-white/30">
+                      SPECIÁLNÍ STAV
                     </p>
                     {/* Animované sluchátko */}
                     <motion.div
@@ -1539,8 +1547,8 @@ const prevStep = activeDbStatuses.length > 0
             className="h-1.5 rounded-full transition-all duration-500"
             style={{
               width: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 32 : 8,
-              backgroundColor: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? activeColor : 'rgba(255,255,255,0.15)',
-              opacity: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 1 : 0.4
+              backgroundColor: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? activeColor : 'rgba(255,255,255,0.22)',
+              opacity: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 1 : 0.55
             }}
           />
         ))}

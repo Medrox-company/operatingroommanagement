@@ -481,7 +481,7 @@ export default function StaffManager() {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <Shield className="w-4 h-4 text-[#FBBF24]" />
-            <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">PERSONÁL CONTROL</p>
+            <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">PERSONÁL CONTROL</p>
           </div>
           <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             PERSONÁL <span className="text-white/20">MANAGEMENT</span>
@@ -498,9 +498,9 @@ export default function StaffManager() {
             <div key={stat.label} className="flex flex-col items-center justify-center px-6 md:px-10 py-4 rounded-2xl hover:bg-white/5 transition-all min-w-[100px]">
               <div className="flex items-center gap-2 mb-2 opacity-50">
                 <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                <p className="text-[9px] font-black uppercase tracking-[0.15em]">{stat.label}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.15em]">{stat.label}</p>
               </div>
-              <p className="text-2xl font-black text-white">{stat.value}</p>
+              <p className="text-2xl font-bold text-white">{stat.value}</p>
             </div>
           ))}
         </div>
@@ -605,7 +605,7 @@ export default function StaffManager() {
                     {/* Skill Level */}
                     {skillMeta && (
                       <div className={`${iconBox} ${skillMeta.bgColor}`} title={`Uroven: ${skillMeta.label}`}>
-                        <span className={`text-[9px] font-black leading-none ${skillMeta.color}`}>{skillMeta.label}</span>
+                        <span className={`text-[9px] font-bold leading-none ${skillMeta.color}`}>{skillMeta.label}</span>
                       </div>
                     )}
 

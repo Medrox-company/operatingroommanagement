@@ -23,19 +23,19 @@ const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsRese
             <ShieldCheck className="w-6 h-6 text-[#FBBF24]" />
          </div>
          <div>
-            <p className="text-[9px] font-black tracking-[0.4em] text-white/30 leading-none mb-1.5 uppercase">HOSPITAL SYSTEM</p>
+            <p className="text-[9px] font-bold tracking-[0.4em] text-white/30 leading-none mb-1.5 uppercase">HOSPITAL SYSTEM</p>
             <p className="text-sm font-bold text-white uppercase tracking-tight">OPERATINGROOM</p>
          </div>
       </div>
 
       <div className="flex items-center gap-10">
         <div className="flex flex-col items-end">
-          <span className="text-4xl font-mono font-bold text-white tracking-tighter tabular-nums leading-none">
+          <span className="text-4xl font-mono font-bold text-white tracking-tight tabular-nums leading-none">
             {time.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
           </span>
           <div className="flex items-center gap-2 mt-2">
              <Globe className="w-3 h-3 text-white/20" />
-             <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">LOCAL TIME • GMT+1</span>
+             <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">LOCAL TIME • GMT+1</span>
           </div>
         </div>
         
@@ -48,10 +48,10 @@ const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsRese
 
           <div className="flex items-center gap-5 cursor-pointer group">
             <div className="text-right hidden sm:block">
-              <p className="text-[12px] font-black text-white/90 uppercase tracking-tighter leading-none mb-1">Dr. Jan Svěrák</p>
-              <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none">Chief Surgeon</p>
+              <p className="text-[12px] font-bold text-white/90 uppercase tracking-tight leading-none mb-1">Dr. Jan Svěrák</p>
+              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-none">Chief Surgeon</p>
             </div>
-            <div className="w-14 h-14 bg-[#FBBF24] text-black rounded-2xl flex items-center justify-center font-black text-sm group-hover:scale-105 transition-all shadow-glow shadow-[#FBBF24]/20">
+            <div className="w-14 h-14 bg-[#FBBF24] text-black rounded-2xl flex items-center justify-center font-bold text-sm group-hover:scale-105 transition-all shadow-glow shadow-[#FBBF24]/20">
               JS
             </div>
           </div>

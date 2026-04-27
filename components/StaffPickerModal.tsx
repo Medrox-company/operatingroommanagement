@@ -222,7 +222,7 @@ export default function StaffPickerModal({
                   </div>
                 )}
                 <div>
-                  <h2 className="text-lg font-black tracking-tight text-white">{title}</h2>
+                  <h2 className="text-lg font-bold tracking-tight text-white">{title}</h2>
                   <p className="text-[11px] text-white/30 mt-0.5">
                     {loading ? 'Načítání...' : `${freeStaff.length} volných · kliknutím vyberte`}
                   </p>
@@ -369,7 +369,7 @@ export default function StaffPickerModal({
                       {/* Name row */}
                       <div className="flex items-center gap-2 w-full">
                         {skillMeta && (
-                          <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-black text-[9px] border ${skillMeta.bgColor} ${skillMeta.color}`}>
+                          <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[9px] border ${skillMeta.bgColor} ${skillMeta.color}`}>
                             {skillMeta.label}
                           </div>
                         )}
