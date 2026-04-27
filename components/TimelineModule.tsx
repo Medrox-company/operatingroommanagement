@@ -629,19 +629,21 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                           </span>
                         </motion.div>
                       ) : (
-                        <div 
-                          className="ml-2 flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-200 hover:bg-white/5"
+                        <motion.div 
+                          className="ml-2 flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer group/time"
+                          whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                          whileTap={{ scale: 0.98 }}
                           style={{ 
                             background: isNightHour ? 'rgba(255,255,255,0.02)' : 'transparent',
                           }}
                         >
-                          <span className={`text-[11px] font-mono font-semibold transition-colors duration-200 ${isNightHour ? 'text-white/25' : 'text-white/45'}`}>
+                          <span className={`text-[11px] font-mono font-semibold transition-all duration-200 group-hover/time:text-white/70 ${isNightHour ? 'text-white/25' : 'text-white/45'}`}>
                             {hourLabel(hour)}
                           </span>
                           {isNextDay && (
-                            <span className="text-[7px] font-semibold text-white/20 uppercase">+1</span>
+                            <span className="text-[7px] font-semibold text-white/20 uppercase group-hover/time:text-white/40 transition-colors duration-200">+1</span>
                           )}
-                        </div>
+                        </motion.div>
                       )
                     )}
                   </div>
@@ -692,24 +694,27 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-white/90" />
                   </motion.div>
-                  {/* Time label */}
-                  <div 
-                    className="absolute -left-6 top-5 px-2 py-0.5 rounded-md text-[9px] font-bold whitespace-nowrap"
+                  {/* Time label with animation */}
+                  <motion.div 
+                    className="absolute -left-6 top-5 px-2.5 py-1 rounded-lg text-[9px] font-bold whitespace-nowrap"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
                     style={{ 
-                      background: `linear-gradient(135deg, ${C.accent}30 0%, ${C.accent}15 100%)`,
-                      border: `1px solid ${C.accent}40`,
+                      background: `linear-gradient(135deg, ${C.accent}35 0%, ${C.accent}18 100%)`,
+                      border: `1.5px solid ${C.accent}50`,
                       color: C.accent,
-                      boxShadow: `0 2px 8px rgba(0,0,0,0.2)`,
+                      boxShadow: `0 4px 16px ${C.accent}30, inset 0 1px 0 rgba(255,255,255,0.1)`,
                     }}
                   >
                     {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Room Rows - Flex container with consistent spacing */}
-            <div className="flex flex-col gap-2 px-1">
+            {/* Room Rows - Flex container with consistent spacing and polish */}
+            <div className="flex flex-col">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -803,33 +808,46 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 progressPct = Math.max(0, Math.min(100, ((nowWindowPct - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Emergency row - LoginPage style */
+              /* Emergency row - LoginPage style with micro-animations */
               if (room.isEmergency) {
                 return (
-                  <div
+                  <motion.div
                     key={room.id}
-                    className="flex items-stretch cursor-pointer transition-all duration-200 group rounded-lg"
-                    style={{ height: rowHeight }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    whileHover={{ backgroundColor: 'rgba(239,68,68,0.05)' }}
+                    className="flex items-stretch cursor-pointer transition-all duration-300 group"
+                    style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03]" 
+                      style={{ 
+                        width: ROOM_LABEL_WIDTH, 
+                        minWidth: ROOM_LABEL_WIDTH, 
+                        background: 'rgba(11,17,32,0.98)',
+                        borderRight: `1px solid ${C.border}`,
+                      }}
                     >
-                      <div 
+                      <motion.div 
                         className="w-7 h-7 rounded-xl flex items-center justify-center"
-                        style={{ background: `${C.red}15`, border: `1px solid ${C.red}30` }}
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                        style={{ background: `${C.red}20`, border: `1.5px solid ${C.red}40`, boxShadow: `0 0 12px ${C.red}30` }}
                       >
                         <AlertTriangle className="w-3.5 h-3.5" style={{ color: C.red }} />
-                      </div>
+                      </motion.div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.red}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.red}80` }}>EMERGENCY</p>
+                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.red}dd` }}>{room.name}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.red}90` }}>EMERGENCY</p>
                       </div>
                     </div>
-                    {/* Emergency timeline box - LoginPage glassmorph */}
-                    <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden animate-pulse">
+                    {/* Emergency timeline box - LoginPage glassmorph with pulse */}
+                    <div className="relative flex-1 overflow-hidden">
+                      <motion.div 
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden"
+                        animate={{ opacity: [0.8, 1, 0.8] }}
+                        transition={{ duration: 2, repeat: Infinity }}
                         {/* Main background */}
                         <div 
                           className="absolute inset-0 rounded-xl backdrop-blur-md"
@@ -841,63 +859,76 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         />
                         {/* Content */}
                         <div className="absolute inset-0 flex items-center justify-center gap-2">
-                          <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
+                          <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}>
+                            <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
+                          </motion.div>
                           <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${C.red}dd` }}>
                             EMERGENCY
                           </span>
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               }
 
-              /* Locked row - LoginPage style with accent yellow */
+              /* Locked row - LoginPage style with accent yellow and micro-animations */
               if (room.isLocked) {
                 return (
-                  <div
+                  <motion.div
                     key={room.id}
-                    className="flex items-stretch cursor-pointer transition-all duration-200 group rounded-lg"
-                    style={{ height: rowHeight }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    whileHover={{ backgroundColor: 'rgba(251,191,36,0.05)' }}
+                    className="flex items-stretch cursor-pointer transition-all duration-300 group"
+                    style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03]" 
+                      style={{ 
+                        width: ROOM_LABEL_WIDTH, 
+                        minWidth: ROOM_LABEL_WIDTH, 
+                        background: 'rgba(11,17,32,0.98)',
+                        borderRight: `1px solid ${C.border}`,
+                      }}
                     >
-                      <div 
+                      <motion.div 
                         className="w-7 h-7 rounded-xl flex items-center justify-center"
+                        whileHover={{ scale: 1.1 }}
                         style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
                       >
                         <Lock className="w-3.5 h-3.5" style={{ color: C.accent }} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
+                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}dd` }}>{room.name}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.accent}90` }}>UZAMCENO</p>
                       </div>
                     </div>
                     {/* Locked timeline box - LoginPage glassmorph */}
-                    <div className="relative flex-1 overflow-hidden rounded-r-lg">
+                    <div className="relative flex-1 overflow-hidden">
                       <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
                         {/* Main background */}
                         <div 
                           className="absolute inset-0 rounded-xl backdrop-blur-md"
                           style={{ 
-                            background: `linear-gradient(135deg, ${C.accent}15 0%, ${C.accent}05 100%)`,
-                            border: `1px solid ${C.accent}25`,
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
+                            background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
+                            border: `1px solid ${C.accent}30`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 12px ${C.accent}15`,
                           }}
                         />
                         {/* Content */}
                         <div className="absolute inset-0 flex items-center justify-center gap-2">
-                          <Lock className="w-4 h-4" style={{ color: `${C.accent}99` }} />
-                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${C.accent}bb` }}>
+                          <motion.div whileHover={{ rotate: 10 }} transition={{ duration: 0.2 }}>
+                            <Lock className="w-4 h-4" style={{ color: `${C.accent}aa` }} />
+                          </motion.div>
+                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${C.accent}cc` }}>
                             UZAMCENO
                           </span>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               }
 
@@ -1250,7 +1281,7 @@ style={{
                                 const nextEntry = history[idx + 1];
                                 const isCurrentSeg = idx === history.length - 1;
                                 
-                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
+                                // Pro aktuáln�� segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
                                   : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
@@ -1529,46 +1560,57 @@ interface StatBoxProps {
 }
 
 const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
-  <div
-    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02] ${glow ? 'shadow-lg' : ''}`}
+  <motion.div
+    whileHover={{ scale: 1.03, y: -2 }}
+    whileTap={{ scale: 0.98 }}
+    transition={{ duration: 0.2 }}
+    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md cursor-pointer group ${glow ? 'shadow-lg' : ''}`}
     style={{
       background: glow
         ? `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`
-        : C.glass,
-      border: glow ? `1px solid ${color}40` : `1px solid ${C.border}`,
-      boxShadow: glow ? `0 0 24px ${color}25, inset 0 1px 0 rgba(255,255,255,0.05)` : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+        : `linear-gradient(135deg, ${C.glass} 0%, rgba(255,255,255,0.02) 100%)`,
+      border: glow ? `1.5px solid ${color}45` : `1px solid ${C.border}`,
+      boxShadow: glow 
+        ? `0 8px 32px ${color}30, inset 0 1px 0 rgba(255,255,255,0.08)` 
+        : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.1)',
     }}
   >
+    {/* Hover glow overlay */}
+    <div 
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"
+      style={{ background: `radial-gradient(circle at center, ${color}15 0%, transparent 70%)` }}
+    />
     {/* Ambient glow for emergency/special states */}
     {glow && (
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-50"
         style={{
-          background: `radial-gradient(ellipse at 50% 0%, ${color}25 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse at 50% 0%, ${color}30 0%, transparent 70%)`,
         }}
       />
     )}
     {/* Top highlight line (LoginPage style) */}
     <div 
-      className="absolute top-0 left-4 right-4 h-px opacity-30"
-      style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }}
+      className="absolute top-0 left-4 right-4 h-px opacity-40 group-hover:opacity-60 transition-opacity duration-300"
+      style={{ background: `linear-gradient(90deg, transparent, ${color}70, transparent)` }}
     />
     <div className="relative flex items-center gap-3 h-full">
       <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
         style={{
-          background: `${color}15`,
-          border: `1px solid ${color}30`,
+          background: `${color}18`,
+          border: `1px solid ${color}35`,
+          boxShadow: `0 0 12px ${color}20`,
         }}
       >
-        <span style={{ color }}><Icon className="w-4 h-4" /></span>
+        <span style={{ color }} className="transition-transform duration-300 group-hover:scale-110"><Icon className="w-4 h-4" /></span>
       </div>
       <div className="min-w-0">
-        <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">{label}</p>
+        <p className="text-[9px] text-white/45 uppercase tracking-[0.3em] font-semibold transition-colors duration-200 group-hover:text-white/60">{label}</p>
         <p className="text-sm font-bold text-white leading-tight">{value}</p>
       </div>
     </div>
-  </div>
+  </motion.div>
 );
 
 // Helper Component - Room Detail Popup (Design matching screenshot)
@@ -1658,29 +1700,52 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         <div className="px-6 py-5 flex items-center justify-between">
           {/* Left side - Progress circle and room info */}
           <div className="flex items-center gap-4">
-            {/* Progress circle */}
-            <div className="relative w-14 h-14 flex items-center justify-center">
-              <svg className="w-14 h-14 -rotate-90">
-                <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
-                <circle 
+            {/* Progress circle with glow effect */}
+            <motion.div 
+              className="relative w-14 h-14 flex items-center justify-center"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              {/* Glow behind circle */}
+              <div 
+                className="absolute inset-0 rounded-full blur-md opacity-40"
+                style={{ background: stepColor }}
+              />
+              <svg className="w-14 h-14 -rotate-90 relative z-10">
+                <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
+                <motion.circle 
                   cx="28" cy="28" r="24" fill="none" stroke={stepColor} strokeWidth="4"
-                  strokeDasharray={`${progressPercent * 1.5} 150`}
                   strokeLinecap="round"
+                  initial={{ strokeDasharray: "0 150" }}
+                  animate={{ strokeDasharray: `${progressPercent * 1.5} 150` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  style={{ filter: `drop-shadow(0 0 6px ${stepColor})` }}
                 />
               </svg>
-              <span className="absolute text-sm font-bold text-white">{progressPercent}%</span>
-            </div>
+              <span className="absolute text-sm font-bold text-white z-20">{progressPercent}%</span>
+            </motion.div>
             
             {/* Room name and status */}
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-white">{room.name}</h2>
-                <span 
+                <motion.h2 
+                  className="text-2xl font-bold text-white"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                >
+                  {room.name}
+                </motion.h2>
+                <motion.span 
                   className="px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ backgroundColor: `${stepColor}30`, color: stepColor }}
+                  style={{ backgroundColor: `${stepColor}25`, color: stepColor, border: `1px solid ${stepColor}40` }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
                 >
                   {currentStatus?.name || 'Status'}
-                </span>
+                </motion.span>
               </div>
               <p className="text-white/50 text-sm mt-0.5">
                 {room.department} · KROK {stepIndex + 1} Z {totalSteps}
@@ -1711,16 +1776,19 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 ))}
               </div>
             </div>
-            <button
+            <motion.button
               onClick={onClose}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-10 h-10 rounded-xl flex items-center justify-center group/close"
               style={{
                 background: C.glass,
                 border: `1px solid ${C.border}`,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
               }}
             >
-              <X className="w-5 h-5 text-white/50 hover:text-white/80 transition-colors" />
-            </button>
+              <X className="w-5 h-5 text-white/50 group-hover/close:text-white/90 transition-colors duration-200" />
+            </motion.button>
           </div>
         </div>
 
