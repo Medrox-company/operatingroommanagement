@@ -669,7 +669,8 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               )}
             </AnimatePresence>
 
-            {/* Room Rows */}
+            {/* Room Rows - Flex container with consistent spacing */}
+            <div className="flex flex-col gap-2 px-1">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -768,13 +769,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch cursor-pointer transition-all duration-200 group"
-                    style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
+                    className="flex items-stretch cursor-pointer transition-all duration-200 group rounded-lg"
+                    style={{ height: rowHeight }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03]" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderRight: `1px solid ${C.border}`, background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div 
                         className="w-7 h-7 rounded-xl flex items-center justify-center"
@@ -788,7 +789,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       </div>
                     </div>
                     {/* Emergency timeline box - LoginPage glassmorph */}
-                    <div className="relative flex-1 overflow-hidden">
+                    <div className="relative flex-1 overflow-hidden rounded-r-lg">
                       <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden animate-pulse">
                         {/* Main background */}
                         <div 
@@ -817,13 +818,13 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch cursor-pointer transition-all duration-200 group"
-                    style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
+                    className="flex items-stretch cursor-pointer transition-all duration-200 group rounded-lg"
+                    style={{ height: rowHeight }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03]" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderRight: `1px solid ${C.border}`, background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div 
                         className="w-7 h-7 rounded-xl flex items-center justify-center"
@@ -837,7 +838,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                       </div>
                     </div>
                     {/* Locked timeline box - LoginPage glassmorph */}
-                    <div className="relative flex-1 overflow-hidden">
+                    <div className="relative flex-1 overflow-hidden rounded-r-lg">
                       <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
                         {/* Main background */}
                         <div 
@@ -868,20 +869,16 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
-                  className="flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
-                  style={{ 
-                    height: rowHeight, 
-                    borderBottom: `1px solid ${C.border}`,
-                  }}
+                  className="flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04] rounded-lg"
+                  style={{ height: rowHeight }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column with expanded width */}
+                  {/* Room Label - Sticky LEFT column with expanded width and rounded corners */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20 rounded-l-lg" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      borderRight: `1px solid ${C.border}`,
                       background: 'rgba(11,17,32,0.98)',
                       backdropFilter: 'blur(8px)',
                     }}
@@ -984,8 +981,8 @@ style={{
                     </div>
                   </div>
 
-                  {/* Timeline section - RIGHT side, scrollable */}
-                  <div className="relative flex-1 overflow-hidden">
+                  {/* Timeline section - RIGHT side, scrollable with rounded-r corners */}
+                  <div className="relative flex-1 overflow-hidden rounded-r-lg">
                     {/* Hour grid lines */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                       const displayHour = hour % 24;
@@ -1465,7 +1462,7 @@ style={{
                 </motion.div>
               );
             })}
-          </div>
+            </div>
         </div>
       </div>
 
