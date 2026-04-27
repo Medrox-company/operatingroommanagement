@@ -1003,7 +1003,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           whileTap={{ scale: 0.95 }}
         >
           <Bell className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
-          <span className="hidden sm:block text-[6px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-bold uppercase tracking-wider text-white/40">Notifikace</span>
+          <span className="hidden sm:block text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-bold uppercase tracking-wider text-white">Notifikace</span>
         </motion.button>
       </div>
 
@@ -1165,8 +1165,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             whileTap={{ scale: 0.95 }}
           >
             <ShieldAlert className={`w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-8 lg:h-8 ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`} strokeWidth={2} />
-            <span className={`text-[4px] sm:text-[5px] md:text-[6px] lg:text-[8px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white/60'}`}>
-              Hygien.
+            <span className={`text-[5px] sm:text-[6px] md:text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-center leading-tight ${room.isEnhancedHygiene ? 'text-orange-300' : 'text-white'}`}>
+              Hygienický<br />režim
             </span>
           </motion.button>
 
