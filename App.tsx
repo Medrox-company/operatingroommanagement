@@ -9,6 +9,8 @@ import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
+import AcuteCaseFAB from './components/AcuteCaseFAB';
+import AcuteCaseModal, { AcuteCaseData } from './components/AcuteCaseModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
@@ -38,6 +40,7 @@ const AppContent: React.FC = () => {
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [isAcuteCaseModalOpen, setIsAcuteCaseModalOpen] = useState(false);
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
@@ -295,6 +298,51 @@ const AppContent: React.FC = () => {
       await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
   }, [isDbConnected, rooms]);
+
+  const handleAcuteCaseSubmit = useCallback(async (data: AcuteCaseData) => {
+    const { selectedRoomId, patientName, patientId, patientAge, bloodType, procedureName, estimatedDuration } = data;
+    
+    recentLocalUpdates.current.set(selectedRoomId, Date.now());
+    
+    const now = new Date();
+    const estEnd = new Date(now.getTime() + estimatedDuration * 60 * 1000);
+    
+    const updatedFields = {
+      isEmergency: true,
+      isLocked: false,
+      currentPatient: {
+        id: patientId || `ACUTE-${Date.now()}`,
+        name: patientName,
+        age: patientAge,
+        bloodType,
+      },
+      currentProcedure: {
+        name: procedureName,
+        startTime: now.toISOString(),
+        estimatedDuration,
+        progress: 0,
+      },
+      estimatedEndTime: estEnd.toISOString(),
+      patientCalledAt: now.toISOString(),
+    };
+    
+    setRooms(prev => prev.map(r =>
+      r.id === selectedRoomId 
+        ? { ...r, ...updatedFields }
+        : r
+    ));
+    
+    if (isDbConnected) {
+      await updateOperatingRoom(selectedRoomId, {
+        is_emergency: true,
+        estimated_end_time: estEnd.toISOString(),
+      });
+    }
+    
+    setIsAcuteCaseModalOpen(false);
+    // Show success notification by selecting the room
+    setSelectedRoomId(selectedRoomId);
+  }, [isDbConnected]);
 
   const toggleLock = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
@@ -569,6 +617,19 @@ const AppContent: React.FC = () => {
 
         </main>
       </div>
+      
+      {/* Acute Case FAB - viditelný v Dashboard a Timeline view */}
+      {(currentView === 'dashboard' || currentView === 'timeline') && (
+        <AcuteCaseFAB onClick={() => setIsAcuteCaseModalOpen(true)} />
+      )}
+      
+      {/* Acute Case Modal */}
+      <AcuteCaseModal
+        isOpen={isAcuteCaseModalOpen}
+        onClose={() => setIsAcuteCaseModalOpen(false)}
+        rooms={rooms}
+        onSubmit={handleAcuteCaseSubmit}
+      />
     </div>
     </ErrorBoundary>
   );
