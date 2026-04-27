@@ -9,7 +9,6 @@ import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
-import AcuteCaseFAB from './components/AcuteCaseFAB';
 import AcuteCaseModal, { AcuteCaseData } from './components/AcuteCaseModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
@@ -300,7 +299,7 @@ const AppContent: React.FC = () => {
   }, [isDbConnected, rooms]);
 
   const handleAcuteCaseSubmit = useCallback(async (data: AcuteCaseData) => {
-    const { selectedRoomId, patientName, patientId, patientAge, bloodType, procedureName, estimatedDuration } = data;
+    const { selectedRoomId, procedureName, estimatedDuration } = data;
     
     recentLocalUpdates.current.set(selectedRoomId, Date.now());
     
@@ -310,12 +309,6 @@ const AppContent: React.FC = () => {
     const updatedFields = {
       isEmergency: true,
       isLocked: false,
-      currentPatient: {
-        id: patientId || `ACUTE-${Date.now()}`,
-        name: patientName,
-        age: patientAge,
-        bloodType,
-      },
       currentProcedure: {
         name: procedureName,
         startTime: now.toISOString(),
@@ -471,15 +464,19 @@ const AppContent: React.FC = () => {
         
       </div>
 
-<Sidebar currentView={currentView} onNavigate={(view) => {
-            if (currentView === 'settings' && view === 'settings') {
-              // Reset settings module when clicking settings again
-              setSettingsResetTrigger(prev => prev + 1);
-            } else {
-              setCurrentView(view);
-              setSelectedRoomId(null);
-            }
-          }} />
+<Sidebar 
+            currentView={currentView} 
+            onAcuteCase={() => setIsAcuteCaseModalOpen(true)}
+            onNavigate={(view) => {
+              if (currentView === 'settings' && view === 'settings') {
+                // Reset settings module when clicking settings again
+                setSettingsResetTrigger(prev => prev + 1);
+              } else {
+                setCurrentView(view);
+                setSelectedRoomId(null);
+              }
+            }} 
+          />
       <MobileNav currentView={currentView} onNavigate={(view) => {
         if (currentView === 'settings' && view === 'settings') {
           // Reset settings module when clicking settings again
@@ -617,11 +614,6 @@ const AppContent: React.FC = () => {
 
         </main>
       </div>
-      
-      {/* Acute Case FAB - viditelný v Dashboard a Timeline view */}
-      {(currentView === 'dashboard' || currentView === 'timeline') && (
-        <AcuteCaseFAB onClick={() => setIsAcuteCaseModalOpen(true)} />
-      )}
       
       {/* Acute Case Modal */}
       <AcuteCaseModal

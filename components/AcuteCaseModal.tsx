@@ -3,9 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, AlertTriangle, User, Stethoscope, Building2, 
-  Clock, ChevronRight, ChevronLeft, Check, Activity,
-  Hash, Heart, FileText, Zap
+  X, AlertTriangle, Stethoscope, Building2, 
+  Clock, ChevronRight, ChevronLeft, Check, Zap
 } from 'lucide-react';
 import type { OperatingRoom } from '../types';
 
@@ -14,16 +13,8 @@ import type { OperatingRoom } from '../types';
 export type UrgencyLevel = 'immediate' | 'urgent' | 'expedited' | 'elective';
 
 export interface AcuteCaseData {
-  // Pacient
-  patientName: string;
-  patientId: string;
-  patientAge: number;
-  bloodType?: string;
-  asaScore: 1 | 2 | 3 | 4 | 5;
-  
   // Výkon
   procedureName: string;
-  diagnosis: string;
   estimatedDuration: number; // minutes
   urgency: UrgencyLevel;
   
@@ -78,14 +69,6 @@ const URGENCY_CONFIG: Record<UrgencyLevel, {
   },
 };
 
-const ASA_CONFIG: Record<number, { label: string; description: string; color: string }> = {
-  1: { label: 'ASA I', description: 'Zdravý pacient', color: '#10b981' },
-  2: { label: 'ASA II', description: 'Mírné systémové onemocnění', color: '#3b82f6' },
-  3: { label: 'ASA III', description: 'Závažné systémové onemocnění', color: '#eab308' },
-  4: { label: 'ASA IV', description: 'Život ohrožující stav', color: '#f97316' },
-  5: { label: 'ASA V', description: 'Moribundní pacient', color: '#ef4444' },
-};
-
 const C = {
   glass: 'rgba(255,255,255,0.04)',
   glassHover: 'rgba(255,255,255,0.08)',
@@ -97,12 +80,7 @@ const C = {
 const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms, onSubmit }) => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<AcuteCaseData>({
-    patientName: '',
-    patientId: '',
-    patientAge: 0,
-    asaScore: 2,
     procedureName: '',
-    diagnosis: '',
     estimatedDuration: 60,
     urgency: 'urgent',
     selectedRoomId: '',
@@ -114,8 +92,7 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
   };
 
   // Step validation
-  const canProceedStep1 = data.patientName.trim().length > 0 && data.patientAge > 0 && data.patientAge < 130;
-  const canProceedStep2 = data.procedureName.trim().length > 0 && data.diagnosis.trim().length > 0 && data.estimatedDuration > 0;
+  const canProceedStep1 = data.procedureName.trim().length > 0 && data.estimatedDuration > 0;
   const canSubmit = data.selectedRoomId.length > 0;
 
   // Sort rooms by suitability for acute case
@@ -142,9 +119,11 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
     // Reset form
     setStep(1);
     setData({
-      patientName: '', patientId: '', patientAge: 0, asaScore: 2,
-      procedureName: '', diagnosis: '', estimatedDuration: 60,
-      urgency: 'urgent', selectedRoomId: '', notes: '',
+      procedureName: '',
+      estimatedDuration: 60,
+      urgency: 'urgent',
+      selectedRoomId: '',
+      notes: '',
     });
   };
 
@@ -221,7 +200,7 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
 
           {/* Step indicator */}
           <div className="flex-shrink-0 px-6 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${C.border}` }}>
-            {[1, 2, 3].map((s) => (
+            {[1, 2].map((s) => (
               <React.Fragment key={s}>
                 <div className="flex items-center gap-2">
                   <div 
@@ -235,10 +214,10 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
                     {step > s ? <Check className="w-3.5 h-3.5" /> : s}
                   </div>
                   <span className={`text-[11px] font-semibold uppercase tracking-wider ${step >= s ? 'text-white/70' : 'text-white/30'}`}>
-                    {s === 1 ? 'Pacient' : s === 2 ? 'Výkon' : 'Sál'}
+                    {s === 1 ? 'Výkon' : 'Sál'}
                   </span>
                 </div>
-                {s < 3 && (
+                {s < 2 && (
                   <div 
                     className="flex-1 h-px transition-all duration-300"
                     style={{ background: step > s ? `${C.red}40` : C.border }}
@@ -251,7 +230,7 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
           {/* Content - scrollable */}
           <div className="flex-1 overflow-y-auto hide-scrollbar px-6 py-5">
             <AnimatePresence mode="wait">
-              {/* STEP 1: Patient */}
+              {/* STEP 1: Procedure & Urgency */}
               {step === 1 && (
                 <motion.div
                   key="step1"
@@ -261,114 +240,8 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
                   className="space-y-4"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <User className="w-4 h-4 text-white/40" />
-                    <h3 className="text-sm font-semibold text-white/90 uppercase tracking-wider">Údaje o pacientovi</h3>
-                  </div>
-
-                  {/* Name */}
-                  <FormField label="Jméno pacienta" required>
-                    <input
-                      type="text"
-                      value={data.patientName}
-                      onChange={(e) => updateData('patientName', e.target.value)}
-                      placeholder="např. Jan Novák"
-                      className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all"
-                      style={{ background: C.glass, border: `1px solid ${C.border}` }}
-                      onFocus={(e) => { e.target.style.border = `1px solid ${C.red}60`; }}
-                      onBlur={(e) => { e.target.style.border = `1px solid ${C.border}`; }}
-                      autoFocus
-                    />
-                  </FormField>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField label="ID pacienta" icon={Hash}>
-                      <input
-                        type="text"
-                        value={data.patientId}
-                        onChange={(e) => updateData('patientId', e.target.value)}
-                        placeholder="P-12345"
-                        className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all"
-                        style={{ background: C.glass, border: `1px solid ${C.border}` }}
-                      />
-                    </FormField>
-
-                    <FormField label="Věk" required>
-                      <input
-                        type="number"
-                        min="0"
-                        max="130"
-                        value={data.patientAge || ''}
-                        onChange={(e) => updateData('patientAge', parseInt(e.target.value) || 0)}
-                        placeholder="65"
-                        className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all"
-                        style={{ background: C.glass, border: `1px solid ${C.border}` }}
-                      />
-                    </FormField>
-                  </div>
-
-                  <FormField label="Krevní skupina" icon={Heart}>
-                    <div className="grid grid-cols-4 gap-2">
-                      {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'].map((bt) => (
-                        <button
-                          key={bt}
-                          type="button"
-                          onClick={() => updateData('bloodType', data.bloodType === bt ? undefined : bt)}
-                          className="px-2 py-2 rounded-lg text-xs font-bold transition-all duration-200 hover:scale-105"
-                          style={{
-                            background: data.bloodType === bt ? 'rgba(239,68,68,0.15)' : C.glass,
-                            border: `1px solid ${data.bloodType === bt ? `${C.red}60` : C.border}`,
-                            color: data.bloodType === bt ? C.red : 'rgba(255,255,255,0.6)',
-                          }}
-                        >
-                          {bt}
-                        </button>
-                      ))}
-                    </div>
-                  </FormField>
-
-                  {/* ASA Score */}
-                  <FormField label="ASA klasifikace" icon={Activity}>
-                    <div className="grid grid-cols-5 gap-2">
-                      {([1, 2, 3, 4, 5] as const).map((asa) => {
-                        const cfg = ASA_CONFIG[asa];
-                        const active = data.asaScore === asa;
-                        return (
-                          <button
-                            key={asa}
-                            type="button"
-                            onClick={() => updateData('asaScore', asa)}
-                            className="px-2 py-3 rounded-lg transition-all duration-200 hover:scale-105 text-center"
-                            style={{
-                              background: active ? `${cfg.color}20` : C.glass,
-                              border: `1.5px solid ${active ? `${cfg.color}60` : C.border}`,
-                            }}
-                          >
-                            <div className="text-xs font-bold" style={{ color: active ? cfg.color : 'rgba(255,255,255,0.7)' }}>
-                              {cfg.label}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="text-[10px] text-white/40 mt-2 leading-relaxed">
-                      {ASA_CONFIG[data.asaScore].description}
-                    </p>
-                  </FormField>
-                </motion.div>
-              )}
-
-              {/* STEP 2: Procedure & Urgency */}
-              {step === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4"
-                >
-                  <div className="flex items-center gap-2 mb-2">
                     <Stethoscope className="w-4 h-4 text-white/40" />
-                    <h3 className="text-sm font-semibold text-white/90 uppercase tracking-wider">Výkon & Urgentnost</h3>
+                    <h3 className="text-sm font-semibold text-white/90 uppercase tracking-wider">Výkon &amp; Urgentnost</h3>
                   </div>
 
                   <FormField label="Název výkonu" required>
@@ -380,17 +253,6 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
                       className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all"
                       style={{ background: C.glass, border: `1px solid ${C.border}` }}
                       autoFocus
-                    />
-                  </FormField>
-
-                  <FormField label="Diagnóza" icon={FileText} required>
-                    <input
-                      type="text"
-                      value={data.diagnosis}
-                      onChange={(e) => updateData('diagnosis', e.target.value)}
-                      placeholder="např. Akutní apendicitida"
-                      className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none transition-all"
-                      style={{ background: C.glass, border: `1px solid ${C.border}` }}
                     />
                   </FormField>
 
@@ -481,10 +343,10 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
                 </motion.div>
               )}
 
-              {/* STEP 3: Room selection */}
-              {step === 3 && (
+              {/* STEP 2: Room selection */}
+              {step === 2 && (
                 <motion.div
-                  key="step3"
+                  key="step2"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
@@ -579,10 +441,7 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
                         </span>
                       </div>
                       <div className="space-y-1.5 text-xs">
-                        <SummaryRow label="Pacient" value={`${data.patientName}, ${data.patientAge} let`} />
-                        <SummaryRow label="ASA" value={ASA_CONFIG[data.asaScore].label} />
                         <SummaryRow label="Výkon" value={data.procedureName} />
-                        <SummaryRow label="Diagnóza" value={data.diagnosis} />
                         <SummaryRow label="Trvání" value={`${data.estimatedDuration} min`} />
                         <SummaryRow label="Urgentnost" value={URGENCY_CONFIG[data.urgency].label} valueColor={URGENCY_CONFIG[data.urgency].color} />
                         <SummaryRow label="Sál" value={rooms.find(r => r.id === data.selectedRoomId)?.name || ''} />
@@ -613,10 +472,10 @@ const AcuteCaseModal: React.FC<AcuteCaseModalProps> = ({ isOpen, onClose, rooms,
               )}
             </button>
 
-            {step < 3 ? (
+            {step < 2 ? (
               <motion.button
                 onClick={() => setStep(step + 1)}
-                disabled={(step === 1 && !canProceedStep1) || (step === 2 && !canProceedStep2)}
+                disabled={!canProceedStep1}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
