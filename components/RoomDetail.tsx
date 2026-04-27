@@ -25,6 +25,40 @@ interface RoomDetailProps {
   onPatientStatusChange?: (calledAt: string | null, arrivedAt: string | null) => void;
 }
 
+// NCEPOD urgency theme — synchronizováno s RoomCard / AcuteCaseModal.
+// Tintuje barvy v Detailu sálu po registraci akutního výkonu.
+const URGENCY_THEME: Record<NonNullable<OperatingRoom['urgencyLevel']>, {
+  label: string;
+  color: string;
+  badgeShadow: string;
+  borderColor: string;
+}> = {
+  immediate: {
+    label: 'EMERGENTNÍ',
+    color: '#ef4444',
+    badgeShadow: '0 0 30px rgba(239,68,68,0.5)',
+    borderColor: 'rgba(239,68,68,0.30)',
+  },
+  urgent: {
+    label: 'URGENTNÍ',
+    color: '#f97316',
+    badgeShadow: '0 0 30px rgba(249,115,22,0.5)',
+    borderColor: 'rgba(249,115,22,0.30)',
+  },
+  expedited: {
+    label: 'ODLOŽITELNÝ',
+    color: '#eab308',
+    badgeShadow: '0 0 30px rgba(234,179,8,0.45)',
+    borderColor: 'rgba(234,179,8,0.30)',
+  },
+  elective: {
+    label: 'ELEKTIVNÍ',
+    color: '#3b82f6',
+    badgeShadow: '0 0 30px rgba(59,130,246,0.45)',
+    borderColor: 'rgba(59,130,246,0.30)',
+  },
+};
+
 const usePrevious = (value: number) => {
   const ref = useRef<number>();
   useEffect(() => {
@@ -236,12 +270,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const isReadyStatus = statusName.includes('priprav');
   const shouldShowTime = !isReadyStatus;
 
-  // Dynamic theme color based on status
-  const activeColor = room.isEmergency 
-    ? '#FF3B30' 
-    : (room.isLocked 
-        ? '#FBBF24' 
-        : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280')));
+  // Urgency téma — aktivní jen když má sál registrovaný akutní výkon (NCEPOD).
+  // Má vizuální prioritu nad výchozím status colorem (zbarvení detailu sálu).
+  const urgencyTheme = room.urgencyLevel ? URGENCY_THEME[room.urgencyLevel] : null;
+
+  // Dynamic theme color based on status (urgency má prioritu)
+  const activeColor = urgencyTheme
+    ? urgencyTheme.color
+    : (room.isEmergency 
+        ? '#FF3B30' 
+        : (room.isLocked 
+            ? '#FBBF24' 
+            : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280'))));
 
   const changeStep = (newIndex: number) => {
     if (isInteractionBlocked) return;
@@ -512,10 +552,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             transition={{ duration: 0.3 }}
             className="rounded-3xl p-6 relative overflow-hidden mb-6"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
-              border: '1px solid rgba(79,237,199,0.15)',
+              background: urgencyTheme
+                ? `linear-gradient(135deg, rgba(255,255,255,0.04) 0%, ${urgencyTheme.color}15 100%)`
+                : 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
+              border: urgencyTheme
+                ? `1px solid ${urgencyTheme.color}40`
+                : '1px solid rgba(79,237,199,0.15)',
               backdropFilter: 'blur(16px)',
-              boxShadow: '0 8px 32px rgba(79,237,199,0.08)',
+              boxShadow: urgencyTheme
+                ? `0 8px 32px ${urgencyTheme.color}25`
+                : '0 8px 32px rgba(79,237,199,0.08)',
             }}
           >
             {/* Ambient accent behind text */}
@@ -546,8 +592,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             {/* Content row: Phase name + play button */}
             <div className="relative flex items-end justify-between gap-4">
               <div className="flex-1">
-                <p className="text-[32px] font-bold text-white leading-[1.1] tracking-tight text-balance">
-                  {room.isEmergency
+                <p
+                  className="text-[32px] font-bold leading-[1.1] tracking-tight text-balance"
+                  style={{ color: urgencyTheme ? urgencyTheme.color : '#ffffff' }}
+                >
+                  {urgencyTheme
+                    ? urgencyTheme.label
+                    : room.isEmergency
                     ? 'Stav nouze'
                     : room.isLocked
                     ? 'Uzamčen'
@@ -899,13 +950,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
       {/* ========== DESKTOP LAYOUT (hidden on mobile) ========== */}
       <div className="hidden md:block w-full h-full overflow-hidden">
-      {/* Status Overlay Effects */}
-      {room.isEmergency && (
+      {/* Status Overlay Effects — urgency má prioritu nad isEmergency/isLocked */}
+      {urgencyTheme ? (
+        <div
+          className="absolute inset-0 z-10 pointer-events-none border-[12px]"
+          style={{ borderColor: urgencyTheme.borderColor }}
+        />
+      ) : room.isEmergency ? (
         <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-red-500/30" />
-      )}
-      {room.isLocked && !room.isEmergency && (
+      ) : room.isLocked ? (
         <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-amber-500/20" />
-      )}
+      ) : null}
 
       {/* Background Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -942,31 +997,50 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         <div className="flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div 
-              key={room.name + room.isEmergency + room.isLocked}
+              key={room.name + room.isEmergency + room.isLocked + (room.urgencyLevel || '')}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               className="flex items-center gap-6"
             >
-              <h1 className={`text-[clamp(1.75rem,4.5vw,3.75rem)] font-bold tracking-tight uppercase leading-none truncate max-w-[60vw]
-                ${room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')}
-              `}>
+              <h1
+                className={`text-[clamp(1.75rem,4.5vw,3.75rem)] font-bold tracking-tight uppercase leading-none truncate max-w-[60vw] ${
+                  urgencyTheme
+                    ? ''
+                    : (room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95'))
+                }`}
+                style={urgencyTheme ? { color: urgencyTheme.color } : undefined}
+              >
                 {room.name}
               </h1>
-              
-              {room.isEmergency && (
+
+              {/* Urgency badge má prioritu — překrývá EMERGENCY i SÁL UZAMČEN */}
+              {urgencyTheme ? (
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)]"
+                  style={{
+                    backgroundColor: urgencyTheme.color,
+                    boxShadow: urgencyTheme.badgeShadow,
+                  }}
+                >
+                  <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
+                  <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">
+                    {urgencyTheme.label}
+                  </span>
+                </motion.div>
+              ) : room.isEmergency ? (
                 <div className="bg-red-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(239,68,68,0.5)]">
                   <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
                   <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">EMERGENCY</span>
                 </div>
-              )}
-              
-              {room.isLocked && !room.isEmergency && (
+              ) : room.isLocked ? (
                 <div className="bg-amber-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(245,158,11,0.2)]">
                   <Lock className="w-[clamp(1rem,1.8vw,1.75rem)] h-[clamp(1rem,1.8vw,1.75rem)]" />
                   <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">SÁL UZAMČEN</span>
                 </div>
-              )}
+              ) : null}
             </motion.div>
           </AnimatePresence>
           <p className="text-[clamp(8px,0.8vw,11px)] font-black text-white/30 tracking-[0.5em] uppercase mt-[clamp(0.75rem,1.5vw,1.25rem)]">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
@@ -1286,7 +1360,7 @@ const prevStep = activeDbStatuses.length > 0
               className="absolute inset-0 rounded-full blur-[100px] transition-colors duration-700"
               style={{ 
                 backgroundColor: activeColor,
-                opacity: (room.isEmergency || room.isLocked) ? 0.45 : 0.25,
+                opacity: (urgencyTheme || room.isEmergency || room.isLocked) ? 0.45 : 0.25,
               }}
             />
 
@@ -1442,7 +1516,12 @@ const prevStep = activeDbStatuses.length > 0
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <p className={`text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] mb-[clamp(0.75rem,2vw,1.5rem)] uppercase ${room.isEmergency ? 'text-red-400' : 'text-white/25'}`}>
+                    <p
+                      className={`text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] mb-[clamp(0.75rem,2vw,1.5rem)] uppercase ${
+                        urgencyTheme ? '' : (room.isEmergency ? 'text-red-400' : 'text-white/25')
+                      }`}
+                      style={urgencyTheme ? { color: urgencyTheme.color, opacity: 0.85 } : undefined}
+                    >
                       PROBÍHAJÍCÍ FÁZE
                     </p>
                     
@@ -1450,7 +1529,10 @@ const prevStep = activeDbStatuses.length > 0
                       key={currentStep.title}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`text-[clamp(1.5rem,5vw,3.75rem)] font-bold tracking-tight leading-tight mb-[clamp(0.75rem,2vw,1.5rem)] break-words ${room.isEmergency ? 'text-red-400' : 'text-white'}`}
+                      className={`text-[clamp(1.5rem,5vw,3.75rem)] font-bold tracking-tight leading-tight mb-[clamp(0.75rem,2vw,1.5rem)] break-words ${
+                        urgencyTheme ? '' : (room.isEmergency ? 'text-red-400' : 'text-white')
+                      }`}
+                      style={urgencyTheme ? { color: urgencyTheme.color } : undefined}
                     >
                       {currentStep.title}
                     </motion.h2>
