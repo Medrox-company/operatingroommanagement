@@ -615,22 +615,32 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        <div 
-                          className="ml-2 px-2.5 py-1 rounded-lg"
+                        <motion.div 
+                          className="ml-2 px-3 py-1.5 rounded-xl"
                           style={{ 
-                            background: C.accent, 
-                            boxShadow: `0 2px 8px ${C.accent}40` 
+                            background: `linear-gradient(135deg, ${C.accent} 0%, #F59E0B 100%)`,
+                            boxShadow: `0 4px 12px ${C.accent}50, inset 0 1px 0 rgba(255,255,255,0.2)`,
                           }}
+                          animate={{ scale: [1, 1.03, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
                         >
                           <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
                             {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
                           </span>
-                        </div>
+                        </motion.div>
                       ) : (
-                        <div className="ml-2 flex items-center gap-1">
-                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                        <div 
+                          className="ml-2 flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-200 hover:bg-white/5"
+                          style={{ 
+                            background: isNightHour ? 'rgba(255,255,255,0.02)' : 'transparent',
+                          }}
+                        >
+                          <span className={`text-[11px] font-mono font-semibold transition-colors duration-200 ${isNightHour ? 'text-white/25' : 'text-white/45'}`}>
                             {hourLabel(hour)}
                           </span>
+                          {isNextDay && (
+                            <span className="text-[7px] font-semibold text-white/20 uppercase">+1</span>
+                          )}
                         </div>
                       )
                     )}
@@ -644,7 +654,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - LoginPage accent yellow */}
+            {/* Now indicator - Premium animated with pulse glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <motion.div 
@@ -653,18 +663,47 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  {/* Ambient glow */}
-                  <div className="absolute -left-4 top-0 bottom-0 w-8 opacity-15 blur-lg" style={{ background: C.accent }} />
-                  {/* Main line */}
+                  {/* Ambient pulse glow */}
+                  <motion.div 
+                    className="absolute -left-6 top-0 bottom-0 w-12 blur-xl" 
+                    style={{ background: `linear-gradient(to bottom, ${C.accent}40 0%, ${C.accent}20 50%, transparent 100%)` }}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  {/* Secondary glow layer */}
+                  <div className="absolute -left-3 top-0 bottom-0 w-6 opacity-20 blur-md" style={{ background: C.accent }} />
+                  {/* Main line with gradient */}
                   <div 
                     className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ background: `linear-gradient(to bottom, ${C.accent} 0%, ${C.accent}80 50%, ${C.accent}30 100%)` }} 
+                    style={{ 
+                      background: `linear-gradient(to bottom, ${C.accent} 0%, ${C.accent}90 30%, ${C.accent}60 70%, ${C.accent}20 100%)`,
+                      boxShadow: `0 0 4px ${C.accent}60`,
+                    }} 
                   />
-                  {/* Top dot */}
+                  {/* Top indicator pill */}
+                  <motion.div 
+                    className="absolute -left-2 -top-1 w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${C.accent} 0%, #F59E0B 100%)`,
+                      boxShadow: `0 0 12px ${C.accent}80, 0 2px 8px rgba(0,0,0,0.3)`,
+                    }}
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/90" />
+                  </motion.div>
+                  {/* Time label */}
                   <div 
-                    className="absolute -left-1.5 -top-0.5 w-3 h-3 rounded-full"
-                    style={{ background: C.accent, boxShadow: `0 0 8px ${C.accent}80` }}
-                  />
+                    className="absolute -left-6 top-5 px-2 py-0.5 rounded-md text-[9px] font-bold whitespace-nowrap"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${C.accent}30 0%, ${C.accent}15 100%)`,
+                      border: `1px solid ${C.accent}40`,
+                      color: C.accent,
+                      boxShadow: `0 2px 8px rgba(0,0,0,0.2)`,
+                    }}
+                  >
+                    {currentTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -919,12 +958,19 @@ style={{
                       )}
                     </div>
 
-                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN, always visible */}
+                    {/* Room info - Premium glassmorph card with hover effects */}
                     <div 
-                      className="flex-shrink-0 flex-1 max-w-xs rounded-xl p-3 backdrop-blur-md transition-all duration-200"
+                      className="flex-shrink-0 flex-1 max-w-xs rounded-xl p-3 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] group/card"
                       style={{ 
-                        background: C.glass, 
-                        border: `1px solid ${C.border}`,
+                        background: isActive 
+                          ? `linear-gradient(135deg, ${roomColor.bg}15 0%, ${C.glass} 100%)`
+                          : `linear-gradient(135deg, ${C.glass} 0%, rgba(255,255,255,0.02) 100%)`,
+                        border: isActive 
+                          ? `1px solid ${roomColor.bg}30`
+                          : `1px solid ${C.border}`,
+                        boxShadow: isActive 
+                          ? `0 4px 16px ${roomColor.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`
+                          : 'inset 0 1px 0 rgba(255,255,255,0.05)',
                       }}
                     >
                       <div className="flex items-center gap-2">
