@@ -11,6 +11,59 @@ interface RoomCardProps {
   onLock?: (e: React.MouseEvent) => void;
 }
 
+// NCEPOD urgency level → vizuální téma sálu (zbarvení po aktivaci akutního výkonu)
+const URGENCY_THEME: Record<NonNullable<OperatingRoom['urgencyLevel']>, {
+  label: string;
+  color: string;        // hlavní barva (text/border accent)
+  bgClass: string;      // pozadí karty
+  borderClass: string;  // hranice karty
+  glowClass: string;    // aura okolo karty
+  textClass: string;    // barva departmentu
+  badgeClass: string;   // velký dolní badge
+  badgeShadow: string;  // glow tlačítka emergency
+}> = {
+  immediate: {
+    label: 'EMERGENTNÍ',
+    color: '#ef4444',
+    bgClass: 'bg-red-950/20',
+    borderClass: 'border-red-500/40',
+    glowClass: 'bg-red-500/20',
+    textClass: 'text-red-400',
+    badgeClass: 'bg-red-600 text-white border-red-500',
+    badgeShadow: '0_0_16px_rgba(239,68,68,0.4)',
+  },
+  urgent: {
+    label: 'URGENTNÍ',
+    color: '#f97316',
+    bgClass: 'bg-orange-950/20',
+    borderClass: 'border-orange-500/40',
+    glowClass: 'bg-orange-500/20',
+    textClass: 'text-orange-400',
+    badgeClass: 'bg-orange-600 text-white border-orange-500',
+    badgeShadow: '0_0_16px_rgba(249,115,22,0.4)',
+  },
+  expedited: {
+    label: 'ODLOŽITELNÝ',
+    color: '#eab308',
+    bgClass: 'bg-yellow-950/20',
+    borderClass: 'border-yellow-500/40',
+    glowClass: 'bg-yellow-500/15',
+    textClass: 'text-yellow-400',
+    badgeClass: 'bg-yellow-600 text-white border-yellow-500',
+    badgeShadow: '0_0_16px_rgba(234,179,8,0.4)',
+  },
+  elective: {
+    label: 'ELEKTIVNÍ',
+    color: '#3b82f6',
+    bgClass: 'bg-blue-950/20',
+    borderClass: 'border-blue-500/40',
+    glowClass: 'bg-blue-500/15',
+    textClass: 'text-blue-400',
+    badgeClass: 'bg-blue-600 text-white border-blue-500',
+    badgeShadow: '0_0_16px_rgba(59,130,246,0.4)',
+  },
+};
+
 const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -53,6 +106,10 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     return count;
   }, [room.completedOperations]);
   
+  // Urgency téma je aktivní, pokud byl pro sál registrován akutní výkon (NCEPOD úroveň).
+  // Má vizuální prioritu (zbarvení) i v případě že isEmergency=false (expedited / elective).
+  const urgencyTheme = room.urgencyLevel ? URGENCY_THEME[room.urgencyLevel] : null;
+
   // Memoize computed values using database statuses
   const { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
     const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -64,7 +121,9 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       color: step?.accent_color || step?.color || '#6B7280',
     };
     
-    const themeColor = room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
+    const themeColor = urgencyTheme
+      ? urgencyTheme.color
+      : (room.isEmergency ? '#FF3B30' : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color)));
     const progressPercent = ((safeIndex + 1) / totalSteps);
     
     // Don't show time for "Sal priprav*" and "Uklid" statuses (ASCII-safe)
@@ -78,7 +137,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     const strokeDashoffset = strokeDasharray * (1 - progressPercent);
     
     return { totalSteps, safeIndex, currentStep, themeColor, progressPercent, shouldShowTime, strokeDasharray, strokeDashoffset };
-  }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
+  }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused, urgencyTheme]);
   
   const radius = 38;
   const strokeWidth = 4;
@@ -95,25 +154,33 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       onClick={onClick}
       className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full"
     >
-      {/* Subtle State Pulse Aura (Emergency or Locked) */}
-      {(room.isEmergency || room.isLocked) && (
+      {/* Subtle State Pulse Aura (Urgency-tinted, Emergency or Locked) */}
+      {(urgencyTheme || room.isEmergency || room.isLocked) && (
         <div 
-          className={`absolute -inset-1 z-0 rounded-[1.85rem] sm:rounded-[2.6rem] blur-xl pointer-events-none ${room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10'}`}
+          className={`absolute -inset-1 z-0 rounded-[1.85rem] sm:rounded-[2.6rem] blur-xl pointer-events-none ${urgencyTheme ? urgencyTheme.glowClass : (room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10')}`}
         />
       )}
 
       {/* Main Card Container */}
       <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
-        ${room.isEmergency 
-          ? 'bg-red-950/20 border-red-500/40' 
-          : (room.isLocked 
-              ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
-              : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]')}
+        ${urgencyTheme 
+          ? `${urgencyTheme.bgClass} ${urgencyTheme.borderClass}` 
+          : (room.isEmergency 
+              ? 'bg-red-950/20 border-red-500/40' 
+              : (room.isLocked 
+                  ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
+                  : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]'))}
       `}>
-        {room.isEmergency && (
+        {urgencyTheme && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: `linear-gradient(135deg, ${urgencyTheme.color}1A 0%, transparent 50%, ${urgencyTheme.color}0D 100%)` }}
+          />
+        )}
+        {!urgencyTheme && room.isEmergency && (
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
         )}
-        {room.isLocked && (
+        {!urgencyTheme && room.isLocked && (
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
         )}
         
@@ -122,7 +189,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
           style={{ 
             backgroundColor: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15 
+            opacity: (urgencyTheme || room.isEmergency || room.isLocked) ? 0.3 : 0.15 
           }}
         />
       </div>
@@ -133,12 +200,12 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Header — centered */}
         <div className="w-full flex flex-col items-center text-center shrink-0">
           <p className={`text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full transition-colors
-            ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
+            ${urgencyTheme ? urgencyTheme.textClass : (room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30'))}
           `}>
             {room.department}
           </p>
           <h3 className={`text-sm sm:text-xl font-bold tracking-tight uppercase leading-none truncate max-w-full transition-colors
-            ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
+            ${(urgencyTheme || room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
           `}>
             {room.name}
           </h3>
@@ -199,7 +266,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                         y={center}
                         textAnchor="middle"
                         dominantBaseline="central"
-                        className={`text-4xl font-bold transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
+                        className={`text-4xl font-bold transition-colors ${(urgencyTheme || room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
                         style={{ 
                             transform: 'rotate(90deg)', 
                             transformOrigin: `${center}px ${center}px`,
@@ -228,13 +295,17 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         <div className="w-full space-y-2 sm:space-y-3 shrink-0">
           <div className="w-full text-center">
             <p className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
-              ${room.isEmergency 
-                ? 'bg-red-600 text-white border-red-500' 
-                : (room.isLocked 
-                    ? 'bg-amber-500 text-white border-amber-600' 
-                    : 'bg-white/5 border-white/5 text-white/50')}
+              ${urgencyTheme
+                ? urgencyTheme.badgeClass
+                : (room.isEmergency 
+                    ? 'bg-red-600 text-white border-red-500' 
+                    : (room.isLocked 
+                        ? 'bg-amber-500 text-white border-amber-600' 
+                        : 'bg-white/5 border-white/5 text-white/50'))}
             `}>
-              {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
+              {urgencyTheme
+                ? urgencyTheme.label
+                : (room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title))}
             </p>
           </div>
           
@@ -319,6 +390,15 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </div>
     </div>
   );
+}, (prev, next) => {
+  // Custom comparator — re-renderuj pouze když se změní DATA sálu, nikoli callbacky.
+  // Inline arrow funkce z parenta (() => setSelectedRoomId(room.id) atd.) se vždy
+  // recreatují, což jinak invaliduje React.memo a způsobuje, že se VŠECHNY karty
+  // re-renderují při jakékoli změně v rooms[]. Tohle je kritická perf optimalizace
+  // pro dashboard se 6+ kartami obsahujícími drahá SVG / glassmorph efekty.
+  // Callbacky jsou de facto pure (jen volají setRooms s room.id), takže stale
+  // closure neničí logiku.
+  return prev.room === next.room;
 });
 
 export default RoomCard;

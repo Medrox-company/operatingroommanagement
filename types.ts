@@ -96,6 +96,8 @@ export interface OperatingRoom {
   };
   isSeptic?: boolean;
   isEmergency?: boolean;
+  /** NCEPOD klasifikace urgence — nastavená při registraci akutního výkonu */
+  urgencyLevel?: 'immediate' | 'urgent' | 'expedited' | 'elective';
   isLocked?: boolean;
   isEnhancedHygiene?: boolean; // Zvýšený hygienický režim
   isPaused?: boolean; // Pauza operace

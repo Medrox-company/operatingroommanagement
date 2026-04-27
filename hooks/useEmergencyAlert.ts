@@ -122,10 +122,16 @@ export function useEmergencyAlert(rooms: OperatingRoom[], selectedRoomId: string
 
       // If emergency was just activated (changed from false to true)
       if (!wasEmergency && isNowEmergency) {
-        console.log('[EmergencyAlert] Emergency activated for room:', room.name);
-        
-        // Play sound on all devices where this room is visible
-        playEmergencyAlert();
+        // Skip harsh siren for 'urgent' level — useUrgencyAlert přehraje jemný chime.
+        // Harsh alarm zazní pouze pro 'immediate' (EMERGENTNÍ) nebo legacy emergency
+        // bez urgencyLevel (zpětná kompatibilita).
+        if (room.urgencyLevel === 'urgent') {
+          console.log('[EmergencyAlert] Skipping harsh siren for URGENTNÍ — gentle chime handled separately');
+        } else {
+          console.log('[EmergencyAlert] Emergency activated for room:', room.name);
+          // Play sound on all devices where this room is visible
+          playEmergencyAlert();
+        }
       }
 
       // Update stored state
