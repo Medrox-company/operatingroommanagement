@@ -420,7 +420,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               <StatBox 
                 icon={AlertTriangle} 
                 label="Emergency" 
-                value={`${stats.emergencyCount} salu`} 
+                value={`${stats.emergencyCount} sálů`} 
                 color="#EF4444" 
                 glow 
               />
@@ -453,7 +453,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     <Clock className="w-4 h-4 text-red-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[9px] text-red-400/60 uppercase tracking-wider font-bold">ARO PŘESAH</p>
+                    <p className="text-[9px] text-red-400/60 uppercase tracking-[0.3em] font-semibold">ARO PŘESAH</p>
                     <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} sálů</p>
                   </div>
                 </div>
@@ -497,7 +497,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   <Clock className="w-4 h-4 text-purple-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Cas</p>
+                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Čas</p>
                   <p className="text-sm font-semibold text-purple-400 leading-tight tabular-nums">
                     {currentTime.toLocaleTimeString("cs-CZ", {
                       hour: "2-digit",
@@ -529,7 +529,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   <Settings className="w-4 h-4 text-slate-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Zobrazit</p>
+                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Zobrazit</p>
                   <p className="text-sm font-semibold text-slate-400 leading-tight">Legendu</p>
                 </div>
               </div>
@@ -549,7 +549,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
             style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)' }}
           >
             <Activity className="w-4 h-4 text-emerald-400/60" />
-            <span className="text-[10px] font-bold tracking-wider uppercase text-white/40">OPERACNI SALY</span>
+            <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">OPERAČNÍ SÁLY</span>
           </div>
           
           {/* Time markers - no scroll, full width for 24h */}
@@ -588,7 +588,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         </div>
                       ) : (
                         <div className="ml-2 flex items-center gap-1">
-                          <span className={`text-[11px] font-mono font-medium ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
                             {hourLabel(hour)}
                           </span>
                         </div>
@@ -1280,7 +1280,7 @@ style={{
                               )}
                               {boxWidthPct > 12 && (
                                 <div>
-                                  <p className="text-[11px] font-bold text-white uppercase tracking-wider">
+                                  <p className="text-[11px] font-semibold text-white uppercase tracking-[0.3em]">
                                     PAUZA
                                   </p>
                                   {boxWidthPct > 20 && (
@@ -1432,7 +1432,7 @@ const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow
         <span style={{ color }}><Icon className="w-4 h-4" /></span>
       </div>
       <div className="min-w-0">
-        <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
+        <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">{label}</p>
         <p className="text-sm font-semibold text-white leading-tight">{value}</p>
       </div>
     </div>
@@ -1549,7 +1549,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div className="flex items-center gap-6">
             {/* Step progress dots */}
             <div>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider text-right mb-1">DOBA OPERACE</p>
+                  <p className="text-[10px] text-white/40 uppercase tracking-[0.3em] font-semibold text-right mb-1">DOBA OPERACE</p>
               <div className="flex items-center gap-1">
                 {activeStatuses.map((_, idx) => (
                   <div
@@ -1583,7 +1583,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Activity className="w-4 h-4 text-white/40" />
-              <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">POSTUP OPERACE</p>
+                  <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">POSTUP OPERACE</p>
             </div>
             
             <div className="flex items-center gap-3">
@@ -1598,9 +1598,9 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stepColor }} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: stepColor }}>
-                      PRAVE PROBIHA
-                    </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.3em]" style={{ color: stepColor }}>
+                            PRÁVĚ PROBÍHÁ
+                          </span>
                   </div>
                   <span 
                     className="px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -1638,9 +1638,9 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-white/30" />
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
-                      NASLEDUJICI
-                    </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+                            NÁSLEDUJÍCÍ
+                          </span>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40">
                     Krok {nextStepIndex + 1}/{totalSteps}
@@ -1652,7 +1652,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                   </div>
                   <div>
                     <p className="text-white/80 font-semibold">{nextStatus?.name || 'Další krok'}</p>
-                    <p className="text-white/30 text-xs mt-0.5">Ceka na zahajeni</p>
+                          <p className="text-white/30 text-xs mt-0.5">Čeká na zahájení</p>
                   </div>
                 </div>
               </div>
@@ -1665,7 +1665,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Users className="w-4 h-4 text-white/40" />
-                <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">TYM</p>
+                        <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">TÝM</p>
               </div>
               <div className="flex gap-3">
                 {/* Doctor */}
@@ -1675,7 +1675,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                       <Stethoscope className="w-4 h-4 text-violet-400" />
                     </div>
                     <div>
-                      <p className="text-[9px] text-white/40 uppercase tracking-wider">ANESTEZIOLOG</p>
+                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">ANESTEZIOLOG</p>
                       <p className="text-sm font-semibold text-white">{room.staff?.doctor?.name || 'MUDr. --'}</p>
                     </div>
                   </div>
@@ -1687,7 +1687,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                       <Users className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-[9px] text-white/40 uppercase tracking-wider">SESTRA</p>
+                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">SESTRA</p>
                       <p className="text-sm font-semibold text-white">{room.staff?.nurse?.name || 'Bc. --'}</p>
                     </div>
                   </div>
@@ -1699,17 +1699,17 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="w-4 h-4 text-white/40" />
-                <p className="text-[11px] text-white/40 uppercase tracking-wider font-medium">CASY</p>
+                        <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">ČASY</p>
               </div>
               <div className="flex gap-3">
                 {/* Start time */}
                 <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
-                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ZACATEK</p>
+                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ZAČÁTEK</p>
                   <p className="text-xl font-mono font-bold text-white/60">--:--</p>
                 </div>
                 {/* Estimated end */}
                 <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
-                  <p className="text-[9px] text-white/40 uppercase tracking-wider mb-1">ODHAD</p>
+                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ODHAD</p>
                   <p className="text-xl font-mono font-bold" style={{ color: stepColor }}>
                     {room.estimatedEndTime 
                       ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
