@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
@@ -1742,4 +1742,29 @@ const prevStep = activeDbStatuses.length > 0
   );
 };
 
-export default RoomDetail;
+// Custom memo comparator — RoomDetail je masivní (1745 řádků s timery, motion, kontext).
+// Plně se re-renderoval při KAŽDÉM update jakéhokoli sálu (rooms[] dostane novou referenci
+// při realtime updatech), i když se právě otevřený sál vůbec nezměnil. Tohle je jeden
+// z hlavních zdrojů „pomalé" aplikace.
+//
+// Strategie:
+//  • re-render POUZE když:
+//    - se změnila reference samotného `room` (data otevřeného sálu),
+//    - nebo některý z callbacků (selectedRoomId v parentu se změnil → nový sál otevřen),
+//    - nebo se změnil POČET sálů (přidán/odebrán → relevantní pro StaffPickerModal).
+//  • ignorujeme novou referenci `allRooms` při stejné délce — content jiných sálů se
+//    propagují do StaffPickerModalu jen když je otevřený, a tam je to bezpečné.
+export default memo(RoomDetail, (prev, next) => {
+  if (prev.room !== next.room) return false;
+  if (prev.onClose !== next.onClose) return false;
+  if (prev.onStepChange !== next.onStepChange) return false;
+  if (prev.onEndTimeChange !== next.onEndTimeChange) return false;
+  if (prev.onEnhancedHygieneToggle !== next.onEnhancedHygieneToggle) return false;
+  if (prev.onStaffChange !== next.onStaffChange) return false;
+  if (prev.onPatientStatusChange !== next.onPatientStatusChange) return false;
+  if (prev.onAcceptAcuteCase !== next.onAcceptAcuteCase) return false;
+  // allRooms — jen porovnej délku; obsah jiných sálů ovlivňuje pouze StaffPickerModal,
+  // který se otevírá vzácně a snese drobnou latenci sync.
+  if ((prev.allRooms?.length || 0) !== (next.allRooms?.length || 0)) return false;
+  return true;
+});

@@ -179,7 +179,14 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
-  const selectedRoom = rooms.find(r => r.id === selectedRoomId) || null;
+  // Memoize selectedRoom — bez useMemo se find() spouští každý render a `selectedRoom`
+  // má pokaždé jinou referenci, což spouští re-render RoomDetailu i když data sálu jsou
+  // stejná. setRooms s funkčním updaterem zachovává reference nezměněných sálů, takže
+  // useMemo zde reálně sníží re-rendery RoomDetailu na minimum.
+  const selectedRoom = useMemo(
+    () => rooms.find(r => r.id === selectedRoomId) || null,
+    [rooms, selectedRoomId]
+  );
 
   // Check if module is enabled AND the current user's role is allowed to see it.
   const isModuleEnabled = useCallback((moduleId: string) => {
@@ -471,6 +478,34 @@ const AppContent: React.FC = () => {
   const handleCloseAcuteCase = useCallback(() => setIsAcuteCaseModalOpen(false), []);
   const handleCloseRoomDetail = useCallback(() => setSelectedRoomId(null), []);
 
+  // Stabilní RoomDetail callbacky — používají selectedRoomId přímo (zdroj pravdy), takže
+  // se NErecreatují při každém update sálů. Bez useCallbacku se po realtime updatu
+  // recreate inline arrow funkce → memo na RoomDetailu by selhal a 1745řádková komponenta
+  // by se zbytečně re-renderovala.
+  const handleStepChange = useCallback((index: number, stepColor?: string) => {
+    if (selectedRoomId) updateRoomStep(selectedRoomId, index, stepColor);
+  }, [selectedRoomId, updateRoomStep]);
+
+  const handleEndTimeChange = useCallback((newTime: Date | null) => {
+    if (selectedRoomId) handleUpdateRoomEndTime(selectedRoomId, newTime);
+  }, [selectedRoomId, handleUpdateRoomEndTime]);
+
+  const handleEnhancedHygieneToggleSelected = useCallback((enabled: boolean) => {
+    if (selectedRoomId) handleEnhancedHygieneToggle(selectedRoomId, enabled);
+  }, [selectedRoomId, handleEnhancedHygieneToggle]);
+
+  const handleStaffChangeSelected = useCallback((role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
+    if (selectedRoomId) handleStaffChange(selectedRoomId, role, staffId, staffName);
+  }, [selectedRoomId, handleStaffChange]);
+
+  const handlePatientStatusChangeSelected = useCallback((calledAt: string | null, arrivedAt: string | null) => {
+    if (selectedRoomId) handlePatientStatusChange(selectedRoomId, calledAt, arrivedAt);
+  }, [selectedRoomId, handlePatientStatusChange]);
+
+  const handleAcceptAcuteCaseSelected = useCallback(() => {
+    if (selectedRoomId) handleAcceptAcuteCase(selectedRoomId);
+  }, [selectedRoomId, handleAcceptAcuteCase]);
+
   // Show login if not authenticated - must be after all hooks
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -527,12 +562,12 @@ const AppContent: React.FC = () => {
                   room={selectedRoom}
                   allRooms={rooms}
                   onClose={handleCloseRoomDetail}
-                  onStepChange={(index, stepColor) => updateRoomStep(selectedRoom.id, index, stepColor)}
-                  onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
-                  onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
-                  onStaffChange={(role, staffId, staffName) => handleStaffChange(selectedRoom.id, role, staffId, staffName)}
-                  onPatientStatusChange={(calledAt, arrivedAt) => handlePatientStatusChange(selectedRoom.id, calledAt, arrivedAt)}
-                  onAcceptAcuteCase={() => handleAcceptAcuteCase(selectedRoom.id)}
+                  onStepChange={handleStepChange}
+                  onEndTimeChange={handleEndTimeChange}
+                  onEnhancedHygieneToggle={handleEnhancedHygieneToggleSelected}
+                  onStaffChange={handleStaffChangeSelected}
+                  onPatientStatusChange={handlePatientStatusChangeSelected}
+                  onAcceptAcuteCase={handleAcceptAcuteCaseSelected}
                 />
               </div>
             )}

@@ -182,7 +182,7 @@ interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
 
-export default function TimelineModule({ rooms }: TimelineModuleProps) {
+function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -1531,6 +1531,13 @@ style={{
     </div>
   );
 }
+
+// Memoized export — TimelineModule je drahý (1500+ řádků s framer-motion animacemi
+// a iterací nad rooms × hours). Default shallow compare zajistí, že když App.tsx
+// re-renderuje z nesouvisejícího důvodu (otevření modalu, změna current view),
+// TimelineModule re-render přeskočí. Re-renderne se jen když se reálně změní `rooms`.
+const TimelineModule = React.memo(TimelineModuleImpl);
+export default TimelineModule;
 
 // Helper Component - Stat Box
 interface StatBoxProps {
