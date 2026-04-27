@@ -821,12 +821,12 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         />
                         {/* Content */}
                         <div className="absolute inset-0 flex items-center justify-center gap-2">
-                          <AlertTriangle className="w-4 h-4" style={{ color: bannerColor }} />
-                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${bannerColor}ee` }}>
+                          <AlertTriangle className="w-4 h-4" style={{ color: '#ffffff' }} />
+                          <span className="font-bold tracking-[0.2em] uppercase select-none" style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.93)' }}>
                             {bannerLabel}
                           </span>
                           {room.currentProcedure?.name && (
-                            <span className="text-xs font-medium tracking-wide truncate max-w-[40ch]" style={{ color: `${bannerColor}cc` }}>
+                            <span className="font-medium tracking-wide truncate max-w-[40ch]" style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.80)' }}>
                               · {room.currentProcedure.name}
                             </span>
                           )}
