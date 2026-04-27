@@ -74,7 +74,7 @@ const DepartmentsManager: React.FC = () => {
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <Stethoscope className="w-4 h-4 text-[#FBBF24]" />
-            <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">DEPARTMENTS MANAGEMENT</p>
+            <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">DEPARTMENTS MANAGEMENT</p>
           </div>
           <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             ODDELENI <span className="text-white/20">KLINIKY</span>

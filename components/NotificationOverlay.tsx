@@ -320,7 +320,7 @@ export default function NotificationOverlay({
                 transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 className="text-center mb-8 md:mb-12"
               >
-                <p className="text-[10px] sm:text-[11px] font-black text-white/30 tracking-[0.5em] uppercase mb-4">
+                <p className="text-[10px] sm:text-[11px] font-bold text-white/30 tracking-[0.5em] uppercase mb-4">
                   POSLAT NOTIFIKACI
                 </p>
                 <AnimatePresence mode="wait">

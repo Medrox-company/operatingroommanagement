@@ -132,7 +132,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         
         {/* Header — centered */}
         <div className="w-full flex flex-col items-center text-center shrink-0">
-          <p className={`text-[8px] sm:text-[9px] font-black tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full transition-colors
+          <p className={`text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full transition-colors
             ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
           `}>
             {room.department}
@@ -182,7 +182,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                         textAnchor="middle"
                         dominantBaseline="central"
                         fill="#22D3EE"
-                        className="text-4xl font-black"
+                        className="text-4xl font-bold"
                         style={{ 
                           transform: 'rotate(90deg)', 
                           transformOrigin: `${center}px ${center}px`,
@@ -199,7 +199,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                         y={center}
                         textAnchor="middle"
                         dominantBaseline="central"
-                        className={`text-4xl font-black transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
+                        className={`text-4xl font-bold transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
                         style={{ 
                             transform: 'rotate(90deg)', 
                             transformOrigin: `${center}px ${center}px`,
@@ -227,7 +227,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Bottom Info */}
         <div className="w-full space-y-2 sm:space-y-3 shrink-0">
           <div className="w-full text-center">
-            <p className={`text-[9px] sm:text-[10px] font-black tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
+            <p className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
               ${room.isEmergency 
                 ? 'bg-red-600 text-white border-red-500' 
                 : (room.isLocked 

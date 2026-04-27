@@ -8,7 +8,7 @@ const ShiftScheduleManager: React.FC = () => {
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <Calendar className="w-4 h-4 text-[#FBBF24]" />
-            <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">SHIFT SCHEDULE MANAGEMENT</p>
+            <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">SHIFT SCHEDULE MANAGEMENT</p>
           </div>
           <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             ROZVRH <span className="text-white/20">SMEN</span>

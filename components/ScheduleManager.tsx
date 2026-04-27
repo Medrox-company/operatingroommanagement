@@ -83,7 +83,7 @@ const ScheduleManager: React.FC = () => {
       <div className="px-6 py-4 border-b border-white/5 flex-shrink-0">
         <p className="text-xs font-bold text-purple-400/60 uppercase tracking-[0.2em] mb-3">PLÁNOVÁNÍ</p>
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-black text-white">ROZPIS SÁLŮ - VŠECHNY PAVILONY</h1>
+          <h1 className="text-3xl font-bold text-white">ROZPIS SÁLŮ - VŠECHNY PAVILONY</h1>
           
           <div className="flex items-center gap-3">
             <button
@@ -93,7 +93,7 @@ const ScheduleManager: React.FC = () => {
             >
               <ChevronLeft className="w-5 h-5 text-white/60" />
             </button>
-            <p className="text-lg font-black text-white min-w-48 text-center">{monthName}</p>
+            <p className="text-lg font-bold text-white min-w-48 text-center">{monthName}</p>
             <button
               onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
               className="p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -126,7 +126,7 @@ const ScheduleManager: React.FC = () => {
               <div key={pavilion} className="grid gap-2" style={{ gridTemplateColumns: 'minmax(120px, 1fr) repeat(7, 1fr)' }}>
                 {/* Pavilion Name */}
                 <div className="flex items-center justify-center bg-white/5 rounded-lg border border-white/10 px-3 py-2 min-h-24">
-                  <span className="text-sm font-black text-white text-center">Pavilon {pavilionIdx + 1}</span>
+                  <span className="text-sm font-bold text-white text-center">Pavilon {pavilionIdx + 1}</span>
                 </div>
 
                 {/* Days for this Pavilion */}
@@ -219,7 +219,7 @@ const ScheduleManager: React.FC = () => {
           >
             {/* Panel Header */}
             <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between flex-shrink-0 bg-black/40">
-              <h3 className="text-lg font-black text-white">
+              <h3 className="text-lg font-bold text-white">
                 {activeDay.pavilion.replace('-', ' ').toUpperCase()} - Den {activeDay.dayIndex + 1}
               </h3>
               <button

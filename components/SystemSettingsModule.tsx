@@ -324,7 +324,7 @@ const SystemSettingsModule: React.FC = () => {
         <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <SettingsIcon className="w-4 h-4 text-[#64748B]" />
-            <p className="text-[10px] font-black text-[#64748B] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
+            <p className="text-[10px] font-bold text-[#64748B] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
           </div>
           <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             NASTAVENÍ <span className="text-white/20">SYSTÉMU</span>
@@ -605,7 +605,7 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
           type="email"
         />
         <div className="md:col-span-2">
-          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
             Poznámky
           </label>
           <textarea
@@ -819,7 +819,7 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-px flex-1 bg-white/10" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
               Záloha a obnova
             </span>
             <div className="h-px flex-1 bg-white/10" />
@@ -1043,7 +1043,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, faci
               label="Role"
               value={
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     isAdmin ? 'bg-[#FBBF24]/20 text-[#FBBF24]' : 'bg-white/10 text-white/60'
                   }`}
                 >
@@ -1111,7 +1111,7 @@ interface FieldProps {
 
 const Field: React.FC<FieldProps> = ({ label, icon: Icon, placeholder, value, onChange, disabled, fullWidth, type }) => (
   <div className={fullWidth ? 'md:col-span-2' : ''}>
-    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">{label}</label>
+    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">{label}</label>
     <div className="relative">
       <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
       <input
@@ -1128,7 +1128,7 @@ const Field: React.FC<FieldProps> = ({ label, icon: Icon, placeholder, value, on
 
 const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="flex items-center justify-between gap-4">
-    <dt className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</dt>
+    <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">{label}</dt>
     <dd className="text-white font-medium text-right truncate">{value}</dd>
   </div>
 );
@@ -1192,11 +1192,11 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
 
         <p className="text-sm text-white/60 leading-relaxed mb-4">
           {isFull
-            ? 'Smažete veškerá data kromě uživatelských účtů. Opravdu pokračovat?'
+            ? 'Sma��ete veškerá data kromě uživatelských účtů. Opravdu pokračovat?'
             : 'Smažete historii, rozpisy a notifikace. Konfigurace zůstane zachována. Opravdu pokračovat?'}
         </p>
 
-        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">
+        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
           Pro potvrzení zadejte přesně: <span className="text-white">SMAZAT DATA</span>
         </label>
         <input
@@ -1372,7 +1372,7 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleM
                     <span className="text-white/30 text-xs uppercase tracking-wider font-bold">Vždy aktivní</span>
                   ) : (
                     <>
-                      <span className="hidden sm:inline text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+                      <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
                         Globálně
                       </span>
                       <button
@@ -1405,7 +1405,7 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleM
 
               {/* Per-role row */}
               <div className="p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-3">
                   Přístup pro role
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -1548,7 +1548,7 @@ const ImportConfirmModal: React.FC<ImportConfirmModalProps> = ({
           )}
         </div>
 
-        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">
+        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
           Pro potvrzení zadejte přesně: <span className="text-white">OBNOVIT DATA</span>
         </label>
         <input

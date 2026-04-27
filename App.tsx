@@ -273,7 +273,7 @@ const AppContent: React.FC = () => {
       };
     }));
 
-    // Fire-and-forget DB persist. UI has already updated optimistically — we don't
+    // Fire-and-forget DB persist. UI has already updated optimistically �� we don't
     // block on the network roundtrip. Errors are logged but never surfaced.
     if (isDbConnected && dbPayload) {
       updateOperatingRoom(roomId, dbPayload).catch((err) =>
@@ -472,7 +472,7 @@ const AppContent: React.FC = () => {
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
                       <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
                         <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
-                        <p className="text-[9px] sm:text-[10px] font-black text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+                        <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
                       </div>
                       <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate">
                         OPERATING <span className="text-white/20">ROOM</span>
@@ -496,7 +496,7 @@ const AppContent: React.FC = () => {
                         <div key={stat.label} className="flex flex-col items-center justify-center px-3 sm:px-6 md:px-10 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[130px] md:min-w-[150px] z-10">
                           <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2 opacity-40">
                             <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
-                            <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em]">{stat.label}</p>
+                            <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em]">{stat.label}</p>
                           </div>
                           <AnimatedCounter to={stat.value} />
                         </div>

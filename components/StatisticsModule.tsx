@@ -387,7 +387,7 @@ function calculateRoomUtilization(
   return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
 }
 
-// ── Helper: Get formatted working hours string for a room ────────────────��─────
+// ── Helper: Get formatted working hours string for a room ────────────────���─────
 function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   const hours = getRoomWorkingHours(room, dayIndex);
   if (!hours.enabled) return 'Zavřeno';
@@ -698,9 +698,9 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-1.5 min-w-0">
           <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
-          <span className="text-xs font-black truncate" style={{ color: C.text }}>{r.name}</span>
+          <span className="text-xs font-bold truncate" style={{ color: C.text }}>{r.name}</span>
         </div>
-        {ups2 && <span className="text-[8px] font-black px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
+        {ups2 && <span className="text-[8px] font-bold px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
       </div>
       <p className="text-[10px] mb-1 truncate" style={{ color: C.faint }}>{r.department}</p>
       {/* Working hours indicator */}
@@ -720,14 +720,14 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         <div className="flex items-center gap-2">
           <div>
             <p className="text-[8px]" style={{ color: C.ghost }}>Ops (prac.)</p>
-            <p className="text-sm font-black leading-none" style={{ color: C.accent }}>{opsCount}</p>
+            <p className="text-sm font-bold leading-none" style={{ color: C.accent }}>{opsCount}</p>
           </div>
           <div>
             <p className="text-[8px]" style={{ color: C.ghost }}>Využití</p>
-            <p className="text-sm font-black leading-none" style={{ color: C.text }}>{utilization}%</p>
+            <p className="text-sm font-bold leading-none" style={{ color: C.text }}>{utilization}%</p>
           </div>
         </div>
-        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
           style={{ background: `${sc2}14`, color: sc2 }}>
           {roomStatusLabel(r).slice(0, 3)}
         </span>
@@ -745,25 +745,25 @@ function Card({children,className='',style={}}:{children:React.ReactNode;classNa
   );
 }
 function SectionLabel({children}:{children:React.ReactNode}){
-  return <p className="text-[10px] font-black uppercase tracking-[0.15em] mb-4" style={{color:C.muted}}>{children}</p>;
+  return <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-4" style={{color:C.muted}}>{children}</p>;
 }
 function TrendBadge({v}:{v:number}){
   if(v>0) return(
-    <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded" style={{background:`${C.green}18`,color:C.green}}>
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{background:`${C.green}18`,color:C.green}}>
       <TrendingUp className="w-3 h-3"/>+{v}%
     </span>
   );
   if(v<0) return(
-    <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded" style={{background:`${C.red}18`,color:C.red}}>
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{background:`${C.red}18`,color:C.red}}>
       <TrendingDown className="w-3 h-3"/>{v}%
     </span>
   );
   return <span className="text-[10px]" style={{color:C.ghost}}>—</span>;
 }
 
-// ═══════���══════════════════════════════════════════════════════════════════════
+// ══════������══════════════════════════════════════════════════════════════════════
 // ROOM DETAIL PANEL
-// ══════════════════════════════════════════════════════����═���════════════════════
+// ══════════════════════════════════════════════════════�����═���════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
@@ -932,11 +932,11 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full" style={{background:sc,boxShadow:`0 0 8px ${sc}`}}/>
             <div>
-              <p className="text-base font-black" style={{color:C.text}}>{room.name}</p>
+              <p className="text-base font-bold" style={{color:C.text}}>{room.name}</p>
               <p className="text-xs mt-0.5" style={{color:C.muted}}>
                 {room.department}
-                {ups&&<span className="ml-2 font-black" style={{color:C.accent}}>· ÚPS 24 h</span>}
-                {room.isSeptic&&<span className="ml-2 font-black" style={{color:C.red}}>· SEPTICKÝ</span>}
+                {ups&&<span className="ml-2 font-bold" style={{color:C.accent}}>· ÚPS 24 h</span>}
+                {room.isSeptic&&<span className="ml-2 font-bold" style={{color:C.red}}>· SEPTICKÝ</span>}
               </p>
             </div>
           </div>
@@ -957,8 +957,8 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
               {l:'Fronta',v:room.queueCount,    c:room.queueCount>0?C.yellow:C.muted},
             ].map(k=>(
               <Card key={k.l} className="p-4 text-center">
-                <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
-                <p className="text-2xl font-black leading-none" style={{color:k.c}}>{k.v}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
+                <p className="text-2xl font-bold leading-none" style={{color:k.c}}>{k.v}</p>
               </Card>
             ))}
           </div>
@@ -976,7 +976,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                   transition={{duration:0.5,delay:i*0.02,ease:'easeOut'}}
                   title={`${seg.title} — ${seg.min} min (${seg.pct.toFixed(1)}%)`}>
                   {seg.pct>=9&&(
-                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-black/60 pointer-events-none">
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-black/60 pointer-events-none">
                       {Math.round(seg.pct)}%
                     </span>
                   )}
@@ -990,7 +990,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                   <div className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{background:seg.color}}/>
                   <div>
                     <p className="text-[10px] leading-tight" style={{color:C.muted}}>{seg.title}</p>
-                    <p className="text-xs font-black leading-tight" style={{color:seg.color}}>
+                    <p className="text-xs font-bold leading-tight" style={{color:seg.color}}>
                       {Math.round(seg.pct)}%
                       <span className="font-normal ml-1" style={{color:C.faint}}>{seg.min} min</span>
                     </p>
@@ -1029,7 +1029,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                         <div className="w-2 h-2 rounded-[2px] shrink-0" style={{background:s.color}}/>
                         <span className="text-xs" style={{color:C.muted}}>{s.label}</span>
                       </div>
-                      <span className="text-sm font-black" style={{color:s.color}}>{s.pct}%</span>
+                      <span className="text-sm font-bold" style={{color:s.color}}>{s.pct}%</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
                       <motion.div className="h-full rounded-full" style={{background:s.color,opacity:0.85}}
@@ -1168,7 +1168,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                 const done=i<room.currentStepIndex;
                 return(
                   <div key={i} className="flex items-center gap-1.5">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider"
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider"
                       style={{
                         background:cur?`${step.color}20`:done?'rgba(255,255,255,0.04)':'transparent',
                         color:cur?step.color:done?'rgba(255,255,255,0.45)':'rgba(255,255,255,0.18)',
@@ -1770,7 +1770,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2 opacity-60">
           <BarChart3 className="w-4 h-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-black text-[#FBBF24] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+          <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
         </div>
         <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
           STATISTIKY
@@ -1783,7 +1783,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{background:C.surface,border:`1px solid ${C.border}`}}>
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
-              className="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
+              className="px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all"
               style={{
                 background:tab===t.id?'rgba(255,255,255,0.07)':'transparent',
                 color:tab===t.id?C.text:C.muted,
@@ -1796,7 +1796,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         <div className="flex items-center gap-1.5">
           {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
             <button key={p} onClick={()=>setPeriod(p)}
-              className="px-3.5 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all"
+              className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
               style={{
                 background:period===p?`${C.accent}18`:'transparent',
                 color:period===p?C.accent:C.muted,
@@ -1832,8 +1832,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   style={{background:C.surface,borderRight:i<7?`1px solid ${C.border}`:undefined}}
                   initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}
                   transition={{duration:0.3,delay:i*0.04}}>
-                  <p className="text-[9px] font-black uppercase tracking-widest mb-2.5" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-2xl font-black leading-none" style={{color:k.c}}>{k.v}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2.5" style={{color:C.muted}}>{k.l}</p>
+                  <p className="text-2xl font-bold leading-none" style={{color:k.c}}>{k.v}</p>
                 </motion.div>
               ))}
             </div>
@@ -1884,10 +1884,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                           background: C.surface,
                           borderRight: i < cells.length - 1 ? `1px solid ${C.border}` : undefined,
                         }}>
-                        <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color: C.muted}}>
+                        <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color: C.muted}}>
                           {k.l}
                         </p>
-                        <p className="text-base font-black leading-none truncate" style={{color: k.c}} title={String(k.v)}>
+                        <p className="text-base font-bold leading-none truncate" style={{color: k.c}} title={String(k.v)}>
                           {k.v}
                         </p>
                       </div>
@@ -1940,7 +1940,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     <div key={s.name} className="flex items-center gap-1.5">
                       <div className="w-2 h-2 rounded-full" style={{background:s.color}}/>
                       <span className="text-xs" style={{color:C.muted}}>{s.name}</span>
-                      <span className="text-xs font-black ml-auto" style={{color:s.color}}>{s.value}</span>
+                      <span className="text-xs font-bold ml-auto" style={{color:s.color}}>{s.value}</span>
                     </div>
                   ))}
                 </div>
@@ -1948,19 +1948,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 {(emergCnt>0||septicCnt>0)&&(
                   <div className="mt-4 pt-3 flex flex-wrap gap-2" style={{borderTop:`1px solid ${C.border}`}}>
                     {emergCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider"
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
                         style={{background:`${C.orange}18`,color:C.orange}}>
                         <AlertTriangle className="w-3 h-3"/>{emergCnt} Emerg.
                       </span>
                     )}
                     {septicCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider"
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
                         style={{background:`${C.red}18`,color:C.red}}>
                         <Shield className="w-3 h-3"/>{septicCnt} Septické
                       </span>
                     )}
                     {upsCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider"
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
                         style={{background:`${C.accent}18`,color:C.accent}}>
                         <Zap className="w-3 h-3"/>{upsCnt} ÚPS
                       </span>
@@ -1997,7 +1997,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                             <div className="w-2 h-2 rounded-[2px]" style={{background:color}}/>
                             <span className="text-xs" style={{color:C.muted}}>{dept}</span>
                           </div>
-                          <span className="text-xs font-black" style={{color:C.text}}>{count}</span>
+                          <span className="text-xs font-bold" style={{color:C.text}}>{count}</span>
                         </div>
                         <div className="h-0.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
                           <motion.div className="h-full rounded-full" style={{background:color,opacity:0.8}}
@@ -2060,16 +2060,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 <SectionLabel>Fronta a kapacita</SectionLabel>
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>Celková fronta</p>
-                    <p className="text-3xl font-black" style={{color:totalQueue>0?C.yellow:C.green}}>{totalQueue}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:C.muted}}>Celková fronta</p>
+                    <p className="text-3xl font-bold" style={{color:totalQueue>0?C.yellow:C.green}}>{totalQueue}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>ÚPS sálů</p>
-                    <p className="text-3xl font-black" style={{color:C.accent}}>{upsCnt}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:C.muted}}>ÚPS sálů</p>
+                    <p className="text-3xl font-bold" style={{color:C.accent}}>{upsCnt}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:C.muted}}>Zaplněnost</p>
-                    <p className="text-3xl font-black" style={{color:C.text}}>{Math.round((busyCount/Math.max(1,rooms.length))*100)}%</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:C.muted}}>Zaplněnost</p>
+                    <p className="text-3xl font-bold" style={{color:C.text}}>{Math.round((busyCount/Math.max(1,rooms.length))*100)}%</p>
                   </div>
                 </div>
                 <div className="space-y-2.5">
@@ -2079,7 +2079,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         <div className="w-1.5 h-1.5 rounded-full" style={{background:roomStatusColor(r)}}/>
                         <span className="text-xs" style={{color:C.muted}}>{r.name}</span>
                       </div>
-                      <span className="text-xs font-black" style={{color:C.yellow}}>{r.queueCount} pac.</span>
+                      <span className="text-xs font-bold" style={{color:C.yellow}}>{r.queueCount} pac.</span>
                     </div>
                   ))}
                   {totalQueue===0&&<p className="text-xs" style={{color:C.faint}}>Žádná fronta</p>}
@@ -2103,10 +2103,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{ background: roomStatusColor(r) }} />
-                          <span className="text-xs font-black" style={{ color: C.text }}>{r.name}</span>
+                          <span className="text-xs font-bold" style={{ color: C.text }}>{r.name}</span>
                         </div>
                         {isUPS(r) && (
-                          <span className="text-[8px] font-black px-1 py-0.5 rounded" style={{ background: `${C.accent}15`, color: C.accent }}>24h</span>
+                          <span className="text-[8px] font-bold px-1 py-0.5 rounded" style={{ background: `${C.accent}15`, color: C.accent }}>24h</span>
                         )}
                       </div>
                       <p className="text-[10px] mb-2" style={{ color: C.faint }}>{r.department}</p>
@@ -2130,15 +2130,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                       <div className="flex items-center justify-between pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
                         <div>
                           <p className="text-[8px]" style={{ color: C.ghost }}>Operace</p>
-                          <p className="text-sm font-black" style={{ color: C.accent }}>{opsInHours}</p>
+                          <p className="text-sm font-bold" style={{ color: C.accent }}>{opsInHours}</p>
                         </div>
                         <div>
                           <p className="text-[8px]" style={{ color: C.ghost }}>Využití</p>
-                          <p className="text-sm font-black" style={{ color: util >= 80 ? C.green : util >= 50 ? C.yellow : C.orange }}>{util}%</p>
+                          <p className="text-sm font-bold" style={{ color: util >= 80 ? C.green : util >= 50 ? C.yellow : C.orange }}>{util}%</p>
                         </div>
                         <div>
                           <p className="text-[8px]" style={{ color: C.ghost }}>Fronta</p>
-                          <p className="text-sm font-black" style={{ color: r.queueCount > 0 ? C.yellow : C.green }}>{r.queueCount}</p>
+                          <p className="text-sm font-bold" style={{ color: r.queueCount > 0 ? C.yellow : C.green }}>{r.queueCount}</p>
                         </div>
                       </div>
                     </div>
@@ -2166,8 +2166,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 <motion.div key={k.l} initial={{opacity:0,scale:0.97}} animate={{opacity:1,scale:1}}
                   transition={{duration:0.2}}>
                   <Card className="p-5">
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-3" style={{color:C.muted}}>{k.l}</p>
-                    <p className="text-4xl font-black leading-none mb-1.5" style={{color:k.c}}>{k.v}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest mb-3" style={{color:C.muted}}>{k.l}</p>
+                    <p className="text-4xl font-bold leading-none mb-1.5" style={{color:k.c}}>{k.v}</p>
                     <p className="text-[10px]" style={{color:C.faint}}>{k.sub}</p>
                   </Card>
                 </motion.div>
@@ -2250,7 +2250,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     transition={{duration:0.6,delay:i*0.07,ease:'easeOut'}}
                     title={`${seg.title} — ${seg.pct}%`}>
                     {seg.pct>=8&&(
-                      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-black/65 pointer-events-none">
+                      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-black/65 pointer-events-none">
                         {seg.pct}%
                       </span>
                     )}
@@ -2265,7 +2265,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         <div className="w-2 h-2 rounded-[2px]" style={{background:seg.color}}/>
                         <span className="text-xs" style={{color:C.muted}}>{seg.title}</span>
                       </div>
-                      <span className="text-sm font-black" style={{color:seg.color}}>{seg.pct}%</span>
+                      <span className="text-sm font-bold" style={{color:seg.color}}>{seg.pct}%</span>
                     </div>
                     <div className="h-1 rounded-full overflow-hidden" style={{background:C.ghost}}>
                       <motion.div className="h-full rounded-full" style={{background:seg.color,opacity:0.8}}
@@ -2308,7 +2308,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs" style={{color:C.faint}}>{avgStepDurations[i] || 0} min</span>
-                        <span className="text-sm font-black w-9 text-right" style={{color:seg.color}}>{seg.pct}%</span>
+                        <span className="text-sm font-bold w-9 text-right" style={{color:seg.color}}>{seg.pct}%</span>
                       </div>
                       </div>
                       <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
@@ -2364,7 +2364,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                           <div className="w-2 h-2 rounded-[2px]" style={{background:seg.color}}/>
                           <span className="text-xs" style={{color:C.muted}}>{seg.title.split(' ').slice(-1)[0]}</span>
                         </div>
-                        <span className="text-xs font-black" style={{color:seg.color}}>{seg.pct}%</span>
+                        <span className="text-xs font-bold" style={{color:seg.color}}>{seg.pct}%</span>
                       </div>
                     ))}
                   </div>
@@ -2429,8 +2429,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 {l:'Operační hodiny / den', v:`${avgWorkingHours} h`, sub:`${workingRange.start}:00–${workingRange.end}:00`, c:C.muted},
               ].map(k=>(
                 <Card key={k.l} className="p-4">
-                  <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-3xl font-black leading-none mb-1" style={{color:k.c}}>{k.v}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
+                  <p className="text-3xl font-bold leading-none mb-1" style={{color:k.c}}>{k.v}</p>
                   <p className="text-[10px]" style={{color:C.faint}}>{k.sub}</p>
                 </Card>
               ))}
@@ -2450,7 +2450,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   </div>
                   {DAYS.map((day,di)=>(
                     <div key={di} className="flex items-center gap-1">
-                      <span className="w-7 text-xs font-black shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
+                      <span className="w-7 text-xs font-bold shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
                       {heatmapData[di].map((v,hi)=>(
                         <motion.div key={hi} className="w-5 h-5 rounded-[3px] shrink-0"
                           style={{background:heatColor(v)}}
@@ -2464,7 +2464,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </div>
               </div>
               <div className="flex items-center gap-4 mt-4">
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{color:C.muted}}>Legenda</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{color:C.muted}}>Legenda</span>
                 {[
                   {c:'rgba(30,41,59,0.45)',l:'< 25%'},
                   {c:'rgba(16,185,129,0.62)',l:'25–50%'},

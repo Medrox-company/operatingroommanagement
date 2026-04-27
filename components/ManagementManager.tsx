@@ -352,7 +352,7 @@ export default function ManagementManager() {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <Shield className="w-4 h-4 text-cyan-400" />
-            <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">MANAGEMENT CONTROL</p>
+            <p className="text-[10px] font-bold text-cyan-400 tracking-[0.4em] uppercase">MANAGEMENT CONTROL</p>
           </div>
           <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             MANAGEMENT <span className="text-white/20">KONTAKTY</span>

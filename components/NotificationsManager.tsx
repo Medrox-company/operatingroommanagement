@@ -175,7 +175,7 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
             <Bell className="w-4 h-4 text-[#EC4899]" />
-            <p className="text-[10px] font-black text-[#EC4899] tracking-[0.4em] uppercase">NOTIFICATION MANAGEMENT</p>
+            <p className="text-[10px] font-bold text-[#EC4899] tracking-[0.4em] uppercase">NOTIFICATION MANAGEMENT</p>
           </div>
           <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
             NOTIFIKACE <span className="text-white/20">SYSTEM</span>
