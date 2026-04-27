@@ -869,18 +869,19 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
-                  className="flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04] rounded-lg"
-                  style={{ height: rowHeight }}
+                  className="flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
+                  style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column with expanded width and rounded corners */}
+                  {/* Room Label - Sticky LEFT column with uniform padding on all sides */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20 rounded-l-lg" 
+                    className="flex-shrink-0 flex items-center gap-2 px-2 py-2 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
                       background: 'rgba(11,17,32,0.98)',
                       backdropFilter: 'blur(8px)',
+                      borderRight: `1px solid ${C.border}`,
                     }}
                   >
                     {/* ARO Overtime Badge - softer */}
