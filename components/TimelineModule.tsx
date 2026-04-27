@@ -30,7 +30,7 @@ const C = {
 const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
-const ROOM_LABEL_WIDTH = 200;
+const ROOM_LABEL_WIDTH = 320;
 const MIN_ROW_HEIGHT = 40; // Minimum row height
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
@@ -856,16 +856,15 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column with HIGHER Z-INDEX to stay above timeline */}
+                  {/* Room Label - Sticky LEFT column with expanded width */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-30" 
+                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
                       borderRight: `1px solid ${C.border}`,
                       background: 'rgba(11,17,32,0.98)',
                       backdropFilter: 'blur(8px)',
-                      boxShadow: '4px 0 12px rgba(0,0,0,0.4)',
                     }}
                   >
                     {/* ARO Overtime Badge - softer */}
