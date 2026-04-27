@@ -540,37 +540,6 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 </div>
               </div>
             </div>
-
-            {/* Legend Button - LoginPage glassmorph style */}
-            <button 
-              onClick={() => setShowLegend(!showLegend)}
-              className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02] hover:bg-white/[0.06]"
-              style={{
-                background: C.glass,
-                border: `1px solid ${C.border}`,
-              }}
-            >
-              {/* Top highlight line */}
-              <div 
-                className="absolute top-0 left-4 right-4 h-px opacity-20"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }}
-              />
-              <div className="relative flex items-center gap-3 h-full">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                  }}
-                >
-                  <Info className="w-4 h-4 text-white/50" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Zobrazit</p>
-                  <p className="text-sm font-bold text-white/70 leading-tight">Legendu</p>
-                </div>
-              </div>
-            </button>
           </div>
         </div>
       </div>
