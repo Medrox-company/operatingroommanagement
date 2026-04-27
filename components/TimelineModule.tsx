@@ -932,7 +932,7 @@ style={{
                             style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(96,165,250,0.3)' }}
                             title="Pacient volán"
                           >
-                            <Phone className="w-3 h-3 text-blue-400" />
+                            <Phone className="w-4 h-4 text-blue-400" />
                           </motion.div>
                         )}
                         {/* Patient arrived indicator */}
@@ -944,7 +944,7 @@ style={{
                             style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}
                             title="Pacient v operačním traktu"
                           >
-                            <BedDouble className="w-3 h-3 text-green-400" />
+                            <BedDouble className="w-4 h-4 text-green-400" />
                           </motion.div>
                         )}
                       </div>
