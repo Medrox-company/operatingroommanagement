@@ -928,7 +928,7 @@ style={{
                           <motion.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="p-1 rounded-lg flex-shrink-0"
+                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                             style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(96,165,250,0.3)' }}
                             title="Pacient volán"
                           >
@@ -940,7 +940,7 @@ style={{
                           <motion.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="p-1 rounded-lg flex-shrink-0"
+                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                             style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}
                             title="Pacient v operačním traktu"
                           >
