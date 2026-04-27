@@ -390,6 +390,15 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </div>
     </div>
   );
+}, (prev, next) => {
+  // Custom comparator — re-renderuj pouze když se změní DATA sálu, nikoli callbacky.
+  // Inline arrow funkce z parenta (() => setSelectedRoomId(room.id) atd.) se vždy
+  // recreatují, což jinak invaliduje React.memo a způsobuje, že se VŠECHNY karty
+  // re-renderují při jakékoli změně v rooms[]. Tohle je kritická perf optimalizace
+  // pro dashboard se 6+ kartami obsahujícími drahá SVG / glassmorph efekty.
+  // Callbacky jsou de facto pure (jen volají setRooms s room.id), takže stale
+  // closure neničí logiku.
+  return prev.room === next.room;
 });
 
 export default RoomCard;

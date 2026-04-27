@@ -289,17 +289,18 @@ const AppContent: React.FC = () => {
 
   const toggleEmergency = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
-    const room = rooms.find(r => r.id === roomId);
-    const newValue = room ? !room.isEmergency : false;
-    
-    setRooms(prev => prev.map(r =>
-      r.id === roomId ? { ...r, isEmergency: newValue } : r
-    ));
-    
+    // Funkční setState — čte aktuální `rooms` z reduceru, takže callback nemusí
+    // mít `rooms` v deps a zůstává referenčně stabilní napříč rendery.
+    let newValue = false;
+    setRooms(prev => prev.map(r => {
+      if (r.id !== roomId) return r;
+      newValue = !r.isEmergency;
+      return { ...r, isEmergency: newValue };
+    }));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
-  }, [isDbConnected, rooms]);
+  }, [isDbConnected]);
 
   // Potvrzení přijetí akutního výkonu — odstraní zbarvení sálu (urgencyLevel) i emergency stav.
   // Probíhající procedura zůstává; ruší se pouze "akutní notifikace".
@@ -365,17 +366,16 @@ const AppContent: React.FC = () => {
 
   const toggleLock = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
-    const room = rooms.find(r => r.id === roomId);
-    const newValue = room ? !room.isLocked : false;
-    
-    setRooms(prev => prev.map(r =>
-      r.id === roomId ? { ...r, isLocked: newValue } : r
-    ));
-    
+    let newValue = false;
+    setRooms(prev => prev.map(r => {
+      if (r.id !== roomId) return r;
+      newValue = !r.isLocked;
+      return { ...r, isLocked: newValue };
+    }));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_locked: newValue });
     }
-  }, [isDbConnected, rooms]);
+  }, [isDbConnected]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
     recentLocalUpdates.current.set(roomId, Date.now());
@@ -454,6 +454,23 @@ const AppContent: React.FC = () => {
     ));
   }, []);
 
+  // Stabilní handlery pro Sidebar / MobileNav — bez useCallbacku se recreatují
+  // každý render a bustují memo na navigačních komponentách.
+  const handleNavigate = useCallback((view: string) => {
+    setCurrentView(prevView => {
+      if (prevView === 'settings' && view === 'settings') {
+        setSettingsResetTrigger(t => t + 1);
+        return prevView;
+      }
+      return view;
+    });
+    setSelectedRoomId(null);
+  }, []);
+
+  const handleOpenAcuteCase = useCallback(() => setIsAcuteCaseModalOpen(true), []);
+  const handleCloseAcuteCase = useCallback(() => setIsAcuteCaseModalOpen(false), []);
+  const handleCloseRoomDetail = useCallback(() => setSelectedRoomId(null), []);
+
   // Show login if not authenticated - must be after all hooks
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -492,26 +509,10 @@ const AppContent: React.FC = () => {
 
 <Sidebar 
             currentView={currentView} 
-            onAcuteCase={() => setIsAcuteCaseModalOpen(true)}
-            onNavigate={(view) => {
-              if (currentView === 'settings' && view === 'settings') {
-                // Reset settings module when clicking settings again
-                setSettingsResetTrigger(prev => prev + 1);
-              } else {
-                setCurrentView(view);
-                setSelectedRoomId(null);
-              }
-            }} 
+            onAcuteCase={handleOpenAcuteCase}
+            onNavigate={handleNavigate}
           />
-      <MobileNav currentView={currentView} onNavigate={(view) => {
-        if (currentView === 'settings' && view === 'settings') {
-          // Reset settings module when clicking settings again
-          setSettingsResetTrigger(prev => prev + 1);
-        } else {
-          setCurrentView(view);
-          setSelectedRoomId(null);
-        }
-      }} />
+      <MobileNav currentView={currentView} onNavigate={handleNavigate} />
 
       <div className="flex-1 flex flex-col relative z-20 w-full overflow-hidden">
         {/* Horní lišta se nezobrazuje – všechny moduly mají plnou stránku jako dashboard */}
@@ -525,7 +526,7 @@ const AppContent: React.FC = () => {
                 <RoomDetail
                   room={selectedRoom}
                   allRooms={rooms}
-                  onClose={() => setSelectedRoomId(null)}
+                  onClose={handleCloseRoomDetail}
                   onStepChange={(index, stepColor) => updateRoomStep(selectedRoom.id, index, stepColor)}
                   onEndTimeChange={(newTime) => handleUpdateRoomEndTime(selectedRoom.id, newTime)}
                   onEnhancedHygieneToggle={(enabled) => handleEnhancedHygieneToggle(selectedRoom.id, enabled)}
@@ -642,13 +643,16 @@ const AppContent: React.FC = () => {
         </main>
       </div>
       
-      {/* Acute Case Modal */}
-      <AcuteCaseModal
-        isOpen={isAcuteCaseModalOpen}
-        onClose={() => setIsAcuteCaseModalOpen(false)}
-        rooms={rooms}
-        onSubmit={handleAcuteCaseSubmit}
-      />
+      {/* Acute Case Modal — podmíněně mountovaný, jinak by každý render
+          App.tsx běžel přes interní useState/useMemo modalu i když je skrytý. */}
+      {isAcuteCaseModalOpen && (
+        <AcuteCaseModal
+          isOpen={isAcuteCaseModalOpen}
+          onClose={handleCloseAcuteCase}
+          rooms={rooms}
+          onSubmit={handleAcuteCaseSubmit}
+        />
+      )}
     </div>
     </ErrorBoundary>
   );
