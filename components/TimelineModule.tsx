@@ -901,18 +901,24 @@ style={{
                       )}
                     </div>
 
-                    {/* Room info */}
-                    <div className="min-w-0 flex-1">
+                    {/* Room info - Rounded glassmorph card like timeline */}
+                    <div 
+                      className="min-w-0 flex-1 rounded-xl p-3 backdrop-blur-md transition-all duration-200"
+                      style={{ 
+                        background: C.glass, 
+                        border: `1px solid ${C.border}`,
+                      }}
+                    >
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium tracking-tight text-white/70 truncate">
+                        <p className="text-sm font-semibold tracking-tight text-white truncate">
                           {room.name}
                         </p>
                         {room.isSeptic && (
-                          <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-purple-400/10 text-purple-300/60 uppercase flex-shrink-0">SEPTIKA</span>
+                          <span className="text-[8px] font-semibold px-2 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,0.15)', color: 'rgba(216,180,254,0.9)', textTransform: 'uppercase' }}>SEPTIKA</span>
                         )}
                         {room.isPaused && !room.isEmergency && !room.isLocked && (
-                          <span className="text-[8px] font-medium px-1.5 py-0.5 rounded bg-cyan-400/15 text-cyan-300/80 uppercase flex-shrink-0 flex items-center gap-1">
-                            <Pause className="w-2 h-2" />
+                          <span className="text-[8px] font-semibold px-2 py-1 rounded-lg uppercase flex-shrink-0 flex items-center gap-1" style={{ background: 'rgba(6,182,212,0.15)', color: 'rgba(34,211,238,0.9)' }}>
+                            <Pause className="w-2.5 h-2.5" />
                             PAUZA
                           </span>
                         )}
@@ -921,7 +927,8 @@ style={{
                           <motion.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="p-1 rounded-md bg-blue-500/20 border border-blue-400/40"
+                            className="p-1 rounded-lg flex-shrink-0"
+                            style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(96,165,250,0.3)' }}
                             title="Pacient volán"
                           >
                             <Phone className="w-3 h-3 text-blue-400" />
@@ -932,27 +939,28 @@ style={{
                           <motion.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="p-1 rounded-md bg-green-500/20 border border-green-400/40"
+                            className="p-1 rounded-lg flex-shrink-0"
+                            style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}
                             title="Pacient v operačním traktu"
                           >
                             <BedDouble className="w-3 h-3 text-green-400" />
                           </motion.div>
                         )}
                       </div>
-                      {isFree ? (
-                        <p className="text-[9px] font-medium text-white/25 flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-emerald-400/40" />
-                          Volny
-                        </p>
-                      ) : remainingTime && stepIndex !== 0 ? (
-                        <p 
-                          className="text-[9px] font-medium text-white/50" 
-                        >
-                          {remainingTime}
-                        </p>
-                      ) : (
-                        <p className="text-[9px] font-medium text-white/25">{room.department}</p>
-                      )}
+                      <div className="mt-1.5">
+                        {isFree ? (
+                          <p className="text-[8px] font-semibold text-white/40 flex items-center gap-2 uppercase tracking-[0.2em]">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.4)' }} />
+                            VOLNÝ
+                          </p>
+                        ) : remainingTime && stepIndex !== 0 ? (
+                          <p className="text-[8px] font-semibold text-white/50 uppercase tracking-[0.2em]">
+                            {remainingTime}
+                          </p>
+                        ) : (
+                          <p className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.2em]">{room.department}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
