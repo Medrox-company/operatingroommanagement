@@ -9,6 +9,23 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle
 } from 'lucide-react';
 
+// ========== DESIGN TOKENS (LoginPage style) ==========
+const C = {
+  accent: '#FBBF24',
+  cyan: '#06B6D4',
+  yellow: '#FBBF24',
+  green: '#10B981',
+  orange: '#F97316',
+  red: '#EF4444',
+  purple: '#A78BFA',
+  pink: '#EC4899',
+  border: 'rgba(255,255,255,0.07)',
+  surface: 'rgba(255,255,255,0.025)',
+  glass: 'rgba(255,255,255,0.04)',
+  muted: 'rgba(255,255,255,0.35)',
+  text: 'rgba(255,255,255,0.85)',
+};
+
 // ========== CONSTANTS ==========
 const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
@@ -385,7 +402,18 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
 
       {/* ======== Header with Title and Stats ======== */}
-      <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
+      <div 
+        className="sticky top-0 z-40 backdrop-blur-xl flex-shrink-0"
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(5,13,24,0.95) 0%, rgba(5,13,24,0.85) 100%)',
+          borderBottom: `1px solid ${C.border}`,
+        }}
+      >
+        {/* Top highlight line (LoginPage style) */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{ background: `linear-gradient(90deg, transparent 0%, ${C.accent}20 50%, transparent 100%)` }}
+        />
         <div className="px-8 md:pl-32 md:pr-10 py-6">
 
 
@@ -426,35 +454,40 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               />
             )}
 
-            {/* ARO Overtime indicator */}
+            {/* ARO Overtime indicator - LoginPage glassmorph with red accent */}
             {aroOvertimeRooms.length > 0 && (
               <div
-                className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden"
+                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md animate-pulse"
                 style={{
-                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.08) 100%)",
-                  border: "1px solid rgba(239, 68, 68, 0.35)",
-                  boxShadow: "0 0 20px rgba(239, 68, 68, 0.15)",
+                  background: `${C.red}15`,
+                  border: `1px solid ${C.red}30`,
+                  boxShadow: `0 0 24px ${C.red}20, inset 0 1px 0 rgba(255,255,255,0.05)`,
                 }}
               >
+                {/* Top highlight line */}
+                <div 
+                  className="absolute top-0 left-4 right-4 h-px opacity-40"
+                  style={{ background: `linear-gradient(90deg, transparent, ${C.red}80, transparent)` }}
+                />
                 <div
-                  className="absolute inset-0 opacity-50"
+                  className="absolute inset-0 opacity-30"
                   style={{
-                    background: "radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.25) 0%, transparent 70%)",
+                    background: `radial-gradient(ellipse at 50% 0%, ${C.red}30 0%, transparent 70%)`,
                   }}
                 />
                 <div className="relative flex items-center gap-3 h-full">
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                     style={{
-                      background: "linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.15) 100%)",
-                      border: "1px solid rgba(239, 68, 68, 0.4)",
+                      background: `${C.red}20`,
+                      border: `1px solid ${C.red}35`,
                     }}
                   >
-                    <Clock className="w-4 h-4 text-red-400" />
+                    <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[9px] text-red-400/60 uppercase tracking-[0.3em] font-semibold">ARO PŘESAH</p>
-                    <p className="text-sm font-bold text-red-400 leading-tight">{aroOvertimeRooms.length} sálů</p>
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-semibold" style={{ color: `${C.red}90` }}>ARO PŘESAH</p>
+                    <p className="text-sm font-bold leading-tight" style={{ color: C.red }}>{aroOvertimeRooms.length} sálů</p>
                   </div>
                 </div>
               </div>
@@ -471,34 +504,33 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               color="#6366F1" 
             />
 
-            {/* Time Box */}
+            {/* Time Box - LoginPage glassmorph style */}
             <div
-              className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden"
+              className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
               style={{
-                background: "linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0.04) 100%)",
-                border: "1px solid rgba(168, 85, 247, 0.25)",
-                boxShadow: "0 0 20px rgba(168, 85, 247, 0.1)",
+                background: C.glass,
+                border: `1px solid ${C.border}`,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
               }}
             >
-              <div
-                className="absolute inset-0 opacity-40"
-                style={{
-                  background: "radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.2) 0%, transparent 70%)",
-                }}
+              {/* Top highlight line */}
+              <div 
+                className="absolute top-0 left-4 right-4 h-px opacity-30"
+                style={{ background: `linear-gradient(90deg, transparent, ${C.accent}60, transparent)` }}
               />
               <div className="relative flex items-center gap-3 h-full">
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                   style={{
-                    background: "linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(168, 85, 247, 0.1) 100%)",
-                    border: "1px solid rgba(168, 85, 247, 0.35)",
+                    background: `${C.accent}15`,
+                    border: `1px solid ${C.accent}25`,
                   }}
                 >
-                  <Clock className="w-4 h-4 text-purple-400" />
+                  <Clock className="w-4 h-4" style={{ color: C.accent }} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Čas</p>
-                  <p className="text-sm font-semibold text-purple-400 leading-tight tabular-nums">
+                  <p className="text-sm font-bold leading-tight tabular-nums" style={{ color: C.accent }}>
                     {currentTime.toLocaleTimeString("cs-CZ", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -509,28 +541,33 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
               </div>
             </div>
 
-            {/* Legend Button */}
+            {/* Legend Button - LoginPage glassmorph style */}
             <button 
               onClick={() => setShowLegend(!showLegend)}
-              className="relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden hover:scale-[1.02] transition-transform"
+              className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02] hover:bg-white/[0.06]"
               style={{
-                background: "linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.03) 100%)",
-                border: "1px solid rgba(148, 163, 184, 0.2)",
+                background: C.glass,
+                border: `1px solid ${C.border}`,
               }}
             >
+              {/* Top highlight line */}
+              <div 
+                className="absolute top-0 left-4 right-4 h-px opacity-20"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }}
+              />
               <div className="relative flex items-center gap-3 h-full">
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                   style={{
-                    background: "rgba(148, 163, 184, 0.15)",
-                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                   }}
                 >
-                  <Settings className="w-4 h-4 text-slate-400" />
+                  <Info className="w-4 h-4 text-white/50" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Zobrazit</p>
-                  <p className="text-sm font-semibold text-slate-400 leading-tight">Legendu</p>
+                  <p className="text-sm font-bold text-white/70 leading-tight">Legendu</p>
                 </div>
               </div>
             </button>
@@ -541,14 +578,29 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
       {/* ======== Main Timeline ======== */}
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
-        {/* Time Axis Header - Fixed */}
-        <div className="flex flex-shrink-0 border-b rounded-t-2xl" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.9)' }}>
+        {/* Time Axis Header - Fixed, LoginPage glassmorph */}
+        <div 
+          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-md" 
+          style={{ 
+            background: C.glass, 
+            borderBottom: `1px solid ${C.border}`,
+          }}
+        >
           {/* Room label header - fixed */}
           <div 
-            className="flex-shrink-0 flex items-center px-4 gap-2 border-r" 
-            style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)' }}
+            className="flex-shrink-0 flex items-center px-4 gap-2" 
+            style={{ 
+              width: ROOM_LABEL_WIDTH, 
+              minWidth: ROOM_LABEL_WIDTH, 
+              borderRight: `1px solid ${C.border}`,
+            }}
           >
-            <Activity className="w-4 h-4 text-emerald-400/60" />
+            <div 
+              className="w-6 h-6 rounded-lg flex items-center justify-center"
+              style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}25` }}
+            >
+              <Activity className="w-3.5 h-3.5" style={{ color: C.accent }} />
+            </div>
             <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">OPERAČNÍ SÁLY</span>
           </div>
           
@@ -576,10 +628,10 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     {!isLast && (
                       isCurrentHour ? (
                         <div 
-                          className="ml-2 px-2 py-0.5 rounded-md"
+                          className="ml-2 px-2.5 py-1 rounded-lg"
                           style={{ 
-                            background: 'rgba(94,234,212,0.9)', 
-                            boxShadow: '0 1px 6px rgba(94,234,212,0.25)' 
+                            background: C.accent, 
+                            boxShadow: `0 2px 8px ${C.accent}40` 
                           }}
                         >
                           <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
@@ -604,7 +656,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - subtle cyan line */}
+            {/* Now indicator - LoginPage accent yellow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <motion.div 
@@ -613,10 +665,17 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  <div className="absolute -left-3 top-0 bottom-0 w-6 opacity-10 blur-md" style={{ background: '#5EEAD4' }} />
+                  {/* Ambient glow */}
+                  <div className="absolute -left-4 top-0 bottom-0 w-8 opacity-15 blur-lg" style={{ background: C.accent }} />
+                  {/* Main line */}
                   <div 
-                    className="absolute -left-px top-0 bottom-0 w-[1.5px]" 
-                    style={{ background: 'linear-gradient(to bottom, #5EEAD4 0%, #5EEAD480 50%, #5EEAD430 100%)' }} 
+                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
+                    style={{ background: `linear-gradient(to bottom, ${C.accent} 0%, ${C.accent}80 50%, ${C.accent}30 100%)` }} 
+                  />
+                  {/* Top dot */}
+                  <div 
+                    className="absolute -left-1.5 -top-0.5 w-3 h-3 rounded-full"
+                    style={{ background: C.accent, boxShadow: `0 0 8px ${C.accent}80` }}
                   />
                 </motion.div>
               )}
@@ -716,42 +775,46 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 progressPct = Math.max(0, Math.min(100, ((nowWindowPct - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Emergency row */
+              /* Emergency row - LoginPage style */
               if (room.isEmergency) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
+                    className="flex items-stretch cursor-pointer transition-all duration-200 group"
+                    style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03]" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderRight: `1px solid ${C.border}`, background: 'rgba(11,17,32,0.95)' }}
                     >
-                      <div className="w-6 h-6 rounded-full bg-red-400/15 flex items-center justify-center border border-red-400/30">
-                        <AlertTriangle className="w-3 h-3 text-red-300/70" />
+                      <div 
+                        className="w-7 h-7 rounded-xl flex items-center justify-center"
+                        style={{ background: `${C.red}15`, border: `1px solid ${C.red}30` }}
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5" style={{ color: C.red }} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium tracking-tight text-red-300/80 truncate">{room.name}</p>
-                        <p className="text-[9px] font-medium text-red-300/50">EMERGENCY</p>
+                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.red}cc` }}>{room.name}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.red}80` }}>EMERGENCY</p>
                       </div>
                     </div>
-                    {/* Emergency timeline box - softer */}
+                    {/* Emergency timeline box - LoginPage glassmorph */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-1 left-2 right-2 rounded-lg overflow-hidden">
-                        {/* Main background - softer */}
+                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden animate-pulse">
+                        {/* Main background */}
                         <div 
-                          className="absolute inset-0 rounded-xl"
+                          className="absolute inset-0 rounded-xl backdrop-blur-md"
                           style={{ 
-                            background: 'linear-gradient(135deg, rgba(252, 165, 165, 0.15) 0%, rgba(252, 165, 165, 0.08) 100%)',
-                            border: '1px solid rgba(252, 165, 165, 0.3)'
+                            background: `linear-gradient(135deg, ${C.red}20 0%, ${C.red}08 100%)`,
+                            border: `1px solid ${C.red}35`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
                           }}
                         />
                         {/* Content */}
                         <div className="absolute inset-0 flex items-center justify-center gap-2">
-                          <AlertTriangle className="w-3.5 h-3.5 text-red-300/70" />
-                          <span className="text-xs font-bold tracking-[0.15em] text-red-300/80 uppercase select-none">
+                          <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
+                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${C.red}dd` }}>
                             EMERGENCY
                           </span>
                         </div>
@@ -761,42 +824,46 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Locked row */
+              /* Locked row - LoginPage style with accent yellow */
               if (room.isLocked) {
                 return (
                   <div
                     key={room.id}
-                    className="flex items-stretch border-b cursor-pointer transition-colors"
-                    style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
+                    className="flex items-stretch cursor-pointer transition-all duration-200 group"
+                    style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 border-r sticky left-0 z-20 hover:bg-white/[0.02]" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03]" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderRight: `1px solid ${C.border}`, background: 'rgba(11,17,32,0.95)' }}
                     >
-                      <div className="w-6 h-6 rounded-full bg-amber-400/15 flex items-center justify-center border border-amber-400/25">
-                        <Lock className="w-3 h-3 text-amber-300/60" />
+                      <div 
+                        className="w-7 h-7 rounded-xl flex items-center justify-center"
+                        style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
+                      >
+                        <Lock className="w-3.5 h-3.5" style={{ color: C.accent }} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium tracking-tight text-amber-300/70 truncate">{room.name}</p>
-                        <p className="text-[9px] font-medium text-amber-300/50">UZAMCENO</p>
+                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}cc` }}>{room.name}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
                       </div>
                     </div>
-                    {/* Locked timeline box - softer */}
+                    {/* Locked timeline box - LoginPage glassmorph */}
                     <div className="relative flex-1 overflow-hidden">
-                      <div className="absolute inset-y-1 left-2 right-2 rounded-lg overflow-hidden">
-                        {/* Main background - softer */}
+                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
+                        {/* Main background */}
                         <div 
-                          className="absolute inset-0 rounded-lg"
+                          className="absolute inset-0 rounded-xl backdrop-blur-md"
                           style={{ 
-                            background: 'linear-gradient(135deg, rgba(253, 224, 71, 0.12) 0%, rgba(253, 224, 71, 0.06) 100%)',
-                            border: '1px solid rgba(253, 224, 71, 0.25)'
+                            background: `linear-gradient(135deg, ${C.accent}15 0%, ${C.accent}05 100%)`,
+                            border: `1px solid ${C.accent}25`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
                           }}
                         />
                         {/* Content */}
                         <div className="absolute inset-0 flex items-center justify-center gap-2">
-                          <Lock className="w-3.5 h-3.5 text-amber-300/60" />
-                          <span className="text-xs font-bold tracking-[0.15em] text-amber-300/70 uppercase select-none">
+                          <Lock className="w-4 h-4" style={{ color: `${C.accent}99` }} />
+                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${C.accent}bb` }}>
                             UZAMCENO
                           </span>
                         </div>
@@ -813,14 +880,22 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
-                  className="flex items-stretch border-b group hover:bg-white/[0.02] transition-colors cursor-pointer"
-                  style={{ height: rowHeight, borderColor: 'rgba(255,255,255,0.04)' }}
+                  className="flex items-stretch group cursor-pointer transition-all duration-200"
+                  style={{ 
+                    height: rowHeight, 
+                    borderBottom: `1px solid ${C.border}`,
+                  }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky */}
+                  {/* Room Label - Sticky with LoginPage hover */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-3 border-r transition-colors group-hover:bg-white/[0.02] sticky left-0 z-20" 
-                    style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(11,17,32,0.95)' }}
+                    className="flex-shrink-0 flex items-center gap-2 px-3 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    style={{ 
+                      width: ROOM_LABEL_WIDTH, 
+                      minWidth: ROOM_LABEL_WIDTH, 
+                      borderRight: `1px solid ${C.border}`,
+                      background: 'rgba(11,17,32,0.95)',
+                    }}
                   >
                     {/* ARO Overtime Badge - softer */}
                     {(() => {
@@ -963,13 +1038,13 @@ style={{
                         return (
                           <div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
+                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.3, position.width)}%`,
-                              // Green background for continuing operations, gray for completed
-                              background: isContinuingOp ? 'rgba(34, 197, 94, 0.3)' : 'rgba(107, 114, 128, 0.4)',
-                              border: '1px solid rgba(107, 114, 128, 0.5)',
+                              // Green background for continuing operations, LoginPage glass for completed
+                              background: isContinuingOp ? `${C.green}30` : C.glass,
+                              border: `1px solid ${isContinuingOp ? `${C.green}40` : C.border}`,
                             }}
                           >
                               {/* Completed operation segments with colors from database context */}
@@ -1065,40 +1140,42 @@ style={{
 
                       return (
                         <div
-                          className="absolute top-1 bottom-1 rounded-lg flex items-center justify-between px-3"
+                          className="absolute top-1.5 bottom-1.5 rounded-xl flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
-                            background: 'rgba(34, 197, 94, 0.35)',
-                            borderRight: '2px solid rgba(34, 197, 94, 0.8)',
+                            background: `linear-gradient(90deg, ${C.green}35 0%, ${C.green}20 100%)`,
+                            borderRight: `2px solid ${C.green}`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08)`,
                             zIndex: 1,
                           }}
                         >
-                          <span className="text-[11px] font-semibold text-white uppercase tracking-wide truncate">
+                          <span className="text-[11px] font-semibold text-white uppercase tracking-[0.15em] truncate">
                             POKRAČUJÍCÍ VÝKON
                           </span>
-                          <span className="text-[10px] font-medium text-green-300 ml-2 whitespace-nowrap">
+                          <span className="text-[10px] font-bold ml-2 whitespace-nowrap" style={{ color: C.green }}>
                             do {endHours}:{endMinutes}
                           </span>
                         </div>
                       );
                     })()}
 
-                    {/* Active operation bar */}
+                    {/* Active operation bar - LoginPage rounded style */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
                         transition={{ duration: 0.4, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
-                        className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
+                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          transformOrigin: 'left center'
+                          transformOrigin: 'left center',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
                         }}
                       >
                         {/* Multi-segment colored bar: one full cycle = all phases colored by status */}
-                        <div className="absolute inset-0 flex overflow-hidden rounded-lg">
+                        <div className="absolute inset-0 flex overflow-hidden rounded-xl">
                           {(() => {
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt
@@ -1306,10 +1383,10 @@ style={{
                               )}
                               {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                                 <div
-                                  className="flex-shrink-0 px-2 py-1 rounded-md text-[9px] font-semibold text-white/90 backdrop-blur-sm"
+                                  className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white/90 backdrop-blur-md"
                                   style={{ 
-                                    background: 'rgba(0,0,0,0.25)',
-                                    border: '1px solid rgba(255,255,255,0.1)'
+                                    background: C.glass,
+                                    border: `1px solid ${C.border}`,
                                   }}
                                 >
                                   {remainingTime}
@@ -1321,18 +1398,18 @@ style={{
                       </motion.div>
                     )}
 
-                    {/* Free room indicator - elegant glass style */}
+                    {/* Free room indicator - LoginPage glass style */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-1.5 left-1.5 right-1.5 rounded-xl flex items-center justify-center overflow-hidden"
+                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
                         style={{ 
-                          background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
-                          border: '1px dashed rgba(255,255,255,0.1)',
+                          background: C.glass,
+                          border: `1px dashed ${C.border}`,
                           backdropFilter: 'blur(4px)'
                         }}
                       >
                         <div className="text-center px-3">
-                          <p className="text-[10px] font-medium text-white/25 uppercase tracking-wide">{stepName}</p>
+                          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-[0.2em]">{stepName}</p>
                         </div>
                       </div>
                     )}
@@ -1404,36 +1481,42 @@ interface StatBoxProps {
 
 const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
   <div
-    className={`relative flex-shrink-0 h-14 rounded-xl px-4 py-2.5 overflow-hidden ${glow ? 'shadow-lg' : ''}`}
+    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02] ${glow ? 'shadow-lg' : ''}`}
     style={{
       background: glow
-        ? `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`
-        : `linear-gradient(135deg, ${color}12 0%, ${color}04 100%)`,
-      border: glow ? `2px solid ${color}50` : `1px solid ${color}25`,
-      boxShadow: glow ? `0 0 30px ${color}30` : 'none',
+        ? `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`
+        : C.glass,
+      border: glow ? `1px solid ${color}40` : `1px solid ${C.border}`,
+      boxShadow: glow ? `0 0 24px ${color}25, inset 0 1px 0 rgba(255,255,255,0.05)` : 'inset 0 1px 0 rgba(255,255,255,0.03)',
     }}
   >
+    {/* Ambient glow for emergency/special states */}
     {glow && (
       <div
-        className="absolute inset-0 opacity-50"
+        className="absolute inset-0 opacity-40"
         style={{
-          background: `radial-gradient(circle at 50% 0%, ${color}30 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse at 50% 0%, ${color}25 0%, transparent 70%)`,
         }}
       />
     )}
+    {/* Top highlight line (LoginPage style) */}
+    <div 
+      className="absolute top-0 left-4 right-4 h-px opacity-30"
+      style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }}
+    />
     <div className="relative flex items-center gap-3 h-full">
       <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
         style={{
-          background: `${color}20`,
-          border: `1px solid ${color}40`,
+          background: `${color}15`,
+          border: `1px solid ${color}30`,
         }}
       >
         <span style={{ color }}><Icon className="w-4 h-4" /></span>
       </div>
       <div className="min-w-0">
         <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">{label}</p>
-        <p className="text-sm font-semibold text-white leading-tight">{value}</p>
+        <p className="text-sm font-bold text-white leading-tight">{value}</p>
       </div>
     </div>
   </div>
@@ -1497,7 +1580,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl"
       onClick={onClose}
     >
       <motion.div
@@ -1505,12 +1588,23 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-3xl overflow-hidden max-w-2xl w-full"
+        className="rounded-3xl overflow-hidden max-w-2xl w-full relative"
         style={{
-          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          background: 'linear-gradient(180deg, rgba(15,31,58,0.98) 0%, rgba(10,21,40,0.98) 100%)',
+          border: `1px solid ${C.border}`,
+          boxShadow: `0 25px 60px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
         }}
       >
+        {/* Ambient glow at top */}
+        <div 
+          className="absolute -top-20 left-1/2 -translate-x-1/2 w-[400px] h-[200px] rounded-full pointer-events-none opacity-20"
+          style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 70%)`, filter: 'blur(60px)' }}
+        />
+        {/* Top highlight line */}
+        <div 
+          className="absolute top-0 left-8 right-8 h-px"
+          style={{ background: `linear-gradient(90deg, transparent, ${C.accent}30, transparent)` }}
+        />
         {/* Header */}
         <div className="px-6 py-5 flex items-center justify-between">
           {/* Left side - Progress circle and room info */}
@@ -1570,9 +1664,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
+              style={{
+                background: C.glass,
+                border: `1px solid ${C.border}`,
+              }}
             >
-              <X className="w-5 h-5 text-white/60" />
+              <X className="w-5 h-5 text-white/50 hover:text-white/80 transition-colors" />
             </button>
           </div>
         </div>
@@ -1633,8 +1731,11 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <span style={{ color: stepColor }}><ChevronRight className="w-5 h-5" /></span>
               </div>
 
-              {/* Next step */}
-              <div className="flex-1 rounded-2xl p-4 bg-white/5 border border-white/10">
+              {/* Next step - LoginPage glass */}
+              <div 
+                className="flex-1 rounded-2xl p-4 backdrop-blur-md"
+                style={{ background: C.glass, border: `1px solid ${C.border}` }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-white/30" />
@@ -1668,8 +1769,11 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                         <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">TÝM</p>
               </div>
               <div className="flex gap-3">
-                {/* Doctor */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                {/* Doctor - LoginPage glass */}
+                <div 
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md"
+                  style={{ background: C.glass, border: `1px solid ${C.border}` }}
+                >
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-500/20">
                       <Stethoscope className="w-4 h-4 text-violet-400" />
@@ -1680,8 +1784,11 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     </div>
                   </div>
                 </div>
-                {/* Nurse */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10">
+                {/* Nurse - LoginPage glass */}
+                <div 
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md"
+                  style={{ background: C.glass, border: `1px solid ${C.border}` }}
+                >
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/20">
                       <Users className="w-4 h-4 text-emerald-400" />
@@ -1702,14 +1809,20 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                         <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">ČASY</p>
               </div>
               <div className="flex gap-3">
-                {/* Start time */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
-                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ZAČÁTEK</p>
+                {/* Start time - LoginPage glass */}
+                <div 
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center"
+                  style={{ background: C.glass, border: `1px solid ${C.border}` }}
+                >
+                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ZAČÁTEK</p>
                   <p className="text-xl font-mono font-bold text-white/60">--:--</p>
                 </div>
-                {/* Estimated end */}
-                <div className="flex-1 rounded-xl p-3 bg-white/5 border border-white/10 text-center">
-                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ODHAD</p>
+                {/* Estimated end - LoginPage glass with accent */}
+                <div 
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center"
+                  style={{ background: `${stepColor}10`, border: `1px solid ${stepColor}25` }}
+                >
+                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ODHAD</p>
                   <p className="text-xl font-mono font-bold" style={{ color: stepColor }}>
                     {room.estimatedEndTime 
                       ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
