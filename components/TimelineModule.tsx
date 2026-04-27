@@ -456,41 +456,53 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
 
             {/* ARO Overtime indicator - LoginPage glassmorph with red accent */}
             {aroOvertimeRooms.length > 0 && (
-              <div
-                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md animate-pulse"
+              <motion.div
+                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
                 style={{
                   background: `${C.red}15`,
-                  border: `1px solid ${C.red}30`,
-                  boxShadow: `0 0 24px ${C.red}20, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                  border: `2px solid ${C.red}40`,
+                  boxShadow: `0 0 24px ${C.red}25, inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${C.red}15`,
                 }}
               >
-                {/* Top highlight line */}
+                {/* Animated gradient border effect */}
                 <div 
-                  className="absolute top-0 left-4 right-4 h-px opacity-40"
+                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: `linear-gradient(90deg, transparent, ${C.red}20, transparent)`,
+                    animation: 'shimmer 2s infinite',
+                  }}
+                />
+                {/* Top highlight line with accent */}
+                <div 
+                  className="absolute top-0 left-4 right-4 h-px opacity-60"
                   style={{ background: `linear-gradient(90deg, transparent, ${C.red}80, transparent)` }}
                 />
                 <div
-                  className="absolute inset-0 opacity-30"
+                  className="absolute inset-0 opacity-40"
                   style={{
                     background: `radial-gradient(ellipse at 50% 0%, ${C.red}30 0%, transparent 70%)`,
                   }}
                 />
                 <div className="relative flex items-center gap-3 h-full">
-                  <div
+                  <motion.div
                     className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
                     style={{
-                      background: `${C.red}20`,
-                      border: `1px solid ${C.red}35`,
+                      background: `${C.red}25`,
+                      border: `1.5px solid ${C.red}50`,
                     }}
                   >
                     <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
-                  </div>
+                  </motion.div>
                   <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.3em] font-semibold" style={{ color: `${C.red}90` }}>ARO PŘESAH</p>
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-semibold" style={{ color: `${C.red}a0` }}>ARO PŘESAH</p>
                     <p className="text-sm font-bold leading-tight" style={{ color: C.red }}>{aroOvertimeRooms.length} sálů</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Spacer */}
@@ -593,7 +605,14 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                     className="absolute top-0 h-full flex items-center" 
                     style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                   >
-                    <div className={`w-px h-full ${isNightHour ? 'bg-white/[0.04]' : 'bg-white/[0.08]'}`} />
+                    <div 
+                      className={`w-px h-full transition-all duration-300`}
+                      style={{ 
+                        background: isNightHour 
+                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
+                          : 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
+                      }} 
+                    />
                     {!isLast && (
                       isCurrentHour ? (
                         <div 
@@ -849,7 +868,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
-                  className="flex items-stretch group cursor-pointer transition-all duration-200"
+                  className="flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
                   style={{ 
                     height: rowHeight, 
                     borderBottom: `1px solid ${C.border}`,
@@ -1059,16 +1078,20 @@ style={{
                                         || '#6b7280';
 
                                       return (
-                                        <div
+                                        <motion.div
                                           key={`seg-${idx}`}
-                                          className="absolute top-0 bottom-0"
+                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-105"
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            background: `${phaseColor}50`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none',
+                                            background: `linear-gradient(90deg, ${phaseColor}70 0%, ${phaseColor}50 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.3)` : 'none',
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2)`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                          initial={{ opacity: 0 }}
+                                          animate={{ opacity: 1 }}
+                                          transition={{ delay: 0.03 * idx }}
                                         />
                                       );
                                     }).filter(Boolean);
@@ -1208,36 +1231,40 @@ style={{
                                 return (
                                   <motion.div
                                     key={`seg-${idx}`}
-                                    className="absolute top-0 bottom-0 overflow-hidden"
+                                    className="absolute top-0 bottom-0 overflow-hidden transition-all duration-300 hover:brightness-110"
                                     style={{
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
                                       background: isCurrentSeg
-                                        ? `${phaseColor}40` // Lighter background for remaining time
-                                        : `${phaseColor}bb`,
+                                        ? `linear-gradient(90deg, ${phaseColor}40 0%, ${phaseColor}20 100%)`
+                                        : `linear-gradient(90deg, ${phaseColor}dd 0%, ${phaseColor}aa 100%)`,
+                                      boxShadow: isCurrentSeg 
+                                        ? 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2)'
+                                        : `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 12px ${phaseColor}30`,
                                     }}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.04 * idx }}
                                   >
-                                    {/* For current segment: show completed portion with full color */}
+                                    {/* For current segment: show completed portion with full color and glow */}
                                     {isCurrentSeg && (
-                                      <div 
-                                        className="absolute top-0 bottom-0 left-0"
+                                      <motion.div 
+                                        className="absolute top-0 bottom-0 left-0 transition-all duration-300"
                                         style={{
                                           width: `${progressWithinSeg}%`,
-                                          background: phaseColor,
+                                          background: `linear-gradient(90deg, ${phaseColor} 0%, ${phaseColor}e0 100%)`,
+                                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 8px ${phaseColor}50`,
                                         }}
                                       />
                                     )}
                                     {/* Subtle separator between segments */}
                                     {idx < history.length - 1 && (
-                                      <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/40 z-10" />
+                                      <div className="absolute top-0 right-0 bottom-0 w-px bg-black/50 z-10" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.5), rgba(0,0,0,0))` }} />
                                     )}
                                     {/* Show phase label if segment is wide enough */}
                                     {segWidthPct > 8 && (
                                       <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
-                                        <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
+                                        <span className="text-[7px] font-semibold text-white/80 truncate uppercase tracking-wide leading-none drop-shadow">
                                           {statusByOrderIndex[entry.stepIndex]?.title || ''}
                                         </span>
                                       </div>
@@ -1709,25 +1736,29 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <span style={{ color: stepColor }}><ChevronRight className="w-5 h-5" /></span>
               </div>
 
-              {/* Next step - LoginPage glass */}
+              {/* Next step - LoginPage glass with gradient accent */}
               <div 
-                className="flex-1 rounded-2xl p-4 backdrop-blur-md"
-                style={{ background: C.glass, border: `1px solid ${C.border}` }}
+                className="flex-1 rounded-2xl p-4 backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
+                style={{ 
+                  background: `linear-gradient(135deg, ${stepColor}12 0%, ${stepColor}05 100%)`,
+                  border: `1px solid ${stepColor}25`,
+                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${stepColor}15`,
+                }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-white/30" />
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+                    <div className="w-2 h-2 rounded-full" style={{ background: stepColor }} />
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.3em]" style={{ color: `${stepColor}99` }}>
                             NÁSLEDUJÍCÍ
                           </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white/40" style={{ background: `${stepColor}15`, border: `1px solid ${stepColor}25` }}>
                     Krok {nextStepIndex + 1}/{totalSteps}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/10">
-                    <Sparkles className="w-5 h-5 text-white/40" />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `${stepColor}20`, border: `1px solid ${stepColor}30` }}>
+                    <Sparkles className="w-5 h-5" style={{ color: stepColor }} />
                   </div>
                   <div>
                     <p className="text-white/80 font-semibold">{nextStatus?.name || 'Další krok'}</p>
@@ -1747,13 +1778,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                         <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">TÝM</p>
               </div>
               <div className="flex gap-3">
-                {/* Doctor - LoginPage glass */}
+                {/* Doctor - LoginPage glass with hover effect */}
                 <div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md"
-                  style={{ background: C.glass, border: `1px solid ${C.border}` }}
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md transition-all duration-200 hover:scale-105"
+                  style={{ background: C.glass, border: `1px solid ${C.border}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-500/20">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200" style={{ background: 'rgba(168,85,247,0.2)', border: '1px solid rgba(168,85,247,0.3)' }}>
                       <Stethoscope className="w-4 h-4 text-violet-400" />
                     </div>
                     <div>
@@ -1762,13 +1793,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     </div>
                   </div>
                 </div>
-                {/* Nurse - LoginPage glass */}
+                {/* Nurse - LoginPage glass with hover effect */}
                 <div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md"
-                  style={{ background: C.glass, border: `1px solid ${C.border}` }}
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md transition-all duration-200 hover:scale-105"
+                  style={{ background: C.glass, border: `1px solid ${C.border}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/20">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200" style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.3)' }}>
                       <Users className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
@@ -1787,27 +1818,36 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                         <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">ČASY</p>
               </div>
               <div className="flex gap-3">
-                {/* Start time - LoginPage glass */}
+                {/* Start time - LoginPage glass with glow on hover */}
                 <div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center"
-                  style={{ background: C.glass, border: `1px solid ${C.border}` }}
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center transition-all duration-200 hover:scale-105"
+                  style={{ 
+                    background: C.glass, 
+                    border: `1px solid ${C.border}`,
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                  }}
                 >
                   <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ZAČÁTEK</p>
                   <p className="text-xl font-mono font-bold text-white/60">--:--</p>
                 </div>
-                {/* Estimated end - LoginPage glass with accent */}
-                <div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center"
-                  style={{ background: `${stepColor}10`, border: `1px solid ${stepColor}25` }}
+                {/* Estimated end - gradient with accent and glow */}
+                <motion.div 
+                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center transition-all duration-200 hover:scale-105"
+                  whileHover={{ boxShadow: `0 0 16px ${stepColor}40` }}
+                  style={{ 
+                    background: `linear-gradient(135deg, ${stepColor}15 0%, ${stepColor}05 100%)`,
+                    border: `1.5px solid ${stepColor}30`,
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 12px ${stepColor}20`,
+                  }}
                 >
-                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ODHAD</p>
+                  <p className="text-[9px] uppercase tracking-[0.3em] font-semibold mb-1" style={{ color: `${stepColor}99` }}>ODHAD</p>
                   <p className="text-xl font-mono font-bold" style={{ color: stepColor }}>
                     {room.estimatedEndTime 
                       ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                       : '--:--'
                     }
                   </p>
-                </div>
+                </motion.div>
               </div>
             </div>
           </div>
