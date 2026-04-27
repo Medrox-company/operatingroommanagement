@@ -34,13 +34,20 @@ type GentleLevel = 'urgent' | 'expedited' | 'elective';
 
 // Tónové sady pro jednotlivé úrovně — všechny příjemné intervaly v durovém ladění.
 // Frekvence v Hz; hlasitost (gain) jemná, aby zvuk nerušil personál.
-const URGENCY_TONES: Record<GentleLevel, { notes: number[]; gain: number; spacing: number }> = {
-  // URGENTNÍ — výrazněji slyšitelný, tří­tónový vzestupný akord (C5 → E5 → G5)
-  urgent:    { notes: [523.25, 659.25, 783.99], gain: 0.18, spacing: 0.18 },
-  // ODLOŽITELNÝ — středně klidný, dvoutónový (C5 → G5, kvinta)
-  expedited: { notes: [523.25, 783.99],          gain: 0.14, spacing: 0.20 },
-  // ELEKTIVNÍ — nejjemnější, dvoutónový (E5 → G5, malá tercie)
-  elective:  { notes: [659.25, 783.99],          gain: 0.12, spacing: 0.22 },
+// `spacing` = rozestup mezi začátkem tónů, `duration` = délka jednotlivého tónu (vč. release).
+const URGENCY_TONES: Record<GentleLevel, {
+  notes: number[];
+  gain: number;
+  spacing: number;
+  duration: number;
+}> = {
+  // URGENTNÍ — výrazný 4-tónový vzestupný akord s dlouhým doznívajícím závěrem
+  // (C5 → E5 → G5 → C6). Celková délka cca 2.6 s.
+  urgent:    { notes: [523.25, 659.25, 783.99, 1046.50], gain: 0.18, spacing: 0.35, duration: 1.50 },
+  // ODLOŽITELNÝ — klidný, 3-tónový (C5 → G5 → C6, kvinta + oktáva). Cca 2.7 s.
+  expedited: { notes: [523.25, 783.99, 1046.50],         gain: 0.14, spacing: 0.42, duration: 1.70 },
+  // ELEKTIVNÍ — nejjemnější, 3-tónový (E5 → G5 → B5, čistá durová tercie). Cca 2.8 s.
+  elective:  { notes: [659.25, 783.99, 987.77],          gain: 0.12, spacing: 0.45, duration: 1.85 },
 };
 
 function playGentleChime(level: GentleLevel): void {
@@ -52,7 +59,7 @@ function playGentleChime(level: GentleLevel): void {
 
   config.notes.forEach((freq, idx) => {
     const startTime = now + idx * config.spacing;
-    const duration = 0.55; // delší release pro plynulé doznívání
+    const { duration } = config;
 
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
@@ -64,11 +71,15 @@ function playGentleChime(level: GentleLevel): void {
     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(freq, startTime);
 
-    // Envelope: pomalý attack (15ms), krátké sustain, dlouhý release
+    // Envelope:
+    //  • plynulý attack (40 ms) → bez „cvaknutí"
+    //  • prodloužený sustain (~30 % duration)
+    //  • dlouhý exponenciální release pro plynulé doznívání
+    const attackTime = 0.04;
+    const sustainEnd = startTime + duration * 0.3;
     gainNode.gain.setValueAtTime(0, startTime);
-    gainNode.gain.linearRampToValueAtTime(config.gain, startTime + 0.015);
-    gainNode.gain.setValueAtTime(config.gain, startTime + 0.08);
-    // Exponenciální release — přirozenější doznívání než lineární
+    gainNode.gain.linearRampToValueAtTime(config.gain, startTime + attackTime);
+    gainNode.gain.setValueAtTime(config.gain, sustainEnd);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
     oscillator.start(startTime);
