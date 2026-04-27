@@ -12,7 +12,8 @@ import {
   Scissors,
   Star,
   Sparkles,
-  BarChart3
+  BarChart3,
+  ShieldCheck
 } from 'lucide-react';
 
 export interface SubDepartment {
@@ -147,14 +148,15 @@ export const STEP_COLORS: Record<number, { bg: string; fill: string; border: str
   7: { bg: 'rgba(249,115,22,0.15)',  fill: 'rgba(249,115,22,0.35)',  border: 'rgba(249,115,22,0.25)',  text: '#F97316', glow: 'rgba(249,115,22,0.2)',  solid: '#F97316' },  // Úklid sálu
 };
 
-export const SIDEBAR_ITEMS = [
+  export const SIDEBAR_ITEMS = [
   { icon: LayoutGrid, label: 'Přehled', id: 'dashboard' },
   { icon: CalendarDays, label: 'Timeline', id: 'timeline' },
+  { icon: ShieldCheck, label: 'Checklist', id: 'safety' },
   { icon: BarChart3, label: 'Statistiky', id: 'statistics' },
   { icon: User, label: 'Personál', id: 'staff' },
   { icon: AlertCircle, label: 'Upozornění', id: 'alerts' },
   { icon: Settings, label: 'Nastavení', id: 'settings' },
-];
+  ];
 
 export const MOCK_ROOMS: OperatingRoom[] = [
   {
