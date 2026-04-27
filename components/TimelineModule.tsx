@@ -848,6 +848,7 @@ export default function TimelineModule({ rooms }: TimelineModuleProps) {
                         className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden"
                         animate={{ opacity: [0.8, 1, 0.8] }}
                         transition={{ duration: 2, repeat: Infinity }}
+                      >
                         {/* Main background */}
                         <div 
                           className="absolute inset-0 rounded-xl backdrop-blur-md"
