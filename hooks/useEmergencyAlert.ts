@@ -26,7 +26,6 @@ function unlockAudio() {
     source.start(0);
     
     isAudioUnlocked = true;
-    console.log('[EmergencyAlert] Audio unlocked for mobile');
   } catch (e) {
     console.error('[EmergencyAlert] Failed to unlock audio:', e);
   }
@@ -93,15 +92,12 @@ function playEmergencyAlert(): void {
       playTone(cycleStart, 880, 0.12);        // High tone (A5)
       playTone(cycleStart + 0.17, 440, 0.12); // Low tone (A4)
     }
-
-    console.log('[EmergencyAlert] Sound played');
-
   } catch (error) {
     console.error('[EmergencyAlert] Failed to play sound:', error);
   }
 }
 
-export function useEmergencyAlert(rooms: OperatingRoom[], selectedRoomId: string | null) {
+export function useEmergencyAlert(rooms: OperatingRoom[]) {
   const previousEmergencyStates = useRef<Map<string, boolean>>(new Map());
   const isInitialized = useRef(false);
 
@@ -122,16 +118,7 @@ export function useEmergencyAlert(rooms: OperatingRoom[], selectedRoomId: string
 
       // If emergency was just activated (changed from false to true)
       if (!wasEmergency && isNowEmergency) {
-        // Skip harsh siren for 'urgent' level — useUrgencyAlert přehraje jemný chime.
-        // Harsh alarm zazní pouze pro 'immediate' (EMERGENTNÍ) nebo legacy emergency
-        // bez urgencyLevel (zpětná kompatibilita).
-        if (room.urgencyLevel === 'urgent') {
-          console.log('[EmergencyAlert] Skipping harsh siren for URGENTNÍ — gentle chime handled separately');
-        } else {
-          console.log('[EmergencyAlert] Emergency activated for room:', room.name);
-          // Play sound on all devices where this room is visible
-          playEmergencyAlert();
-        }
+        playEmergencyAlert();
       }
 
       // Update stored state

@@ -48,20 +48,6 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
 
-  // NCEPOD urgency theme — synchronizováno s RoomCard / RoomDetail / AcuteCaseModal.
-  // Tintuje řádek sálu na timeline po registraci akutního výkonu.
-  const URGENCY_THEME: Record<'immediate' | 'urgent' | 'expedited' | 'elective', {
-    label: string;
-    color: string;        // hlavní barva
-    bgSoft: string;       // jemné pozadí (např. řádek)
-    border: string;       // border tone
-  }> = {
-    immediate: { label: 'EMERGENTNÍ',  color: '#ef4444', bgSoft: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.35)' },
-    urgent:    { label: 'URGENTNÍ',    color: '#f97316', bgSoft: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.35)' },
-    expedited: { label: 'ODLOŽITELNÝ', color: '#eab308', bgSoft: 'rgba(234,179,8,0.07)',  border: 'rgba(234,179,8,0.30)' },
-    elective:  { label: 'ELEKTIVNÍ',   color: '#3b82f6', bgSoft: 'rgba(59,130,246,0.07)', border: 'rgba(59,130,246,0.30)' },
-  };
-
   // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
   const STEP_INDEX_COLORS: Record<number, string> = {
   0: '#6b7280',
@@ -789,13 +775,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 progressPct = Math.max(0, Math.min(100, ((nowWindowPct - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Urgency row — full-banner pro immediate/urgent (isEmergency aktivní);
-                 tintuje se podle NCEPOD úrovně, fallback red pro legacy emergency bez urgencyLevel */
+              /* Emergency row — full-banner pulsing red banner při aktivním stavu nouze. */
               if (room.isEmergency) {
-                const urgencyTheme = room.urgencyLevel ? URGENCY_THEME[room.urgencyLevel] : null;
-                const bannerColor = urgencyTheme ? urgencyTheme.color : C.red;
-                const bannerLabel = urgencyTheme ? urgencyTheme.label : 'EMERGENCY';
-                const shouldPulse = !urgencyTheme || room.urgencyLevel === 'immediate' || room.urgencyLevel === 'urgent';
+                const bannerColor = C.red;
+                const bannerLabel = 'STAV NOUZE';
+                const shouldPulse = true;
                 return (
                   <div
                     key={room.id}
@@ -818,7 +802,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
                       </div>
                     </div>
-                    {/* Urgency timeline box - tinted glassmorph */}
+                    {/* Emergency timeline box - tinted glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
                     <div className={`absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
                       <div 
@@ -896,9 +880,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               }
 
               /* Active / Free row */
-              const softUrgency = (room.urgencyLevel === 'expedited' || room.urgencyLevel === 'elective')
-                ? URGENCY_THEME[room.urgencyLevel]
-                : null;
               return (
                 <div
                   key={room.id}
@@ -906,21 +887,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   style={{
                     height: rowHeight,
                     borderBottom: `1px solid ${C.border}`,
-                    background: softUrgency ? softUrgency.bgSoft : undefined,
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Side-stripe marker pro registrovaný akutní výkon — viditelný při scrollování */}
-                  {softUrgency && (
-                    <div
-                      className="absolute left-0 top-0 bottom-0 z-30 pointer-events-none"
-                      style={{
-                        width: 3,
-                        background: softUrgency.color,
-                        boxShadow: `0 0 12px ${softUrgency.color}aa`,
-                      }}
-                    />
-                  )}
                   {/* Room Label - Sticky LEFT column.
                      Vnější `py-1.5` ZARUČUJE, že vnitřní glassmorph karta (vyplňující rodiče
                      pomocí self-stretch) má SHODNOU vertikální výšku jako zaoblený timeline bar
@@ -1027,23 +996,6 @@ style={{
                             <Pause className="w-2.5 h-2.5" />
                             PAUZA
                           </span>
-                        )}
-                        {/* Urgency badge — pro expedited / elective (immediate/urgent jsou v Emergency rowu) */}
-                        {room.urgencyLevel && (room.urgencyLevel === 'expedited' || room.urgencyLevel === 'elective') && (
-                          <motion.span
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="text-[8px] font-semibold px-2 py-1 rounded-lg uppercase flex-shrink-0 flex items-center gap-1"
-                            style={{
-                              background: URGENCY_THEME[room.urgencyLevel].bgSoft,
-                              color: URGENCY_THEME[room.urgencyLevel].color,
-                              border: `1px solid ${URGENCY_THEME[room.urgencyLevel].border}`,
-                            }}
-                            title={`Akutní výkon — ${URGENCY_THEME[room.urgencyLevel].label}`}
-                          >
-                            <AlertTriangle className="w-2.5 h-2.5" />
-                            {URGENCY_THEME[room.urgencyLevel].label}
-                          </motion.span>
                         )}
                         {/* Patient called / arrived indicators přesunuty na pozici před name
                             kartou (stejné místo jako ARO badge), pro jednotný vizuální jazyk. */}
