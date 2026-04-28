@@ -31,8 +31,9 @@ const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 320;
-const MIN_ROW_HEIGHT = 32; // Minimum row height — sníženo z 40 aby se vešlo více sálů bez scrollu
+const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
+const ROW_GAP_PX = 4;      // gap-1 mezi řádky (Tailwind: 0.25rem) — musí korespondovat s `gap-1` v JSX
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
@@ -217,13 +218,17 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return () => clearInterval(interval);
   }, []);
   
-  // Calculate responsive row height based on container height and number of rooms
+  // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
+  // Předtím výpočet ignoroval `gap` mezi řádky (8px × N-1) → součet všech řádků
+  // přesáhl výšku kontejneru a vznikal scroll. Nyní gap odečteme PŘED dělením.
   useEffect(() => {
     const calculateRowHeight = () => {
       if (rowsContainerRef.current && rooms.length > 0) {
         const containerHeight = rowsContainerRef.current.clientHeight;
-        const calculatedHeight = Math.floor(containerHeight / rooms.length);
-        // Clamp between MIN and MAX
+        const totalGapPx = (rooms.length - 1) * ROW_GAP_PX;
+        const availableHeight = Math.max(0, containerHeight - totalGapPx);
+        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
+        const calculatedHeight = Math.floor(availableHeight / rooms.length);
         const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
         setRowHeight(clampedHeight);
       }
@@ -683,8 +688,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               )}
             </AnimatePresence>
 
-            {/* Room Rows - Flex container with consistent spacing */}
-            <div className="flex flex-col gap-2 px-1">
+            {/* Room Rows - Flex container. gap-1 (4px) — minimální mezera, aby se vešlo
+               co nejvíce sálů bez scrollu. Kontejner i výpočet rowHeight používá ROW_GAP_PX=4. */}
+            <div className="flex flex-col gap-1 px-1">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -964,11 +970,9 @@ style={{
                     </div>
 
                     {/* Room info - Rounded glassmorph card IN LEFT COLUMN, always visible.
-                       Padding sníženo z p-3 na py-1.5 px-2.5 aby se karta vešla i do MIN_ROW_HEIGHT
-                       (32px) bez přetékání do dalšího řádku. min-w-0 + overflow-hidden zajišťuje
-                       správné truncate chování. */}
+                       Padding adaptivní: kompaktní (rowHeight < 44) → minimum, jinak komfortní. */}
                     <div 
-                      className="flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-xl py-1.5 px-2.5 backdrop-blur-md transition-all duration-200 overflow-hidden"
+                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-xl ${rowHeight < 44 ? 'py-0.5 px-2' : 'py-1.5 px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
                       style={{ 
                         background: C.glass, 
                         border: `1px solid ${C.border}`,
@@ -1004,16 +1008,17 @@ style={{
                             {URGENCY_THEME[room.urgencyLevel].label}
                           </motion.span>
                         )}
-                        {/* Patient called indicator */}
+                        {/* Patient called indicator — adaptivní: w-6 h-6 při kompakt. řádku (<44),
+                            jinak w-9 h-9. Zaručuje, že se vejde i do MIN_ROW_HEIGHT=24. */}
                         {room.patientCalledAt && !room.patientArrivedAt && (
                           <motion.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                            className={`${rowHeight < 44 ? 'w-6 h-6' : 'w-9 h-9'} rounded-xl flex items-center justify-center flex-shrink-0`}
                             style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(96,165,250,0.3)' }}
                             title="Pacient volán"
                           >
-                            <Phone className="w-4 h-4 text-blue-400" />
+                            <Phone className={`${rowHeight < 44 ? 'w-3 h-3' : 'w-4 h-4'} text-blue-400`} />
                           </motion.div>
                         )}
                         {/* Patient arrived indicator */}
@@ -1021,15 +1026,18 @@ style={{
                           <motion.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                            className={`${rowHeight < 44 ? 'w-6 h-6' : 'w-9 h-9'} rounded-xl flex items-center justify-center flex-shrink-0`}
                             style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}
                             title="Pacient v operačním traktu"
                           >
-                            <BedDouble className="w-4 h-4 text-green-400" />
+                            <BedDouble className={`${rowHeight < 44 ? 'w-3 h-3' : 'w-4 h-4'} text-green-400`} />
                           </motion.div>
                         )}
                       </div>
-                      <div className="mt-0.5">
+                      {/* Sekundární řádek (department / remainingTime) — skryt při velmi malé
+                          výšce řádku (>=12 sálů na bežném FullHD), aby se vše vešlo bez scrollu.
+                          Klíčové info (room.name, badges) zůstává v primárním řádku. */}
+                      <div className={`mt-0.5 ${rowHeight < 44 ? 'hidden' : ''}`}>
                         {isFree ? (
                           <p className="text-[8px] font-semibold text-white/40 flex items-center gap-2 uppercase tracking-[0.2em] truncate">
                             <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'rgba(16,185,129,0.4)' }} />
