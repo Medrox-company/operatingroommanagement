@@ -9,7 +9,6 @@ import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
-import AcuteCaseModal, { AcuteCaseData } from './components/AcuteCaseModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
@@ -19,7 +18,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
-import { useUrgencyAlert } from './hooks/useUrgencyAlert';
 
 // Main App Content - Operating Rooms Management System
 const DEFAULT_BG_SETTINGS: BackgroundSettings = {
@@ -40,7 +38,6 @@ const AppContent: React.FC = () => {
   const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
-  const [isAcuteCaseModalOpen, setIsAcuteCaseModalOpen] = useState(false);
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
@@ -97,10 +94,8 @@ const AppContent: React.FC = () => {
     return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${colorStops})`;
   }, [bgSettings]);
 
-  // Emergency alert sound - harsh siren pro 'immediate' / EMERGENTNÍ
-  useEmergencyAlert(rooms, selectedRoomId);
-  // Urgency alert sound - jemný chime pro 'urgent' / 'expedited' / 'elective'
-  useUrgencyAlert(rooms);
+  // Emergency alert sound — siréna při aktivaci stavu nouze (isEmergency=true).
+  useEmergencyAlert(rooms);
 
   // Load rooms from API on mount - separated for stability
   useEffect(() => {
@@ -309,68 +304,6 @@ const AppContent: React.FC = () => {
     }
   }, [isDbConnected]);
 
-  // Potvrzení přijetí akutního výkonu — odstraní zbarvení sálu (urgencyLevel) i emergency stav.
-  // Probíhající procedura zůstává; ruší se pouze "akutní notifikace".
-  const handleAcceptAcuteCase = useCallback(async (roomId: string) => {
-    recentLocalUpdates.current.set(roomId, Date.now());
-
-    setRooms(prev => prev.map(r =>
-      r.id === roomId
-        ? { ...r, urgencyLevel: undefined, isEmergency: false }
-        : r
-    ));
-
-    if (isDbConnected) {
-      await updateOperatingRoom(roomId, {
-        is_emergency: false,
-      });
-    }
-  }, [isDbConnected]);
-
-  const handleAcuteCaseSubmit = useCallback(async (data: AcuteCaseData) => {
-    const { selectedRoomId, procedureName, estimatedDuration, urgency } = data;
-    
-    recentLocalUpdates.current.set(selectedRoomId, Date.now());
-    
-    const now = new Date();
-    const estEnd = new Date(now.getTime() + estimatedDuration * 60 * 1000);
-    
-    // Emergentní a urgentní akutní výkony aktivují stav nouze;
-    // odložitelné a elektivní jsou jen označené úrovní urgence (zbarvení sálu).
-    const isEmergencyLevel = urgency === 'immediate' || urgency === 'urgent';
-    
-    const updatedFields = {
-      isEmergency: isEmergencyLevel,
-      urgencyLevel: urgency,
-      isLocked: false,
-      currentProcedure: {
-        name: procedureName,
-        startTime: now.toISOString(),
-        estimatedDuration,
-        progress: 0,
-      },
-      estimatedEndTime: estEnd.toISOString(),
-      patientCalledAt: now.toISOString(),
-    };
-    
-    setRooms(prev => prev.map(r =>
-      r.id === selectedRoomId 
-        ? { ...r, ...updatedFields }
-        : r
-    ));
-    
-    if (isDbConnected) {
-      await updateOperatingRoom(selectedRoomId, {
-        is_emergency: isEmergencyLevel,
-        estimated_end_time: estEnd.toISOString(),
-      });
-    }
-    
-    setIsAcuteCaseModalOpen(false);
-    // Show success notification by selecting the room
-    setSelectedRoomId(selectedRoomId);
-  }, [isDbConnected]);
-
   const toggleLock = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
     let newValue = false;
@@ -474,8 +407,6 @@ const AppContent: React.FC = () => {
     setSelectedRoomId(null);
   }, []);
 
-  const handleOpenAcuteCase = useCallback(() => setIsAcuteCaseModalOpen(true), []);
-  const handleCloseAcuteCase = useCallback(() => setIsAcuteCaseModalOpen(false), []);
   const handleCloseRoomDetail = useCallback(() => setSelectedRoomId(null), []);
 
   // Stabilní RoomDetail callbacky — používají selectedRoomId přímo (zdroj pravdy), takže
@@ -501,10 +432,6 @@ const AppContent: React.FC = () => {
   const handlePatientStatusChangeSelected = useCallback((calledAt: string | null, arrivedAt: string | null) => {
     if (selectedRoomId) handlePatientStatusChange(selectedRoomId, calledAt, arrivedAt);
   }, [selectedRoomId, handlePatientStatusChange]);
-
-  const handleAcceptAcuteCaseSelected = useCallback(() => {
-    if (selectedRoomId) handleAcceptAcuteCase(selectedRoomId);
-  }, [selectedRoomId, handleAcceptAcuteCase]);
 
   // Show login if not authenticated - must be after all hooks
   if (!isAuthenticated) {
@@ -544,7 +471,6 @@ const AppContent: React.FC = () => {
 
 <Sidebar 
             currentView={currentView} 
-            onAcuteCase={handleOpenAcuteCase}
             onNavigate={handleNavigate}
           />
       <MobileNav currentView={currentView} onNavigate={handleNavigate} />
@@ -567,7 +493,6 @@ const AppContent: React.FC = () => {
                   onEnhancedHygieneToggle={handleEnhancedHygieneToggleSelected}
                   onStaffChange={handleStaffChangeSelected}
                   onPatientStatusChange={handlePatientStatusChangeSelected}
-                  onAcceptAcuteCase={handleAcceptAcuteCaseSelected}
                 />
               </div>
             )}
@@ -580,10 +505,10 @@ const AppContent: React.FC = () => {
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
                       <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
                         <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
-                        <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+                        <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ</p>
                       </div>
                       <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate">
-                        OPERATING <span className="text-white/20">ROOM</span>
+                        OPERAČNÍ <span className="text-white/20">SÁLY</span>
                       </h1>
                     </div>
                     <div className="flex gap-1.5 md:gap-4 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
@@ -677,17 +602,6 @@ const AppContent: React.FC = () => {
 
         </main>
       </div>
-      
-      {/* Acute Case Modal — podmíněně mountovaný, jinak by každý render
-          App.tsx běžel přes interní useState/useMemo modalu i když je skrytý. */}
-      {isAcuteCaseModalOpen && (
-        <AcuteCaseModal
-          isOpen={isAcuteCaseModalOpen}
-          onClose={handleCloseAcuteCase}
-          rooms={rooms}
-          onSubmit={handleAcuteCaseSubmit}
-        />
-      )}
     </div>
     </ErrorBoundary>
   );

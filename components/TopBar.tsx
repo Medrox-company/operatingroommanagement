@@ -24,7 +24,7 @@ const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsRese
          </div>
          <div>
             <p className="text-[9px] font-bold tracking-[0.4em] text-white/30 leading-none mb-1.5 uppercase">HOSPITAL SYSTEM</p>
-            <p className="text-sm font-bold text-white uppercase tracking-tight">OPERATINGROOM</p>
+            <p className="text-sm font-bold text-white uppercase tracking-tight">OPERAČNÍ SÁLY</p>
          </div>
       </div>
 

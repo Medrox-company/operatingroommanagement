@@ -1,15 +1,14 @@
 import React, { memo, useMemo } from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
-import { LogOut, Zap } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   currentView: string;
   onNavigate: (viewId: string) => void;
-  onAcuteCase?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onAcuteCase }) => {
+const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
   const { isAdmin, logout, hasModuleAccess } = useAuth();
 
   // Filter sidebar items based on role + module access.
@@ -54,24 +53,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onAcute
       </nav>
 
       <div className="mt-auto flex flex-col items-center gap-4 pb-4 w-full px-4 pointer-events-auto flex-shrink-0">
-        {/* Acute Case Button - same design as nav icons */}
-        {onAcuteCase && (
-          <button
-            onClick={onAcuteCase}
-            aria-label="Akutní výkon"
-            className="relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-2xl text-white/40 hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          >
-            <Zap
-              className="w-6 h-6 transition-all duration-300 group-hover:-translate-y-0.5"
-              strokeWidth={2}
-            />
-
-            <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
-              Akutní
-            </span>
-          </button>
-        )}
-
         {/* Logout Button */}
         <button 
           onClick={logout}
@@ -86,5 +67,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onAcute
     </aside>
   );
 });
+
+Sidebar.displayName = 'Sidebar';
 
 export default Sidebar;

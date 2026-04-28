@@ -31,8 +31,9 @@ const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 320;
-const MIN_ROW_HEIGHT = 40; // Minimum row height
+const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
+const ROW_GAP_PX = 4;      // gap-1 mezi řádky (Tailwind: 0.25rem) — musí korespondovat s `gap-1` v JSX
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
@@ -46,20 +47,6 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
   red: { bg: '#F87171', border: '#FCA5A5', stripe: '#FECACA', text: '#FFF', glow: 'rgba(248,113,113,0.2)' },
   cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
 };
-
-  // NCEPOD urgency theme — synchronizováno s RoomCard / RoomDetail / AcuteCaseModal.
-  // Tintuje řádek sálu na timeline po registraci akutního výkonu.
-  const URGENCY_THEME: Record<'immediate' | 'urgent' | 'expedited' | 'elective', {
-    label: string;
-    color: string;        // hlavní barva
-    bgSoft: string;       // jemné pozadí (např. řádek)
-    border: string;       // border tone
-  }> = {
-    immediate: { label: 'EMERGENTNÍ',  color: '#ef4444', bgSoft: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.35)' },
-    urgent:    { label: 'URGENTNÍ',    color: '#f97316', bgSoft: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.35)' },
-    expedited: { label: 'ODLOŽITELNÝ', color: '#eab308', bgSoft: 'rgba(234,179,8,0.07)',  border: 'rgba(234,179,8,0.30)' },
-    elective:  { label: 'ELEKTIVNÍ',   color: '#3b82f6', bgSoft: 'rgba(59,130,246,0.07)', border: 'rgba(59,130,246,0.30)' },
-  };
 
   // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
   const STEP_INDEX_COLORS: Record<number, string> = {
@@ -217,13 +204,17 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return () => clearInterval(interval);
   }, []);
   
-  // Calculate responsive row height based on container height and number of rooms
+  // Calculate responsive row height — všechny sály se MUS�� vejít bez scrollování.
+  // Předtím výpočet ignoroval `gap` mezi řádky (8px × N-1) → součet všech řádků
+  // přesáhl výšku kontejneru a vznikal scroll. Nyní gap odečteme PŘED dělením.
   useEffect(() => {
     const calculateRowHeight = () => {
       if (rowsContainerRef.current && rooms.length > 0) {
         const containerHeight = rowsContainerRef.current.clientHeight;
-        const calculatedHeight = Math.floor(containerHeight / rooms.length);
-        // Clamp between MIN and MAX
+        const totalGapPx = (rooms.length - 1) * ROW_GAP_PX;
+        const availableHeight = Math.max(0, containerHeight - totalGapPx);
+        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
+        const calculatedHeight = Math.floor(availableHeight / rooms.length);
         const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
         setRowHeight(clampedHeight);
       }
@@ -683,8 +674,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               )}
             </AnimatePresence>
 
-            {/* Room Rows - Flex container with consistent spacing */}
-            <div className="flex flex-col gap-2 px-1">
+            {/* Room Rows - Flex container. gap-1 (4px) — minimální mezera, aby se vešlo
+               co nejvíce sálů bez scrollu. Kontejner i výpočet rowHeight používá ROW_GAP_PX=4. */}
+            <div className="flex flex-col gap-1 px-1">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -703,8 +695,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from database context - použít lookup mapu podle order_index
-              const currentStep = statusByOrderIndex[room.currentStepIndex];
+              // Get status from database context.
+              // FIX: room.currentStepIndex je pozice v POLI activeStatuses (0-based), NIKOLI
+              // db `order_index`. Lookup přes statusByOrderIndex selhával, pokud měla DB
+              // jiné číslování (1-based nebo s mezerami) — text statusu se pak nezobrazil.
+              // Sjednoceno s logikou v RoomCard.tsx (přímá indexace pole).
+              const safeStepIndex = Math.max(0, Math.min(room.currentStepIndex, activeStatuses.length - 1));
+              const currentStep = activeStatuses[safeStepIndex] || statusByOrderIndex[room.currentStepIndex] || null;
               // If paused, override color to pause color (cyan)
               const PAUSE_COLOR = '#22D3EE';
               const stepColor = room.isPaused 
@@ -778,13 +775,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 progressPct = Math.max(0, Math.min(100, ((nowWindowPct - boxLeftPct) / boxWidthPct) * 100));
               }
 
-              /* Urgency row — full-banner pro immediate/urgent (isEmergency aktivní);
-                 tintuje se podle NCEPOD úrovně, fallback red pro legacy emergency bez urgencyLevel */
+              /* Emergency row — full-banner pulsing red banner při aktivním stavu nouze. */
               if (room.isEmergency) {
-                const urgencyTheme = room.urgencyLevel ? URGENCY_THEME[room.urgencyLevel] : null;
-                const bannerColor = urgencyTheme ? urgencyTheme.color : C.red;
-                const bannerLabel = urgencyTheme ? urgencyTheme.label : 'EMERGENCY';
-                const shouldPulse = !urgencyTheme || room.urgencyLevel === 'immediate' || room.urgencyLevel === 'urgent';
+                const bannerColor = C.red;
+                const bannerLabel = 'STAV NOUZE';
+                const shouldPulse = true;
                 return (
                   <div
                     key={room.id}
@@ -793,26 +788,25 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div 
-                        className="w-7 h-7 rounded-xl flex items-center justify-center"
+                        className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: `${bannerColor}26`, border: `1px solid ${bannerColor}55` }}
                       >
                         <AlertTriangle className="w-3.5 h-3.5" style={{ color: bannerColor }} />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
                       </div>
                     </div>
-                    {/* Urgency timeline box - tinted glassmorph */}
+                    {/* Emergency timeline box - tinted glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                      <div className={`absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
-                        {/* Main background */}
-                        <div 
-                          className="absolute inset-0 rounded-xl backdrop-blur-md"
+                    <div className={`absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
+                      <div 
+                        className="absolute inset-0 rounded-md backdrop-blur-md"
                           style={{ 
                             background: `linear-gradient(135deg, ${bannerColor}20 0%, ${bannerColor}08 100%)`,
                             border: `1px solid ${bannerColor}55`,
@@ -847,26 +841,25 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div 
-                        className="w-7 h-7 rounded-xl flex items-center justify-center"
+                        className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
                       >
                         <Lock className="w-3.5 h-3.5" style={{ color: C.accent }} />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
                       </div>
                     </div>
                     {/* Locked timeline box - LoginPage glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
-                        {/* Main background */}
-                        <div 
-                          className="absolute inset-0 rounded-xl backdrop-blur-md"
+                    <div className="absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden">
+                      <div 
+                        className="absolute inset-0 rounded-md backdrop-blur-md"
                           style={{ 
                             background: `linear-gradient(135deg, ${C.accent}15 0%, ${C.accent}05 100%)`,
                             border: `1px solid ${C.accent}25`,
@@ -887,37 +880,23 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               }
 
               /* Active / Free row */
-              const softUrgency = (room.urgencyLevel === 'expedited' || room.urgencyLevel === 'elective')
-                ? URGENCY_THEME[room.urgencyLevel]
-                : null;
               return (
-                <motion.div
+                <div
                   key={room.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
                   className="relative flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
                   style={{
                     height: rowHeight,
                     borderBottom: `1px solid ${C.border}`,
-                    background: softUrgency ? softUrgency.bgSoft : undefined,
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Side-stripe marker pro registrovaný akutní výkon — viditelný při scrollování */}
-                  {softUrgency && (
-                    <div
-                      className="absolute left-0 top-0 bottom-0 z-30 pointer-events-none"
-                      style={{
-                        width: 3,
-                        background: softUrgency.color,
-                        boxShadow: `0 0 12px ${softUrgency.color}aa`,
-                      }}
-                    />
-                  )}
-                  {/* Room Label - Sticky LEFT column with uniform padding on all sides */}
+                  {/* Room Label - Sticky LEFT column.
+                     Vnější `py-1.5` ZARUČUJE, že vnitřní glassmorph karta (vyplňující rodiče
+                     pomocí self-stretch) má SHODNOU vertikální výšku jako zaoblený timeline bar
+                     v pravé části (ten má `top-1.5 bottom-1.5` = inset 6px). Tím obě "kapsle"
+                     na řádku vypadají jako vizuálně sladěný pár. */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-2 py-2 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
@@ -948,6 +927,38 @@ style={{
                       }
                       return null;
                     })()}
+
+                    {/* Patient Called Badge — stejný design jako ARO (vertikální stack
+                        label nad ikonou, glassmorph s barevným borderem). Přesunuto z name
+                        karty na pozici před názvem sálu, aby vizuálně korespondovalo s ARO. */}
+                    {room.patientCalledAt && !room.patientArrivedAt && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          border: '1px solid rgba(96, 165, 250, 0.96)',
+                        }}
+                        title="Pacient volán"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(96, 165, 250, 0.96)' }}>VOLÁN</span>
+                        <Phone className="w-3 h-3" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
+                      </div>
+                    )}
+
+                    {/* Patient Arrived Badge — stejný design jako ARO. */}
+                    {room.patientArrivedAt && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(52, 211, 153, 0.96)',
+                        }}
+                        title="Pacient v operačním traktu"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
+                        <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
+                      </div>
+                    )}
                     
                     {/* Numbered badge for active rooms - softer */}
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -961,15 +972,19 @@ style={{
                       )}
                     </div>
 
-                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN, always visible */}
+                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN.
+                       Stretchuje se na plnou výšku rodiče (díky `items-stretch` na rodiči),
+                       takže vizuálně koresponduje s timeline barem napravo, který má stejné
+                       inset (top-1.5 bottom-1.5). Vertikální padding NEpotřebuje — content
+                       je centrovaný přes flex justify-center. */}
                     <div 
-                      className="flex-shrink-0 flex-1 max-w-xs rounded-xl p-3 backdrop-blur-md transition-all duration-200"
+                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-md flex items-center ${rowHeight < 44 ? 'px-2' : 'px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
                       style={{ 
                         background: C.glass, 
                         border: `1px solid ${C.border}`,
                       }}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full">
                         <p className="text-sm font-semibold tracking-tight text-white truncate">
                           {room.name}
                         </p>
@@ -982,62 +997,12 @@ style={{
                             PAUZA
                           </span>
                         )}
-                        {/* Urgency badge — pro expedited / elective (immediate/urgent jsou v Emergency rowu) */}
-                        {room.urgencyLevel && (room.urgencyLevel === 'expedited' || room.urgencyLevel === 'elective') && (
-                          <motion.span
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="text-[8px] font-semibold px-2 py-1 rounded-lg uppercase flex-shrink-0 flex items-center gap-1"
-                            style={{
-                              background: URGENCY_THEME[room.urgencyLevel].bgSoft,
-                              color: URGENCY_THEME[room.urgencyLevel].color,
-                              border: `1px solid ${URGENCY_THEME[room.urgencyLevel].border}`,
-                            }}
-                            title={`Akutní výkon — ${URGENCY_THEME[room.urgencyLevel].label}`}
-                          >
-                            <AlertTriangle className="w-2.5 h-2.5" />
-                            {URGENCY_THEME[room.urgencyLevel].label}
-                          </motion.span>
-                        )}
-                        {/* Patient called indicator */}
-                        {room.patientCalledAt && !room.patientArrivedAt && (
-                          <motion.div 
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(96,165,250,0.3)' }}
-                            title="Pacient volán"
-                          >
-                            <Phone className="w-4 h-4 text-blue-400" />
-                          </motion.div>
-                        )}
-                        {/* Patient arrived indicator */}
-                        {room.patientArrivedAt && (
-                          <motion.div 
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}
-                            title="Pacient v operačním traktu"
-                          >
-                            <BedDouble className="w-4 h-4 text-green-400" />
-                          </motion.div>
-                        )}
+                        {/* Patient called / arrived indicators přesunuty na pozici před name
+                            kartou (stejné místo jako ARO badge), pro jednotný vizuální jazyk. */}
                       </div>
-                      <div className="mt-1.5">
-                        {isFree ? (
-                          <p className="text-[8px] font-semibold text-white/40 flex items-center gap-2 uppercase tracking-[0.2em]">
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.4)' }} />
-                            VOLNÝ
-                          </p>
-                        ) : remainingTime && stepIndex !== 0 ? (
-                          <p className="text-[8px] font-semibold text-white/50 uppercase tracking-[0.2em]">
-                            {remainingTime}
-                          </p>
-                        ) : (
-                          <p className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.2em]">{room.department}</p>
-                        )}
-                      </div>
+                      {/* Sekundární řádek (status / department / remainingTime) odstraněn —
+                          aktuální status se nyní zobrazuje uppercase ve středu timeline baru,
+                          takže duplicita pod názvem sálu byla redundantní. */}
                     </div>
                   </div>
 
@@ -1092,13 +1057,14 @@ style={{
                         return (
                           <div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-md"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.3, position.width)}%`,
-                              // Green background for continuing operations, LoginPage glass for completed
+                              // Green pro continuing, glass pro completed; jednotný refined shadow
                               background: isContinuingOp ? `${C.green}30` : C.glass,
                               border: `1px solid ${isContinuingOp ? `${C.green}40` : C.border}`,
+                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.15)',
                             }}
                           >
                               {/* Completed operation segments with colors from database context */}
@@ -1106,7 +1072,7 @@ style={{
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
                                   {(() => {
                                     // Build color lookup from activeStatuses
-                                    // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                                    // Použ��váme order_index (tj. sort_order) jako klíč, ne pozici v poli
                                     const stepColorMap: Record<number, string> = {};
                                     activeStatuses.forEach((s) => {
                                       stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
@@ -1141,9 +1107,9 @@ style={{
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            background: `linear-gradient(90deg, ${phaseColor}70 0%, ${phaseColor}50 100%)`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.3)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2)`,
+                                            background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.22)`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
@@ -1198,13 +1164,13 @@ style={{
 
                       return (
                         <div
-                          className="absolute top-1.5 bottom-1.5 rounded-xl flex items-center justify-between px-3"
+                          className="absolute top-1 bottom-1 rounded-md flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
                             background: `linear-gradient(90deg, ${C.green}35 0%, ${C.green}20 100%)`,
                             borderRight: `2px solid ${C.green}`,
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08)`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2)`,
                             zIndex: 1,
                           }}
                         >
@@ -1218,22 +1184,24 @@ style={{
                       );
                     })()}
 
-                    {/* Active operation bar - LoginPage rounded style */}
+                    {/* Active operation bar — refined design:
+                       • menší zaoblení (rounded-md = 6px) pro precíznější/clinical look,
+                       • dvojitá vrstva shadow (top highlight + outer drop) pro hloubku,
+                       • jemný hairline border pro vizuální separaci od pozadí.
+                       Inset top/bottom snížen z 1.5 (6px) na 1 (4px) — bar je vyšší a lépe
+                       vyplňuje řádek, status text získává více vertikálního prostoru. */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, scaleX: 0 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.4, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
-                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
+                      <div
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-md"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          transformOrigin: 'left center',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.25)',
+                          border: '1px solid rgba(255,255,255,0.06)',
                         }}
                       >
-                        {/* Multi-segment colored bar: one full cycle = all phases colored by status */}
-                        <div className="absolute inset-0 flex overflow-hidden rounded-xl">
+                        {/* Multi-segment colored bar */}
+                        <div className="absolute inset-0 flex overflow-hidden rounded-md">
                           {(() => {
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt
@@ -1292,12 +1260,14 @@ style={{
                                     style={{
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
+                                      // Zvýšený kontrast aktivní fáze — lépe vystoupí z pozadí
+                                      // a aktuální status zůstává čitelný i bez tučného textu.
                                       background: isCurrentSeg
-                                        ? `linear-gradient(90deg, ${phaseColor}40 0%, ${phaseColor}20 100%)`
+                                        ? `linear-gradient(90deg, ${phaseColor}66 0%, ${phaseColor}3a 100%)`
                                         : `linear-gradient(90deg, ${phaseColor}dd 0%, ${phaseColor}aa 100%)`,
                                       boxShadow: isCurrentSeg 
-                                        ? 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2)'
-                                        : `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 12px ${phaseColor}30`,
+                                        ? `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.22), 0 0 0 1px ${phaseColor}33`
+                                        : `inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.18)`,
                                     }}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
@@ -1318,14 +1288,9 @@ style={{
                                     {idx < history.length - 1 && (
                                       <div className="absolute top-0 right-0 bottom-0 w-px bg-black/50 z-10" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.5), rgba(0,0,0,0))` }} />
                                     )}
-                                    {/* Show phase label if segment is wide enough */}
-                                    {segWidthPct > 8 && (
-                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
-                                        <span className="text-[7px] font-semibold text-white/80 truncate uppercase tracking-wide leading-none drop-shadow">
-                                          {statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                        </span>
-                                      </div>
-                                    )}
+                                    {/* Per-segment phase label odstraněn — aktuální status se zobrazuje
+                                       jen jednou, centrovaně velkými písmeny v hlavním boxu (řešeno
+                                       v primary content overlay výše). */}
                                   </motion.div>
                                 );
                               });
@@ -1407,23 +1372,30 @@ style={{
 
 
 
-                        {/* Content overlay - refined typography */}
-                        <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
+                        {/* Content overlay - status (uppercase) ve středu, lékař + sestra pod ním.
+                            Když se zobrazí pravý time badge (boxWidthPct > 18 + remainingTime),
+                            rezervujeme symetrický horizontální padding `px-14` přes celý overlay,
+                            takže status text zůstane v optickém středu boxu a badge ho NIKDY
+                            nepřekryje. Bez badge ponecháme vzdušnější `px-4`. */}
+                        {(() => {
+                          const showRightBadge = !room.isPaused && boxWidthPct > 18 && remainingTime && stepIndex !== 0;
+                          return (
+                        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-3 z-10 ${showRightBadge ? 'px-14' : 'px-4'}`}>
                           {room.isPaused ? (
-                            /* Pause state - elegant pause display */
-                            <div className="min-w-0 flex-1 flex items-center gap-2">
+                            /* Pause state - centrovaný display */
+                            <div className="min-w-0 flex-1 flex items-center justify-center gap-2">
                               {boxWidthPct > 5 && (
-                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
                                   <Pause className="w-3 h-3 text-white" />
                                 </div>
                               )}
                               {boxWidthPct > 12 && (
-                                <div>
-                                  <p className="text-[11px] font-semibold text-white uppercase tracking-[0.3em]">
+                                <div className="flex flex-col items-center text-center min-w-0">
+                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.16em] leading-tight truncate">
                                     PAUZA
                                   </p>
                                   {boxWidthPct > 20 && (
-                                    <p className="text-[8px] text-white/60">
+                                    <p className="text-[9px] text-white/70 leading-tight truncate normal-case">
                                       Operace pozastavena
                                     </p>
                                   )}
@@ -1431,21 +1403,26 @@ style={{
                               )}
                             </div>
                           ) : (
-                            /* Normal state - refined step info */
+                            /* Normal state — STATUS centrovaný uppercase, pod ním lékař + sestra
+                               (každý normal case, oddělené tečkou). RemainingTime jako floating badge. */
                             <>
                               {boxWidthPct > 8 && (
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] font-semibold text-white truncate drop-shadow-sm">
+                                <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
+                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.14em] leading-tight truncate w-full">
                                     {stepName}
                                   </p>
-                                  <p className="text-[9px] font-normal text-white/60 truncate">
-                                    {room.staff?.doctor?.name || ''}
-                                  </p>
+                                  {boxWidthPct > 14 && (room.staff?.doctor?.name || room.staff?.nurse?.name) && (
+                                    <p className="text-[9px] font-normal text-white/75 leading-tight truncate w-full normal-case mt-0.5">
+                                      {[room.staff?.doctor?.name, room.staff?.nurse?.name]
+                                        .filter(Boolean)
+                                        .join(' \u00B7 ')}
+                                    </p>
+                                  )}
                                 </div>
                               )}
                               {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                                 <div
-                                  className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white/90 backdrop-blur-md"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white/90 backdrop-blur-md"
                                   style={{ 
                                     background: C.glass,
                                     border: `1px solid ${C.border}`,
@@ -1457,13 +1434,15 @@ style={{
                             </>
                           )}
                         </div>
-                      </motion.div>
+                          );
+                        })()}
+                      </div>
                     )}
 
                     {/* Free room indicator - LoginPage glass style */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
+                        className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
                         style={{ 
                           background: C.glass,
                           border: `1px dashed ${C.border}`,
@@ -1519,7 +1498,7 @@ style={{
                       );
                     })()}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
             </div>
@@ -1618,9 +1597,14 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const stepIndex = room.currentStepIndex;
   const nextStepIndex = stepIndex + 1;
   
-  // Použít lookup mapu pro správné mapování barvy a statusu
-  const currentStatus = statusByOrderIndex[stepIndex] || null;
-  const nextStatus = statusByOrderIndex[nextStepIndex] || null;
+  // Použít lookup mapu pro správné mapování barvy a statusu.
+  // FIX: stepIndex/nextStepIndex jsou pozice v POLI activeStatuses (0-based), ne DB
+  // `order_index`. Primárně použijeme přímou indexaci, fallback na order_index lookup
+  // pro starší rooms s legacy daty.
+  const safeIdx = Math.max(0, Math.min(stepIndex, activeStatuses.length - 1));
+  const safeNextIdx = Math.max(0, Math.min(nextStepIndex, activeStatuses.length - 1));
+  const currentStatus = activeStatuses[safeIdx] || statusByOrderIndex[stepIndex] || null;
+  const nextStatus = activeStatuses[safeNextIdx] || statusByOrderIndex[nextStepIndex] || null;
   
   const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
