@@ -820,10 +820,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     </div>
                     {/* Urgency timeline box - tinted glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                      <div className={`absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
-                        {/* Main background */}
-                        <div 
-                          className="absolute inset-0 rounded-xl backdrop-blur-md"
+                    <div className={`absolute inset-y-2 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
+                      <div 
+                        className="absolute inset-0 rounded-md backdrop-blur-md"
                           style={{ 
                             background: `linear-gradient(135deg, ${bannerColor}20 0%, ${bannerColor}08 100%)`,
                             border: `1px solid ${bannerColor}55`,
@@ -874,10 +873,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     </div>
                     {/* Locked timeline box - LoginPage glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                      <div className="absolute inset-y-2 left-2 right-2 rounded-xl overflow-hidden">
-                        {/* Main background */}
-                        <div 
-                          className="absolute inset-0 rounded-xl backdrop-blur-md"
+                    <div className="absolute inset-y-2 left-2 right-2 rounded-md overflow-hidden">
+                      <div 
+                        className="absolute inset-0 rounded-md backdrop-blur-md"
                           style={{ 
                             background: `linear-gradient(135deg, ${C.accent}15 0%, ${C.accent}05 100%)`,
                             border: `1px solid ${C.accent}25`,
@@ -1011,7 +1009,7 @@ style={{
                        inset (top-1.5 bottom-1.5). Vertikální padding NEpotřebuje — content
                        je centrovaný přes flex justify-center. */}
                     <div 
-                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-xl flex items-center ${rowHeight < 44 ? 'px-2' : 'px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
+                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-md flex items-center ${rowHeight < 44 ? 'px-2' : 'px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
                       style={{ 
                         background: C.glass, 
                         border: `1px solid ${C.border}`,
@@ -1107,13 +1105,14 @@ style={{
                         return (
                           <div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
+                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.3, position.width)}%`,
-                              // Green background for continuing operations, LoginPage glass for completed
+                              // Green pro continuing, glass pro completed; jednotný refined shadow
                               background: isContinuingOp ? `${C.green}30` : C.glass,
                               border: `1px solid ${isContinuingOp ? `${C.green}40` : C.border}`,
+                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.15)',
                             }}
                           >
                               {/* Completed operation segments with colors from database context */}
@@ -1156,9 +1155,9 @@ style={{
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            background: `linear-gradient(90deg, ${phaseColor}70 0%, ${phaseColor}50 100%)`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.3)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2)`,
+                                            background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.22)`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
@@ -1213,13 +1212,13 @@ style={{
 
                       return (
                         <div
-                          className="absolute top-1.5 bottom-1.5 rounded-xl flex items-center justify-between px-3"
+                          className="absolute top-1.5 bottom-1.5 rounded-md flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
                             background: `linear-gradient(90deg, ${C.green}35 0%, ${C.green}20 100%)`,
                             borderRight: `2px solid ${C.green}`,
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08)`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2)`,
                             zIndex: 1,
                           }}
                         >
@@ -1233,21 +1232,22 @@ style={{
                       );
                     })()}
 
-                    {/* Active operation bar - LoginPage rounded style.
-                       Vstupní animace (scaleX 0→1 zleva doprava + delay per row) odstraněna,
-                       aby se modul při otevření nerozjížděl jako "vlna". Bar se vykreslí
-                       okamžitě v plné šíři. */}
+                    {/* Active operation bar — refined design:
+                       • menší zaoblení (rounded-md = 6px) pro precíznější/clinical look,
+                       • dvojitá vrstva shadow (top highlight + outer drop) pro hloubku,
+                       • jemný hairline border pro vizuální separaci od pozadí. */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <div
-                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
+                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.25)',
+                          border: '1px solid rgba(255,255,255,0.06)',
                         }}
                       >
-                        {/* Multi-segment colored bar: one full cycle = all phases colored by status */}
-                        <div className="absolute inset-0 flex overflow-hidden rounded-xl">
+                        {/* Multi-segment colored bar */}
+                        <div className="absolute inset-0 flex overflow-hidden rounded-md">
                           {(() => {
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt
@@ -1306,12 +1306,14 @@ style={{
                                     style={{
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
+                                      // Zvýšený kontrast aktivní fáze — lépe vystoupí z pozadí
+                                      // a aktuální status zůstává čitelný i bez tučného textu.
                                       background: isCurrentSeg
-                                        ? `linear-gradient(90deg, ${phaseColor}40 0%, ${phaseColor}20 100%)`
+                                        ? `linear-gradient(90deg, ${phaseColor}66 0%, ${phaseColor}3a 100%)`
                                         : `linear-gradient(90deg, ${phaseColor}dd 0%, ${phaseColor}aa 100%)`,
                                       boxShadow: isCurrentSeg 
-                                        ? 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.2)'
-                                        : `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 12px ${phaseColor}30`,
+                                        ? `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.22), 0 0 0 1px ${phaseColor}33`
+                                        : `inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.18)`,
                                     }}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
@@ -1478,7 +1480,7 @@ style={{
                     {/* Free room indicator - LoginPage glass style */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
+                        className="absolute inset-y-2 left-2 right-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
                         style={{ 
                           background: C.glass,
                           border: `1px dashed ${C.border}`,
