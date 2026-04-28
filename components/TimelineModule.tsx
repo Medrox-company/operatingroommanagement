@@ -1416,23 +1416,24 @@ style={{
 
 
 
-                        {/* Content overlay - refined typography */}
-                        <div className="absolute inset-0 flex items-center px-4 pointer-events-none gap-3 z-10">
+                        {/* Content overlay - status (uppercase) ve středu, lékař + sestra pod ním
+                            (normal case) — sjednocená vizuální hierarchie napříč všemi řádky. */}
+                        <div className="absolute inset-0 flex items-center justify-center px-4 pointer-events-none gap-3 z-10">
                           {room.isPaused ? (
-                            /* Pause state - elegant pause display */
-                            <div className="min-w-0 flex-1 flex items-center gap-2">
+                            /* Pause state - centrovaný display */
+                            <div className="min-w-0 flex-1 flex items-center justify-center gap-2">
                               {boxWidthPct > 5 && (
-                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
                                   <Pause className="w-3 h-3 text-white" />
                                 </div>
                               )}
                               {boxWidthPct > 12 && (
-                                <div>
-                                  <p className="text-[11px] font-semibold text-white uppercase tracking-[0.3em]">
+                                <div className="flex flex-col items-center text-center min-w-0">
+                                  <p className="text-[12px] font-bold text-white uppercase tracking-[0.22em] leading-tight truncate">
                                     PAUZA
                                   </p>
                                   {boxWidthPct > 20 && (
-                                    <p className="text-[8px] text-white/60">
+                                    <p className="text-[9px] text-white/70 leading-tight truncate normal-case">
                                       Operace pozastavena
                                     </p>
                                   )}
@@ -1440,19 +1441,26 @@ style={{
                               )}
                             </div>
                           ) : (
-                            /* Normal state - jen jméno lékaře (status odstraněn na přání uživatele;
-                               status už je vyjádřen barvou samotného baru). */
+                            /* Normal state — STATUS centrovaný uppercase, pod ním lékař + sestra
+                               (každý normal case, oddělené tečkou). RemainingTime jako floating badge. */
                             <>
                               {boxWidthPct > 8 && (
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] font-semibold text-white truncate drop-shadow-sm">
-                                    {room.staff?.doctor?.name || ''}
+                                <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
+                                  <p className="text-[12px] font-bold text-white uppercase tracking-[0.18em] leading-tight truncate w-full drop-shadow-sm">
+                                    {stepName}
                                   </p>
+                                  {boxWidthPct > 14 && (room.staff?.doctor?.name || room.staff?.nurse?.name) && (
+                                    <p className="text-[9px] font-normal text-white/75 leading-tight truncate w-full normal-case mt-0.5">
+                                      {[room.staff?.doctor?.name, room.staff?.nurse?.name]
+                                        .filter(Boolean)
+                                        .join(' \u00B7 ')}
+                                    </p>
+                                  )}
                                 </div>
                               )}
                               {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                                 <div
-                                  className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white/90 backdrop-blur-md"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white/90 backdrop-blur-md"
                                   style={{ 
                                     background: C.glass,
                                     border: `1px solid ${C.border}`,
