@@ -1429,7 +1429,7 @@ style={{
                               )}
                               {boxWidthPct > 12 && (
                                 <div className="flex flex-col items-center text-center min-w-0">
-                                  <p className="text-[12px] font-bold text-white uppercase tracking-[0.22em] leading-tight truncate">
+                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.16em] leading-tight truncate">
                                     PAUZA
                                   </p>
                                   {boxWidthPct > 20 && (
@@ -1446,7 +1446,7 @@ style={{
                             <>
                               {boxWidthPct > 8 && (
                                 <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
-                                  <p className="text-[12px] font-bold text-white uppercase tracking-[0.18em] leading-tight truncate w-full drop-shadow-sm">
+                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.14em] leading-tight truncate w-full">
                                     {stepName}
                                   </p>
                                   {boxWidthPct > 14 && (room.staff?.doctor?.name || room.staff?.nurse?.name) && (
