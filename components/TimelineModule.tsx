@@ -709,8 +709,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
               const remainingTime = getRemainingTime(room);
               
-              // Get status from database context - použít lookup mapu podle order_index
-              const currentStep = statusByOrderIndex[room.currentStepIndex];
+              // Get status from database context.
+              // FIX: room.currentStepIndex je pozice v POLI activeStatuses (0-based), NIKOLI
+              // db `order_index`. Lookup přes statusByOrderIndex selhával, pokud měla DB
+              // jiné číslování (1-based nebo s mezerami) — text statusu se pak nezobrazil.
+              // Sjednoceno s logikou v RoomCard.tsx (přímá indexace pole).
+              const safeStepIndex = Math.max(0, Math.min(room.currentStepIndex, activeStatuses.length - 1));
+              const currentStep = activeStatuses[safeStepIndex] || statusByOrderIndex[room.currentStepIndex] || null;
               // If paused, override color to pause color (cyan)
               const PAUSE_COLOR = '#22D3EE';
               const stepColor = room.isPaused 
@@ -1628,9 +1633,14 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const stepIndex = room.currentStepIndex;
   const nextStepIndex = stepIndex + 1;
   
-  // Použít lookup mapu pro správné mapování barvy a statusu
-  const currentStatus = statusByOrderIndex[stepIndex] || null;
-  const nextStatus = statusByOrderIndex[nextStepIndex] || null;
+  // Použít lookup mapu pro správné mapování barvy a statusu.
+  // FIX: stepIndex/nextStepIndex jsou pozice v POLI activeStatuses (0-based), ne DB
+  // `order_index`. Primárně použijeme přímou indexaci, fallback na order_index lookup
+  // pro starší rooms s legacy daty.
+  const safeIdx = Math.max(0, Math.min(stepIndex, activeStatuses.length - 1));
+  const safeNextIdx = Math.max(0, Math.min(nextStepIndex, activeStatuses.length - 1));
+  const currentStatus = activeStatuses[safeIdx] || statusByOrderIndex[stepIndex] || null;
+  const nextStatus = activeStatuses[safeNextIdx] || statusByOrderIndex[nextStepIndex] || null;
   
   const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
   const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
