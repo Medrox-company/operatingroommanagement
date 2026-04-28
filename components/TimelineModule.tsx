@@ -820,7 +820,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     </div>
                     {/* Urgency timeline box - tinted glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                    <div className={`absolute inset-y-2 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
+                    <div className={`absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
                       <div 
                         className="absolute inset-0 rounded-md backdrop-blur-md"
                           style={{ 
@@ -873,7 +873,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     </div>
                     {/* Locked timeline box - LoginPage glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                    <div className="absolute inset-y-2 left-2 right-2 rounded-md overflow-hidden">
+                    <div className="absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden">
                       <div 
                         className="absolute inset-0 rounded-md backdrop-blur-md"
                           style={{ 
@@ -1105,7 +1105,7 @@ style={{
                         return (
                           <div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-md"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.3, position.width)}%`,
@@ -1212,7 +1212,7 @@ style={{
 
                       return (
                         <div
-                          className="absolute top-1.5 bottom-1.5 rounded-md flex items-center justify-between px-3"
+                          className="absolute top-1 bottom-1 rounded-md flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
@@ -1235,10 +1235,12 @@ style={{
                     {/* Active operation bar — refined design:
                        • menší zaoblení (rounded-md = 6px) pro precíznější/clinical look,
                        • dvojitá vrstva shadow (top highlight + outer drop) pro hloubku,
-                       • jemný hairline border pro vizuální separaci od pozadí. */}
+                       • jemný hairline border pro vizuální separaci od pozadí.
+                       Inset top/bottom snížen z 1.5 (6px) na 1 (4px) — bar je vyšší a lépe
+                       vyplňuje řádek, status text získává více vertikálního prostoru. */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <div
-                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-md"
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-md"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
@@ -1418,9 +1420,15 @@ style={{
 
 
 
-                        {/* Content overlay - status (uppercase) ve středu, lékař + sestra pod ním
-                            (normal case) — sjednocená vizuální hierarchie napříč všemi řádky. */}
-                        <div className="absolute inset-0 flex items-center justify-center px-4 pointer-events-none gap-3 z-10">
+                        {/* Content overlay - status (uppercase) ve středu, lékař + sestra pod ním.
+                            Když se zobrazí pravý time badge (boxWidthPct > 18 + remainingTime),
+                            rezervujeme symetrický horizontální padding `px-14` přes celý overlay,
+                            takže status text zůstane v optickém středu boxu a badge ho NIKDY
+                            nepřekryje. Bez badge ponecháme vzdušnější `px-4`. */}
+                        {(() => {
+                          const showRightBadge = !room.isPaused && boxWidthPct > 18 && remainingTime && stepIndex !== 0;
+                          return (
+                        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-3 z-10 ${showRightBadge ? 'px-14' : 'px-4'}`}>
                           {room.isPaused ? (
                             /* Pause state - centrovaný display */
                             <div className="min-w-0 flex-1 flex items-center justify-center gap-2">
@@ -1474,13 +1482,15 @@ style={{
                             </>
                           )}
                         </div>
+                          );
+                        })()}
                       </div>
                     )}
 
                     {/* Free room indicator - LoginPage glass style */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-2 left-2 right-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
+                        className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
                         style={{ 
                           background: C.glass,
                           border: `1px dashed ${C.border}`,
