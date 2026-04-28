@@ -8,16 +8,11 @@ interface SidebarProps {
   onNavigate: (viewId: string) => void;
 }
 
-/**
- * INDUSTRIAL SIDEBAR — Siemens SaaS aesthetic.
- *
- * Sharp panel s hairline borderem napravo, mono modul kódy (M01, M02...) pod
- * každou ikonou, accent strip vlevo u aktivního modulu. Žádné rounded blobs,
- * žádný glassmorph — pure black panel s 1px hairlines.
- */
 const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
   const { isAdmin, logout, hasModuleAccess } = useAuth();
 
+  // Filter sidebar items based on role + module access.
+  // Dashboard is always accessible for everyone.
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
     if (item.id === 'dashboard') return true;
     if (isAdmin) return true;
@@ -25,52 +20,31 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
   }), [isAdmin, hasModuleAccess]);
 
   return (
-    <aside
-      className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-stretch z-[100] bg-background border-r border-hairline-strong"
-      aria-label="Hlavní navigace"
-    >
-      {/* System brand block — UNIT.ID + version */}
-      <div className="flex flex-col items-center justify-center py-4 border-b border-hairline-strong">
-        <div className="font-mono text-[10px] font-semibold tracking-[0.18em] text-accent">OR</div>
-        <div className="font-mono text-[8px] tracking-[0.15em] text-foreground-dim mt-0.5">CTRL</div>
-      </div>
+    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none">
+      
+      <div className="mb-12 w-14 h-14 flex-shrink-0" />
 
-      {/* Module navigation */}
-      <nav className="flex-1 flex flex-col py-3 min-h-0 overflow-y-auto hide-scrollbar">
+      <nav className="flex-1 flex flex-col gap-4 w-full px-4 pointer-events-auto min-h-0">
         {enabledItems.map((item, index) => {
           const isActive = currentView === item.id;
-          const moduleCode = `M${String(index + 1).padStart(2, '0')}`;
           return (
             <button
-              key={item.id}
+              key={index}
               onClick={() => onNavigate(item.id)}
               aria-current={isActive ? 'page' : undefined}
               aria-label={item.label}
               className={`
-                relative w-full py-3 flex flex-col items-center justify-center gap-1 transition-colors group
-                focus:outline-none focus-visible:bg-panel-hi
-                ${isActive ? 'text-accent bg-panel-hi' : 'text-foreground-muted hover:text-foreground hover:bg-panel'}
+                relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-2xl
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+                ${isActive ? 'bg-white/[0.15] text-white shadow-xl' : 'text-white/40 hover:bg-white/5 hover:text-white'}
               `}
             >
-              {/* Active accent strip — sharp 2px vertical line */}
-              {isActive && (
-                <span
-                  className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-accent"
-                  aria-hidden
-                />
-              )}
-
-              <item.icon
-                className="w-5 h-5 transition-transform"
-                strokeWidth={isActive ? 1.75 : 1.5}
+              <item.icon 
+                className={`w-6 h-6 transition-all duration-300 group-hover:-translate-y-0.5`} 
+                strokeWidth={isActive ? 2.5 : 2}
               />
 
-              <span className="font-mono text-[8.5px] tracking-[0.15em] uppercase leading-none">
-                {moduleCode}
-              </span>
-
-              {/* Hover tooltip — module label */}
-              <span className="absolute left-full ml-2 px-2 py-1 bg-panel-hi border border-hairline-strong text-foreground text-[10px] font-medium tracking-[0.12em] uppercase opacity-0 translate-x-[-4px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] font-sans">
+              <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
                 {item.label}
               </span>
             </button>
@@ -78,18 +52,14 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
         })}
       </nav>
 
-      {/* Logout footer */}
-      <div className="border-t border-hairline-strong">
-        <button
+      <div className="mt-auto flex flex-col items-center gap-4 pb-4 w-full px-4 pointer-events-auto flex-shrink-0">
+        {/* Logout Button */}
+        <button 
           onClick={logout}
-          aria-label="Odhlásit"
-          className="w-full py-3 flex flex-col items-center justify-center gap-1 text-foreground-dim hover:text-critical hover:bg-panel-hi transition-colors group focus:outline-none focus-visible:bg-panel-hi"
+          className="w-full aspect-square rounded-2xl bg-white/5 flex flex-col items-center justify-center text-white/30 hover:text-red-400 hover:bg-white/10 transition-all duration-300 group relative"
         >
-          <LogOut className="w-5 h-5" strokeWidth={1.5} />
-          <span className="font-mono text-[8.5px] tracking-[0.15em] uppercase leading-none">
-            EXIT
-          </span>
-          <span className="absolute left-full ml-2 px-2 py-1 bg-panel-hi border border-hairline-strong text-foreground text-[10px] font-medium tracking-[0.12em] uppercase opacity-0 translate-x-[-4px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] font-sans">
+          <LogOut className="w-6 h-6 transition-transform group-hover:scale-110" />
+          <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
             Odhlásit
           </span>
         </button>
