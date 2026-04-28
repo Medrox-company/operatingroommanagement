@@ -583,7 +583,7 @@ const AppContent: React.FC = () => {
                         <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
                       </div>
                       <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate">
-                        OPERATING <span className="text-white/20">ROOM</span>
+                        OPERAČNÍ <span className="text-white/20">SÁLY</span>
                       </h1>
                     </div>
                     <div className="flex gap-1.5 md:gap-4 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
