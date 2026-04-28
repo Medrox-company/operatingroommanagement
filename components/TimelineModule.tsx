@@ -1031,23 +1031,9 @@ style={{
                           </motion.div>
                         )}
                       </div>
-                      {/* Sekundární řádek (department / remainingTime) — skryt při velmi malé
-                          výšce řádku (>=12 sálů na bežném FullHD), aby se vše vešlo bez scrollu.
-                          Klíčové info (room.name, badges) zůstává v primárním řádku. */}
-                      <div className={`mt-0.5 ${rowHeight < 44 ? 'hidden' : ''}`}>
-                        {isFree ? (
-                          <p className="text-[8px] font-semibold text-white/40 flex items-center gap-2 uppercase tracking-[0.2em] truncate">
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'rgba(16,185,129,0.4)' }} />
-                            VOLNÝ
-                          </p>
-                        ) : remainingTime && stepIndex !== 0 ? (
-                          <p className="text-[8px] font-semibold text-white/50 uppercase tracking-[0.2em] truncate">
-                            {remainingTime}
-                          </p>
-                        ) : (
-                          <p className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.2em] truncate">{room.department}</p>
-                        )}
-                      </div>
+                      {/* Sekundární řádek (status / department / remainingTime) odstraněn —
+                          aktuální status se nyní zobrazuje uppercase ve středu timeline baru,
+                          takže duplicita pod názvem sálu byla redundantní. */}
                     </div>
                   </div>
 
