@@ -59,7 +59,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onAcute
           <button
             onClick={onAcuteCase}
             aria-label="Akutní výkon"
-            className="relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-2xl text-white/40 hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            className="relative w-full aspect-square rounded-2xl bg-white/5 flex flex-col items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all duration-300 group focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             <Zap
               className="w-6 h-6 transition-all duration-300 group-hover:-translate-y-0.5"

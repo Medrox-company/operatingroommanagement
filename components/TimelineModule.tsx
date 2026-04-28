@@ -218,7 +218,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return () => clearInterval(interval);
   }, []);
   
-  // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
+  // Calculate responsive row height — všechny sály se MUS�� vejít bez scrollování.
   // Předtím výpočet ignoroval `gap` mezi řádky (8px × N-1) → součet všech řádků
   // přesáhl výšku kontejneru a vznikal scroll. Nyní gap odečteme PŘED dělením.
   useEffect(() => {
@@ -897,11 +897,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 ? URGENCY_THEME[room.urgencyLevel]
                 : null;
               return (
-                <motion.div
+                <div
                   key={room.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: roomIndex * 0.02, duration: 0.3 }}
                   className="relative flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
                   style={{
                     height: rowHeight,
@@ -1231,17 +1228,16 @@ style={{
                       );
                     })()}
 
-                    {/* Active operation bar - LoginPage rounded style */}
+                    {/* Active operation bar - LoginPage rounded style.
+                       Vstupní animace (scaleX 0→1 zleva doprava + delay per row) odstraněna,
+                       aby se modul při otevření nerozjížděl jako "vlna". Bar se vykreslí
+                       okamžitě v plné šíři. */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, scaleX: 0 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.4, delay: roomIndex * 0.015, ease: [0.32, 0.72, 0, 1] }}
+                      <div
                         className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          transformOrigin: 'left center',
                           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
                         }}
                       >
@@ -1444,14 +1440,12 @@ style={{
                               )}
                             </div>
                           ) : (
-                            /* Normal state - refined step info */
+                            /* Normal state - jen jméno lékaře (status odstraněn na přání uživatele;
+                               status už je vyjádřen barvou samotného baru). */
                             <>
                               {boxWidthPct > 8 && (
                                 <div className="min-w-0 flex-1">
                                   <p className="text-[11px] font-semibold text-white truncate drop-shadow-sm">
-                                    {stepName}
-                                  </p>
-                                  <p className="text-[9px] font-normal text-white/60 truncate">
                                     {room.staff?.doctor?.name || ''}
                                   </p>
                                 </div>
@@ -1470,7 +1464,7 @@ style={{
                             </>
                           )}
                         </div>
-                      </motion.div>
+                      </div>
                     )}
 
                     {/* Free room indicator - LoginPage glass style */}
@@ -1532,7 +1526,7 @@ style={{
                       );
                     })()}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
             </div>
