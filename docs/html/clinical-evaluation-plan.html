@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CEP-001 · Clinical Evaluation Plan ORMS</title>
+  <meta name="description" content="Šablona Clinical Evaluation Plan pro ORMS dle MDR čl. 61 a MDCG 2020-1." />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="layout">
+    <header class="doc-header">
+      <p class="doc-eyebrow">CEP-001 · Šablona</p>
+      <h1>Clinical Evaluation Plan</h1>
+      <p class="doc-subtitle">Operating Room Management System (ORMS) — soulad s MDR čl. 61, Příloha XIV, MDCG 2020-1, MDCG 2020-6, MEDDEV 2.7/1 rev. 4.</p>
+      <dl class="doc-meta">
+        <div><dt>Verze</dt><dd>0.1 (šablona)</dd></div>
+        <div><dt>Vlastník</dt><dd>___ (Klinický expert / Medical Officer)</dd></div>
+        <div><dt>Schválil</dt><dd>___</dd></div>
+      </dl>
+    </header>
+
+    <blockquote>Šablona Clinical Evaluation Plan. Doplňte všechna <code>___</code> před prvním schválením.</blockquote>
+
+    <nav class="doc-nav" aria-label="Obsah dokumentu">
+      <h2>Obsah</h2>
+      <ol>
+        <li><a href="#identifikace">Identifikace prostředku</a></li>
+        <li><a href="#rozsah">Rozsah klinického hodnocení</a></li>
+        <li><a href="#claims">Klinické tvrzení</a></li>
+        <li><a href="#sota">State of the Art</a></li>
+        <li><a href="#strategie">Strategie hodnocení (PICO)</a></li>
+        <li><a href="#zdroje">Datové zdroje</a></li>
+        <li><a href="#reserse">Metodika literární rešerše</a></li>
+        <li><a href="#studie">Klinický průzkum / pilotní studie</a></li>
+        <li><a href="#prinos">Analýza poměru přínos/riziko</a></li>
+        <li><a href="#pmcf">Post-Market Clinical Follow-up</a></li>
+        <li><a href="#vystupy">Výstupy CEP</a></li>
+        <li><a href="#schvaleni">Schválení</a></li>
+      </ol>
+    </nav>
+
+    <section id="identifikace">
+      <h2>1. Identifikace prostředku</h2>
+      <table>
+        <thead><tr><th>Pole</th><th>Hodnota</th></tr></thead>
+        <tbody>
+          <tr><td>Název</td><td>Operating Room Management System (ORMS)</td></tr>
+          <tr><td>Model / verze</td><td>___</td></tr>
+          <tr><td>Basic UDI-DI</td><td>___</td></tr>
+          <tr><td>UDI-DI</td><td>___</td></tr>
+          <tr><td>Klasifikace</td><td>Třída ___ (předpoklad IIa, pravidlo 11)</td></tr>
+          <tr><td>Zamýšlený účel</td><td>___</td></tr>
+          <tr><td>Cílové stavy / populace</td><td>___</td></tr>
+          <tr><td>Kontraindikace</td><td>___</td></tr>
+          <tr><td>Klinický přínos (claim)</td><td>___ (např. zkrácení doby přípravy sálu, snížení chyb v koordinaci)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="rozsah">
+      <h2>2. Rozsah klinického hodnocení</h2>
+      <ul>
+        <li>Hodnocení celého životního cyklu produktu (čl. 61 MDR).</li>
+        <li>Vstup do technické dokumentace (Příloha II.6).</li>
+        <li>Aktualizace minimálně <strong>1× ročně</strong> pro IIa (v rámci PSUR).</li>
+      </ul>
+    </section>
+
+    <section id="claims">
+      <h2>3. Klinické tvrzení (Clinical Claims)</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Klinický claim</th><th>Endpoint</th><th>Akceptační kritérium</th></tr></thead>
+        <tbody>
+          <tr><td>C1</td><td>ORMS poskytuje aktuální informaci o stavu sálu s latencí &lt; 3 s</td><td>latence realtime updatu</td><td>95. percentil &lt; 3 s</td></tr>
+          <tr><td>C2</td><td>ORMS snižuje chyby v koordinaci personálu</td><td>počet chybných přiřazení / měsíc</td><td>snížení o ≥ 30 % vs. baseline</td></tr>
+          <tr><td>C3</td><td>Nouzový alarm je doručen příjemcům do 5 s</td><td>čas od triggeru po notifikaci</td><td>medián &lt; 5 s</td></tr>
+          <tr><td>C4</td><td>…</td><td>…</td><td>…</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="sota">
+      <h2>4. State of the Art (SOTA)</h2>
+      <ul>
+        <li>Definice srovnávacích produktů a klinických alternativ:
+          <ul>
+            <li>whiteboard / papírový rozpis,</li>
+            <li>HIS moduly (např. ___),</li>
+            <li>konkurenční SaMD pro OR management (___).</li>
+          </ul>
+        </li>
+        <li>Identifikace klinických norem péče.</li>
+        <li>Identifikace přijatelné rizikově-přínosové úrovně oboru.</li>
+      </ul>
+    </section>
+
+    <section id="strategie">
+      <h2>5. Strategie hodnocení (PICO)</h2>
+      <table>
+        <thead><tr><th>Prvek</th><th>Hodnota</th></tr></thead>
+        <tbody>
+          <tr><td><strong>P</strong>opulace</td><td>personál a pacienti operačních sálů v ČR</td></tr>
+          <tr><td><strong>I</strong>ntervence</td><td>použití ORMS pro koordinaci</td></tr>
+          <tr><td><strong>C</strong>omparator</td><td>stávající praxe (whiteboard / HIS)</td></tr>
+          <tr><td><strong>O</strong>utcome</td><td>doba obratu sálu, počet koordinačních chyb, doba odezvy na alarm, spokojenost personálu</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="zdroje">
+      <h2>6. Datové zdroje</h2>
+
+      <h3>6.1 Vlastní data</h3>
+      <ul>
+        <li>Pre-clinical: simulační testy, usability testy.</li>
+        <li>Bench testing: latence realtime, výkon DB, spolehlivost notifikací.</li>
+        <li>PMS data po uvedení na trh.</li>
+        <li>Případná <strong>klinická studie / pilotní nasazení</strong> (___).</li>
+      </ul>
+
+      <h3>6.2 Literatura</h3>
+      <ul>
+        <li>Databáze: PubMed, Embase, Cochrane, Google Scholar.</li>
+        <li>Klíčová slova: „operating room management software“, „OR coordination digital“, „surgical workflow management“, „OR turnover time digital tool“.</li>
+        <li>Časový rozsah: posledních 10 let, plus klíčové starší práce.</li>
+      </ul>
+
+      <h3>6.3 Ekvivalence</h3>
+      <ul>
+        <li><strong>Pokud výrobce uplatňuje ekvivalenci</strong> dle MDCG 2020-5: doložit klinickou, technickou a biologickou ekvivalenci. (Pro čistě SW prostředek odpadá biologická.)</li>
+        <li>ORMS je nový/proprietární SaMD → ekvivalence pravděpodobně <strong>nelze uplatnit</strong>, klinická data je nutné generovat vlastní.</li>
+      </ul>
+    </section>
+
+    <section id="reserse">
+      <h2>7. Metodika literární rešerše</h2>
+      <ul>
+        <li>Strukturovaný protokol (PRISMA-light).</li>
+        <li>Search string: ___</li>
+        <li>Kritéria zahrnutí / vyloučení: ___</li>
+        <li>Hodnocení kvality (např. Oxford CEBM levels).</li>
+        <li>Příloha: tabulka článků s extrakcí dat.</li>
+      </ul>
+    </section>
+
+    <section id="studie">
+      <h2>8. Klinický průzkum / pilotní studie</h2>
+      <p>Pokud literatura a PMS nestačí na doložení claimů (typicky ano pro nový SaMD):</p>
+      <table>
+        <thead><tr><th>Parametr</th><th>Hodnota</th></tr></thead>
+        <tbody>
+          <tr><td>Typ studie</td><td>observační, prospektivní, multicentrická</td></tr>
+          <tr><td>Pracoviště</td><td>___ (např. 2 fakultní nemocnice v ČR)</td></tr>
+          <tr><td>Doba sběru</td><td>___ měsíců</td></tr>
+          <tr><td>Velikost vzorku</td><td>___ (statisticky odůvodnit)</td></tr>
+          <tr><td>Etická komise</td><td>nutný souhlas dle zák. 375/2022 Sb.</td></tr>
+          <tr><td>Souhlas účastníků</td><td>nutný (i pro personál sledovaný v rámci studie)</td></tr>
+          <tr><td>Endpoints</td><td>C1–C4 výše</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="prinos">
+      <h2>9. Analýza poměru přínos/riziko</h2>
+      <ul>
+        <li>Vstupy z RMR (<a href="risk-management-plan.html">RMP-001</a>).</li>
+        <li>Pro každý hlavní claim porovnat klinický přínos vs. zbytková rizika.</li>
+        <li>Závěr: ___</li>
+      </ul>
+    </section>
+
+    <section id="pmcf">
+      <h2>10. Post-Market Clinical Follow-up (PMCF)</h2>
+      <ul>
+        <li>PMCF Plan jako samostatný dokument PMCF-001.</li>
+        <li>Aktivity: dotazníky uživatelů, sledování KPI, registrace incidentů.</li>
+        <li>Aktualizace CEP / CER po každém PMCF cyklu.</li>
+      </ul>
+    </section>
+
+    <section id="vystupy">
+      <h2>11. Výstupy CEP</h2>
+      <ul>
+        <li>Clinical Evaluation Report (CER-001) – samostatný dokument.</li>
+        <li>Vstup do PMS Plan a PSUR.</li>
+        <li>Vstup do IFU (claims, kontraindikace, varování).</li>
+      </ul>
+    </section>
+
+    <section id="schvaleni">
+      <h2>12. Schválení</h2>
+      <table>
+        <thead><tr><th>Role</th><th>Jméno</th><th>Podpis</th><th>Datum</th></tr></thead>
+        <tbody>
+          <tr><td>Klinický expert</td><td></td><td></td><td></td></tr>
+          <tr><td>Regulatory Affairs / PRRC</td><td></td><td></td><td></td></tr>
+          <tr><td>Top management</td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="doc-footer">
+      <span><a href="index.html">← Zpět na přehled dokumentace</a></span>
+      <span>CEP-001 · v0.1 (šablona)</span>
+    </footer>
+  </main>
+</body>
+</html>

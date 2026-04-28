@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PMS-001 · Post-Market Surveillance Plan ORMS</title>
+  <meta name="description" content="Šablona Post-Market Surveillance Plan pro ORMS dle MDR čl. 83–86 a Přílohy III." />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="layout">
+    <header class="doc-header">
+      <p class="doc-eyebrow">PMS-001 · Šablona</p>
+      <h1>Post-Market Surveillance Plan</h1>
+      <p class="doc-subtitle">Operating Room Management System (ORMS) — soulad s MDR (EU) 2017/745 čl. 83–86 + Příloha III a zákonem č. 375/2022 Sb.</p>
+      <dl class="doc-meta">
+        <div><dt>Verze</dt><dd>0.1 (šablona)</dd></div>
+        <div><dt>Vlastník</dt><dd>___ (PRRC / Quality Manager)</dd></div>
+      </dl>
+    </header>
+
+    <blockquote>
+      Pro třídu IIa platí povinnost vést PMS systém a zpracovávat <strong>PSUR (Periodic Safety Update Report) minimálně 1× ročně</strong> a aktualizovat technickou dokumentaci.
+    </blockquote>
+
+    <nav class="doc-nav" aria-label="Obsah dokumentu">
+      <h2>Obsah</h2>
+      <ol>
+        <li><a href="#ucel">Účel</a></li>
+        <li><a href="#rozsah">Rozsah</a></li>
+        <li><a href="#role">Role</a></li>
+        <li><a href="#zdroje">Zdroje informací</a></li>
+        <li><a href="#kpi">Klíčové ukazatele (KPI)</a></li>
+        <li><a href="#vigilance">Vigilance — povinné hlášení</a></li>
+        <li><a href="#capa">CAPA</a></li>
+        <li><a href="#reporty">Reporty</a></li>
+        <li><a href="#gdpr">GDPR a sběr telemetrie</a></li>
+        <li><a href="#schvaleni">Schválení a revize</a></li>
+        <li><a href="#prilohy">Přílohy</a></li>
+      </ol>
+    </nav>
+
+    <section id="ucel">
+      <h2>1. Účel</h2>
+      <p>PMS Plan popisuje, jak výrobce systematicky a aktivně sbírá, analyzuje a využívá informace o ORMS po jeho uvedení na trh, aby:</p>
+      <ul>
+        <li>monitoroval bezpečnost a výkonnost,</li>
+        <li>udržoval aktuálnost analýzy přínos/riziko,</li>
+        <li>spouštěl preventivní/nápravná opatření (CAPA),</li>
+        <li>splnil povinnosti vigilance vůči SÚKL a EU.</li>
+      </ul>
+    </section>
+
+    <section id="rozsah">
+      <h2>2. Rozsah</h2>
+      <ul>
+        <li>Všechny verze ORMS uvedené na trh v EU/EHP, primárně ČR.</li>
+        <li>Doba: po celou dobu životního cyklu, minimálně dokud je v provozu poslední instance.</li>
+      </ul>
+    </section>
+
+    <section id="role">
+      <h2>3. Role</h2>
+      <table>
+        <thead><tr><th>Role</th><th>Odpovědnost</th></tr></thead>
+        <tbody>
+          <tr><td>PRRC</td><td>Soulad s MDR, schvalování PSUR, hlášení incidentů</td></tr>
+          <tr><td>Quality Manager</td><td>Provoz PMS procesu, CAPA</td></tr>
+          <tr><td>Vývojový tým</td><td>Telemetrie, root-cause analysis</td></tr>
+          <tr><td>Customer Success / Support</td><td>Sběr stížností, kategorizace</td></tr>
+          <tr><td>Klinický expert</td><td>Hodnocení klinického dopadu</td></tr>
+          <tr><td>DPO</td><td>Soulad sběru dat s GDPR</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="zdroje">
+      <h2>4. Zdroje informací</h2>
+
+      <h3>4.1 Proaktivní</h3>
+      <ul>
+        <li><strong>Telemetrie a logy</strong> ORMS (anonymizované):
+          <ul>
+            <li>latence realtime kanálu,</li>
+            <li>úspěšnost notifikací,</li>
+            <li>chybové stavy (5xx, abort, retry),</li>
+            <li>audit log (přihlášení, změny stavů sálů).</li>
+          </ul>
+        </li>
+        <li><strong>Uživatelské průzkumy</strong> (kvartálně, NPS + cílené otázky o bezpečnosti).</li>
+        <li><strong>PMCF</strong> aktivity (viz CEP).</li>
+        <li>Sledování literatury a registrů (FDA MAUDE, BfArM, EUDAMED, SÚKL).</li>
+        <li>Sledování dodavatelů (Supabase, Vercel) – výpadky, security advisory.</li>
+      </ul>
+
+      <h3>4.2 Reaktivní</h3>
+      <ul>
+        <li><strong>Stížnosti</strong> uživatelů (helpdesk, e-mail, telefon).</li>
+        <li>Hlášení incidentů od poskytovatelů zdravotních služeb.</li>
+        <li>Bug reporty v issue trackeru.</li>
+        <li>Bezpečnostní hlášení (CVE, dependency alert).</li>
+      </ul>
+    </section>
+
+    <section id="kpi">
+      <h2>5. Klíčové ukazatele (KPI)</h2>
+      <table>
+        <thead><tr><th>KPI</th><th>Práh / cíl</th><th>Frekvence</th></tr></thead>
+        <tbody>
+          <tr><td>Dostupnost služby</td><td>≥ 99.5 % měsíčně</td><td>měsíčně</td></tr>
+          <tr><td>Medián latence realtime updatu</td><td>&lt; 1.5 s</td><td>týdně</td></tr>
+          <tr><td>95p latence realtime updatu</td><td>&lt; 3 s</td><td>týdně</td></tr>
+          <tr><td>Doručení nouzového alarmu &lt; 5 s</td><td>≥ 99 %</td><td>týdně</td></tr>
+          <tr><td>Počet závažných incidentů</td><td>0</td><td>průběžně</td></tr>
+          <tr><td>Počet stížností / 1000 hodin provozu</td><td>≤ ___</td><td>měsíčně</td></tr>
+          <tr><td>Otevřená kritická zranitelnost (CVSS ≥ 9)</td><td>0 trvale</td><td>denně</td></tr>
+        </tbody>
+      </table>
+      <p>Trendy se hodnotí, prahy se přezkoumávají v PSUR.</p>
+    </section>
+
+    <section id="vigilance">
+      <h2>6. Vigilance – povinné hlášení</h2>
+      <p>Termíny dle MDR čl. 87:</p>
+      <table>
+        <thead><tr><th>Událost</th><th>Lhůta hlášení SÚKL</th></tr></thead>
+        <tbody>
+          <tr><td>Závažné nebezpečí pro veřejné zdraví</td><td><span class="pill pill-critical">bez zbytečného odkladu, nejpozději 2 dny</span></td></tr>
+          <tr><td>Smrt nebo nepředvídané závažné poškození zdraví</td><td><span class="pill pill-critical">nejpozději 10 dní</span></td></tr>
+          <tr><td>Ostatní závažné incidenty</td><td><span class="pill pill-warn">nejpozději 15 dní</span></td></tr>
+          <tr><td>Trend reporting (statistický nárůst neincidentů)</td><td>dle vyhodnocení, definovat prahy</td></tr>
+        </tbody>
+      </table>
+      <p>Procesní kroky:</p>
+      <ol>
+        <li>Příjem hlášení.</li>
+        <li>Klasifikace (závažný / nezávažný / FSCA).</li>
+        <li>Záznam v incident logu.</li>
+        <li>Notifikace SÚKL (a dalších kompetentních autorit přes EUDAMED).</li>
+        <li>Vyšetřování root-cause + CAPA.</li>
+        <li><strong>Field Safety Notice (FSN)</strong> a <strong>Field Safety Corrective Action (FSCA)</strong> – pokud relevantní.</li>
+        <li>Uzavření a poučení.</li>
+      </ol>
+    </section>
+
+    <section id="capa">
+      <h2>7. CAPA (Corrective and Preventive Actions)</h2>
+      <ul>
+        <li>Trigger: incident, překročení KPI prahu, audit, stížnost, externí signál.</li>
+        <li>Workflow: Open → Investigate → Plan → Execute → Verify Effectiveness → Close.</li>
+        <li>Vlastník: Quality Manager.</li>
+        <li>Vstup do dalšího PSUR.</li>
+      </ul>
+    </section>
+
+    <section id="reporty">
+      <h2>8. Reporty</h2>
+      <table>
+        <thead><tr><th>Report</th><th>Pro koho</th><th>Frekvence</th><th>Třída IIa</th></tr></thead>
+        <tbody>
+          <tr><td>Interní PMS report</td><td>Top management</td><td>měsíčně</td><td>povinné</td></tr>
+          <tr><td><strong>PSUR</strong> (Periodic Safety Update Report)</td><td>kompetentní autority přes EUDAMED</td><td><strong>min. 1× ročně</strong></td><td>povinné</td></tr>
+          <tr><td>FSN</td><td>uživatelé</td><td>ad hoc</td><td>dle potřeby</td></tr>
+          <tr><td>Aktualizace CER</td><td>tech. dokumentace</td><td>min. 1× ročně</td><td>povinné</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="gdpr">
+      <h2>9. Ochrana osobních údajů a sběr telemetrie</h2>
+      <ul>
+        <li>Telemetrie a logy musí být anonymizovány nebo pseudonymizovány.</li>
+        <li>DPIA dle GDPR čl. 35.</li>
+        <li>Smluvní zpracování s nemocnicí (DPA).</li>
+        <li>Lokalizace dat: ___ (preferovaně EU).</li>
+        <li>Doba uchování: ___ (typicky 10–15 let pro záznamy MDR + GDPR retence).</li>
+      </ul>
+    </section>
+
+    <section id="schvaleni">
+      <h2>10. Schválení a revize</h2>
+      <ul>
+        <li>Plán se reviduje <strong>min. 1× ročně</strong> a při každém major release.</li>
+        <li>Schvaluje PRRC a top management.</li>
+      </ul>
+    </section>
+
+    <section id="prilohy">
+      <h2>11. Přílohy</h2>
+      <ul>
+        <li><a href="risk-management-plan.html">RMP-001 · Risk Management Plan</a></li>
+        <li><a href="clinical-evaluation-plan.html">CEP-001 · Clinical Evaluation Plan</a></li>
+        <li><a href="cybersecurity-sbom.html">SEC-001 · Cybersecurity Plan &amp; SBOM</a></li>
+        <li>(vytvořit) <code>docs/pms/INCIDENT_LOG.xlsx</code></li>
+        <li>(vytvořit) <code>docs/pms/CAPA_LOG.xlsx</code></li>
+      </ul>
+    </section>
+
+    <footer class="doc-footer">
+      <span><a href="index.html">← Zpět na přehled dokumentace</a></span>
+      <span>PMS-001 · v0.1 (šablona)</span>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REG-GAP-001 · Regulatorní gap-analýza ORMS</title>
+  <meta name="description" content="Regulatorní gap-analýza ORMS vůči MDR (EU) 2017/745 a zákonu č. 375/2022 Sb." />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="layout">
+    <header class="doc-header">
+      <p class="doc-eyebrow">REG-GAP-001 · Pracovní (draft)</p>
+      <h1>Regulatorní gap-analýza</h1>
+      <p class="doc-subtitle">Operating Room Management System (ORMS) — hodnocení vůči MDR (EU) 2017/745 a zákonu č. 375/2022 Sb.</p>
+      <dl class="doc-meta">
+        <div><dt>Verze</dt><dd>1.0</dd></div>
+        <div><dt>Datum</dt><dd>2026-04-28</dd></div>
+        <div><dt>Větev</dt><dd>medical-device-compliance</dd></div>
+        <div><dt>Zpracoval</dt><dd>___ (PRRC)</dd></div>
+        <div><dt>Schválil</dt><dd>___</dd></div>
+      </dl>
+    </header>
+
+    <blockquote>
+      Tento dokument hodnotí současný stav aplikace ORMS vůči požadavkům na zdravotnický prostředek (ZP) v České republice a Evropské unii. Slouží jako vstup pro rozhodnutí „go / no-go“ a pro plán implementace.
+    </blockquote>
+
+    <nav class="doc-nav" aria-label="Obsah dokumentu">
+      <h2>Obsah</h2>
+      <ol>
+        <li><a href="#shrnuti">Shrnutí pro management</a></li>
+        <li><a href="#rozsah">Rozsah a referenční předpisy</a></li>
+        <li><a href="#kvalifikace">Kvalifikace ORMS jako ZP</a></li>
+        <li><a href="#gap">Gap-analýza vůči MDR</a></li>
+        <li><a href="#tech">Technické nedostatky v kódu</a></li>
+        <li><a href="#roadmap">Plán nápravných opatření</a></li>
+        <li><a href="#zaver">Závěr</a></li>
+        <li><a href="#prilohy">Přílohy</a></li>
+      </ol>
+    </nav>
+
+    <section id="shrnuti">
+      <h2>1. Shrnutí pro management</h2>
+      <table>
+        <thead><tr><th>Otázka</th><th>Odpověď</th></tr></thead>
+        <tbody>
+          <tr><td>Splňuje ORMS dnes požadavky na ZP v ČR?</td><td><span class="pill pill-critical">Ne</span></td></tr>
+          <tr><td>Je rozhodnuto, že ORMS je ZP?</td><td><span class="pill pill-warn">Ne — kvalifikace neprovedena</span></td></tr>
+          <tr><td>Existuje formální QMS dle ISO 13485?</td><td><span class="pill pill-critical">Ne</span></td></tr>
+          <tr><td>Existuje CE značení?</td><td><span class="pill pill-critical">Ne</span></td></tr>
+          <tr><td>Registrace u SÚKL / v EUDAMED?</td><td><span class="pill pill-critical">Ne</span></td></tr>
+          <tr><td>Notifikovaná osoba?</td><td><span class="pill pill-critical">Ne</span></td></tr>
+          <tr><td>Odhadovaná práce do CE (třída IIa)</td><td>6–12 měsíců, ~45–90 tis. EUR</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-warning">
+        <strong>Doporučení.</strong> Před zahájením certifikační cesty provést <strong>kvalifikační rozhodnutí</strong> (MDCG 2019-11) s regulatorním konzultantem a získat stanovisko SÚKL podle § 5 zákona č. 375/2022 Sb. Pokud výsledek bude „není ZP“, projekt přestat marketingově prezentovat jako medicínský produkt a vystačit s GDPR, NIS2 a smlouvou s nemocnicí.
+      </div>
+    </section>
+
+    <section id="rozsah">
+      <h2>2. Rozsah, předmět a referenční předpisy</h2>
+
+      <h3>2.1 Předmět posouzení</h3>
+      <ul>
+        <li><strong>Produkt:</strong> Operating Room Management System (ORMS)</li>
+        <li><strong>Verze kódu:</strong> větev <code>medical-device-compliance</code>, package <code>0.0.1</code></li>
+        <li><strong>Architektura:</strong> Next.js 15 (App Router), Supabase (Postgres + RLS), realtime kanály, autentizace přes vlastní <code>AuthContext</code></li>
+        <li><strong>Zamýšlený účel:</strong> monitoring stavu operačních sálů, koordinace 8 fází operačního workflow, plánování personálu, statistiky, nouzový alarm.</li>
+      </ul>
+
+      <h3>2.2 Referenční předpisy</h3>
+      <table>
+        <thead><tr><th>Oblast</th><th>Předpis</th></tr></thead>
+        <tbody>
+          <tr><td>EU MDR</td><td>Nařízení (EU) 2017/745</td></tr>
+          <tr><td>ČR – dozor a registrace</td><td>Zákon č. 375/2022 Sb.</td></tr>
+          <tr><td>ČR – prováděcí</td><td>Vyhláška č. 343/2021 Sb.</td></tr>
+          <tr><td>Kvalifikace SW</td><td>MDCG 2019-11</td></tr>
+          <tr><td>Klasifikace SW</td><td>MDR Příloha VIII, pravidlo 11</td></tr>
+          <tr><td>QMS</td><td>ISO 13485:2016</td></tr>
+          <tr><td>Řízení rizik</td><td>ISO 14971:2019, ISO/TR 24971</td></tr>
+          <tr><td>Životní cyklus SW</td><td>IEC 62304:2006/A1:2015</td></tr>
+          <tr><td>Použitelnost</td><td>IEC 62366-1:2015</td></tr>
+          <tr><td>Kybernetická bezpečnost</td><td>IEC 81001-5-1, MDCG 2019-16</td></tr>
+          <tr><td>Klinické hodnocení</td><td>MDR čl. 61, MDCG 2020-1, MDCG 2020-6</td></tr>
+          <tr><td>Označení</td><td>MDR Příloha I (kap. III), MDCG 2019-11</td></tr>
+          <tr><td>Ochrana osobních údajů</td><td>GDPR (EU 2016/679), zákon č. 110/2019 Sb.</td></tr>
+          <tr><td>Kybernetická bezpečnost provozu</td><td>NIS2 / zákon o kybernetické bezpečnosti (ČR)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="kvalifikace">
+      <h2>3. Kvalifikace ORMS jako zdravotnického prostředku</h2>
+      <p>Postupováno dle rozhodovacího stromu MDCG 2019-11.</p>
+      <table>
+        <thead><tr><th>Krok</th><th>Otázka</th><th>Závěr ORMS</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Je software MDSW (řídí, ovlivňuje, zpracovává klinická data za účelem diagnózy / léčby / monitoringu nemoci)?</td><td><strong>Hraniční.</strong> ORMS data jen prezentuje a koordinuje, neprovádí výpočty na klinických datech.</td></tr>
+          <tr><td>2</td><td>Slouží pouze k uchování / přenosu / jednoduché vizualizaci?</td><td>Z velké části <strong>ano</strong>.</td></tr>
+          <tr><td>3</td><td>Slouží pouze k administrativě, plánování, fakturaci, koordinaci zdrojů?</td><td><strong>Ano</strong> – hlavní funkce.</td></tr>
+          <tr><td>4</td><td>Je-li MDSW, do které třídy patří dle pravidla 11?</td><td>Pokud bude klasifikováno jako MDSW, lze argumentovat třídou IIa.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <p><strong>Pracovní závěr</strong></p>
+        <ul>
+          <li><strong>Primární scénář (doporučený):</strong> ORMS = administrativní/koordinační software, <strong>NENÍ ZP</strong>. Postačí GDPR, NIS2, ISO 27001 / dobrá praxe, smluvní vztah s nemocnicí.</li>
+          <li><strong>Záložní scénář:</strong> Pokud výrobce trvá na klinickém určení (např. funkce „klinické rozhodování o pořadí pacientů“), pak <strong>ZP třídy IIa</strong> s povinností notifikované osoby.</li>
+        </ul>
+        <p>Toto rozhodnutí MUSÍ být potvrzeno písemně před další prací. Doporučujeme získat <strong>písemné stanovisko SÚKL</strong> (§ 5 zák. 375/2022 Sb.).</p>
+      </div>
+    </section>
+
+    <section id="gap">
+      <h2>4. Gap-analýza vůči požadavkům MDR (scénář ZP třídy IIa)</h2>
+      <p>Stupnice: <strong>0</strong> = chybí · <strong>1</strong> = částečně / ad-hoc · <strong>2</strong> = formálně připraveno · <strong>3</strong> = auditovatelné a schválené.</p>
+
+      <h3>4.1 Systém managementu kvality – ISO 13485</h3>
+      <table>
+        <thead><tr><th>Požadavek</th><th>Stav</th><th>Důkaz / poznámka</th></tr></thead>
+        <tbody>
+          <tr><td>QM Manual</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Řízení dokumentů a záznamů</td><td><span class="pill pill-critical">0</span></td><td>Pouze <code>docs/</code>, bez verzování a schvalování</td></tr>
+          <tr><td>Řízení návrhu a vývoje</td><td><span class="pill pill-critical">0</span></td><td>Žádný design history file (DHF)</td></tr>
+          <tr><td>Řízení dodavatelů</td><td><span class="pill pill-critical">0</span></td><td>Supabase, Vercel = SaaS dodavatelé bez QAA</td></tr>
+          <tr><td>CAPA</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Interní audity</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Management review</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Školení personálu</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Gap:</strong> kompletní – zavést QMS a certifikovat notifikovanou osobou.</p>
+
+      <h3>4.2 Technická dokumentace – Příloha II a III MDR</h3>
+      <table>
+        <thead><tr><th>Sekce TF</th><th>Stav</th><th>Poznámka</th></tr></thead>
+        <tbody>
+          <tr><td>Popis a specifikace produktu</td><td><span class="pill pill-warn">1</span></td><td>Existuje neformálně v <code>MDR_COMPLIANCE.md</code></td></tr>
+          <tr><td>Návod k použití (IFU)</td><td><span class="pill pill-critical">0</span></td><td>Šablona dodána (IFU-001)</td></tr>
+          <tr><td>Označení (labelling)</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Informace pro výrobce / UDI</td><td><span class="pill pill-critical">0</span></td><td>UDI-DI nepřiděleno</td></tr>
+          <tr><td>Verifikace a validace</td><td><span class="pill pill-critical">0</span></td><td>Neexistují testy (žádný test runner v <code>package.json</code>)</td></tr>
+          <tr><td>Předklinické a klinické hodnocení</td><td><span class="pill pill-critical">0</span></td><td>Šablona CEP dodána</td></tr>
+          <tr><td>Řízení rizik</td><td><span class="pill pill-warn">1</span></td><td>Mini-FMEA v <code>MDR_COMPLIANCE.md</code>; chybí RMP/RMR</td></tr>
+          <tr><td>PMS systém</td><td><span class="pill pill-critical">0</span></td><td>Šablona dodána</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.3 Životní cyklus softwaru – IEC 62304 (předpoklad třída B)</h3>
+      <table>
+        <thead><tr><th>Proces</th><th>Stav</th><th>Poznámka</th></tr></thead>
+        <tbody>
+          <tr><td>Plán vývoje SW</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Analýza požadavků</td><td><span class="pill pill-warn">1</span></td><td>Implicitně v kódu a README</td></tr>
+          <tr><td>Architektonický návrh</td><td><span class="pill pill-warn">1</span></td><td>Implicitně z Next.js struktury</td></tr>
+          <tr><td>Detailní návrh</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Implementace + code review</td><td><span class="pill pill-warn">1</span></td><td>Git, ale bez formálního CR procesu</td></tr>
+          <tr><td>Verifikace (unit / integ / system)</td><td><span class="pill pill-critical">0</span></td><td><strong>Žádné testy</strong> v projektu</td></tr>
+          <tr><td>Validace</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>Konfigurační management</td><td><span class="pill pill-warn">1</span></td><td>Git ano, formální CCB ne</td></tr>
+          <tr><td>Řízení problémů (bug tracking)</td><td><span class="pill pill-warn">1</span></td><td>Neformální</td></tr>
+          <tr><td>Údržba SW</td><td><span class="pill pill-critical">0</span></td><td>Bez SOP</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.4 Řízení rizik – ISO 14971</h3>
+      <table>
+        <thead><tr><th>Položka</th><th>Stav</th></tr></thead>
+        <tbody>
+          <tr><td>Risk Management Plan</td><td><span class="pill pill-critical">0 — šablona dodána</span></td></tr>
+          <tr><td>Identifikace nebezpečí</td><td><span class="pill pill-warn">1 — mini tabulka</span></td></tr>
+          <tr><td>Odhad a hodnocení rizik</td><td><span class="pill pill-warn">1</span></td></tr>
+          <tr><td>Opatření a verifikace opatření</td><td><span class="pill pill-warn">1 — popsáno textem, neoveřeno</span></td></tr>
+          <tr><td>Hodnocení zbytkových rizik</td><td><span class="pill pill-warn">1</span></td></tr>
+          <tr><td>Risk Management Report</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Production / post-production loop</td><td><span class="pill pill-critical">0</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.5 Použitelnost – IEC 62366-1</h3>
+      <table>
+        <thead><tr><th>Položka</th><th>Stav</th></tr></thead>
+        <tbody>
+          <tr><td>Specifikace use case</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Identifikace nebezpečných situací z UI</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Formativní testy s reálnými uživateli</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Sumativní validační test</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Usability Engineering File</td><td><span class="pill pill-critical">0</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.6 Kybernetická bezpečnost – IEC 81001-5-1, MDCG 2019-16</h3>
+      <table>
+        <thead><tr><th>Položka</th><th>Stav</th><th>Důkaz</th></tr></thead>
+        <tbody>
+          <tr><td>Threat model</td><td><span class="pill pill-critical">0</span></td><td>—</td></tr>
+          <tr><td>SBOM</td><td><span class="pill pill-critical">0 — šablona dodána</span></td><td>—</td></tr>
+          <tr><td>Řízení zranitelností a patchů</td><td><span class="pill pill-critical">0</span></td><td>Bez procesu</td></tr>
+          <tr><td>Autentizace</td><td><span class="pill pill-critical">0/1</span></td><td>Demo přihlášení <code>admin/admin123</code>, <code>user/user123</code>, session jen v <code>localStorage</code></td></tr>
+          <tr><td>Autorizace a RLS</td><td><span class="pill pill-critical">0</span></td><td>RLS politiky na klíčových tabulkách jsou <code>USING (true)</code> – fakticky vypnuté</td></tr>
+          <tr><td>Šifrování v přenosu</td><td><span class="pill pill-ok">2</span></td><td>TLS přes Vercel/Supabase</td></tr>
+          <tr><td>Šifrování v klidu</td><td><span class="pill pill-warn">1</span></td><td>Defaultní Supabase</td></tr>
+          <tr><td>Audit log</td><td><span class="pill pill-critical">0</span></td><td>Není</td></tr>
+          <tr><td>MFA</td><td><span class="pill pill-critical">0</span></td><td>Není</td></tr>
+          <tr><td>Penetrační test</td><td><span class="pill pill-critical">0</span></td><td>Není</td></tr>
+          <tr><td>Plán reakce na incident</td><td><span class="pill pill-critical">0</span></td><td>Není</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.7 Klinické hodnocení – MDR čl. 61</h3>
+      <table>
+        <thead><tr><th>Položka</th><th>Stav</th></tr></thead>
+        <tbody>
+          <tr><td>Clinical Evaluation Plan</td><td><span class="pill pill-critical">0 — šablona dodána</span></td></tr>
+          <tr><td>Literární rešerše</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Analýza ekvivalence</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Clinical Evaluation Report</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>PMCF Plan</td><td><span class="pill pill-critical">0</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.8 Označení, UDI, EUDAMED</h3>
+      <table>
+        <thead><tr><th>Položka</th><th>Stav</th></tr></thead>
+        <tbody>
+          <tr><td>Basic UDI-DI</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>UDI-DI</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Issuing entity (GS1 / HIBCC / ICCBBA)</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Registrace výrobce v EUDAMED</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Registrace prostředku v EUDAMED</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>CE prohlášení o shodě</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Certifikát notifikované osoby</td><td><span class="pill pill-critical">0</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.9 Post-Market Surveillance a Vigilance</h3>
+      <table>
+        <thead><tr><th>Položka</th><th>Stav</th></tr></thead>
+        <tbody>
+          <tr><td>PMS Plan</td><td><span class="pill pill-critical">0 — šablona dodána</span></td></tr>
+          <tr><td>PMS Report / PSUR (IIa: ročně)</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Vigilance procedura</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Trend reporting</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Hlášení závažných incidentů SÚKL (lhůty 2 / 10 / 15 dní)</td><td><span class="pill pill-critical">0</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.10 Specifické požadavky ČR</h3>
+      <table>
+        <thead><tr><th>Položka</th><th>Stav</th></tr></thead>
+        <tbody>
+          <tr><td>PRRC dle čl. 15 MDR</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Smluvní zástupce v EU (pokud výrobce mimo EU)</td><td><span class="pill pill-info">n/a</span></td></tr>
+          <tr><td>Registrace osoby zacházející se ZP v RZPRO (SÚKL)</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Notifikace prostředku v ČR</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Návod a UI v češtině</td><td><span class="pill pill-warn">1 — UI ano, IFU chybí</span></td></tr>
+          <tr><td>GDPR / DPIA</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>Smlouva o zpracování osobních údajů s nemocnicí</td><td><span class="pill pill-critical">0</span></td></tr>
+          <tr><td>NIS2 zařazení a opatření</td><td><span class="pill pill-critical">0</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="tech">
+      <h2>5. Konkrétní technické nedostatky v kódu</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Soubor / oblast</th><th>Nález</th><th>Závažnost</th></tr></thead>
+        <tbody>
+          <tr><td>T-01</td><td><code>components/login-page.tsx</code> a podobné</td><td>Demo hesla <code>admin123</code> / <code>user123</code>, session v <code>localStorage</code></td><td><span class="pill pill-critical">Kritická</span></td></tr>
+          <tr><td>T-02</td><td>Supabase RLS politiky</td><td><code>USING (true)</code> na čtení i zápis</td><td><span class="pill pill-critical">Kritická</span></td></tr>
+          <tr><td>T-03</td><td><code>package.json</code></td><td>Chybí test runner (vitest / jest / playwright)</td><td><span class="pill pill-warn">Vysoká</span></td></tr>
+          <tr><td>T-04</td><td>Datový model</td><td>Chybí audit log (kdo, kdy, co)</td><td><span class="pill pill-warn">Vysoká</span></td></tr>
+          <tr><td>T-05</td><td>Verze</td><td><code>0.0.1</code>, bez release tagů</td><td><span class="pill pill-info">Střední</span></td></tr>
+          <tr><td>T-06</td><td>Závislosti</td><td>Chybí SBOM, žádné <code>npm audit</code> v CI</td><td><span class="pill pill-info">Střední</span></td></tr>
+          <tr><td>T-07</td><td>Realtime sync</td><td>Chybí dokumentace a testy chybových stavů (ztráta WS)</td><td><span class="pill pill-info">Střední</span></td></tr>
+          <tr><td>T-08</td><td>Nouzový alarm</td><td>Spoléhá na unlock audio uživatelem; chybí fallback (vibrace, push)</td><td><span class="pill pill-info">Střední</span></td></tr>
+          <tr><td>T-09</td><td>Logování</td><td>Console-only, bez perzistence a bez korelace requestů</td><td><span class="pill pill-info">Střední</span></td></tr>
+          <tr><td>T-10</td><td>Backup / restore</td><td>Bez plánu obnovy a RTO/RPO</td><td><span class="pill pill-info">Střední</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="roadmap">
+      <h2>6. Plán nápravných opatření</h2>
+      <p>Fáze odpovídají typické cestě ke CE pro SaMD třídy IIa.</p>
+
+      <h3>Fáze 1 – Rozhodnutí (1 měsíc)</h3>
+      <ol>
+        <li>Kvalifikace MDCG 2019-11 + stanovisko SÚKL.</li>
+        <li>Pokud ZP → výběr notifikované osoby (např. EZÚ, ITC Zlín).</li>
+        <li>Jmenování PRRC.</li>
+      </ol>
+
+      <h3>Fáze 2 – Základ QMS (2 měsíce)</h3>
+      <ol>
+        <li>Implementace ISO 13485 (procedury, formuláře, školení).</li>
+        <li>Plán vývoje SW dle IEC 62304.</li>
+        <li>Risk Management Plan + první RMR.</li>
+      </ol>
+
+      <h3>Fáze 3 – Technická a klinická dokumentace (3 měsíce)</h3>
+      <ol>
+        <li>Doplnění technické dokumentace dle Přílohy II a III MDR.</li>
+        <li>Clinical Evaluation Plan a Report.</li>
+        <li>Usability Engineering File.</li>
+      </ol>
+
+      <h3>Fáze 4 – Kvalita kódu a kybernetika (paralelně, 3 měsíce)</h3>
+      <ol>
+        <li>Skutečná autentizace (Supabase Auth nebo OIDC), MFA, secure session cookies.</li>
+        <li>Reálné RLS politiky vázané na <code>auth.uid()</code> a roli.</li>
+        <li>Audit log tabulka + triggery / app logika.</li>
+        <li>Test framework (Vitest + Playwright), pokrytí klíčových rizikových toků.</li>
+        <li>SBOM (CycloneDX), dependency scanning v CI, threat model, penetrační test.</li>
+      </ol>
+
+      <h3>Fáze 5 – Audit a CE (2 měsíce)</h3>
+      <ol>
+        <li>Audit QMS notifikovanou osobou.</li>
+        <li>Audit technické dokumentace.</li>
+        <li>Vystavení CE prohlášení o shodě.</li>
+        <li>Registrace v EUDAMED a u SÚKL (RZPRO + notifikace).</li>
+      </ol>
+
+      <h3>Fáze 6 – Post-market (kontinuálně)</h3>
+      <ol>
+        <li>PMS Plan v provozu.</li>
+        <li>PSUR ročně.</li>
+        <li>Vigilance reporty.</li>
+        <li>PMCF (post-market clinical follow-up).</li>
+      </ol>
+    </section>
+
+    <section id="zaver">
+      <h2>7. Závěr</h2>
+      <p>ORMS je zajímavý a funkční koordinační nástroj, ale <strong>dnes nesplňuje ani technické, ani procesní požadavky</strong> na zdravotnický prostředek dle MDR a zákona č. 375/2022 Sb. Doporučujeme nejdřív <strong>rozhodnout otázku kvalifikace</strong> (zda vůbec má jít o ZP); teprve poté zahajovat certifikační projekt podle kapitoly 6.</p>
+    </section>
+
+    <section id="prilohy">
+      <h2>8. Přílohy / související dokumenty</h2>
+      <ul>
+        <li><a href="../MDR_COMPLIANCE.md">docs/MDR_COMPLIANCE.md</a> – původní interní compliance přehled</li>
+        <li><a href="risk-management-plan.html">RMP-001 · Risk Management Plan</a></li>
+        <li><a href="clinical-evaluation-plan.html">CEP-001 · Clinical Evaluation Plan</a></li>
+        <li><a href="post-market-surveillance-plan.html">PMS-001 · Post-Market Surveillance Plan</a></li>
+        <li><a href="instructions-for-use.html">IFU-001 · Návod k použití</a></li>
+        <li><a href="cybersecurity-sbom.html">SEC-001 · Cybersecurity Plan &amp; SBOM</a></li>
+      </ul>
+    </section>
+
+    <footer class="doc-footer">
+      <span><a href="index.html">← Zpět na přehled dokumentace</a></span>
+      <span>REG-GAP-001 · v1.0 · 2026-04-28</span>
+    </footer>
+  </main>
+</body>
+</html>

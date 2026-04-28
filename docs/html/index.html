@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ORMS – Regulatorní dokumentace</title>
+  <meta name="description" content="Regulatorní dokumentace systému Operating Room Management System (ORMS) – gap-analýza a šablony dokumentů dle MDR 2017/745." />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="layout">
+    <header class="doc-header">
+      <p class="doc-eyebrow">Operating Room Management System</p>
+      <h1>Regulatorní dokumentace</h1>
+      <p class="doc-subtitle">Gap-analýza a pracovní šablony povinných dokumentů dle MDR (EU) 2017/745, zákona č. 375/2022 Sb. a souvisejících harmonizovaných norem.</p>
+      <dl class="doc-meta">
+        <div><dt>Projekt</dt><dd>ORMS</dd></div>
+        <div><dt>Větev</dt><dd>medical-device-compliance</dd></div>
+        <div><dt>Status</dt><dd><span class="pill pill-warn">Pracovní (draft)</span></dd></div>
+        <div><dt>Vydáno</dt><dd>2026-04-28</dd></div>
+      </dl>
+    </header>
+
+    <section>
+      <h2>Obsah</h2>
+      <p>Sada dokumentů, která tvoří vstup do <strong>technické dokumentace dle Přílohy II a III MDR</strong>. Hlavním vstupním bodem je gap-analýza; ostatní dokumenty jsou šablony k vyplnění výrobcem (PRRC, Quality Manager, klinický expert, Cybersecurity Officer).</p>
+
+      <div class="doc-grid">
+        <a class="doc-card" href="regulatory-gap-analysis.html">
+          <span class="doc-card-id">REG-GAP-001</span>
+          <h3>Regulatorní gap-analýza</h3>
+          <p>Hodnocení 10 oblastí MDR, technické nedostatky v kódu a roadmapa ke CE.</p>
+        </a>
+        <a class="doc-card" href="risk-management-plan.html">
+          <span class="doc-card-id">RMP-001</span>
+          <h3>Risk Management Plan</h3>
+          <p>Šablona dle ISO 14971:2019 – politika ALARP, matice, hazard log, vazba na PMS.</p>
+        </a>
+        <a class="doc-card" href="clinical-evaluation-plan.html">
+          <span class="doc-card-id">CEP-001</span>
+          <h3>Clinical Evaluation Plan</h3>
+          <p>Šablona dle MDR čl. 61 a MDCG 2020-1 – claims, PICO, literární rešerše, PMCF.</p>
+        </a>
+        <a class="doc-card" href="post-market-surveillance-plan.html">
+          <span class="doc-card-id">PMS-001</span>
+          <h3>Post-Market Surveillance Plan</h3>
+          <p>KPI, vigilance lhůty pro SÚKL, CAPA, PSUR a sběr telemetrie.</p>
+        </a>
+        <a class="doc-card" href="instructions-for-use.html">
+          <span class="doc-card-id">IFU-001</span>
+          <h3>Návod k použití (IFU)</h3>
+          <p>Šablona v češtině dle Přílohy I MDR a e-IFU nařízení 2021/2226.</p>
+        </a>
+        <a class="doc-card" href="cybersecurity-sbom.html">
+          <span class="doc-card-id">SEC-001</span>
+          <h3>Cybersecurity Plan &amp; SBOM</h3>
+          <p>STRIDE, SDLC, patch SLA, SBOM v CycloneDX dle IEC 81001-5-1 a MDCG 2019-16.</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Jak s dokumenty pracovat</h2>
+      <ol>
+        <li>Začněte gap-analýzou a rozhodněte o <strong>kvalifikaci</strong> ORMS dle MDCG 2019-11 (zda je vůbec ZP).</li>
+        <li>Pokud je ORMS klasifikován jako ZP třídy IIa, vyplňte všechny šablony – místa s <code>___</code> musí doplnit výrobce.</li>
+        <li>Šablony jsou vstupem do technické dokumentace pro <strong>notifikovanou osobu</strong> (např. EZÚ, ITC Zlín).</li>
+        <li>Po nasazení udržujte dokumenty živé – minimálně <strong>1× ročně</strong> revize, při každém major release změnové řízení.</li>
+      </ol>
+    </section>
+
+    <footer class="doc-footer">
+      <span>ORMS Regulatory Documentation Set</span>
+      <span>Verze 1.0 · 2026-04-28</span>
+    </footer>
+  </main>
+</body>
+</html>

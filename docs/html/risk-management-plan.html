@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RMP-001 · Risk Management Plan ORMS</title>
+  <meta name="description" content="Šablona Risk Management Plan pro ORMS dle ISO 14971:2019." />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="layout">
+    <header class="doc-header">
+      <p class="doc-eyebrow">RMP-001 · Šablona</p>
+      <h1>Risk Management Plan</h1>
+      <p class="doc-subtitle">Operating Room Management System (ORMS) — soulad s ISO 14971:2019 a ISO/TR 24971:2020.</p>
+      <dl class="doc-meta">
+        <div><dt>Verze</dt><dd>0.1 (šablona)</dd></div>
+        <div><dt>Vlastník</dt><dd>___ (Quality Manager / PRRC)</dd></div>
+        <div><dt>Schválil</dt><dd>___</dd></div>
+        <div><dt>Datum</dt><dd>___</dd></div>
+      </dl>
+    </header>
+
+    <blockquote>
+      Šablona pro Risk Management Plan dle ISO 14971. Místa označená <code>___</code> je nutné doplnit konkrétními informacemi výrobce a produktu.
+    </blockquote>
+
+    <nav class="doc-nav" aria-label="Obsah dokumentu">
+      <h2>Obsah</h2>
+      <ol>
+        <li><a href="#uvod">Úvod a účel</a></li>
+        <li><a href="#rozsah">Rozsah</a></li>
+        <li><a href="#role">Role a odpovědnosti</a></li>
+        <li><a href="#politika">Politika přijatelnosti rizik</a></li>
+        <li><a href="#proces">Proces řízení rizik</a></li>
+        <li><a href="#kategorie">Kategorie nebezpečí</a></li>
+        <li><a href="#hazardlog">Hazard Log</a></li>
+        <li><a href="#verifikace">Verifikace opatření</a></li>
+        <li><a href="#postprod">Production a Post-Production</a></li>
+        <li><a href="#reeval">Kritéria pro reevaluaci RMR</a></li>
+        <li><a href="#schvaleni">Schválení</a></li>
+      </ol>
+    </nav>
+
+    <section id="uvod">
+      <h2>1. Úvod a účel</h2>
+      <p>Tento Risk Management Plan definuje, jak výrobce ORMS systematicky identifikuje, hodnotí, řídí a monitoruje rizika spojená s používáním produktu po celou dobu jeho životního cyklu, v souladu s <strong>ISO 14971:2019</strong>.</p>
+    </section>
+
+    <section id="rozsah">
+      <h2>2. Rozsah</h2>
+      <ul>
+        <li><strong>Produkt:</strong> Operating Room Management System (ORMS)</li>
+        <li><strong>Verze:</strong> ___</li>
+        <li><strong>Zamýšlený účel:</strong> ___ (převzít z technické dokumentace)</li>
+        <li><strong>Zamýšlení uživatelé:</strong> ___</li>
+        <li><strong>Prostředí použití:</strong> ___</li>
+        <li><strong>Tento plán pokrývá:</strong> návrh, vývoj, výrobu (build/release), distribuci, použití, údržbu, vyřazení.</li>
+      </ul>
+    </section>
+
+    <section id="role">
+      <h2>3. Role a odpovědnosti</h2>
+      <table>
+        <thead><tr><th>Role</th><th>Jméno</th><th>Odpovědnost</th></tr></thead>
+        <tbody>
+          <tr><td>Risk Manager</td><td>___</td><td>Vlastní RMP, RMR, koordinuje analýzy</td></tr>
+          <tr><td>PRRC (čl. 15 MDR)</td><td>___</td><td>Schvaluje RMR, dohlíží nad souladem</td></tr>
+          <tr><td>Vývojový tým (lead)</td><td>___</td><td>Implementuje a verifikuje opatření</td></tr>
+          <tr><td>Klinický expert</td><td>___</td><td>Posuzuje klinické dopady</td></tr>
+          <tr><td>Cybersecurity Officer</td><td>___</td><td>Bezpečnostní rizika</td></tr>
+          <tr><td>Top management</td><td>___</td><td>Schvaluje politiku a kritéria</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="politika">
+      <h2>4. Politika přijatelnosti rizik</h2>
+      <ul>
+        <li>Princip: <strong>ALARP</strong> (As Low As Reasonably Practicable).</li>
+        <li>Riziko se snižuje pořadím opatření dle ISO 14971:
+          <ol>
+            <li>Inherently safe design.</li>
+            <li>Ochranná opatření v produktu.</li>
+            <li>Informace pro bezpečnost (návod, varování, školení) – pouze jako doplněk.</li>
+          </ol>
+        </li>
+        <li>Žádné individuální riziko nesmí zůstat v zóně „nepřijatelné“.</li>
+        <li>Celkové zbytkové riziko musí být převáženo klinickým přínosem.</li>
+      </ul>
+
+      <h3>4.1 Stupnice pravděpodobnosti</h3>
+      <table>
+        <thead><tr><th>Úroveň</th><th>Popis</th><th>Frekvence</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Velmi nepravděpodobné</td><td>&lt; 1× za 10 let provozu</td></tr>
+          <tr><td>2</td><td>Nepravděpodobné</td><td>1× za 1–10 let</td></tr>
+          <tr><td>3</td><td>Příležitostně</td><td>1× za 1–12 měsíců</td></tr>
+          <tr><td>4</td><td>Pravděpodobné</td><td>1× za měsíc</td></tr>
+          <tr><td>5</td><td>Velmi pravděpodobné</td><td>týdně a častěji</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 Stupnice závažnosti</h3>
+      <table>
+        <thead><tr><th>Úroveň</th><th>Popis</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Zanedbatelná (drobné nepohodlí)</td></tr>
+          <tr><td>2</td><td>Malá (krátké zpoždění bez dopadu na pacienta)</td></tr>
+          <tr><td>3</td><td>Střední (zpoždění péče, žádná trvalá újma)</td></tr>
+          <tr><td>4</td><td>Velká (dočasné poškození zdraví)</td></tr>
+          <tr><td>5</td><td>Katastrofická (trvalé poškození / smrt)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.3 Matice přijatelnosti</h3>
+<pre><code>              Závažnost →
+              1     2     3     4     5
+Pravd. ↓    ┌─────┬─────┬─────┬─────┬─────┐
+        5   │ ALA │ ALA │ NEP │ NEP │ NEP │
+            ├─────┼─────┼─────┼─────┼─────┤
+        4   │ PŘI │ ALA │ ALA │ NEP │ NEP │
+            ├─────┼─────┼─────┼─────┼─────┤
+        3   │ PŘI │ ALA │ ALA │ ALA │ NEP │
+            ├─────┼─────┼─────┼─────┼─────┤
+        2   │ PŘI │ PŘI │ ALA │ ALA │ NEP │
+            ├─────┼─────┼─────┼─────┼─────┤
+        1   │ PŘI │ PŘI │ PŘI │ ALA │ ALA │
+            └─────┴─────┴─────┴─────┴─────┘</code></pre>
+      <p><span class="pill pill-ok">PŘI</span> Přijatelné · <span class="pill pill-warn">ALA</span> ALARP (nutno snižovat) · <span class="pill pill-critical">NEP</span> Nepřijatelné</p>
+    </section>
+
+    <section id="proces">
+      <h2>5. Proces řízení rizik</h2>
+<pre><code>┌────────────────┐  ┌──────────────┐  ┌─────────────┐  ┌────────────┐
+│ Identifikace   │→ │ Analýza      │→ │ Hodnocení   │→ │ Řízení     │
+│ nebezpečí      │  │ (P × S)      │  │ vůči matici │  │ (opatření) │
+└────────────────┘  └──────────────┘  └─────────────┘  └─────┬──────┘
+                                                              │
+              ┌──────────────────────┐  ┌──────────────┐      │
+              │ Production / Post-   │← │ Verifikace   │←─────┘
+              │ Production loop      │  │ a validace   │
+              └──────────────────────┘  └──────────────┘</code></pre>
+
+      <h3>5.1 Vstupy</h3>
+      <ul>
+        <li>Specifikace zamýšleného účelu.</li>
+        <li>Use case a uživatelské scénáře (IEC 62366-1).</li>
+        <li>Architektura SW (IEC 62304).</li>
+        <li>Hlášení z PMS, vigilance, externí databáze (FDA MAUDE, BfArM, EUDAMED).</li>
+      </ul>
+
+      <h3>5.2 Techniky</h3>
+      <ul>
+        <li>FMEA pro funkční rizika.</li>
+        <li>STRIDE / threat modeling pro kybernetická rizika (provazba na IEC 81001-5-1).</li>
+        <li>Use error analysis dle IEC 62366-1.</li>
+      </ul>
+
+      <h3>5.3 Výstupy</h3>
+      <ul>
+        <li>Risk Matrix (Hazard Log).</li>
+        <li>Risk Management Report (RMR).</li>
+        <li>Vstupy do IFU a labellingu (varování, kontraindikace).</li>
+      </ul>
+    </section>
+
+    <section id="kategorie">
+      <h2>6. Kategorie nebezpečí specifické pro ORMS</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Kategorie</th><th>Příklady</th></tr></thead>
+        <tbody>
+          <tr><td>H1</td><td>Informační</td><td>Nesprávné/zpožděné zobrazení stavu sálu, fáze pacienta</td></tr>
+          <tr><td>H2</td><td>Dostupnost</td><td>Výpadek serveru, ztráta realtime kanálu</td></tr>
+          <tr><td>H3</td><td>Datová integrita</td><td>Ztráta nebo poškození dat, kolize verzí</td></tr>
+          <tr><td>H4</td><td>Bezpečnost / kybernetika</td><td>Neoprávněný přístup, manipulace s daty, ransomware</td></tr>
+          <tr><td>H5</td><td>Použitelnost</td><td>Use error, špatně navržené UI, jazyková bariéra</td></tr>
+          <tr><td>H6</td><td>Závislost na třetí straně</td><td>Výpadek Supabase/Vercel, změna API</td></tr>
+          <tr><td>H7</td><td>Notifikace / alarmy</td><td>Zpožděný/nedoručený nouzový alarm</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="hazardlog">
+      <h2>7. Hazard Log – šablona záznamu</h2>
+      <table>
+        <thead><tr><th>Pole</th><th>Popis</th></tr></thead>
+        <tbody>
+          <tr><td>ID</td><td>např. R-042</td></tr>
+          <tr><td>Datum</td><td>YYYY-MM-DD</td></tr>
+          <tr><td>Nebezpečí</td><td>krátký popis</td></tr>
+          <tr><td>Předvídatelná sekvence událostí</td><td>…</td></tr>
+          <tr><td>Nebezpečná situace</td><td>…</td></tr>
+          <tr><td>Možná škoda</td><td>…</td></tr>
+          <tr><td>P (1–5)</td><td>…</td></tr>
+          <tr><td>S (1–5)</td><td>…</td></tr>
+          <tr><td>Iniciální RPN / zóna</td><td>…</td></tr>
+          <tr><td>Opatření (typ 1/2/3 dle ISO 14971)</td><td>…</td></tr>
+          <tr><td>Verifikace opatření</td><td>odkaz na test/CR</td></tr>
+          <tr><td>Reziduální P</td><td>…</td></tr>
+          <tr><td>Reziduální S</td><td>…</td></tr>
+          <tr><td>Reziduální zóna</td><td>PŘI / ALA / NEP</td></tr>
+          <tr><td>Vlastník</td><td>…</td></tr>
+          <tr><td>Status</td><td>open / closed</td></tr>
+        </tbody>
+      </table>
+      <p>Plný hazard log je vedený v souboru <code>docs/risk/HAZARD_LOG.xlsx</code> (založit při zahájení projektu).</p>
+    </section>
+
+    <section id="verifikace">
+      <h2>8. Verifikace opatření</h2>
+      <p>Každé opatření musí mít definovanou verifikaci:</p>
+      <ul>
+        <li>Testovací případ (unit / integration / system / usability).</li>
+        <li>Akceptační kritérium.</li>
+        <li>Záznam výsledku (build ID, datum, tester).</li>
+      </ul>
+    </section>
+
+    <section id="postprod">
+      <h2>9. Production a Post-Production činnosti</h2>
+      <ul>
+        <li>Sběr dat z provozu (incidenty, helpdesk, logy, telemetrie – v souladu s GDPR).</li>
+        <li>Pravidelné hodnocení přijatelnosti zbytkových rizik (min. 1× ročně + při major release).</li>
+        <li>Vstup do <strong>PMS Plan</strong> (<a href="post-market-surveillance-plan.html">PMS-001</a>).</li>
+        <li>Trigger pro <strong>CAPA</strong> při překročení trendových prahů.</li>
+      </ul>
+    </section>
+
+    <section id="reeval">
+      <h2>10. Kritéria pro reevaluaci RMR</h2>
+      <p>RMR se aktualizuje při:</p>
+      <ul>
+        <li>každém major release (změna verze X v X.Y.Z),</li>
+        <li>novém významném nebezpečí z PMS / vigilance,</li>
+        <li>změně regulatorních požadavků,</li>
+        <li>změně zamýšleného účelu,</li>
+        <li>závažném incidentu nebo CAPA.</li>
+      </ul>
+    </section>
+
+    <section id="schvaleni">
+      <h2>11. Schválení</h2>
+      <table>
+        <thead><tr><th>Role</th><th>Jméno</th><th>Podpis</th><th>Datum</th></tr></thead>
+        <tbody>
+          <tr><td>Risk Manager</td><td></td><td></td><td></td></tr>
+          <tr><td>PRRC</td><td></td><td></td><td></td></tr>
+          <tr><td>Top management</td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="doc-footer">
+      <span><a href="index.html">← Zpět na přehled dokumentace</a></span>
+      <span>RMP-001 · v0.1 (šablona)</span>
+    </footer>
+  </main>
+</body>
+</html>

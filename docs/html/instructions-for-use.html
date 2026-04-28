@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IFU-001 · Návod k použití ORMS</title>
+  <meta name="description" content="Šablona návodu k použití (IFU) pro ORMS dle Přílohy I MDR a nařízení 2021/2226." />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="layout">
+    <header class="doc-header">
+      <p class="doc-eyebrow">IFU-001 · Šablona</p>
+      <h1>Návod k použití (Instructions for Use)</h1>
+      <p class="doc-subtitle">Operating Room Management System (ORMS) — čeština, soulad s MDR Příloha I kap. III a prováděcím nařízením (EU) 2021/2226 (e-IFU).</p>
+      <dl class="doc-meta">
+        <div><dt>Verze</dt><dd>0.1 (šablona)</dd></div>
+        <div><dt>Jazyk</dt><dd>čeština (povinný pro ČR)</dd></div>
+        <div><dt>Schválil</dt><dd>___</dd></div>
+      </dl>
+    </header>
+
+    <blockquote>
+      Pro SaMD je povolena elektronická forma návodu (e-IFU) za podmínek nařízení 2021/2226. Návod musí být v každém případě dostupný v jazyce uživatele (čeština).
+    </blockquote>
+
+    <nav class="doc-nav" aria-label="Obsah dokumentu">
+      <h2>Obsah</h2>
+      <ol>
+        <li><a href="#identifikace">Identifikace výrobku a výrobce</a></li>
+        <li><a href="#symboly">Symboly a označení</a></li>
+        <li><a href="#ucel">Zamýšlený účel</a></li>
+        <li><a href="#indikace">Indikace, kontraindikace, populace</a></li>
+        <li><a href="#prinos">Klinický přínos</a></li>
+        <li><a href="#varovani">Bezpečnostní upozornění</a></li>
+        <li><a href="#systemove">Systémové požadavky</a></li>
+        <li><a href="#instalace">Instalace a první přihlášení</a></li>
+        <li><a href="#funkce">Funkce a obsluha</a></li>
+        <li><a href="#kyber">Kybernetická bezpečnost</a></li>
+        <li><a href="#udrzba">Údržba a aktualizace</a></li>
+        <li><a href="#hlaseni">Hlášení incidentů</a></li>
+        <li><a href="#likvidace">Likvidace</a></li>
+        <li><a href="#kontakt">Kontakt a podpora</a></li>
+        <li><a href="#regulatorni">Záruční a regulatorní informace</a></li>
+        <li><a href="#forma">Poznámka k formě IFU</a></li>
+      </ol>
+    </nav>
+
+    <section id="identifikace">
+      <h2>1. Identifikace výrobku a výrobce</h2>
+      <table>
+        <thead><tr><th>Pole</th><th>Hodnota</th></tr></thead>
+        <tbody>
+          <tr><td>Obchodní název</td><td>Operating Room Management System (ORMS)</td></tr>
+          <tr><td>Verze SW</td><td>___</td></tr>
+          <tr><td>Basic UDI-DI</td><td>___</td></tr>
+          <tr><td>UDI-DI</td><td>___</td></tr>
+          <tr><td>Třída</td><td>___ (např. IIa)</td></tr>
+          <tr><td>Notifikovaná osoba</td><td>___ (číslo NB)</td></tr>
+          <tr><td>Výrobce</td><td>___, IČ ___</td></tr>
+          <tr><td>Adresa</td><td>___</td></tr>
+          <tr><td>PRRC</td><td>___</td></tr>
+          <tr><td>E-mail / telefon</td><td>___</td></tr>
+          <tr><td>Datum vydání</td><td>___</td></tr>
+          <tr><td>Datum revize</td><td>___</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="symboly">
+      <h2>2. Symboly a označení</h2>
+      <p>Použité symboly podle ISO 15223-1:</p>
+      <ul>
+        <li>Návod k použití</li>
+        <li>Výrobce</li>
+        <li>Varování</li>
+        <li>CE (s číslem NB)</li>
+        <li>UDI</li>
+      </ul>
+    </section>
+
+    <section id="ucel">
+      <h2>3. Zamýšlený účel</h2>
+      <p>ORMS je zdravotnický software určený k <strong>monitoringu a koordinaci provozu operačních sálů</strong>: zobrazení stavu sálů, fází operačního workflow, plánování personálu, statistik a nouzových notifikací.</p>
+      <p>ORMS <strong>není</strong> určen k:</p>
+      <ul>
+        <li>diagnóze či léčbě onemocnění,</li>
+        <li>monitorování fyziologických vitálních funkcí,</li>
+        <li>automatickému řízení zdravotnického zařízení,</li>
+        <li>náhradě HIS / EHR systému.</li>
+      </ul>
+    </section>
+
+    <section id="indikace">
+      <h2>4. Indikace, kontraindikace, cílová populace</h2>
+      <ul>
+        <li><strong>Uživatelé:</strong> vedoucí sestry, koordinátoři, anesteziologický a chirurgický tým, nemocniční management.</li>
+        <li><strong>Prostředí:</strong> nemocniční operační trakty, centrální monitoring, mobilní zařízení personálu v interní síti.</li>
+        <li><strong>Cílová populace pacientů:</strong> dospělí i dětští pacienti operovaní v zařízení, kde je ORMS provozován (data o pacientech zpracována jen pro účely koordinace).</li>
+        <li><strong>Kontraindikace použití:</strong>
+          <ul>
+            <li>jako jediný zdroj informace o vitálních funkcích,</li>
+            <li>jako jediný kanál pro nouzovou komunikaci (nesmí nahradit standardní nemocniční nouzové systémy),</li>
+            <li>bez školení uživatelů.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section id="prinos">
+      <h2>5. Klinický přínos</h2>
+      <ul>
+        <li>Lepší přehled o stavu sálů a workflow → snížení doby obratu sálu.</li>
+        <li>Snížení koordinačních chyb mezi týmy.</li>
+        <li>Rychlejší předání informace o nouzové situaci.</li>
+      </ul>
+      <p>(Konkrétní hodnoty viz <code>CER-001</code>.)</p>
+    </section>
+
+    <section id="varovani">
+      <h2>6. Bezpečnostní upozornění a varování</h2>
+
+      <div class="callout callout-warning">
+        <strong>VAROVÁNÍ</strong>
+        <ul>
+          <li>ORMS nenahrazuje přímou klinickou komunikaci ani standardní nemocniční nouzové systémy.</li>
+          <li>Při výpadku sítě nebo služby přejděte na záložní postup (whiteboard / telefon).</li>
+          <li>Údaje zobrazené v ORMS musí být před klinickým rozhodnutím ověřeny u odpovědné osoby.</li>
+          <li>Nouzový alarm vyžaduje funkční audio na klientském zařízení – uživatel musí audio při startu směny odemknout.</li>
+          <li>Aplikaci nepoužívejte na zařízeních se zastaralým OS / prohlížečem mimo seznam podporovaných.</li>
+        </ul>
+      </div>
+
+      <div class="callout">
+        <strong>POZOR</strong>
+        <ul>
+          <li>Změny stavu sálu provádějte vždy aktivním potvrzením, nikoli omylem během pohybu prsty po dotykové obrazovce.</li>
+          <li>Účty se nesmí sdílet, každý uživatel má vlastní přihlášení a roli.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="systemove">
+      <h2>7. Systémové požadavky</h2>
+      <table>
+        <thead><tr><th>Komponenta</th><th>Minimum</th></tr></thead>
+        <tbody>
+          <tr><td>Prohlížeč</td><td>Chrome / Edge ___+, Safari ___+, Firefox ___+</td></tr>
+          <tr><td>OS</td><td>Windows 10+, macOS 12+, iOS 15+, Android 11+</td></tr>
+          <tr><td>Síť</td><td>stabilní připojení, latence &lt; 200 ms k serveru</td></tr>
+          <tr><td>Audio</td><td>reproduktory pro nouzový alarm</td></tr>
+          <tr><td>Rozlišení</td><td>min. 1280×720 (mobilní layout od 360×640)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="instalace">
+      <h2>8. Instalace a první přihlášení</h2>
+      <ol>
+        <li>Administrátor obdrží od výrobce / distributora přístupové údaje a URL.</li>
+        <li>Otevřete URL v podporovaném prohlížeči.</li>
+        <li>Přihlaste se firemními údaji (SSO / e-mail + heslo + MFA).</li>
+        <li>Při prvním přihlášení odemkněte audio nouzového alarmu.</li>
+        <li>Ověřte, že vidíte aktuální seznam sálů a zelený indikátor připojení v reálném čase.</li>
+      </ol>
+    </section>
+
+    <section id="funkce">
+      <h2>9. Funkce a obsluha</h2>
+      <p>(Doplnit screenshoty + popis pro každou funkci.)</p>
+      <ul>
+        <li>9.1 Dashboard sálů</li>
+        <li>9.2 Detail sálu a fáze workflow</li>
+        <li>9.3 Přiřazení personálu</li>
+        <li>9.4 Plánování operací</li>
+        <li>9.5 Statistiky</li>
+        <li>9.6 Nouzový alarm</li>
+        <li>9.7 Administrace uživatelů a rolí</li>
+        <li>9.8 Audit log</li>
+      </ul>
+    </section>
+
+    <section id="kyber">
+      <h2>10. Kybernetická bezpečnost</h2>
+      <ul>
+        <li>Komunikace probíhá výhradně přes TLS 1.2+.</li>
+        <li>Doporučeno provozovat v izolovaném segmentu sítě nemocnice.</li>
+        <li>Uživatelská hesla musí splňovat minimálně ___ znaků a obsahovat ___.</li>
+        <li>MFA je povinná pro role admin, klinický koordinátor.</li>
+        <li>Aktualizace SW se aplikují automaticky; release notes jsou publikovány na ___.</li>
+        <li>Hlášení bezpečnostních incidentů: <code>security@___</code>.</li>
+        <li>Doporučená opatření IT oddělení nemocnice viz dokument <a href="cybersecurity-sbom.html">SEC-001</a>.</li>
+      </ul>
+    </section>
+
+    <section id="udrzba">
+      <h2>11. Údržba a aktualizace</h2>
+      <ul>
+        <li>Výrobce vydává plánované aktualizace minimálně ___× ročně.</li>
+        <li>Mimořádné bezpečnostní aktualizace mimo plán (nasazení do ___ hodin od oznámení CVE).</li>
+        <li>Plánované odstávky jsou oznámeny minimálně ___ dní předem.</li>
+      </ul>
+    </section>
+
+    <section id="hlaseni">
+      <h2>12. Hlášení incidentů</h2>
+      <ul>
+        <li>Uživatel hlásí podezření na incident:
+          <ol>
+            <li>Internímu IT a vedení operačního traktu.</li>
+            <li>Výrobci na <code>vigilance@___</code> (24/7).</li>
+          </ol>
+        </li>
+        <li>Výrobce hlásí závažné incidenty SÚKL ve lhůtách dle MDR čl. 87 (2 / 10 / 15 dní).</li>
+        <li>Závažným incidentem je událost, která přímo nebo nepřímo vedla, mohla vést nebo může vést ke smrti, závažnému zhoršení zdravotního stavu nebo závažnému ohrožení veřejného zdraví.</li>
+      </ul>
+    </section>
+
+    <section id="likvidace">
+      <h2>13. Likvidace</h2>
+      <p>ORMS je software – fyzická likvidace se netýká. Po ukončení smlouvy:</p>
+      <ul>
+        <li>výrobce smaže produkční data v souladu s DPA a GDPR retencí,</li>
+        <li>na žádost zákazníka poskytne export dat (formát ___),</li>
+        <li>zachová auditní záznamy po dobu vyžadovanou MDR a zákonem 375/2022 Sb.</li>
+      </ul>
+    </section>
+
+    <section id="kontakt">
+      <h2>14. Kontakt a podpora</h2>
+      <ul>
+        <li>Helpdesk: ___ (telefon, e-mail, hodiny dostupnosti)</li>
+        <li>Eskalace: ___</li>
+        <li>Vigilance: <code>vigilance@___</code></li>
+        <li>Security: <code>security@___</code></li>
+        <li>DPO: <code>dpo@___</code></li>
+      </ul>
+    </section>
+
+    <section id="regulatorni">
+      <h2>15. Záruční a regulatorní informace</h2>
+      <ul>
+        <li>Splňuje požadavky <strong>Nařízení (EU) 2017/745</strong>.</li>
+        <li>CE značka s číslem notifikované osoby ___.</li>
+        <li>Registrováno u <strong>SÚKL</strong> (RZPRO ID ___).</li>
+        <li>EUDAMED odkaz: ___</li>
+      </ul>
+    </section>
+
+    <section id="forma">
+      <h2>Poznámka k formě IFU</h2>
+      <p>Pro veřejnou distribuci v ČR je nutné:</p>
+      <ol>
+        <li>Návod publikovat v elektronické podobě (e-IFU) podle nařízení 2021/2226 a zároveň zajistit:
+          <ul>
+            <li>veřejně dostupnou trvalou URL,</li>
+            <li>možnost stáhnout PDF,</li>
+            <li>oznámení dostupnosti e-IFU uživateli při instalaci a v aplikaci,</li>
+            <li>poskytnutí papírové verze do 7 dní na vyžádání zdarma.</li>
+          </ul>
+        </li>
+        <li>Vést <strong>změnové řízení</strong> každé verze IFU vázané na verzi SW.</li>
+      </ol>
+    </section>
+
+    <footer class="doc-footer">
+      <span><a href="index.html">← Zpět na přehled dokumentace</a></span>
+      <span>IFU-001 · v0.1 (šablona)</span>
+    </footer>
+  </main>
+</body>
+</html>
