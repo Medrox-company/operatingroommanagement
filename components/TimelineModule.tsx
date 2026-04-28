@@ -918,11 +918,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       }}
                     />
                   )}
-                  {/* Room Label - Sticky LEFT column. Used `min-h-0 overflow-hidden`
-                     a `py-1` aby se obsah karty nepřekrýval s vedlejším řádkem
-                     při sníženém rowHeight (responzivní dělení container_height / rooms.length). */}
+                  {/* Room Label - Sticky LEFT column.
+                     Vnější `py-1.5` ZARUČUJE, že vnitřní glassmorph karta (vyplňující rodiče
+                     pomocí self-stretch) má SHODNOU vertikální výšku jako zaoblený timeline bar
+                     v pravé části (ten má `top-1.5 bottom-1.5` = inset 6px). Tím obě "kapsle"
+                     na řádku vypadají jako vizuálně sladěný pár. */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-2 py-1 min-h-0 overflow-hidden transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
@@ -966,16 +968,19 @@ style={{
                       )}
                     </div>
 
-                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN, always visible.
-                       Padding adaptivní: kompaktní (rowHeight < 44) → minimum, jinak komfortní. */}
+                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN.
+                       Stretchuje se na plnou výšku rodiče (díky `items-stretch` na rodiči),
+                       takže vizuálně koresponduje s timeline barem napravo, který má stejné
+                       inset (top-1.5 bottom-1.5). Vertikální padding NEpotřebuje — content
+                       je centrovaný přes flex justify-center. */}
                     <div 
-                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-xl ${rowHeight < 44 ? 'py-0.5 px-2' : 'py-1.5 px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
+                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-xl flex items-center ${rowHeight < 44 ? 'px-2' : 'px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
                       style={{ 
                         background: C.glass, 
                         border: `1px solid ${C.border}`,
                       }}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full">
                         <p className="text-sm font-semibold tracking-tight text-white truncate">
                           {room.name}
                         </p>
@@ -1313,14 +1318,9 @@ style={{
                                     {idx < history.length - 1 && (
                                       <div className="absolute top-0 right-0 bottom-0 w-px bg-black/50 z-10" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.5), rgba(0,0,0,0))` }} />
                                     )}
-                                    {/* Show phase label if segment is wide enough */}
-                                    {segWidthPct > 8 && (
-                                      <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none z-[5]">
-                                        <span className="text-[7px] font-semibold text-white/80 truncate uppercase tracking-wide leading-none drop-shadow">
-                                          {statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                        </span>
-                                      </div>
-                                    )}
+                                    {/* Per-segment phase label odstraněn — aktuální status se zobrazuje
+                                       jen jednou, centrovaně velkými písmeny v hlavním boxu (řešeno
+                                       v primary content overlay výše). */}
                                   </motion.div>
                                 );
                               });
