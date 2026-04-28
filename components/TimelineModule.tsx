@@ -955,6 +955,38 @@ style={{
                       }
                       return null;
                     })()}
+
+                    {/* Patient Called Badge — stejný design jako ARO (vertikální stack
+                        label nad ikonou, glassmorph s barevným borderem). Přesunuto z name
+                        karty na pozici před názvem sálu, aby vizuálně korespondovalo s ARO. */}
+                    {room.patientCalledAt && !room.patientArrivedAt && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          border: '1px solid rgba(96, 165, 250, 0.96)',
+                        }}
+                        title="Pacient volán"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(96, 165, 250, 0.96)' }}>VOLÁN</span>
+                        <Phone className="w-3 h-3" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
+                      </div>
+                    )}
+
+                    {/* Patient Arrived Badge — stejný design jako ARO. */}
+                    {room.patientArrivedAt && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(52, 211, 153, 0.96)',
+                        }}
+                        title="Pacient v operačním traktu"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
+                        <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
+                      </div>
+                    )}
                     
                     {/* Numbered badge for active rooms - softer */}
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -1010,31 +1042,8 @@ style={{
                             {URGENCY_THEME[room.urgencyLevel].label}
                           </motion.span>
                         )}
-                        {/* Patient called indicator — adaptivní: w-6 h-6 při kompakt. řádku (<44),
-                            jinak w-9 h-9. Zaručuje, že se vejde i do MIN_ROW_HEIGHT=24. */}
-                        {room.patientCalledAt && !room.patientArrivedAt && (
-                          <motion.div 
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className={`${rowHeight < 44 ? 'w-6 h-6' : 'w-9 h-9'} rounded-xl flex items-center justify-center flex-shrink-0`}
-                            style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(96,165,250,0.3)' }}
-                            title="Pacient volán"
-                          >
-                            <Phone className={`${rowHeight < 44 ? 'w-3 h-3' : 'w-4 h-4'} text-blue-400`} />
-                          </motion.div>
-                        )}
-                        {/* Patient arrived indicator */}
-                        {room.patientArrivedAt && (
-                          <motion.div 
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className={`${rowHeight < 44 ? 'w-6 h-6' : 'w-9 h-9'} rounded-xl flex items-center justify-center flex-shrink-0`}
-                            style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}
-                            title="Pacient v operačním traktu"
-                          >
-                            <BedDouble className={`${rowHeight < 44 ? 'w-3 h-3' : 'w-4 h-4'} text-green-400`} />
-                          </motion.div>
-                        )}
+                        {/* Patient called / arrived indicators přesunuty na pozici před name
+                            kartou (stejné místo jako ARO badge), pro jednotný vizuální jazyk. */}
                       </div>
                       {/* Sekundární řádek (status / department / remainingTime) odstraněn —
                           aktuální status se nyní zobrazuje uppercase ve středu timeline baru,
@@ -1107,7 +1116,7 @@ style={{
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
                                   {(() => {
                                     // Build color lookup from activeStatuses
-                                    // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                                    // Použ��váme order_index (tj. sort_order) jako klíč, ne pozici v poli
                                     const stepColorMap: Record<number, string> = {};
                                     activeStatuses.forEach((s) => {
                                       stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
