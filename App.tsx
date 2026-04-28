@@ -440,10 +440,12 @@ const AppContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-    <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
-      {/* Dynamic Background Layer - Controlled by BackgroundManager settings */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Background Image Layer - lazy loaded for performance */}
+    <div className="flex h-screen w-full font-sans overflow-hidden bg-background text-foreground">
+      {/* Industrial backdrop — minimální 64×64 grid texture (1.5% alpha) přes pure black,
+         zachovává čitelnost a dává systému "engineering blueprint" pocit. Volitelná uživatelská
+         tapeta ze SettingsPage je překryvově monochromatizována na grayscale a tlumena na
+         max 30% opacity, aby ji nepřekrývala kontrolní data. */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-industrial">
         {bgSettings.imageUrl && (
           <img
             src={bgSettings.imageUrl}
@@ -452,21 +454,18 @@ const AppContent: React.FC = () => {
             decoding="async"
             className="w-full h-full object-cover grayscale scale-105 transition-opacity duration-500"
             style={{
-              opacity: bgSettings.imageOpacity / 100,
+              opacity: Math.min(bgSettings.imageOpacity ?? 0, 30) / 100,
               filter: bgSettings.imageBlur > 0 ? `blur(${bgSettings.imageBlur}px)` : undefined,
             }}
           />
         )}
-        
-        {/* Color/Gradient Overlay */}
+        {/* Vignette — mírné ztmavení okrajů pro fokusování pozornosti do středu */}
         <div
-          className="absolute inset-0 transition-all duration-500"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            background: backgroundStyle,
-            opacity: (bgSettings.opacity ?? 100) / 100,
+            background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)',
           }}
         />
-        
       </div>
 
 <Sidebar 

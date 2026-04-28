@@ -1,8 +1,22 @@
-
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User } from 'lucide-react';
+import { Biohazard, AlertCircle, Lock, Phone, BedDouble } from 'lucide-react';
+
+/**
+ * INDUSTRIAL CONTROL ROOM CARD — Siemens SaaS aesthetic.
+ *
+ * Layout (zhora dolů):
+ *   1. Top bar — UNIT.ID kód (mono) + LIVE indikátor + dept tag
+ *   2. Status row — barevný hairline-bordered status pill
+ *   3. Hero metric — velké mono číslo (počet operací dnes) + label
+ *   4. Telemetry grid — 2 sloupce: ETA / FÁZE
+ *   5. Crew row — lékař + sestra (mono jména)
+ *   6. Action bar — emergency / lock toggly + indikátory
+ *
+ * Žádné rounded blobs, žádné gradients, žádné glassmorph aura efekty.
+ * Pure black surface + 1px hairlines + sharp 4px radius. Color jen jako accent.
+ */
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -12,324 +26,280 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
-  // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
-  
-  // workflowStatuses is already filtered (active, non-special) and sorted by context
-  // Add null safety
   const activeStatuses = workflowStatuses || [];
-  
-  // Filter completed operations for today (7:00 yesterday/today to 6:59 today/tomorrow)
-  // The window is: if current time >= 7:00, count from 7:00 today to 6:59 tomorrow
-  //                if current time < 7:00, count from 7:00 yesterday to 6:59 today
+
+  /* Today's operation count — okno 7:00 dneska → 6:59 zítra (nebo včera→dneska) */
   const todayOperationCount = useMemo(() => {
     if (!room.completedOperations || room.completedOperations.length === 0) return 0;
-    
+
     const now = new Date();
-    const currentHour = now.getHours();
-    
-    // Determine the start of the 24h window based on current time
     const startOfWindow = new Date(now);
-    if (currentHour >= 7) {
-      // After 7 AM - window starts at 7:00 today
+    if (now.getHours() >= 7) {
       startOfWindow.setHours(7, 0, 0, 0);
     } else {
-      // Before 7 AM - window starts at 7:00 yesterday
       startOfWindow.setDate(startOfWindow.getDate() - 1);
       startOfWindow.setHours(7, 0, 0, 0);
     }
-    
-    // End of window is 24h after start (6:59:59 next day)
     const endOfWindow = new Date(startOfWindow);
     endOfWindow.setDate(endOfWindow.getDate() + 1);
     endOfWindow.setHours(6, 59, 59, 999);
-    
-    const count = room.completedOperations.filter(op => {
-      if (!op.endedAt) return false; // Use endedAt for completed operations
+
+    return room.completedOperations.filter(op => {
+      if (!op.endedAt) return false;
       const opEnd = new Date(op.endedAt);
       return opEnd >= startOfWindow && opEnd <= endOfWindow;
     }).length;
-    
-    return count;
   }, [room.completedOperations]);
-  
-  // Memoize computed values using database statuses
-  const { currentStep, themeColor, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
+
+  const { currentStep, themeColor, progressPct, shouldShowTime, statusKey } = useMemo(() => {
     const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
     const safeIndex = Math.min(Math.max(0, room.currentStepIndex || 0), totalSteps - 1);
     const step = activeStatuses[safeIndex] || null;
-    
+
     const currentStep = {
       title: step?.title || step?.name || 'Status',
-      color: step?.accent_color || step?.color || '#6B7280',
+      color: step?.accent_color || step?.color || '#00D4FF',
     };
-    
+
     const themeColor = room.isEmergency
-      ? '#FF3B30'
-      : (room.isLocked ? '#FBBF24' : (room.isPaused ? '#22D3EE' : currentStep.color));
-    const progressPercent = ((safeIndex + 1) / totalSteps);
-    
-    // Don't show time for "Sal priprav*" and "Uklid" statuses (ASCII-safe)
+      ? 'hsl(var(--critical))'
+      : (room.isLocked
+          ? 'hsl(var(--warning))'
+          : (room.isPaused ? 'hsl(var(--accent))' : currentStep.color));
+
+    const progressPct = ((safeIndex + 1) / totalSteps) * 100;
+
     const statusName = (step?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const isReadyStatus = statusName.includes('priprav');
     const isCleaningStatus = statusName.includes('uklid');
     const shouldShowTime = !isReadyStatus && !isCleaningStatus;
-    
-    const radius = 38;
-    const strokeDasharray = 2 * Math.PI * radius;
-    const strokeDashoffset = strokeDasharray * (1 - progressPercent);
-    
-    return { currentStep, themeColor, shouldShowTime, strokeDasharray, strokeDashoffset };
-  }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
-  
-  const radius = 38;
-  const strokeWidth = 4;
 
-  const center = 56;
+    const statusKey: 'emergency' | 'locked' | 'paused' | 'ready' | 'active' = room.isEmergency
+      ? 'emergency'
+      : room.isLocked
+        ? 'locked'
+        : room.isPaused
+          ? 'paused'
+          : isReadyStatus
+            ? 'ready'
+            : 'active';
+
+    return { currentStep, themeColor, progressPct, shouldShowTime, statusKey };
+  }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
 
   const handleAction = (e: React.MouseEvent, action?: (e: React.MouseEvent) => void) => {
     e.stopPropagation();
     if (action) action(e);
   };
 
+  /* Unit ID — technical identifier z room.id (např. „or-001" → „OR-001") */
+  const unitId = useMemo(() => {
+    const id = (room.id || '').toString();
+    const parts = id.split('-');
+    if (parts.length >= 2) {
+      return `${parts[0].toUpperCase()}-${parts[1].padStart(3, '0').slice(-3)}`;
+    }
+    const num = id.replace(/\D/g, '').padStart(3, '0').slice(-3);
+    return `OR-${num}`;
+  }, [room.id]);
+
+  /* Border accent — emergency/locked posunují border na color, jinak hairline */
+  const borderClass = statusKey === 'emergency'
+    ? 'border-critical/60'
+    : statusKey === 'locked'
+      ? 'border-warning/50'
+      : 'border-hairline-strong hover:border-accent/40';
+
+  const statusLabel = statusKey === 'emergency'
+    ? 'STAV NOUZE'
+    : statusKey === 'locked'
+      ? 'UZAMČEN'
+      : statusKey === 'paused'
+        ? 'PAUZA'
+        : currentStep.title;
+
   return (
     <div
       onClick={onClick}
-      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
+      className={`relative cursor-pointer h-[260px] sm:h-[300px] w-full bg-panel border ${borderClass} transition-colors group focus:outline-none focus-visible:ring-1 focus-visible:ring-accent`}
     >
-      {/* Subtle State Pulse Aura (Emergency or Locked) */}
-      {(room.isEmergency || room.isLocked) && (
-        <div 
-          className={`absolute -inset-1 z-0 rounded-[1.85rem] sm:rounded-[2.6rem] blur-xl pointer-events-none ${room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10'}`}
+      {/* Top hairline accent — color barva podle stavu, sharp top edge */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px transition-colors"
+        style={{ backgroundColor: themeColor, opacity: statusKey === 'active' ? 0.4 : 0.9 }}
+        aria-hidden
+      />
+
+      {/* Critical/Locked subtle inset glow — extrémně decentní, jen pro alarmové stavy */}
+      {(statusKey === 'emergency' || statusKey === 'locked') && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ boxShadow: `inset 0 0 24px ${themeColor}22` }}
+          aria-hidden
         />
       )}
 
-      {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
-        ${room.isEmergency 
-            ? 'bg-red-950/20 border-red-500/40' 
-            : (room.isLocked 
-                ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
-                : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]')}
-      `}>
-        {room.isEmergency && (
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
-        )}
-        {room.isLocked && (
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
-        )}
-        
-        {/* Static Glow Layer */}
-        <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
-          style={{ 
-            backgroundColor: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15 
-          }}
-        />
-      </div>
+      <div className="relative h-full w-full flex flex-col">
 
-      {/* Content Container */}
-      <div className="relative h-full w-full z-10 p-3 sm:p-6 flex flex-col">
-        
-        {/* Header — centered */}
-        <div className="w-full flex flex-col items-center text-center shrink-0">
-          <p className={`text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full transition-colors
-            ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
-          `}>
-            {room.department}
-          </p>
-          <h3 className={`text-sm sm:text-xl font-bold tracking-tight uppercase leading-none truncate max-w-full transition-colors
-            ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
-          `}>
+        {/* ── 1. Top bar: UNIT.ID + LIVE indikátor + dept ─────────── */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-hairline">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="w-1.5 h-1.5 shrink-0"
+              style={{
+                backgroundColor: themeColor,
+                animation: statusKey === 'active' || statusKey === 'emergency' ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
+              }}
+              aria-hidden
+            />
+            <span className="font-mono text-[10px] tracking-[0.18em] text-foreground uppercase truncate">
+              {unitId}
+            </span>
+            <span className="hidden sm:inline font-mono text-[9px] tracking-[0.15em] text-foreground-faint">
+              ·
+            </span>
+            <span className="hidden sm:inline font-mono text-[9px] tracking-[0.18em] text-foreground-dim uppercase truncate">
+              {room.department}
+            </span>
+          </div>
+          {room.isSeptic && (
+            <Biohazard className="w-3 h-3 text-critical shrink-0" aria-label="Septický" />
+          )}
+        </div>
+
+        {/* ── 2. Room name (hlavní identifier) ─────────────────────── */}
+        <div className="px-3 pt-3 pb-2">
+          <h3 className="font-sans text-base sm:text-xl font-light tracking-tight text-foreground truncate leading-tight">
             {room.name}
           </h3>
         </div>
 
-        {/* Central Content Wrapper */}
-        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-            <div className="relative flex items-center justify-center">
-                {/* Static glow behind the circle - replaced motion for performance */}
-                <div
-                  className="absolute rounded-full blur-[40px] transition-all duration-500"
-                  style={{ width: 80, height: 80, backgroundColor: themeColor, opacity: 0.25 }}
-                />
-                <svg
-                  viewBox="0 0 112 112"
-                  className="w-20 h-20 sm:w-28 sm:h-28 overflow-visible select-none flex-shrink-0"
-                  style={{ transform: 'rotate(-90deg)' }}
-                >
-                    <circle 
-                      cx={center} cy={center} r={radius} 
-                      fill="none" 
-                      stroke="white" 
-                      strokeWidth="1.5" 
-                      className="opacity-[0.03]" 
-                    />
-                    <circle 
-                      cx={center} cy={center} r={radius} 
-                      fill="none"
-                      stroke={themeColor} 
-                      strokeWidth={strokeWidth} 
-                      strokeLinecap="round"
-                      strokeDasharray={strokeDasharray}
-                      strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
-                      className="transition-all duration-500"
-                      style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
-                    />
-                    {room.isPaused ? (
-                      <text
-                        x={center}
-                        y={center}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill="#22D3EE"
-                        className="text-4xl font-bold"
-                        style={{ 
-                          transform: 'rotate(90deg)', 
-                          transformOrigin: `${center}px ${center}px`,
-                          fontSize: '28px',
-                          fontWeight: 900,
-                          letterSpacing: '-0.05em'
-                        }}
-                      >
-                        P
-                      </text>
-                    ) : (
-                      <text
-                        x={center}
-                        y={center}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        className={`text-4xl font-bold transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
-                        style={{ 
-                            transform: 'rotate(90deg)', 
-                            transformOrigin: `${center}px ${center}px`,
-                            letterSpacing: '-0.05em'
-                        }}
-                      >
-                        {todayOperationCount}
-                      </text>
-                    )}
-                </svg>
+        {/* ── 3. Hero metric block: dnešní operace / pauza ─────────── */}
+        <div className="flex-1 flex items-center justify-between px-3 min-h-0 gap-3">
+          <div className="flex flex-col min-w-0">
+            <span className="font-mono text-[9px] tracking-[0.2em] text-foreground-dim uppercase mb-0.5">
+              {statusKey === 'paused' ? 'STAV' : 'DNES / OPS'}
+            </span>
+            <span
+              className="font-mono text-[44px] sm:text-[56px] font-light leading-none tabular-nums"
+              style={{ color: statusKey === 'paused' ? themeColor : 'hsl(var(--foreground))' }}
+            >
+              {statusKey === 'paused' ? 'P' : String(todayOperationCount).padStart(2, '0')}
+            </span>
+          </div>
+
+          {/* Progress meter — vertikální stripes (Siemens-style) */}
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <span className="font-mono text-[9px] tracking-[0.2em] text-foreground-dim uppercase">
+              FÁZE
+            </span>
+            <div className="flex items-end gap-[3px] h-10">
+              {Array.from({ length: Math.max(activeStatuses.length, 1) }).map((_, i) => {
+                const reached = ((i + 1) / Math.max(activeStatuses.length, 1)) * 100 <= progressPct;
+                return (
+                  <div
+                    key={i}
+                    className="w-1 transition-colors"
+                    style={{
+                      height: `${20 + (i % 3) * 10}px`,
+                      backgroundColor: reached ? themeColor : 'hsl(var(--border-strong))',
+                      opacity: reached ? 1 : 0.5,
+                    }}
+                    aria-hidden
+                  />
+                );
+              })}
             </div>
-            
-            {room.estimatedEndTime && shouldShowTime && (
-                <div className="-mt-1 text-center">
-                    <div className="flex items-center gap-1 sm:gap-1.5 justify-center">
-                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" style={{ color: themeColor }} />
-                      <span className="text-sm sm:text-lg font-mono font-bold tracking-tight" style={{ color: themeColor }}>
-                          {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                </div>
-            )}
+            <span className="font-mono text-[10px] font-medium tabular-nums text-foreground-muted">
+              {Math.round(progressPct)}%
+            </span>
+          </div>
         </div>
 
-        {/* Bottom Info */}
-        <div className="w-full space-y-2 sm:space-y-3 shrink-0">
-          <div className="w-full text-center">
-            <p className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
-              ${room.isEmergency 
-                  ? 'bg-red-600 text-white border-red-500' 
-                  : (room.isLocked 
-                      ? 'bg-amber-500 text-white border-amber-600' 
-                      : 'bg-white/5 border-white/5 text-white/50')}
-            `}>
-              {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
-            </p>
+        {/* ── 4. Telemetry row: ETA + STATUS ───────────────────────── */}
+        <div className="grid grid-cols-2 border-t border-hairline divide-x divide-hairline">
+          <div className="px-3 py-2">
+            <div className="font-mono text-[9px] tracking-[0.2em] text-foreground-dim uppercase mb-0.5">
+              ETA
+            </div>
+            <div className="font-mono text-sm font-medium tabular-nums text-foreground">
+              {room.estimatedEndTime && shouldShowTime
+                ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+                : '——:——'}
+            </div>
           </div>
-          
-            <div className={`flex items-center justify-between pt-2 sm:pt-3 border-t gap-1.5 sm:gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
-          `}>
-            {/* Left: avatar + names */}
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-              <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border shrink-0 flex items-center justify-center
-                ${room.isEmergency ? 'border-red-500/30 bg-red-500/10' : (room.isLocked ? 'border-amber-500/30 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/30 bg-cyan-500/10' : 'border-white/10 bg-white/5'))}
-              `}>
-                <User className={`w-3 h-3 sm:w-4 sm:h-4 transition-opacity
-                  ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : (room.isPaused ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/60'))}
-                `} />
-              </div>
-              <div className="min-w-0 flex flex-col gap-0.5">
-                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-tight truncate transition-colors
-                  ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
-                `}>
-                  {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
-                </span>
-                {room?.staff?.nurse?.name && (
-                  <span className={`hidden sm:inline text-[9px] font-medium uppercase tracking-tight truncate transition-colors
-                    ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
-                  `}>
-                    {room?.staff?.nurse?.name?.split(' ').pop()}
-                  </span>
-                )}
-              </div>
+          <div className="px-3 py-2 min-w-0">
+            <div className="font-mono text-[9px] tracking-[0.2em] text-foreground-dim uppercase mb-0.5">
+              STATUS
             </div>
-
-            {/* Right: action buttons / status badges */}
-            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-              {room.isSeptic && (
-                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/20 backdrop-blur-md">
-                  <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/70" />
-                </div>
-              )}
-
-              {/* Patient called indicator */}
-              {room.patientCalledAt && !room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">
-                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
-                </div>
-              )}
-
-              {/* Patient arrived indicator */}
-              {room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-green-500/20 border-green-400/40">
-                  <BedDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                </div>
-              )}
-
-              {/* Emergency button */}
-              <button
-                onClick={(e) => handleAction(e, onEmergency)}
-                aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
-                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md
-                  ${room.isEmergency
-                    ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
-                    : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
-                `}
-              >
-                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
-
-              {/* Lock button */}
-              <button
-                onClick={(e) => handleAction(e, onLock)}
-                aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
-                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md
-                  ${room.isLocked
-                    ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
-                    : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
-                `}
-              >
-                <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
+            <div
+              className="font-sans text-[11px] font-medium tracking-tight uppercase truncate"
+              style={{ color: themeColor }}
+              title={statusLabel}
+            >
+              {statusLabel}
             </div>
+          </div>
+        </div>
+
+        {/* ── 5. Crew row + action bar ─────────────────────────────── */}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-hairline">
+          <div className="flex flex-col min-w-0">
+            <span className="font-mono text-[9px] tracking-[0.2em] text-foreground-dim uppercase">
+              CREW
+            </span>
+            <span className="font-sans text-[11px] font-medium text-foreground truncate">
+              {room?.staff?.doctor?.name?.split(' ').pop() || '——'}
+              {room?.staff?.nurse?.name && (
+                <span className="text-foreground-dim"> · {room.staff.nurse.name.split(' ').pop()}</span>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {room.patientCalledAt && !room.patientArrivedAt && (
+              <div className="p-1 border border-accent/40 bg-accent-soft" title="Pacient volán">
+                <Phone className="w-3 h-3 text-accent" />
+              </div>
+            )}
+            {room.patientArrivedAt && (
+              <div className="p-1 border border-success/40" style={{ backgroundColor: 'hsla(142, 70%, 45%, 0.12)' }} title="Pacient na sále">
+                <BedDouble className="w-3 h-3 text-success" />
+              </div>
+            )}
+            <button
+              onClick={(e) => handleAction(e, onEmergency)}
+              aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
+              className={`p-1 border transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-critical
+                ${room.isEmergency
+                  ? 'border-critical bg-critical text-background'
+                  : 'border-hairline-strong text-foreground-dim hover:text-critical hover:border-critical/60'}
+              `}
+            >
+              <AlertCircle className="w-3 h-3" />
+            </button>
+            <button
+              onClick={(e) => handleAction(e, onLock)}
+              aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
+              className={`p-1 border transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-warning
+                ${room.isLocked
+                  ? 'border-warning bg-warning text-background'
+                  : 'border-hairline-strong text-foreground-dim hover:text-warning hover:border-warning/60'}
+              `}
+            >
+              <Lock className="w-3 h-3" />
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
-}, (prev, next) => {
-  // Custom comparator — re-renderuj pouze když se změní DATA sálu, nikoli callbacky.
-  // Inline arrow funkce z parenta (() => setSelectedRoomId(room.id) atd.) se vždy
-  // recreatují, což jinak invaliduje React.memo a způsobuje, že se VŠECHNY karty
-  // re-renderují při jakékoli změně v rooms[]. Tohle je kritická perf optimalizace
-  // pro dashboard se 6+ kartami obsahujícími drahá SVG / glassmorph efekty.
-  // Callbacky jsou de facto pure (jen volají setRooms s room.id), takže stale
-  // closure neničí logiku.
-  return prev.room === next.room;
-});
+}, (prev, next) => prev.room === next.room);
+
+RoomCard.displayName = 'RoomCard';
 
 export default RoomCard;
