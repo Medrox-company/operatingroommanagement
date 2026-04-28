@@ -31,7 +31,7 @@ const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 320;
-const MIN_ROW_HEIGHT = 40; // Minimum row height
+const MIN_ROW_HEIGHT = 32; // Minimum row height — sníženo z 40 aby se vešlo více sálů bez scrollu
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
@@ -793,18 +793,18 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div 
-                        className="w-7 h-7 rounded-xl flex items-center justify-center"
+                        className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: `${bannerColor}26`, border: `1px solid ${bannerColor}55` }}
                       >
                         <AlertTriangle className="w-3.5 h-3.5" style={{ color: bannerColor }} />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
                       </div>
                     </div>
                     {/* Urgency timeline box - tinted glassmorph */}
@@ -847,18 +847,18 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     onClick={() => setSelectedRoom(room)}
                   >
                     <div 
-                      className="flex-shrink-0 flex items-center gap-3 px-4 sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
                     >
                       <div 
-                        className="w-7 h-7 rounded-xl flex items-center justify-center"
+                        className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
                       >
                         <Lock className="w-3.5 h-3.5" style={{ color: C.accent }} />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
                       </div>
                     </div>
                     {/* Locked timeline box - LoginPage glassmorph */}
@@ -915,9 +915,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       }}
                     />
                   )}
-                  {/* Room Label - Sticky LEFT column with uniform padding on all sides */}
+                  {/* Room Label - Sticky LEFT column. Used `min-h-0 overflow-hidden`
+                     a `py-1` aby se obsah karty nepřekrýval s vedlejším řádkem
+                     při sníženém rowHeight (responzivní dělení container_height / rooms.length). */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-2 px-2 py-2 transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-center gap-2 px-2 py-1 min-h-0 overflow-hidden transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
@@ -961,9 +963,12 @@ style={{
                       )}
                     </div>
 
-                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN, always visible */}
+                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN, always visible.
+                       Padding sníženo z p-3 na py-1.5 px-2.5 aby se karta vešla i do MIN_ROW_HEIGHT
+                       (32px) bez přetékání do dalšího řádku. min-w-0 + overflow-hidden zajišťuje
+                       správné truncate chování. */}
                     <div 
-                      className="flex-shrink-0 flex-1 max-w-xs rounded-xl p-3 backdrop-blur-md transition-all duration-200"
+                      className="flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-xl py-1.5 px-2.5 backdrop-blur-md transition-all duration-200 overflow-hidden"
                       style={{ 
                         background: C.glass, 
                         border: `1px solid ${C.border}`,
@@ -1024,18 +1029,18 @@ style={{
                           </motion.div>
                         )}
                       </div>
-                      <div className="mt-1.5">
+                      <div className="mt-0.5">
                         {isFree ? (
-                          <p className="text-[8px] font-semibold text-white/40 flex items-center gap-2 uppercase tracking-[0.2em]">
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.4)' }} />
+                          <p className="text-[8px] font-semibold text-white/40 flex items-center gap-2 uppercase tracking-[0.2em] truncate">
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'rgba(16,185,129,0.4)' }} />
                             VOLNÝ
                           </p>
                         ) : remainingTime && stepIndex !== 0 ? (
-                          <p className="text-[8px] font-semibold text-white/50 uppercase tracking-[0.2em]">
+                          <p className="text-[8px] font-semibold text-white/50 uppercase tracking-[0.2em] truncate">
                             {remainingTime}
                           </p>
                         ) : (
-                          <p className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.2em]">{room.department}</p>
+                          <p className="text-[8px] font-semibold text-white/40 uppercase tracking-[0.2em] truncate">{room.department}</p>
                         )}
                       </div>
                     </div>

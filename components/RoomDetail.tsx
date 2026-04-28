@@ -1034,20 +1034,30 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 {room.name}
               </h1>
 
-              {/* Urgency badge má prioritu — překrývá EMERGENCY i SÁL UZAMČEN */}
+              {/* Urgency badge má prioritu — překrývá EMERGENCY i SÁL UZAMČEN.
+                  Použit glassmorph styl shodný s ostatními akčními boxy v Detailu sálu
+                  (bg-white/[0.03] + border barvou tématu + backdrop-blur-md), místo
+                  solidní barvy pozadí — drží jednotný vizuální jazyk Detailu. */}
               {urgencyTheme ? (
                 <>
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)]"
+                    className="pointer-events-auto rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] backdrop-blur-md"
                     style={{
-                      backgroundColor: urgencyTheme.color,
-                      boxShadow: urgencyTheme.badgeShadow,
+                      background: 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${urgencyTheme.color}66`,
+                      boxShadow: `0 8px 24px ${urgencyTheme.color}26, inset 0 1px 0 rgba(255,255,255,0.06)`,
                     }}
                   >
-                    <AlertTriangle className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]" />
-                    <span className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest">
+                    <AlertTriangle
+                      className="w-[clamp(1rem,2vw,2rem)] h-[clamp(1rem,2vw,2rem)]"
+                      style={{ color: urgencyTheme.color }}
+                    />
+                    <span
+                      className="text-[clamp(0.875rem,1.8vw,1.5rem)] font-black uppercase tracking-widest"
+                      style={{ color: urgencyTheme.color }}
+                    >
                       {urgencyTheme.label}
                     </span>
                   </motion.div>
@@ -1058,12 +1068,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                       animate={{ scale: 1, opacity: 1 }}
                       whileHover={{ scale: 1.04 }}
                       whileTap={{ scale: 0.97 }}
-                      className="pointer-events-auto bg-white/95 hover:bg-white text-[#0B1120] px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] backdrop-blur-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                      style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6)' }}
+                      className="pointer-events-auto rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] backdrop-blur-md hover:bg-white/[0.08] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.18)',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+                      }}
                       aria-label="Přijmout akutní výkon"
                     >
-                      <Check className="w-[clamp(1rem,1.8vw,1.75rem)] h-[clamp(1rem,1.8vw,1.75rem)]" strokeWidth={3} />
-                      <span className="text-[clamp(0.875rem,1.6vw,1.25rem)] font-black uppercase tracking-widest">
+                      <Check
+                        className="w-[clamp(1rem,1.8vw,1.75rem)] h-[clamp(1rem,1.8vw,1.75rem)] text-white"
+                        strokeWidth={3}
+                      />
+                      <span className="text-[clamp(0.875rem,1.6vw,1.25rem)] font-black uppercase tracking-widest text-white">
                         Přijmout
                       </span>
                     </motion.button>
