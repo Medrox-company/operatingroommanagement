@@ -760,7 +760,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         </span>
       </div>
 
-      {/* ── Print-only rozšířený detail sálu ───────────────────────────��───
+      {/* ── Print-only rozšířený detail sálu ───────────────────────────���───
           Při tisku ukážeme všechna důležitá data jako v RoomDetail panelu:
           aktuální fáze, personál, časy pacienta, příznaky (UPS/septický/atd.). */}
       {isPrinting && (
@@ -1472,15 +1472,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const scorecardData = useMemo(() => {
     // Průměrná délka výkonu — váženě dle workflow steps
     const opDuration = avgStepDurations.reduce((s, v) => s + v, 0);
-    // Recent events — posledních 8 záznamů z status history pro live ticker
+    // Recent events — posledních 8 záznamů z status history pro live ticker.
+    // StatusHistoryRow má `operating_room_id`, `event_type`, `step_name`, `timestamp`.
     const recentEvents = (statusHistory ?? [])
       .slice(0, 8)
       .map((row) => {
-        const room = rooms.find(r => r.id === row.room_id);
+        const room = rooms.find(r => r.id === row.operating_room_id);
         return {
-          timestamp: row.changed_at,
+          timestamp: row.timestamp,
           roomName: room?.name ?? 'Neznámý sál',
-          eventLabel: row.new_status ?? 'Změna stavu',
+          eventLabel: row.step_name ?? row.event_type ?? 'Změna stavu',
           color: room ? roomStatusColor(room) : undefined,
         };
       });

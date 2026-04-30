@@ -187,7 +187,8 @@ interface Recommendation {
   description: string;
   action: string;
   impact: string;
-  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  // Lucide ikony — ForwardRefExoticComponent. Přijímáme obecné ikonové komponenty.
+  icon: React.ComponentType<any>;
 }
 
 const RecommendationCard: React.FC<{ rec: Recommendation; index: number }> = memo(({ rec, index }) => {

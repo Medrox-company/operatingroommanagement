@@ -406,7 +406,9 @@ export interface KPIBlockProps {
   /** True pokud vyšší hodnota = horší (např. čekací doba) */
   deltaInverted?: boolean;
   accent?: string;
-  icon?: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  // Lucide ikona (LucideIcon je `ForwardRefExoticComponent`); přijímáme i obecné komponenty.
+  // Zachováme volnost — ikona se renderuje dále s běžnými LucideProps.
+  icon?: React.ComponentType<any>;
   /** Mini sparkline serie pod hodnotou */
   trend?: number[];
   /** Cílová hodnota — render progress baru */
@@ -486,7 +488,8 @@ KPIBlock.displayName = 'KPIBlock';
 // IconBubble — kruhová ikona s barevným pozadím (pro hero karty)
 // ─────────────────────────────────────────────────────────────────────────────
 export const IconBubble: React.FC<{
-  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  // Lucide icony jsou ForwardRefExoticComponent — přijímáme libovolnou ikonovou komponentu.
+  icon: React.ComponentType<any>;
   color?: string;
   size?: number;
   pulsing?: boolean;

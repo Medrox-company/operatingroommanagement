@@ -100,7 +100,8 @@ function computeCompositeScore(d: ScorecardData): number {
 interface Insight {
   level: 'success' | 'info' | 'warning' | 'critical';
   text: string;
-  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  // Lucide ikony — ForwardRefExoticComponent. Přijímáme obecné ikonové komponenty.
+  icon: React.ComponentType<any>;
 }
 
 function generateInsights(d: ScorecardData, score: number): Insight[] {
