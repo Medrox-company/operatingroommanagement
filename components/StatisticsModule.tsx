@@ -25,11 +25,17 @@ import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
 import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
 import { ForecastTab } from './statistics/ForecastTab';
+import { QualityTab } from './statistics/QualityTab';
+import { FinanceTab } from './statistics/FinanceTab';
+import { PatientFlowTab } from './statistics/PatientFlowTab';
+import { EquipmentTab } from './statistics/EquipmentTab';
+import { ComplianceTab } from './statistics/ComplianceTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'efektivita' | 'personal' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
+type Tab    = 'prehled' | 'efektivita' | 'personal' | 'kvalita' | 'pacienti' | 'compliance'
+            | 'finance' | 'vybaveni' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -760,7 +766,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         </span>
       </div>
 
-      {/* ── Print-only rozšířený detail sálu ───────────────────────────���───
+      {/* ── Print-only rozšířený detail sálu ───────────────────────────����───
           Při tisku ukážeme všechna důležitá data jako v RoomDetail panelu:
           aktuální fáze, personál, časy pacienta, příznaky (UPS/septický/atd.). */}
       {isPrinting && (
@@ -1382,6 +1388,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     'prehled':    'Přehled',
     'efektivita': 'Efektivita',
     'personal':   'Personál',
+    'kvalita':    'Kvalita',
+    'pacienti':   'Pacienti',
+    'compliance': 'Compliance',
+    'finance':    'Finance',
+    'vybaveni':   'Vybavení',
     'saly':       'Sály',
     'faze':       'Fáze',
     'heatmapa':   'Heatmapa',
@@ -1639,6 +1650,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     {id:'prehled',    label:'Přehled'},
     {id:'efektivita', label:'Efektivita'},
     {id:'personal',   label:'Personál'},
+    {id:'kvalita',    label:'Kvalita'},
+    {id:'pacienti',   label:'Pacienti'},
+    {id:'compliance', label:'Compliance'},
+    {id:'finance',    label:'Finance'},
+    {id:'vybaveni',   label:'Vybavení'},
     {id:'saly',       label:'Sály'},
     {id:'faze',       label:'Fáze'},
     {id:'heatmapa',   label:'Heatmapa'},
@@ -1775,6 +1791,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 { id: 'prehled', label: 'Přehled' },
                 { id: 'efektivita', label: 'Efektivita' },
                 { id: 'personal', label: 'Personál' },
+                { id: 'kvalita', label: 'Kvalita' },
+                { id: 'pacienti', label: 'Pacienti' },
+                { id: 'compliance', label: 'Compliance' },
+                { id: 'finance', label: 'Finance' },
+                { id: 'vybaveni', label: 'Vybavení' },
                 { id: 'saly', label: 'Sály' },
                 { id: 'faze', label: 'Fáze' },
                 { id: 'heatmapa', label: 'Heatmapa' },
@@ -2017,6 +2038,62 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
           )}
 
+          {/* ── Kvalita & bezpečnost ── */}
+          {(tab === 'kvalita' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <QualityTab
+                rooms={rooms}
+                totalOps={totalOps}
+                periodLabel={period}
+              />
+            </div>
+          )}
+
+          {/* ── Pacienti & flow ── */}
+          {(tab === 'pacienti' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <PatientFlowTab
+                rooms={rooms}
+                totalOps={totalOps}
+                periodLabel={period}
+              />
+            </div>
+          )}
+
+          {/* ── Compliance & audit ── */}
+          {(tab === 'compliance' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <ComplianceTab
+                rooms={rooms}
+                totalOps={totalOps}
+                periodLabel={period}
+              />
+            </div>
+          )}
+
+          {/* ── Finance & náklady ── */}
+          {(tab === 'finance' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <FinanceTab
+                rooms={rooms}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                periodLabel={period}
+              />
+            </div>
+          )}
+
+          {/* ── Vybavení & sterilizace ── */}
+          {(tab === 'vybaveni' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <EquipmentTab
+                rooms={rooms}
+                totalOps={totalOps}
+                periodLabel={period}
+              />
+            </div>
+          )}
+
           {/* ── Forecast & alerty ── */}
           {(tab === 'forecast' || isPrinting) && (
             <div className="flex flex-col gap-3">
@@ -2169,19 +2246,26 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
       {/* ── Period + Tab navigation ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7 print-hide">
-        {/* Tabs */}
-        <div className="flex items-center gap-1 p-1 rounded-lg" style={{background:C.surface,border:`1px solid ${C.border}`}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              className="px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all"
-              style={{
-                background:tab===t.id?'rgba(255,255,255,0.07)':'transparent',
-                color:tab===t.id?C.text:C.muted,
-              }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+  {/* Tabs — horizontálně scrollovatelný strip pro 12 záložek */}
+  <div className="flex items-center gap-1 p-1 rounded-lg overflow-x-auto max-w-full"
+    style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      scrollbarWidth: 'thin',
+      scrollbarColor: `${C.faint} transparent`,
+    }}>
+    {TABS.map(t => (
+      <button key={t.id} onClick={() => setTab(t.id)}
+        className="px-3.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0"
+        style={{
+          background: tab === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
+          color: tab === t.id ? C.text : C.muted,
+          boxShadow: tab === t.id ? `inset 0 0 0 1px ${C.border}` : 'none',
+        }}>
+        {t.label}
+      </button>
+    ))}
+  </div>
         {/* Period switcher + Export */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5">
@@ -2635,6 +2719,112 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               periodLabel={period}
               doctorOps={doctorOpsMap}
               nurseOps={nurseOpsMap}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Kvalita & bezpečnost ── (klinické metriky) */}
+        {(tab==='kvalita' || isPrinting) && (
+          <motion.div key="kvalita"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Kvalita & bezpečnost
+              </h2>
+            )}
+            <QualityTab
+              rooms={rooms}
+              totalOps={totalOps}
+              periodLabel={period}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Pacienti & flow ── */}
+        {(tab==='pacienti' || isPrinting) && (
+          <motion.div key="pacienti"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Pacienti & flow
+              </h2>
+            )}
+            <PatientFlowTab
+              rooms={rooms}
+              totalOps={totalOps}
+              periodLabel={period}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Compliance & audit ── */}
+        {(tab==='compliance' || isPrinting) && (
+          <motion.div key="compliance"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Compliance & audit
+              </h2>
+            )}
+            <ComplianceTab
+              rooms={rooms}
+              totalOps={totalOps}
+              periodLabel={period}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Finance & náklady ── */}
+        {(tab==='finance' || isPrinting) && (
+          <motion.div key="finance"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Finance & náklady
+              </h2>
+            )}
+            <FinanceTab
+              rooms={rooms}
+              totalOps={totalOps}
+              avgUtilization={avgUtil}
+              periodLabel={period}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Vybavení & sterilizace ── */}
+        {(tab==='vybaveni' || isPrinting) && (
+          <motion.div key="vybaveni"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Vybavení & sterilizace
+              </h2>
+            )}
+            <EquipmentTab
+              rooms={rooms}
+              totalOps={totalOps}
+              periodLabel={period}
             />
           </motion.div>
         )}
