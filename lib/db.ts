@@ -66,6 +66,7 @@ interface DBOperatingRoom {
   current_procedure_id: string | null;
   weekly_schedule: Record<string, any> | null;
   sort_order: number | null;
+  hourly_operating_cost: number | string | null;
 }
 
 interface DBStaff {

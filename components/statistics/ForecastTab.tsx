@@ -273,7 +273,7 @@ export const ForecastTab: React.FC<ForecastTabProps> = memo(({
                 <YAxis stroke={C.muted} fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{
-                    background: C.bgAlt, border: `1px solid ${C.border}`,
+                    background: C.surface2, border: `1px solid ${C.border}`,
                     borderRadius: 8, fontSize: 11,
                   }}
                   labelStyle={{ color: C.text }}

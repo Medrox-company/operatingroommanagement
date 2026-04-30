@@ -114,12 +114,12 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
       .sort((a, b) => (b.availability ?? 0) - (a.availability ?? 0))
       .slice(0, 8);
 
-    // Currently assigned to live rooms
+    // Currently assigned to live rooms — staff je v `room.staff` namespace
     const assignedIds = new Set<string>();
     for (const r of rooms) {
-      if (r.doctor?.id) assignedIds.add(r.doctor.id);
-      if (r.nurse?.id) assignedIds.add(r.nurse.id);
-      if (r.anesthesiologist?.id) assignedIds.add(r.anesthesiologist.id);
+      if (r.staff?.doctor?.id) assignedIds.add(r.staff.doctor.id);
+      if (r.staff?.nurse?.id) assignedIds.add(r.staff.nurse.id);
+      if (r.staff?.anesthesiologist?.id) assignedIds.add(r.staff.anesthesiologist.id);
     }
     const currentlyAssigned = staff.filter(s => assignedIds.has(s.id)).length;
 
@@ -366,7 +366,7 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
         />
       </div>
 
-      {/* ── Top dostupní + Top absentující ──────────────────────── */}
+      {/* ── Top dostupní + Top absentující ──────────────────���───── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card icon={UserCheck} accent={C.green}
           title="Top dostupní (aktivní)"
