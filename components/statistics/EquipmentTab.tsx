@@ -1,453 +1,466 @@
 /**
- * Equipment & Supply Tab — zařízení, sterilizace a sklady.
+ * EquipmentTab — Vybavení a údržba
  *
- * Zobrazuje:
- *   • Sterilizace cycle stats (úspěšné/neúspěšné, BowieDick, Helix test)
- *   • Instrument set turnover (kolikrát denně se otáčí)
- *   • Equipment uptime / breakdowns
- *   • Robot / laparoscopic věž využití
- *   • Implant inventory (TEP-H, TEP-K, sítě, šrouby)
- *   • Disposables consumption
- *   • Low-stock alerts
- *   • Maintenance schedule
+ * Reálná data z tabulky `equipment`:
+ *   • is_available
+ *   • last_maintenance / next_maintenance
+ *   • type (kategorizace)
+ *   • operating_room_id (přiřazení k sálu)
  *
- * Data jsou deterministicky generovaná z hashů.
+ * Žádné fiktivní spotřební normy / cykly sterilizace — schéma to neobsahuje.
  */
-
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  PieChart, Pie, Cell, ComposedChart, Line,
-} from 'recharts';
-import {
-  Wrench, ShieldAlert, FlaskConical, Boxes, AlertTriangle, CheckCircle2,
-  Battery, Cpu, Package, RotateCw, PackageX, Calendar,
+  Wrench, AlertTriangle, CheckCircle2, Calendar, Package, MapPin, XCircle, Clock,
 } from 'lucide-react';
-import type { OperatingRoom } from '../../types';
+import { motion } from 'framer-motion';
 import {
-  C, Card, MetricTile, ComplianceMeter, CategoryBarList, EventFeed,
-  hashStr, formatNumber, generateSeededTrend,
+  C, Card, KPIBlock, MetricTile, ProgressRing, CategoryBarList, EventFeed,
+  ComplianceMeter, formatNumber, type EventFeedItem,
 } from './shared';
+import type { EquipmentRow } from '../../lib/db';
+import type { OperatingRoom } from '../../types';
 
 interface EquipmentTabProps {
+  equipment: EquipmentRow[] | null;
   rooms: OperatingRoom[];
-  totalOps: number;
   periodLabel: string;
 }
 
-export const EquipmentTab: React.FC<EquipmentTabProps> = ({ rooms, totalOps, periodLabel }) => {
-  const data = useMemo(() => {
-    const seed = `equip-${rooms.length}-${periodLabel}-${totalOps}`;
-    const h = (k: string) => hashStr(`${seed}-${k}`);
+const DAY = 24 * 60 * 60 * 1000;
 
-    // Sterilizace
-    const sterileCyclesTotal     = Math.round(totalOps * 1.4 + h('cyc-tot') * 20);
-    const sterileSuccessRate     = 98 + h('sterile-success') * 1.8;     // 98-99.8 %
-    const sterileFailures        = Math.round(sterileCyclesTotal * (100 - sterileSuccessRate) / 100);
-    const bowieDickSuccess       = 99 + h('bowie') * 1;                  // 99-100 %
-    const helixSuccess           = 97 + h('helix') * 2.5;                // 97-99.5 %
-    const turnaroundTimeMin      = 92 + h('turnaround') * 28;            // 92-120 min sterilization cycle
+export const EquipmentTab: React.FC<EquipmentTabProps> = memo(({ equipment, rooms, periodLabel }) => {
+  const stats = useMemo(() => {
+    if (!equipment || equipment.length === 0) return null;
 
-    // Equipment uptime (laparoskopické věže, robot, anestezie, monitorování)
-    const laparoscopicUptime     = 96 + h('lap-up') * 3.5;
-    const robotUptime            = 92 + h('rob-up') * 6;
-    const anesthesiaUptime       = 99 + h('anest-up') * 1;
-    const monitoringUptime       = 99.5 + h('mon-up') * 0.5;
-    const xrayUptime             = 95 + h('xray-up') * 4;
-    const overallUptime          = (laparoscopicUptime + robotUptime + anesthesiaUptime + monitoringUptime + xrayUptime) / 5;
+    const total = equipment.length;
+    const available = equipment.filter(e => e.is_available).length;
+    const unavailable = total - available;
+    const availPct = total > 0 ? (available / total) * 100 : 0;
 
-    // Breakdown events
-    const breakdownEvents        = Math.round(2 + h('break-evt') * 6);   // 2-8 incidentů
-    const totalDowntimeH         = breakdownEvents * (1.5 + h('downtime') * 4);
+    const now = Date.now();
+    let overdue = 0;
+    let dueSoon = 0;
+    let scheduled = 0;
+    let neverServiced = 0;
+    let recentlyServiced = 0;
 
-    // Instrument set turnover (kolikrát denně se set otočí)
-    const instrumentSets = [
-      { name: 'Laparoskopický základní',   count: 12, used: 38 + Math.round(h('lap-bas') * 12) },
-      { name: 'Ortopedický TEP set',       count: 6,  used: 14 + Math.round(h('ort-tep') * 6) },
-      { name: 'Cévní chirurgie',           count: 4,  used: 8 + Math.round(h('vasc') * 4) },
-      { name: 'Apendektomie set',          count: 8,  used: 22 + Math.round(h('app-set') * 6) },
-      { name: 'Cholecystektomie set',      count: 8,  used: 24 + Math.round(h('chol-set') * 8) },
-      { name: 'Urologický endoskopický',   count: 5,  used: 12 + Math.round(h('uro') * 5) },
-      { name: 'Neurochirurgický set',      count: 3,  used: 5 + Math.round(h('neuro') * 3) },
-      { name: 'Hrudní chirurgie',          count: 3,  used: 4 + Math.round(h('thor') * 3) },
-    ];
-    instrumentSets.forEach(s => s.used = Math.min(s.count * 7, s.used));
+    for (const e of equipment) {
+      if (!e.last_maintenance) neverServiced++;
+      else {
+        const last = new Date(e.last_maintenance).getTime();
+        if (now - last < 30 * DAY) recentlyServiced++;
+      }
+      if (e.next_maintenance) {
+        const next = new Date(e.next_maintenance).getTime();
+        if (next < now) overdue++;
+        else {
+          scheduled++;
+          if (next - now < 14 * DAY) dueSoon++;
+        }
+      }
+    }
 
-    // Implant inventory
-    const implants = [
-      { name: 'TEP kyčle (Cementovaná)',   stock: 12 + Math.round(h('tep-h-c') * 5),  used: 6 + Math.round(h('tep-h-c-u') * 4),  alert: 'low' },
-      { name: 'TEP kyčle (Bezcement.)',     stock: 18 + Math.round(h('tep-h-nc') * 6), used: 9 + Math.round(h('tep-h-nc-u') * 4) },
-      { name: 'TEP kolene (Cementovaná)',   stock: 14 + Math.round(h('tep-k-c') * 5),  used: 8 + Math.round(h('tep-k-c-u') * 4) },
-      { name: 'TEP kolene (Bezcement.)',    stock: 9 + Math.round(h('tep-k-nc') * 4),  used: 5 + Math.round(h('tep-k-nc-u') * 3) },
-      { name: 'Hernie síťka (Tříslo)',      stock: 42 + Math.round(h('hernia-i') * 15),used: 26 + Math.round(h('hernia-i-u') * 8) },
-      { name: 'Hernie síťka (Břišní)',      stock: 16 + Math.round(h('hernia-a') * 8), used: 9 + Math.round(h('hernia-a-u') * 5) },
-      { name: 'Šrouby (titanové)',          stock: 88 + Math.round(h('screws') * 25),  used: 52 + Math.round(h('screws-u') * 18) },
-      { name: 'Pacemaker',                  stock: 4 + Math.round(h('pace') * 2),      used: 1 + Math.round(h('pace-u') * 2),    alert: 'low' },
-      { name: 'Stenty (cévní)',             stock: 22 + Math.round(h('stent') * 10),   used: 11 + Math.round(h('stent-u') * 6) },
-      { name: 'Cévní protézy (Dacron)',     stock: 8 + Math.round(h('graft') * 3),     used: 3 + Math.round(h('graft-u') * 2) },
-    ];
+    // Type breakdown
+    const typeCounts = new Map<string, { total: number; available: number }>();
+    for (const e of equipment) {
+      const t = e.type?.trim() || 'Neuvedeno';
+      const cur = typeCounts.get(t) ?? { total: 0, available: 0 };
+      cur.total++;
+      if (e.is_available) cur.available++;
+      typeCounts.set(t, cur);
+    }
+    const byType = Array.from(typeCounts.entries())
+      .map(([type, c]) => ({
+        type,
+        total: c.total,
+        available: c.available,
+        availPct: c.total > 0 ? (c.available / c.total) * 100 : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
 
-    // Disposables (jednorázové) — výrazná spotřeba
-    const disposables = [
-      { name: 'Sterilní pláště',           used: Math.round(totalOps * 4.5 + h('gowns') * 50),     budget: 250000 },
-      { name: 'Rukavice sterilní (páry)',  used: Math.round(totalOps * 8 + h('gloves') * 80),     budget: 180000 },
-      { name: 'Stapler náboje',            used: Math.round(totalOps * 1.2 + h('stapler') * 12),  budget: 420000 },
-      { name: 'Energetické nástroje (hrot)', used: Math.round(totalOps * 0.8 + h('energy') * 10), budget: 380000 },
-      { name: 'Šicí materiál (vlákna)',     used: Math.round(totalOps * 6 + h('suture') * 60),     budget: 95000 },
-      { name: 'Krycí materiál & roušky',    used: Math.round(totalOps * 2.4 + h('drapes') * 30),  budget: 65000 },
-    ];
+    // Per-room equipment count
+    const roomMap = new Map(rooms.map(r => [r.id, r.name]));
+    const perRoom = new Map<string, { total: number; unavail: number }>();
+    for (const e of equipment) {
+      const rid = e.operating_room_id ?? '__unassigned__';
+      const cur = perRoom.get(rid) ?? { total: 0, unavail: 0 };
+      cur.total++;
+      if (!e.is_available) cur.unavail++;
+      perRoom.set(rid, cur);
+    }
+    const perRoomList = Array.from(perRoom.entries())
+      .map(([rid, c]) => ({
+        roomId: rid,
+        roomName: rid === '__unassigned__' ? 'Nepřiřazeno' : (roomMap.get(rid) ?? rid),
+        total: c.total,
+        unavail: c.unavail,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8);
 
-    // Stock alerts
-    const lowStockItems = implants.filter(i => i.alert === 'low').length
-                        + (disposables.some(d => d.used > d.budget * 0.92) ? 1 : 0);
-    const reorderPending = 2 + Math.round(h('reorder') * 3);
+    // Overdue list
+    const overdueList = equipment
+      .filter(e => e.next_maintenance && new Date(e.next_maintenance).getTime() < now)
+      .map(e => ({
+        ...e,
+        daysOverdue: Math.floor((now - new Date(e.next_maintenance!).getTime()) / DAY),
+        roomName: e.operating_room_id ? (roomMap.get(e.operating_room_id) ?? '—') : '—',
+      }))
+      .sort((a, b) => b.daysOverdue - a.daysOverdue)
+      .slice(0, 8);
 
-    // Sterilizace trend (denní úspěšnost)
-    const sterileTrend = generateSeededTrend(`${seed}-sterile-trend`, 14, sterileSuccessRate, 0.012);
-
-    // Maintenance schedule
-    const maintenanceItems = [
-      { name: 'Laparoskopická věž 1',       due: 'Dnes',         priority: 'high'    as const },
-      { name: 'Anesteziologický stroj 3',    due: 'Zítra',        priority: 'medium'  as const },
-      { name: 'Robot da Vinci',              due: 'Za 3 dny',     priority: 'medium'  as const },
-      { name: 'C-rameno',                    due: 'Za 5 dní',    priority: 'low'     as const },
-      { name: 'Sterilizační autokláv 2',     due: 'Za 7 dní',    priority: 'low'     as const },
-      { name: 'Defibrilátor (sál 4)',        due: 'Za 12 dní',   priority: 'low'     as const },
-    ];
+    // Due soon list
+    const dueSoonList = equipment
+      .filter(e => {
+        if (!e.next_maintenance) return false;
+        const next = new Date(e.next_maintenance).getTime();
+        return next >= now && next - now < 14 * DAY;
+      })
+      .map(e => ({
+        ...e,
+        daysUntil: Math.ceil((new Date(e.next_maintenance!).getTime() - now) / DAY),
+        roomName: e.operating_room_id ? (roomMap.get(e.operating_room_id) ?? '—') : '—',
+      }))
+      .sort((a, b) => a.daysUntil - b.daysUntil)
+      .slice(0, 6);
 
     return {
-      sterileCyclesTotal, sterileSuccessRate, sterileFailures,
-      bowieDickSuccess, helixSuccess, turnaroundTimeMin,
-      laparoscopicUptime, robotUptime, anesthesiaUptime, monitoringUptime, xrayUptime, overallUptime,
-      breakdownEvents, totalDowntimeH,
-      instrumentSets, implants, disposables, lowStockItems, reorderPending,
-      sterileTrend, maintenanceItems,
+      total, available, unavailable, availPct,
+      overdue, dueSoon, scheduled, neverServiced, recentlyServiced,
+      byType, perRoomList, overdueList, dueSoonList,
     };
-  }, [rooms.length, totalOps, periodLabel]);
+  }, [equipment, rooms]);
 
-  // Maintenance events feed
-  const maintenanceEvents = useMemo(() => {
-    const now = Date.now();
-    return data.maintenanceItems.map((item, i) => ({
-      id: `m-${i}`,
-      timestamp: new Date(now + (i + 1) * 1000 * 60 * 60 * 12).toISOString(),
-      title: item.name,
-      description: `Plánovaná údržba — ${item.due}`,
-      severity: item.priority === 'high' ? 'critical' as const : item.priority === 'medium' ? 'warning' as const : 'info' as const,
-      source: 'Maintenance',
-    }));
-  }, [data.maintenanceItems]);
+  const maintenanceEvents = useMemo<EventFeedItem[]>(() => {
+    if (!equipment) return [];
+    return equipment
+      .filter(e => e.last_maintenance)
+      .sort((a, b) => new Date(b.last_maintenance!).getTime() - new Date(a.last_maintenance!).getTime())
+      .slice(0, 8)
+      .map(e => ({
+        id: e.id,
+        timestamp: e.last_maintenance!,
+        title: e.name,
+        description: [e.type, e.is_available ? 'Dostupné' : 'Mimo provoz'].filter(Boolean).join(' • '),
+        severity: e.is_available ? 'success' : 'warning',
+        source: e.type ?? undefined,
+      }));
+  }, [equipment]);
+
+  if (!equipment) {
+    return (
+      <Card>
+        <div className="flex items-center gap-3 py-6 px-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: `${C.muted}1a` }}>
+            <Clock size={16} color={C.muted} strokeWidth={2.2} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: C.text }}>Načítání dat…</p>
+            <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>
+              Načítá se z tabulky <code>equipment</code>.
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!stats || stats.total === 0) {
+    return (
+      <Card>
+        <div className="flex items-center gap-3 py-6 px-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: `${C.yellow}1a` }}>
+            <AlertTriangle size={16} color={C.yellow} strokeWidth={2.2} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: C.text }}>
+              Žádné záznamy o vybavení
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>
+              Tabulka <code>equipment</code> neobsahuje žádné položky.
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {/* ── Hero KPIs ── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-        <MetricTile
-          label="Equipment uptime"
-          value={`${data.overallUptime.toFixed(1)}%`}
-          color={data.overallUptime >= 97 ? C.green : C.yellow}
-          icon={Battery}
-          sublabel={`${data.breakdownEvents} výpadků / period`}
-        />
-        <MetricTile
-          label="Sterilizace úspěšnost"
-          value={`${data.sterileSuccessRate.toFixed(2)}%`}
-          color={C.green}
-          icon={FlaskConical}
-          sublabel={`${data.sterileFailures} fail / ${data.sterileCyclesTotal} cyklů`}
-        />
-        <MetricTile
-          label="Cyklů celkem"
-          value={formatNumber(data.sterileCyclesTotal)}
-          color={C.accent}
-          icon={RotateCw}
-          sublabel="Sterilizace v období"
-        />
-        <MetricTile
-          label="Avg turnaround"
-          value={`${Math.round(data.turnaroundTimeMin)} min`}
-          color={C.purple}
-          icon={Wrench}
-          sublabel="Cyklus sterilizace"
-          invertedDelta
-        />
-        <MetricTile
-          label="Low stock"
-          value={data.lowStockItems}
-          color={data.lowStockItems > 0 ? C.red : C.green}
-          icon={PackageX}
-          sublabel={`${data.reorderPending} reorder pending`}
-        />
-        <MetricTile
-          label="Total downtime"
-          value={`${data.totalDowntimeH.toFixed(1)} h`}
-          color={data.totalDowntimeH < 8 ? C.green : C.red}
-          icon={ShieldAlert}
-          invertedDelta
-          sublabel="Nedostupnost zařízení"
-        />
-      </div>
-
-      {/* ── Equipment uptime + Sterilization ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card title="Uptime jednotlivých zařízení" subtitle="Dostupnost % v období" accent={C.green}>
-          <div className="space-y-3 mt-2">
-            <ComplianceMeter label="Laparoskopické věže (3 ks)"      value={data.laparoscopicUptime} target={97} />
-            <ComplianceMeter label="Robot da Vinci"                  value={data.robotUptime}        target={94} />
-            <ComplianceMeter label="Anesteziologické stroje (8 ks)"  value={data.anesthesiaUptime}   target={99} />
-            <ComplianceMeter label="Monitorovací zařízení (12 ks)"   value={data.monitoringUptime}   target={99.5} />
-            <ComplianceMeter label="C-rameno / RTG"                  value={data.xrayUptime}         target={95} />
-          </div>
-          <div className="mt-3 pt-3 text-[10px]" style={{ borderTop: `1px solid ${C.border}`, color: C.muted }}>
-            Robot dostupnost = nejnižší — naplánovat preventivní údržbu mimo špičku.
-          </div>
-        </Card>
-
-        <Card title="Sterilizace — quality control" subtitle="Standardní testy a cykly" accent={C.accent}>
-          <div className="space-y-3 mt-2">
-            <ComplianceMeter label="Bowie-Dick test (denní vakuum)"  value={data.bowieDickSuccess}   target={100} size="md" />
-            <ComplianceMeter label="Helix test (PCD)"                value={data.helixSuccess}       target={99} size="md" />
-            <ComplianceMeter label="Cycle success rate (overall)"    value={data.sterileSuccessRate} target={99} size="md" />
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <div className="p-2 rounded-md text-center" style={{ background: C.surface }}>
-              <div className="text-[9px] uppercase" style={{ color: C.muted }}>Úspěšné cykly</div>
-              <div className="text-lg font-bold font-mono tabular-nums mt-0.5" style={{ color: C.green }}>
-                {formatNumber(data.sterileCyclesTotal - data.sterileFailures)}
+    <div className="flex flex-col gap-4">
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <Card elevated icon={Wrench} accent={C.accent}
+        title="Vybavení & údržba"
+        subtitle={`Z databáze \`equipment\`. Období: ${periodLabel}`}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 items-center">
+          <div className="flex items-center gap-4 justify-center md:justify-start">
+            <ProgressRing
+              value={stats.availPct}
+              size={120}
+              strokeWidth={10}
+              gradient
+              centerLabel={
+                <div className="flex flex-col items-center">
+                  <span className="text-2xl font-bold tabular-nums leading-none"
+                    style={{ color: stats.availPct >= 90 ? C.green : stats.availPct >= 70 ? C.yellow : C.red }}>
+                    {stats.availPct.toFixed(0)}%
+                  </span>
+                  <span className="text-[8px] uppercase tracking-wider mt-1" style={{ color: C.muted }}>
+                    Dostupnost
+                  </span>
+                </div>
+              }
+            />
+            <div className="flex flex-col gap-0.5">
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: C.muted }}>
+                Celkem položek
               </div>
-            </div>
-            <div className="p-2 rounded-md text-center" style={{ background: C.surface }}>
-              <div className="text-[9px] uppercase" style={{ color: C.muted }}>Neúspěšné</div>
-              <div className="text-lg font-bold font-mono tabular-nums mt-0.5" style={{ color: C.red }}>
-                {formatNumber(data.sterileFailures)}
+              <div className="text-3xl font-bold leading-none" style={{ color: C.textHi }}>
+                {formatNumber(stats.total)}
+              </div>
+              <div className="text-[10px] mt-1" style={{ color: C.muted }}>
+                <span style={{ color: C.green }} className="font-bold">{stats.available}</span> dostupných
+                {' / '}
+                <span style={{ color: C.red }} className="font-bold">{stats.unavailable}</span> mimo provoz
               </div>
             </div>
           </div>
-          <div className="text-[10px] mt-3" style={{ color: C.muted }}>
-            Selhání jsou recyklována, žádný kontaminovaný nástroj nedoručen na sál.
-          </div>
-        </Card>
 
-        <Card title="Sterilizace trend (14 dní)" subtitle="Denní úspěšnost cyklů" accent={C.purple}>
-          <div className="h-[200px] mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data.sterileTrend.map((v, i) => ({ d: `D${i + 1}`, value: v }))}>
-                <defs>
-                  <linearGradient id="strGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={C.purple} stopOpacity={0.5} />
-                    <stop offset="100%" stopColor={C.purple} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="d" stroke={C.muted} fontSize={9} tickLine={false} axisLine={false} />
-                <YAxis stroke={C.muted} fontSize={9} tickLine={false} axisLine={false}
-                  domain={[95, 100]} tickFormatter={(v) => `${v.toFixed(1)}%`} />
-                <Tooltip
-                  contentStyle={{ background: '#0a0a0a', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }}
-                  formatter={(v: number) => [`${v.toFixed(2)} %`, 'Úspěšnost']}
-                />
-                <Bar dataKey="value" fill="url(#strGrad)" radius={[2, 2, 0, 0]} />
-                <Line type="monotone" dataKey="value" stroke={C.purple} strokeWidth={2} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
+          <div className="flex flex-col gap-3">
+            <ComplianceMeter
+              label="Servisováno za posledních 30 dní"
+              value={stats.total > 0 ? (stats.recentlyServiced / stats.total) * 100 : 0}
+              target={70}
+            />
+            <ComplianceMeter
+              label="Plán údržby do 14 dnů"
+              value={stats.total > 0 ? (stats.dueSoon / stats.total) * 100 : 0}
+              target={20}
+              inverted
+            />
+            <ComplianceMeter
+              label="Po termínu (overdue)"
+              value={stats.total > 0 ? (stats.overdue / stats.total) * 100 : 0}
+              target={5}
+              inverted
+            />
           </div>
-        </Card>
-      </div>
-
-      {/* ── Instrument turnover + Implants ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Card title="Instrument set turnover" subtitle="Kolikrát byl set v období použit / kolik je celkem k dispozici" accent={C.accent}>
-          <div className="space-y-2 mt-2">
-            {data.instrumentSets.map((set, i) => {
-              const utilization = (set.used / (set.count * 7)) * 100; // /period (max 7× za týden)
-              const c = utilization > 80 ? C.red : utilization > 60 ? C.yellow : C.green;
-              return (
-                <div key={i}>
-                  <div className="flex items-center justify-between mb-1 text-[11px]">
-                    <span style={{ color: C.text }} className="truncate flex-1">{set.name}</span>
-                    <span className="font-mono tabular-nums shrink-0 ml-2" style={{ color: C.muted }}>
-                      <span className="font-bold" style={{ color: c }}>{set.used}</span>/{set.count * 7}
-                    </span>
-                  </div>
-                  <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ background: C.surface }}>
-                    <div className="h-full rounded-full" style={{
-                      width: `${Math.min(100, utilization)}%`,
-                      background: `linear-gradient(90deg, ${c}66, ${c})`,
-                    }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-3 pt-3 grid grid-cols-3 gap-2 text-[10px]" style={{ borderTop: `1px solid ${C.border}` }}>
-            <div>
-              <div style={{ color: C.muted }}>Sety celkem</div>
-              <div className="font-bold mt-0.5 font-mono tabular-nums" style={{ color: C.text }}>
-                {data.instrumentSets.reduce((s, x) => s + x.count, 0)} ks
-              </div>
-            </div>
-            <div>
-              <div style={{ color: C.muted }}>Použití celkem</div>
-              <div className="font-bold mt-0.5 font-mono tabular-nums" style={{ color: C.accent }}>
-                {data.instrumentSets.reduce((s, x) => s + x.used, 0)}×
-              </div>
-            </div>
-            <div>
-              <div style={{ color: C.muted }}>Avg / set / period</div>
-              <div className="font-bold mt-0.5 font-mono tabular-nums" style={{ color: C.green }}>
-                {(data.instrumentSets.reduce((s, x) => s + x.used / x.count, 0) / data.instrumentSets.length).toFixed(1)}×
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Implant inventory" subtitle="Stav skladu × spotřeba v období" accent={C.purple}>
-          <div className="space-y-2 mt-2">
-            {data.implants.map((imp, i) => {
-              const remaining = imp.stock - imp.used;
-              const lowStock = remaining <= imp.stock * 0.2;
-              return (
-                <div key={i} className="flex items-center gap-2 text-[11px] py-1"
-                  style={{ borderBottom: i < data.implants.length - 1 ? `1px dashed ${C.border}` : 'none' }}>
-                  <div className="flex-1 truncate" style={{ color: C.text }}>{imp.name}</div>
-                  <div className="font-mono tabular-nums shrink-0" style={{ color: C.muted }}>
-                    {imp.used}/{imp.stock}
-                  </div>
-                  <div className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider`}
-                    style={{
-                      background: lowStock ? `${C.red}15` : `${C.green}15`,
-                      color: lowStock ? C.red : C.green,
-                    }}>
-                    {lowStock ? `Low: ${remaining}` : `OK: ${remaining}`}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      </div>
-
-      {/* ── Disposables consumption + Maintenance schedule ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Card title="Disposables — spotřeba v období" subtitle="Jednorázový materiál" accent={C.orange}>
-          <CategoryBarList
-            items={data.disposables.map((d) => {
-              const pctBudget = (d.used / d.budget) * 100;
-              const c = pctBudget > 92 ? C.red : pctBudget > 75 ? C.yellow : C.green;
-              return {
-                label: d.name,
-                value: d.used,
-                color: c,
-                sublabel: `${pctBudget.toFixed(0)}%`,
-              };
-            })}
-            formatValue={(v) => formatNumber(v) + ' ks'}
-          />
-          <div className="mt-3 pt-3 text-[10px]" style={{ borderTop: `1px solid ${C.border}`, color: C.muted }}>
-            Spotřeba se odvíjí od počtu a typu výkonů. Procento ukazuje vyčerpání period budgetu.
-          </div>
-        </Card>
-
-        <Card title="Plán údržby" subtitle="Nadcházející servisy a kontroly" accent={C.yellow}
-          action={<Calendar size={14} color={C.yellow} />}>
-          <EventFeed items={maintenanceEvents} maxItems={6} />
-        </Card>
-      </div>
-
-      {/* ── Robot + Lap utilization charts ── */}
-      <Card title="Specializovaná zařízení — denní využití" subtitle="Robot, laparoskopická věž, C-rameno" accent={C.purple}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-          {[
-            {
-              name: 'Robot da Vinci',
-              icon: Cpu,
-              utilization: 62 + hashStr(`${rooms.length}-rob-util`) * 25,
-              cases: 8 + Math.round(hashStr(`${rooms.length}-rob-cases`) * 8),
-              color: C.purple,
-              status: 'Operativní',
-            },
-            {
-              name: 'Laparoskopické věže',
-              icon: Boxes,
-              utilization: 78 + hashStr(`${rooms.length}-lap-util`) * 18,
-              cases: 32 + Math.round(hashStr(`${rooms.length}-lap-cases`) * 18),
-              color: C.accent,
-              status: '3/3 aktivní',
-            },
-            {
-              name: 'C-rameno (RTG)',
-              icon: Cpu,
-              utilization: 42 + hashStr(`${rooms.length}-xray-util`) * 22,
-              cases: 12 + Math.round(hashStr(`${rooms.length}-xray-cases`) * 8),
-              color: C.yellow,
-              status: 'Přesunutelné',
-            },
-          ].map((eq, i) => {
-            const Icon = eq.icon;
-            return (
-              <div key={i} className="rounded-lg p-3" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-md p-1.5" style={{ background: `${eq.color}18` }}>
-                      <Icon size={14} color={eq.color} strokeWidth={2.2} />
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-bold" style={{ color: C.text }}>{eq.name}</div>
-                      <div className="text-[9px]" style={{ color: C.muted }}>{eq.status}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: C.muted }}>
-                  Využití kapacity
-                </div>
-                <div className="text-2xl font-bold font-mono tabular-nums" style={{ color: eq.color }}>
-                  {eq.utilization.toFixed(0)}%
-                </div>
-                <div className="w-full rounded-full h-1.5 mt-2 overflow-hidden" style={{ background: C.surface2 }}>
-                  <div className="h-full rounded-full" style={{
-                    width: `${eq.utilization}%`,
-                    background: `linear-gradient(90deg, ${eq.color}66, ${eq.color})`,
-                  }} />
-                </div>
-                <div className="text-[10px] mt-2" style={{ color: C.muted }}>
-                  Výkonů v období: <span className="font-mono tabular-nums font-bold" style={{ color: C.text }}>{eq.cases}</span>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </Card>
 
-      {/* ── Stock alerts ── */}
-      {data.lowStockItems > 0 && (
-        <Card title="Stock alerty" subtitle={`${data.lowStockItems} položek pod prahovou hodnotou`} accent={C.red}
-          action={<AlertTriangle size={14} color={C.red} />}>
-          <div className="space-y-2">
-            {data.implants.filter(i => i.alert === 'low').map((item, i) => {
-              const remaining = item.stock - item.used;
-              return (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-md"
-                  style={{ background: `${C.red}0d`, border: `1px solid ${C.red}30` }}>
-                  <PackageX size={14} color={C.red} />
-                  <div className="flex-1">
-                    <div className="text-[11px] font-bold" style={{ color: C.text }}>{item.name}</div>
-                    <div className="text-[10px]" style={{ color: C.muted }}>
-                      Zbývá <span className="font-mono tabular-nums" style={{ color: C.red }}>{remaining}</span> ks
-                      {' • '}Doporučeno objednat <span className="font-mono tabular-nums" style={{ color: C.text }}>{item.stock}</span> ks
+      {/* ── KPI strip ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KPIBlock label="Dostupné" value={stats.available} icon={CheckCircle2} color={C.green}
+          sublabel={`${stats.availPct.toFixed(0)}% z celku`} />
+        <KPIBlock label="Mimo provoz" value={stats.unavailable} icon={XCircle} color={C.red}
+          sublabel="is_available = false" />
+        <KPIBlock label="Po termínu" value={stats.overdue} icon={AlertTriangle} color={C.orange}
+          sublabel="next_maintenance < dnes" />
+        <KPIBlock label="Údržba do 14 dnů" value={stats.dueSoon} icon={Calendar} color={C.yellow}
+          sublabel="plánováno blízce" />
+      </div>
+
+      {/* ── Type & Per-room breakdown ──────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card icon={Package} accent={C.purple}
+          title="Po typu vybavení"
+          subtitle="Dostupnost podle kategorie">
+          {stats.byType.length > 0 ? (
+            <div className="flex flex-col gap-2.5">
+              {stats.byType.map((t, i) => (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className="flex items-baseline justify-between text-[11px]">
+                    <span style={{ color: C.text }} className="font-medium truncate flex-1 mr-2">
+                      {t.type}
+                    </span>
+                    <span className="font-mono tabular-nums" style={{ color: C.muted }}>
+                      {t.available}/{t.total}
+                    </span>
+                    <span className="font-mono tabular-nums font-bold ml-2 w-12 text-right"
+                      style={{ color: t.availPct >= 90 ? C.green : t.availPct >= 70 ? C.yellow : C.red }}>
+                      {t.availPct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: C.surface }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${t.availPct}%` }}
+                      transition={{ duration: 0.6, delay: i * 0.04 }}
+                      style={{
+                        height: '100%',
+                        background: t.availPct >= 90 ? C.green : t.availPct >= 70 ? C.yellow : C.red,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-center py-4" style={{ color: C.muted }}>Žádné typy vybavení</div>
+          )}
+        </Card>
+
+        <Card icon={MapPin} accent={C.cyan}
+          title="Po sálech"
+          subtitle="Vybavení přiřazené k sálu">
+          {stats.perRoomList.length > 0 ? (
+            <CategoryBarList
+              items={stats.perRoomList.map(r => ({
+                label: r.roomName,
+                value: r.total,
+                color: r.unavail === 0 ? C.green : r.unavail >= 3 ? C.red : C.yellow,
+                sublabel: r.unavail > 0 ? `${r.unavail}× mimo` : '',
+              }))}
+              formatValue={(v) => `${v}×`}
+            />
+          ) : (
+            <div className="text-xs text-center py-4" style={{ color: C.muted }}>
+              Žádné položky přiřazené k sálu
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* ── Overdue & Due Soon ─────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card icon={AlertTriangle} accent={C.red}
+          title="Po termínu údržby"
+          subtitle="next_maintenance < dnes"
+          action={
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-mono tabular-nums"
+              style={{ background: `${C.red}1a`, color: C.red }}>
+              {stats.overdueList.length}
+            </span>
+          }>
+          {stats.overdueList.length > 0 ? (
+            <div className="flex flex-col">
+              {stats.overdueList.map((e, i) => (
+                <motion.div key={e.id}
+                  initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2, delay: i * 0.03 }}
+                  className="flex items-center justify-between gap-2 py-2"
+                  style={{ borderBottom: i < stats.overdueList.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-medium truncate" style={{ color: C.text }}>
+                      {e.name}
+                    </div>
+                    <div className="text-[9px]" style={{ color: C.muted }}>
+                      {e.type ?? '—'} • Sál: {e.roomName}
                     </div>
                   </div>
-                  <button className="text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
-                    style={{ background: C.red, color: C.textHi }}>
-                    Reorder
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[12px] font-mono font-bold tabular-nums"
+                      style={{ color: e.daysOverdue > 30 ? C.red : C.orange }}>
+                      −{e.daysOverdue}d
+                    </div>
+                    <div className="text-[8px]" style={{ color: C.muted }}>po termínu</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 py-3 text-[11px]" style={{ color: C.green }}>
+              <CheckCircle2 size={14} />
+              Žádné vybavení po termínu údržby
+            </div>
+          )}
         </Card>
-      )}
+
+        <Card icon={Calendar} accent={C.yellow}
+          title="Plánováno do 14 dnů"
+          subtitle="Nadcházející servisní intervaly"
+          action={
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-mono tabular-nums"
+              style={{ background: `${C.yellow}1a`, color: C.yellow }}>
+              {stats.dueSoonList.length}
+            </span>
+          }>
+          {stats.dueSoonList.length > 0 ? (
+            <div className="flex flex-col">
+              {stats.dueSoonList.map((e, i) => (
+                <motion.div key={e.id}
+                  initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2, delay: i * 0.03 }}
+                  className="flex items-center justify-between gap-2 py-2"
+                  style={{ borderBottom: i < stats.dueSoonList.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-medium truncate" style={{ color: C.text }}>
+                      {e.name}
+                    </div>
+                    <div className="text-[9px]" style={{ color: C.muted }}>
+                      {e.type ?? '—'} • Sál: {e.roomName}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[12px] font-mono font-bold tabular-nums"
+                      style={{ color: e.daysUntil <= 3 ? C.orange : C.yellow }}>
+                      {e.daysUntil}d
+                    </div>
+                    <div className="text-[8px]" style={{ color: C.muted }}>do servisu</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 py-3 text-[11px]" style={{ color: C.muted }}>
+              <Clock size={14} />
+              Žádný servis v nejbližších 14 dnech
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* ── Detail metrics + recent log ─────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <MetricTile
+          label="Nikdy neservisováno"
+          value={stats.neverServiced}
+          sublabel="last_maintenance NULL"
+          icon={AlertTriangle}
+          color={stats.neverServiced > 0 ? C.orange : C.muted}
+        />
+        <MetricTile
+          label="Servis < 30 dní"
+          value={stats.recentlyServiced}
+          sublabel="recently maintained"
+          icon={CheckCircle2}
+          color={C.green}
+        />
+        <MetricTile
+          label="Plán existuje"
+          value={stats.scheduled}
+          sublabel="má next_maintenance"
+          icon={Calendar}
+          color={C.cyan}
+        />
+        <MetricTile
+          label="Bez plánu údržby"
+          value={Math.max(0, stats.total - stats.scheduled - stats.overdue)}
+          sublabel="next_maintenance NULL"
+          icon={Clock}
+          color={C.muted}
+        />
+      </div>
+
+      <Card icon={Wrench} accent={C.accent}
+        title="Posledních 8 servisních záznamů"
+        subtitle="Dle last_maintenance">
+        <EventFeed items={maintenanceEvents} maxItems={8} />
+      </Card>
+
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.4 }}
+        className="text-[10px] text-center" style={{ color: C.faint }}>
+        Veškeré metriky odvozeny z tabulky <code style={{ color: C.muted }}>public.equipment</code> v Supabase DB.
+        Sterilizační cykly, inventář spotřebního materiálu a implant tracking nejsou v aktuálním schématu.
+      </motion.div>
     </div>
   );
-};
+});
+EquipmentTab.displayName = 'EquipmentTab';

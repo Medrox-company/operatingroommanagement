@@ -25,17 +25,14 @@ import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
 import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
 import { ForecastTab } from './statistics/ForecastTab';
-import { QualityTab } from './statistics/QualityTab';
-import { FinanceTab } from './statistics/FinanceTab';
-import { PatientFlowTab } from './statistics/PatientFlowTab';
+import { SafetyTab } from './statistics/SafetyTab';
 import { EquipmentTab } from './statistics/EquipmentTab';
-import { ComplianceTab } from './statistics/ComplianceTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'efektivita' | 'personal' | 'kvalita' | 'pacienti' | 'compliance'
-            | 'finance' | 'vybaveni' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
+type Tab    = 'prehled' | 'efektivita' | 'personal' | 'bezpecnost'
+            | 'vybaveni' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {

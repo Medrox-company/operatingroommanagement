@@ -833,6 +833,166 @@ export async function fetchRoomStatistics(
   }
 }
 
+// ============= STATISTICS — RAW TABLE FETCHES =============
+
+// ── safety_checklists ──────────────────────────────────────────────
+export interface SafetyChecklistRow {
+  id: string;
+  operating_room_id: string | null;
+  patient_name: string | null;
+  patient_id_external: string | null;
+  procedure_name: string | null;
+  surgeon_name: string | null;
+  anesthesiologist_name: string | null;
+  nurse_name: string | null;
+  sign_in_completed: boolean;
+  sign_in_completed_at: string | null;
+  sign_in_completed_by: string | null;
+  sign_in_data: Record<string, any> | null;
+  time_out_completed: boolean;
+  time_out_completed_at: string | null;
+  time_out_completed_by: string | null;
+  time_out_data: Record<string, any> | null;
+  sign_out_completed: boolean;
+  sign_out_completed_at: string | null;
+  sign_out_completed_by: string | null;
+  sign_out_data: Record<string, any> | null;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchSafetyChecklists(
+  options?: { fromDate?: Date; toDate?: Date; limit?: number }
+): Promise<SafetyChecklistRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    let query = supabase
+      .from('safety_checklists')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (options?.fromDate) query = query.gte('created_at', options.fromDate.toISOString());
+    if (options?.toDate)   query = query.lte('created_at', options.toDate.toISOString());
+    if (options?.limit)    query = query.limit(options.limit);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as SafetyChecklistRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch safety_checklists:', error);
+    return null;
+  }
+}
+
+// ── equipment ──────────────────────────────────────────────────────
+export interface EquipmentRow {
+  id: string;
+  name: string;
+  type: string | null;
+  operating_room_id: string | null;
+  is_available: boolean;
+  last_maintenance: string | null;
+  next_maintenance: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchEquipment(): Promise<EquipmentRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('equipment')
+      .select('*')
+      .order('next_maintenance', { ascending: true, nullsFirst: false });
+    if (error) throw error;
+    return (data ?? []) as EquipmentRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch equipment:', error);
+    return null;
+  }
+}
+
+// ── staff (full table — pro Personál tab) ─────────────────────────
+export interface StaffRow {
+  id: string;
+  name: string;
+  role: string;
+  is_active: boolean;
+  skill_level: string | null;
+  availability: number | null;
+  is_external: boolean | null;
+  is_recommended: boolean | null;
+  vacation_days: number | null;
+  sick_leave_days: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchAllStaff(): Promise<StaffRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('staff')
+      .select('*')
+      .order('role', { ascending: true })
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as StaffRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch staff:', error);
+    return null;
+  }
+}
+
+// ── schedules (planned ops) ───────────────────────────────────────
+export interface ScheduleRow {
+  id: string;
+  operating_room_id: string | null;
+  patient_id: string | null;
+  procedure_id: string | null;
+  scheduled_date: string;        // YYYY-MM-DD
+  scheduled_time: string | null; // HH:MM:SS
+  duration_minutes: number | null;
+  priority: string | null;
+  status: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchSchedules(
+  options?: { fromDate?: Date; toDate?: Date; limit?: number }
+): Promise<ScheduleRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    let query = supabase
+      .from('schedules')
+      .select('*')
+      .order('scheduled_date', { ascending: true })
+      .order('scheduled_time', { ascending: true, nullsFirst: false });
+
+    if (options?.fromDate) {
+      const from = options.fromDate.toISOString().split('T')[0];
+      query = query.gte('scheduled_date', from);
+    }
+    if (options?.toDate) {
+      const to = options.toDate.toISOString().split('T')[0];
+      query = query.lte('scheduled_date', to);
+    }
+    if (options?.limit) query = query.limit(options.limit);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as ScheduleRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch schedules:', error);
+    return null;
+  }
+}
+
 // ============= BACKGROUND SETTINGS =============
 
 export interface BackgroundSettings {
