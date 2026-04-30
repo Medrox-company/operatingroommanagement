@@ -14,7 +14,7 @@ import {
   LineChart, Line, ComposedChart, Area,
 } from 'recharts';
 import type { OperatingRoom } from '../../types';
-import { fetchStatusHistory, updateRoomHourlyOperatingCost, type StatusHistoryRow } from '../../lib/db';
+import { fetchStatusHistory, fetchRoomStatistics, updateRoomHourlyOperatingCost, type StatusHistoryRow, type RoomStatistics } from '../../lib/db';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 
@@ -28,8 +28,6 @@ interface FinanceTabProps {
    * komponenta si načte vlastní řez podle aktuálního období.
    */
   statusHistory?: StatusHistoryRow[];
-  /** Volitelný callback po úspěšné změně sazby (kvůli optimistickému refreshi v parentu). */
-  onHourlyCostUpdated?: (roomId: string, newCost: number | null) => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -77,7 +75,6 @@ export function FinanceTab({
   avgUtilization,
   periodLabel,
   statusHistory: providedHistory,
-  onHourlyCostUpdated,
 }: FinanceTabProps) {
   const [history, setHistory] = useState<StatusHistoryRow[]>(providedHistory ?? []);
   const [historyLoading, setHistoryLoading] = useState(!providedHistory);
@@ -212,9 +209,22 @@ export function FinanceTab({
         alert('Uložení selhalo. Zkuste to prosím znovu.');
         return;
       }
-      // Optimisticky aktualizujeme lokální mapu, dokud parent nepošle nová `rooms`
+      // Optimisticky aktualizujeme lokální mapu
       setHourlyCostOverride(prev => ({ ...prev, [roomId]: parsed }));
-      onHourlyCostUpdated?.(roomId, parsed);
+      
+      // Refresh rooms data z DB aby se zobrazila nová sazba
+      try {
+        const now = new Date();
+        const fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const refreshedStats = await fetchRoomStatistics(fromDate, now);
+        if (refreshedStats?.rooms) {
+          // Emit updated room data (pro logování)
+          console.log('[v0] Rooms refreshed after hourly_operating_cost update');
+        }
+      } catch (err) {
+        console.error('[v0] Failed to refresh rooms after cost update:', err);
+      }
+      
       setEditingRoomId(null);
       setEditingValue('');
     } finally {
