@@ -760,7 +760,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         </span>
       </div>
 
-      {/* ── Print-only rozšířený detail sálu ───────────────────────────────
+      {/* ── Print-only rozšířený detail sálu ───────────────────────────��───
           Při tisku ukážeme všechna důležitá data jako v RoomDetail panelu:
           aktuální fáze, personál, časy pacienta, příznaky (UPS/septický/atd.). */}
       {isPrinting && (
@@ -1468,6 +1468,55 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
   const upsCnt    = rooms.filter(isUPS).length;
 
+  // ── Scorecard data construction (pro ExecutiveScorecard hero kartu) ──
+  const scorecardData = useMemo(() => {
+    // Průměrná délka výkonu — váženě dle workflow steps
+    const opDuration = avgStepDurations.reduce((s, v) => s + v, 0);
+    // Recent events — posledních 8 záznamů z status history pro live ticker
+    const recentEvents = (statusHistory ?? [])
+      .slice(0, 8)
+      .map((row) => {
+        const room = rooms.find(r => r.id === row.room_id);
+        return {
+          timestamp: row.changed_at,
+          roomName: room?.name ?? 'Neznámý sál',
+          eventLabel: row.new_status ?? 'Změna stavu',
+          color: room ? roomStatusColor(room) : undefined,
+        };
+      });
+    return {
+      utilization: avgUtil,
+      totalOps,
+      activeRooms: busyCount,
+      totalQueue,
+      septicCount: septicCnt,
+      upsCount: upsCnt,
+      avgOpDuration: opDuration,
+      recentEvents,
+      rooms,
+      periodLabel: period,
+    };
+  }, [avgUtil, totalOps, busyCount, totalQueue, septicCnt, upsCnt, avgStepDurations, statusHistory, rooms, period]);
+
+  // ── Doctor / Nurse ops counts pro StaffTab (z statusHistory + current rooms) ──
+  const doctorOpsMap = useMemo(() => {
+    const m = new Map<string, number>();
+    rooms.forEach(r => {
+      const name = r.staff?.doctor?.name;
+      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
+    });
+    return m;
+  }, [rooms]);
+
+  const nurseOpsMap = useMemo(() => {
+    const m = new Map<string, number>();
+    rooms.forEach(r => {
+      const name = r.staff?.nurse?.name;
+      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
+    });
+    return m;
+  }, [rooms]);
+
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};
     rooms.forEach(r=>{ m[r.department]=(m[r.department]??0)+r.operations24h; });
@@ -1739,12 +1788,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {(tab === 'prehled' || isPrinting) && (
             <div className="flex flex-col gap-3">
               {/* Executive scorecard hero (mobile/print verze) */}
-              <ExecutiveScorecard
-                rooms={rooms}
-                statusHistory={statusHistory}
-                roomStatistics={roomStatistics}
-                period={period}
-              />
+              <ExecutiveScorecard data={scorecardData} />
 
               <div className="grid grid-cols-2 gap-2.5">
                 {[
@@ -1952,9 +1996,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <div className="flex flex-col gap-3">
               <EfficiencyTab
                 rooms={rooms}
-                statusHistory={statusHistory}
-                roomStatistics={roomStatistics}
-                period={period}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                avgStepDurations={avgStepDurations}
+                periodLabel={period}
               />
             </div>
           )}
@@ -1964,8 +2009,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <div className="flex flex-col gap-3">
               <StaffTab
                 rooms={rooms}
-                statusHistory={statusHistory}
-                period={period}
+                periodLabel={period}
+                doctorOps={doctorOpsMap}
+                nurseOps={nurseOpsMap}
               />
             </div>
           )}
@@ -1975,8 +2021,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <div className="flex flex-col gap-3">
               <ForecastTab
                 rooms={rooms}
-                statusHistory={statusHistory}
-                period={period}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                periodLabel={period}
               />
             </div>
           )}
@@ -2198,13 +2245,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </h2>
             )}
 
-            {/* Executive scorecard hero — celkové hodnocení A-F + AI insighty + period delty */}
-            <ExecutiveScorecard
-              rooms={rooms}
-              statusHistory={statusHistory}
-              roomStatistics={roomStatistics}
-              period={period}
-            />
+            {/* Executive scorecard hero — celkové hodnocení A-F + AI insighty + live ticker */}
+            <ExecutiveScorecard data={scorecardData} />
 
             {/* KPI strip */}
             <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
@@ -2566,9 +2608,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             )}
             <EfficiencyTab
               rooms={rooms}
-              statusHistory={statusHistory}
-              roomStatistics={roomStatistics}
-              period={period}
+              totalOps={totalOps}
+              avgUtilization={avgUtil}
+              avgStepDurations={avgStepDurations}
+              periodLabel={period}
             />
           </motion.div>
         )}
@@ -2588,8 +2631,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             )}
             <StaffTab
               rooms={rooms}
-              statusHistory={statusHistory}
-              period={period}
+              periodLabel={period}
+              doctorOps={doctorOpsMap}
+              nurseOps={nurseOpsMap}
             />
           </motion.div>
         )}
@@ -3047,8 +3091,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             )}
             <ForecastTab
               rooms={rooms}
-              statusHistory={statusHistory}
-              period={period}
+              totalOps={totalOps}
+              avgUtilization={avgUtil}
+              periodLabel={period}
             />
           </motion.div>
         )}
