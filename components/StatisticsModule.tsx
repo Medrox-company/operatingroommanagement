@@ -676,8 +676,10 @@ interface RoomMiniCardProps {
   stepDurations: number[];
   opsCount: number;
   utilization: number;
+  /** Pokud true, vyrenderuje rozšířenou kartu s detail daty pro tisk/PDF */
+  isPrinting?: boolean;
 }
-const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations, opsCount, utilization }) => {
+const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations, opsCount, utilization, isPrinting }) => {
   const sc2   = roomStatusColor(r);
   const isBusy = isRoomBusyByStep(r);
   const tl2   = useMemo(() => mergeSeg(buildTimeline(r, workflowSteps, stepDurations)), [r, workflowSteps, stepDurations]);
@@ -685,6 +687,16 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
   const workingHoursStr = formatRoomWorkingHours(r, todayIndex);
   const workingMinutes = getRoomWorkingMinutes(r, todayIndex);
+  // Aktuální fáze workflow + její barva (pro Detail v tisku)
+  const currentPhase = workflowSteps[r.currentStepIndex];
+  const phaseLabel = currentPhase?.title ?? '—';
+  const phaseColor = currentPhase?.color ?? sc2;
+  // Doktor/sestra/anesteziolog jména pro print detail
+  const doctorName = r.staff?.doctor?.name ?? '—';
+  const nurseName  = r.staff?.nurse?.name  ?? '—';
+  const anesthName = r.staff?.anesthesiologist?.name ?? '—';
+  // Časy
+  const fmtTime = (iso?: string | null) => iso ? new Date(iso).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '—';
   
   return (
     <motion.button onClick={onClick}
@@ -743,6 +755,74 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
           {roomStatusLabel(r).slice(0, 3)}
         </span>
       </div>
+
+      {/* ── Print-only rozšířený detail sálu ───────────────────────────────
+          Při tisku ukážeme všechna důležitá data jako v RoomDetail panelu:
+          aktuální fáze, personál, časy pacienta, příznaky (UPS/septický/atd.). */}
+      {isPrinting && (
+        <div className="mt-2 pt-2" style={{ borderTop: `1px dashed ${C.border}` }}>
+          {/* Aktuální fáze */}
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: phaseColor }} />
+            <p className="text-[9px] uppercase font-bold tracking-wider" style={{ color: C.muted }}>Fáze:</p>
+            <p className="text-[10px] font-bold flex-1" style={{ color: phaseColor }}>{phaseLabel}</p>
+          </div>
+
+          {/* Personál — 3 řádky kompaktně */}
+          <div className="grid grid-cols-1 gap-0.5 mb-1.5">
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <span style={{ color: C.ghost }} className="w-12 shrink-0">Lékař:</span>
+              <span style={{ color: C.text }} className="font-medium truncate">{doctorName}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <span style={{ color: C.ghost }} className="w-12 shrink-0">Sestra:</span>
+              <span style={{ color: C.text }} className="font-medium truncate">{nurseName}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <span style={{ color: C.ghost }} className="w-12 shrink-0">Anest.:</span>
+              <span style={{ color: C.text }} className="font-medium truncate">{anesthName}</span>
+            </div>
+          </div>
+
+          {/* Časy pacienta */}
+          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mb-1.5">
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Volán:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.patientCalledAt)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Přijel:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.patientArrivedAt)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Start:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.operationStartedAt)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Konec:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.estimatedEndTime)}</span>
+            </div>
+          </div>
+
+          {/* Indikátory & příznaky */}
+          <div className="flex flex-wrap gap-1">
+            {r.queueCount > 0 && (
+              <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.accent}15`, color: C.accent }}>
+                Fronta: {r.queueCount}
+              </span>
+            )}
+            <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.text}10`, color: C.text }}>
+              24h: {r.operations24h}
+            </span>
+            {ups2 && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.accent}20`, color: C.accent }}>ÚPS</span>}
+            {r.isSeptic && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.red}20`, color: C.red }}>SEPTICKÝ</span>}
+            {r.isEmergency && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.red}20`, color: C.red }}>POHOT.</span>}
+            {r.isLocked && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.muted}20`, color: C.muted }}>UZAMČEN</span>}
+            {r.isPaused && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.yellow}20`, color: C.yellow }}>PAUZA</span>}
+            {r.isEnhancedHygiene && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.accent}20`, color: C.accent }}>HYG+</span>}
+          </div>
+        </div>
+      )}
     </motion.button>
   );
 });
@@ -1535,7 +1615,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               Připravuji export...
             </p>
             <p className="text-xs" style={{ color: C.muted }}>
-              Vykreslují se grafy a všechny záložky
+              Vykreslují se grafy a všechny záložky včetně detailů
             </p>
           </div>
         </div>
@@ -1642,14 +1722,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             />
           </div>
 
-          {/* ── Přehled ── (vždy renderováno při tisku) */}
+          {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
           {(tab === 'prehled' || isPrinting) && (
-            <div className={`flex flex-col gap-3 ${isPrinting && tab !== 'prehled' ? 'print-section' : ''}`}>
-              {isPrinting && (
-                <h2 className="print-only text-base font-bold uppercase tracking-tight border-b-2 border-black pb-1 mb-1">
-                  1. Přehled
-                </h2>
-              )}
+            <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { l: 'Obsazeno', v: `${busyCount}/${rooms.length}`, c: C.orange },
@@ -1728,12 +1803,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Sály ── (vždy renderováno při tisku) */}
           {(tab === 'saly' || isPrinting) && (
-            <div className={`flex flex-col gap-2.5 ${isPrinting && tab !== 'saly' ? 'print-section' : ''}`}>
-              {isPrinting && (
-                <h2 className="print-only text-base font-bold uppercase tracking-tight border-b-2 border-black pb-1 mb-1">
-                  2. Sály
-                </h2>
-              )}
+            <div className="flex flex-col gap-2.5">
               <MobileSectionLabel>Sály ({rooms.length})</MobileSectionLabel>
               {rooms.map(r => {
                 const util = calculateRoomUtilization(r, statusHistory, period);
@@ -1794,12 +1864,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Fáze ── (vždy renderováno při tisku) */}
           {(tab === 'faze' || isPrinting) && (
-            <div className={`flex flex-col gap-2.5 ${isPrinting && tab !== 'faze' ? 'print-section' : ''}`}>
-              {isPrinting && (
-                <h2 className="print-only text-base font-bold uppercase tracking-tight border-b-2 border-black pb-1 mb-1">
-                  3. Fáze
-                </h2>
-              )}
+            <div className="flex flex-col gap-2.5">
               <MobileSectionLabel>Průměrné trvání fází ({period})</MobileSectionLabel>
               <MobileCard>
                 <div className="flex flex-col gap-3.5">
@@ -1863,12 +1928,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Heatmapa ── (vždy renderováno při tisku) */}
           {(tab === 'heatmapa' || isPrinting) && (
-            <div className={`flex flex-col gap-3 ${isPrinting && tab !== 'heatmapa' ? 'print-section' : ''}`}>
-              {isPrinting && (
-                <h2 className="print-only text-base font-bold uppercase tracking-tight border-b-2 border-black pb-1 mb-1">
-                  4. Heatmapa
-                </h2>
-              )}
+            <div className="flex flex-col gap-3">
               <MobileSectionLabel>Heatmapa 7 × 24 h</MobileSectionLabel>
               <MobileCard>
                 {(() => {
@@ -1976,20 +2036,21 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         } : undefined}
       >
 
-      {/* ── Print-only hlavička reportu ── */}
-      <div className="print-only mb-6" style={{ pageBreakAfter: 'avoid' }}>
-        <div className="flex items-baseline justify-between border-b-2 border-black pb-2 mb-2">
-          <h1 className="text-2xl font-bold uppercase tracking-tight">
+      {/* ── Print-only hlavička reportu (kompaktní, dark theme) ── */}
+      <div className="print-only mb-3 px-4 pt-3" style={{ pageBreakAfter: 'avoid' }}>
+        <div className="flex items-baseline justify-between pb-2 mb-2"
+          style={{ borderBottom: `1px solid ${C.border}` }}>
+          <h1 className="text-xl font-bold uppercase tracking-tight" style={{ color: C.yellow }}>
             Statistiky operačních sálů
           </h1>
-          <p className="text-xs font-mono">
+          <p className="text-[10px] font-mono" style={{ color: C.muted }}>
             {new Date().toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })}
           </p>
         </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
-          <span><strong>Záložka:</strong> {tabLabelMap[tab]}</span>
-          <span><strong>Období:</strong> {periodLabelMap[period]}</span>
-          <span><strong>Počet sálů:</strong> {rooms.length}</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[10px]" style={{ color: C.text }}>
+          <span><span style={{ color: C.muted }}>Období:</span> <strong>{periodLabelMap[period]}</strong></span>
+          <span><span style={{ color: C.muted }}>Počet sálů:</span> <strong>{rooms.length}</strong></span>
+          <span style={{ color: C.muted }}>Generováno z aplikace OperatingRoom Control</span>
         </div>
       </div>
 
@@ -2067,7 +2128,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       {/* ── Tab content ── 
           Při tisku změníme `mode` na "sync" a vyrenderujeme všechny záložky
           najednou (přes `|| isPrinting`). Bez toho by AnimatePresence(mode="wait")
-          povolila pouze jedinou aktivní záložku a v PDF by chybělo 75 % dat. */}
+          povolila pouze jedinou aktivní záložku a v PDF by chybělo 75 % dat.
+          Browser pak přirozeně paginuje na víc A4 stránek. */}
       <AnimatePresence mode={isPrinting ? 'sync' : 'wait'}>
         {(tab==='prehled' || isPrinting) && (
           <motion.div key="prehled"
@@ -2075,10 +2137,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className={`space-y-5 ${isPrinting && tab !== 'prehled' ? 'print-section' : ''}`}>
+            className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-2xl font-bold uppercase tracking-tight border-b-2 border-black pb-2 mb-4">
-                1. Přehled
+              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3" style={{ color: C.yellow }}>
+                Přehled
               </h2>
             )}
 
@@ -2433,10 +2495,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className={`space-y-5 ${isPrinting && tab !== 'saly' ? 'print-section' : ''}`}>
+            className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-2xl font-bold uppercase tracking-tight border-b-2 border-black pb-2 mb-4">
-                2. Sály
+              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3 mt-6" style={{ color: C.yellow }}>
+                Sály — Detail
               </h2>
             )}
 
@@ -2485,7 +2547,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             {/* Room cards grid */}
             <div>
               <SectionLabel>Sály — kliknutím zobrazíte podrobné statistiky</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+              {/* V print režimu zmenšíme grid na 2 sloupce, aby se vešel rozšířený detail
+                  každého sálu (fáze, personál, časy, příznaky). Na obrazovce zachováme
+                  původní 6-sloupcový hustý layout. */}
+              <div className={isPrinting
+                ? "grid grid-cols-2 gap-2.5"
+                : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5"}>
                 {rooms.map((r, i) => (
                   <RoomMiniCard 
                     key={r.id} 
@@ -2496,6 +2563,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     stepDurations={avgStepDurations}
                     opsCount={countOperationsInWorkingHours(r, statusHistory, period)}
                     utilization={calculateRoomUtilization(r, statusHistory, period)}
+                    isPrinting={isPrinting}
                   />
                 ))}
               </div>
@@ -2525,10 +2593,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className={`space-y-5 ${isPrinting && tab !== 'faze' ? 'print-section' : ''}`}>
+            className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-2xl font-bold uppercase tracking-tight border-b-2 border-black pb-2 mb-4">
-                3. Fáze
+              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3 mt-6" style={{ color: C.yellow }}>
+                Fáze
               </h2>
             )}
 
@@ -2691,10 +2759,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className={`space-y-5 ${isPrinting && tab !== 'heatmapa' ? 'print-section' : ''}`}>
+            className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-2xl font-bold uppercase tracking-tight border-b-2 border-black pb-2 mb-4">
-                4. Heatmapa
+              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3 mt-6" style={{ color: C.yellow }}>
+                Heatmapa
               </h2>
             )}
 
