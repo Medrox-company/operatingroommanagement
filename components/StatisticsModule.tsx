@@ -8,7 +8,20 @@ import {
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 // Step durations now calculated from real database history
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { fetchRoomStatistics, fetchStatusHistory, RoomStatistics, StatusHistoryRow } from '../lib/db';
+import {
+  fetchRoomStatistics,
+  fetchStatusHistory,
+  fetchSafetyChecklists,
+  fetchEquipment,
+  fetchAllStaff,
+  fetchSchedules,
+  type RoomStatistics,
+  type StatusHistoryRow,
+  type SafetyChecklistRow,
+  type EquipmentRow,
+  type StaffRow,
+  type ScheduleRow,
+} from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip,
@@ -27,11 +40,12 @@ import { StaffTab } from './statistics/StaffTab';
 import { ForecastTab } from './statistics/ForecastTab';
 import { SafetyTab } from './statistics/SafetyTab';
 import { EquipmentTab } from './statistics/EquipmentTab';
+import { FinanceTab } from './statistics/FinanceTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'efektivita' | 'personal' | 'bezpecnost'
+type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal' | 'bezpecnost'
             | 'vybaveni' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
@@ -1316,6 +1330,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
   const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
+  // ── REÁLNÁ DB DATA pro nové tab moduly (Safety/Equipment/Staff/Forecast) ──
+  // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
+  const [safetyChecklists, setSafetyChecklists] = useState<SafetyChecklistRow[] | null>(null);
+  const [equipmentList,    setEquipmentList]    = useState<EquipmentRow[] | null>(null);
+  const [staffList,        setStaffList]        = useState<StaffRow[] | null>(null);
+  const [schedulesList,    setSchedulesList]    = useState<ScheduleRow[] | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
@@ -1384,11 +1404,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const tabLabelMap: Record<Tab, string> = {
     'prehled':    'Přehled',
     'efektivita': 'Efektivita',
-    'personal':   'Personál',
-    'kvalita':    'Kvalita',
-    'pacienti':   'Pacienti',
-    'compliance': 'Compliance',
     'finance':    'Finance',
+    'personal':   'Personál',
+    'bezpecnost': 'Bezpečnost',
     'vybaveni':   'Vybavení',
     'saly':       'Sály',
     'faze':       'Fáze',
@@ -1419,13 +1437,24 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           break;
       }
 
-      const [stats, history] = await Promise.all([
+      // Forecast horizont — od dneška do +30 dní (plánované výkony)
+      const forecastUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      const [stats, history, checklists, equipment, staffRows, schedules] = await Promise.all([
         fetchRoomStatistics(fromDate, now),
-        fetchStatusHistory({ fromDate, toDate: now, limit: 500 }),
+        fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
+        fetchSafetyChecklists({ fromDate, toDate: now, limit: 1000 }),
+        fetchEquipment(),
+        fetchAllStaff(),
+        fetchSchedules({ fromDate: now, toDate: forecastUntil, limit: 500 }),
       ]);
 
-      if (stats) setDbStats(stats);
-      if (history) setStatusHistory(history);
+      if (stats)    setDbStats(stats);
+      setStatusHistory(history ?? []);
+      setSafetyChecklists(checklists);
+      setEquipmentList(equipment);
+      setStaffList(staffRows);
+      setSchedulesList(schedules);
       setIsLoadingStats(false);
     };
 
@@ -1506,25 +1535,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       periodLabel: period,
     };
   }, [avgUtil, totalOps, busyCount, totalQueue, septicCnt, upsCnt, avgStepDurations, statusHistory, rooms, period]);
-
-  // ── Doctor / Nurse ops counts pro StaffTab (z statusHistory + current rooms) ──
-  const doctorOpsMap = useMemo(() => {
-    const m = new Map<string, number>();
-    rooms.forEach(r => {
-      const name = r.staff?.doctor?.name;
-      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
-    });
-    return m;
-  }, [rooms]);
-
-  const nurseOpsMap = useMemo(() => {
-    const m = new Map<string, number>();
-    rooms.forEach(r => {
-      const name = r.staff?.nurse?.name;
-      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
-    });
-    return m;
-  }, [rooms]);
 
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};
@@ -1646,11 +1656,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const TABS:{ id:Tab; label:string }[]=[
     {id:'prehled',    label:'Přehled'},
     {id:'efektivita', label:'Efektivita'},
-    {id:'personal',   label:'Personál'},
-    {id:'kvalita',    label:'Kvalita'},
-    {id:'pacienti',   label:'Pacienti'},
-    {id:'compliance', label:'Compliance'},
     {id:'finance',    label:'Finance'},
+    {id:'personal',   label:'Personál'},
+    {id:'bezpecnost', label:'Bezpečnost'},
     {id:'vybaveni',   label:'Vybavení'},
     {id:'saly',       label:'Sály'},
     {id:'faze',       label:'Fáze'},
@@ -1787,11 +1795,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               tabs={[
                 { id: 'prehled', label: 'Přehled' },
                 { id: 'efektivita', label: 'Efektivita' },
-                { id: 'personal', label: 'Personál' },
-                { id: 'kvalita', label: 'Kvalita' },
-                { id: 'pacienti', label: 'Pacienti' },
-                { id: 'compliance', label: 'Compliance' },
                 { id: 'finance', label: 'Finance' },
+                { id: 'personal', label: 'Personál' },
+                { id: 'bezpecnost', label: 'Bezpečnost' },
                 { id: 'vybaveni', label: 'Vybavení' },
                 { id: 'saly', label: 'Sály' },
                 { id: 'faze', label: 'Fáze' },
@@ -2027,48 +2033,24 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {(tab === 'personal' || isPrinting) && (
             <div className="flex flex-col gap-3">
               <StaffTab
+                staff={staffList}
                 rooms={rooms}
                 periodLabel={period}
-                doctorOps={doctorOpsMap}
-                nurseOps={nurseOpsMap}
               />
             </div>
           )}
-
-          {/* ── Kvalita & bezpečnost ── */}
-          {(tab === 'kvalita' || isPrinting) && (
+          
+          {/* ── Bezpečnost (WHO checklist — z DB safety_checklists) ── */}
+          {(tab === 'bezpecnost' || isPrinting) && (
             <div className="flex flex-col gap-3">
-              <QualityTab
-                rooms={rooms}
-                totalOps={totalOps}
+              <SafetyTab
+                checklists={safetyChecklists}
                 periodLabel={period}
               />
             </div>
           )}
 
-          {/* ── Pacienti & flow ── */}
-          {(tab === 'pacienti' || isPrinting) && (
-            <div className="flex flex-col gap-3">
-              <PatientFlowTab
-                rooms={rooms}
-                totalOps={totalOps}
-                periodLabel={period}
-              />
-            </div>
-          )}
-
-          {/* ── Compliance & audit ── */}
-          {(tab === 'compliance' || isPrinting) && (
-            <div className="flex flex-col gap-3">
-              <ComplianceTab
-                rooms={rooms}
-                totalOps={totalOps}
-                periodLabel={period}
-              />
-            </div>
-          )}
-
-          {/* ── Finance & náklady ── */}
+          {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
           {(tab === 'finance' || isPrinting) && (
             <div className="flex flex-col gap-3">
               <FinanceTab
@@ -2076,16 +2058,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 totalOps={totalOps}
                 avgUtilization={avgUtil}
                 periodLabel={period}
+                statusHistory={statusHistory}
               />
             </div>
           )}
 
-          {/* ── Vybavení & sterilizace ── */}
+          {/* ── Vybavení (z DB equipment) ── */}
           {(tab === 'vybaveni' || isPrinting) && (
             <div className="flex flex-col gap-3">
               <EquipmentTab
+                equipment={equipmentList}
                 rooms={rooms}
-                totalOps={totalOps}
                 periodLabel={period}
               />
             </div>
@@ -2095,9 +2078,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {(tab === 'forecast' || isPrinting) && (
             <div className="flex flex-col gap-3">
               <ForecastTab
+                schedules={schedulesList}
+                history={statusHistory}
                 rooms={rooms}
-                totalOps={totalOps}
-                avgUtilization={avgUtil}
                 periodLabel={period}
               />
             </div>
@@ -2712,17 +2695,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </h2>
             )}
             <StaffTab
+              staff={staffList}
               rooms={rooms}
               periodLabel={period}
-              doctorOps={doctorOpsMap}
-              nurseOps={nurseOpsMap}
             />
           </motion.div>
         )}
 
         {/* ── Kvalita & bezpečnost ── (klinické metriky) */}
-        {(tab==='kvalita' || isPrinting) && (
-          <motion.div key="kvalita"
+        {/* ── Bezpečnost (z DB safety_checklists) ── */}
+        {(tab==='bezpecnost' || isPrinting) && (
+          <motion.div key="bezpecnost"
             initial={isPrinting ? false : {opacity:0,y:10}}
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
@@ -2730,60 +2713,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             className="space-y-5">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Kvalita & bezpečnost
+                Bezpečnost — WHO Surgical Safety Checklist
               </h2>
             )}
-            <QualityTab
-              rooms={rooms}
-              totalOps={totalOps}
+            <SafetyTab
+              checklists={safetyChecklists}
               periodLabel={period}
             />
           </motion.div>
         )}
 
-        {/* ── Pacienti & flow ── */}
-        {(tab==='pacienti' || isPrinting) && (
-          <motion.div key="pacienti"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Pacienti & flow
-              </h2>
-            )}
-            <PatientFlowTab
-              rooms={rooms}
-              totalOps={totalOps}
-              periodLabel={period}
-            />
-          </motion.div>
-        )}
-
-        {/* ── Compliance & audit ── */}
-        {(tab==='compliance' || isPrinting) && (
-          <motion.div key="compliance"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Compliance & audit
-              </h2>
-            )}
-            <ComplianceTab
-              rooms={rooms}
-              totalOps={totalOps}
-              periodLabel={period}
-            />
-          </motion.div>
-        )}
-
-        {/* ── Finance & náklady ── */}
+        {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
         {(tab==='finance' || isPrinting) && (
           <motion.div key="finance"
             initial={isPrinting ? false : {opacity:0,y:10}}
@@ -2793,7 +2733,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             className="space-y-5">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Finance & náklady
+                Finance & náklady provozu
               </h2>
             )}
             <FinanceTab
@@ -2801,11 +2741,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               totalOps={totalOps}
               avgUtilization={avgUtil}
               periodLabel={period}
+              statusHistory={statusHistory}
             />
           </motion.div>
         )}
 
-        {/* ── Vybavení & sterilizace ── */}
+        {/* ── Vybavení (z DB equipment) ── */}
         {(tab==='vybaveni' || isPrinting) && (
           <motion.div key="vybaveni"
             initial={isPrinting ? false : {opacity:0,y:10}}
@@ -2815,12 +2756,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             className="space-y-5">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Vybavení & sterilizace
+                Vybavení & údržba
               </h2>
             )}
             <EquipmentTab
+              equipment={equipmentList}
               rooms={rooms}
-              totalOps={totalOps}
               periodLabel={period}
             />
           </motion.div>
@@ -3278,9 +3219,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </h2>
             )}
             <ForecastTab
+              schedules={schedulesList}
+              history={statusHistory}
               rooms={rooms}
-              totalOps={totalOps}
-              avgUtilization={avgUtil}
               periodLabel={period}
             />
           </motion.div>

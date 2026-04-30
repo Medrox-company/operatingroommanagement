@@ -121,4 +121,11 @@ export interface OperatingRoom {
   currentPatient?: Patient;
   currentProcedure?: Procedure;
   estimatedEndTime?: string; // ISO String
+
+  /**
+   * Hodinová sazba provozu sálu v Kč/h (DB sloupec `hourly_operating_cost`).
+   * `null` znamená, že sazba nebyla nastavena — Finance modul ji pak vyloučí
+   * z výpočtů a označí sál jako "Nevyplněno" / "Needs setup".
+   */
+  hourlyOperatingCost?: number | null;
 }

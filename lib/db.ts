@@ -147,6 +147,10 @@ function transformRoom(
     currentStepIndex: row.current_step_index,
     estimatedEndTime: row.estimated_end_time || undefined,
     weeklySchedule: row.weekly_schedule as WeeklySchedule | undefined,
+    // Finance — hodinová sazba provozu (CZK/h). NULL = nenastaveno.
+    hourlyOperatingCost: row.hourly_operating_cost === null || row.hourly_operating_cost === undefined
+      ? null
+      : Number(row.hourly_operating_cost),
     staff: {
       doctor: { 
         id: doctor?.id,
@@ -269,6 +273,7 @@ export async function updateOperatingRoom(
     anesthesiologist_id: string | null;
     status_history: any[] | null;
     completed_operations: any[] | null;
+    hourly_operating_cost: number | null;
   }>
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
@@ -288,6 +293,31 @@ export async function updateOperatingRoom(
     return true;
   } catch (err) {
     console.error('Error updating operating room:', err);
+    return false;
+  }
+}
+
+/**
+ * Aktualizuje hodinovou sazbu provozu sálu (CZK/h).
+ * `null` = sazba nenastavena (FinanceTab pak sál vyloučí z výpočtů).
+ */
+export async function updateRoomHourlyOperatingCost(
+  roomId: string,
+  hourlyCost: number | null,
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('operating_rooms')
+      .update({ hourly_operating_cost: hourlyCost })
+      .eq('id', roomId);
+    if (error) {
+      console.error('[DB] Failed to update hourly_operating_cost:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[DB] Exception updating hourly_operating_cost:', err);
     return false;
   }
 }
