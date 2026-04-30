@@ -60,24 +60,37 @@ body {
 }
 
 /* ── Print styles for Statistics Module export ─────────────────────────────────
-   Když uživatel zvolí Tisk / Uložit jako PDF, zobrazí se pouze obsah
-   označený `data-print-area`. Vše ostatní (sidebar, navigace, ovládací
-   prvky uvnitř modulu) se skryje a pozadí se vybělí. */
+   Strategie:
+     • Skryjeme všechno mimo `[data-print-area="statistics"]`.
+     • Pozadí stránky a karet vybělíme.
+     • PŘÍSTUPNĚ zachováme všechny accent barvy (hex inline styly: #10B981,
+       #FBBF24, #06B6D4, #F97316, #EF4444 atd.) — neoverridujeme `color`
+       universálně, jen specificky cílíme bílé/průhledné inline styly.
+     • Recharts SVG zachovají své fill/stroke (grafy zůstanou barevné).
+     • Framer Motion opacity:0 force-resetneme na 1, aby žádný panel nebyl
+       neviditelný uprostřed animace v okamžiku window.print(). */
 @media print {
   @page {
     size: A4;
-    margin: 10mm 8mm;
+    margin: 8mm 6mm;
+  }
+
+  /* Vynutit barvy v celém dokumentu (bez print-color-adjust prohlížeče
+     barvy v "barevně úsporném" režimu odstraní) */
+  html,
+  body,
+  [data-print-area="statistics"],
+  [data-print-area="statistics"] * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
   html,
   body {
     background: #ffffff !important;
-    color: #000000 !important;
-    /* Vynutit zachování barev z grafů — bez `print-color-adjust: exact`
-       prohlížeče barvy v "barevně úsporném" režimu odstraní. */
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
+    color: #0f172a !important;
+    color-scheme: light !important;
   }
 
   /* Skrýt vše defaultně */
@@ -89,12 +102,15 @@ body {
   [data-print-area="statistics"],
   [data-print-area="statistics"] * {
     visibility: visible;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
 
-  /* Pozice print cíle u origin — stránka začíná od hraní A4 */
+  /* Pozice print cíle u origin — stránka začíná od hraní A4.
+     Override `!important` přebije i inline style={{position:'fixed', left:-99999px}}
+     které během `isPrinting` nastavujeme pro offscreen měření Recharts grafů.
+     Display: block !important NEpoužíváme — Tailwindovy md:hidden / hidden md:block
+     mají v print kontextu A4 (≥768px) přirozeně vybrat správnou variantu:
+       • mobile (md:hidden) → display:none v print
+       • desktop (hidden md:block) → display:block v print */
   [data-print-area="statistics"] {
     position: absolute !important;
     left: 0 !important;
@@ -104,8 +120,11 @@ body {
     padding: 0 !important;
     margin: 0 !important;
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
+    font-size: 9.5pt !important;
     z-index: 9999 !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   /* UI ovládací prvky během tisku schované */
@@ -115,33 +134,127 @@ body {
     visibility: hidden !important;
   }
 
-  /* Print-only elementy (metadata report hlavička) */
+  /* Print-only elementy (metadata report hlavička, číslování sekcí) */
   .print-only {
     display: block !important;
     visibility: visible !important;
+    color: #0f172a !important;
   }
 
-  /* Force light theme on text & non-SVG elements inside print target.
-     Selektor `*:not(svg):not(svg *)` zachová fill/stroke barvy v Recharts SVG. */
-  [data-print-area="statistics"] *:not(svg):not(svg *) {
-    background: transparent !important;
-    color: #000000 !important;
-    border-color: #cfcfcf !important;
+  /* ─── BAREVNÉ MAPOVÁNÍ ─────────────────────────────────────────────────
+     Cílíme POUZE inline styly s rgba(255,255,255,...) (bílé textové a
+     pozadí varianty z designu) a překlápíme je na light theme.
+     Hex barvy (#10B981, #FBBF24, ...) zůstávají nedotčené — accent
+     barvy v KPI, badge, status pillech tak v PDF zůstávají barevné. */
+
+  /* Bílá poloprůhledná pozadí karet → světle šedé (subtilní) */
+  [data-print-area="statistics"] [style*="background: rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="background:rgba(255,255,255"],
+  [data-print-area="statistics"] [style*="background-color: rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="background-color:rgba(255,255,255"] {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
+  /* Bílý text → tmavý slate (pro „surface text", „muted", „faint") */
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255"] {
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important;
+  }
+
+  /* Pseudo-bílé (rgba s 0.85+) text už by měl být tmavý — aplikujeme i pro
+     poloprůhledné rgba(255,255,255,0.35) typu C.muted: budou méně tmavé */
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.35"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.35"],
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.5"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.5"] {
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+  }
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.15"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.15"],
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.07"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.07"] {
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+  }
+
+  /* Borders s rgba(255,255,255,...) → světle šedé */
+  [data-print-area="statistics"] [style*="border-color: rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="border-color:rgba(255,255,255"],
+  [data-print-area="statistics"] [style*="border: 1px solid rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="border:1px solid rgba(255,255,255"],
+  [data-print-area="statistics"] [style*="border-right: 1px solid rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="borderRight: 1px solid rgba(255, 255, 255"] {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Globální cleanup — žádné stíny, blur, glow */
+  [data-print-area="statistics"] * {
     box-shadow: none !important;
     backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     text-shadow: none !important;
-    -webkit-text-fill-color: #000000 !important;
+    /* Force motion.div opacity 1 — Framer Motion často nestihne dokončit
+       animaci před otevřením print dialogu */
+    opacity: 1 !important;
   }
 
-  /* Recharts SVGs: ZACHOVAT všechny inline fill/stroke barvy.
-     Bez tohoto by se barevné sloupce, čáry a heatmapa vytiskly černě. */
-  [data-print-area="statistics"] svg,
-  [data-print-area="statistics"] svg * {
-    color: inherit;
+  /* Default text color pro elementy bez inline color (Tailwind text-white
+     třídy atd.) — pádový tmavý slate */
+  [data-print-area="statistics"] h1,
+  [data-print-area="statistics"] h2,
+  [data-print-area="statistics"] h3,
+  [data-print-area="statistics"] h4,
+  [data-print-area="statistics"] p,
+  [data-print-area="statistics"] span:not([style*="color"]),
+  [data-print-area="statistics"] div:not([style*="color"]) {
+    color: #0f172a;
   }
-  /* Recharts texty (osy, legenda) na bílém pozadí ponechat tmavé */
-  [data-print-area="statistics"] svg text {
-    fill: #000000 !important;
+
+  /* Tailwind text-white / text-white\/X třídy — v light theme overrid */
+  [data-print-area="statistics"] .text-white {
+    color: #0f172a !important;
+  }
+
+  /* ─── RECHARTS CHARTS ─────────────────────────────────────────────────
+     Zachováme všechny inline fill/stroke barvy SVG primitivů. Pouze osy
+     a labely (které jsou na ose nastavené tickovou barvou) zviditelníme
+     v tmavé na bílém. */
+
+  /* Recharts ResponsiveContainer musí mít explicitní rozměry */
+  [data-print-area="statistics"] .recharts-responsive-container {
+    width: 100% !important;
+    min-height: 200px !important;
+    max-height: 320px !important;
+  }
+  [data-print-area="statistics"] .recharts-wrapper,
+  [data-print-area="statistics"] .recharts-surface {
+    overflow: visible !important;
+  }
+
+  /* Osy a tickové labely → tmavá */
+  [data-print-area="statistics"] .recharts-cartesian-axis-tick text,
+  [data-print-area="statistics"] .recharts-text {
+    fill: #1e293b !important;
+    color: #1e293b !important;
+  }
+  /* Linka osy a gridu → světle šedá */
+  [data-print-area="statistics"] .recharts-cartesian-axis-line,
+  [data-print-area="statistics"] .recharts-cartesian-axis-tick-line,
+  [data-print-area="statistics"] .recharts-cartesian-grid-horizontal line,
+  [data-print-area="statistics"] .recharts-cartesian-grid-vertical line {
+    stroke: #cbd5e1 !important;
+  }
+  /* Tooltip cursor (najetý zvýrazňovač) v print nepotřebujeme */
+  [data-print-area="statistics"] .recharts-tooltip-cursor,
+  [data-print-area="statistics"] .recharts-tooltip-wrapper {
+    display: none !important;
+  }
+  /* Legenda → tmavá */
+  [data-print-area="statistics"] .recharts-legend-item-text {
+    color: #1e293b !important;
   }
 
   /* Karty a graf wrappery — nezalamovat uprostřed */
@@ -160,24 +273,38 @@ body {
 
   /* Sidebar / mobile nav / dialogy mimo tisk */
   aside,
-  nav,
+  nav:not([data-print-area="statistics"] nav),
   [role="dialog"] {
     display: none !important;
   }
 
-  /* Recharts ResponsiveContainer — zafixovat šířku, aby se ResponsiveContainer
-     nezhroutil na 0 px během print preview. Bez tohoto by graf byl prázdný. */
-  [data-print-area="statistics"] .recharts-responsive-container {
-    width: 100% !important;
-    min-height: 200px;
+  /* Heading typografie — kompaktnější pro print A4 */
+  [data-print-area="statistics"] h1 { font-size: 18pt !important; line-height: 1.2 !important; }
+  [data-print-area="statistics"] h2 { font-size: 13pt !important; line-height: 1.2 !important; }
+  [data-print-area="statistics"] h3 { font-size: 11pt !important; line-height: 1.2 !important; }
+
+  /* Vynutit desktop layout v tisku — i když uživatel klikne Tisk z mobilu,
+     A4 stránka má dost místa pro desktop layout (md:block) a méně pro
+     mobilní (md:hidden). V print režimu (≥768px) Tailwind responsive
+     automaticky vybere správnou variantu, ale pro jistotu (a pro override
+     inline isPrinting styles) explicitně forsujeme: */
+  .md\:hidden[data-print-area="statistics"] {
+    display: none !important;
+  }
+  .hidden.md\:block[data-print-area="statistics"] {
+    display: block !important;
   }
 
-  /* Zabránit oříznutí motion.div animací během tisku (opacity/transform reset) */
-  [data-print-area="statistics"] [style*="opacity: 0"],
-  [data-print-area="statistics"] [style*="transform"] {
-    opacity: 1 !important;
-    transform: none !important;
-  }
+  /* Mezery v gridu redukovat */
+  [data-print-area="statistics"] .gap-2 { gap: 0.25rem !important; }
+  [data-print-area="statistics"] .gap-3 { gap: 0.4rem !important; }
+  [data-print-area="statistics"] .gap-4 { gap: 0.5rem !important; }
+  [data-print-area="statistics"] .gap-5 { gap: 0.6rem !important; }
+  [data-print-area="statistics"] .gap-6 { gap: 0.7rem !important; }
+  [data-print-area="statistics"] .py-4 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+  [data-print-area="statistics"] .px-4 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+  [data-print-area="statistics"] .space-y-5 > * + * { margin-top: 0.6rem !important; }
+  [data-print-area="statistics"] .space-y-3 > * + * { margin-top: 0.4rem !important; }
 }
 
 /* Default stav pro print-only elementy — na obrazovce skryté */

@@ -1252,19 +1252,27 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     // Aktivujeme print režim — všechny záložky se vyrenderují
     setIsPrinting(true);
 
-    // Dvojitý requestAnimationFrame zajistí, že React stihne re-renderovat
-    // všechny záložky a Recharts ResponsiveContainery změří svůj layout
-    // dříve, než otevřeme nativní print dialog (jinak by byly grafy prázdné).
+    // Sled timeoutů — postupně:
+    //   1× requestAnimationFrame  → React si stihne připravit nový state
+    //   2× requestAnimationFrame  → DOM commit + layout
+    //   1200 ms timeout           → Recharts ResponsiveContainery změří
+    //                               viewport, Framer Motion staggered animace
+    //                               (max ~600 ms s delay i*0.04 + 0.3 dur)
+    //                               doběhnou, line/area charty doanimují.
+    // Bez tohoto by graf zůstal prázdný a část karet by byla mid-fade.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setTimeout(() => {
-          window.print();
-          // Obnova původního stavu po zavření dialogu
-          setTimeout(() => {
-            setIsPrinting(false);
-            document.title = original;
-          }, 400);
-        }, 300);
+          try {
+            window.print();
+          } finally {
+            // Robust cleanup — po zavření print dialogu nebo chybě
+            setTimeout(() => {
+              setIsPrinting(false);
+              document.title = original;
+            }, 500);
+          }
+        }, 1200);
       });
     });
   }, []);
@@ -1499,6 +1507,40 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
   return(
     <>
+      {/* ── Print loading overlay ─────────────────────────────────────────────
+          Během 1200 ms wait okna mezi `setIsPrinting(true)` a `window.print()`
+          uživatel vidí, že export běží. Bez tohoto by mu UI vypadalo jako
+          zaseknuté nebo se náhle zdvojnásobilo (mobilní section + offscreen
+          desktop). Overlay je pomocí `print-hide` v print režimu skrytý. */}
+      {isPrinting && (
+        <div
+          className="print-hide fixed inset-0 flex items-center justify-center"
+          style={{
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <div className="flex flex-col items-center gap-4 px-8 py-6 rounded-xl"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: `1px solid ${C.border}`,
+            }}>
+            <div className="w-10 h-10 rounded-full animate-spin"
+              style={{
+                border: `3px solid ${C.border}`,
+                borderTopColor: C.accent,
+              }} />
+            <p className="text-sm font-bold uppercase tracking-widest" style={{ color: C.text }}>
+              Připravuji export...
+            </p>
+            <p className="text-xs" style={{ color: C.muted }}>
+              Vykreslují se grafy a všechny záložky
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Mobile background — unified with RoomDetail / Timeline / Staff */}
       <div
         aria-hidden
@@ -1911,8 +1953,28 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       {/* ========== DESKTOP (hidden md:block) ========== */}
       {/* `data-print-area="statistics"` označuje sekci, která se vytiskne /
           uloží do PDF. Zbytek stránky (sidebar atd.) se v print režimu skryje
-          přes globální `@media print` pravidla v `app/globals.css`. */}
-      <div className="hidden md:block w-full" data-print-area="statistics">
+          přes globální `@media print` pravidla v `app/globals.css`.
+          
+          Při `isPrinting` (i na mobilním zařízení) potřebujeme, aby desktop
+          sekce byla v DOM a měla měřitelnou šířku — jinak Recharts
+          ResponsiveContainery uvnitř měří 0×0 a grafy v PDF zůstanou prázdné.
+          Dáme ji proto fixed offscreen pozici se šířkou 1024 px (typický
+          desktop layout) — uživatel ji nevidí, ale Recharts ji změří. Print
+          CSS pak při window.print() přemístí na origin a zviditelní. */}
+      <div
+        className="hidden md:block w-full"
+        data-print-area="statistics"
+        style={isPrinting ? {
+          display: 'block',
+          position: 'fixed',
+          top: 0,
+          left: '-99999px',
+          width: '1024px',
+          opacity: 0,
+          pointerEvents: 'none',
+          zIndex: -1,
+        } : undefined}
+      >
 
       {/* ── Print-only hlavička reportu ── */}
       <div className="print-only mb-6" style={{ pageBreakAfter: 'avoid' }}>
