@@ -172,7 +172,7 @@ export const Card: React.FC<CardProps> = memo(({ title, subtitle, action, accent
 });
 Card.displayName = 'Card';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────────���──────────────────────────────────────────────────────────
 // AnimatedCounter — plynule animuje číslo z 0 → value při mount
 // ─────────────────────────────────────────────────────────────────────────────
 interface AnimatedCounterProps {
@@ -639,3 +639,397 @@ export function generateSeededTrend(key: string, n: number, endValue: number, vo
   result[n - 1] = endValue;
   return result;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// StackedBar — horizontální segmentovaný bar (např. payer mix, ASA distribution)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface StackedBarSegment {
+  label: string;
+  value: number;
+  color: string;
+}
+export interface StackedBarProps {
+  segments: StackedBarSegment[];
+  height?: number;
+  showLabels?: boolean;
+  showLegend?: boolean;
+  formatValue?: (v: number) => string;
+}
+export const StackedBar: React.FC<StackedBarProps> = memo(({
+  segments, height = 10, showLabels = false, showLegend = true,
+  formatValue = (v) => `${v}`,
+}) => {
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+  return (
+    <div className="w-full">
+      <div className="flex w-full overflow-hidden rounded-full" style={{ height, background: C.surface }}>
+        {segments.map((seg, i) => {
+          const pct = (seg.value / total) * 100;
+          if (pct < 0.1) return null;
+          return (
+            <motion.div
+              key={i}
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 0.7, delay: i * 0.05, ease: 'easeOut' }}
+              style={{
+                background: seg.color,
+                height: '100%',
+                borderRight: i < segments.length - 1 ? `1px solid rgba(0,0,0,0.25)` : 'none',
+              }}
+              title={`${seg.label}: ${formatValue(seg.value)} (${pct.toFixed(1)}%)`}
+            />
+          );
+        })}
+      </div>
+      {showLabels && (
+        <div className="flex w-full mt-1 text-[9px]" style={{ color: C.muted }}>
+          {segments.map((seg, i) => {
+            const pct = (seg.value / total) * 100;
+            if (pct < 5) return null;
+            return (
+              <div key={i} style={{ width: `${pct}%` }} className="text-center">
+                {pct.toFixed(0)}%
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {showLegend && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+          {segments.map((seg, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-[10px]">
+              <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: seg.color }} />
+              <span style={{ color: C.text }}>{seg.label}</span>
+              <span style={{ color: C.muted }} className="font-mono tabular-nums">
+                {formatValue(seg.value)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+StackedBar.displayName = 'StackedBar';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FunnelChart — vertikální funnel (pacient flow: admit → pre-op → OR → PACU → discharge)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface FunnelStage {
+  label: string;
+  value: number;
+  color?: string;
+  sublabel?: string;
+}
+export const FunnelChart: React.FC<{ stages: FunnelStage[]; maxWidth?: number }> = memo(({ stages, maxWidth = 100 }) => {
+  if (!stages.length) return null;
+  const max = Math.max(...stages.map(s => s.value)) || 1;
+  return (
+    <div className="flex flex-col gap-1.5">
+      {stages.map((stage, i) => {
+        const pct = (stage.value / max) * maxWidth;
+        const color = stage.color ?? C.accent;
+        const dropoff = i > 0 ? ((stages[i - 1].value - stage.value) / stages[i - 1].value) * 100 : 0;
+        return (
+          <div key={i}>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 relative h-7 rounded-md overflow-hidden" style={{ background: C.surface }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 0.6, delay: i * 0.08, ease: 'easeOut' }}
+                  style={{
+                    height: '100%',
+                    background: `linear-gradient(90deg, ${color}, ${color}cc)`,
+                    borderRight: `2px solid ${color}`,
+                  }}
+                />
+                <div className="absolute inset-0 flex items-center justify-between px-2">
+                  <span className="text-[10px] font-bold" style={{ color: C.textHi }}>
+                    {stage.label}
+                  </span>
+                  <span className="text-[10px] font-mono tabular-nums" style={{ color: C.textHi }}>
+                    {formatNumber(stage.value)}
+                  </span>
+                </div>
+              </div>
+              {i > 0 && dropoff > 0 && (
+                <div className="text-[9px] font-mono tabular-nums w-14 text-right" style={{ color: C.muted }}>
+                  −{dropoff.toFixed(0)}%
+                </div>
+              )}
+              {i === 0 && <div className="w-14" />}
+            </div>
+            {stage.sublabel && (
+              <div className="text-[9px] mt-0.5 ml-1" style={{ color: C.muted }}>{stage.sublabel}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+FunnelChart.displayName = 'FunnelChart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ComplianceMeter — barevný horizontální gauge s pásmy + threshold marker
+// ─────────────────────────────────────────────────────────────────────────────
+export interface ComplianceMeterProps {
+  value: number;          // aktuální % (0-100)
+  target: number;         // cílové % (např. 95)
+  label: string;
+  inverted?: boolean;     // true pro metriky kde menší = lepší (např. complications rate)
+  size?: 'sm' | 'md';
+}
+export const ComplianceMeter: React.FC<ComplianceMeterProps> = memo(({ value, target, label, inverted, size = 'md' }) => {
+  const v = Math.max(0, Math.min(100, value));
+  const ok = inverted ? v <= target : v >= target;
+  const warn = inverted
+    ? v <= target * 1.5
+    : v >= target * 0.85;
+  const color = ok ? C.green : (warn ? C.yellow : C.red);
+  const h = size === 'sm' ? 6 : 9;
+  return (
+    <div className="w-full">
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="text-[10px] uppercase tracking-wider font-medium" style={{ color: C.muted }}>{label}</span>
+        <div className="flex items-baseline gap-1">
+          <span className={`font-mono tabular-nums font-bold ${size === 'sm' ? 'text-sm' : 'text-base'}`}
+            style={{ color }}>
+            {v.toFixed(1)}%
+          </span>
+          <span className="text-[9px]" style={{ color: C.muted }}>/ {target}%</span>
+        </div>
+      </div>
+      <div className="relative w-full rounded-full overflow-hidden" style={{ height: h, background: C.surface }}>
+        {/* Threshold marker */}
+        <div className="absolute top-0 bottom-0 w-px" style={{ left: `${target}%`, background: 'rgba(255,255,255,0.4)', zIndex: 2 }} />
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${v}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          style={{
+            height: '100%',
+            background: `linear-gradient(90deg, ${color}aa, ${color})`,
+          }}
+        />
+      </div>
+    </div>
+  );
+});
+ComplianceMeter.displayName = 'ComplianceMeter';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MetricTile — kompaktní informační dlaždice (label/value/icon/sublabel)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface MetricTileProps {
+  label: string;
+  value: string | number;
+  sublabel?: string;
+  color?: string;
+  icon?: React.ComponentType<any>;
+  delta?: number;
+  invertedDelta?: boolean;
+  trend?: number[];
+  className?: string;
+}
+export const MetricTile: React.FC<MetricTileProps> = memo(({
+  label, value, sublabel, color = C.text, icon: Icon, delta, invertedDelta, trend, className,
+}) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className={`relative rounded-lg p-3 overflow-hidden ${className ?? ''}`}
+      style={{ background: C.surface, border: `1px solid ${C.border}` }}
+    >
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {Icon && (
+            <div className="rounded-md p-1 shrink-0" style={{ background: `${color}1a` }}>
+              <Icon size={11} color={color} strokeWidth={2.4} />
+            </div>
+          )}
+          <span className="text-[9px] uppercase tracking-wider font-medium truncate" style={{ color: C.muted }}>
+            {label}
+          </span>
+        </div>
+        {typeof delta === 'number' && (
+          <DeltaBadge delta={delta} inverted={invertedDelta} hideZero size="xs" />
+        )}
+      </div>
+      <div className="text-lg font-bold leading-none font-mono tabular-nums" style={{ color }}>
+        {typeof value === 'number' ? <AnimatedCounter value={value} /> : value}
+      </div>
+      {sublabel && (
+        <div className="text-[9px] mt-1" style={{ color: C.muted }}>{sublabel}</div>
+      )}
+      {trend && trend.length > 1 && (
+        <div className="absolute bottom-0 right-0 left-0 opacity-50 pointer-events-none">
+          <Sparkline data={trend} width={120} height={20} color={color} fillOpacity={0.12} />
+        </div>
+      )}
+    </motion.div>
+  );
+});
+MetricTile.displayName = 'MetricTile';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HeatmapStrip — 1D denní/hodinová heatmapa (n buněk, intenzity 0-1)
+// ─────────────────────────────────────────────────────────────────────────────
+export const HeatmapStrip: React.FC<{
+  values: number[];
+  labels?: string[];
+  color?: string;
+  cellHeight?: number;
+}> = memo(({ values, labels, color = C.accent, cellHeight = 18 }) => {
+  const max = Math.max(...values, 0.001);
+  return (
+    <div className="w-full">
+      <div className="flex w-full gap-px">
+        {values.map((v, i) => {
+          const intensity = max > 0 ? v / max : 0;
+          return (
+            <div
+              key={i}
+              className="flex-1 rounded-sm relative group"
+              style={{
+                height: cellHeight,
+                background: intensity > 0
+                  ? `${color}${Math.round(intensity * 220 + 25).toString(16).padStart(2, '0')}`
+                  : C.surface,
+                border: `1px solid ${C.border}`,
+              }}
+              title={labels?.[i] ? `${labels[i]}: ${v.toFixed(1)}` : `${v.toFixed(1)}`}
+            />
+          );
+        })}
+      </div>
+      {labels && (
+        <div className="flex w-full gap-px mt-1">
+          {labels.map((l, i) => (
+            <div key={i} className="flex-1 text-center text-[8px]" style={{ color: C.muted }}>
+              {i % 2 === 0 ? l : ''}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+HeatmapStrip.displayName = 'HeatmapStrip';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EventFeed — chronologický feed událostí (incidenty, audity, alerty)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface EventFeedItem {
+  id: string;
+  timestamp: string;       // ISO
+  title: string;
+  description?: string;
+  severity?: 'info' | 'warning' | 'critical' | 'success';
+  source?: string;
+}
+export const EventFeed: React.FC<{ items: EventFeedItem[]; maxItems?: number }> = memo(({ items, maxItems = 6 }) => {
+  const list = items.slice(0, maxItems);
+  const sevColor = (s?: EventFeedItem['severity']) => {
+    switch (s) {
+      case 'critical': return C.red;
+      case 'warning':  return C.yellow;
+      case 'success':  return C.green;
+      default:         return C.accent;
+    }
+  };
+  if (!list.length) {
+    return <div className="text-xs text-center py-4" style={{ color: C.muted }}>Žádné události</div>;
+  }
+  return (
+    <div className="flex flex-col">
+      {list.map((it, i) => {
+        const c = sevColor(it.severity);
+        return (
+          <motion.div
+            key={it.id}
+            initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2, delay: i * 0.04 }}
+            className="flex gap-2.5 py-2"
+            style={{ borderBottom: i < list.length - 1 ? `1px solid ${C.border}` : 'none' }}
+          >
+            <div className="relative shrink-0 mt-1">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
+              {i < list.length - 1 && (
+                <div className="absolute left-1/2 top-2 bottom-[-12px] w-px -translate-x-1/2"
+                  style={{ background: C.border }} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[11px] font-medium truncate" style={{ color: C.text }}>{it.title}</span>
+                <span className="text-[9px] font-mono shrink-0" style={{ color: C.muted }}>
+                  {formatTime(it.timestamp)}
+                </span>
+              </div>
+              {it.description && (
+                <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>{it.description}</div>
+              )}
+              {it.source && (
+                <div className="text-[9px] mt-0.5 inline-block px-1.5 py-px rounded"
+                  style={{ background: `${c}15`, color: c }}>
+                  {it.source}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+});
+EventFeed.displayName = 'EventFeed';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CategoryBar — vertikální kategorizovaný bar list (např. "Top diagnózy")
+// ─────────────────────────────────────────────────────────────────────────────
+export interface CategoryBarItem {
+  label: string;
+  value: number;
+  color?: string;
+  sublabel?: string;
+}
+export const CategoryBarList: React.FC<{
+  items: CategoryBarItem[];
+  formatValue?: (v: number) => string;
+}> = memo(({ items, formatValue = (v) => `${v}` }) => {
+  const max = Math.max(...items.map(i => i.value), 1);
+  return (
+    <div className="flex flex-col gap-1.5">
+      {items.map((it, i) => {
+        const pct = (it.value / max) * 100;
+        const color = it.color ?? C.accent;
+        return (
+          <div key={i} className="flex items-center gap-2">
+            <div className="w-32 shrink-0 truncate text-[11px]" style={{ color: C.text }} title={it.label}>
+              {it.label}
+              {it.sublabel && (
+                <span className="ml-1 text-[9px]" style={{ color: C.muted }}>{it.sublabel}</span>
+              )}
+            </div>
+            <div className="flex-1 relative h-4 rounded-md overflow-hidden" style={{ background: C.surface }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.6, delay: i * 0.04 }}
+                style={{ height: '100%', background: `linear-gradient(90deg, ${color}55, ${color})` }}
+              />
+            </div>
+            <div className="w-14 shrink-0 text-right text-[11px] font-mono tabular-nums font-bold" style={{ color }}>
+              {formatValue(it.value)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+CategoryBarList.displayName = 'CategoryBarList';
