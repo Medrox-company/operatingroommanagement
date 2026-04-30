@@ -764,7 +764,7 @@ function TrendBadge({v}:{v:number}){
   return <span className="text-[10px]" style={{color:C.ghost}}>—</span>;
 }
 
-// ══════������══════════════════════════════════════════════════════════════════════
+// ══════������═══════════════════════════════════════���══════════════════════════════
 // ROOM DETAIL PANEL
 // ══════════════════════════════════════════════════════�������═���════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
@@ -1223,7 +1223,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
-  // ── Export do tisku / PDF ───────────────────────────────────────────────────
+  // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
   // Obě funkce volají `window.print()`. Prohlížeč zobrazí systémový dialog,
   // ve kterém uživatel může:
   //   • vybrat tiskárnu a vytisknout (varianta "Tisk")
@@ -1937,7 +1937,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </button>
             <button
               onClick={handleExportPdf}
-              title="Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")"
+              title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
               style={{
                 background: `${C.yellow}14`,
