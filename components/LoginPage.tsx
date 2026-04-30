@@ -191,9 +191,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </span>
                 <span
                   className="block break-words"
-                  style={{ color: C.yellow }}
+                  style={{ color: '#ffb800' }}
                 >
-                  MANAGEMENT
+                  MANAGEMENT 
                 </span>
               </motion.h1>
 
