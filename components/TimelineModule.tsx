@@ -265,7 +265,17 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return [...rooms];
   }, [rooms]);
 
-  /* --- ARO Overtime Tracking - rooms that exceed working hours --- */
+  /* --- ARO Overtime Tracking - rooms that exceed working hours.
+     
+     Pořadí ARO čísel (1, 2, 3...) je STABILNÍ podle pořadí, ve kterém sály
+     vstoupily do overtime stavu — kdo dříve překročil pracovní dobu, dostane
+     nižší číslo. Persistujeme timestampy v `useRef<Map>`, takže se pořadí
+     nemění když se změní `estimatedEndTime` jiných sálů.
+     
+     Když sál opustí overtime stav (např. operatér zkrátil odhad nebo operace
+     skončí), jeho záznam se vymaže a uvolní místo pro ostatní. */
+  const aroEnteredAtRef = useRef<Map<string, number>>(new Map());
+  
   const aroOvertimeRooms = useMemo(() => {
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const todayKey = dayKeys[currentTime.getDay()];
@@ -276,6 +286,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       estimatedEndTime: Date;
       workingEndTime: Date;
       overtimeMinutes: number;
+      enteredAt: number;
     }> = [];
     
     rooms.forEach(room => {
@@ -306,18 +317,36 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       // Check if estimated end exceeds working hours
       if (endTime > workingEndTime) {
         const overtimeMinutes = Math.round((endTime.getTime() - workingEndTime.getTime()) / (1000 * 60));
+        
+        // Stabilní timestamp vstupu do overtime — pokud sál vstupuje poprvé,
+        // zaregistrujeme ho s aktuálním časem; jinak ponecháme původní timestamp.
+        let enteredAt = aroEnteredAtRef.current.get(room.id);
+        if (enteredAt === undefined) {
+          enteredAt = Date.now();
+          aroEnteredAtRef.current.set(room.id, enteredAt);
+        }
+        
         overtimeList.push({
           roomId: room.id,
           roomName: room.name,
           estimatedEndTime: endTime,
           workingEndTime,
-          overtimeMinutes
+          overtimeMinutes,
+          enteredAt,
         });
       }
     });
     
-    // Sort by estimated end time (who finishes first has priority to be relieved first)
-    return overtimeList.sort((a, b) => a.estimatedEndTime.getTime() - b.estimatedEndTime.getTime());
+    // Garbage collection — odstraň timestampy sálů, které už nejsou v overtime,
+    // aby se při návratu sálu do overtime přidělil nový (vyšší) timestamp.
+    const activeIds = new Set(overtimeList.map(r => r.roomId));
+    for (const id of Array.from(aroEnteredAtRef.current.keys())) {
+      if (!activeIds.has(id)) aroEnteredAtRef.current.delete(id);
+    }
+    
+    // Sort podle pořadí vstupu do overtime — kdo první překročil pracovní dobu
+    // dostane ARO #1, druhý #2 atd. Stabilní napříč rerender cykly.
+    return overtimeList.sort((a, b) => a.enteredAt - b.enteredAt);
   }, [rooms, currentTime]);
   
   // Get ARO position for a room (returns position number or null if not in overtime)
