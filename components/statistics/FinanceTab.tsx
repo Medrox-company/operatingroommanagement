@@ -14,7 +14,7 @@ import {
   LineChart, Line, ComposedChart, Area,
 } from 'recharts';
 import type { OperatingRoom } from '../../types';
-import { fetchStatusHistory, fetchRoomStatistics, updateRoomHourlyOperatingCost, type StatusHistoryRow, type RoomStatistics } from '../../lib/db';
+import { fetchStatusHistory, updateRoomHourlyOperatingCost, type StatusHistoryRow } from '../../lib/db';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 
@@ -209,22 +209,8 @@ export function FinanceTab({
         alert('Uložení selhalo. Zkuste to prosím znovu.');
         return;
       }
-      // Optimisticky aktualizujeme lokální mapu
+      // Optimisticky aktualizujeme lokální mapu — sazba je nyní uložena v DB
       setHourlyCostOverride(prev => ({ ...prev, [roomId]: parsed }));
-      
-      // Refresh rooms data z DB aby se zobrazila nová sazba
-      try {
-        const now = new Date();
-        const fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        const refreshedStats = await fetchRoomStatistics(fromDate, now);
-        if (refreshedStats?.rooms) {
-          // Emit updated room data (pro logování)
-          console.log('[v0] Rooms refreshed after hourly_operating_cost update');
-        }
-      } catch (err) {
-        console.error('[v0] Failed to refresh rooms after cost update:', err);
-      }
-      
       setEditingRoomId(null);
       setEditingValue('');
     } finally {
