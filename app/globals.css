@@ -62,53 +62,67 @@ body {
 /* ── Print styles for Statistics Module export ─────────────────────────────────
    Když uživatel zvolí Tisk / Uložit jako PDF, zobrazí se pouze obsah
    označený `data-print-area`. Vše ostatní (sidebar, navigace, ovládací
-   prvky uvnitř modulu) se skryje. */
+   prvky uvnitř modulu) se skryje a pozadí se vybělí. */
 @media print {
   @page {
     size: A4;
-    margin: 12mm 10mm;
+    margin: 10mm 8mm;
   }
 
   html,
   body {
     background: #ffffff !important;
     color: #000000 !important;
+    /* Vynutit zachování barev z grafů — bez `print-color-adjust: exact`
+       prohlížeče barvy v "barevně úsporném" režimu odstraní. */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
-  /* Hide everything in the body by default */
+  /* Skrýt vše defaultně */
   body * {
     visibility: hidden;
   }
 
-  /* Reveal the chosen print target and all its descendants */
+  /* Odhalit print cíl a všechny jeho potomky */
   [data-print-area="statistics"],
   [data-print-area="statistics"] * {
     visibility: visible;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
-  /* Position the print target at the page origin so we don't get the sidebar
-     gap or other absolute offsets in the printed output. */
+  /* Pozice print cíle u origin — stránka začíná od hraní A4 */
   [data-print-area="statistics"] {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
     padding: 0 !important;
+    margin: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
+    z-index: 9999 !important;
   }
 
-  /* UI controls hidden during print (export button, period switcher, etc.) */
-  .print-hide {
+  /* UI ovládací prvky během tisku schované */
+  .print-hide,
+  .print-hide * {
     display: none !important;
+    visibility: hidden !important;
   }
 
-  /* Show print-only elements (report metadata header) */
+  /* Print-only elementy (metadata report hlavička) */
   .print-only {
     display: block !important;
+    visibility: visible !important;
   }
 
-  /* Force light theme inside print target */
+  /* Force light theme on text & non-SVG elements inside print target.
+     Selektor `*:not(svg):not(svg *)` zachová fill/stroke barvy v Recharts SVG. */
   [data-print-area="statistics"] *:not(svg):not(svg *) {
     background: transparent !important;
     color: #000000 !important;
@@ -116,30 +130,62 @@ body {
     box-shadow: none !important;
     backdrop-filter: none !important;
     text-shadow: none !important;
+    -webkit-text-fill-color: #000000 !important;
   }
 
-  /* Recharts SVGs: keep their fills/strokes (charts must render) */
+  /* Recharts SVGs: ZACHOVAT všechny inline fill/stroke barvy.
+     Bez tohoto by se barevné sloupce, čáry a heatmapa vytiskly černě. */
   [data-print-area="statistics"] svg,
   [data-print-area="statistics"] svg * {
     color: inherit;
   }
+  /* Recharts texty (osy, legenda) na bílém pozadí ponechat tmavé */
+  [data-print-area="statistics"] svg text {
+    fill: #000000 !important;
+  }
 
-  /* Avoid awkward page breaks inside cards/grids */
+  /* Karty a graf wrappery — nezalamovat uprostřed */
   [data-print-area="statistics"] .print-card,
-  [data-print-area="statistics"] [data-no-break] {
+  [data-print-area="statistics"] [data-no-break],
+  [data-print-area="statistics"] .recharts-wrapper {
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
-  /* Sidebar / mobile nav / room detail panel out of print */
+  /* Sekce mezi záložkami (Přehled → Sály → Fáze → Heatmapa) — nová stránka */
+  .print-section {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Sidebar / mobile nav / dialogy mimo tisk */
   aside,
   nav,
   [role="dialog"] {
     display: none !important;
   }
+
+  /* Recharts ResponsiveContainer — zafixovat šířku, aby se ResponsiveContainer
+     nezhroutil na 0 px během print preview. Bez tohoto by graf byl prázdný. */
+  [data-print-area="statistics"] .recharts-responsive-container {
+    width: 100% !important;
+    min-height: 200px;
+  }
+
+  /* Zabránit oříznutí motion.div animací během tisku (opacity/transform reset) */
+  [data-print-area="statistics"] [style*="opacity: 0"],
+  [data-print-area="statistics"] [style*="transform"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
-/* Default state for print-only elements (hidden on screen) */
+/* Default stav pro print-only elementy — na obrazovce skryté */
 .print-only {
   display: none;
+}
+
+/* `print-section` na obrazovce nedělá nic; aktivuje se až v @media print */
+.print-section {
+  /* placeholder — page-break aktivován v print media query výše */
 }
