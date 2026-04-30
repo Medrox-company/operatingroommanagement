@@ -60,17 +60,22 @@ body {
 }
 
 /* ── Print styles for Statistics Module export ─────────────────────────────────
-   Strategie: TISKNEME APLIKACI 1:1 (dark theme, všechny barvy zachovány).
-   Žádné překlápění do "report" stylu — uživatel chce identický vzhled.
-   Necháme browser přirozeně paginovat na víc A4 stránek. */
+   Strategie: BÍLÉ MINIMALISTICKÉ POZADÍ + plná data + barevné accenty.
+     • Pozadí stránky bílé (printer-friendly, neplýtvá toner)
+     • Tmavé surfaces (rgba(255,255,255,0.04) atd.) překlopíme na white
+     • Bílé texty (rgba(255,255,255,*)) překlopíme na slate dark
+     • Borders rgba(255,255,255,*) → světle šedé
+     • HEX accent barvy (KPI hodnoty, badges, status) ZACHOVÁNY
+     • Recharts grid lines udržíme viditelné na bílém
+     • Per-room KPI strip vynutíme do JEDNOHO řádku (8 sloupců) */
 @media print {
   @page {
     size: A4;
     margin: 6mm;
   }
 
-  /* Klíč: vynutit zachování barev (jinak prohlížeč v "úsporném" režimu
-     barvy odstraní a tmavé pozadí + accent barvy se nevytisknou) */
+  /* Vynutit zachování barev — bez tohoto by prohlížeč v "úsporném"
+     režimu odstranil accent barvy z grafů a KPI */
   *,
   *::before,
   *::after {
@@ -79,18 +84,14 @@ body {
     color-adjust: exact !important;
   }
 
-  /* Vynutit tmavé pozadí stránky (browser default je bílé) — aby tisk
-     vypadal identicky s aplikací */
   html,
   body {
-    background: #000000 !important;
-    color-scheme: dark !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    color-scheme: light !important;
   }
 
   /* Skrýt vše mimo print target */
-  body > *:not(:has([data-print-area="statistics"])) {
-    visibility: hidden;
-  }
   body * {
     visibility: hidden;
   }
@@ -99,7 +100,7 @@ body {
     visibility: visible;
   }
 
-  /* Print target přemístíme na origin (sidebar offset zruší) a roztáhneme */
+  /* Print target na origin (sidebar offset pryč) */
   [data-print-area="statistics"] {
     position: absolute !important;
     left: 0 !important;
@@ -109,21 +110,21 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     z-index: 9999 !important;
-    background: #000000 !important;
-    /* Force visible (override inline isPrinting offscreen style) */
+    background: #ffffff !important;
+    color: #0f172a !important;
+    /* Override inline isPrinting offscreen style */
     opacity: 1 !important;
     pointer-events: auto !important;
   }
 
-  /* UI ovládací prvky během tisku schované (period switch, export buttons,
-     mobile loading overlay, mobilní bottomNav, sidebar atd.) */
+  /* UI ovládací prvky během tisku schované */
   .print-hide,
   .print-hide * {
     display: none !important;
     visibility: hidden !important;
   }
 
-  /* Print-only elementy (metadata report hlavička) viditelné */
+  /* Print-only elementy (metadata header) */
   .print-only {
     display: block !important;
     visibility: visible !important;
@@ -136,8 +137,7 @@ body {
     display: none !important;
   }
 
-  /* Mobilní section v print skrýt, desktop section v print zobrazit
-     (override inline isPrinting offscreen style) */
+  /* Mobilní section schovat, desktop section zobrazit */
   .md\:hidden[data-print-area="statistics"] {
     display: none !important;
   }
@@ -145,8 +145,7 @@ body {
     display: block !important;
   }
 
-  /* Vynutit Framer Motion opacity 1 — animace často nestihnou doběhnout
-     před otevřením print dialogu */
+  /* Framer Motion: force opacity 1 + transform reset */
   [data-print-area="statistics"] [style*="opacity: 0"],
   [data-print-area="statistics"] [style*="opacity:0"] {
     opacity: 1 !important;
@@ -156,45 +155,172 @@ body {
     transform: none !important;
   }
 
-  /* Recharts ResponsiveContainer — fixovat layout aby se nezhroutil */
+  /* ─── BAREVNÉ MAPOVÁNÍ DARK → LIGHT ──────────────────────────────────
+     Cíleně přepisujeme pouze dark surface/text/border styly (rgba bílé
+     varianty). Hex barvy a accent inline styly necháváme nedotčené. */
+
+  /* Tmavé surface → bílé. Inline styly typu background: rgba(255,255,255,0.04)
+     by na bílém pozadí byly prakticky neviditelné — překlopíme je na čisté
+     bílé s decentní šedou. */
+  [data-print-area="statistics"] [style*="background: rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="background:rgba(255,255,255"],
+  [data-print-area="statistics"] [style*="background-color: rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="background-color:rgba(255,255,255"] {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
+  /* Tmavé pozadí stránky / app shell → také bílé */
+  [data-print-area="statistics"] [style*="background: #000"],
+  [data-print-area="statistics"] [style*="background:#000"],
+  [data-print-area="statistics"] [style*="background-color: #000"],
+  [data-print-area="statistics"] [style*="background-color:#000"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  /* Bílé/poloprůhledné texty → tmavý slate */
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255"] {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+  }
+
+  /* Muted texty (rgba 0.35-0.6) → střední slate */
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.35"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.35"],
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.5"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.5"],
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.6"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.6"] {
+    color: #475569 !important;
+    -webkit-text-fill-color: #475569 !important;
+  }
+
+  /* Faint texty (rgba 0.07-0.2) → světle šedé */
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.07"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.07"],
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.15"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.15"],
+  [data-print-area="statistics"] [style*="color: rgba(255, 255, 255, 0.2"],
+  [data-print-area="statistics"] [style*="color:rgba(255,255,255,0.2"] {
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+  }
+
+  /* Borders rgba(255,255,255,*) → světle šedé pro viditelnost gridů */
+  [data-print-area="statistics"] [style*="rgba(255, 255, 255"][style*="border"],
+  [data-print-area="statistics"] [style*="rgba(255,255,255"][style*="border"] {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Tailwind text-white třída → tmavá */
+  [data-print-area="statistics"] .text-white {
+    color: #0f172a !important;
+  }
+
+  /* Pozadí app shell (z layoutu) — bílé */
+  [data-print-area="statistics"] {
+    background: #ffffff !important;
+  }
+
+  /* Žádné stíny / blur / glow — minimalistický vzhled */
+  [data-print-area="statistics"] * {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    text-shadow: none !important;
+  }
+
+  /* ─── RECHARTS ───────────────────────────────────────────────────────
+     Ponechat všechny inline fill/stroke (sloupce, čáry, area, koláč).
+     Pouze osy/grid překreslit kontrastně na bílém. */
+
   [data-print-area="statistics"] .recharts-responsive-container {
     width: 100% !important;
-    min-height: 220px !important;
+    min-height: 200px !important;
   }
   [data-print-area="statistics"] .recharts-wrapper {
     overflow: visible !important;
   }
-  /* Tooltip v tisku skrýt (cursor highlight) */
+  /* Osy a tickové texty — tmavé */
+  [data-print-area="statistics"] .recharts-cartesian-axis-tick text,
+  [data-print-area="statistics"] .recharts-text {
+    fill: #475569 !important;
+  }
+  /* Grid lines, axis lines — světle šedé */
+  [data-print-area="statistics"] .recharts-cartesian-grid-horizontal line,
+  [data-print-area="statistics"] .recharts-cartesian-grid-vertical line,
+  [data-print-area="statistics"] .recharts-cartesian-axis-line,
+  [data-print-area="statistics"] .recharts-cartesian-axis-tick-line {
+    stroke: #e2e8f0 !important;
+  }
+  /* Reference linie kapacity (rgba bílá) → výraznější */
+  [data-print-area="statistics"] .recharts-line path[stroke="rgba(255,255,255,0.1)"] {
+    stroke: #cbd5e1 !important;
+  }
+  /* Tooltip cursor & wrapper v print zbytečné */
   [data-print-area="statistics"] .recharts-tooltip-cursor,
   [data-print-area="statistics"] .recharts-tooltip-wrapper {
     display: none !important;
   }
+  /* Legenda → tmavá */
+  [data-print-area="statistics"] .recharts-legend-item-text {
+    color: #0f172a !important;
+  }
 
-  /* Page breaks: NEFORSEME mezi záložkami — necháme browser plynout přirozeně.
-     Pouze zabráníme zlomu UVNITŘ karet/grafů. */
+  /* ─── PER-ROOM KPI STRIP V ŘÁDCÍCH ──────────────────────────────────
+     V Přehled tabu chceme každý sál na JEDNOM řádku (8 buněk vedle sebe).
+     V ostatních responsive grid-cols breakpointech (md/lg) se zachovávají. */
+  [data-print-area="statistics"] .grid-cols-2.md\:grid-cols-4.lg\:grid-cols-8 {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+  [data-print-area="statistics"] .grid-cols-4.lg\:grid-cols-8 {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+  /* Sály grid (mini cards) — 4 sloupce na A4 (s rozšířeným detailem) */
+  [data-print-area="statistics"] .grid-cols-2.sm\:grid-cols-3.md\:grid-cols-4.lg\:grid-cols-6 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  /* 3-col layouty (Card+Pie, charts row) → 3 sloupce na A4 */
+  [data-print-area="statistics"] .grid-cols-1.lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  /* Page breaks: pouze nezalamovat uvnitř karet/grafů */
   [data-print-area="statistics"] .recharts-wrapper,
   [data-print-area="statistics"] [data-no-break],
   [data-print-area="statistics"] .print-card {
     page-break-inside: avoid;
     break-inside: avoid;
   }
-
-  /* Print-section nadpisy by neměly viset osamocené na konci stránky */
+  /* Nadpisy nesmí viset na konci stránky */
   [data-print-area="statistics"] h2 {
     page-break-after: avoid;
     break-after: avoid;
   }
 
-  /* Kompaktnější padding/gaps pro lepší využití A4 plochy */
+  /* Minimalistická typografie — kompaktní pro A4 */
   [data-print-area="statistics"] {
-    font-size: 9pt !important;
+    font-size: 8.5pt !important;
+    line-height: 1.3 !important;
   }
-  [data-print-area="statistics"] .gap-3 { gap: 0.4rem !important; }
-  [data-print-area="statistics"] .gap-4 { gap: 0.5rem !important; }
-  [data-print-area="statistics"] .gap-5 { gap: 0.6rem !important; }
-  [data-print-area="statistics"] .space-y-5 > * + * { margin-top: 0.6rem !important; }
-  [data-print-area="statistics"] .mb-7 { margin-bottom: 0.6rem !important; }
-  [data-print-area="statistics"] .mb-8 { margin-bottom: 0.6rem !important; }
+  /* Redukce mezer pro hustší layout */
+  [data-print-area="statistics"] .gap-2 { gap: 0.25rem !important; }
+  [data-print-area="statistics"] .gap-2\.5 { gap: 0.3rem !important; }
+  [data-print-area="statistics"] .gap-3 { gap: 0.35rem !important; }
+  [data-print-area="statistics"] .gap-4 { gap: 0.4rem !important; }
+  [data-print-area="statistics"] .gap-5 { gap: 0.5rem !important; }
+  [data-print-area="statistics"] .space-y-3 > * + * { margin-top: 0.4rem !important; }
+  [data-print-area="statistics"] .space-y-5 > * + * { margin-top: 0.5rem !important; }
+  [data-print-area="statistics"] .py-3 { padding-top: 0.3rem !important; padding-bottom: 0.3rem !important; }
+  [data-print-area="statistics"] .py-4 { padding-top: 0.35rem !important; padding-bottom: 0.35rem !important; }
+  [data-print-area="statistics"] .px-4 { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+  [data-print-area="statistics"] .p-3 { padding: 0.35rem !important; }
+  [data-print-area="statistics"] .p-4 { padding: 0.4rem !important; }
+  [data-print-area="statistics"] .p-5 { padding: 0.5rem !important; }
+  [data-print-area="statistics"] .mb-7 { margin-bottom: 0.5rem !important; }
+  [data-print-area="statistics"] .mb-8 { margin-bottom: 0.5rem !important; }
 }
 
 /* Default stav pro print-only elementy — na obrazovce skryté */

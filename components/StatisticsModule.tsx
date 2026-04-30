@@ -388,7 +388,7 @@ function calculateRoomUtilization(
   return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
 }
 
-// ── Helper: Get formatted working hours string for a room ────────────────����─────
+// ── Helper: Get formatted working hours string for a room ─────────���──────����─────
 function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   const hours = getRoomWorkingHours(room, dayIndex);
   if (!hours.enabled) return 'Zavřeno';
@@ -2036,21 +2036,20 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         } : undefined}
       >
 
-      {/* ── Print-only hlavička reportu (kompaktní, dark theme) ── */}
-      <div className="print-only mb-3 px-4 pt-3" style={{ pageBreakAfter: 'avoid' }}>
-        <div className="flex items-baseline justify-between pb-2 mb-2"
-          style={{ borderBottom: `1px solid ${C.border}` }}>
-          <h1 className="text-xl font-bold uppercase tracking-tight" style={{ color: C.yellow }}>
+      {/* ── Print-only hlavička reportu (minimalistická, černý text na bílém) ── */}
+      <div className="print-only mb-3 px-3 pt-2" style={{ pageBreakAfter: 'avoid' }}>
+        <div className="flex items-baseline justify-between pb-1.5 mb-1.5"
+          style={{ borderBottom: '1px solid #cbd5e1' }}>
+          <h1 className="text-base font-bold uppercase tracking-tight" style={{ color: '#0f172a' }}>
             Statistiky operačních sálů
           </h1>
-          <p className="text-[10px] font-mono" style={{ color: C.muted }}>
+          <p className="text-[9px] font-mono" style={{ color: '#475569' }}>
             {new Date().toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })}
           </p>
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[10px]" style={{ color: C.text }}>
-          <span><span style={{ color: C.muted }}>Období:</span> <strong>{periodLabelMap[period]}</strong></span>
-          <span><span style={{ color: C.muted }}>Počet sálů:</span> <strong>{rooms.length}</strong></span>
-          <span style={{ color: C.muted }}>Generováno z aplikace OperatingRoom Control</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[9px]" style={{ color: '#0f172a' }}>
+          <span><span style={{ color: '#475569' }}>Období:</span> <strong>{periodLabelMap[period]}</strong></span>
+          <span><span style={{ color: '#475569' }}>Počet sálů:</span> <strong>{rooms.length}</strong></span>
         </div>
       </div>
 
@@ -2139,7 +2138,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             transition={{duration:0.22}}
             className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3" style={{ color: C.yellow }}>
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Přehled
               </h2>
             )}
@@ -2497,8 +2496,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             transition={{duration:0.22}}
             className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3 mt-6" style={{ color: C.yellow }}>
-                Sály — Detail
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Sály — detail
               </h2>
             )}
 
@@ -2595,7 +2594,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             transition={{duration:0.22}}
             className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3 mt-6" style={{ color: C.yellow }}>
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Fáze
               </h2>
             )}
@@ -2761,7 +2760,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             transition={{duration:0.22}}
             className="space-y-5">
             {isPrinting && (
-              <h2 className="print-only text-lg font-bold uppercase tracking-tight mb-3 mt-6" style={{ color: C.yellow }}>
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Heatmapa
               </h2>
             )}
