@@ -11,16 +11,10 @@ import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext'
 import {
   fetchRoomStatistics,
   fetchStatusHistory,
-  fetchSafetyChecklists,
-  fetchEquipment,
   fetchAllStaff,
-  fetchSchedules,
   type RoomStatistics,
   type StatusHistoryRow,
-  type SafetyChecklistRow,
-  type EquipmentRow,
   type StaffRow,
-  type ScheduleRow,
 } from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -37,16 +31,13 @@ import {
 import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
 import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
-import { ForecastTab } from './statistics/ForecastTab';
-import { SafetyTab } from './statistics/SafetyTab';
-import { EquipmentTab } from './statistics/EquipmentTab';
 import { FinanceTab } from './statistics/FinanceTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal' | 'bezpecnost'
-            | 'vybaveni' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
+type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
+            | 'saly' | 'faze' | 'heatmapa';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -1330,12 +1321,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
   const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
-  // ── REÁLNÁ DB DATA pro nové tab moduly (Safety/Equipment/Staff/Forecast) ──
+  // ── REÁLNÁ DB DATA pro tab moduly (Staff) ──
   // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
-  const [safetyChecklists, setSafetyChecklists] = useState<SafetyChecklistRow[] | null>(null);
-  const [equipmentList,    setEquipmentList]    = useState<EquipmentRow[] | null>(null);
-  const [staffList,        setStaffList]        = useState<StaffRow[] | null>(null);
-  const [schedulesList,    setSchedulesList]    = useState<ScheduleRow[] | null>(null);
+  const [staffList, setStaffList] = useState<StaffRow[] | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
@@ -1406,12 +1394,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     'efektivita': 'Efektivita',
     'finance':    'Finance',
     'personal':   'Personál',
-    'bezpecnost': 'Bezpečnost',
-    'vybaveni':   'Vybavení',
     'saly':       'Sály',
     'faze':       'Fáze',
     'heatmapa':   'Heatmapa',
-    'forecast':   'Forecast',
   };
 
   // Load statistics from database
@@ -1437,24 +1422,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           break;
       }
 
-      // Forecast horizont — od dneška do +30 dní (plánované výkony)
-      const forecastUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-      const [stats, history, checklists, equipment, staffRows, schedules] = await Promise.all([
+      const [stats, history, staffRows] = await Promise.all([
         fetchRoomStatistics(fromDate, now),
         fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
-        fetchSafetyChecklists({ fromDate, toDate: now, limit: 1000 }),
-        fetchEquipment(),
         fetchAllStaff(),
-        fetchSchedules({ fromDate: now, toDate: forecastUntil, limit: 500 }),
       ]);
 
-      if (stats)    setDbStats(stats);
+      if (stats) setDbStats(stats);
       setStatusHistory(history ?? []);
-      setSafetyChecklists(checklists);
-      setEquipmentList(equipment);
       setStaffList(staffRows);
-      setSchedulesList(schedules);
       setIsLoadingStats(false);
     };
 
@@ -1658,12 +1634,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     {id:'efektivita', label:'Efektivita'},
     {id:'finance',    label:'Finance'},
     {id:'personal',   label:'Personál'},
-    {id:'bezpecnost', label:'Bezpečnost'},
-    {id:'vybaveni',   label:'Vybavení'},
     {id:'saly',       label:'Sály'},
     {id:'faze',       label:'Fáze'},
     {id:'heatmapa',   label:'Heatmapa'},
-    {id:'forecast',   label:'Forecast'},
   ];
 
   return(
@@ -1797,12 +1770,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 { id: 'efektivita', label: 'Efektivita' },
                 { id: 'finance', label: 'Finance' },
                 { id: 'personal', label: 'Personál' },
-                { id: 'bezpecnost', label: 'Bezpečnost' },
-                { id: 'vybaveni', label: 'Vybavení' },
                 { id: 'saly', label: 'Sály' },
                 { id: 'faze', label: 'Fáze' },
                 { id: 'heatmapa', label: 'Heatmapa' },
-                { id: 'forecast', label: 'Forecast' },
               ]}
               value={tab}
               onChange={setTab}
@@ -2040,16 +2010,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
           )}
           
-          {/* ── Bezpečnost (WHO checklist — z DB safety_checklists) ── */}
-          {(tab === 'bezpecnost' || isPrinting) && (
-            <div className="flex flex-col gap-3">
-              <SafetyTab
-                checklists={safetyChecklists}
-                periodLabel={period}
-              />
-            </div>
-          )}
-
           {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
           {(tab === 'finance' || isPrinting) && (
             <div className="flex flex-col gap-3">
@@ -2059,29 +2019,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 avgUtilization={avgUtil}
                 periodLabel={period}
                 statusHistory={statusHistory}
-              />
-            </div>
-          )}
-
-          {/* ── Vybavení (z DB equipment) ── */}
-          {(tab === 'vybaveni' || isPrinting) && (
-            <div className="flex flex-col gap-3">
-              <EquipmentTab
-                equipment={equipmentList}
-                rooms={rooms}
-                periodLabel={period}
-              />
-            </div>
-          )}
-
-          {/* ── Forecast & alerty ── */}
-          {(tab === 'forecast' || isPrinting) && (
-            <div className="flex flex-col gap-3">
-              <ForecastTab
-                schedules={schedulesList}
-                history={statusHistory}
-                rooms={rooms}
-                periodLabel={period}
               />
             </div>
           )}
@@ -2702,27 +2639,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </motion.div>
         )}
 
-        {/* ── Kvalita & bezpečnost ── (klinické metriky) */}
-        {/* ── Bezpečnost (z DB safety_checklists) ── */}
-        {(tab==='bezpecnost' || isPrinting) && (
-          <motion.div key="bezpecnost"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Bezpečnost — WHO Surgical Safety Checklist
-              </h2>
-            )}
-            <SafetyTab
-              checklists={safetyChecklists}
-              periodLabel={period}
-            />
-          </motion.div>
-        )}
-
         {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
         {(tab==='finance' || isPrinting) && (
           <motion.div key="finance"
@@ -2742,27 +2658,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               avgUtilization={avgUtil}
               periodLabel={period}
               statusHistory={statusHistory}
-            />
-          </motion.div>
-        )}
-
-        {/* ── Vybavení (z DB equipment) ── */}
-        {(tab==='vybaveni' || isPrinting) && (
-          <motion.div key="vybaveni"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Vybavení & údržba
-              </h2>
-            )}
-            <EquipmentTab
-              equipment={equipmentList}
-              rooms={rooms}
-              periodLabel={period}
             />
           </motion.div>
         )}
@@ -3205,28 +3100,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </motion.div>
         )}
 
-        {/* ── Forecast & alerty ── (nová záložka) */}
-        {(tab==='forecast' || isPrinting) && (
-          <motion.div key="forecast"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Forecast & alerty
-              </h2>
-            )}
-            <ForecastTab
-              schedules={schedulesList}
-              history={statusHistory}
-              rooms={rooms}
-              periodLabel={period}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
 
       </div>
       {/* ── Room detail panel (shared mobile + desktop) ── */}
