@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
+  Printer, FileDown,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 // Step durations now calculated from real database history
@@ -20,11 +21,15 @@ import {
   MobilePillTabs,
   MobileSectionLabel,
 } from './mobile/MobileShell';
+import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
+import { EfficiencyTab } from './statistics/EfficiencyTab';
+import { StaffTab } from './statistics/StaffTab';
+import { ForecastTab } from './statistics/ForecastTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'saly' | 'faze' | 'heatmapa';
+type Tab    = 'prehled' | 'efektivita' | 'personal' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -387,7 +392,7 @@ function calculateRoomUtilization(
   return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
 }
 
-// ── Helper: Get formatted working hours string for a room ────────────────���─────
+// ── Helper: Get formatted working hours string for a room ─────────���──────����─────
 function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   const hours = getRoomWorkingHours(room, dayIndex);
   if (!hours.enabled) return 'Zavřeno';
@@ -675,8 +680,10 @@ interface RoomMiniCardProps {
   stepDurations: number[];
   opsCount: number;
   utilization: number;
+  /** Pokud true, vyrenderuje rozšířenou kartu s detail daty pro tisk/PDF */
+  isPrinting?: boolean;
 }
-const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations, opsCount, utilization }) => {
+const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations, opsCount, utilization, isPrinting }) => {
   const sc2   = roomStatusColor(r);
   const isBusy = isRoomBusyByStep(r);
   const tl2   = useMemo(() => mergeSeg(buildTimeline(r, workflowSteps, stepDurations)), [r, workflowSteps, stepDurations]);
@@ -684,6 +691,16 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
   const workingHoursStr = formatRoomWorkingHours(r, todayIndex);
   const workingMinutes = getRoomWorkingMinutes(r, todayIndex);
+  // Aktuální fáze workflow + její barva (pro Detail v tisku)
+  const currentPhase = workflowSteps[r.currentStepIndex];
+  const phaseLabel = currentPhase?.title ?? '—';
+  const phaseColor = currentPhase?.color ?? sc2;
+  // Doktor/sestra/anesteziolog jména pro print detail
+  const doctorName = r.staff?.doctor?.name ?? '—';
+  const nurseName  = r.staff?.nurse?.name  ?? '—';
+  const anesthName = r.staff?.anesthesiologist?.name ?? '—';
+  // Časy
+  const fmtTime = (iso?: string | null) => iso ? new Date(iso).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '—';
   
   return (
     <motion.button onClick={onClick}
@@ -695,14 +712,24 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
       initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.18, delay: index * 0.025 }}
       whileHover={{ scale: 1.03 } as any}>
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center justify-between mb-1.5 gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
-          <span className="text-xs font-bold truncate" style={{ color: C.text }}>{r.name}</span>
+          {/* Název sálu na JEDNOM řádku — `whitespace-nowrap` + `overflow-hidden`
+              + `text-ellipsis`. Používáme adaptivní velikost fontu přes clamp,
+              aby se i delší názvy ("Sál č. 1 - Traumatologie") vešly bez wrapu.
+              Plný název je vždy dostupný v tooltipu. */}
+          <span
+            className="font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-0"
+            style={{ color: C.text, fontSize: 'clamp(9px, 0.78vw, 12px)' }}
+            title={r.name}
+          >
+            {r.name}
+          </span>
         </div>
         {ups2 && <span className="text-[8px] font-bold px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
       </div>
-      <p className="text-[10px] mb-1 truncate" style={{ color: C.faint }}>{r.department}</p>
+      <p className="text-[10px] mb-1 whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: C.faint }} title={r.department}>{r.department}</p>
       {/* Working hours indicator */}
       <div className="flex items-center gap-1 mb-2">
         <Clock className="w-2.5 h-2.5" style={{ color: C.muted }} />
@@ -732,6 +759,74 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
           {roomStatusLabel(r).slice(0, 3)}
         </span>
       </div>
+
+      {/* ── Print-only rozšířený detail sálu ───────────────────────────���───
+          Při tisku ukážeme všechna důležitá data jako v RoomDetail panelu:
+          aktuální fáze, personál, časy pacienta, příznaky (UPS/septický/atd.). */}
+      {isPrinting && (
+        <div className="mt-2 pt-2" style={{ borderTop: `1px dashed ${C.border}` }}>
+          {/* Aktuální fáze */}
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: phaseColor }} />
+            <p className="text-[9px] uppercase font-bold tracking-wider" style={{ color: C.muted }}>Fáze:</p>
+            <p className="text-[10px] font-bold flex-1" style={{ color: phaseColor }}>{phaseLabel}</p>
+          </div>
+
+          {/* Personál — 3 řádky kompaktně */}
+          <div className="grid grid-cols-1 gap-0.5 mb-1.5">
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <span style={{ color: C.ghost }} className="w-12 shrink-0">Lékař:</span>
+              <span style={{ color: C.text }} className="font-medium truncate">{doctorName}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <span style={{ color: C.ghost }} className="w-12 shrink-0">Sestra:</span>
+              <span style={{ color: C.text }} className="font-medium truncate">{nurseName}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <span style={{ color: C.ghost }} className="w-12 shrink-0">Anest.:</span>
+              <span style={{ color: C.text }} className="font-medium truncate">{anesthName}</span>
+            </div>
+          </div>
+
+          {/* Časy pacienta */}
+          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mb-1.5">
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Volán:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.patientCalledAt)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Přijel:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.patientArrivedAt)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Start:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.operationStartedAt)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[9px]">
+              <span style={{ color: C.ghost }}>Konec:</span>
+              <span style={{ color: C.text }} className="font-mono">{fmtTime(r.estimatedEndTime)}</span>
+            </div>
+          </div>
+
+          {/* Indikátory & příznaky */}
+          <div className="flex flex-wrap gap-1">
+            {r.queueCount > 0 && (
+              <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.accent}15`, color: C.accent }}>
+                Fronta: {r.queueCount}
+              </span>
+            )}
+            <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.text}10`, color: C.text }}>
+              24h: {r.operations24h}
+            </span>
+            {ups2 && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.accent}20`, color: C.accent }}>ÚPS</span>}
+            {r.isSeptic && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.red}20`, color: C.red }}>SEPTICKÝ</span>}
+            {r.isEmergency && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.red}20`, color: C.red }}>POHOT.</span>}
+            {r.isLocked && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.muted}20`, color: C.muted }}>UZAMČEN</span>}
+            {r.isPaused && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.yellow}20`, color: C.yellow }}>PAUZA</span>}
+            {r.isEnhancedHygiene && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.accent}20`, color: C.accent }}>HYG+</span>}
+          </div>
+        </div>
+      )}
     </motion.button>
   );
 });
@@ -761,9 +856,9 @@ function TrendBadge({v}:{v:number}){
   return <span className="text-[10px]" style={{color:C.ghost}}>—</span>;
 }
 
-// ══════������══════════════════════════════════════════════════════════════════════
+// ══════������═══════════════════════════════════════�����══════════════════════════════
 // ROOM DETAIL PANEL
-// ══════════════════════════════════════════════════════�����═���════════════════════
+// ══════════════════════════════════════════════════════�������═���════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
@@ -1220,6 +1315,79 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
+  // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
+  // Obě funkce volají `window.print()`. Prohlížeč zobrazí systémový dialog,
+  // ve kterém uživatel může:
+  //   • vybrat tiskárnu a vytisknout (varianta "Tisk")
+  //   • zvolit "Uložit jako PDF" / "Microsoft Print to PDF" jako tiskárnu
+  //     (varianta "PDF")
+  // Před tiskem dočasně přepíšeme `document.title`, aby uložený PDF soubor
+  // dostal přímo smysluplný název.
+  // `isPrinting` flag během tisku zforsuje vyrenderování VŠECH záložek
+  // (Přehled + Sály + Fáze + Heatmapa) najednou — bez něj by se exportovala
+  // pouze aktuálně aktivní záložka. Po zavření print dialogu se flag vrátí
+  // na false a zobrazení se vrátí do normálního stavu.
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const triggerPrint = useCallback((filename: string) => {
+    if (typeof window === 'undefined') return;
+    const original = document.title;
+    document.title = filename;
+    // Aktivujeme print režim — všechny záložky se vyrenderují
+    setIsPrinting(true);
+
+    // Sled timeoutů — postupně:
+    //   1× requestAnimationFrame  → React si stihne připravit nový state
+    //   2× requestAnimationFrame  → DOM commit + layout
+    //   1200 ms timeout           → Recharts ResponsiveContainery změří
+    //                               viewport, Framer Motion staggered animace
+    //                               (max ~600 ms s delay i*0.04 + 0.3 dur)
+    //                               doběhnou, line/area charty doanimují.
+    // Bez tohoto by graf zůstal prázdný a část karet by byla mid-fade.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          try {
+            window.print();
+          } finally {
+            // Robust cleanup — po zavření print dialogu nebo chybě
+            setTimeout(() => {
+              setIsPrinting(false);
+              document.title = original;
+            }, 500);
+          }
+        }, 1200);
+      });
+    });
+  }, []);
+
+  const handlePrint = useCallback(() => {
+    const dateStr = new Date().toLocaleDateString('cs-CZ');
+    triggerPrint(`Statistiky - ${period} - ${dateStr}`);
+  }, [period, triggerPrint]);
+
+  const handleExportPdf = useCallback(() => {
+    const dateStr = new Date().toISOString().slice(0, 10);
+    triggerPrint(`Statistiky_${period}_${dateStr}.pdf`);
+  }, [period, triggerPrint]);
+
+  // Lokalizovaný popis aktuálního období pro print-only hlavičku reportu
+  const periodLabelMap: Record<Period, string> = {
+    'den':   'Posledních 24 hodin',
+    'týden': 'Posledních 7 dní',
+    'měsíc': 'Posledních 30 dní',
+    'rok':   'Posledních 365 dní',
+  };
+  const tabLabelMap: Record<Tab, string> = {
+    'prehled':    'Přehled',
+    'efektivita': 'Efektivita',
+    'personal':   'Personál',
+    'saly':       'Sály',
+    'faze':       'Fáze',
+    'heatmapa':   'Heatmapa',
+    'forecast':   'Forecast',
+  };
+
   // Load statistics from database
   useEffect(() => {
     const loadStats = async () => {
@@ -1299,6 +1467,56 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const septicCnt = rooms.filter(r=>r.isSeptic).length;
   const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
   const upsCnt    = rooms.filter(isUPS).length;
+
+  // ── Scorecard data construction (pro ExecutiveScorecard hero kartu) ──
+  const scorecardData = useMemo(() => {
+    // Průměrná délka výkonu — váženě dle workflow steps
+    const opDuration = avgStepDurations.reduce((s, v) => s + v, 0);
+    // Recent events — posledních 8 záznamů z status history pro live ticker.
+    // StatusHistoryRow má `operating_room_id`, `event_type`, `step_name`, `timestamp`.
+    const recentEvents = (statusHistory ?? [])
+      .slice(0, 8)
+      .map((row) => {
+        const room = rooms.find(r => r.id === row.operating_room_id);
+        return {
+          timestamp: row.timestamp,
+          roomName: room?.name ?? 'Neznámý sál',
+          eventLabel: row.step_name ?? row.event_type ?? 'Změna stavu',
+          color: room ? roomStatusColor(room) : undefined,
+        };
+      });
+    return {
+      utilization: avgUtil,
+      totalOps,
+      activeRooms: busyCount,
+      totalQueue,
+      septicCount: septicCnt,
+      upsCount: upsCnt,
+      avgOpDuration: opDuration,
+      recentEvents,
+      rooms,
+      periodLabel: period,
+    };
+  }, [avgUtil, totalOps, busyCount, totalQueue, septicCnt, upsCnt, avgStepDurations, statusHistory, rooms, period]);
+
+  // ── Doctor / Nurse ops counts pro StaffTab (z statusHistory + current rooms) ──
+  const doctorOpsMap = useMemo(() => {
+    const m = new Map<string, number>();
+    rooms.forEach(r => {
+      const name = r.staff?.doctor?.name;
+      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
+    });
+    return m;
+  }, [rooms]);
+
+  const nurseOpsMap = useMemo(() => {
+    const m = new Map<string, number>();
+    rooms.forEach(r => {
+      const name = r.staff?.nurse?.name;
+      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
+    });
+    return m;
+  }, [rooms]);
 
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};
@@ -1418,14 +1636,51 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   }), [rooms, roomDistributions, WORKFLOW_STEPS]);
 
   const TABS:{ id:Tab; label:string }[]=[
-    {id:'prehled', label:'Přehled'},
-    {id:'saly',    label:'Sály'},
-    {id:'faze',    label:'Fáze'},
-    {id:'heatmapa',label:'Heatmapa'},
+    {id:'prehled',    label:'Přehled'},
+    {id:'efektivita', label:'Efektivita'},
+    {id:'personal',   label:'Personál'},
+    {id:'saly',       label:'Sály'},
+    {id:'faze',       label:'Fáze'},
+    {id:'heatmapa',   label:'Heatmapa'},
+    {id:'forecast',   label:'Forecast'},
   ];
 
   return(
     <>
+      {/* ── Print loading overlay ─────────────────────────────────────────────
+          Během 1200 ms wait okna mezi `setIsPrinting(true)` a `window.print()`
+          uživatel vidí, že export běží. Bez tohoto by mu UI vypadalo jako
+          zaseknuté nebo se náhle zdvojnásobilo (mobilní section + offscreen
+          desktop). Overlay je pomocí `print-hide` v print režimu skrytý. */}
+      {isPrinting && (
+        <div
+          className="print-hide fixed inset-0 flex items-center justify-center"
+          style={{
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <div className="flex flex-col items-center gap-4 px-8 py-6 rounded-xl"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: `1px solid ${C.border}`,
+            }}>
+            <div className="w-10 h-10 rounded-full animate-spin"
+              style={{
+                border: `3px solid ${C.border}`,
+                borderTopColor: C.accent,
+              }} />
+            <p className="text-sm font-bold uppercase tracking-widest" style={{ color: C.text }}>
+              Připravuji export...
+            </p>
+            <p className="text-xs" style={{ color: C.muted }}>
+              Vykreslují se grafy a všechny záložky včetně detailů
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Mobile background — unified with RoomDetail / Timeline / Staff */}
       <div
         aria-hidden
@@ -1448,15 +1703,58 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       </div>
 
       {/* ========== MOBILE (md:hidden) ========== */}
-      <div className="md:hidden w-full relative" style={{ zIndex: 1 }}>
+      <div className="md:hidden w-full relative" style={{ zIndex: 1 }} data-print-area="statistics">
+        {/* ── Print-only hlavička pro mobilní export ── */}
+        <div className="print-only mb-4" style={{ pageBreakAfter: 'avoid' }}>
+          <div className="flex items-baseline justify-between border-b-2 border-black pb-2 mb-2">
+            <h1 className="text-xl font-bold uppercase tracking-tight">
+              Statistiky operačních sálů
+            </h1>
+            <p className="text-xs font-mono">
+              {new Date().toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' })}
+            </p>
+          </div>
+          <p className="text-xs">
+            <strong>Záložka:</strong> {tabLabelMap[tab]} · <strong>Období:</strong> {periodLabelMap[period]} · <strong>Sály:</strong> {rooms.length}
+          </p>
+        </div>
+
         <div className="flex flex-col gap-5">
-          <MobileHeader
-            kicker="Statistiky"
-            title="Provozní přehled"
-          />
+          <div className="print-hide">
+            <MobileHeader
+              kicker="Statistiky"
+              title="Provozní přehled"
+            />
+          </div>
+
+          {/* Export buttons (mobile) */}
+          <div className="flex items-center gap-2 print-hide">
+            <button
+              onClick={handlePrint}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+              style={{
+                background: `${C.accent}14`,
+                color: C.accent,
+                border: `1px solid ${C.accent}40`,
+              }}>
+              <Printer className="w-4 h-4" />
+              Tisk
+            </button>
+            <button
+              onClick={handleExportPdf}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+              style={{
+                background: `${C.yellow}14`,
+                color: C.yellow,
+                border: `1px solid ${C.yellow}40`,
+              }}>
+              <FileDown className="w-4 h-4" />
+              PDF
+            </button>
+          </div>
 
           {/* Period toggle */}
-          <div>
+          <div className="print-hide">
             <MobileSectionLabel className="mb-2">Období</MobileSectionLabel>
             <MobilePillTabs<Period>
               tabs={[
@@ -1471,20 +1769,28 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </div>
 
           {/* Tab toggle */}
-          <MobilePillTabs<Tab>
-            tabs={[
-              { id: 'prehled', label: 'Přehled' },
-              { id: 'saly', label: 'Sály' },
-              { id: 'faze', label: 'Fáze' },
-              { id: 'heatmapa', label: 'Heatmapa' },
-            ]}
-            value={tab}
-            onChange={setTab}
-          />
+          <div className="print-hide">
+            <MobilePillTabs<Tab>
+              tabs={[
+                { id: 'prehled', label: 'Přehled' },
+                { id: 'efektivita', label: 'Efektivita' },
+                { id: 'personal', label: 'Personál' },
+                { id: 'saly', label: 'Sály' },
+                { id: 'faze', label: 'Fáze' },
+                { id: 'heatmapa', label: 'Heatmapa' },
+                { id: 'forecast', label: 'Forecast' },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
+          </div>
 
-          {/* ── Přehled ── */}
-          {tab === 'prehled' && (
+          {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
+          {(tab === 'prehled' || isPrinting) && (
             <div className="flex flex-col gap-3">
+              {/* Executive scorecard hero (mobile/print verze) */}
+              <ExecutiveScorecard data={scorecardData} />
+
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { l: 'Obsazeno', v: `${busyCount}/${rooms.length}`, c: C.orange },
@@ -1561,8 +1867,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
           )}
 
-          {/* ── Sály ── */}
-          {tab === 'saly' && (
+          {/* ── Sály ── (vždy renderováno při tisku) */}
+          {(tab === 'saly' || isPrinting) && (
             <div className="flex flex-col gap-2.5">
               <MobileSectionLabel>Sály ({rooms.length})</MobileSectionLabel>
               {rooms.map(r => {
@@ -1577,7 +1883,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 leading-none">
                           {roomStatusLabel(r)}
                         </p>
-                        <h3 className="text-base font-semibold text-white mt-1.5 leading-tight truncate">
+                        {/* Název sálu na JEDNOM řádku v mobilní kartě — adaptivní
+                            velikost přes clamp; pokud se nevejde, ořízne se
+                            ellipsisem a plný text je dostupný v `title`. */}
+                        <h3
+                          className="font-semibold text-white mt-1.5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
+                          style={{ fontSize: 'clamp(13px, 4.2vw, 17px)' }}
+                          title={r.name}
+                        >
                           {r.name}
                         </h3>
                       </div>
@@ -1615,8 +1928,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
           )}
 
-          {/* ── Fáze ── */}
-          {tab === 'faze' && (
+          {/* ── Fáze ── (vždy renderováno při tisku) */}
+          {(tab === 'faze' || isPrinting) && (
             <div className="flex flex-col gap-2.5">
               <MobileSectionLabel>Průměrné trvání fází ({period})</MobileSectionLabel>
               <MobileCard>
@@ -1679,8 +1992,45 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
           )}
 
-          {/* ── Heatmapa ── */}
-          {tab === 'heatmapa' && (
+          {/* ── Efektivita & KPI dashboard ── */}
+          {(tab === 'efektivita' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <EfficiencyTab
+                rooms={rooms}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                avgStepDurations={avgStepDurations}
+                periodLabel={period}
+              />
+            </div>
+          )}
+
+          {/* ── Personál & týmy ── */}
+          {(tab === 'personal' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <StaffTab
+                rooms={rooms}
+                periodLabel={period}
+                doctorOps={doctorOpsMap}
+                nurseOps={nurseOpsMap}
+              />
+            </div>
+          )}
+
+          {/* ── Forecast & alerty ── */}
+          {(tab === 'forecast' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <ForecastTab
+                rooms={rooms}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                periodLabel={period}
+              />
+            </div>
+          )}
+
+          {/* ── Heatmapa ── (vždy renderováno při tisku) */}
+          {(tab === 'heatmapa' || isPrinting) && (
             <div className="flex flex-col gap-3">
               <MobileSectionLabel>Heatmapa 7 × 24 h</MobileSectionLabel>
               <MobileCard>
@@ -1764,10 +2114,50 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       </div>
 
       {/* ========== DESKTOP (hidden md:block) ========== */}
-      <div className="hidden md:block w-full">
+      {/* `data-print-area="statistics"` označuje sekci, která se vytiskne /
+          uloží do PDF. Zbytek stránky (sidebar atd.) se v print režimu skryje
+          přes globální `@media print` pravidla v `app/globals.css`.
+          
+          Při `isPrinting` (i na mobilním zařízení) potřebujeme, aby desktop
+          sekce byla v DOM a měla měřitelnou šířku — jinak Recharts
+          ResponsiveContainery uvnitř měří 0×0 a grafy v PDF zůstanou prázdné.
+          Dáme ji proto fixed offscreen pozici se šířkou 1024 px (typický
+          desktop layout) — uživatel ji nevidí, ale Recharts ji změří. Print
+          CSS pak při window.print() přemístí na origin a zviditelní. */}
+      <div
+        className="hidden md:block w-full"
+        data-print-area="statistics"
+        style={isPrinting ? {
+          display: 'block',
+          position: 'fixed',
+          top: 0,
+          left: '-99999px',
+          width: '1024px',
+          opacity: 0,
+          pointerEvents: 'none',
+          zIndex: -1,
+        } : undefined}
+      >
+
+      {/* ── Print-only hlavička reportu (minimalistická, černý text na bílém) ── */}
+      <div className="print-only mb-3 px-3 pt-2" style={{ pageBreakAfter: 'avoid' }}>
+        <div className="flex items-baseline justify-between pb-1.5 mb-1.5"
+          style={{ borderBottom: '1px solid #cbd5e1' }}>
+          <h1 className="text-base font-bold uppercase tracking-tight" style={{ color: '#0f172a' }}>
+            Statistiky operačních sálů
+          </h1>
+          <p className="text-[9px] font-mono" style={{ color: '#475569' }}>
+            {new Date().toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[9px]" style={{ color: '#0f172a' }}>
+          <span><span style={{ color: '#475569' }}>Období:</span> <strong>{periodLabelMap[period]}</strong></span>
+          <span><span style={{ color: '#475569' }}>Počet sálů:</span> <strong>{rooms.length}</strong></span>
+        </div>
+      </div>
 
       {/* ── Module header ── */}
-      <div className="mb-8">
+      <div className="mb-8 print-hide">
         <div className="flex items-center gap-3 mb-2 opacity-60">
           <BarChart3 className="w-4 h-4 text-[#FBBF24]" />
           <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
@@ -1778,7 +2168,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       </div>
 
       {/* ── Period + Tab navigation ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7 print-hide">
         {/* Tabs */}
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{background:C.surface,border:`1px solid ${C.border}`}}>
           {TABS.map(t=>(
@@ -1792,28 +2182,72 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </button>
           ))}
         </div>
-        {/* Period switcher */}
-        <div className="flex items-center gap-1.5">
-          {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-            <button key={p} onClick={()=>setPeriod(p)}
-              className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
+        {/* Period switcher + Export */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
+              <button key={p} onClick={()=>setPeriod(p)}
+                className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
+                style={{
+                  background:period===p?`${C.accent}18`:'transparent',
+                  color:period===p?C.accent:C.muted,
+                  border:`1px solid ${period===p?C.accent:C.border}`,
+                }}>
+                {p}
+              </button>
+            ))}
+          </div>
+          {/* Export buttons */}
+          <div className="flex items-center gap-1.5 pl-3" style={{ borderLeft: `1px solid ${C.border}` }}>
+            <button
+              onClick={handlePrint}
+              title="Vytisknout aktuální zobrazení"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
               style={{
-                background:period===p?`${C.accent}18`:'transparent',
-                color:period===p?C.accent:C.muted,
-                border:`1px solid ${period===p?C.accent:C.border}`,
+                background: `${C.accent}14`,
+                color: C.accent,
+                border: `1px solid ${C.accent}40`,
               }}>
-              {p}
+              <Printer className="w-3.5 h-3.5" />
+              Tisk
             </button>
-          ))}
+            <button
+              onClick={handleExportPdf}
+              title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
+              style={{
+                background: `${C.yellow}14`,
+                color: C.yellow,
+                border: `1px solid ${C.yellow}40`,
+              }}>
+              <FileDown className="w-3.5 h-3.5" />
+              PDF
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── Tab content ── */}
-      <AnimatePresence mode="wait">
-        {tab==='prehled'&&(
+      {/* ── Tab content ── 
+          Při tisku změníme `mode` na "sync" a vyrenderujeme všechny záložky
+          najednou (přes `|| isPrinting`). Bez toho by AnimatePresence(mode="wait")
+          povolila pouze jedinou aktivní záložku a v PDF by chybělo 75 % dat.
+          Browser pak přirozeně paginuje na víc A4 stránek. */}
+      <AnimatePresence mode={isPrinting ? 'sync' : 'wait'}>
+        {(tab==='prehled' || isPrinting) && (
           <motion.div key="prehled"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Přehled
+              </h2>
+            )}
+
+            {/* Executive scorecard hero — celkové hodnocení A-F + AI insighty + live ticker */}
+            <ExecutiveScorecard data={scorecardData} />
 
             {/* KPI strip */}
             <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
@@ -1858,7 +2292,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : isUPS(r) ? C.accent : C.faint;
 
                 const cells = [
-                  { l: 'Sál',                   v: r.name.replace('Sál č. ', 'S'), c: C.text },
+                  // Plný název sálu (bez zkrácení "Sál č. " → "S") — uživatel
+                  // chce vidět kompletní označení sálu i v KPI stripu.
+                  { l: 'Sál',                   v: r.name,                         c: C.text },
                   { l: 'Stav',                  v: roomStatusLabel(r),             c: roomStatusColor(r) },
                   { l: 'Využití v prac. době',  v: `${util}%`,                     c: util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted },
                   { l: `Výkony (${period})`,    v: opsInHours,                     c: C.accent },
@@ -1887,7 +2323,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color: C.muted}}>
                           {k.l}
                         </p>
-                        <p className="text-base font-bold leading-none truncate" style={{color: k.c}} title={String(k.v)}>
+                        {/* Hodnota buňky — JEDEN řádek (`whitespace-nowrap`)
+                            s adaptivní velikostí písma přes clamp. Pokud se
+                            název nevejde, zobrazí se ellipsis a plný text
+                            zůstává v `title` tooltipu. */}
+                        <p
+                          className="font-bold leading-none whitespace-nowrap overflow-hidden text-ellipsis"
+                          style={{ color: k.c, fontSize: 'clamp(11px, 0.95vw, 16px)' }}
+                          title={String(k.v)}
+                        >
                           {k.v}
                         </p>
                       </div>
@@ -2150,10 +2594,63 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </motion.div>
         )}
 
-        {tab==='saly'&&(
+        {/* ── Efektivita & KPI ── (nová záložka) */}
+        {(tab==='efektivita' || isPrinting) && (
+          <motion.div key="efektivita"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Efektivita & KPI
+              </h2>
+            )}
+            <EfficiencyTab
+              rooms={rooms}
+              totalOps={totalOps}
+              avgUtilization={avgUtil}
+              avgStepDurations={avgStepDurations}
+              periodLabel={period}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Personál & týmy ── (nová záložka) */}
+        {(tab==='personal' || isPrinting) && (
+          <motion.div key="personal"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Personál & týmy
+              </h2>
+            )}
+            <StaffTab
+              rooms={rooms}
+              periodLabel={period}
+              doctorOps={doctorOpsMap}
+              nurseOps={nurseOpsMap}
+            />
+          </motion.div>
+        )}
+
+        {(tab==='saly' || isPrinting) && (
           <motion.div key="saly"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Sály — detail
+              </h2>
+            )}
 
             {/* Status summary row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -2200,7 +2697,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             {/* Room cards grid */}
             <div>
               <SectionLabel>Sály — kliknutím zobrazíte podrobné statistiky</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+              {/* V print režimu zmenšíme grid na 2 sloupce, aby se vešel rozšířený detail
+                  každého sálu (fáze, personál, časy, příznaky). Na obrazovce zachováme
+                  původní 6-sloupcový hustý layout. */}
+              <div className={isPrinting
+                ? "grid grid-cols-2 gap-2.5"
+                : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5"}>
                 {rooms.map((r, i) => (
                   <RoomMiniCard 
                     key={r.id} 
@@ -2211,6 +2713,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     stepDurations={avgStepDurations}
                     opsCount={countOperationsInWorkingHours(r, statusHistory, period)}
                     utilization={calculateRoomUtilization(r, statusHistory, period)}
+                    isPrinting={isPrinting}
                   />
                 ))}
               </div>
@@ -2234,10 +2737,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </motion.div>
         )}
 
-        {tab==='faze'&&(
+        {(tab==='faze' || isPrinting) && (
           <motion.div key="faze"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Fáze
+              </h2>
+            )}
 
             {/* Workflow aggregate bar */}
             <Card className="p-5">
@@ -2392,10 +2903,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </motion.div>
         )}
 
-        {tab==='heatmapa'&&(
+        {(tab==='heatmapa' || isPrinting) && (
           <motion.div key="heatmapa"
-            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}} className="space-y-5">
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Heatmapa
+              </h2>
+            )}
 
             {/* Peak cards - calculated from real heatmap data */}
             {(() => {
@@ -2555,6 +3074,28 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </div>
             </Card>
 
+          </motion.div>
+        )}
+
+        {/* ── Forecast & alerty ── (nová záložka) */}
+        {(tab==='forecast' || isPrinting) && (
+          <motion.div key="forecast"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Forecast & alerty
+              </h2>
+            )}
+            <ForecastTab
+              rooms={rooms}
+              totalOps={totalOps}
+              avgUtilization={avgUtil}
+              periodLabel={period}
+            />
           </motion.div>
         )}
       </AnimatePresence>
