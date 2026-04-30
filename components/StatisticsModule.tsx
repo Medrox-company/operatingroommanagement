@@ -21,11 +21,15 @@ import {
   MobilePillTabs,
   MobileSectionLabel,
 } from './mobile/MobileShell';
+import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
+import { EfficiencyTab } from './statistics/EfficiencyTab';
+import { StaffTab } from './statistics/StaffTab';
+import { ForecastTab } from './statistics/ForecastTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'saly' | 'faze' | 'heatmapa';
+type Tab    = 'prehled' | 'efektivita' | 'personal' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -1375,10 +1379,13 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     'rok':   'Posledních 365 dní',
   };
   const tabLabelMap: Record<Tab, string> = {
-    'prehled':  'Přehled',
-    'saly':     'Sály',
-    'faze':     'Fáze',
-    'heatmapa': 'Heatmapa',
+    'prehled':    'Přehled',
+    'efektivita': 'Efektivita',
+    'personal':   'Personál',
+    'saly':       'Sály',
+    'faze':       'Fáze',
+    'heatmapa':   'Heatmapa',
+    'forecast':   'Forecast',
   };
 
   // Load statistics from database
@@ -1579,10 +1586,13 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   }), [rooms, roomDistributions, WORKFLOW_STEPS]);
 
   const TABS:{ id:Tab; label:string }[]=[
-    {id:'prehled', label:'Přehled'},
-    {id:'saly',    label:'Sály'},
-    {id:'faze',    label:'Fáze'},
-    {id:'heatmapa',label:'Heatmapa'},
+    {id:'prehled',    label:'Přehled'},
+    {id:'efektivita', label:'Efektivita'},
+    {id:'personal',   label:'Personál'},
+    {id:'saly',       label:'Sály'},
+    {id:'faze',       label:'Fáze'},
+    {id:'heatmapa',   label:'Heatmapa'},
+    {id:'forecast',   label:'Forecast'},
   ];
 
   return(
@@ -1713,9 +1723,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <MobilePillTabs<Tab>
               tabs={[
                 { id: 'prehled', label: 'Přehled' },
+                { id: 'efektivita', label: 'Efektivita' },
+                { id: 'personal', label: 'Personál' },
                 { id: 'saly', label: 'Sály' },
                 { id: 'faze', label: 'Fáze' },
                 { id: 'heatmapa', label: 'Heatmapa' },
+                { id: 'forecast', label: 'Forecast' },
               ]}
               value={tab}
               onChange={setTab}
@@ -1725,6 +1738,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
           {(tab === 'prehled' || isPrinting) && (
             <div className="flex flex-col gap-3">
+              {/* Executive scorecard hero (mobile/print verze) */}
+              <ExecutiveScorecard
+                rooms={rooms}
+                statusHistory={statusHistory}
+                roomStatistics={roomStatistics}
+                period={period}
+              />
+
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { l: 'Obsazeno', v: `${busyCount}/${rooms.length}`, c: C.orange },
@@ -1923,6 +1944,40 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   })()}
                 </div>
               </MobileCard>
+            </div>
+          )}
+
+          {/* ── Efektivita & KPI dashboard ── */}
+          {(tab === 'efektivita' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <EfficiencyTab
+                rooms={rooms}
+                statusHistory={statusHistory}
+                roomStatistics={roomStatistics}
+                period={period}
+              />
+            </div>
+          )}
+
+          {/* ── Personál & týmy ── */}
+          {(tab === 'personal' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <StaffTab
+                rooms={rooms}
+                statusHistory={statusHistory}
+                period={period}
+              />
+            </div>
+          )}
+
+          {/* ── Forecast & alerty ── */}
+          {(tab === 'forecast' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <ForecastTab
+                rooms={rooms}
+                statusHistory={statusHistory}
+                period={period}
+              />
             </div>
           )}
 
@@ -2142,6 +2197,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 Přehled
               </h2>
             )}
+
+            {/* Executive scorecard hero — celkové hodnocení A-F + AI insighty + period delty */}
+            <ExecutiveScorecard
+              rooms={rooms}
+              statusHistory={statusHistory}
+              roomStatistics={roomStatistics}
+              period={period}
+            />
 
             {/* KPI strip */}
             <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
@@ -2485,6 +2548,49 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </div>
             </Card>
 
+          </motion.div>
+        )}
+
+        {/* ── Efektivita & KPI ── (nová záložka) */}
+        {(tab==='efektivita' || isPrinting) && (
+          <motion.div key="efektivita"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Efektivita & KPI
+              </h2>
+            )}
+            <EfficiencyTab
+              rooms={rooms}
+              statusHistory={statusHistory}
+              roomStatistics={roomStatistics}
+              period={period}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Personál & týmy ── (nová záložka) */}
+        {(tab==='personal' || isPrinting) && (
+          <motion.div key="personal"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Personál & týmy
+              </h2>
+            )}
+            <StaffTab
+              rooms={rooms}
+              statusHistory={statusHistory}
+              period={period}
+            />
           </motion.div>
         )}
 
@@ -2923,6 +3029,27 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </div>
             </Card>
 
+          </motion.div>
+        )}
+
+        {/* ── Forecast & alerty ── (nová záložka) */}
+        {(tab==='forecast' || isPrinting) && (
+          <motion.div key="forecast"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Forecast & alerty
+              </h2>
+            )}
+            <ForecastTab
+              rooms={rooms}
+              statusHistory={statusHistory}
+              period={period}
+            />
           </motion.div>
         )}
       </AnimatePresence>
