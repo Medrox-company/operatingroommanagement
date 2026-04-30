@@ -23,6 +23,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 // ─────────────────────────────────────────────────────────────────────────────
 export const C = {
   accent:  '#06B6D4',
+  cyan:    '#06B6D4',     // alias k accent — používá se v některých tabech sémanticky
   green:   '#10B981',
   orange:  '#F97316',
   yellow:  '#FBBF24',
@@ -136,8 +137,12 @@ export interface CardProps {
   /** Vyšší vizuální váha — výraznější border + jemný gradient */
   elevated?: boolean;
   noPadding?: boolean;
+  /** Lucide ikona renderovaná v hlavičce vedle title */
+  icon?: React.ComponentType<any>;
 }
-export const Card: React.FC<CardProps> = memo(({ title, subtitle, action, accent, className, children, elevated, noPadding }) => {
+export const Card: React.FC<CardProps> = memo(({
+  title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon,
+}) => {
   return (
     <div className={`rounded-xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
       style={{
@@ -151,6 +156,12 @@ export const Card: React.FC<CardProps> = memo(({ title, subtitle, action, accent
           <div className="flex items-center gap-2 min-w-0">
             {accent && (
               <div className="w-1 h-5 rounded-full shrink-0" style={{ background: accent }} />
+            )}
+            {Icon && (
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: `${accent ?? C.accent}1a`, border: `1px solid ${accent ?? C.accent}33` }}>
+                <Icon size={14} color={accent ?? C.accent} strokeWidth={2.2} />
+              </div>
             )}
             <div className="min-w-0">
               {title && (
@@ -172,7 +183,7 @@ export const Card: React.FC<CardProps> = memo(({ title, subtitle, action, accent
 });
 Card.displayName = 'Card';
 
-// ──────────────────���──────────────────────────────────────────────────────────
+// ──────────────────�����──────────────────────────────────────────────────────────
 // AnimatedCounter — plynule animuje číslo z 0 → value při mount
 // ─────────────────────────────────────────────────────────────────────────────
 interface AnimatedCounterProps {
@@ -234,32 +245,40 @@ DeltaBadge.displayName = 'DeltaBadge';
 // ProgressRing — kruhový SVG progress se středovým labelem
 // ─────────────────────────────────────────────────────────────────────────────
 interface ProgressRingProps {
-  value: number;          // 0..100
-  size?: number;          // px
+  value: number;
+  /** Maximální hodnota (default 100). Pro value mimo 0–100 měřítka. */
+  max?: number;
+  size?: number;
   strokeWidth?: number;
   color?: string;
   trackColor?: string;
+  /** backwards-compat: stejné jako trackColor */
+  backgroundColor?: string;
   label?: string;
   sublabel?: string;
+  /** Custom obsah ve středu kroužku — má přednost před label/sublabel */
+  centerLabel?: React.ReactNode;
   /** Rozpadne se na multi-color ring (např. green→yellow→red podle value) */
   gradient?: boolean;
 }
 export const ProgressRing: React.FC<ProgressRingProps> = memo(({
-  value, size = 88, strokeWidth = 8, color, trackColor = C.ghost, label, sublabel, gradient,
+  value, max = 100, size = 88, strokeWidth = 8, color,
+  trackColor, backgroundColor, label, sublabel, centerLabel, gradient,
 }) => {
-  const clamped = Math.max(0, Math.min(100, value));
+  const pct = Math.max(0, Math.min(100, (value / Math.max(1, max)) * 100));
   const r = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (clamped / 100) * circ;
+  const offset = circ - (pct / 100) * circ;
   const ringColor = color ?? (
     gradient
-      ? (clamped >= 80 ? C.green : clamped >= 60 ? C.accent : clamped >= 40 ? C.yellow : C.red)
+      ? (pct >= 80 ? C.green : pct >= 60 ? C.accent : pct >= 40 ? C.yellow : C.red)
       : C.accent
   );
+  const track = trackColor ?? backgroundColor ?? C.ghost;
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={track} strokeWidth={strokeWidth} />
         <motion.circle
           cx={size/2} cy={size/2} r={r}
           fill="none" stroke={ringColor}
@@ -271,15 +290,21 @@ export const ProgressRing: React.FC<ProgressRingProps> = memo(({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {label && (
-          <span className="text-lg font-bold leading-none" style={{ color: ringColor }}>
-            {label}
-          </span>
-        )}
-        {sublabel && (
-          <span className="text-[8px] uppercase tracking-wider mt-1" style={{ color: C.muted }}>
-            {sublabel}
-          </span>
+        {centerLabel ? (
+          centerLabel
+        ) : (
+          <>
+            {label && (
+              <span className="text-lg font-bold leading-none" style={{ color: ringColor }}>
+                {label}
+              </span>
+            )}
+            {sublabel && (
+              <span className="text-[8px] uppercase tracking-wider mt-1" style={{ color: C.muted }}>
+                {sublabel}
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -406,6 +431,8 @@ export interface KPIBlockProps {
   /** True pokud vyšší hodnota = horší (např. čekací doba) */
   deltaInverted?: boolean;
   accent?: string;
+  /** Alias k accent — některé taby používají sémantičtější `color` */
+  color?: string;
   // Lucide ikona (LucideIcon je `ForwardRefExoticComponent`); přijímáme i obecné komponenty.
   // Zachováme volnost — ikona se renderuje dále s běžnými LucideProps.
   icon?: React.ComponentType<any>;
@@ -413,27 +440,35 @@ export interface KPIBlockProps {
   trend?: number[];
   /** Cílová hodnota — render progress baru */
   target?: number;
+  /** Alias k `target` */
+  targetValue?: number;
+  /** Pokud chceme řídit progress nezávisle na value (např. % completion) */
+  progressValue?: number;
   /** Sublabel (např. detail nebo comparison) */
   sublabel?: string;
 }
 export const KPIBlock: React.FC<KPIBlockProps> = memo(({
-  label, value, format, unit, delta, deltaInverted, accent = C.accent, icon: Icon, trend, target, sublabel,
+  label, value, format, unit, delta, deltaInverted, accent, color, icon: Icon, trend,
+  target, targetValue, progressValue, sublabel,
 }) => {
+  const accentColor = color ?? accent ?? C.accent;
+  const effectiveTarget = target ?? targetValue;
   const numericValue = typeof value === 'number' ? value : parseFloat(String(value));
-  const showProgress = target !== undefined && Number.isFinite(numericValue) && target > 0;
-  const progressPct = showProgress ? Math.min(100, (numericValue / target!) * 100) : 0;
+  const progressBase = progressValue ?? numericValue;
+  const showProgress = effectiveTarget !== undefined && Number.isFinite(progressBase) && effectiveTarget > 0;
+  const progressPct = showProgress ? Math.min(100, (progressBase / effectiveTarget!) * 100) : 0;
   return (
     <div className="rounded-xl p-3 relative overflow-hidden"
       style={{ background: C.surface, border: `1px solid ${C.border}` }}>
       {/* Decorative accent corner */}
       <div className="absolute top-0 right-0 w-8 h-8 rounded-bl-2xl"
-        style={{ background: `${accent}10` }} />
+        style={{ background: `${accentColor}10` }} />
       <div className="flex items-start justify-between mb-1.5 relative">
         <div className="flex items-center gap-1.5 min-w-0">
           {Icon && (
             <div className="w-5 h-5 rounded flex items-center justify-center shrink-0"
-              style={{ background: `${accent}18` }}>
-              <Icon size={11} color={accent} strokeWidth={2.5} />
+              style={{ background: `${accentColor}18` }}>
+              <Icon size={11} color={accentColor} strokeWidth={2.5} />
             </div>
           )}
           <span className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: C.muted }}>
@@ -460,13 +495,13 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
       )}
       {trend && trend.length >= 2 && (
         <div className="mt-2">
-          <Sparkline data={trend} width={Math.max(80, trend.length * 6)} height={20} color={accent} />
+          <Sparkline data={trend} width={Math.max(80, trend.length * 6)} height={20} color={accentColor} />
         </div>
       )}
       {showProgress && (
         <div className="mt-2">
           <div className="flex items-baseline justify-between text-[8px] mb-1" style={{ color: C.muted }}>
-            <span>cíl {target!.toLocaleString('cs-CZ')}{unit ?? ''}</span>
+            <span>cíl {effectiveTarget!.toLocaleString('cs-CZ')}{unit ?? ''}</span>
             <span>{progressPct.toFixed(0)}%</span>
           </div>
           <div className="h-1 rounded-full overflow-hidden" style={{ background: C.ghost }}>
@@ -474,7 +509,7 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
               initial={{ width: 0 }}
               animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              style={{ background: accent }}
+              style={{ background: accentColor }}
             />
           </div>
         </div>
