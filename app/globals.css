@@ -58,3 +58,88 @@ body {
     transition-duration: 0.01ms !important; 
   }
 }
+
+/* ── Print styles for Statistics Module export ─────────────────────────────────
+   Když uživatel zvolí Tisk / Uložit jako PDF, zobrazí se pouze obsah
+   označený `data-print-area`. Vše ostatní (sidebar, navigace, ovládací
+   prvky uvnitř modulu) se skryje. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Hide everything in the body by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Reveal the chosen print target and all its descendants */
+  [data-print-area="statistics"],
+  [data-print-area="statistics"] * {
+    visibility: visible;
+  }
+
+  /* Position the print target at the page origin so we don't get the sidebar
+     gap or other absolute offsets in the printed output. */
+  [data-print-area="statistics"] {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* UI controls hidden during print (export button, period switcher, etc.) */
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Show print-only elements (report metadata header) */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Force light theme inside print target */
+  [data-print-area="statistics"] *:not(svg):not(svg *) {
+    background: transparent !important;
+    color: #000000 !important;
+    border-color: #cfcfcf !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Recharts SVGs: keep their fills/strokes (charts must render) */
+  [data-print-area="statistics"] svg,
+  [data-print-area="statistics"] svg * {
+    color: inherit;
+  }
+
+  /* Avoid awkward page breaks inside cards/grids */
+  [data-print-area="statistics"] .print-card,
+  [data-print-area="statistics"] [data-no-break] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Sidebar / mobile nav / room detail panel out of print */
+  aside,
+  nav,
+  [role="dialog"] {
+    display: none !important;
+  }
+}
+
+/* Default state for print-only elements (hidden on screen) */
+.print-only {
+  display: none;
+}

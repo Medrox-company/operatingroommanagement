@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
+  Printer, FileDown,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 // Step durations now calculated from real database history
@@ -387,7 +388,7 @@ function calculateRoomUtilization(
   return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
 }
 
-// ── Helper: Get formatted working hours string for a room ────────────────���─────
+// ── Helper: Get formatted working hours string for a room ────────────────����─────
 function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
   const hours = getRoomWorkingHours(room, dayIndex);
   if (!hours.enabled) return 'Zavřeno';
@@ -695,14 +696,16 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
       initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.18, delay: index * 0.025 }}
       whileHover={{ scale: 1.03 } as any}>
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
-          <span className="text-xs font-bold truncate" style={{ color: C.text }}>{r.name}</span>
+      <div className="flex items-start justify-between mb-1.5 gap-1.5">
+        <div className="flex items-start gap-1.5 min-w-0 flex-1">
+          <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
+          {/* Plný název sálu — přepsání `truncate` na wrap, aby uživatel viděl
+              celý název i v úzkém boxu (např. "Sál č. 1 - Traumatologie"). */}
+          <span className="text-xs font-bold leading-tight break-words" style={{ color: C.text }} title={r.name}>{r.name}</span>
         </div>
         {ups2 && <span className="text-[8px] font-bold px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
       </div>
-      <p className="text-[10px] mb-1 truncate" style={{ color: C.faint }}>{r.department}</p>
+      <p className="text-[10px] mb-1 break-words" style={{ color: C.faint }} title={r.department}>{r.department}</p>
       {/* Working hours indicator */}
       <div className="flex items-center gap-1 mb-2">
         <Clock className="w-2.5 h-2.5" style={{ color: C.muted }} />
@@ -763,7 +766,7 @@ function TrendBadge({v}:{v:number}){
 
 // ══════������══════════════════════════════════════════════════════════════════════
 // ROOM DETAIL PANEL
-// ══════════════════════════════════════════════════════�����═���════════════════════
+// ══════════════════════════════════════════════════════�������═���════════════════════
 interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
@@ -1220,6 +1223,50 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
+  // ── Export do tisku / PDF ───────────────────────────────────────────────────
+  // Obě funkce volají `window.print()`. Prohlížeč zobrazí systémový dialog,
+  // ve kterém uživatel může:
+  //   • vybrat tiskárnu a vytisknout (varianta "Tisk")
+  //   • zvolit "Uložit jako PDF" / "Microsoft Print to PDF" jako tiskárnu
+  //     (varianta "PDF")
+  // Před tiskem dočasně přepíšeme `document.title`, aby uložený PDF soubor
+  // dostal přímo smysluplný název.
+  const triggerPrint = useCallback((filename: string) => {
+    if (typeof window === 'undefined') return;
+    const original = document.title;
+    document.title = filename;
+    // setTimeout dává prohlížeči čas applinout změnu titulku před otevřením dialogu
+    setTimeout(() => {
+      window.print();
+      // obnova titulku po zavření dialogu
+      setTimeout(() => { document.title = original; }, 800);
+    }, 50);
+  }, []);
+
+  const handlePrint = useCallback(() => {
+    const dateStr = new Date().toLocaleDateString('cs-CZ');
+    triggerPrint(`Statistiky - ${period} - ${dateStr}`);
+  }, [period, triggerPrint]);
+
+  const handleExportPdf = useCallback(() => {
+    const dateStr = new Date().toISOString().slice(0, 10);
+    triggerPrint(`Statistiky_${period}_${dateStr}.pdf`);
+  }, [period, triggerPrint]);
+
+  // Lokalizovaný popis aktuálního období pro print-only hlavičku reportu
+  const periodLabelMap: Record<Period, string> = {
+    'den':   'Posledních 24 hodin',
+    'týden': 'Posledních 7 dní',
+    'měsíc': 'Posledních 30 dní',
+    'rok':   'Posledních 365 dní',
+  };
+  const tabLabelMap: Record<Tab, string> = {
+    'prehled':  'Přehled',
+    'saly':     'Sály',
+    'faze':     'Fáze',
+    'heatmapa': 'Heatmapa',
+  };
+
   // Load statistics from database
   useEffect(() => {
     const loadStats = async () => {
@@ -1448,15 +1495,58 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       </div>
 
       {/* ========== MOBILE (md:hidden) ========== */}
-      <div className="md:hidden w-full relative" style={{ zIndex: 1 }}>
+      <div className="md:hidden w-full relative" style={{ zIndex: 1 }} data-print-area="statistics">
+        {/* ── Print-only hlavička pro mobilní export ── */}
+        <div className="print-only mb-4" style={{ pageBreakAfter: 'avoid' }}>
+          <div className="flex items-baseline justify-between border-b-2 border-black pb-2 mb-2">
+            <h1 className="text-xl font-bold uppercase tracking-tight">
+              Statistiky operačních sálů
+            </h1>
+            <p className="text-xs font-mono">
+              {new Date().toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' })}
+            </p>
+          </div>
+          <p className="text-xs">
+            <strong>Záložka:</strong> {tabLabelMap[tab]} · <strong>Období:</strong> {periodLabelMap[period]} · <strong>Sály:</strong> {rooms.length}
+          </p>
+        </div>
+
         <div className="flex flex-col gap-5">
-          <MobileHeader
-            kicker="Statistiky"
-            title="Provozní přehled"
-          />
+          <div className="print-hide">
+            <MobileHeader
+              kicker="Statistiky"
+              title="Provozní přehled"
+            />
+          </div>
+
+          {/* Export buttons (mobile) */}
+          <div className="flex items-center gap-2 print-hide">
+            <button
+              onClick={handlePrint}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+              style={{
+                background: `${C.accent}14`,
+                color: C.accent,
+                border: `1px solid ${C.accent}40`,
+              }}>
+              <Printer className="w-4 h-4" />
+              Tisk
+            </button>
+            <button
+              onClick={handleExportPdf}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+              style={{
+                background: `${C.yellow}14`,
+                color: C.yellow,
+                border: `1px solid ${C.yellow}40`,
+              }}>
+              <FileDown className="w-4 h-4" />
+              PDF
+            </button>
+          </div>
 
           {/* Period toggle */}
-          <div>
+          <div className="print-hide">
             <MobileSectionLabel className="mb-2">Období</MobileSectionLabel>
             <MobilePillTabs<Period>
               tabs={[
@@ -1471,16 +1561,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </div>
 
           {/* Tab toggle */}
-          <MobilePillTabs<Tab>
-            tabs={[
-              { id: 'prehled', label: 'Přehled' },
-              { id: 'saly', label: 'Sály' },
-              { id: 'faze', label: 'Fáze' },
-              { id: 'heatmapa', label: 'Heatmapa' },
-            ]}
-            value={tab}
-            onChange={setTab}
-          />
+          <div className="print-hide">
+            <MobilePillTabs<Tab>
+              tabs={[
+                { id: 'prehled', label: 'Přehled' },
+                { id: 'saly', label: 'Sály' },
+                { id: 'faze', label: 'Fáze' },
+                { id: 'heatmapa', label: 'Heatmapa' },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
+          </div>
 
           {/* ── Přehled ── */}
           {tab === 'prehled' && (
@@ -1577,7 +1669,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 leading-none">
                           {roomStatusLabel(r)}
                         </p>
-                        <h3 className="text-base font-semibold text-white mt-1.5 leading-tight truncate">
+                        {/* Plný název sálu — bez `truncate`, aby se i delší
+                            označení (např. "Sál č. 1 - Traumatologie") zobrazila celá. */}
+                        <h3 className="text-base font-semibold text-white mt-1.5 leading-tight break-words" title={r.name}>
                           {r.name}
                         </h3>
                       </div>
@@ -1764,10 +1858,30 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       </div>
 
       {/* ========== DESKTOP (hidden md:block) ========== */}
-      <div className="hidden md:block w-full">
+      {/* `data-print-area="statistics"` označuje sekci, která se vytiskne /
+          uloží do PDF. Zbytek stránky (sidebar atd.) se v print režimu skryje
+          přes globální `@media print` pravidla v `app/globals.css`. */}
+      <div className="hidden md:block w-full" data-print-area="statistics">
+
+      {/* ── Print-only hlavička reportu ── */}
+      <div className="print-only mb-6" style={{ pageBreakAfter: 'avoid' }}>
+        <div className="flex items-baseline justify-between border-b-2 border-black pb-2 mb-2">
+          <h1 className="text-2xl font-bold uppercase tracking-tight">
+            Statistiky operačních sálů
+          </h1>
+          <p className="text-xs font-mono">
+            {new Date().toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+          <span><strong>Záložka:</strong> {tabLabelMap[tab]}</span>
+          <span><strong>Období:</strong> {periodLabelMap[period]}</span>
+          <span><strong>Počet sálů:</strong> {rooms.length}</span>
+        </div>
+      </div>
 
       {/* ── Module header ── */}
-      <div className="mb-8">
+      <div className="mb-8 print-hide">
         <div className="flex items-center gap-3 mb-2 opacity-60">
           <BarChart3 className="w-4 h-4 text-[#FBBF24]" />
           <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
@@ -1778,7 +1892,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       </div>
 
       {/* ── Period + Tab navigation ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7 print-hide">
         {/* Tabs */}
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{background:C.surface,border:`1px solid ${C.border}`}}>
           {TABS.map(t=>(
@@ -1792,19 +1906,48 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </button>
           ))}
         </div>
-        {/* Period switcher */}
-        <div className="flex items-center gap-1.5">
-          {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-            <button key={p} onClick={()=>setPeriod(p)}
-              className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
+        {/* Period switcher + Export */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
+              <button key={p} onClick={()=>setPeriod(p)}
+                className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
+                style={{
+                  background:period===p?`${C.accent}18`:'transparent',
+                  color:period===p?C.accent:C.muted,
+                  border:`1px solid ${period===p?C.accent:C.border}`,
+                }}>
+                {p}
+              </button>
+            ))}
+          </div>
+          {/* Export buttons */}
+          <div className="flex items-center gap-1.5 pl-3" style={{ borderLeft: `1px solid ${C.border}` }}>
+            <button
+              onClick={handlePrint}
+              title="Vytisknout aktuální zobrazení"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
               style={{
-                background:period===p?`${C.accent}18`:'transparent',
-                color:period===p?C.accent:C.muted,
-                border:`1px solid ${period===p?C.accent:C.border}`,
+                background: `${C.accent}14`,
+                color: C.accent,
+                border: `1px solid ${C.accent}40`,
               }}>
-              {p}
+              <Printer className="w-3.5 h-3.5" />
+              Tisk
             </button>
-          ))}
+            <button
+              onClick={handleExportPdf}
+              title="Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
+              style={{
+                background: `${C.yellow}14`,
+                color: C.yellow,
+                border: `1px solid ${C.yellow}40`,
+              }}>
+              <FileDown className="w-3.5 h-3.5" />
+              PDF
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1858,7 +2001,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : isUPS(r) ? C.accent : C.faint;
 
                 const cells = [
-                  { l: 'Sál',                   v: r.name.replace('Sál č. ', 'S'), c: C.text },
+                  // Plný název sálu (bez zkrácení "Sál č. " → "S") — uživatel
+                  // chce vidět kompletní označení sálu i v KPI stripu.
+                  { l: 'Sál',                   v: r.name,                         c: C.text },
                   { l: 'Stav',                  v: roomStatusLabel(r),             c: roomStatusColor(r) },
                   { l: 'Využití v prac. době',  v: `${util}%`,                     c: util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted },
                   { l: `Výkony (${period})`,    v: opsInHours,                     c: C.accent },
@@ -1887,7 +2032,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                         <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color: C.muted}}>
                           {k.l}
                         </p>
-                        <p className="text-base font-bold leading-none truncate" style={{color: k.c}} title={String(k.v)}>
+                        {/* Hodnota buňky — `break-words` + `leading-tight` umožní zobrazení
+                            celého názvu sálu i jiných víceslovných hodnot bez ořezu. */}
+                        <p className="text-base font-bold leading-tight break-words" style={{color: k.c}} title={String(k.v)}>
                           {k.v}
                         </p>
                       </div>
