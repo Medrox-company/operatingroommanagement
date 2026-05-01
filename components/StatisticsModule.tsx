@@ -32,6 +32,7 @@ import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
 import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
 import { FinanceTab } from './statistics/FinanceTab';
+import { RoomsTab } from './statistics/RoomsTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
@@ -768,7 +769,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         </span>
       </div>
 
-      {/* ── Print-only rozšířený detail sálu ───────────────────────────����───
+      {/* ── Print-only rozšířený detail sálu ────���──────────────────────����───
           Při tisku ukážeme všechna důležitá data jako v RoomDetail panelu:
           aktuální fáze, personál, časy pacienta, příznaky (UPS/septický/atd.). */}
       {isPrinting && (
@@ -1861,64 +1862,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
           )}
 
-          {/* ── Sály ── (vždy renderováno při tisku) */}
+          {/* ── Sály ── (propracovaný RoomsTab) */}
           {(tab === 'saly' || isPrinting) && (
-            <div className="flex flex-col gap-2.5">
-              <MobileSectionLabel>Sály ({rooms.length})</MobileSectionLabel>
-              {rooms.map(r => {
-                const util = calculateRoomUtilization(r, statusHistory, period);
-                const ops = countOperationsInWorkingHours(r, statusHistory, period);
-                const utilColor =
-                  util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted;
-                return (
-                  <MobileCard key={r.id} accent={utilColor} onClick={() => setSelectedRoom(r)}>
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 leading-none">
-                          {roomStatusLabel(r)}
-                        </p>
-                        {/* Název sálu na JEDNOM řádku v mobilní kartě — adaptivní
-                            velikost přes clamp; pokud se nevejde, ořízne se
-                            ellipsisem a plný text je dostupný v `title`. */}
-                        <h3
-                          className="font-semibold text-white mt-1.5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
-                          style={{ fontSize: 'clamp(13px, 4.2vw, 17px)' }}
-                          title={r.name}
-                        >
-                          {r.name}
-                        </h3>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 leading-none">
-                          Výkony
-                        </p>
-                        <p className="text-sm font-semibold text-white tabular-nums mt-1">{ops}</p>
-                      </div>
-                    </div>
-
-                    {/* Utilization bar */}
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: 'rgba(255,255,255,0.06)' }}
-                    >
-                      <div
-                        className="h-full rounded-full transition-[width] duration-500"
-                        style={{
-                          width: `${Math.min(100, util)}%`,
-                          background: `linear-gradient(90deg, ${utilColor} 0%, ${utilColor}aa 100%)`,
-                          boxShadow: `0 0 8px ${utilColor}55`,
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] mt-2">
-                      <span className="text-white/40">Využití</span>
-                      <span className="font-semibold tabular-nums" style={{ color: utilColor }}>
-                        {util}%
-                      </span>
-                    </div>
-                  </MobileCard>
-                );
-              })}
+            <div className="flex flex-col gap-3">
+              <RoomsTab
+                rooms={rooms}
+                statusHistory={statusHistory}
+                periodLabel={period}
+                onRoomSelect={setSelectedRoom}
+                calculateRoomUtilization={calculateRoomUtilization}
+                countOperationsInWorkingHours={countOperationsInWorkingHours}
+                workflowSteps={WORKFLOW_STEPS}
+              />
             </div>
           )}
 
@@ -2662,6 +2617,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </motion.div>
         )}
 
+        {/* ── Sály — propracovaný RoomsTab ── */}
         {(tab==='saly' || isPrinting) && (
           <motion.div key="saly"
             initial={isPrinting ? false : {opacity:0,y:10}}
@@ -2671,92 +2627,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             className="space-y-5">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Sály — detail
+                Operační sály — detailní přehled
               </h2>
             )}
-
-            {/* Status summary row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                {l:'Obsazeno', v:busyCount,  c:C.orange, sub:`${Math.round((busyCount/Math.max(1,rooms.length))*100)}% kapacity`},
-                {l:'Volno',    v:freeCount,  c:C.green,  sub:`${Math.round((freeCount/Math.max(1,rooms.length))*100)}% kapacity`},
-                {l:'Úklid',    v:cleanCount, c:C.accent, sub:'V sanitaci'},
-                {l:'Údržba',   v:maintCount, c:C.faint,  sub:'Mimo provoz'},
-              ].map(k=>(
-                <motion.div key={k.l} initial={{opacity:0,scale:0.97}} animate={{opacity:1,scale:1}}
-                  transition={{duration:0.2}}>
-                  <Card className="p-5">
-                    <p className="text-[9px] font-bold uppercase tracking-widest mb-3" style={{color:C.muted}}>{k.l}</p>
-                    <p className="text-4xl font-bold leading-none mb-1.5" style={{color:k.c}}>{k.v}</p>
-                    <p className="text-[10px]" style={{color:C.faint}}>{k.sub}</p>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Room status stacked bar */}
-            <Card className="p-5">
-              <SectionLabel>Procentuální využití workflow fází — jednotlivé sály ({period})</SectionLabel>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={roomStatusBar} margin={{top:4,right:0,bottom:0,left:-24}} barSize={24}>
-                  <XAxis dataKey="name" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP}/>
-                  {WORKFLOW_STEPS.map(step=>(
-                    <Bar key={step.title} dataKey={step.title} stackId="r" fill={step.color} opacity={0.82} name={step.title}/>
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3">
-                {WORKFLOW_STEPS.map(s=>(
-                  <div key={s.title} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:s.color}}/>
-                    <span className="text-[10px]" style={{color:C.faint}}>{s.title}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Room cards grid */}
-            <div>
-              <SectionLabel>Sály — kliknutím zobrazíte podrobné statistiky</SectionLabel>
-              {/* V print režimu zmenšíme grid na 2 sloupce, aby se vešel rozšířený detail
-                  každého sálu (fáze, personál, časy, příznaky). Na obrazovce zachováme
-                  původní 6-sloupcový hustý layout. */}
-              <div className={isPrinting
-                ? "grid grid-cols-2 gap-2.5"
-                : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5"}>
-                {rooms.map((r, i) => (
-                  <RoomMiniCard 
-                    key={r.id} 
-                    r={r} 
-                    index={i} 
-                    onClick={() => setSelectedRoom(r)} 
-                    workflowSteps={WORKFLOW_STEPS} 
-                    stepDurations={avgStepDurations}
-                    opsCount={countOperationsInWorkingHours(r, statusHistory, period)}
-                    utilization={calculateRoomUtilization(r, statusHistory, period)}
-                    isPrinting={isPrinting}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Utilisation per room line chart */}
-            <Card className="p-5">
-              <SectionLabel>Procentuální využití výkonem — porovnání sálů</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={roomBarData} margin={{top:0,right:0,bottom:0,left:-24}} barSize={18}>
-                  <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number)=>[`${v}%`,'Využití výkonem']}/>
-                  <Bar dataKey="util" radius={[2,2,0,0]}>
-                    {roomBarData.map((e,i)=><Cell key={i} fill={e.color} opacity={0.78}/>)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-
+            <RoomsTab
+              rooms={rooms}
+              statusHistory={statusHistory}
+              periodLabel={period}
+              onRoomSelect={setSelectedRoom}
+              calculateRoomUtilization={calculateRoomUtilization}
+              countOperationsInWorkingHours={countOperationsInWorkingHours}
+              workflowSteps={WORKFLOW_STEPS}
+            />
           </motion.div>
         )}
 
