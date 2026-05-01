@@ -1121,10 +1121,14 @@ style={{
                                       const segWidthPct = (segDuration / opDuration) * 100;
                                       const segLeftPct = ((segStart - opStart) / opDuration) * 100;
                                       if (segWidthPct <= 0) return undefined;
-                                      // Preferujeme AKTUÁLNÍ barvu ze Statusů (live z DB),
-                                      // aby byla časová osa vždy konzistentní s modulem Statusy.
-                                      // entry.color je jen fallback pro stavy, které už v DB neexistují.
-                                      const phaseColor = stepColorMap[entry.stepIndex]
+                                      // AKTUÁLNÍ barva z DB ("Správa statusů" → workflow_statuses.accent_color)
+                                      // má VŽDY přednost před snapshotem `entry.color`. Lookup probíhá
+                                      // v dvou krocích, aby zachytil i případy, kdy `entry.stepIndex`
+                                      // odpovídá pozici v poli, nikoli order_index v DB.
+                                      const phaseColor =
+                                        stepColorMap[entry.stepIndex]
+                                        || activeStatuses[entry.stepIndex]?.accent_color
+                                        || activeStatuses[entry.stepIndex]?.color
                                         || entry.color
                                         || STEP_INDEX_COLORS[entry.stepIndex]
                                         || '#6b7280';
@@ -1272,9 +1276,20 @@ style={{
                                 const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
                                 if (segWidthPct <= 0) return null;
                                 
-                                // Preferujeme AKTUÁLNÍ barvu ze Statusů (live z DB),
-                                // aby byla časová osa vždy konzistentní s modulem Statusy.
-                                const phaseColor = stepColorMap[entry.stepIndex]
+                                // AKTUÁLNÍ barva z DB ("Správa statusů" → workflow_statuses.accent_color)
+                                // má VŽDY přednost před snapshotem `entry.color`, který je uložený
+                                // v `room_status_history` v okamžiku změny statusu. Bez této priority
+                                // by změna barvy v Nastavení neoznačila barvu retroaktivně na timeline
+                                // a u některých statusů (kde stepIndex v historii ≠ aktuální order_index)
+                                // by zůstala stará snapshot-barva.
+                                // 1) Lookup podle order_index z DB (kanonické mapování).
+                                // 2) Lookup podle pozice v poli `activeStatuses` (pokud entry.stepIndex
+                                //    je pozice, ne order_index — sjednoceno s logikou v RoomCard.tsx).
+                                // 3) Až poté fallback: snapshot → hardkódovaná paleta → šedá.
+                                const phaseColor =
+                                  stepColorMap[entry.stepIndex]
+                                  || activeStatuses[entry.stepIndex]?.accent_color
+                                  || activeStatuses[entry.stepIndex]?.color
                                   || entry.color
                                   || STEP_INDEX_COLORS[entry.stepIndex]
                                   || '#6b7280';
@@ -1511,24 +1526,24 @@ style={{
                       const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
                       const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
-                      // Marker předpokládaného ukončení výkonu (working-hours hranice
-                      // konkrétního sálu) — barevně přebírá AKTUÁLNÍ status sálu, aby
-                      // celý řádek vč. boxu konce výkonu sdílel jednotnou barvu statusu.
+                      // Značka konce pracovní doby sálu (working-hours hranice).
+                      // Barva NEZÁVISÍ na aktuálním statusu — má vlastní oranžovou identitu,
+                      // aby byla na časové ose okamžitě rozpoznatelná napříč sály a statusy.
                       return (
                         <div
                           className="absolute top-0 bottom-0 w-0.5 z-20"
                           style={{
                             left: `${endPercent}%`,
-                            background: `linear-gradient(180deg, transparent 0%, ${stepColor} 20%, ${stepColor} 80%, transparent 100%)`,
+                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)',
                           }}
                         >
                           {/* End time label */}
                           <div
                             className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
                             style={{
-                              background: `${stepColor}33`,
-                              border: `1px solid ${stepColor}66`,
-                              color: stepColor,
+                              background: 'rgba(249, 115, 22, 0.2)',
+                              border: '1px solid rgba(249, 115, 22, 0.4)',
+                              color: '#F97316',
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
