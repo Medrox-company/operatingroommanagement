@@ -156,565 +156,299 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {screen === 'intro' && (
             <motion.section
               key="intro"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-4xl text-center relative"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full max-w-2xl text-center"
             >
-              {/* ═══════════════════════════════════════════════════════════════
-                  NOISE TEXTURE OVERLAY — adds depth and premium feel
-                  ═══════════════════════════════════════════════════════════════ */}
-              <div
-                aria-hidden
-                className="fixed inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                }}
-              />
-
-              {/* ═══════════════════════════════════════════════════════════════
-                  MORPHING ORGANIC BLOB — cinematic background element
-                  ═══════════════════════════════════════════════════════════════ */}
-              <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-                <svg className="absolute w-full h-full" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
-                  <defs>
-                    <linearGradient id="blobGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={C.cyan} stopOpacity="0.08" />
-                      <stop offset="50%" stopColor={C.purple} stopOpacity="0.05" />
-                      <stop offset="100%" stopColor={C.yellow} stopOpacity="0.03" />
-                    </linearGradient>
-                    <filter id="blobBlur">
-                      <feGaussianBlur stdDeviation="50" />
-                    </filter>
-                  </defs>
-                  <motion.path
-                    fill="url(#blobGradient)"
-                    filter="url(#blobBlur)"
+              {/* ═══════════ ANIMATED BACKGROUND ELEMENTS ═══════════ */}
+              
+              {/* Floating particles */}
+              <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(20)].map((_, i) => (
+                  <motion.div
+                    key={`particle-${i}`}
+                    className="absolute rounded-full"
+                    style={{
+                      width: Math.random() * 4 + 2,
+                      height: Math.random() * 4 + 2,
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      background: i % 3 === 0 ? C.cyan : i % 3 === 1 ? C.yellow : 'rgba(255,255,255,0.3)',
+                      filter: 'blur(0.5px)',
+                    }}
                     animate={{
-                      d: [
-                        'M 500 200 C 700 200 850 350 850 500 C 850 650 700 800 500 800 C 300 800 150 650 150 500 C 150 350 300 200 500 200',
-                        'M 500 180 C 720 220 880 380 860 520 C 840 680 680 820 480 820 C 280 820 140 680 160 480 C 180 320 320 180 500 180',
-                        'M 520 200 C 680 180 840 340 820 520 C 800 700 660 840 460 820 C 260 800 120 640 160 460 C 200 280 360 220 520 200',
-                        'M 500 200 C 700 200 850 350 850 500 C 850 650 700 800 500 800 C 300 800 150 650 150 500 C 150 350 300 200 500 200',
-                      ],
+                      y: [0, -30, 0],
+                      x: [0, Math.random() * 20 - 10, 0],
+                      opacity: [0.2, 0.6, 0.2],
+                      scale: [1, 1.2, 1],
                     }}
                     transition={{
-                      duration: 25,
+                      duration: 4 + Math.random() * 4,
                       repeat: Infinity,
+                      delay: Math.random() * 3,
                       ease: 'easeInOut',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Animated pulse rings */}
+              <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={`ring-${i}`}
+                    className="absolute rounded-full"
+                    style={{
+                      width: 300 + i * 150,
+                      height: 300 + i * 150,
+                      border: `1px solid ${C.cyan}`,
+                      opacity: 0,
+                    }}
+                    animate={{
+                      scale: [0.8, 1.5],
+                      opacity: [0.3, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      delay: i * 1.3,
+                      ease: 'easeOut',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Ghost watermark with glow animation */}
+              <motion.div
+                aria-hidden
+                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+                animate={{
+                  opacity: [0.015, 0.03, 0.015],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              >
+                <span
+                  className="font-black tracking-tighter leading-none"
+                  style={{
+                    fontSize: 'clamp(12rem, 32vw, 22rem)',
+                    color: 'rgba(255,255,255,1)',
+                  }}
+                >
+                  ORM
+                </span>
+              </motion.div>
+
+              {/* ═══════════ ANIMATED EKG/PULSE LINE ═══════════ */}
+              <div className="relative mb-8">
+                <svg
+                  viewBox="0 0 400 60"
+                  className="w-full max-w-md mx-auto h-12 overflow-visible"
+                  style={{ filter: `drop-shadow(0 0 8px ${C.cyan}80)` }}
+                >
+                  <defs>
+                    <linearGradient id="pulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={C.cyan} stopOpacity="0" />
+                      <stop offset="50%" stopColor={C.cyan} stopOpacity="1" />
+                      <stop offset="100%" stopColor={C.cyan} stopOpacity="0" />
+                    </linearGradient>
+                    <clipPath id="pulseClip">
+                      <motion.rect
+                        x="-100"
+                        y="0"
+                        width="200"
+                        height="60"
+                        animate={{ x: [-100, 500] }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: 'linear',
+                        }}
+                      />
+                    </clipPath>
+                  </defs>
+                  {/* Background line */}
+                  <path
+                    d="M 0 30 L 80 30 L 100 30 L 120 10 L 140 50 L 160 20 L 180 40 L 200 30 L 220 30 L 240 30 L 260 5 L 280 55 L 300 30 L 320 30 L 400 30"
+                    fill="none"
+                    stroke="rgba(6, 182, 212, 0.15)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {/* Animated pulse */}
+                  <motion.path
+                    d="M 0 30 L 80 30 L 100 30 L 120 10 L 140 50 L 160 20 L 180 40 L 200 30 L 220 30 L 240 30 L 260 5 L 280 55 L 300 30 L 320 30 L 400 30"
+                    fill="none"
+                    stroke="url(#pulseGradient)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    clipPath="url(#pulseClip)"
+                  />
+                  {/* Glowing dot */}
+                  <motion.circle
+                    r="4"
+                    fill={C.cyan}
+                    style={{ filter: `drop-shadow(0 0 6px ${C.cyan})` }}
+                    animate={{
+                      cx: [0, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 400],
+                      cy: [30, 30, 30, 10, 50, 20, 40, 30, 30, 30, 5, 55, 30, 30, 30],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: 'linear',
                     }}
                   />
                 </svg>
               </div>
 
-              {/* ═══════════════════════════════════════════════════════════════
-                  ULTRA-PREMIUM AURORA BACKGROUND — enhanced
-                  ═══════════════════════════════════════════════════════════════ */}
-              <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-                {/* Aurora layer 1 — cyan flowing wave */}
-                <motion.div
-                  className="absolute w-[150%] h-[60%] -top-[20%] -left-[25%]"
-                  style={{
-                    background: `radial-gradient(ellipse 80% 50% at 50% 50%, ${C.cyan}12 0%, transparent 70%)`,
-                    filter: 'blur(80px)',
-                  }}
-                  animate={{
-                    x: ['-5%', '5%', '-5%'],
-                    y: ['-3%', '3%', '-3%'],
-                    scale: [1, 1.08, 1],
-                    rotate: [0, 3, 0],
-                  }}
-                  transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {/* Aurora layer 2 — gold accent */}
-                <motion.div
-                  className="absolute w-[80%] h-[40%] top-[10%] left-[10%]"
-                  style={{
-                    background: `radial-gradient(ellipse 60% 40% at 30% 50%, ${C.yellow}06 0%, transparent 60%)`,
-                    filter: 'blur(100px)',
-                  }}
-                  animate={{
-                    x: ['0%', '15%', '0%'],
-                    y: ['0%', '-8%', '0%'],
-                    opacity: [0.5, 0.9, 0.5],
-                  }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-                />
-                {/* Aurora layer 3 — deep purple undertone */}
-                <motion.div
-                  className="absolute w-[120%] h-[50%] -bottom-[10%] -left-[10%]"
-                  style={{
-                    background: `radial-gradient(ellipse 70% 50% at 70% 80%, ${C.purple}06 0%, transparent 60%)`,
-                    filter: 'blur(120px)',
-                  }}
-                  animate={{
-                    x: ['5%', '-8%', '5%'],
-                    opacity: [0.3, 0.7, 0.3],
-                  }}
-                  transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
-                />
-                {/* NEW: Subtle green accent for medical feel */}
-                <motion.div
-                  className="absolute w-[60%] h-[30%] top-[30%] right-[5%]"
-                  style={{
-                    background: `radial-gradient(ellipse 50% 50% at 50% 50%, ${C.green}04 0%, transparent 70%)`,
-                    filter: 'blur(80px)',
-                  }}
-                  animate={{
-                    x: ['-5%', '5%', '-5%'],
-                    y: ['5%', '-5%', '5%'],
-                    opacity: [0.4, 0.7, 0.4],
-                  }}
-                  transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-                />
-              </div>
-
-              {/* ═══════════════════════════════════════════════════════════════
-                  CONSTELLATION NETWORK — connecting nodes
-                  ═══════════════════════════════════════════════════════════════ */}
-              <svg
-                aria-hidden
-                className="fixed inset-0 w-full h-full pointer-events-none"
-                style={{ opacity: 0.4 }}
+              {/* ═══════════ ANIMATED TITLE ═══════════ */}
+              <motion.h1
+                className="relative font-bold tracking-tight leading-[0.95] text-balance"
+                style={{ fontSize: 'clamp(1.875rem, 7vw, 4.5rem)' }}
               >
-                <defs>
-                  <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor={C.cyan} stopOpacity="0" />
-                    <stop offset="50%" stopColor={C.cyan} stopOpacity="0.6" />
-                    <stop offset="100%" stopColor={C.cyan} stopOpacity="0" />
-                  </linearGradient>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                {/* Animated constellation lines */}
-                {[
-                  { x1: '10%', y1: '20%', x2: '25%', y2: '35%', delay: 0 },
-                  { x1: '25%', y1: '35%', x2: '45%', y2: '25%', delay: 0.5 },
-                  { x1: '45%', y1: '25%', x2: '70%', y2: '40%', delay: 1 },
-                  { x1: '70%', y1: '40%', x2: '85%', y2: '30%', delay: 1.5 },
-                  { x1: '15%', y1: '70%', x2: '35%', y2: '60%', delay: 2 },
-                  { x1: '35%', y1: '60%', x2: '55%', y2: '75%', delay: 2.5 },
-                  { x1: '55%', y1: '75%', x2: '80%', y2: '65%', delay: 3 },
-                  { x1: '25%', y1: '35%', x2: '35%', y2: '60%', delay: 3.5 },
-                  { x1: '45%', y1: '25%', x2: '55%', y2: '75%', delay: 4 },
-                ].map((line, i) => (
-                  <motion.line
-                    key={`line-${i}`}
-                    x1={line.x1}
-                    y1={line.y1}
-                    x2={line.x2}
-                    y2={line.y2}
-                    stroke="url(#lineGrad)"
-                    strokeWidth="1"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 2, delay: line.delay, ease: 'easeOut' }}
-                  />
-                ))}
-                {/* Constellation nodes */}
-                {[
-                  { cx: '10%', cy: '20%', r: 3, delay: 0 },
-                  { cx: '25%', cy: '35%', r: 4, delay: 0.3 },
-                  { cx: '45%', cy: '25%', r: 5, delay: 0.6 },
-                  { cx: '70%', cy: '40%', r: 4, delay: 0.9 },
-                  { cx: '85%', cy: '30%', r: 3, delay: 1.2 },
-                  { cx: '15%', cy: '70%', r: 3, delay: 1.5 },
-                  { cx: '35%', cy: '60%', r: 4, delay: 1.8 },
-                  { cx: '55%', cy: '75%', r: 5, delay: 2.1 },
-                  { cx: '80%', cy: '65%', r: 3, delay: 2.4 },
-                ].map((node, i) => (
-                  <motion.circle
-                    key={`node-${i}`}
-                    cx={node.cx}
-                    cy={node.cy}
-                    r={node.r}
-                    fill={i % 2 === 0 ? C.cyan : C.yellow}
-                    filter="url(#glow)"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{
-                      scale: [1, 1.3, 1],
-                      opacity: [0.6, 1, 0.6],
-                    }}
-                    transition={{
-                      scale: { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: node.delay },
-                      opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: node.delay },
-                    }}
-                  />
-                ))}
-              </svg>
-
-              {/* ═══════════════════════════════════════════════════════════════
-                  FLOATING ETHEREAL ORBS — enhanced with glow halos
-                  ═══════════════════════════════════════════════════════════════ */}
-              <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-                {[...Array(8)].map((_, i) => {
-                  const colors = [C.cyan, C.yellow, C.purple, C.green, C.cyan, C.yellow, C.purple, C.green];
-                  const sizes = [80, 120, 60, 100, 90, 140, 70, 110];
-                  const positions = [
-                    { left: '8%', top: '15%' },
-                    { left: '85%', top: '20%' },
-                    { left: '20%', top: '70%' },
-                    { left: '75%', top: '75%' },
-                    { left: '45%', top: '10%' },
-                    { left: '60%', top: '85%' },
-                    { left: '10%', top: '45%' },
-                    { left: '90%', top: '50%' },
-                  ];
-                  return (
-                    <motion.div
-                      key={`orb-${i}`}
-                      className="absolute rounded-full"
-                      style={{
-                        width: sizes[i],
-                        height: sizes[i],
-                        ...positions[i],
-                        background: `radial-gradient(circle, ${colors[i]}15 0%, ${colors[i]}05 40%, transparent 70%)`,
-                        filter: 'blur(30px)',
-                        boxShadow: `0 0 60px ${colors[i]}10`,
-                      }}
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{
-                        opacity: [0.2, 0.5, 0.2],
-                        scale: [1, 1.15, 1],
-                        y: [0, -15 - (i % 3) * 8, 0],
-                        x: [0, (i % 2 === 0 ? 1 : -1) * (8 + (i % 4) * 3), 0],
-                      }}
-                      transition={{
-                        opacity: { duration: 6 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.5 },
-                        scale: { duration: 8 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.5 },
-                        y: { duration: 10 + i * 1.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 },
-                        x: { duration: 12 + i * 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 },
-                      }}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* ═══════════════════════════════════════════════════════════════
-                  SUBTLE GRID PATTERN — adds structure
-                  ═══════════════════════════════════════════════════════════════ */}
-              <div
-                aria-hidden
-                className="fixed inset-0 pointer-events-none opacity-[0.02]"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
-                  `,
-                  backgroundSize: '60px 60px',
-                }}
-              />
-
-              {/* ═══════════════════════════════════════════════════════════════
-                  GHOST WATERMARK — ultra subtle breathing
-                  ═══════════════════════════════════════════════════════════════ */}
-              <motion.div
-                aria-hidden
-                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 2, ease: 'easeOut' }}
-              >
-                <motion.span
-                  className="font-black tracking-tighter leading-none"
-                  style={{
-                    fontSize: 'clamp(14rem, 38vw, 28rem)',
-                    background: `linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                  animate={{ opacity: [0.8, 1, 0.8] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  ORM
-                </motion.span>
-              </motion.div>
-
-              {/* ═══════════════════════════════════════════════════════════════
-                  MAIN CONTENT
-                  ═══════════════════════════════════════════════════════════════ */}
-              <div className="relative z-10">
-                {/* Elegant top accent line */}
-                <motion.div
-                  className="mx-auto mb-12 h-px"
-                  style={{
-                    background: `linear-gradient(90deg, transparent 0%, ${C.cyan}60 50%, transparent 100%)`,
-                    maxWidth: '120px',
-                  }}
-                  initial={{ scaleX: 0, opacity: 0 }}
-                  animate={{ scaleX: 1, opacity: 1 }}
-                  transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                />
-
-                {/* Title with ultra-sophisticated reveal */}
-                <motion.h1
-                  className="relative font-bold tracking-tight leading-[0.90]"
-                  style={{ fontSize: 'clamp(2.2rem, 9vw, 6rem)' }}
-                >
-                  {/* OPERATINGROOM — cinematic letter reveal with stagger */}
-                  <span className="block overflow-hidden">
+                {/* OPERATINGROOM — staggered letter animation */}
+                <span className="block text-white break-words overflow-hidden">
+                  {'OPERATINGROOM'.split('').map((letter, i) => (
                     <motion.span
+                      key={`letter-${i}`}
                       className="inline-block"
-                      initial={{ y: '120%' }}
-                      animate={{ y: '0%' }}
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{
-                        duration: 1.2,
-                        delay: 0.3,
-                        ease: [0.16, 1, 0.3, 1],
+                        delay: 0.05 + i * 0.04,
+                        duration: 0.5,
+                        ease: [0.215, 0.61, 0.355, 1],
                       }}
                     >
-                      {'OPERATINGROOM'.split('').map((letter, i) => (
-                        <motion.span
-                          key={`l1-${i}`}
-                          className="inline-block"
-                          style={{
-                            textShadow: '0 0 40px rgba(255,255,255,0.1)',
-                          }}
-                          initial={{ opacity: 0, y: 20, filter: 'blur(10px)', scale: 0.8 }}
-                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
-                          transition={{
-                            duration: 0.8,
-                            delay: 0.4 + i * 0.035,
-                            ease: [0.16, 1, 0.3, 1],
-                          }}
-                        >
-                          {letter}
-                        </motion.span>
-                      ))}
+                      {letter}
                     </motion.span>
-                  </span>
-
-                  {/* MANAGEMENT SYSTEM — premium gold with enhanced glow */}
-                  <span className="block overflow-hidden mt-2">
-                    <motion.span
-                      className="inline-block relative"
-                      style={{
-                        fontSize: 'clamp(1.6rem, 5.5vw, 4rem)',
-                        background: `linear-gradient(135deg, #ffc107 0%, #ffdb4d 25%, #ffd700 50%, #ffdb4d 75%, #ffc107 100%)`,
-                        backgroundSize: '200% 100%',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        filter: 'drop-shadow(0 0 40px rgba(255,184,0,0.35))',
-                      }}
-                      initial={{ y: '120%', opacity: 0 }}
-                      animate={{ 
-                        y: '0%', 
-                        opacity: 1,
-                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                      }}
-                      transition={{
-                        y: { duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] },
-                        opacity: { duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] },
-                        backgroundPosition: { duration: 8, repeat: Infinity, ease: 'linear', delay: 2 },
-                      }}
-                    >
-                      MANAGEMENT SYSTEM
-                      {/* Traveling light shimmer */}
-                      <motion.span
-                        className="absolute inset-0 pointer-events-none"
-                        style={{
-                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)',
-                          WebkitBackgroundClip: 'text',
-                          mixBlendMode: 'overlay',
-                        }}
-                        animate={{ x: ['-150%', '150%'] }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          repeatDelay: 5,
-                          ease: [0.16, 1, 0.3, 1],
-                        }}
-                      />
-                    </motion.span>
-                  </span>
-                </motion.h1>
-
-                {/* Subtle underline accent */}
-                <motion.div
-                  className="mx-auto mt-6 h-[2px] rounded-full"
-                  style={{
-                    background: `linear-gradient(90deg, transparent 0%, ${C.yellow}60 50%, transparent 100%)`,
-                    maxWidth: '180px',
-                  }}
-                  initial={{ scaleX: 0, opacity: 0 }}
-                  animate={{ scaleX: 1, opacity: 1 }}
-                  transition={{ duration: 1, delay: 1.4, ease: [0.16, 1, 0.3, 1] }}
-                />
-
-                {/* Subtitle with fade-in */}
-                <motion.p
-                  className="mt-8 text-base md:text-lg text-white/40 max-w-lg mx-auto leading-relaxed tracking-wide"
+                  ))}
+                </span>
+                {/* MANAGEMENT SYSTEM — with shimmer effect */}
+                <motion.span
+                  className="block break-words relative"
+                  style={{ color: '#ffb800', fontSize: '56px' }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 1.2, ease: 'easeOut' }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                >
+                  <span className="relative">
+                    MANAGEMENT SYSTEM
+                    {/* Shimmer overlay */}
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                      style={{ mixBlendMode: 'overlay' }}
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatDelay: 3,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                  </span>
+                </motion.span>
+              </motion.h1>
+
+              {/* Subtitle with typewriter effect */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9, duration: 0.5 }}
+                className="relative mt-6 text-sm md:text-base text-white/50 max-w-md mx-auto leading-relaxed"
+              >
+                <motion.span
+                  initial={{ width: 0 }}
+                  animate={{ width: '100%' }}
+                  transition={{ delay: 1, duration: 1, ease: 'easeOut' }}
+                  className="inline-block overflow-hidden whitespace-nowrap"
                 >
                   Systém pro správu a monitoring operačních sálů
-                </motion.p>
+                </motion.span>
+              </motion.p>
 
-                {/* Elegant separator */}
-                <motion.div
-                  className="mx-auto my-10 flex items-center gap-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 1.4 }}
+              {/* CTA buttons with breathing glow */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2, duration: 0.4 }}
+                className="relative mt-10 flex items-center justify-center gap-3 flex-wrap"
+              >
+                {/* Primary button with animated glow */}
+                <motion.button
+                  onClick={() => goToScreen('form')}
+                  className="group relative inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-semibold text-[12px] tracking-[0.15em] uppercase transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: C.yellow,
+                    color: '#0a0f1a',
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.border})` }} />
+                  {/* Breathing glow */}
                   <motion.div
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: C.cyan, boxShadow: `0 0 12px ${C.cyan}` }}
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute inset-0 rounded-2xl pointer-events-none"
+                    style={{ background: C.yellow }}
+                    animate={{
+                      boxShadow: [
+                        `0 8px 24px -6px ${C.yellow}50`,
+                        `0 16px 40px -8px ${C.yellow}70`,
+                        `0 8px 24px -6px ${C.yellow}50`,
+                      ],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
                   />
-                  <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${C.border}, transparent)` }} />
-                </motion.div>
+                  <LogIn className="w-4 h-4 relative z-10" strokeWidth={2.5} />
+                  <span className="relative z-10">Přihlášení</span>
+                  <ChevronRight className="w-4 h-4 -ml-1 relative z-10 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+                </motion.button>
 
-                {/* CTA buttons with ultra-premium styling */}
-                <motion.div
-                  className="flex items-center justify-center gap-5 flex-wrap"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, delay: 1.8, ease: [0.16, 1, 0.3, 1] }}
+                {/* Secondary button with subtle pulse */}
+                <motion.button
+                  onClick={() => goToScreen('demo')}
+                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-semibold text-[12px] tracking-[0.15em] uppercase text-white/70 hover:text-white transition-all duration-200"
+                  style={{
+                    background: C.glass,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    borderColor: 'rgba(255,255,255,0.2)',
+                  }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {/* Primary — Přihlášení — with magnetic hover effect */}
-                  <motion.button
-                    onClick={() => goToScreen('form')}
-                    className="group relative inline-flex items-center gap-3.5 px-10 py-5 rounded-2xl font-semibold text-[11px] tracking-[0.22em] uppercase overflow-hidden"
-                    style={{ background: '#ffb800', color: '#0a0f1a' }}
-                    whileHover={{ scale: 1.04, y: -2 }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                  <motion.span
+                    animate={{ rotate: [0, 15, -15, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                   >
-                    {/* Multi-layer animated gradient overlay */}
-                    <motion.div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        background: 'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-                      }}
-                      animate={{ x: ['-150%', '150%'] }}
-                      transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 4, ease: [0.16, 1, 0.3, 1] }}
-                    />
-                    {/* Breathing glow effect */}
-                    <motion.div
-                      className="absolute inset-0 -z-10 rounded-2xl"
-                      animate={{
-                        boxShadow: [
-                          '0 8px 32px -8px rgba(255,184,0,0.4), 0 0 0 0 rgba(255,184,0,0)',
-                          '0 16px 48px -12px rgba(255,184,0,0.6), 0 0 80px -20px rgba(255,184,0,0.3)',
-                          '0 8px 32px -8px rgba(255,184,0,0.4), 0 0 0 0 rgba(255,184,0,0)',
-                        ],
-                      }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                    {/* Inner highlight */}
-                    <div 
-                      className="absolute inset-[1px] rounded-[15px] pointer-events-none"
-                      style={{
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 50%)',
-                      }}
-                    />
-                    <LogIn className="w-4 h-4 relative z-10" strokeWidth={2.5} />
-                    <span className="relative z-10 font-bold">Přihlášení</span>
-                    <motion.span
-                      className="relative z-10"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
-                    </motion.span>
-                  </motion.button>
+                    <Sparkles className="w-4 h-4" strokeWidth={2.25} />
+                  </motion.span>
+                  <span>Demo</span>
+                </motion.button>
+              </motion.div>
 
-                  {/* Secondary — Demo — with glassmorphism */}
-                  <motion.button
-                    onClick={() => goToScreen('demo')}
-                    className="group relative inline-flex items-center gap-3.5 px-10 py-5 rounded-2xl font-semibold text-[11px] tracking-[0.22em] uppercase text-white/50 hover:text-white transition-all duration-500"
-                    style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      backdropFilter: 'blur(20px)',
-                    }}
-                    whileHover={{
-                      scale: 1.04,
-                      y: -2,
-                      borderColor: 'rgba(6,182,212,0.3)',
-                      boxShadow: '0 8px 32px -8px rgba(6,182,212,0.2), inset 0 0 20px rgba(6,182,212,0.05)',
-                    }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                  >
-                    {/* Subtle inner glow on hover */}
-                    <div 
-                      className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                      style={{
-                        background: `radial-gradient(ellipse at center, ${C.cyan}08 0%, transparent 70%)`,
-                      }}
-                    />
-                    <motion.span
-                      animate={{ 
-                        rotate: [0, 15, -15, 0], 
-                        scale: [1, 1.15, 1],
-                      }}
-                      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      <Sparkles className="w-4 h-4" strokeWidth={2} />
-                    </motion.span>
-                    <span className="font-bold">Demo</span>
-                  </motion.button>
-                </motion.div>
-
-                {/* Bottom decorative element — enhanced */}
-                <motion.div
-                  className="mt-20 flex flex-col items-center gap-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1, delay: 2.2 }}
-                >
-                  {/* Floating dots */}
-                  <div className="flex items-center gap-3">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <motion.div
-                        key={`dot-${i}`}
-                        className="rounded-full"
-                        style={{ 
-                          width: i === 2 ? 6 : 4,
-                          height: i === 2 ? 6 : 4,
-                          background: i === 2 ? C.cyan : 'rgba(255,255,255,0.15)',
-                          boxShadow: i === 2 ? `0 0 12px ${C.cyan}` : 'none',
-                        }}
-                        animate={i === 2 ? { 
-                          scale: [1, 1.4, 1], 
-                          opacity: [0.6, 1, 0.6],
-                          boxShadow: [`0 0 12px ${C.cyan}`, `0 0 24px ${C.cyan}`, `0 0 12px ${C.cyan}`],
-                        } : {
-                          opacity: [0.15, 0.3, 0.15],
-                        }}
-                        transition={{ 
-                          duration: i === 2 ? 3 : 4, 
-                          repeat: Infinity, 
-                          ease: 'easeInOut',
-                          delay: i * 0.15,
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Scroll indicator hint */}
-                  <motion.div
-                    className="flex flex-col items-center gap-2 text-white/20"
-                    animate={{ y: [0, 5, 0], opacity: [0.3, 0.5, 0.3] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <div className="w-px h-8" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)' }} />
-                  </motion.div>
-                </motion.div>
-              </div>
+              {/* Bottom decorative line */}
+              <motion.div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 h-px w-48"
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${C.cyan}40, transparent)`,
+                }}
+                initial={{ scaleX: 0, opacity: 0 }}
+                animate={{ scaleX: 1, opacity: 1 }}
+                transition={{ delay: 1.5, duration: 0.8 }}
+              />
             </motion.section>
           )}
 
