@@ -1100,11 +1100,17 @@ style={{
                               {!isContinuingOp && operation.statusHistory && operation.statusHistory.length > 0 && (
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
                                   {(() => {
-                                    // Build color lookup from activeStatuses
-                                    // Použ��váme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                                    // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
+                                    // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
+                                    // neaktivních statusů) — viz RoomDetail.changeStep → App.updateRoomStep.
+                                    // DB `sort_order` má mezery (např. neaktivní "Začátek anestezie" má
+                                    // sort_order=2, takže "Chirurgický výkon" je sort_order=3 ale POZICE 2).
+                                    // Proto MUSÍME indexovat podle pozice v poli, NE podle order_index,
+                                    // jinak se barvy posunou a Ukončení výkonu se vykreslí barvou
+                                    // Chirurgického výkonu apod.
                                     const stepColorMap: Record<number, string> = {};
-                                    activeStatuses.forEach((s) => {
-                                      stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
+                                    activeStatuses.forEach((s, idx) => {
+                                      stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                                     });
 
                                     const opStart = new Date(operation.startedAt).getTime();
@@ -1121,16 +1127,13 @@ style={{
                                       const segWidthPct = (segDuration / opDuration) * 100;
                                       const segLeftPct = ((segStart - opStart) / opDuration) * 100;
                                       if (segWidthPct <= 0) return undefined;
-                                      // AKTUÁLNÍ barva z DB ("Správa statusů" → workflow_statuses.accent_color)
-                                      // má VŽDY přednost před snapshotem `entry.color`. Lookup probíhá
-                                      // v dvou krocích, aby zachytil i případy, kdy `entry.stepIndex`
-                                      // odpovídá pozici v poli, nikoli order_index v DB.
+                                      // AKTUÁLNÍ barva z DB má VŽDY přednost (live z "Správa statusů").
+                                      // entry.color je jen fallback pro stavy, jejichž status už v DB
+                                      // neexistuje (např. byl smazán). STEP_INDEX_COLORS NEPOUŽÍVÁME —
+                                      // hardkódovaná paleta by mohla zase posunout barvy mimo realitu DB.
                                       const phaseColor =
                                         stepColorMap[entry.stepIndex]
-                                        || activeStatuses[entry.stepIndex]?.accent_color
-                                        || activeStatuses[entry.stepIndex]?.color
                                         || entry.color
-                                        || STEP_INDEX_COLORS[entry.stepIndex]
                                         || '#6b7280';
 
                                       return (
@@ -1252,11 +1255,13 @@ style={{
                             const effectiveEndTime = Math.max(estimatedEndTime, now);
                             const totalDuration = Math.max(1, effectiveEndTime - operationStart);
 
-                            // Build color lookup from activeStatuses (database-driven)
-                            // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                            // KLÍČOVÉ: stejné mapování jako u dokončených operací výše —
+                            // `stepIndex` v room_status_history je POZICE v poli `activeDbStatuses`,
+                            // NE order_index z DB. Indexujeme tedy podle pozice (idx), aby barvy
+                            // odpovídaly přesně statusu, který uživatel vybral v RoomDetailu.
                             const stepColorMap: Record<number, string> = {};
-                            activeStatuses.forEach((s) => {
-                              stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
+                            activeStatuses.forEach((s, idx) => {
+                              stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                             });
 
                             // If we have real status history → render exact segments
@@ -1276,22 +1281,13 @@ style={{
                                 const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
                                 if (segWidthPct <= 0) return null;
                                 
-                                // AKTUÁLNÍ barva z DB ("Správa statusů" → workflow_statuses.accent_color)
-                                // má VŽDY přednost před snapshotem `entry.color`, který je uložený
-                                // v `room_status_history` v okamžiku změny statusu. Bez této priority
-                                // by změna barvy v Nastavení neoznačila barvu retroaktivně na timeline
-                                // a u některých statusů (kde stepIndex v historii ≠ aktuální order_index)
-                                // by zůstala stará snapshot-barva.
-                                // 1) Lookup podle order_index z DB (kanonické mapování).
-                                // 2) Lookup podle pozice v poli `activeStatuses` (pokud entry.stepIndex
-                                //    je pozice, ne order_index — sjednoceno s logikou v RoomCard.tsx).
-                                // 3) Až poté fallback: snapshot → hardkódovaná paleta → šedá.
+                                // AKTUÁLNÍ barva z DB má VŽDY přednost (live z "Správa statusů").
+                                // stepColorMap je indexována podle pozice v `activeStatuses` —
+                                // sjednoceno s tím, jak App.tsx ukládá `stepIndex` do historie.
+                                // entry.color je jen fallback pro statusy, které byly smazány.
                                 const phaseColor =
                                   stepColorMap[entry.stepIndex]
-                                  || activeStatuses[entry.stepIndex]?.accent_color
-                                  || activeStatuses[entry.stepIndex]?.color
                                   || entry.color
-                                  || STEP_INDEX_COLORS[entry.stepIndex]
                                   || '#6b7280';
 
                                 // For current segment, calculate progress within the segment
