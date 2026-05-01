@@ -7,8 +7,9 @@ import {
   Cell, PieChart, Pie, LineChart, Line, CartesianGrid, Area, AreaChart
 } from 'recharts';
 import type { OperatingRoom } from '../../types';
+import { RoomStatus } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
-import { C, Card, formatMinutes, SectionLabel as SharedLabel } from './shared';
+import { C, Card, formatMinutes, SectionHeader } from './shared';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 
@@ -100,7 +101,7 @@ export function PhasesTab({
             Sály v provozu
           </p>
           <p className="text-2xl font-bold" style={{ color: C.green }}>
-            {rooms.filter(r => r.status === 'obsazeno').length}
+            {rooms.filter(r => r.status === RoomStatus.BUSY).length}
           </p>
           <p className="text-xs mt-1" style={{ color: C.faint }}>
             z {rooms.length} sálů
