@@ -34,7 +34,8 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & Props
 // ─────────────────────────────────────────────────────────────────────────────
-type Period = 'today' | 'week' | 'month';
+// Stejný Period typ jako v StatisticsModule — česká jména
+type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 type ViewMode = 'grid' | 'list';
 
 export interface RoomsTabProps {
