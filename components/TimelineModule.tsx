@@ -1197,8 +1197,10 @@ style={{
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
-                            background: `linear-gradient(90deg, ${C.green}35 0%, ${C.green}20 100%)`,
-                            borderRight: `2px solid ${C.green}`,
+                            // Použijeme aktuální barvu statusu sálu (accent_color z DB),
+                            // aby celá lišta pokračujícího výkonu odpovídala statusu na řádku.
+                            background: `linear-gradient(90deg, ${stepColor}35 0%, ${stepColor}20 100%)`,
+                            borderRight: `2px solid ${stepColor}`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2)`,
                             zIndex: 1,
                           }}
@@ -1206,7 +1208,7 @@ style={{
                           <span className="text-[11px] font-semibold text-white uppercase tracking-[0.15em] truncate">
                             POKRAČUJÍCÍ VÝKON
                           </span>
-                          <span className="text-[10px] font-bold ml-2 whitespace-nowrap" style={{ color: C.green }}>
+                          <span className="text-[10px] font-bold ml-2 whitespace-nowrap" style={{ color: stepColor }}>
                             do {endHours}:{endMinutes}
                           </span>
                         </div>
@@ -1451,10 +1453,15 @@ style={{
                               )}
                               {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                                 <div
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white/90 backdrop-blur-md"
-                                  style={{ 
-                                    background: C.glass,
-                                    border: `1px solid ${C.border}`,
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md"
+                                  style={{
+                                    // Badge předpokládaného zbývajícího času — laděný do barvy
+                                    // aktuálního statusu sálu, aby vizuálně tvořil pár se zbytkem
+                                    // řádku a okamžitě signalizoval, ke které fázi se vztahuje.
+                                    background: `${stepColor}26`,
+                                    border: `1px solid ${stepColor}66`,
+                                    color: '#ffffff',
+                                    boxShadow: `0 0 8px ${stepColor}33`,
                                   }}
                                 >
                                   {remainingTime}
@@ -1504,21 +1511,24 @@ style={{
                       const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
                       const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
+                      // Marker předpokládaného ukončení výkonu (working-hours hranice
+                      // konkrétního sálu) — barevně přebírá AKTUÁLNÍ status sálu, aby
+                      // celý řádek vč. boxu konce výkonu sdílel jednotnou barvu statusu.
                       return (
-                        <div 
+                        <div
                           className="absolute top-0 bottom-0 w-0.5 z-20"
-                          style={{ 
+                          style={{
                             left: `${endPercent}%`,
-                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
+                            background: `linear-gradient(180deg, transparent 0%, ${stepColor} 20%, ${stepColor} 80%, transparent 100%)`,
                           }}
                         >
                           {/* End time label */}
-                          <div 
+                          <div
                             className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
-                            style={{ 
-                              background: 'rgba(249, 115, 22, 0.2)',
-                              border: '1px solid rgba(249, 115, 22, 0.4)',
-                              color: '#F97316'
+                            style={{
+                              background: `${stepColor}33`,
+                              border: `1px solid ${stepColor}66`,
+                              color: stepColor,
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
