@@ -8,7 +8,14 @@ import {
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 // Step durations now calculated from real database history
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { fetchRoomStatistics, fetchStatusHistory, RoomStatistics, StatusHistoryRow } from '../lib/db';
+import {
+  fetchRoomStatistics,
+  fetchStatusHistory,
+  fetchAllStaff,
+  type RoomStatistics,
+  type StatusHistoryRow,
+  type StaffRow,
+} from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip,
@@ -24,12 +31,13 @@ import {
 import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
 import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
-import { ForecastTab } from './statistics/ForecastTab';
+import { FinanceTab } from './statistics/FinanceTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'efektivita' | 'personal' | 'saly' | 'faze' | 'heatmapa' | 'forecast';
+type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
+            | 'saly' | 'faze' | 'heatmapa';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -760,7 +768,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
         </span>
       </div>
 
-      {/* ── Print-only rozšířený detail sálu ───────────────────────────���───
+      {/* ── Print-only rozšířený detail sálu ───────────────────────────����───
           Při tisku ukážeme všechna důležitá data jako v RoomDetail panelu:
           aktuální fáze, personál, časy pacienta, příznaky (UPS/septický/atd.). */}
       {isPrinting && (
@@ -1313,6 +1321,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
   const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
+  // ── REÁLNÁ DB DATA pro tab moduly (Staff) ──
+  // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
+  const [staffList, setStaffList] = useState<StaffRow[] | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
@@ -1381,11 +1392,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const tabLabelMap: Record<Tab, string> = {
     'prehled':    'Přehled',
     'efektivita': 'Efektivita',
+    'finance':    'Finance',
     'personal':   'Personál',
     'saly':       'Sály',
     'faze':       'Fáze',
     'heatmapa':   'Heatmapa',
-    'forecast':   'Forecast',
   };
 
   // Load statistics from database
@@ -1411,13 +1422,15 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           break;
       }
 
-      const [stats, history] = await Promise.all([
+      const [stats, history, staffRows] = await Promise.all([
         fetchRoomStatistics(fromDate, now),
-        fetchStatusHistory({ fromDate, toDate: now, limit: 500 }),
+        fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
+        fetchAllStaff(),
       ]);
 
       if (stats) setDbStats(stats);
-      if (history) setStatusHistory(history);
+      setStatusHistory(history ?? []);
+      setStaffList(staffRows);
       setIsLoadingStats(false);
     };
 
@@ -1498,25 +1511,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       periodLabel: period,
     };
   }, [avgUtil, totalOps, busyCount, totalQueue, septicCnt, upsCnt, avgStepDurations, statusHistory, rooms, period]);
-
-  // ── Doctor / Nurse ops counts pro StaffTab (z statusHistory + current rooms) ──
-  const doctorOpsMap = useMemo(() => {
-    const m = new Map<string, number>();
-    rooms.forEach(r => {
-      const name = r.staff?.doctor?.name;
-      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
-    });
-    return m;
-  }, [rooms]);
-
-  const nurseOpsMap = useMemo(() => {
-    const m = new Map<string, number>();
-    rooms.forEach(r => {
-      const name = r.staff?.nurse?.name;
-      if (name) m.set(name, (m.get(name) ?? 0) + (r.operations24h ?? 0));
-    });
-    return m;
-  }, [rooms]);
 
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};
@@ -1638,11 +1632,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const TABS:{ id:Tab; label:string }[]=[
     {id:'prehled',    label:'Přehled'},
     {id:'efektivita', label:'Efektivita'},
+    {id:'finance',    label:'Finance'},
     {id:'personal',   label:'Personál'},
     {id:'saly',       label:'Sály'},
     {id:'faze',       label:'Fáze'},
     {id:'heatmapa',   label:'Heatmapa'},
-    {id:'forecast',   label:'Forecast'},
   ];
 
   return(
@@ -1774,11 +1768,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               tabs={[
                 { id: 'prehled', label: 'Přehled' },
                 { id: 'efektivita', label: 'Efektivita' },
+                { id: 'finance', label: 'Finance' },
                 { id: 'personal', label: 'Personál' },
                 { id: 'saly', label: 'Sály' },
                 { id: 'faze', label: 'Fáze' },
                 { id: 'heatmapa', label: 'Heatmapa' },
-                { id: 'forecast', label: 'Forecast' },
               ]}
               value={tab}
               onChange={setTab}
@@ -2009,22 +2003,22 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {(tab === 'personal' || isPrinting) && (
             <div className="flex flex-col gap-3">
               <StaffTab
+                staff={staffList}
                 rooms={rooms}
                 periodLabel={period}
-                doctorOps={doctorOpsMap}
-                nurseOps={nurseOpsMap}
               />
             </div>
           )}
-
-          {/* ── Forecast & alerty ── */}
-          {(tab === 'forecast' || isPrinting) && (
+          
+          {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
+          {(tab === 'finance' || isPrinting) && (
             <div className="flex flex-col gap-3">
-              <ForecastTab
+              <FinanceTab
                 rooms={rooms}
                 totalOps={totalOps}
                 avgUtilization={avgUtil}
                 periodLabel={period}
+                statusHistory={statusHistory}
               />
             </div>
           )}
@@ -2169,19 +2163,26 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
       {/* ── Period + Tab navigation ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7 print-hide">
-        {/* Tabs */}
-        <div className="flex items-center gap-1 p-1 rounded-lg" style={{background:C.surface,border:`1px solid ${C.border}`}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              className="px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all"
-              style={{
-                background:tab===t.id?'rgba(255,255,255,0.07)':'transparent',
-                color:tab===t.id?C.text:C.muted,
-              }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+  {/* Tabs — horizontálně scrollovatelný strip pro 12 záložek */}
+  <div className="flex items-center gap-1 p-1 rounded-lg overflow-x-auto max-w-full"
+    style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      scrollbarWidth: 'thin',
+      scrollbarColor: `${C.faint} transparent`,
+    }}>
+    {TABS.map(t => (
+      <button key={t.id} onClick={() => setTab(t.id)}
+        className="px-3.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0"
+        style={{
+          background: tab === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
+          color: tab === t.id ? C.text : C.muted,
+          boxShadow: tab === t.id ? `inset 0 0 0 1px ${C.border}` : 'none',
+        }}>
+        {t.label}
+      </button>
+    ))}
+  </div>
         {/* Period switcher + Export */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5">
@@ -2631,10 +2632,32 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </h2>
             )}
             <StaffTab
+              staff={staffList}
               rooms={rooms}
               periodLabel={period}
-              doctorOps={doctorOpsMap}
-              nurseOps={nurseOpsMap}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
+        {(tab==='finance' || isPrinting) && (
+          <motion.div key="finance"
+            initial={isPrinting ? false : {opacity:0,y:10}}
+            animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-6}}
+            transition={{duration:0.22}}
+            className="space-y-5">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Finance & náklady provozu
+              </h2>
+            )}
+            <FinanceTab
+              rooms={rooms}
+              totalOps={totalOps}
+              avgUtilization={avgUtil}
+              periodLabel={period}
+              statusHistory={statusHistory}
             />
           </motion.div>
         )}
@@ -3077,28 +3100,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </motion.div>
         )}
 
-        {/* ── Forecast & alerty ── (nová záložka) */}
-        {(tab==='forecast' || isPrinting) && (
-          <motion.div key="forecast"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Forecast & alerty
-              </h2>
-            )}
-            <ForecastTab
-              rooms={rooms}
-              totalOps={totalOps}
-              avgUtilization={avgUtil}
-              periodLabel={period}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
 
       </div>
       {/* ── Room detail panel (shared mobile + desktop) ── */}

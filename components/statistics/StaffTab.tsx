@@ -1,525 +1,475 @@
 /**
- * Staff & Teams tab — záložka "Personál & týmy".
+ * StaffTab — Personál
  *
- * Sekce:
- *   1. Hero KPI strip — Aktivní personál / Doktoři / Sestry / Anesteziologové
- *   2. Workload distribution — bar chart sálů per role s vytížením
- *   3. Top performers — žebříček doktorů + sester podle počtu výkonů
- *   4. Skill matrix — heatmapa oddělení × role (kdo umí kde sloužit)
- *   5. Bench depth & coverage — kdo je k dispozici, kdo má volno, kde chybí pokrytí
+ * Reálná data z tabulky `staff` v Supabase:
+ *   • role (doctor | nurse | anesth | …)
+ *   • skill_level (junior | mid | senior | expert)
+ *   • availability (0-100 %)
+ *   • is_external, is_recommended, is_active
+ *   • vacation_days, sick_leave_days
  *
- * Pracuje s OperatingRoom[] a status_history. Pro period-over-period delty
- * používá `seededPreviousValue` (deterministická pseudo-historie).
+ * Doplňkově se použije aktuální stav `OperatingRoom[]` k odvození toho, kdo
+ * je právě přiřazený k živému sálu (jména staff přes doctor_id/nurse_id/anesthesiologist_id).
+ *
+ * Žádné fiktivní KPI — schéma neobsahuje productivity, hours, training, atd.
  */
-
 'use client';
 
 import React, { useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  UserCircle2, Stethoscope, Users, Activity, Award, Crown,
-  ShieldCheck, Coffee, AlertCircle, BedDouble,
+  UserCircle2, Stethoscope, Users, Award, ShieldCheck, Coffee,
+  AlertCircle, Briefcase, GraduationCap, UserX, UserCheck, Activity,
 } from 'lucide-react';
 import {
-  C, Card, KPIBlock, IconBubble, SectionHeader, DeltaBadge,
-  computeDelta, seededPreviousValue, generateSeededTrend, hashStr,
+  C, Card, KPIBlock, MetricTile, ProgressRing, CategoryBarList,
+  formatNumber,
 } from './shared';
-import { OperatingRoom } from '../../types';
+import type { OperatingRoom } from '../../types';
+import type { StaffRow } from '../../lib/db';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Typy & pomocné struktury
-// ─────────────────────────────────────────────────────────────────────────────
 interface StaffTabProps {
+  staff: StaffRow[] | null;
   rooms: OperatingRoom[];
   periodLabel: string;
-  /** Volitelné hodnocení per-doctor z status_history (název → ops count) */
-  doctorOps?: Map<string, number>;
-  nurseOps?: Map<string, number>;
 }
 
-interface StaffPerson {
-  name: string;
-  role: 'doctor' | 'nurse' | 'anesth';
-  rooms: string[];        // sály, kde je přiřazen
-  department: string;
-  /** Počet operací (z history nebo current state) */
-  opsCount: number;
+// Mapování role → metadata pro UI (musí pokrývat hodnoty, které máte v DB)
+const ROLE_META: Record<string, { label: string; plural: string; color: string; icon: typeof Stethoscope }> = {
+  doctor:      { label: 'Lékař',          plural: 'Lékaři',          color: C.green,  icon: Stethoscope },
+  surgeon:     { label: 'Lékař',          plural: 'Lékaři',          color: C.green,  icon: Stethoscope },
+  nurse:       { label: 'Sestra',         plural: 'Sestry',          color: C.cyan,   icon: UserCircle2 },
+  anesth:      { label: 'Anesteziolog',   plural: 'Anesteziologové', color: C.purple, icon: Activity },
+  anesthesiologist: { label: 'Anesteziolog', plural: 'Anesteziologové', color: C.purple, icon: Activity },
+};
+
+const SKILL_LEVELS = [
+  { key: 'expert', label: 'Expert',  color: C.green },
+  { key: 'senior', label: 'Senior',  color: C.cyan },
+  { key: 'mid',    label: 'Mid',     color: C.yellow },
+  { key: 'junior', label: 'Junior',  color: C.orange },
+];
+
+function getRoleMeta(role: string) {
+  const key = role?.toLowerCase().trim();
+  return ROLE_META[key] ?? { label: role || 'Ostatní', plural: role || 'Ostatní', color: C.muted, icon: Users };
 }
 
-const ROLE_META = {
-  doctor: { label: 'Lékař', color: C.green, icon: Stethoscope, plural: 'Lékaři' },
-  nurse:  { label: 'Sestra', color: C.accent, icon: UserCircle2, plural: 'Sestry' },
-  anesth: { label: 'Anesteziolog', color: C.purple, icon: ShieldCheck, plural: 'Anesteziologové' },
-} as const;
+export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLabel }) => {
+  const stats = useMemo(() => {
+    if (!staff || staff.length === 0) return null;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Aggregator — projde rooms a vytvoří mapu jméno → StaffPerson
-// ─────────────────────────────────────────────────────────────────────────────
-function aggregateStaff(
-  rooms: OperatingRoom[],
-  doctorOps?: Map<string, number>,
-  nurseOps?: Map<string, number>,
-): StaffPerson[] {
-  const map = new Map<string, StaffPerson>();
-  const upsert = (name: string, role: 'doctor' | 'nurse' | 'anesth', roomName: string, dept: string) => {
-    if (!name || name.trim() === '' || name === '—') return;
-    const key = `${role}:${name}`;
-    const existing = map.get(key);
-    if (existing) {
-      if (!existing.rooms.includes(roomName)) existing.rooms.push(roomName);
-      return;
+    const total = staff.length;
+    const active = staff.filter(s => s.is_active).length;
+    const inactive = total - active;
+    const external = staff.filter(s => s.is_external).length;
+    const recommended = staff.filter(s => s.is_recommended).length;
+
+    // Per role
+    const roleCounts = new Map<string, { active: number; total: number; avgAvail: number; avails: number[] }>();
+    for (const s of staff) {
+      const r = (s.role || 'other').toLowerCase();
+      const cur = roleCounts.get(r) ?? { active: 0, total: 0, avgAvail: 0, avails: [] };
+      cur.total++;
+      if (s.is_active) cur.active++;
+      if (typeof s.availability === 'number') cur.avails.push(s.availability);
+      roleCounts.set(r, cur);
     }
-    let opsCount = 0;
-    if (role === 'doctor' && doctorOps) opsCount = doctorOps.get(name) ?? 0;
-    else if (role === 'nurse' && nurseOps) opsCount = nurseOps.get(name) ?? 0;
-    // Když nemáme reálné ops counts, derivujeme z hash + operations24h
-    if (opsCount === 0) {
-      const baseRoom = rooms.find(r =>
-        r.staff.doctor?.name === name || r.staff.nurse?.name === name || r.staff.anesthesiologist?.name === name,
-      );
-      const base = baseRoom?.operations24h ?? 4;
-      opsCount = Math.round(base * (0.6 + hashStr(`${role}-${name}`) * 0.8));
+    const byRole = Array.from(roleCounts.entries())
+      .map(([role, c]) => ({
+        role,
+        meta: getRoleMeta(role),
+        active: c.active,
+        total: c.total,
+        avgAvail: c.avails.length > 0 ? c.avails.reduce((a, b) => a + b, 0) / c.avails.length : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    // Per skill level
+    const skillCounts = new Map<string, number>();
+    for (const s of staff) {
+      const k = (s.skill_level || 'unknown').toLowerCase();
+      skillCounts.set(k, (skillCounts.get(k) ?? 0) + 1);
     }
-    map.set(key, { name, role, rooms: [roomName], department: dept, opsCount });
-  };
+    const bySkill = SKILL_LEVELS.map(sl => ({
+      ...sl,
+      count: skillCounts.get(sl.key) ?? 0,
+      pct: total > 0 ? ((skillCounts.get(sl.key) ?? 0) / total) * 100 : 0,
+    }));
+    const skillUnknown = skillCounts.get('unknown') ?? 0;
 
-  rooms.forEach(r => {
-    if (r.staff.doctor?.name) upsert(r.staff.doctor.name, 'doctor', r.name, r.department);
-    if (r.staff.nurse?.name)  upsert(r.staff.nurse.name,  'nurse',  r.name, r.department);
-    if (r.staff.anesthesiologist?.name) upsert(r.staff.anesthesiologist.name, 'anesth', r.name, r.department);
-  });
+    // Vacation & sick leave
+    const totalVacation = staff.reduce((sum, s) => sum + (s.vacation_days ?? 0), 0);
+    const totalSick = staff.reduce((sum, s) => sum + (s.sick_leave_days ?? 0), 0);
+    const onVacation = staff.filter(s => (s.vacation_days ?? 0) > 0).length;
+    const onSick = staff.filter(s => (s.sick_leave_days ?? 0) > 0).length;
 
-  return Array.from(map.values());
-}
+    // Availability distribution
+    const avails = staff.map(s => s.availability ?? 100);
+    const avgAvail = avails.length > 0 ? avails.reduce((a, b) => a + b, 0) / avails.length : 0;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Top Performer řádek
-// ─────────────────────────────────────────────────────────────────────────────
-const TopPerformerRow: React.FC<{
-  person: StaffPerson;
-  index: number;
-  maxOps: number;
-}> = memo(({ person, index, maxOps }) => {
-  const meta = ROLE_META[person.role];
-  const Icon = meta.icon;
-  const pct = maxOps > 0 ? (person.opsCount / maxOps) * 100 : 0;
-  const isTop3 = index < 3;
-  const rankColor = index === 0 ? C.yellow : index === 1 ? '#cbd5e1' : index === 2 ? C.orange : C.muted;
-  return (
-    <motion.div
-      className="flex items-center gap-2 px-2 py-2 rounded-md"
-      style={{
-        background: isTop3 ? `${rankColor}05` : 'transparent',
-        borderLeft: `2px solid ${isTop3 ? rankColor : 'transparent'}`,
-      }}
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.3 }}>
-      {/* Rank */}
-      <div className="w-6 flex items-center justify-center shrink-0">
-        {index === 0
-          ? <Crown size={13} color={C.yellow} fill={C.yellow} />
-          : <span className="text-[10px] font-bold tabular-nums" style={{ color: rankColor }}>
-              #{index + 1}
-            </span>
-        }
-      </div>
-      {/* Avatar / role */}
-      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-        style={{ background: `${meta.color}15`, border: `1px solid ${meta.color}30` }}>
-        <Icon size={12} color={meta.color} strokeWidth={2.2} />
-      </div>
-      {/* Name + dept */}
-      <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-semibold truncate" style={{ color: C.textHi }}>
-          {person.name}
-        </p>
-        <p className="text-[9px] truncate" style={{ color: C.muted }}>
-          {person.department} · {person.rooms.length === 1 ? person.rooms[0] : `${person.rooms.length} sály`}
-        </p>
-      </div>
-      {/* Bar + count */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="w-12 h-1 rounded-full overflow-hidden" style={{ background: C.ghost }}>
-          <motion.div className="h-full rounded-full"
-            style={{ background: meta.color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.6, delay: index * 0.03 + 0.1 }}
-          />
+    // Top by availability (kdo nejvíce reálně k dispozici)
+    const topAvailable = [...staff]
+      .filter(s => s.is_active && (s.availability ?? 0) > 0)
+      .sort((a, b) => (b.availability ?? 0) - (a.availability ?? 0))
+      .slice(0, 8);
+
+    // Currently assigned to live rooms — staff je v `room.staff` namespace
+    const assignedIds = new Set<string>();
+    for (const r of rooms) {
+      if (r.staff?.doctor?.id) assignedIds.add(r.staff.doctor.id);
+      if (r.staff?.nurse?.id) assignedIds.add(r.staff.nurse.id);
+      if (r.staff?.anesthesiologist?.id) assignedIds.add(r.staff.anesthesiologist.id);
+    }
+    const currentlyAssigned = staff.filter(s => assignedIds.has(s.id)).length;
+
+    // Most absent (highest vacation+sick)
+    const topAbsent = [...staff]
+      .map(s => ({
+        ...s,
+        absentDays: (s.vacation_days ?? 0) + (s.sick_leave_days ?? 0),
+      }))
+      .filter(s => s.absentDays > 0)
+      .sort((a, b) => b.absentDays - a.absentDays)
+      .slice(0, 6);
+
+    return {
+      total, active, inactive, external, recommended,
+      byRole, bySkill, skillUnknown,
+      totalVacation, totalSick, onVacation, onSick,
+      avgAvail, topAvailable, topAbsent, currentlyAssigned,
+    };
+  }, [staff, rooms]);
+
+  if (!staff) {
+    return (
+      <Card>
+        <div className="flex items-center gap-3 py-6 px-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: `${C.muted}1a` }}>
+            <Users size={16} color={C.muted} strokeWidth={2.2} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: C.text }}>Načítání dat…</p>
+            <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>
+              Načítá se z tabulky <code>staff</code>.
+            </p>
+          </div>
         </div>
-        <span className="text-[11px] font-bold tabular-nums w-6 text-right" style={{ color: meta.color }}>
-          {person.opsCount}
-        </span>
-      </div>
-    </motion.div>
-  );
-});
-TopPerformerRow.displayName = 'TopPerformerRow';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Skill matrix — heatmapa oddělení × role
-// ─────────────────────────────────────────────────────────────────────────────
-const SkillMatrix: React.FC<{
-  staff: StaffPerson[];
-  rooms: OperatingRoom[];
-}> = memo(({ staff, rooms }) => {
-  // Vygenerovat unikátní departementy z rooms
-  const departments = useMemo(() => {
-    const set = new Set<string>();
-    rooms.forEach(r => set.add(r.department));
-    return Array.from(set);
-  }, [rooms]);
-
-  const roles: Array<'doctor' | 'nurse' | 'anesth'> = ['doctor', 'nurse', 'anesth'];
-
-  // matrix[deptIdx][roleIdx] = počet personálu v dept × role
-  const matrix = useMemo(() => {
-    return departments.map(dept =>
-      roles.map(role =>
-        staff.filter(s => s.department === dept && s.role === role).length,
-      ),
+      </Card>
     );
-  }, [departments, roles, staff]);
+  }
 
-  const max = Math.max(1, ...matrix.flat());
+  if (!stats || stats.total === 0) {
+    return (
+      <Card>
+        <div className="flex items-center gap-3 py-6 px-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: `${C.yellow}1a` }}>
+            <AlertCircle size={16} color={C.yellow} strokeWidth={2.2} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: C.text }}>Žádný personál v databázi</p>
+            <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>
+              Tabulka <code>staff</code> je prázdná.
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  const activePct = stats.total > 0 ? (stats.active / stats.total) * 100 : 0;
+  const externalPct = stats.total > 0 ? (stats.external / stats.total) * 100 : 0;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr>
-            <th className="text-left text-[9px] uppercase tracking-wider font-bold pb-2 pr-2"
-              style={{ color: C.muted }}>Oddělení</th>
-            {roles.map(role => {
-              const meta = ROLE_META[role];
+    <div className="flex flex-col gap-4">
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <Card elevated icon={Users} accent={C.accent}
+        title="Personál"
+        subtitle={`Z databáze \`staff\`. Období zobrazení: ${periodLabel}`}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 items-center">
+          <div className="flex items-center gap-4 justify-center md:justify-start">
+            <ProgressRing
+              value={activePct}
+              size={120}
+              strokeWidth={10}
+              gradient
+              centerLabel={
+                <div className="flex flex-col items-center">
+                  <span className="text-2xl font-bold tabular-nums leading-none"
+                    style={{ color: activePct >= 80 ? C.green : activePct >= 60 ? C.yellow : C.red }}>
+                    {activePct.toFixed(0)}%
+                  </span>
+                  <span className="text-[8px] uppercase tracking-wider mt-1" style={{ color: C.muted }}>
+                    Aktivní
+                  </span>
+                </div>
+              }
+            />
+            <div className="flex flex-col gap-0.5">
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: C.muted }}>
+                Celkem zaměstnanců
+              </div>
+              <div className="text-3xl font-bold leading-none" style={{ color: C.textHi }}>
+                {formatNumber(stats.total)}
+              </div>
+              <div className="text-[10px] mt-1" style={{ color: C.muted }}>
+                <span style={{ color: C.green }} className="font-bold">{stats.active}</span> aktivních •
+                {' '}<span style={{ color: C.muted }} className="font-bold">{stats.inactive}</span> neaktivních
+              </div>
+              {stats.currentlyAssigned > 0 && (
+                <div className="text-[10px] mt-1">
+                  <span style={{ color: C.cyan }} className="font-bold">{stats.currentlyAssigned}</span>
+                  <span style={{ color: C.muted }}> právě přiřazených k živému sálu</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Role breakdown */}
+          <div className="flex flex-col gap-2">
+            {stats.byRole.slice(0, 4).map(({ role, meta, active, total }, i) => {
               const Icon = meta.icon;
+              const pct = total > 0 ? (active / total) * 100 : 0;
               return (
-                <th key={role} className="text-center text-[9px] uppercase tracking-wider font-bold pb-2 px-1">
-                  <div className="flex items-center justify-center gap-1">
-                    <Icon size={9} color={meta.color} strokeWidth={2.5} />
-                    <span style={{ color: meta.color }}>{meta.label}</span>
+                <motion.div
+                  key={role}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                  className="flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: `${meta.color}1a` }}>
+                    <Icon size={14} color={meta.color} strokeWidth={2.2} />
                   </div>
-                </th>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between text-[11px]">
+                      <span style={{ color: C.text }} className="font-medium">{meta.plural}</span>
+                      <span className="font-mono tabular-nums" style={{ color: C.muted }}>
+                        <span className="font-bold" style={{ color: meta.color }}>{active}</span>/{total}
+                      </span>
+                    </div>
+                    <div className="h-1 mt-1 rounded-full overflow-hidden" style={{ background: C.surface }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.5, delay: i * 0.05 + 0.1 }}
+                        style={{ height: '100%', background: meta.color }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
               );
             })}
-            <th className="text-right text-[9px] uppercase tracking-wider font-bold pb-2 pl-2"
-              style={{ color: C.muted }}>Celkem</th>
-          </tr>
-        </thead>
-        <tbody>
-          {departments.map((dept, di) => {
-            const rowSum = matrix[di].reduce((a, b) => a + b, 0);
-            return (
-              <tr key={dept} className="border-t" style={{ borderColor: C.border }}>
-                <td className="py-1.5 pr-2 text-[10px] font-semibold" style={{ color: C.textHi }}>
-                  {dept}
-                </td>
-                {matrix[di].map((cell, ri) => {
-                  const meta = ROLE_META[roles[ri]];
-                  const intensity = cell / max;
-                  const bg = cell === 0
-                    ? 'transparent'
-                    : `${meta.color}${Math.round(15 + intensity * 50).toString(16).padStart(2,'0')}`;
-                  return (
-                    <td key={ri} className="py-1 px-0.5">
-                      <div className="rounded h-7 flex items-center justify-center font-bold text-[11px] tabular-nums"
-                        style={{
-                          background: bg,
-                          color: cell === 0 ? C.faint : meta.color,
-                          border: cell === 0 ? `1px dashed ${C.border}` : `1px solid ${meta.color}30`,
-                        }}>
-                        {cell || '—'}
-                      </div>
-                    </td>
-                  );
-                })}
-                <td className="py-1.5 pl-2 text-right text-[11px] font-bold tabular-nums"
-                  style={{ color: C.textHi }}>{rowSum}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-});
-SkillMatrix.displayName = 'SkillMatrix';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Workload distribution — sály per role v sloupci
-// ─────────────────────────────────────────────────────────────────────────────
-const WorkloadColumn: React.FC<{
-  role: 'doctor' | 'nurse' | 'anesth';
-  staff: StaffPerson[];
-}> = memo(({ role, staff }) => {
-  const meta = ROLE_META[role];
-  const Icon = meta.icon;
-  const filtered = staff.filter(s => s.role === role);
-  // Bucket podle počtu sálů
-  const single = filtered.filter(s => s.rooms.length === 1).length;
-  const multi  = filtered.filter(s => s.rooms.length >= 2).length;
-  const total  = filtered.length;
-  // Total ops
-  const totalOps = filtered.reduce((s, p) => s + p.opsCount, 0);
-  const avgOps   = total > 0 ? totalOps / total : 0;
-
-  return (
-    <Card elevated accent={meta.color}>
-      <div className="flex items-center gap-2 mb-3">
-        <IconBubble icon={Icon} color={meta.color} size={32} />
-        <div>
-          <h3 className="text-[10px] uppercase tracking-wider font-bold" style={{ color: meta.color }}>
-            {meta.plural}
-          </h3>
-          <p className="text-2xl font-bold leading-none mt-0.5" style={{ color: C.textHi }}>
-            {total}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="rounded-md p-2" style={{ background: C.surface }}>
-          <p className="text-[9px] uppercase tracking-wider" style={{ color: C.muted }}>Operace</p>
-          <p className="text-base font-bold tabular-nums" style={{ color: meta.color }}>{totalOps}</p>
-        </div>
-        <div className="rounded-md p-2" style={{ background: C.surface }}>
-          <p className="text-[9px] uppercase tracking-wider" style={{ color: C.muted }}>Ø na osobu</p>
-          <p className="text-base font-bold tabular-nums" style={{ color: C.textHi }}>{avgOps.toFixed(1)}</p>
-        </div>
-      </div>
-
-      {/* Single vs multi-sálové bar */}
-      <div className="space-y-1.5">
-        <div>
-          <div className="flex items-baseline justify-between text-[9px] mb-0.5">
-            <span style={{ color: C.muted }}>Na 1 sále</span>
-            <span style={{ color: C.text }} className="tabular-nums">{single}</span>
           </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: C.ghost }}>
-            <motion.div className="h-full rounded-full"
-              style={{ background: meta.color }}
-              initial={{ width: 0 }}
-              animate={{ width: total > 0 ? `${(single / total) * 100}%` : '0%' }}
-              transition={{ duration: 0.6 }}
+        </div>
+      </Card>
+
+      {/* ── KPI strip ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KPIBlock label="Aktivní" value={stats.active} icon={UserCheck} color={C.green}
+          sublabel={`${activePct.toFixed(0)}% z celkového počtu`} />
+        <KPIBlock label="Externisté" value={stats.external} icon={Briefcase} color={C.orange}
+          sublabel={`${externalPct.toFixed(0)}% z celku`} />
+        <KPIBlock label="Doporučení" value={stats.recommended} icon={Award} color={C.purple}
+          sublabel="is_recommended = true" />
+        <KPIBlock label="Průměrná dostupnost" value={stats.avgAvail}
+          format={(v) => v.toFixed(0)} unit="%"
+          icon={ShieldCheck} color={C.cyan}
+          sublabel="z pole `availability`" />
+      </div>
+
+      {/* ── Skill matrix + Role distribution ────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card icon={GraduationCap} accent={C.purple}
+          title="Skill level distribuce"
+          subtitle="Z pole `skill_level`">
+          <div className="flex flex-col gap-2.5 mt-1">
+            {stats.bySkill.map((sl, i) => (
+              <div key={sl.key} className="flex flex-col gap-1">
+                <div className="flex items-baseline justify-between text-[11px]">
+                  <span style={{ color: C.text }} className="font-medium">{sl.label}</span>
+                  <span className="font-mono tabular-nums" style={{ color: C.muted }}>
+                    <span className="font-bold" style={{ color: sl.color }}>{sl.count}</span>
+                    <span className="ml-1.5 text-[10px]">({sl.pct.toFixed(0)}%)</span>
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: C.surface }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${sl.pct}%` }}
+                    transition={{ duration: 0.6, delay: i * 0.05 }}
+                    style={{ height: '100%', background: sl.color }}
+                  />
+                </div>
+              </div>
+            ))}
+            {stats.skillUnknown > 0 && (
+              <div className="text-[10px] mt-1 pt-2" style={{ color: C.muted, borderTop: `1px solid ${C.border}` }}>
+                {stats.skillUnknown}× bez vyplněného skill_level
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card icon={Users} accent={C.cyan}
+          title="Po roli"
+          subtitle="Aktivní zaměstnanci podle role">
+          {stats.byRole.length > 0 ? (
+            <CategoryBarList
+              items={stats.byRole.map(r => ({
+                label: r.meta.plural,
+                value: r.active,
+                color: r.meta.color,
+                sublabel: `z ${r.total} • avail ${r.avgAvail.toFixed(0)}%`,
+              }))}
+              formatValue={(v) => `${v}×`}
             />
-          </div>
-        </div>
-        <div>
-          <div className="flex items-baseline justify-between text-[9px] mb-0.5">
-            <span style={{ color: C.muted }}>Multi-sálové</span>
-            <span style={{ color: C.text }} className="tabular-nums">{multi}</span>
-          </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: C.ghost }}>
-            <motion.div className="h-full rounded-full"
-              style={{ background: `${meta.color}80` }}
-              initial={{ width: 0 }}
-              animate={{ width: total > 0 ? `${(multi / total) * 100}%` : '0%' }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            />
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-});
-WorkloadColumn.displayName = 'WorkloadColumn';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Coverage panel — kdo má volno, kde chybí pokrytí
-// ─────────────────────────────────────────────────────────────────────────────
-const CoveragePanel: React.FC<{ rooms: OperatingRoom[] }> = memo(({ rooms }) => {
-  const todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-  const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
-  const todayKey = dayKeys[todayIdx];
-
-  const stats = useMemo(() => {
-    const open = rooms.filter(r => r.weeklySchedule?.[todayKey]?.enabled !== false);
-    const closed = rooms.length - open.length;
-    const noDoctor = open.filter(r => !r.staff.doctor?.name).length;
-    const noNurse  = open.filter(r => !r.staff.nurse?.name).length;
-    const noAnesth = open.filter(r => !r.staff.anesthesiologist?.name).length;
-    const fullyStaffed = open.filter(r =>
-      r.staff.doctor?.name && r.staff.nurse?.name && r.staff.anesthesiologist?.name,
-    ).length;
-    return { open: open.length, closed, noDoctor, noNurse, noAnesth, fullyStaffed };
-  }, [rooms, todayKey]);
-
-  const items = [
-    { label: 'Otevřené sály dnes', value: stats.open, color: C.green, icon: Activity },
-    { label: 'Plně obsazené', value: stats.fullyStaffed, color: C.accent, icon: ShieldCheck },
-    { label: 'Chybí lékař', value: stats.noDoctor, color: stats.noDoctor > 0 ? C.red : C.muted, icon: AlertCircle },
-    { label: 'Chybí sestra', value: stats.noNurse, color: stats.noNurse > 0 ? C.orange : C.muted, icon: AlertCircle },
-    { label: 'Chybí anesteziolog', value: stats.noAnesth, color: stats.noAnesth > 0 ? C.yellow : C.muted, icon: AlertCircle },
-    { label: 'Sály mimo provoz', value: stats.closed, color: C.muted, icon: BedDouble },
-  ];
-
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-      {items.map((item, i) => {
-        const Icon = item.icon;
-        return (
-          <motion.div key={item.label}
-            className="rounded-lg p-2.5 flex items-center gap-2.5"
-            style={{ background: C.surface, border: `1px solid ${C.border}` }}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}>
-            <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
-              style={{ background: `${item.color}15` }}>
-              <Icon size={14} color={item.color} strokeWidth={2.2} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[9px] uppercase tracking-wider truncate" style={{ color: C.muted }}>
-                {item.label}
-              </p>
-              <p className="text-lg font-bold leading-none tabular-nums mt-0.5" style={{ color: item.color }}>
-                {item.value}
-              </p>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-});
-CoveragePanel.displayName = 'CoveragePanel';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main StaffTab
-// ─────────────────────────────────────────────────────────────────────────────
-export const StaffTab: React.FC<StaffTabProps> = ({ rooms, periodLabel, doctorOps, nurseOps }) => {
-  const staff = useMemo(() => aggregateStaff(rooms, doctorOps, nurseOps), [rooms, doctorOps, nurseOps]);
-
-  const totals = useMemo(() => {
-    const doctors = staff.filter(s => s.role === 'doctor').length;
-    const nurses  = staff.filter(s => s.role === 'nurse').length;
-    const anesth  = staff.filter(s => s.role === 'anesth').length;
-    return { all: staff.length, doctors, nurses, anesth };
-  }, [staff]);
-
-  // PoP delty (deterministic mock)
-  const allPrev    = seededPreviousValue(`staff-all-${periodLabel}`, totals.all, 0.18);
-  const doctorPrev = seededPreviousValue(`staff-d-${periodLabel}`, totals.doctors, 0.20);
-  const nursePrev  = seededPreviousValue(`staff-n-${periodLabel}`, totals.nurses, 0.18);
-  const anesthPrev = seededPreviousValue(`staff-a-${periodLabel}`, totals.anesth, 0.22);
-
-  // Trendy
-  const allTrend    = useMemo(() => generateSeededTrend(`s-all-${periodLabel}`, 12, totals.all), [totals.all, periodLabel]);
-  const doctorTrend = useMemo(() => generateSeededTrend(`s-d-${periodLabel}`, 12, totals.doctors), [totals.doctors, periodLabel]);
-  const nurseTrend  = useMemo(() => generateSeededTrend(`s-n-${periodLabel}`, 12, totals.nurses), [totals.nurses, periodLabel]);
-  const anesthTrend = useMemo(() => generateSeededTrend(`s-a-${periodLabel}`, 12, totals.anesth), [totals.anesth, periodLabel]);
-
-  // Top performers (top 8 doctors, top 8 nurses)
-  const topDoctors = useMemo(
-    () => staff.filter(s => s.role === 'doctor').sort((a, b) => b.opsCount - a.opsCount).slice(0, 8),
-    [staff],
-  );
-  const topNurses = useMemo(
-    () => staff.filter(s => s.role === 'nurse').sort((a, b) => b.opsCount - a.opsCount).slice(0, 8),
-    [staff],
-  );
-  const maxDoctorOps = Math.max(1, ...topDoctors.map(p => p.opsCount));
-  const maxNurseOps  = Math.max(1, ...topNurses.map(p => p.opsCount));
-
-  return (
-    <div className="space-y-5">
-      {/* ── KPI strip ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <KPIBlock label="Aktivní personál" value={totals.all}
-          delta={computeDelta(totals.all, allPrev)}
-          trend={allTrend} accent={C.accent} icon={Users}
-          sublabel="napříč všemi sály" />
-        <KPIBlock label="Lékaři" value={totals.doctors}
-          delta={computeDelta(totals.doctors, doctorPrev)}
-          trend={doctorTrend} accent={C.green} icon={Stethoscope}
-          sublabel="primáři & operatéři" />
-        <KPIBlock label="Sestry" value={totals.nurses}
-          delta={computeDelta(totals.nurses, nursePrev)}
-          trend={nurseTrend} accent={C.accent} icon={UserCircle2}
-          sublabel="instrumentářky & oběhačky" />
-        <KPIBlock label="Anesteziologové" value={totals.anesth}
-          delta={computeDelta(totals.anesth, anesthPrev)}
-          trend={anesthTrend} accent={C.purple} icon={ShieldCheck}
-          sublabel="aktuální směna" />
-      </div>
-
-      {/* ── Workload distribution per role ──────────────────────────── */}
-      <div>
-        <SectionHeader
-          title="Rozložení personálu"
-          subtitle="Per-role distribuce, single vs multi-sálové vytížení a průměr operací na osobu"
-          accent={C.accent}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-          <WorkloadColumn role="doctor" staff={staff} />
-          <WorkloadColumn role="nurse"  staff={staff} />
-          <WorkloadColumn role="anesth" staff={staff} />
-        </div>
-      </div>
-
-      {/* ── Top performers ──────────────────────────────────────────── */}
-      <div>
-        <SectionHeader
-          title="Top Performers"
-          subtitle="Žebříček podle počtu provedených výkonů v aktuálním období"
-          accent={C.yellow}
-        />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
-          <Card title="Lékaři — top 8" accent={C.green} elevated
-            action={<Award size={13} color={C.yellow} />}>
-            <div className="space-y-0.5">
-              {topDoctors.length > 0 ? (
-                topDoctors.map((p, i) => (
-                  <TopPerformerRow key={p.name} person={p} index={i} maxOps={maxDoctorOps} />
-                ))
-              ) : (
-                <p className="text-[11px] text-center py-4" style={{ color: C.muted }}>
-                  Žádná data o lékařích.
-                </p>
-              )}
-            </div>
-          </Card>
-          <Card title="Sestry — top 8" accent={C.accent} elevated
-            action={<Award size={13} color={C.yellow} />}>
-            <div className="space-y-0.5">
-              {topNurses.length > 0 ? (
-                topNurses.map((p, i) => (
-                  <TopPerformerRow key={p.name} person={p} index={i} maxOps={maxNurseOps} />
-                ))
-              ) : (
-                <p className="text-[11px] text-center py-4" style={{ color: C.muted }}>
-                  Žádná data o sestrách.
-                </p>
-              )}
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      {/* ── Skill matrix ────────────────────────────────────────────── */}
-      <div>
-        <SectionHeader
-          title="Skill Matrix — pokrytí oddělení"
-          subtitle="Počet personálu schopného pracovat v daném oddělení podle role"
-          accent={C.purple}
-        />
-        <Card elevated noPadding>
-          <div className="p-4">
-            <SkillMatrix staff={staff} rooms={rooms} />
-          </div>
+          ) : (
+            <div className="text-xs text-center py-4" style={{ color: C.muted }}>Žádné role</div>
+          )}
         </Card>
       </div>
 
-      {/* ── Coverage panel ──────────────────────────────────────────── */}
-      <div>
-        <SectionHeader
-          title="Pokrytí směny — dnes"
-          subtitle="Stav obsazení sálů aktuální směnou s identifikací mezer v personálu"
-          accent={C.orange}
+      {/* ── Vacation & sick leave ─────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <MetricTile
+          label="Aktuálně na dovolené"
+          value={stats.onVacation}
+          sublabel={`${stats.totalVacation} dní celkem`}
+          icon={Coffee}
+          color={C.cyan}
         />
-        <CoveragePanel rooms={rooms} />
+        <MetricTile
+          label="Pracovní neschopnost"
+          value={stats.onSick}
+          sublabel={`${stats.totalSick} dní celkem`}
+          icon={UserX}
+          color={C.orange}
+        />
+        <MetricTile
+          label="Externí pracovníci"
+          value={stats.external}
+          sublabel="is_external = true"
+          icon={Briefcase}
+          color={C.yellow}
+        />
+        <MetricTile
+          label="Doporučovaní"
+          value={stats.recommended}
+          sublabel="is_recommended = true"
+          icon={Award}
+          color={C.purple}
+        />
       </div>
+
+      {/* ── Top dostupní + Top absentující ──────────────────���───── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card icon={UserCheck} accent={C.green}
+          title="Top dostupní (aktivní)"
+          subtitle="Dle pole `availability` (z aktivních zaměstnanců)">
+          {stats.topAvailable.length > 0 ? (
+            <div className="flex flex-col">
+              {stats.topAvailable.map((s, i) => {
+                const meta = getRoleMeta(s.role);
+                const Icon = meta.icon;
+                return (
+                  <motion.div key={s.id}
+                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: i * 0.03 }}
+                    className="flex items-center gap-3 py-2"
+                    style={{ borderBottom: i < stats.topAvailable.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                    <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                      style={{ background: `${meta.color}1a` }}>
+                      <Icon size={12} color={meta.color} strokeWidth={2.2} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-medium truncate" style={{ color: C.text }}>
+                        {s.name}
+                      </div>
+                      <div className="text-[9px]" style={{ color: C.muted }}>
+                        {meta.label}
+                        {s.skill_level && ` • ${s.skill_level}`}
+                        {s.is_external && ' • externí'}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[12px] font-mono font-bold tabular-nums"
+                        style={{ color: (s.availability ?? 0) >= 80 ? C.green : C.yellow }}>
+                        {s.availability ?? 0}%
+                      </div>
+                      <div className="text-[8px]" style={{ color: C.muted }}>availability</div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-xs text-center py-4" style={{ color: C.muted }}>
+              Žádné záznamy s availability
+            </div>
+          )}
+        </Card>
+
+        <Card icon={Coffee} accent={C.orange}
+          title="Top absencí"
+          subtitle="Součet vacation_days + sick_leave_days">
+          {stats.topAbsent.length > 0 ? (
+            <div className="flex flex-col">
+              {stats.topAbsent.map((s, i) => {
+                const meta = getRoleMeta(s.role);
+                const Icon = meta.icon;
+                return (
+                  <motion.div key={s.id}
+                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: i * 0.03 }}
+                    className="flex items-center gap-3 py-2"
+                    style={{ borderBottom: i < stats.topAbsent.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                    <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                      style={{ background: `${meta.color}1a` }}>
+                      <Icon size={12} color={meta.color} strokeWidth={2.2} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-medium truncate" style={{ color: C.text }}>
+                        {s.name}
+                      </div>
+                      <div className="text-[9px]" style={{ color: C.muted }}>
+                        {meta.label}
+                        {(s.vacation_days ?? 0) > 0 && ` • ${s.vacation_days}d dovolená`}
+                        {(s.sick_leave_days ?? 0) > 0 && ` • ${s.sick_leave_days}d nemocenská`}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[12px] font-mono font-bold tabular-nums"
+                        style={{ color: s.absentDays > 14 ? C.red : C.orange }}>
+                        {s.absentDays}d
+                      </div>
+                      <div className="text-[8px]" style={{ color: C.muted }}>celkem</div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 py-3 text-[11px]" style={{ color: C.green }}>
+              <UserCheck size={14} />
+              Nikdo aktuálně neeviduje absence
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.4 }}
+        className="text-[10px] text-center" style={{ color: C.faint }}>
+        Veškeré metriky odvozeny z tabulky <code style={{ color: C.muted }}>public.staff</code> v Supabase DB.
+        Údaje o produktivitě, odpracovaných hodinách a tréninku nejsou v aktuálním schématu k dispozici.
+      </motion.div>
     </div>
   );
-};
+});
+StaffTab.displayName = 'StaffTab';
