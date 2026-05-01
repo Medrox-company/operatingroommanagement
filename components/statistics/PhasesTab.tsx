@@ -214,8 +214,11 @@ const TimelineGantt = ({
                 <div
                   className="absolute inset-0.5 rounded-lg flex items-center justify-center transition-all group-hover:scale-[1.02]"
                   style={{
-                    background: `linear-gradient(135deg, ${step.color} 0%, ${step.color}cc 100%)`,
-                    boxShadow: `0 4px 20px ${step.color}40`,
+                    // Solid accent_color — must match the current-status badge color shown on RoomCard.
+                    // Previously a 135° gradient dimmed the bottom-right to 80% opacity, so the same
+                    // workflow phase looked visibly different from the room's actual status pill.
+                    background: step.color,
+                    boxShadow: `0 4px 16px ${step.color}55`,
                   }}
                 >
                   {widthPct > 8 && (
@@ -541,7 +544,8 @@ export function PhasesTab({
                     <Tooltip {...TIP} formatter={(v: number) => [`${Math.round(v)} min`, 'Trvání']} />
                     <Bar dataKey="duration" radius={[0, 6, 6, 0]}>
                       {barChartData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} opacity={i === longestPhaseIdx ? 1 : 0.75} />
+                        // Solid accent_color at 100% — same color the room shows when in this phase.
+                        <Cell key={i} fill={entry.color} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -568,7 +572,7 @@ export function PhasesTab({
                         strokeWidth={0}
                       >
                         {pieData.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} opacity={0.9} />
+                          <Cell key={i} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip {...TIP} formatter={(v: number) => [`${v}%`, 'Podíl']} />
@@ -648,7 +652,7 @@ export function PhasesTab({
               <Tooltip {...TIP} formatter={(v: number) => [`${v} sálů`, 'Počet']} />
               <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                 {workflowSteps.map((step, i) => (
-                  <Cell key={i} fill={step.color} opacity={0.85} />
+                  <Cell key={i} fill={step.color} />
                 ))}
               </Bar>
             </BarChart>
