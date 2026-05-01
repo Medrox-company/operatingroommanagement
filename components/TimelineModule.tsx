@@ -1100,11 +1100,17 @@ style={{
                               {!isContinuingOp && operation.statusHistory && operation.statusHistory.length > 0 && (
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
                                   {(() => {
-                                    // Build color lookup from activeStatuses
-                                    // Použ��váme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                                    // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
+                                    // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
+                                    // neaktivních statusů) — viz RoomDetail.changeStep → App.updateRoomStep.
+                                    // DB `sort_order` má mezery (např. neaktivní "Začátek anestezie" má
+                                    // sort_order=2, takže "Chirurgický výkon" je sort_order=3 ale POZICE 2).
+                                    // Proto MUSÍME indexovat podle pozice v poli, NE podle order_index,
+                                    // jinak se barvy posunou a Ukončení výkonu se vykreslí barvou
+                                    // Chirurgického výkonu apod.
                                     const stepColorMap: Record<number, string> = {};
-                                    activeStatuses.forEach((s) => {
-                                      stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
+                                    activeStatuses.forEach((s, idx) => {
+                                      stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                                     });
 
                                     const opStart = new Date(operation.startedAt).getTime();
@@ -1121,12 +1127,13 @@ style={{
                                       const segWidthPct = (segDuration / opDuration) * 100;
                                       const segLeftPct = ((segStart - opStart) / opDuration) * 100;
                                       if (segWidthPct <= 0) return undefined;
-                                      // Preferujeme AKTUÁLNÍ barvu ze Statusů (live z DB),
-                                      // aby byla časová osa vždy konzistentní s modulem Statusy.
-                                      // entry.color je jen fallback pro stavy, které už v DB neexistují.
-                                      const phaseColor = stepColorMap[entry.stepIndex]
+                                      // AKTUÁLNÍ barva z DB má VŽDY přednost (live z "Správa statusů").
+                                      // entry.color je jen fallback pro stavy, jejichž status už v DB
+                                      // neexistuje (např. byl smazán). STEP_INDEX_COLORS NEPOUŽÍVÁME —
+                                      // hardkódovaná paleta by mohla zase posunout barvy mimo realitu DB.
+                                      const phaseColor =
+                                        stepColorMap[entry.stepIndex]
                                         || entry.color
-                                        || STEP_INDEX_COLORS[entry.stepIndex]
                                         || '#6b7280';
 
                                       return (
@@ -1197,8 +1204,10 @@ style={{
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
-                            background: `linear-gradient(90deg, ${C.green}35 0%, ${C.green}20 100%)`,
-                            borderRight: `2px solid ${C.green}`,
+                            // Použijeme aktuální barvu statusu sálu (accent_color z DB),
+                            // aby celá lišta pokračujícího výkonu odpovídala statusu na řádku.
+                            background: `linear-gradient(90deg, ${stepColor}35 0%, ${stepColor}20 100%)`,
+                            borderRight: `2px solid ${stepColor}`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2)`,
                             zIndex: 1,
                           }}
@@ -1206,7 +1215,7 @@ style={{
                           <span className="text-[11px] font-semibold text-white uppercase tracking-[0.15em] truncate">
                             POKRAČUJÍCÍ VÝKON
                           </span>
-                          <span className="text-[10px] font-bold ml-2 whitespace-nowrap" style={{ color: C.green }}>
+                          <span className="text-[10px] font-bold ml-2 whitespace-nowrap" style={{ color: stepColor }}>
                             do {endHours}:{endMinutes}
                           </span>
                         </div>
@@ -1246,11 +1255,13 @@ style={{
                             const effectiveEndTime = Math.max(estimatedEndTime, now);
                             const totalDuration = Math.max(1, effectiveEndTime - operationStart);
 
-                            // Build color lookup from activeStatuses (database-driven)
-                            // Používáme order_index (tj. sort_order) jako klíč, ne pozici v poli
+                            // KLÍČOVÉ: stejné mapování jako u dokončených operací výše —
+                            // `stepIndex` v room_status_history je POZICE v poli `activeDbStatuses`,
+                            // NE order_index z DB. Indexujeme tedy podle pozice (idx), aby barvy
+                            // odpovídaly přesně statusu, který uživatel vybral v RoomDetailu.
                             const stepColorMap: Record<number, string> = {};
-                            activeStatuses.forEach((s) => {
-                              stepColorMap[s.order_index] = s.accent_color || s.color || STEP_INDEX_COLORS[s.order_index] || '#6b7280';
+                            activeStatuses.forEach((s, idx) => {
+                              stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                             });
 
                             // If we have real status history → render exact segments
@@ -1270,11 +1281,13 @@ style={{
                                 const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
                                 if (segWidthPct <= 0) return null;
                                 
-                                // Preferujeme AKTUÁLNÍ barvu ze Statusů (live z DB),
-                                // aby byla časová osa vždy konzistentní s modulem Statusy.
-                                const phaseColor = stepColorMap[entry.stepIndex]
+                                // AKTUÁLNÍ barva z DB má VŽDY přednost (live z "Správa statusů").
+                                // stepColorMap je indexována podle pozice v `activeStatuses` —
+                                // sjednoceno s tím, jak App.tsx ukládá `stepIndex` do historie.
+                                // entry.color je jen fallback pro statusy, které byly smazány.
+                                const phaseColor =
+                                  stepColorMap[entry.stepIndex]
                                   || entry.color
-                                  || STEP_INDEX_COLORS[entry.stepIndex]
                                   || '#6b7280';
 
                                 // For current segment, calculate progress within the segment
@@ -1289,27 +1302,32 @@ style={{
                                     style={{
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
-                                      // Zvýšený kontrast aktivní fáze — lépe vystoupí z pozadí
-                                      // a aktuální status zůstává čitelný i bez tučného textu.
+                                      // OPRAVA priority barev:
+                                      // Aktuální segment musí mít plnou barvu svého statusu — pokud uživatel
+                                      // zvolí "Ukončení výkonu", celá oblast od posledního přepnutí do
+                                      // předpokládaného konce výkonu musí být zřetelně v jeho barvě.
+                                      // Minulé segmenty jsou lehce ztlumené, aby aktuální status vizuálně
+                                      // dominoval — opačně, než tomu bylo dříve.
                                       background: isCurrentSeg
-                                        ? `linear-gradient(90deg, ${phaseColor}66 0%, ${phaseColor}3a 100%)`
-                                        : `linear-gradient(90deg, ${phaseColor}dd 0%, ${phaseColor}aa 100%)`,
-                                      boxShadow: isCurrentSeg 
-                                        ? `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.22), 0 0 0 1px ${phaseColor}33`
-                                        : `inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.18)`,
+                                        ? `linear-gradient(90deg, ${phaseColor} 0%, ${phaseColor}cc 100%)`
+                                        : `linear-gradient(90deg, ${phaseColor}aa 0%, ${phaseColor}77 100%)`,
+                                      boxShadow: isCurrentSeg
+                                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.20), 0 0 12px ${phaseColor}55`
+                                        : `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.18)`,
                                     }}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.04 * idx }}
                                   >
-                                    {/* For current segment: show completed portion with full color and glow */}
-                                    {isCurrentSeg && (
-                                      <motion.div 
-                                        className="absolute top-0 bottom-0 left-0 transition-all duration-300"
+                                    {/* Pro aktuální segment: jemný highlight overlay přes již uplynulou
+                                       část segmentu. Slouží jen jako vizuální dotek pro indikaci postupu —
+                                       základní barva je už nastavena na celém segmentu výše. */}
+                                    {isCurrentSeg && progressWithinSeg > 0 && (
+                                      <motion.div
+                                        className="absolute top-0 bottom-0 left-0 transition-all duration-300 pointer-events-none"
                                         style={{
                                           width: `${progressWithinSeg}%`,
-                                          background: `linear-gradient(90deg, ${phaseColor} 0%, ${phaseColor}e0 100%)`,
-                                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 8px ${phaseColor}50`,
+                                          background: `linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 100%)`,
                                         }}
                                       />
                                     )}
@@ -1451,10 +1469,15 @@ style={{
                               )}
                               {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                                 <div
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white/90 backdrop-blur-md"
-                                  style={{ 
-                                    background: C.glass,
-                                    border: `1px solid ${C.border}`,
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md"
+                                  style={{
+                                    // Badge předpokládaného zbývajícího času — laděný do barvy
+                                    // aktuálního statusu sálu, aby vizuálně tvořil pár se zbytkem
+                                    // řádku a okamžitě signalizoval, ke které fázi se vztahuje.
+                                    background: `${stepColor}26`,
+                                    border: `1px solid ${stepColor}66`,
+                                    color: '#ffffff',
+                                    boxShadow: `0 0 8px ${stepColor}33`,
                                   }}
                                 >
                                   {remainingTime}
@@ -1504,21 +1527,24 @@ style={{
                       const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
                       const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
+                      // Značka konce pracovní doby sálu (working-hours hranice).
+                      // Barva NEZÁVISÍ na aktuálním statusu — má vlastní oranžovou identitu,
+                      // aby byla na časové ose okamžitě rozpoznatelná napříč sály a statusy.
                       return (
-                        <div 
+                        <div
                           className="absolute top-0 bottom-0 w-0.5 z-20"
-                          style={{ 
+                          style={{
                             left: `${endPercent}%`,
-                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)'
+                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)',
                           }}
                         >
                           {/* End time label */}
-                          <div 
+                          <div
                             className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
-                            style={{ 
+                            style={{
                               background: 'rgba(249, 115, 22, 0.2)',
                               border: '1px solid rgba(249, 115, 22, 0.4)',
-                              color: '#F97316'
+                              color: '#F97316',
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
