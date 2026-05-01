@@ -162,84 +162,293 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               transition={{ duration: 0.3, ease: 'easeOut' }}
               className="w-full max-w-2xl text-center"
             >
-              {/* Ghost watermark */}
-              <div
+              {/* ═══════════ ANIMATED BACKGROUND ELEMENTS ═══════════ */}
+              
+              {/* Floating particles */}
+              <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(20)].map((_, i) => (
+                  <motion.div
+                    key={`particle-${i}`}
+                    className="absolute rounded-full"
+                    style={{
+                      width: Math.random() * 4 + 2,
+                      height: Math.random() * 4 + 2,
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      background: i % 3 === 0 ? C.cyan : i % 3 === 1 ? C.yellow : 'rgba(255,255,255,0.3)',
+                      filter: 'blur(0.5px)',
+                    }}
+                    animate={{
+                      y: [0, -30, 0],
+                      x: [0, Math.random() * 20 - 10, 0],
+                      opacity: [0.2, 0.6, 0.2],
+                      scale: [1, 1.2, 1],
+                    }}
+                    transition={{
+                      duration: 4 + Math.random() * 4,
+                      repeat: Infinity,
+                      delay: Math.random() * 3,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Animated pulse rings */}
+              <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={`ring-${i}`}
+                    className="absolute rounded-full"
+                    style={{
+                      width: 300 + i * 150,
+                      height: 300 + i * 150,
+                      border: `1px solid ${C.cyan}`,
+                      opacity: 0,
+                    }}
+                    animate={{
+                      scale: [0.8, 1.5],
+                      opacity: [0.3, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      delay: i * 1.3,
+                      ease: 'easeOut',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Ghost watermark with glow animation */}
+              <motion.div
                 aria-hidden
                 className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+                animate={{
+                  opacity: [0.015, 0.03, 0.015],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
               >
                 <span
                   className="font-black tracking-tighter leading-none"
                   style={{
                     fontSize: 'clamp(12rem, 32vw, 22rem)',
-                    color: 'rgba(255,255,255,0.015)',
+                    color: 'rgba(255,255,255,1)',
                   }}
                 >
                   ORM
                 </span>
+              </motion.div>
+
+              {/* ═══════════ ANIMATED EKG/PULSE LINE ═══════════ */}
+              <div className="relative mb-8">
+                <svg
+                  viewBox="0 0 400 60"
+                  className="w-full max-w-md mx-auto h-12 overflow-visible"
+                  style={{ filter: `drop-shadow(0 0 8px ${C.cyan}80)` }}
+                >
+                  <defs>
+                    <linearGradient id="pulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={C.cyan} stopOpacity="0" />
+                      <stop offset="50%" stopColor={C.cyan} stopOpacity="1" />
+                      <stop offset="100%" stopColor={C.cyan} stopOpacity="0" />
+                    </linearGradient>
+                    <clipPath id="pulseClip">
+                      <motion.rect
+                        x="-100"
+                        y="0"
+                        width="200"
+                        height="60"
+                        animate={{ x: [-100, 500] }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: 'linear',
+                        }}
+                      />
+                    </clipPath>
+                  </defs>
+                  {/* Background line */}
+                  <path
+                    d="M 0 30 L 80 30 L 100 30 L 120 10 L 140 50 L 160 20 L 180 40 L 200 30 L 220 30 L 240 30 L 260 5 L 280 55 L 300 30 L 320 30 L 400 30"
+                    fill="none"
+                    stroke="rgba(6, 182, 212, 0.15)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {/* Animated pulse */}
+                  <motion.path
+                    d="M 0 30 L 80 30 L 100 30 L 120 10 L 140 50 L 160 20 L 180 40 L 200 30 L 220 30 L 240 30 L 260 5 L 280 55 L 300 30 L 320 30 L 400 30"
+                    fill="none"
+                    stroke="url(#pulseGradient)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    clipPath="url(#pulseClip)"
+                  />
+                  {/* Glowing dot */}
+                  <motion.circle
+                    r="4"
+                    fill={C.cyan}
+                    style={{ filter: `drop-shadow(0 0 6px ${C.cyan})` }}
+                    animate={{
+                      cx: [0, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 400],
+                      cy: [30, 30, 30, 10, 50, 20, 40, 30, 30, 30, 5, 55, 30, 30, 30],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                  />
+                </svg>
               </div>
 
-              {/* Title */}
+              {/* ═══════════ ANIMATED TITLE ═══════════ */}
               <motion.h1
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05, duration: 0.35 }}
                 className="relative font-bold tracking-tight leading-[0.95] text-balance"
                 style={{ fontSize: 'clamp(1.875rem, 7vw, 4.5rem)' }}
               >
-                <span className="block text-white break-words">
-                  OPERATINGROOM
+                {/* OPERATINGROOM — staggered letter animation */}
+                <span className="block text-white break-words overflow-hidden">
+                  {'OPERATINGROOM'.split('').map((letter, i) => (
+                    <motion.span
+                      key={`letter-${i}`}
+                      className="inline-block"
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        delay: 0.05 + i * 0.04,
+                        duration: 0.5,
+                        ease: [0.215, 0.61, 0.355, 1],
+                      }}
+                    >
+                      {letter}
+                    </motion.span>
+                  ))}
                 </span>
-                <span
-                  className="block break-words"
+                {/* MANAGEMENT SYSTEM — with shimmer effect */}
+                <motion.span
+                  className="block break-words relative"
                   style={{ color: '#ffb800', fontSize: '56px' }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
                 >
-                  MANAGEMENT SYSTEM
-                </span>
+                  <span className="relative">
+                    MANAGEMENT SYSTEM
+                    {/* Shimmer overlay */}
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                      style={{ mixBlendMode: 'overlay' }}
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatDelay: 3,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                  </span>
+                </motion.span>
               </motion.h1>
 
-              {/* Subtitle */}
+              {/* Subtitle with typewriter effect */}
               <motion.p
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12, duration: 0.3 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9, duration: 0.5 }}
                 className="relative mt-6 text-sm md:text-base text-white/50 max-w-md mx-auto leading-relaxed"
               >
-                Systém pro správu a monitoring operačních sálů
+                <motion.span
+                  initial={{ width: 0 }}
+                  animate={{ width: '100%' }}
+                  transition={{ delay: 1, duration: 1, ease: 'easeOut' }}
+                  className="inline-block overflow-hidden whitespace-nowrap"
+                >
+                  Systém pro správu a monitoring operačních sálů
+                </motion.span>
               </motion.p>
 
-              {/* CTA buttons */}
+              {/* CTA buttons with breathing glow */}
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
+                transition={{ delay: 1.2, duration: 0.4 }}
                 className="relative mt-10 flex items-center justify-center gap-3 flex-wrap"
               >
-                <button
+                {/* Primary button with animated glow */}
+                <motion.button
                   onClick={() => goToScreen('form')}
-                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-semibold text-[12px] tracking-[0.15em] uppercase transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  className="group relative inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-semibold text-[12px] tracking-[0.15em] uppercase transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                   style={{
                     background: C.yellow,
                     color: '#0a0f1a',
-                    boxShadow: `0 12px 32px -8px ${C.yellow}60`,
                   }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <LogIn className="w-4 h-4" strokeWidth={2.5} />
-                  <span>Přihlášení</span>
-                  <ChevronRight className="w-4 h-4 -ml-1 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
-                </button>
+                  {/* Breathing glow */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl pointer-events-none"
+                    style={{ background: C.yellow }}
+                    animate={{
+                      boxShadow: [
+                        `0 8px 24px -6px ${C.yellow}50`,
+                        `0 16px 40px -8px ${C.yellow}70`,
+                        `0 8px 24px -6px ${C.yellow}50`,
+                      ],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                  <LogIn className="w-4 h-4 relative z-10" strokeWidth={2.5} />
+                  <span className="relative z-10">Přihlášení</span>
+                  <ChevronRight className="w-4 h-4 -ml-1 relative z-10 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+                </motion.button>
 
-                <button
+                {/* Secondary button with subtle pulse */}
+                <motion.button
                   onClick={() => goToScreen('demo')}
-                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-semibold text-[12px] tracking-[0.15em] uppercase text-white/70 hover:text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-semibold text-[12px] tracking-[0.15em] uppercase text-white/70 hover:text-white transition-all duration-200"
                   style={{
                     background: C.glass,
                     border: '1px solid rgba(255,255,255,0.1)',
                   }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    borderColor: 'rgba(255,255,255,0.2)',
+                  }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <Sparkles className="w-4 h-4" strokeWidth={2.25} />
+                  <motion.span
+                    animate={{ rotate: [0, 15, -15, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <Sparkles className="w-4 h-4" strokeWidth={2.25} />
+                  </motion.span>
                   <span>Demo</span>
-                </button>
+                </motion.button>
               </motion.div>
+
+              {/* Bottom decorative line */}
+              <motion.div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 h-px w-48"
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${C.cyan}40, transparent)`,
+                }}
+                initial={{ scaleX: 0, opacity: 0 }}
+                animate={{ scaleX: 1, opacity: 1 }}
+                transition={{ delay: 1.5, duration: 0.8 }}
+              />
             </motion.section>
           )}
 
