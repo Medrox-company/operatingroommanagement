@@ -159,54 +159,114 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="w-full max-w-4xl text-center relative"
             >
               {/* ═══════════════════════════════════════════════════════════════
-                  ULTRA-PREMIUM AURORA BACKGROUND
+                  NOISE TEXTURE OVERLAY — adds depth and premium feel
+                  ═══════════════════════════════════════════════════════════════ */}
+              <div
+                aria-hidden
+                className="fixed inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+                }}
+              />
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  MORPHING ORGANIC BLOB — cinematic background element
+                  ═══════════════════════════════════════════════════════════════ */}
+              <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
+                <svg className="absolute w-full h-full" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+                  <defs>
+                    <linearGradient id="blobGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={C.cyan} stopOpacity="0.08" />
+                      <stop offset="50%" stopColor={C.purple} stopOpacity="0.05" />
+                      <stop offset="100%" stopColor={C.yellow} stopOpacity="0.03" />
+                    </linearGradient>
+                    <filter id="blobBlur">
+                      <feGaussianBlur stdDeviation="50" />
+                    </filter>
+                  </defs>
+                  <motion.path
+                    fill="url(#blobGradient)"
+                    filter="url(#blobBlur)"
+                    animate={{
+                      d: [
+                        'M 500 200 C 700 200 850 350 850 500 C 850 650 700 800 500 800 C 300 800 150 650 150 500 C 150 350 300 200 500 200',
+                        'M 500 180 C 720 220 880 380 860 520 C 840 680 680 820 480 820 C 280 820 140 680 160 480 C 180 320 320 180 500 180',
+                        'M 520 200 C 680 180 840 340 820 520 C 800 700 660 840 460 820 C 260 800 120 640 160 460 C 200 280 360 220 520 200',
+                        'M 500 200 C 700 200 850 350 850 500 C 850 650 700 800 500 800 C 300 800 150 650 150 500 C 150 350 300 200 500 200',
+                      ],
+                    }}
+                    transition={{
+                      duration: 25,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                </svg>
+              </div>
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  ULTRA-PREMIUM AURORA BACKGROUND — enhanced
                   ═══════════════════════════════════════════════════════════════ */}
               <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
                 {/* Aurora layer 1 — cyan flowing wave */}
                 <motion.div
                   className="absolute w-[150%] h-[60%] -top-[20%] -left-[25%]"
                   style={{
-                    background: `radial-gradient(ellipse 80% 50% at 50% 50%, ${C.cyan}15 0%, transparent 70%)`,
-                    filter: 'blur(60px)',
+                    background: `radial-gradient(ellipse 80% 50% at 50% 50%, ${C.cyan}12 0%, transparent 70%)`,
+                    filter: 'blur(80px)',
                   }}
                   animate={{
                     x: ['-5%', '5%', '-5%'],
                     y: ['-3%', '3%', '-3%'],
-                    scale: [1, 1.05, 1],
-                    rotate: [0, 2, 0],
+                    scale: [1, 1.08, 1],
+                    rotate: [0, 3, 0],
                   }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+                  transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 {/* Aurora layer 2 — gold accent */}
                 <motion.div
                   className="absolute w-[80%] h-[40%] top-[10%] left-[10%]"
                   style={{
-                    background: `radial-gradient(ellipse 60% 40% at 30% 50%, ${C.yellow}08 0%, transparent 60%)`,
-                    filter: 'blur(80px)',
+                    background: `radial-gradient(ellipse 60% 40% at 30% 50%, ${C.yellow}06 0%, transparent 60%)`,
+                    filter: 'blur(100px)',
                   }}
                   animate={{
-                    x: ['0%', '10%', '0%'],
-                    y: ['0%', '-5%', '0%'],
-                    opacity: [0.6, 1, 0.6],
+                    x: ['0%', '15%', '0%'],
+                    y: ['0%', '-8%', '0%'],
+                    opacity: [0.5, 0.9, 0.5],
                   }}
-                  transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
                 />
                 {/* Aurora layer 3 — deep purple undertone */}
                 <motion.div
                   className="absolute w-[120%] h-[50%] -bottom-[10%] -left-[10%]"
                   style={{
-                    background: `radial-gradient(ellipse 70% 50% at 70% 80%, ${C.purple}08 0%, transparent 60%)`,
-                    filter: 'blur(100px)',
+                    background: `radial-gradient(ellipse 70% 50% at 70% 80%, ${C.purple}06 0%, transparent 60%)`,
+                    filter: 'blur(120px)',
                   }}
                   animate={{
-                    x: ['5%', '-5%', '5%'],
-                    opacity: [0.4, 0.8, 0.4],
+                    x: ['5%', '-8%', '5%'],
+                    opacity: [0.3, 0.7, 0.3],
                   }}
-                  transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
+                  transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
+                />
+                {/* NEW: Subtle green accent for medical feel */}
+                <motion.div
+                  className="absolute w-[60%] h-[30%] top-[30%] right-[5%]"
+                  style={{
+                    background: `radial-gradient(ellipse 50% 50% at 50% 50%, ${C.green}04 0%, transparent 70%)`,
+                    filter: 'blur(80px)',
+                  }}
+                  animate={{
+                    x: ['-5%', '5%', '-5%'],
+                    y: ['5%', '-5%', '5%'],
+                    opacity: [0.4, 0.7, 0.4],
+                  }}
+                  transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
                 />
               </div>
 
@@ -290,38 +350,66 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </svg>
 
               {/* ═══════════════════════════════════════════════════════════════
-                  FLOATING ETHEREAL ORBS
+                  FLOATING ETHEREAL ORBS — enhanced with glow halos
                   ═══════════════════════════════════════════════════════════════ */}
               <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={`orb-${i}`}
-                    className="absolute rounded-full"
-                    style={{
-                      width: 100 + i * 40,
-                      height: 100 + i * 40,
-                      left: `${15 + i * 12}%`,
-                      top: `${20 + (i % 3) * 25}%`,
-                      background: `radial-gradient(circle, ${
-                        i % 3 === 0 ? C.cyan : i % 3 === 1 ? C.yellow : C.purple
-                      }10 0%, transparent 70%)`,
-                      filter: 'blur(40px)',
-                    }}
-                    animate={{
-                      y: [0, -20 - i * 5, 0],
-                      x: [0, 10 + i * 3, 0],
-                      scale: [1, 1.1, 1],
-                      opacity: [0.3, 0.6, 0.3],
-                    }}
-                    transition={{
-                      duration: 8 + i * 2,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                      delay: i * 0.8,
-                    }}
-                  />
-                ))}
+                {[...Array(8)].map((_, i) => {
+                  const colors = [C.cyan, C.yellow, C.purple, C.green, C.cyan, C.yellow, C.purple, C.green];
+                  const sizes = [80, 120, 60, 100, 90, 140, 70, 110];
+                  const positions = [
+                    { left: '8%', top: '15%' },
+                    { left: '85%', top: '20%' },
+                    { left: '20%', top: '70%' },
+                    { left: '75%', top: '75%' },
+                    { left: '45%', top: '10%' },
+                    { left: '60%', top: '85%' },
+                    { left: '10%', top: '45%' },
+                    { left: '90%', top: '50%' },
+                  ];
+                  return (
+                    <motion.div
+                      key={`orb-${i}`}
+                      className="absolute rounded-full"
+                      style={{
+                        width: sizes[i],
+                        height: sizes[i],
+                        ...positions[i],
+                        background: `radial-gradient(circle, ${colors[i]}15 0%, ${colors[i]}05 40%, transparent 70%)`,
+                        filter: 'blur(30px)',
+                        boxShadow: `0 0 60px ${colors[i]}10`,
+                      }}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{
+                        opacity: [0.2, 0.5, 0.2],
+                        scale: [1, 1.15, 1],
+                        y: [0, -15 - (i % 3) * 8, 0],
+                        x: [0, (i % 2 === 0 ? 1 : -1) * (8 + (i % 4) * 3), 0],
+                      }}
+                      transition={{
+                        opacity: { duration: 6 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.5 },
+                        scale: { duration: 8 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.5 },
+                        y: { duration: 10 + i * 1.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 },
+                        x: { duration: 12 + i * 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 },
+                      }}
+                    />
+                  );
+                })}
               </div>
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  SUBTLE GRID PATTERN — adds structure
+                  ═══════════════════════════════════════════════════════════════ */}
+              <div
+                aria-hidden
+                className="fixed inset-0 pointer-events-none opacity-[0.02]"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+                  `,
+                  backgroundSize: '60px 60px',
+                }}
+              />
 
               {/* ═══════════════════════════════════════════════════════════════
                   GHOST WATERMARK — ultra subtle breathing
@@ -365,20 +453,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 />
 
-                {/* Title with sophisticated reveal */}
+                {/* Title with ultra-sophisticated reveal */}
                 <motion.h1
-                  className="relative font-bold tracking-tight leading-[0.92]"
-                  style={{ fontSize: 'clamp(2rem, 8vw, 5.5rem)' }}
+                  className="relative font-bold tracking-tight leading-[0.90]"
+                  style={{ fontSize: 'clamp(2.2rem, 9vw, 6rem)' }}
                 >
-                  {/* OPERATINGROOM — mask reveal animation */}
-                  <span className="block text-white overflow-hidden">
+                  {/* OPERATINGROOM — cinematic letter reveal with stagger */}
+                  <span className="block overflow-hidden">
                     <motion.span
                       className="inline-block"
-                      initial={{ y: '110%', opacity: 0 }}
-                      animate={{ y: '0%', opacity: 1 }}
+                      initial={{ y: '120%' }}
+                      animate={{ y: '0%' }}
                       transition={{
-                        duration: 1,
-                        delay: 0.4,
+                        duration: 1.2,
+                        delay: 0.3,
                         ease: [0.16, 1, 0.3, 1],
                       }}
                     >
@@ -386,12 +474,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         <motion.span
                           key={`l1-${i}`}
                           className="inline-block"
-                          initial={{ opacity: 0, filter: 'blur(8px)' }}
-                          animate={{ opacity: 1, filter: 'blur(0px)' }}
+                          style={{
+                            textShadow: '0 0 40px rgba(255,255,255,0.1)',
+                          }}
+                          initial={{ opacity: 0, y: 20, filter: 'blur(10px)', scale: 0.8 }}
+                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
                           transition={{
-                            duration: 0.6,
-                            delay: 0.5 + i * 0.03,
-                            ease: 'easeOut',
+                            duration: 0.8,
+                            delay: 0.4 + i * 0.035,
+                            ease: [0.16, 1, 0.3, 1],
                           }}
                         >
                           {letter}
@@ -400,46 +491,63 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     </motion.span>
                   </span>
 
-                  {/* MANAGEMENT SYSTEM — gold with glow */}
-                  <span className="block overflow-hidden mt-1">
+                  {/* MANAGEMENT SYSTEM — premium gold with enhanced glow */}
+                  <span className="block overflow-hidden mt-2">
                     <motion.span
                       className="inline-block relative"
                       style={{
-                        fontSize: 'clamp(1.5rem, 5vw, 3.5rem)',
-                        background: `linear-gradient(135deg, #ffb800 0%, #ffd700 50%, #ffb800 100%)`,
+                        fontSize: 'clamp(1.6rem, 5.5vw, 4rem)',
+                        background: `linear-gradient(135deg, #ffc107 0%, #ffdb4d 25%, #ffd700 50%, #ffdb4d 75%, #ffc107 100%)`,
+                        backgroundSize: '200% 100%',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
-                        filter: 'drop-shadow(0 0 30px rgba(255,184,0,0.3))',
+                        filter: 'drop-shadow(0 0 40px rgba(255,184,0,0.35))',
                       }}
-                      initial={{ y: '110%', opacity: 0 }}
-                      animate={{ y: '0%', opacity: 1 }}
+                      initial={{ y: '120%', opacity: 0 }}
+                      animate={{ 
+                        y: '0%', 
+                        opacity: 1,
+                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                      }}
                       transition={{
-                        duration: 1,
-                        delay: 0.8,
-                        ease: [0.16, 1, 0.3, 1],
+                        y: { duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] },
+                        opacity: { duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] },
+                        backgroundPosition: { duration: 8, repeat: Infinity, ease: 'linear', delay: 2 },
                       }}
                     >
                       MANAGEMENT SYSTEM
-                      {/* Traveling light effect */}
+                      {/* Traveling light shimmer */}
                       <motion.span
-                        className="absolute inset-0"
+                        className="absolute inset-0 pointer-events-none"
                         style={{
-                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)',
                           WebkitBackgroundClip: 'text',
                           mixBlendMode: 'overlay',
                         }}
-                        animate={{ x: ['-200%', '200%'] }}
+                        animate={{ x: ['-150%', '150%'] }}
                         transition={{
-                          duration: 3,
+                          duration: 2.5,
                           repeat: Infinity,
-                          repeatDelay: 4,
-                          ease: 'easeInOut',
+                          repeatDelay: 5,
+                          ease: [0.16, 1, 0.3, 1],
                         }}
                       />
                     </motion.span>
                   </span>
                 </motion.h1>
+
+                {/* Subtle underline accent */}
+                <motion.div
+                  className="mx-auto mt-6 h-[2px] rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, transparent 0%, ${C.yellow}60 50%, transparent 100%)`,
+                    maxWidth: '180px',
+                  }}
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={{ scaleX: 1, opacity: 1 }}
+                  transition={{ duration: 1, delay: 1.4, ease: [0.16, 1, 0.3, 1] }}
+                />
 
                 {/* Subtitle with fade-in */}
                 <motion.p
@@ -468,95 +576,143 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${C.border}, transparent)` }} />
                 </motion.div>
 
-                {/* CTA buttons with premium styling */}
+                {/* CTA buttons with ultra-premium styling */}
                 <motion.div
-                  className="flex items-center justify-center gap-4 flex-wrap"
-                  initial={{ opacity: 0, y: 30 }}
+                  className="flex items-center justify-center gap-5 flex-wrap"
+                  initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 1.6, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 1, delay: 1.8, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  {/* Primary — Přihlášení */}
+                  {/* Primary — Přihlášení — with magnetic hover effect */}
                   <motion.button
                     onClick={() => goToScreen('form')}
-                    className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-[11px] tracking-[0.2em] uppercase overflow-hidden"
+                    className="group relative inline-flex items-center gap-3.5 px-10 py-5 rounded-2xl font-semibold text-[11px] tracking-[0.22em] uppercase overflow-hidden"
                     style={{ background: '#ffb800', color: '#0a0f1a' }}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                   >
-                    {/* Animated gradient overlay */}
+                    {/* Multi-layer animated gradient overlay */}
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{
-                        background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                        background: 'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
                       }}
-                      animate={{ x: ['-100%', '100%'] }}
-                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, ease: 'easeInOut' }}
+                      animate={{ x: ['-150%', '150%'] }}
+                      transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 4, ease: [0.16, 1, 0.3, 1] }}
                     />
-                    {/* Glow effect */}
+                    {/* Breathing glow effect */}
                     <motion.div
                       className="absolute inset-0 -z-10 rounded-2xl"
                       animate={{
                         boxShadow: [
-                          '0 10px 40px -10px rgba(255,184,0,0.4)',
-                          '0 20px 60px -15px rgba(255,184,0,0.6)',
-                          '0 10px 40px -10px rgba(255,184,0,0.4)',
+                          '0 8px 32px -8px rgba(255,184,0,0.4), 0 0 0 0 rgba(255,184,0,0)',
+                          '0 16px 48px -12px rgba(255,184,0,0.6), 0 0 80px -20px rgba(255,184,0,0.3)',
+                          '0 8px 32px -8px rgba(255,184,0,0.4), 0 0 0 0 rgba(255,184,0,0)',
                         ],
                       }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    {/* Inner highlight */}
+                    <div 
+                      className="absolute inset-[1px] rounded-[15px] pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 50%)',
+                      }}
                     />
                     <LogIn className="w-4 h-4 relative z-10" strokeWidth={2.5} />
-                    <span className="relative z-10">Přihlášení</span>
+                    <span className="relative z-10 font-bold">Přihlášení</span>
                     <motion.span
                       className="relative z-10"
-                      animate={{ x: [0, 4, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                     >
                       <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
                     </motion.span>
                   </motion.button>
 
-                  {/* Secondary — Demo */}
+                  {/* Secondary — Demo — with glassmorphism */}
                   <motion.button
                     onClick={() => goToScreen('demo')}
-                    className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors duration-300"
+                    className="group relative inline-flex items-center gap-3.5 px-10 py-5 rounded-2xl font-semibold text-[11px] tracking-[0.22em] uppercase text-white/50 hover:text-white transition-all duration-500"
                     style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      backdropFilter: 'blur(10px)',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      backdropFilter: 'blur(20px)',
                     }}
                     whileHover={{
-                      scale: 1.03,
-                      borderColor: 'rgba(255,255,255,0.15)',
-                      background: 'rgba(255,255,255,0.05)',
+                      scale: 1.04,
+                      y: -2,
+                      borderColor: 'rgba(6,182,212,0.3)',
+                      boxShadow: '0 8px 32px -8px rgba(6,182,212,0.2), inset 0 0 20px rgba(6,182,212,0.05)',
                     }}
-                    whileTap={{ scale: 0.98 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                   >
+                    {/* Subtle inner glow on hover */}
+                    <div 
+                      className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                      style={{
+                        background: `radial-gradient(ellipse at center, ${C.cyan}08 0%, transparent 70%)`,
+                      }}
+                    />
                     <motion.span
-                      animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                      animate={{ 
+                        rotate: [0, 15, -15, 0], 
+                        scale: [1, 1.15, 1],
+                      }}
+                      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                     >
                       <Sparkles className="w-4 h-4" strokeWidth={2} />
                     </motion.span>
-                    <span>Demo</span>
+                    <span className="font-bold">Demo</span>
                   </motion.button>
                 </motion.div>
 
-                {/* Bottom decorative element */}
+                {/* Bottom decorative element — enhanced */}
                 <motion.div
-                  className="mt-16 flex items-center justify-center gap-2"
+                  className="mt-20 flex flex-col items-center gap-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 2 }}
+                  transition={{ duration: 1, delay: 2.2 }}
                 >
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={`dot-${i}`}
-                      className="w-1 h-1 rounded-full"
-                      style={{ background: i === 1 ? C.cyan : 'rgba(255,255,255,0.2)' }}
-                      animate={i === 1 ? { scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] } : {}}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                  ))}
+                  {/* Floating dots */}
+                  <div className="flex items-center gap-3">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <motion.div
+                        key={`dot-${i}`}
+                        className="rounded-full"
+                        style={{ 
+                          width: i === 2 ? 6 : 4,
+                          height: i === 2 ? 6 : 4,
+                          background: i === 2 ? C.cyan : 'rgba(255,255,255,0.15)',
+                          boxShadow: i === 2 ? `0 0 12px ${C.cyan}` : 'none',
+                        }}
+                        animate={i === 2 ? { 
+                          scale: [1, 1.4, 1], 
+                          opacity: [0.6, 1, 0.6],
+                          boxShadow: [`0 0 12px ${C.cyan}`, `0 0 24px ${C.cyan}`, `0 0 12px ${C.cyan}`],
+                        } : {
+                          opacity: [0.15, 0.3, 0.15],
+                        }}
+                        transition={{ 
+                          duration: i === 2 ? 3 : 4, 
+                          repeat: Infinity, 
+                          ease: 'easeInOut',
+                          delay: i * 0.15,
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Scroll indicator hint */}
+                  <motion.div
+                    className="flex flex-col items-center gap-2 text-white/20"
+                    animate={{ y: [0, 5, 0], opacity: [0.3, 0.5, 0.3] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <div className="w-px h-8" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)' }} />
+                  </motion.div>
                 </motion.div>
               </div>
             </motion.section>
