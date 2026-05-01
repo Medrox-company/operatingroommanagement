@@ -1306,27 +1306,32 @@ style={{
                                     style={{
                                       left: `${Math.max(0, segLeftPct)}%`,
                                       width: `${Math.max(0.5, segWidthPct)}%`,
-                                      // Zvýšený kontrast aktivní fáze — lépe vystoupí z pozadí
-                                      // a aktuální status zůstává čitelný i bez tučného textu.
+                                      // OPRAVA priority barev:
+                                      // Aktuální segment musí mít plnou barvu svého statusu — pokud uživatel
+                                      // zvolí "Ukončení výkonu", celá oblast od posledního přepnutí do
+                                      // předpokládaného konce výkonu musí být zřetelně v jeho barvě.
+                                      // Minulé segmenty jsou lehce ztlumené, aby aktuální status vizuálně
+                                      // dominoval — opačně, než tomu bylo dříve.
                                       background: isCurrentSeg
-                                        ? `linear-gradient(90deg, ${phaseColor}66 0%, ${phaseColor}3a 100%)`
-                                        : `linear-gradient(90deg, ${phaseColor}dd 0%, ${phaseColor}aa 100%)`,
-                                      boxShadow: isCurrentSeg 
-                                        ? `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.22), 0 0 0 1px ${phaseColor}33`
-                                        : `inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.18)`,
+                                        ? `linear-gradient(90deg, ${phaseColor} 0%, ${phaseColor}cc 100%)`
+                                        : `linear-gradient(90deg, ${phaseColor}aa 0%, ${phaseColor}77 100%)`,
+                                      boxShadow: isCurrentSeg
+                                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.20), 0 0 12px ${phaseColor}55`
+                                        : `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.18)`,
                                     }}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.04 * idx }}
                                   >
-                                    {/* For current segment: show completed portion with full color and glow */}
-                                    {isCurrentSeg && (
-                                      <motion.div 
-                                        className="absolute top-0 bottom-0 left-0 transition-all duration-300"
+                                    {/* Pro aktuální segment: jemný highlight overlay přes již uplynulou
+                                       část segmentu. Slouží jen jako vizuální dotek pro indikaci postupu —
+                                       základní barva je už nastavena na celém segmentu výše. */}
+                                    {isCurrentSeg && progressWithinSeg > 0 && (
+                                      <motion.div
+                                        className="absolute top-0 bottom-0 left-0 transition-all duration-300 pointer-events-none"
                                         style={{
                                           width: `${progressWithinSeg}%`,
-                                          background: `linear-gradient(90deg, ${phaseColor} 0%, ${phaseColor}e0 100%)`,
-                                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 8px ${phaseColor}50`,
+                                          background: `linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 100%)`,
                                         }}
                                       />
                                     )}
