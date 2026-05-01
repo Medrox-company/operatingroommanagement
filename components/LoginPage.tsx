@@ -216,47 +216,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
 
               {/* ═══════════════════════════════════════════════════════════════
-                  ETHEREAL FLOATING ORBS — glass morphism spheres
-                  ═══════════════════════════════════════════════════════════════ */}
-              <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-                {[
-                  { size: 120, x: '15%', y: '25%', color: C.cyan, delay: 0 },
-                  { size: 80, x: '80%', y: '20%', color: C.yellow, delay: 1 },
-                  { size: 60, x: '25%', y: '70%', color: C.purple, delay: 2 },
-                  { size: 100, x: '75%', y: '65%', color: C.green, delay: 3 },
-                  { size: 40, x: '50%', y: '15%', color: C.cyan, delay: 4 },
-                  { size: 50, x: '10%', y: '50%', color: C.yellow, delay: 5 },
-                ].map((orb, i) => (
-                  <motion.div
-                    key={`orb-${i}`}
-                    className="absolute rounded-full"
-                    style={{
-                      width: orb.size,
-                      height: orb.size,
-                      left: orb.x,
-                      top: orb.y,
-                      background: `radial-gradient(circle at 30% 30%, ${orb.color}15 0%, ${orb.color}05 50%, transparent 70%)`,
-                      boxShadow: `inset 0 0 ${orb.size / 3}px ${orb.color}10, 0 0 ${orb.size}px ${orb.color}05`,
-                      backdropFilter: 'blur(1px)',
-                    }}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{
-                      opacity: [0, 0.6, 0.4, 0.6],
-                      scale: [0, 1, 1.05, 1],
-                      y: [0, -20, 10, 0],
-                      x: [0, 10, -10, 0],
-                    }}
-                    transition={{
-                      opacity: { duration: 8, repeat: Infinity, ease: 'easeInOut', delay: orb.delay },
-                      scale: { duration: 10, repeat: Infinity, ease: 'easeInOut', delay: orb.delay },
-                      y: { duration: 12, repeat: Infinity, ease: 'easeInOut', delay: orb.delay },
-                      x: { duration: 14, repeat: Infinity, ease: 'easeInOut', delay: orb.delay },
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* ═══════════════════════════════════════════════════════════════
                   CONSTELLATION NETWORK — connected stars
                   ═══════════════════════════════════════════════════════════════ */}
               <div aria-hidden className="fixed inset-0 pointer-events-none">
@@ -493,42 +452,111 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {screen === 'form' && (
             <motion.section
               key="form"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-md"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="w-full max-w-md relative"
             >
-              <div
-                className="rounded-3xl p-8 md:p-10"
+              {/* Aurora background for form */}
+              <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
+                <motion.div
+                  className="absolute w-[600px] h-[600px] rounded-full"
+                  style={{
+                    left: '30%',
+                    top: '-10%',
+                    background: `radial-gradient(circle, ${C.cyan}10 0%, transparent 70%)`,
+                    filter: 'blur(80px)',
+                  }}
+                  animate={{ x: [0, 50, -30, 0], y: [0, 30, -20, 0], scale: [1, 1.1, 0.95, 1] }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  className="absolute w-[500px] h-[500px] rounded-full"
+                  style={{
+                    right: '20%',
+                    bottom: '10%',
+                    background: `radial-gradient(circle, ${C.yellow}06 0%, transparent 70%)`,
+                    filter: 'blur(100px)',
+                  }}
+                  animate={{ x: [0, -40, 30, 0], y: [0, -30, 40, 0] }}
+                  transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+                />
+              </div>
+
+              {/* Constellation for form */}
+              <div aria-hidden className="fixed inset-0 pointer-events-none opacity-20">
+                <svg className="w-full h-full">
+                  {[
+                    { cx: '25%', cy: '35%' }, { cx: '75%', cy: '25%' }, { cx: '20%', cy: '70%' },
+                    { cx: '80%', cy: '65%' }, { cx: '50%', cy: '20%' }, { cx: '45%', cy: '80%' },
+                  ].map((star, i) => (
+                    <motion.circle
+                      key={`form-star-${i}`}
+                      cx={star.cx}
+                      cy={star.cy}
+                      r="1.5"
+                      fill={C.cyan}
+                      animate={{ opacity: [0.2, 0.7, 0.2], scale: [1, 1.4, 1] }}
+                      transition={{ duration: 3 + i, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+                    />
+                  ))}
+                </svg>
+              </div>
+
+              <motion.div
+                className="relative z-10 rounded-3xl p-8 md:p-10"
                 style={{
-                  background: C.glass,
-                  border: `1px solid ${C.border}`,
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
                   backdropFilter: 'blur(20px)',
+                  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
                 }}
+                initial={{ y: 30, filter: 'blur(10px)' }}
+                animate={{ y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               >
                 {/* Header */}
-                <div className="text-center mb-8">
-                  <div
-                    className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 overflow-hidden"
+                <motion.div 
+                  className="text-center mb-8"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <motion.div
+                    className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 overflow-hidden"
                     style={{
-                      background: `${C.accent}15`,
-                      border: `1px solid ${C.accent}25`,
+                      background: `linear-gradient(135deg, ${C.accent}20 0%, ${C.accent}10 100%)`,
+                      border: `1px solid ${C.accent}30`,
+                      boxShadow: `0 0 30px ${C.accent}15`,
                     }}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <img
                       src="/images/logo.png"
                       alt="Logo"
                       className="w-10 h-10 object-contain"
                     />
-                  </div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">
+                  </motion.div>
+                  <motion.h2 
+                    className="text-2xl font-bold text-white tracking-tight"
+                    initial={{ opacity: 0, filter: 'blur(8px)' }}
+                    animate={{ opacity: 1, filter: 'blur(0px)' }}
+                    transition={{ duration: 0.6, delay: 0.35 }}
+                  >
                     Přihlášení
-                  </h2>
-                  <p className="text-sm text-white/40 mt-1">
+                  </motion.h2>
+                  <motion.p 
+                    className="text-sm text-white/40 mt-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.45 }}
+                  >
                     Zadejte přihlašovací údaje
-                  </p>
-                </div>
+                  </motion.p>
+                </motion.div>
 
                 {/* Error */}
                 <AnimatePresence>
@@ -550,43 +578,57 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </AnimatePresence>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <motion.form 
+                  onSubmit={handleSubmit} 
+                  className="space-y-5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                >
                   {/* Email */}
-                  <div>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.55 }}
+                  >
                     <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-white/40 mb-2">
                       Email
                     </label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-cyan-400 transition-colors" />
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="vas@email.cz"
                         required
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-white/25 transition-all focus:outline-none"
+                        className="w-full pl-11 pr-4 py-4 rounded-xl text-sm text-white placeholder-white/25 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                         style={{
                           background: 'rgba(255,255,255,0.03)',
                           border: '1px solid rgba(255,255,255,0.08)',
                         }}
                       />
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Password */}
-                  <div>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.65 }}
+                  >
                     <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-white/40 mb-2">
                       Heslo
                     </label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-cyan-400 transition-colors" />
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder="********"
                         required
-                        className="w-full pl-11 pr-12 py-3.5 rounded-xl text-sm text-white placeholder-white/25 transition-all focus:outline-none"
+                        className="w-full pl-11 pr-12 py-4 rounded-xl text-sm text-white placeholder-white/25 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                         style={{
                           background: 'rgba(255,255,255,0.03)',
                           border: '1px solid rgba(255,255,255,0.08)',
@@ -600,29 +642,54 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Submit */}
-                  <button
+                  <motion.button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 rounded-xl font-semibold text-[12px] tracking-[0.15em] uppercase transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative w-full py-4 rounded-xl font-semibold text-sm tracking-wide overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: C.accent,
+                      background: 'linear-gradient(135deg, rgba(251,191,36,0.95) 0%, rgba(245,158,11,0.95) 100%)',
                       color: '#0a0f1a',
-                      boxShadow: `0 8px 24px -6px ${C.accent}50`,
                     }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.75 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                   >
-                    {isLoading ? (
-                      <span className="inline-flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        Přihlašování...
-                      </span>
-                    ) : (
-                      'Přihlásit se'
-                    )}
-                  </button>
-                </form>
+                    {/* Shine effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                      initial={{ x: '-100%' }}
+                      animate={{ x: '200%' }}
+                      transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
+                    />
+                    {/* Glow */}
+                    <motion.div
+                      className="absolute inset-0 rounded-xl"
+                      animate={{
+                        boxShadow: [
+                          '0 0 15px rgba(251,191,36,0.25)',
+                          '0 0 30px rgba(251,191,36,0.4)',
+                          '0 0 15px rgba(251,191,36,0.25)',
+                        ],
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    <span className="relative z-10">
+                      {isLoading ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          Přihlašování...
+                        </span>
+                      ) : (
+                        'Přihlásit se'
+                      )}
+                    </span>
+                  </motion.button>
+                </motion.form>
 
                 {/* Divider */}
                 <div className="flex items-center gap-4 my-6">
@@ -632,14 +699,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </div>
 
                 {/* Demo link */}
-                <button
+                <motion.button
                   onClick={() => goToScreen('demo')}
                   className="w-full py-3 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/[0.04] transition-all flex items-center justify-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.9 }}
+                  whileHover={{ scale: 1.02 }}
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>Vyzkoušet demo účet</span>
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             </motion.section>
           )}
 
@@ -647,81 +718,199 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {screen === 'demo' && (
             <motion.section
               key="demo"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-3xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="w-full max-w-3xl relative"
             >
-              {/* Header */}
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-white tracking-tight">
-                  Demo přístup
-                </h2>
-                <p className="text-sm text-white/40 mt-2">
-                  Vyberte roli pro rychlé přihlášení
-                </p>
+              {/* Aurora background for demo */}
+              <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
+                <motion.div
+                  className="absolute w-[700px] h-[700px] rounded-full"
+                  style={{
+                    left: '10%',
+                    top: '-15%',
+                    background: `radial-gradient(circle, ${C.purple}10 0%, transparent 70%)`,
+                    filter: 'blur(80px)',
+                  }}
+                  animate={{ x: [0, 80, -40, 0], y: [0, 40, -20, 0], scale: [1, 1.15, 0.9, 1] }}
+                  transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  className="absolute w-[600px] h-[600px] rounded-full"
+                  style={{
+                    right: '5%',
+                    top: '40%',
+                    background: `radial-gradient(circle, ${C.cyan}08 0%, transparent 70%)`,
+                    filter: 'blur(100px)',
+                  }}
+                  animate={{ x: [0, -60, 30, 0], y: [0, -50, 60, 0] }}
+                  transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+                />
+                <motion.div
+                  className="absolute w-[400px] h-[400px] rounded-full"
+                  style={{
+                    left: '50%',
+                    bottom: '5%',
+                    background: `radial-gradient(circle, ${C.yellow}05 0%, transparent 70%)`,
+                    filter: 'blur(60px)',
+                  }}
+                  animate={{ x: [0, 40, -40, 0], y: [0, -30, 40, 0] }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
+                />
               </div>
 
+              {/* Constellation for demo */}
+              <div aria-hidden className="fixed inset-0 pointer-events-none opacity-25">
+                <svg className="w-full h-full">
+                  {[
+                    { x1: '15%', y1: '25%', x2: '30%', y2: '30%' },
+                    { x1: '70%', y1: '20%', x2: '85%', y2: '35%' },
+                    { x1: '25%', y1: '70%', x2: '40%', y2: '75%' },
+                    { x1: '60%', y1: '65%', x2: '75%', y2: '70%' },
+                  ].map((line, i) => (
+                    <motion.line
+                      key={`demo-line-${i}`}
+                      x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
+                      stroke={C.purple}
+                      strokeWidth="0.5"
+                      strokeOpacity="0.2"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.3 }}
+                      transition={{ duration: 1.5, delay: 0.3 + i * 0.15, ease: 'easeOut' }}
+                    />
+                  ))}
+                  {[
+                    { cx: '15%', cy: '25%' }, { cx: '30%', cy: '30%' }, { cx: '70%', cy: '20%' },
+                    { cx: '85%', cy: '35%' }, { cx: '25%', cy: '70%' }, { cx: '40%', cy: '75%' },
+                    { cx: '60%', cy: '65%' }, { cx: '75%', cy: '70%' }, { cx: '50%', cy: '15%' },
+                  ].map((star, i) => (
+                    <motion.circle
+                      key={`demo-star-${i}`}
+                      cx={star.cx}
+                      cy={star.cy}
+                      r="2"
+                      fill={C.purple}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: [0.3, 0.8, 0.3], scale: [1, 1.4, 1] }}
+                      transition={{ duration: 3 + i, repeat: Infinity, delay: i * 0.1, ease: 'easeInOut' }}
+                    />
+                  ))}
+                </svg>
+              </div>
+
+              {/* Header */}
+              <motion.div 
+                className="relative z-10 text-center mb-10"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <motion.div
+                  className="w-12 h-px mx-auto mb-8"
+                  style={{ background: `linear-gradient(90deg, transparent, ${C.purple}, transparent)` }}
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={{ scaleX: 1, opacity: 0.5 }}
+                  transition={{ duration: 1, delay: 0.2 }}
+                />
+                <motion.h2 
+                  className="text-3xl font-bold text-white tracking-tight"
+                  initial={{ opacity: 0, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  transition={{ duration: 0.8, delay: 0.25 }}
+                >
+                  Demo přístup
+                </motion.h2>
+                <motion.p 
+                  className="text-base text-white/40 mt-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  Vyberte roli pro rychlé přihlášení
+                </motion.p>
+              </motion.div>
+
               {/* Roles grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {QUICK_ROLES.map((role) => (
-                  <button
+              <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-4">
+                {QUICK_ROLES.map((role, idx) => (
+                  <motion.button
                     key={role.id}
                     onClick={() => handleQuickLogin(role.id)}
                     disabled={isLoading}
-                    className="group relative p-5 rounded-2xl text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                    className="group relative p-6 rounded-2xl text-left transition-all duration-300 disabled:opacity-50"
                     style={{
-                      background: C.glass,
-                      border: `1px solid ${C.border}`,
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      backdropFilter: 'blur(10px)',
                     }}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.5 + idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ 
+                      scale: 1.03, 
+                      borderColor: `${role.color}40`,
+                      background: 'rgba(255,255,255,0.04)',
+                    }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     {/* Hover glow */}
-                    <div
+                    <motion.div
                       aria-hidden
-                      className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                      className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                       style={{
-                        background: `radial-gradient(circle at 50% 0%, ${role.color}15 0%, transparent 70%)`,
+                        background: `radial-gradient(circle at 50% 0%, ${role.color}20 0%, transparent 70%)`,
+                        boxShadow: `0 0 40px ${role.color}10`,
                       }}
                     />
 
                     {/* Icon */}
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+                    <motion.div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                       style={{
-                        background: `${role.color}15`,
-                        border: `1px solid ${role.color}25`,
+                        background: `linear-gradient(135deg, ${role.color}20 0%, ${role.color}10 100%)`,
+                        border: `1px solid ${role.color}30`,
+                        boxShadow: `0 0 20px ${role.color}10`,
                       }}
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ duration: 0.3 }}
                     >
                       <role.icon className="w-5 h-5" style={{ color: role.color }} strokeWidth={2} />
-                    </div>
+                    </motion.div>
 
                     {/* Text */}
-                    <h3 className="text-sm font-semibold text-white mb-0.5">
+                    <h3 className="text-sm font-semibold text-white mb-1 group-hover:text-white transition-colors">
                       {role.label}
                     </h3>
-                    <p className="text-[11px] text-white/35">
+                    <p className="text-[11px] text-white/35 group-hover:text-white/50 transition-colors">
                       {role.description}
                     </p>
 
                     {/* Arrow */}
                     <ChevronRight
-                      className="absolute top-5 right-4 w-4 h-4 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all"
+                      className="absolute top-6 right-5 w-4 h-4 text-white/15 group-hover:text-white/50 group-hover:translate-x-1 transition-all duration-300"
                     />
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
               {/* Back to form */}
-              <div className="text-center mt-8">
-                <button
+              <motion.div 
+                className="relative z-10 text-center mt-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 1 }}
+              >
+                <motion.button
                   onClick={() => goToScreen('form')}
                   className="text-sm text-white/40 hover:text-white transition-colors inline-flex items-center gap-2"
+                  whileHover={{ scale: 1.02 }}
                 >
                   <Lock className="w-4 h-4" />
                   <span>Přihlásit se vlastním účtem</span>
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             </motion.section>
           )}
         </AnimatePresence>
