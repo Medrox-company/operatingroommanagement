@@ -933,7 +933,7 @@ export async function fetchSafetyChecklists(
   }
 }
 
-// ── equipment ──────────────────────────────────────────────────────
+// ── equipment ─────────────────────────────────────────────────────���
 export interface EquipmentRow {
   id: string;
   name: string;

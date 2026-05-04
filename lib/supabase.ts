@@ -1,13 +1,31 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// For Next.js, environment variables are accessed via process.env
-// Supabase integration provides NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Supabase credentials - NEXT_PUBLIC_ prefix makes them available on client-side
+// These are inlined at build time by Next.js for both server and client bundles
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-// Create client only if we have valid credentials
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Singleton pattern for Supabase client to avoid creating multiple instances
+let supabaseInstance: SupabaseClient | null = null;
 
+function getSupabaseClient(): SupabaseClient | null {
+  if (supabaseInstance) return supabaseInstance;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    return null;
+  }
+  
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  });
+  
+  return supabaseInstance;
+}
+
+export const supabase = getSupabaseClient();
 export const isSupabaseConfigured = !!supabase;
