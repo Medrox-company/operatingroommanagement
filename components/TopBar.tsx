@@ -17,41 +17,41 @@ const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsRese
   }, []);
 
   return (
-    <header className="h-24 px-6 md:px-10 flex items-center justify-between glass z-30 border-b border-blue-500/20">
-      <div className="flex items-center gap-4">
-         <div className="w-12 h-12 bg-primary/20 border border-primary/40 rounded-xl flex items-center justify-center glass glow-blue">
-            <ShieldCheck className="w-6 h-6 text-primary" />
+    <header className="h-24 px-12 md:px-14 flex items-center justify-between bg-white/5 backdrop-blur-2xl z-30 border-b border-white/10">
+      <div className="flex items-center gap-6">
+         <div className="w-12 h-12 bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md">
+            <ShieldCheck className="w-6 h-6 text-[#FBBF24]" />
          </div>
          <div>
-            <p className="text-[9px] font-bold tracking-[0.4em] text-muted-foreground/60 leading-none mb-1.5 uppercase">HOSPITAL SYSTEM</p>
-            <p className="text-sm font-bold text-foreground uppercase tracking-tight">OPERAČNÍ SÁLY</p>
+            <p className="text-[9px] font-bold tracking-[0.4em] text-white/30 leading-none mb-1.5 uppercase">HOSPITAL SYSTEM</p>
+            <p className="text-sm font-bold text-white uppercase tracking-tight">OPERAČNÍ SÁLY</p>
          </div>
       </div>
 
-      <div className="flex items-center gap-6 md:gap-10">
+      <div className="flex items-center gap-10">
         <div className="flex flex-col items-end">
-          <span className="text-3xl md:text-4xl font-mono font-bold text-foreground tracking-tight tabular-nums leading-none">
+          <span className="text-4xl font-mono font-bold text-white tracking-tight tabular-nums leading-none">
             {time.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
           </span>
           <div className="flex items-center gap-2 mt-2">
-             <Globe className="w-3 h-3 text-muted-foreground/50" />
-             <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-[0.3em]">LOCAL TIME • GMT+1</span>
+             <Globe className="w-3 h-3 text-white/20" />
+             <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">LOCAL TIME • GMT+1</span>
           </div>
         </div>
         
-        <div className="h-10 w-px bg-border" />
+        <div className="h-10 w-px bg-white/10" />
 
-        <div className="flex items-center gap-4 md:gap-8">
-          <div className="relative p-3 glass border-blue-500/20 rounded-lg cursor-pointer hover:bg-blue-500/10 hover:text-primary transition-all group glow-blue">
-            <Bell className="w-5 h-5 text-muted-foreground group-hover:text-primary" />
+        <div className="flex items-center gap-8">
+          <div className="relative p-3.5 bg-white/5 border border-white/10 rounded-2xl shadow-2xl cursor-pointer hover:bg-white/10 hover:text-white transition-all group backdrop-blur-md">
+            <Bell className="w-5 h-5 text-white/40 group-hover:text-white" />
           </div>
 
-          <div className="flex items-center gap-4 md:gap-5 cursor-pointer group">
+          <div className="flex items-center gap-5 cursor-pointer group">
             <div className="text-right hidden sm:block">
-              <p className="text-[12px] font-bold text-foreground uppercase tracking-tight leading-none mb-1">Dr. Jan Svěrák</p>
-              <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest leading-none">Chief Surgeon</p>
+              <p className="text-[12px] font-bold text-white/90 uppercase tracking-tight leading-none mb-1">Dr. Jan Svěrák</p>
+              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-none">Chief Surgeon</p>
             </div>
-            <div className="w-12 md:w-14 h-12 md:h-14 bg-primary/30 text-primary-foreground border border-primary/50 rounded-lg glass glow-blue flex items-center justify-center font-bold text-sm group-hover:scale-105 transition-all">
+            <div className="w-14 h-14 bg-[#FBBF24] text-black rounded-2xl flex items-center justify-center font-bold text-sm group-hover:scale-105 transition-all shadow-glow shadow-[#FBBF24]/20">
               JS
             </div>
           </div>
