@@ -104,14 +104,24 @@ const AppContent: React.FC = () => {
   const recentLocalUpdates = useRef<Map<string, number>>(new Map());
   const DEBOUNCE_MS = 2000;
 
+  // Ref to track current view without causing re-renders
+  const currentViewRef = useRef(currentView);
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
+
   // Load rooms on mount + polling fallback for cross-device sync.
   // Polling is needed because Supabase realtime may not work reliably on all
   // devices (mobile networks, different browsers). Polling respects recentLocalUpdates
   // to avoid overwriting optimistic updates.
+  // IMPORTANT: Polling is DISABLED when user is in settings to prevent UI flickering.
   useEffect(() => {
     let isMounted = true;
     
     const loadRooms = async (isPolling = false) => {
+      // Skip if user is in settings - prevents UI flickering
+      if (currentViewRef.current === 'settings') return;
+      
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
@@ -125,6 +135,9 @@ const AppContent: React.FC = () => {
         if (!response.ok) throw new Error('Failed to fetch rooms');
         const dbRooms = await response.json();
         if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) return;
+        
+        // Double-check we're not in settings before updating state
+        if (currentViewRef.current === 'settings') return;
         
         if (!isPolling) {
           // Initial load - replace all
