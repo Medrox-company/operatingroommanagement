@@ -128,8 +128,10 @@ const AppContent: React.FC = () => {
   }, []);
 
   // Track recent local updates to ignore duplicate realtime events (prevents flickering)
+  // Note: Only ignores realtime updates for the SAME client that made the change
+  // Other clients will still receive updates normally
   const recentLocalUpdates = useRef<Map<string, number>>(new Map());
-  const DEBOUNCE_MS = 2000; // Ignore realtime updates within 2s of local update (increased for stability)
+  const DEBOUNCE_MS = 500; // Reduced to 500ms for faster cross-client sync
   
   // Cleanup old entries from recentLocalUpdates to prevent memory growth
   useEffect(() => {
@@ -294,13 +296,33 @@ const AppContent: React.FC = () => {
     // Funkční setState — čte aktuální `rooms` z reduceru, takže callback nemusí
     // mít `rooms` v deps a zůstává referenčně stabilní napříč rendery.
     let newValue = false;
+    let roomName = '';
     setRooms(prev => prev.map(r => {
       if (r.id !== roomId) return r;
       newValue = !r.isEmergency;
+      roomName = r.name;
       return { ...r, isEmergency: newValue };
     }));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_emergency: newValue });
+      
+      // Send email notification when emergency is activated
+      if (newValue && roomName) {
+        try {
+          await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'notify_emergencies',
+              roomId,
+              roomName,
+              customReason: 'Byl aktivován stav nouze na operačním sále.',
+            }),
+          });
+        } catch (err) {
+          console.error('[v0] Failed to send emergency notification:', err);
+        }
+      }
     }
   }, [isDbConnected]);
 
