@@ -100,23 +100,23 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
         <div 
-          className={`absolute -inset-2 z-0 rounded-2xl blur-2xl pointer-events-none ${room.isEmergency ? 'bg-red-400/15' : 'bg-amber-400/10'}`}
+          className={`absolute -inset-1 z-0 rounded-[1.85rem] sm:rounded-[2.6rem] blur-xl pointer-events-none ${room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10'}`}
         />
       )}
 
       {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-2xl border shadow-soft transition-all duration-500 overflow-hidden
+      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
         ${room.isEmergency 
-            ? 'bg-red-50 border-red-200 shadow-soft-lg' 
+            ? 'bg-red-950/20 border-red-500/40' 
             : (room.isLocked 
-                ? 'bg-amber-50 border-amber-200' 
-                : 'bg-white border-border hover:shadow-soft-lg hover:border-primary/30')}
+                ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
+                : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]')}
       `}>
         {room.isEmergency && (
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-red-500/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
         )}
         {room.isLocked && (
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-500/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
         )}
         
         {/* Static Glow Layer */}
@@ -124,7 +124,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
           style={{ 
             backgroundColor: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.08 : 0.05
+            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15 
           }}
         />
       </div>
@@ -135,12 +135,12 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Header — centered */}
         <div className="w-full flex flex-col items-center text-center shrink-0">
           <p className={`text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full transition-colors
-            ${room.isEmergency ? 'text-red-600' : (room.isLocked ? 'text-amber-600' : 'text-muted-foreground')}
+            ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
           `}>
             {room.department}
           </p>
           <h3 className={`text-sm sm:text-xl font-bold tracking-tight uppercase leading-none truncate max-w-full transition-colors
-            ${(room.isEmergency || room.isLocked) ? 'text-foreground' : 'text-foreground'}
+            ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
           `}>
             {room.name}
           </h3>
@@ -162,9 +162,9 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                     <circle 
                       cx={center} cy={center} r={radius} 
                       fill="none" 
-                      stroke="currentColor" 
+                      stroke="white" 
                       strokeWidth="1.5" 
-                      className="text-border opacity-30" 
+                      className="opacity-[0.03]" 
                     />
                     <circle 
                       cx={center} cy={center} r={radius} 
@@ -183,7 +183,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                         y={center}
                         textAnchor="middle"
                         dominantBaseline="central"
-                        fill="#06B6D4"
+                        fill="#22D3EE"
                         className="text-4xl font-bold"
                         style={{ 
                           transform: 'rotate(90deg)', 
@@ -201,7 +201,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                         y={center}
                         textAnchor="middle"
                         dominantBaseline="central"
-                        className={`text-4xl font-bold transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-foreground' : 'fill-foreground'}`}
+                        className={`text-4xl font-bold transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
                         style={{ 
                             transform: 'rotate(90deg)', 
                             transformOrigin: `${center}px ${center}px`,
@@ -217,8 +217,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             {room.estimatedEndTime && shouldShowTime && (
                 <div className="-mt-1 text-center">
                     <div className="flex items-center gap-1 sm:gap-1.5 justify-center">
-                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      <span className="text-sm sm:text-lg font-mono font-bold tracking-tight text-primary">
+                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" style={{ color: themeColor }} />
+                      <span className="text-sm sm:text-lg font-mono font-bold tracking-tight" style={{ color: themeColor }}>
                           {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -229,38 +229,38 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Bottom Info */}
         <div className="w-full space-y-2 sm:space-y-3 shrink-0">
           <div className="w-full text-center">
-            <p className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-lg border transition-all inline-block w-full
+            <p className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
               ${room.isEmergency 
-                  ? 'bg-red-100 text-red-700 border-red-300' 
+                  ? 'bg-red-600 text-white border-red-500' 
                   : (room.isLocked 
-                      ? 'bg-amber-100 text-amber-700 border-amber-300' 
-                      : 'bg-muted text-muted-foreground border-border')}
+                      ? 'bg-amber-500 text-white border-amber-600' 
+                      : 'bg-white/5 border-white/5 text-white/50')}
             `}>
               {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
             </p>
           </div>
           
             <div className={`flex items-center justify-between pt-2 sm:pt-3 border-t gap-1.5 sm:gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-200' : (room.isLocked ? 'border-amber-200' : (room.isPaused ? 'border-cyan-200' : 'border-border'))}
+            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
           `}>
             {/* Left: avatar + names */}
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
               <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border shrink-0 flex items-center justify-center
-                ${room.isEmergency ? 'border-red-200 bg-red-50' : (room.isLocked ? 'border-amber-200 bg-amber-50' : (room.isPaused ? 'border-cyan-200 bg-cyan-50' : 'border-border bg-input'))}
+                ${room.isEmergency ? 'border-red-500/30 bg-red-500/10' : (room.isLocked ? 'border-amber-500/30 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/30 bg-cyan-500/10' : 'border-white/10 bg-white/5'))}
               `}>
-                <User className={`w-3 h-3 sm:w-4 sm:h-4 transition-colors
-                  ${room.isEmergency ? 'text-red-600' : (room.isLocked ? 'text-amber-600' : (room.isPaused ? 'text-cyan-600' : 'text-muted-foreground'))}
+                <User className={`w-3 h-3 sm:w-4 sm:h-4 transition-opacity
+                  ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : (room.isPaused ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/60'))}
                 `} />
               </div>
               <div className="min-w-0 flex flex-col gap-0.5">
                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-tight truncate transition-colors
-                  ${room.isEmergency ? 'text-red-700' : (room.isLocked ? 'text-amber-700' : (room.isPaused ? 'text-cyan-700' : 'text-foreground'))}
+                  ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
                 `}>
                   {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
                 </span>
                 {room?.staff?.nurse?.name && (
                   <span className={`hidden sm:inline text-[9px] font-medium uppercase tracking-tight truncate transition-colors
-                    ${room.isEmergency ? 'text-red-600/70' : (room.isLocked ? 'text-amber-600/70' : (room.isPaused ? 'text-cyan-600/70' : 'text-muted-foreground'))}
+                    ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
                   `}>
                     {room?.staff?.nurse?.name?.split(' ').pop()}
                   </span>
@@ -271,22 +271,22 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             {/* Right: action buttons / status badges */}
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {room.isSeptic && (
-                <div className="p-1 sm:p-1.5 bg-red-100 rounded-lg sm:rounded-xl border border-red-200">
-                  <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600" />
+                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/20 backdrop-blur-md">
+                  <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/70" />
                 </div>
               )}
 
               {/* Patient called indicator */}
               {room.patientCalledAt && !room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all bg-blue-100 border-blue-200">
-                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
+                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">
+                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
                 </div>
               )}
 
               {/* Patient arrived indicator */}
               {room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all bg-green-100 border-green-200">
-                  <BedDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-green-500/20 border-green-400/40">
+                  <BedDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
                 </div>
               )}
 
