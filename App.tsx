@@ -160,11 +160,12 @@ const AppContent: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Track recent local updates to ignore duplicate realtime events (prevents flickering)
-  // Note: Only ignores realtime updates for the SAME client that made the change
-  // Other clients will still receive updates normally
+  // Track recent local updates to protect optimistic UI updates from being
+  // overwritten by polling that may have started BEFORE our DB write completed.
+  // Must be longer than polling interval (2000ms) + DB write latency (~500ms)
+  // so a polling fetch in flight before our update can't overwrite us when it returns.
   const recentLocalUpdates = useRef<Map<string, number>>(new Map());
-  const DEBOUNCE_MS = 500; // Reduced to 500ms for faster cross-client sync
+  const DEBOUNCE_MS = 4000;
   
   // Cleanup old entries from recentLocalUpdates to prevent memory growth
   useEffect(() => {
@@ -329,9 +330,8 @@ const AppContent: React.FC = () => {
   }, [isDbConnected]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
+    // Mark as recently updated to protect optimistic UI from being overwritten by polling
     recentLocalUpdates.current.set(roomId, Date.now());
-    // Funkční setState — čte aktuální `rooms` z reduceru, takže callback nemusí
-    // mít `rooms` v deps a zůstává referenčně stabilní napříč rendery.
     let newValue = false;
     let roomName = '';
     setRooms(prev => prev.map(r => {
@@ -341,8 +341,19 @@ const AppContent: React.FC = () => {
       return { ...r, isEmergency: newValue };
     }));
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { is_emergency: newValue });
-      
+      try {
+        await updateOperatingRoom(roomId, { is_emergency: newValue });
+        // Refresh timestamp AFTER successful DB write so the next polling tick
+        // (which already queried DB before our write completed) cannot overwrite us.
+        recentLocalUpdates.current.set(roomId, Date.now());
+      } catch (err) {
+        console.error('[v0] Failed to update emergency in DB:', err);
+        // Revert optimistic update on failure
+        setRooms(prev => prev.map(r => r.id === roomId ? { ...r, isEmergency: !newValue } : r));
+        recentLocalUpdates.current.delete(roomId);
+        return;
+      }
+
       // Send email notification when emergency is activated
       if (newValue && roomName) {
         try {
@@ -372,7 +383,16 @@ const AppContent: React.FC = () => {
       return { ...r, isLocked: newValue };
     }));
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { is_locked: newValue });
+      try {
+        await updateOperatingRoom(roomId, { is_locked: newValue });
+        // Refresh timestamp AFTER DB write so next polling tick respects our update
+        recentLocalUpdates.current.set(roomId, Date.now());
+      } catch (err) {
+        console.error('[v0] Failed to update lock in DB:', err);
+        // Revert optimistic update on failure
+        setRooms(prev => prev.map(r => r.id === roomId ? { ...r, isLocked: !newValue } : r));
+        recentLocalUpdates.current.delete(roomId);
+      }
     }
   }, [isDbConnected]);
 
