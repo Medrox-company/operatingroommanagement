@@ -100,13 +100,19 @@ const AppContent: React.FC = () => {
   // Load rooms from API on mount + polling fallback for realtime sync
   useEffect(() => {
     let isMounted = true;
-    const loadRooms = async () => {
+    const loadRooms = async (isInitialLoad = false) => {
       try {
         // Add timeout to prevent hanging
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
         
-        const response = await fetch('/api/rooms', { signal: controller.signal });
+        // CRITICAL: cache: 'no-store' prevents browser/Next.js from returning
+        // stale data which would break cross-device real-time sync
+        const response = await fetch(`/api/rooms?t=${Date.now()}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        });
         clearTimeout(timeout);
         
         if (!isMounted) return; // Ignore if unmounted
@@ -114,7 +120,21 @@ const AppContent: React.FC = () => {
         
         const dbRooms = await response.json();
         if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
-          setRooms(dbRooms);
+          // On initial load, replace everything. On polling, merge to preserve
+          // recently-changed local optimistic updates (debounce window).
+          if (isInitialLoad) {
+            setRooms(dbRooms);
+          } else {
+            setRooms(prev => dbRooms.map((dbRoom: OperatingRoom) => {
+              const lastLocalUpdate = recentLocalUpdates.current.get(dbRoom.id);
+              // If we just made a local change, keep our optimistic version briefly
+              if (lastLocalUpdate && Date.now() - lastLocalUpdate < DEBOUNCE_MS) {
+                const localRoom = prev.find(r => r.id === dbRoom.id);
+                if (localRoom) return localRoom;
+              }
+              return dbRoom;
+            }));
+          }
           setIsDbConnected(true);
         }
       } catch (error) {
@@ -123,20 +143,21 @@ const AppContent: React.FC = () => {
         // Keep using MOCK_ROOMS on error - don't crash
       }
     };
-    loadRooms();
+    loadRooms(true);
     
-    // Polling fallback - refresh data every 3 seconds to ensure sync
-    // This acts as a backup for realtime subscriptions
+    // Polling fallback - refresh data every 2 seconds to ensure cross-device sync
+    // This acts as a backup for realtime subscriptions which may not fire reliably
     const pollingInterval = setInterval(() => {
       if (isMounted) {
-        loadRooms();
+        loadRooms(false);
       }
-    }, 3000);
+    }, 2000);
     
     return () => { 
       isMounted = false;
       clearInterval(pollingInterval);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Track recent local updates to ignore duplicate realtime events (prevents flickering)
