@@ -12,7 +12,6 @@ function getSupabaseClient(): SupabaseClient | null {
   if (supabaseInstance) return supabaseInstance;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
     return null;
   }
   
