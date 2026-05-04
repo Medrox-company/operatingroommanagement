@@ -293,30 +293,32 @@ const AppContent: React.FC = () => {
   }, [isDbConnected]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
+    const currentRoom = rooms.find(r => r.id === roomId);
+    if (!currentRoom) return;
+    const newValue = !currentRoom.isEmergency;
+    
     recentLocalUpdates.current.set(roomId, Date.now());
-    let newValue = false;
-    setRooms(prev => prev.map(room => {
-      if (room.id !== roomId) return room;
-      newValue = !room.isEmergency;
-      return { ...room, isEmergency: newValue };
-    }));
+    setRooms(prev => prev.map(room =>
+      room.id === roomId ? { ...room, isEmergency: newValue } : room
+    ));
     if (isDbConnected) {
-      updateOperatingRoom(roomId, { is_emergency: newValue });
+      await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, rooms]);
 
   const toggleLock = useCallback(async (roomId: string) => {
+    const currentRoom = rooms.find(r => r.id === roomId);
+    if (!currentRoom) return;
+    const newValue = !currentRoom.isLocked;
+    
     recentLocalUpdates.current.set(roomId, Date.now());
-    let newValue = false;
-    setRooms(prev => prev.map(room => {
-      if (room.id !== roomId) return room;
-      newValue = !room.isLocked;
-      return { ...room, isLocked: newValue };
-    }));
+    setRooms(prev => prev.map(room =>
+      room.id === roomId ? { ...room, isLocked: newValue } : room
+    ));
     if (isDbConnected) {
-      updateOperatingRoom(roomId, { is_locked: newValue });
+      await updateOperatingRoom(roomId, { is_locked: newValue });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, rooms]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
     recentLocalUpdates.current.set(roomId, Date.now());
