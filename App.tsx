@@ -295,69 +295,28 @@ const AppContent: React.FC = () => {
   const toggleEmergency = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
     let newValue = false;
-    let roomName = '';
-    setRooms(prev => prev.map(r => {
-      if (r.id !== roomId) return r;
-      newValue = !r.isEmergency;
-      roomName = r.name;
-      return { ...r, isEmergency: newValue };
+    setRooms(prev => prev.map(room => {
+      if (room.id !== roomId) return room;
+      newValue = !room.isEmergency;
+      return { ...room, isEmergency: newValue };
     }));
-    
-    // Use server-side API for reliable DB write (bypasses client-side Supabase issues)
-    try {
-      const res = await fetch('/api/rooms/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, field: 'is_emergency', value: newValue }),
-      });
-      if (!res.ok) {
-        throw new Error('API call failed');
-      }
-      // Send email notification when emergency is activated
-      if (newValue && roomName) {
-        fetch('/api/send-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'notify_emergencies',
-            roomId,
-            roomName,
-            customReason: 'Byl aktivován stav nouze na operačním sále.',
-          }),
-        }).catch(() => {});
-      }
-    } catch {
-      // Revert on failure
-      setRooms(prev => prev.map(r => r.id === roomId ? { ...r, isEmergency: !newValue } : r));
-      recentLocalUpdates.current.delete(roomId);
+    if (isDbConnected) {
+      updateOperatingRoom(roomId, { is_emergency: newValue });
     }
-  }, []);
+  }, [isDbConnected]);
 
   const toggleLock = useCallback(async (roomId: string) => {
     recentLocalUpdates.current.set(roomId, Date.now());
     let newValue = false;
-    setRooms(prev => prev.map(r => {
-      if (r.id !== roomId) return r;
-      newValue = !r.isLocked;
-      return { ...r, isLocked: newValue };
+    setRooms(prev => prev.map(room => {
+      if (room.id !== roomId) return room;
+      newValue = !room.isLocked;
+      return { ...room, isLocked: newValue };
     }));
-    
-    // Use server-side API for reliable DB write
-    try {
-      const res = await fetch('/api/rooms/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, field: 'is_locked', value: newValue }),
-      });
-      if (!res.ok) {
-        throw new Error('API call failed');
-      }
-    } catch {
-      // Revert on failure
-      setRooms(prev => prev.map(r => r.id === roomId ? { ...r, isLocked: !newValue } : r));
-      recentLocalUpdates.current.delete(roomId);
+    if (isDbConnected) {
+      updateOperatingRoom(roomId, { is_locked: newValue });
     }
-  }, []);
+  }, [isDbConnected]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
     recentLocalUpdates.current.set(roomId, Date.now());
