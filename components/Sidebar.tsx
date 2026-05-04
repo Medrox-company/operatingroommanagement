@@ -20,11 +20,11 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
   }), [isAdmin, hasModuleAccess]);
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none">
+    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none glass border-r border-blue-500/20">
       
       <div className="mb-12 w-14 h-14 flex-shrink-0" />
 
-      <nav className="flex-1 flex flex-col gap-4 w-full px-4 pointer-events-auto min-h-0">
+      <nav className="flex-1 flex flex-col gap-3 w-full px-3 pointer-events-auto min-h-0">
         {enabledItems.map((item, index) => {
           const isActive = currentView === item.id;
           return (
@@ -34,9 +34,9 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
               aria-current={isActive ? 'page' : undefined}
               aria-label={item.label}
               className={`
-                relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-2xl
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
-                ${isActive ? 'bg-white/[0.15] text-white shadow-xl' : 'text-white/40 hover:bg-white/5 hover:text-white'}
+                relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-xl
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background
+                ${isActive ? 'glass border-primary/50 text-primary glow-blue' : 'text-muted-foreground hover:glass hover:border-blue-500/30 hover:text-foreground'}
               `}
             >
               <item.icon 
@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
                 strokeWidth={isActive ? 2.5 : 2}
               />
 
-              <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
+              <span className="absolute left-full ml-3 px-3 py-2 glass border-blue-500/30 text-foreground text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] glow-blue font-mono">
                 {item.label}
               </span>
             </button>
@@ -52,14 +52,14 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
         })}
       </nav>
 
-      <div className="mt-auto flex flex-col items-center gap-4 pb-4 w-full px-4 pointer-events-auto flex-shrink-0">
+      <div className="mt-auto flex flex-col items-center gap-3 pb-4 w-full px-3 pointer-events-auto flex-shrink-0">
         {/* Logout Button */}
         <button 
           onClick={logout}
-          className="w-full aspect-square rounded-2xl bg-white/5 flex flex-col items-center justify-center text-white/30 hover:text-red-400 hover:bg-white/10 transition-all duration-300 group relative"
+          className="w-full aspect-square rounded-xl glass border-destructive/30 flex flex-col items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all duration-300 group relative"
         >
           <LogOut className="w-6 h-6 transition-transform group-hover:scale-110" />
-          <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
+          <span className="absolute left-full ml-3 px-3 py-2 glass border-destructive/30 text-foreground text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] font-mono">
             Odhlásit
           </span>
         </button>

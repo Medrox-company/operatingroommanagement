@@ -3,8 +3,30 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  
+  /* Glassmorphism Dark Theme Design Tokens */
+  --background: 10 15 30;          /* Deep dark blue */
+  --foreground: 244 250 255;       /* Near white */
+  --card: 20 25 45;                /* Slightly lighter dark blue */
+  --card-foreground: 244 250 255;  /* Near white */
+  --primary: 59 130 246;           /* Blue */
+  --primary-foreground: 15 23 42;  /* Dark slate */
+  --secondary: 139 92 246;         /* Purple */
+  --secondary-foreground: 244 250 255; /* Near white */
+  --muted: 148 163 184;            /* Muted slate */
+  --muted-foreground: 203 213 225; /* Light slate */
+  --accent: 34 197 94;             /* Green */
+  --accent-foreground: 244 250 255; /* Near white */
+  --destructive: 239 68 68;        /* Red */
+  --destructive-foreground: 244 250 255; /* Near white */
+  --border: 51 65 100;             /* Dark blue-gray */
+  --input: 30 40 60;               /* Very dark blue */
+  --ring: 59 130 246;              /* Blue */
+  --radius: 0.75rem;               /* Rounded corners */
+  --glass-bg: rgba(20, 25, 45, 0.7);        /* Glass background */
+  --glass-border: rgba(100, 116, 139, 0.2); /* Glass border */
 }
 
 html {
@@ -15,24 +37,60 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: #000;
+  background: linear-gradient(135deg, rgb(10 15 30) 0%, rgb(15 23 35) 50%, rgb(10 15 30) 100%);
+  background-attachment: fixed;
+  color: rgb(var(--foreground));
 }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Safe area for mobile bottom navigation (MobileNav ~ 80px + safe-area-inset-bottom) */
+/* ── GLASSMORPHISM UTILITIES ────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-lg {
+  background: rgba(20, 25, 45, 0.5);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+}
+
+.glass-subtle {
+  background: rgba(20, 25, 45, 0.4);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(100, 116, 139, 0.1);
+}
+
+/* Soft glow effects */
+.glow-blue {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.15), 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.15), 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.glow-green {
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.15), 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Layout safe area that respects Sidebar (desktop, 96px) and MobileNav (bottom) */
 .pb-mobile-nav {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* Layout safe area that respects Sidebar (desktop, 96px) and MobileNav (bottom) */
 .layout-safe-area {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 768px) {
   .layout-safe-area {
-    padding-left: 6rem; /* clear desktop sidebar (w-24 = 96px) */
+    padding-left: 6rem;
     padding-bottom: 0;
   }
 }

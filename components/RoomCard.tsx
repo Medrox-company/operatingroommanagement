@@ -100,17 +100,17 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
         <div 
-          className={`absolute -inset-1 z-0 rounded-[1.85rem] sm:rounded-[2.6rem] blur-xl pointer-events-none ${room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10'}`}
+          className={`absolute -inset-2 z-0 rounded-3xl blur-3xl pointer-events-none ${room.isEmergency ? 'bg-red-600/25' : 'bg-amber-500/15'}`}
         />
       )}
 
-      {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
+      {/* Main Card Container - Glassmorphism */}
+      <div className={`absolute inset-0 z-0 rounded-3xl border overflow-hidden transition-all duration-500 glass glow-blue
         ${room.isEmergency 
-            ? 'bg-red-950/20 border-red-500/40' 
+            ? 'border-red-500/50 glow-blue' 
             : (room.isLocked 
-                ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
-                : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]')}
+                ? 'border-amber-500/50' 
+                : 'border-blue-500/30 hover:border-blue-500/50 group-hover:glow-blue')}
       `}>
         {room.isEmergency && (
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
