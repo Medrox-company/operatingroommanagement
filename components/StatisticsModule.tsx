@@ -12,9 +12,11 @@ import {
   fetchRoomStatistics,
   fetchStatusHistory,
   fetchAllStaff,
+  fetchPeriodComparison,
   type RoomStatistics,
   type StatusHistoryRow,
   type StaffRow,
+  type PeriodComparisonStats,
 } from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -1323,6 +1325,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
   const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
+  const [periodComparison, setPeriodComparison] = useState<PeriodComparisonStats | null>(null);
   // ── REÁLNÁ DB DATA pro tab moduly (Staff) ──
   // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
   const [staffList, setStaffList] = useState<StaffRow[] | null>(null);
@@ -1424,15 +1427,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           break;
       }
 
-      const [stats, history, staffRows] = await Promise.all([
+      const [stats, history, staffRows, comparison] = await Promise.all([
         fetchRoomStatistics(fromDate, now),
         fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
         fetchAllStaff(),
+        fetchPeriodComparison(period),
       ]);
 
       if (stats) setDbStats(stats);
       setStatusHistory(history ?? []);
       setStaffList(staffRows);
+      setPeriodComparison(comparison);
       setIsLoadingStats(false);
     };
 
@@ -1483,6 +1488,32 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
   const upsCnt    = rooms.filter(isUPS).length;
 
+  // ── REÁLNÉ DELTY a TRENDY z period comparison ──
+  const realDeltas = useMemo(() => {
+    if (!periodComparison) {
+      return { utilDelta: 0, opsDelta: 0, queueDelta: 0, durationDelta: 0 };
+    }
+    const { currentPeriod: curr, previousPeriod: prev } = periodComparison;
+    const calcDelta = (c: number, p: number) => p === 0 ? 0 : Math.round(((c - p) / p) * 100);
+    return {
+      utilDelta: calcDelta(curr.avgUtilization, prev.avgUtilization),
+      opsDelta: calcDelta(curr.totalOperations, prev.totalOperations),
+      queueDelta: calcDelta(curr.totalQueue, prev.totalQueue),
+      durationDelta: calcDelta(curr.avgOpDuration, prev.avgOpDuration),
+    };
+  }, [periodComparison]);
+
+  // Reálné trendy pro sparklines
+  const realTrends = useMemo(() => {
+    if (!periodComparison || !periodComparison.trendData.length) {
+      return { operations: [] as number[], utilization: [] as number[] };
+    }
+    return {
+      operations: periodComparison.trendData.map(d => d.operations),
+      utilization: periodComparison.trendData.map(d => d.utilization),
+    };
+  }, [periodComparison]);
+
   // ── Scorecard data construction (pro ExecutiveScorecard hero kartu) ──
   const scorecardData = useMemo(() => {
     // Průměrná délka výkonu — váženě dle workflow steps
@@ -1511,8 +1542,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       recentEvents,
       rooms,
       periodLabel: period,
+      // Předání REÁLNÝCH delt a trendů z databáze
+      realDeltas,
+      realTrends,
     };
-  }, [avgUtil, totalOps, busyCount, totalQueue, septicCnt, upsCnt, avgStepDurations, statusHistory, rooms, period]);
+  }, [avgUtil, totalOps, busyCount, totalQueue, septicCnt, upsCnt, avgStepDurations, statusHistory, rooms, period, realDeltas, realTrends]);
 
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};

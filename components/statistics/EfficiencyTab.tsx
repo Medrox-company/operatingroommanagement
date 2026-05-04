@@ -25,8 +25,7 @@ import {
 } from 'recharts';
 import {
   C, Card, KPIBlock, ProgressRing, SectionHeader, DeltaBadge, IconBubble,
-  computeDelta, seededPreviousValue, generateSeededTrend, hashStr,
-  formatMinutes, formatPercent,
+  hashStr, formatMinutes, formatPercent,
 } from './shared';
 import { OperatingRoom } from '../../types';
 
@@ -157,7 +156,7 @@ const TurnoverChart: React.FC<{ avgStepDurations: number[] }> = memo(({ avgStepD
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {buckets.map((b, i) => {
-              // Color gradient: rychlý (zelený) → pomalý (červený)
+              // Color gradient: rychlý (zelený) → pomalý (červen��)
               const color = b.center < 10 ? C.green : b.center < 20 ? C.accent : b.center < 30 ? C.yellow : C.red;
               return <Cell key={i} fill={color} />;
             })}
@@ -301,15 +300,18 @@ export const EfficiencyTab: React.FC<EfficiencyTabProps> = ({
     return { throughput, turnover, onTimePct, overrunPct, septicPct };
   }, [rooms, totalOps, avgStepDurations, periodLabel]);
 
-  const throughputPrev = seededPreviousValue(`th-${periodLabel}`, kpis.throughput, 0.20);
-  const turnoverPrev   = seededPreviousValue(`tu-${periodLabel}`, kpis.turnover, 0.15);
-  const onTimePrev     = seededPreviousValue(`ot-${periodLabel}`, kpis.onTimePct, 0.15);
-  const overrunPrev    = seededPreviousValue(`or-${periodLabel}`, kpis.overrunPct, 0.20);
-  const utilPrev       = seededPreviousValue(`util-eff-${periodLabel}`, avgUtilization, 0.15);
+  // Bez historických dat - delta je 0, žádné trendy
+  // V budoucnu lze tyto hodnoty načíst z databáze přes props podobně jako v ExecutiveScorecard
+  const throughputDelta = 0;
+  const turnoverDelta = 0;
+  const onTimeDelta = 0;
+  const overrunDelta = 0;
+  const utilDelta = 0;
 
-  const throughputTrend = useMemo(() => generateSeededTrend(`th-trend-${periodLabel}`, 14, kpis.throughput, 0.18), [kpis.throughput, periodLabel]);
-  const turnoverTrend   = useMemo(() => generateSeededTrend(`tu-trend-${periodLabel}`, 14, kpis.turnover, 0.12), [kpis.turnover, periodLabel]);
-  const onTimeTrend     = useMemo(() => generateSeededTrend(`ot-trend-${periodLabel}`, 14, kpis.onTimePct, 0.10), [kpis.onTimePct, periodLabel]);
+  // Prázdné trendy - bez historických dat
+  const throughputTrend: number[] = [];
+  const turnoverTrend: number[] = [];
+  const onTimeTrend: number[] = [];
 
   // Bottleneck identification — score per room + reason
   const bottlenecks = useMemo(() => {
@@ -336,30 +338,30 @@ export const EfficiencyTab: React.FC<EfficiencyTabProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
         <KPIBlock label="Throughput / h"
           value={kpis.throughput} format={(v) => v.toFixed(1)} unit="op/h"
-          delta={computeDelta(kpis.throughput, throughputPrev)}
+          delta={throughputDelta}
           trend={throughputTrend} accent={C.accent} icon={Gauge}
           sublabel="průměr 24 h" />
         <KPIBlock label="Turnover čas"
           value={kpis.turnover} format={(v) => Math.round(v).toString()} unit="min"
-          delta={computeDelta(kpis.turnover, turnoverPrev)}
+          delta={turnoverDelta}
           deltaInverted
           trend={turnoverTrend} accent={C.purple} icon={RefreshCw}
           sublabel="výměna mezi pacienty" />
         <KPIBlock label="On-time start"
           value={kpis.onTimePct} format={(v) => v.toFixed(0)} unit="%"
-          delta={computeDelta(kpis.onTimePct, onTimePrev)}
+          delta={onTimeDelta}
           trend={onTimeTrend} accent={C.green} icon={ClockArrowUp}
           target={90}
           sublabel="cíl 90 %" />
         <KPIBlock label="Overrun rate"
           value={kpis.overrunPct} format={(v) => v.toFixed(1)} unit="%"
-          delta={computeDelta(kpis.overrunPct, overrunPrev)}
+          delta={overrunDelta}
           deltaInverted
           accent={C.orange} icon={Hourglass}
           sublabel="překročení odhadu" />
         <KPIBlock label="Vytížení"
           value={avgUtilization} format={(v) => v.toFixed(1)} unit="%"
-          delta={computeDelta(avgUtilization, utilPrev)}
+          delta={utilDelta}
           accent={C.yellow} icon={Activity}
           target={75}
           sublabel="cíl 75 % v provozu" />

@@ -20,8 +20,7 @@ import {
   Target, Sparkles, ArrowUpRight, ArrowDownRight, Radio,
 } from 'lucide-react';
 import {
-  C, Card, GradeBadge, KPIBlock, DeltaBadge, IconBubble, LiveDot,
-  AnimatedCounter, formatPercent, generateSeededTrend, computeDelta, seededPreviousValue,
+  C, Card, GradeBadge, KPIBlock, LiveDot,
 } from './shared';
 import { OperatingRoom } from '../../types';
 
@@ -54,6 +53,18 @@ export interface ScorecardData {
   rooms: OperatingRoom[];
   /** Aktuální období label (např. "den") */
   periodLabel: string;
+  /** REÁLNÉ delty z period-over-period porovnání */
+  realDeltas?: {
+    utilDelta: number;
+    opsDelta: number;
+    queueDelta: number;
+    durationDelta: number;
+  };
+  /** REÁLNÉ trendy pro sparklines */
+  realTrends?: {
+    operations: number[];
+    utilization: number[];
+  };
 }
 
 interface ExecutiveScorecardProps {
@@ -235,23 +246,22 @@ const InsightItem: React.FC<{ insight: Insight; index: number }> = ({ insight, i
 export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) => {
   // Composite score
   const score = useMemo(() => computeCompositeScore(data), [data]);
-  // Pseudo-historical scores pro sparkline
-  const scoreTrend = useMemo(
-    () => generateSeededTrend(`scorecard-${data.periodLabel}`, 12, score, 0.06),
-    [score, data.periodLabel],
-  );
+  // Pro scoreTrend používáme reálná data z utilization trendu (pokud dostupná)
+  const scoreTrend = data.realTrends?.utilization ?? [];
 
-  // PoP delty na hlavních KPI
-  const utilPrev   = seededPreviousValue(`util-${data.periodLabel}`, data.utilization);
-  const opsPrev    = seededPreviousValue(`ops-${data.periodLabel}`, data.totalOps, 0.30);
-  const queuePrev  = seededPreviousValue(`queue-${data.periodLabel}`, data.totalQueue, 0.50);
-  const durPrev    = seededPreviousValue(`dur-${data.periodLabel}`, data.avgOpDuration, 0.18);
+  // Použití REÁLNÝCH delt z databáze pokud jsou dostupná, jinak fallback na 0
+  const hasRealData = !!data.realDeltas && !!data.realTrends;
+  const utilDelta = data.realDeltas?.utilDelta ?? 0;
+  const opsDelta = data.realDeltas?.opsDelta ?? 0;
+  const queueDelta = data.realDeltas?.queueDelta ?? 0;
+  const durDelta = data.realDeltas?.durationDelta ?? 0;
 
-  // Trend mock pro KPI sparkliny
-  const utilTrend  = useMemo(() => generateSeededTrend(`util-trend-${data.periodLabel}`, 14, data.utilization), [data.utilization, data.periodLabel]);
-  const opsTrend   = useMemo(() => generateSeededTrend(`ops-trend-${data.periodLabel}`, 14, data.totalOps, 0.25), [data.totalOps, data.periodLabel]);
-  const queueTrend = useMemo(() => generateSeededTrend(`queue-trend-${data.periodLabel}`, 14, data.totalQueue, 0.4), [data.totalQueue, data.periodLabel]);
-  const durTrend   = useMemo(() => generateSeededTrend(`dur-trend-${data.periodLabel}`, 14, data.avgOpDuration, 0.12), [data.avgOpDuration, data.periodLabel]);
+  // Použití REÁLNÝCH trendů z databáze pokud jsou dostupná, jinak prázdné pole
+  const utilTrend = data.realTrends?.utilization ?? [];
+  const opsTrend = data.realTrends?.operations ?? [];
+  // Pro queue a duration používáme stejný trend jako pro operace (zatím nemáme specifická data)
+  const queueTrend = data.realTrends?.operations ?? [];
+  const durTrend = data.realTrends?.utilization ?? [];
 
   // Insights
   const insights = useMemo(() => generateInsights(data, score), [data, score]);
@@ -302,7 +312,7 @@ export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) 
             value={data.utilization}
             format={(v) => v.toFixed(1)}
             unit="%"
-            delta={computeDelta(data.utilization, utilPrev)}
+            delta={utilDelta}
             trend={utilTrend}
             target={75}
             accent={C.green}
@@ -312,7 +322,7 @@ export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) 
           <KPIBlock
             label="Operace celkem"
             value={data.totalOps}
-            delta={computeDelta(data.totalOps, opsPrev)}
+            delta={opsDelta}
             trend={opsTrend}
             accent={C.accent}
             icon={Zap}
@@ -321,7 +331,7 @@ export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) 
           <KPIBlock
             label="Pacienti ve frontě"
             value={data.totalQueue}
-            delta={computeDelta(data.totalQueue, queuePrev)}
+            delta={queueDelta}
             deltaInverted
             trend={queueTrend}
             accent={C.orange}
@@ -333,7 +343,7 @@ export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) 
             value={data.avgOpDuration}
             format={(v) => Math.round(v).toString()}
             unit="min"
-            delta={computeDelta(data.avgOpDuration, durPrev)}
+            delta={durDelta}
             deltaInverted
             trend={durTrend}
             accent={C.purple}

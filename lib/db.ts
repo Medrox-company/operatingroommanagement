@@ -867,6 +867,136 @@ export async function fetchRoomStatistics(
   }
 }
 
+// ============= PERIOD COMPARISON — REAL TREND DATA =============
+
+export interface PeriodComparisonStats {
+  currentPeriod: {
+    totalOperations: number;
+    avgUtilization: number;
+    totalQueue: number;
+    avgOpDuration: number; // minutes
+  };
+  previousPeriod: {
+    totalOperations: number;
+    avgUtilization: number;
+    totalQueue: number;
+    avgOpDuration: number;
+  };
+  /** Trend data points for sparklines - daily aggregates */
+  trendData: {
+    date: string;
+    operations: number;
+    utilization: number;
+  }[];
+}
+
+/**
+ * Fetches statistics for current period AND previous period for comparison.
+ * Also returns daily trend data for sparklines.
+ */
+export async function fetchPeriodComparison(
+  period: 'den' | 'týden' | 'měsíc' | 'rok'
+): Promise<PeriodComparisonStats | null> {
+  if (!isSupabaseConfigured || !supabase) {
+    return null;
+  }
+
+  try {
+    const now = new Date();
+    let periodMs: number;
+    
+    switch (period) {
+      case 'den':    periodMs = 24 * 60 * 60 * 1000; break;
+      case 'týden':  periodMs = 7 * 24 * 60 * 60 * 1000; break;
+      case 'měsíc':  periodMs = 30 * 24 * 60 * 60 * 1000; break;
+      case 'rok':    periodMs = 365 * 24 * 60 * 60 * 1000; break;
+    }
+    
+    const currentStart = new Date(now.getTime() - periodMs);
+    const previousStart = new Date(now.getTime() - periodMs * 2);
+    
+    // Fetch all history for both periods
+    const { data, error } = await supabase
+      .from('room_status_history')
+      .select('*')
+      .gte('timestamp', previousStart.toISOString())
+      .lte('timestamp', now.toISOString())
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+    
+    const history = data || [];
+    
+    // Split into current and previous period
+    const currentHistory = history.filter((e: StatusHistoryRow) => 
+      new Date(e.timestamp).getTime() >= currentStart.getTime()
+    );
+    const previousHistory = history.filter((e: StatusHistoryRow) => 
+      new Date(e.timestamp).getTime() < currentStart.getTime()
+    );
+    
+    // Calculate stats for each period
+    const calcPeriodStats = (events: StatusHistoryRow[]) => {
+      const opEnds = events.filter(e => e.event_type === 'operation_end');
+      const stepChanges = events.filter(e => e.event_type === 'step_change' && e.duration_seconds);
+      
+      const totalOperations = opEnds.length;
+      
+      const durations = opEnds
+        .map(e => e.duration_seconds)
+        .filter((d): d is number => d !== null && d !== undefined);
+      const avgOpDuration = durations.length > 0
+        ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length / 60)
+        : 0;
+      
+      // Simplified utilization - sum of all step durations / expected working time
+      const totalStepMinutes = stepChanges.reduce((sum, e) => sum + (e.duration_seconds || 0) / 60, 0);
+      const expectedMinutesPerDay = 10 * 60; // 10 hours per day
+      const days = Math.max(1, events.length > 0 ? 
+        Math.ceil((new Date(events[events.length - 1].timestamp).getTime() - 
+                   new Date(events[0].timestamp).getTime()) / (24 * 60 * 60 * 1000)) : 1);
+      const avgUtilization = Math.min(100, Math.round((totalStepMinutes / (expectedMinutesPerDay * days)) * 100));
+      
+      return { totalOperations, avgUtilization, totalQueue: 0, avgOpDuration };
+    };
+    
+    // Build daily trend data from current period
+    const trendData: { date: string; operations: number; utilization: number }[] = [];
+    const dailyOps: Record<string, number> = {};
+    const dailyMinutes: Record<string, number> = {};
+    
+    currentHistory.forEach((e: StatusHistoryRow) => {
+      const day = e.timestamp.split('T')[0];
+      if (e.event_type === 'operation_end') {
+        dailyOps[day] = (dailyOps[day] || 0) + 1;
+      }
+      if (e.event_type === 'step_change' && e.duration_seconds) {
+        dailyMinutes[day] = (dailyMinutes[day] || 0) + e.duration_seconds / 60;
+      }
+    });
+    
+    // Generate trend for each day in period
+    const dayCount = period === 'den' ? 24 : period === 'týden' ? 7 : period === 'měsíc' ? 30 : 12;
+    for (let i = dayCount - 1; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * (periodMs / dayCount));
+      const dayKey = date.toISOString().split('T')[0];
+      const ops = dailyOps[dayKey] || 0;
+      const mins = dailyMinutes[dayKey] || 0;
+      const util = Math.min(100, Math.round((mins / (10 * 60)) * 100)); // 10h working day
+      trendData.push({ date: dayKey, operations: ops, utilization: util });
+    }
+    
+    return {
+      currentPeriod: calcPeriodStats(currentHistory),
+      previousPeriod: calcPeriodStats(previousHistory),
+      trendData,
+    };
+  } catch (error) {
+    console.error('[DB] Failed to fetch period comparison:', error);
+    return null;
+  }
+}
+
 // ============= STATISTICS — RAW TABLE FETCHES =============
 
 // ── safety_checklists ──────────────────────────────────────────────
