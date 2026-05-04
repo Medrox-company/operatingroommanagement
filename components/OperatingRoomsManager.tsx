@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_WORKING_HOURS } from '../types';
 import { MOCK_ROOMS } from '../constants';
@@ -201,7 +201,6 @@ const RoomCard: React.FC<{
   onDelete: () => void;
   onScheduleEdit: () => void;
 }> = ({ room, onEdit, onDelete, onScheduleEdit }) => {
-  const color = getDeptColor(room.department);
   const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
   
   // Count active days
@@ -212,12 +211,8 @@ const RoomCard: React.FC<{
   const todaySchedule = schedule[todayKey];
   
   return (
-    <motion.div
-      className="relative group overflow-hidden rounded-xl"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.01 }}
-      transition={{ duration: 0.3 }}
+    <div
+      className="relative group overflow-hidden rounded-xl transition-transform duration-200 hover:scale-[1.01]"
     >
       {/* Card Content */}
       <div 
@@ -334,7 +329,7 @@ const RoomCard: React.FC<{
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -427,12 +422,9 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   onRoomsChange,
   onScheduleUpdate,
 }) => {
-  const [roomsList, setRoomsList] = useState<OperatingRoom[]>(
-    (initialRooms || MOCK_ROOMS).map(room => ({
-      ...room,
-      weeklySchedule: room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE
-    })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-  );
+  // Use ref to track if we've done initial load - prevents re-sync from polling
+  const hasInitialized = useRef(false);
+  const [roomsList, setRoomsList] = useState<OperatingRoom[]>([]);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingRoom, setEditingRoom] = useState<OperatingRoom | null>(null);
   const [scheduleEditRoom, setScheduleEditRoom] = useState<OperatingRoom | null>(null);
@@ -442,6 +434,18 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     name: '',
     department: '',
   });
+
+  // Initialize roomsList only once on mount, ignore subsequent prop changes from polling
+  useEffect(() => {
+    if (!hasInitialized.current && initialRooms && initialRooms.length > 0) {
+      hasInitialized.current = true;
+      const sorted = initialRooms.map(room => ({
+        ...room,
+        weeklySchedule: room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE
+      })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      setRoomsList(sorted);
+    }
+  }, [initialRooms]);
 
   const saveRoomOrder = useCallback(async (rooms: OperatingRoom[]) => {
     try {
@@ -637,84 +641,73 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
       {/* Error Message */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 flex items-center gap-3"
-        >
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <p className="text-sm">{error}</p>
           <button onClick={() => setError(null)} className="ml-auto">
             <X className="w-4 h-4" />
           </button>
-        </motion.div>
+        </div>
       )}
 
       {/* Add New Room Form */}
-      <AnimatePresence>
-        {isAddingNew && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-8 overflow-hidden"
+      {isAddingNew && (
+        <div className="mb-8">
+          <div 
+            className="p-6 rounded-2xl"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%)',
+              border: '1px solid rgba(251, 191, 36, 0.2)'
+            }}
           >
-            <div 
-              className="p-6 rounded-2xl"
-              style={{ 
-                background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%)',
-                border: '1px solid rgba(251, 191, 36, 0.2)'
-              }}
-            >
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Plus className="w-5 h-5 text-cyan-400" />
-                Přidat nový operační sál
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Název sálu</label>
-                  <input
-                    type="text"
-                    placeholder="např. Sál č. 1"
-                    value={newRoomData.name}
-                    onChange={(e) => setNewRoomData({ ...newRoomData, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Oddeleni</label>
-                  <input
-                    type="text"
-                    placeholder="TRA, CHIR, atd."
-                    value={newRoomData.department}
-                    onChange={(e) => setNewRoomData({ ...newRoomData, department: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
-                  />
-                </div>
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-cyan-400" />
+              Přidat nový operační sál
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Název sálu</label>
+                <input
+                  type="text"
+                  placeholder="např. Sál č. 1"
+                  value={newRoomData.name}
+                  onChange={(e) => setNewRoomData({ ...newRoomData, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
+                />
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleAddRoom}
-                  className="px-6 py-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-semibold hover:bg-cyan-500/30 transition-all flex items-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Přidat sál
-                </button>
-                <button
-                  onClick={() => {
-                    setIsAddingNew(false);
-                    setNewRoomData({ name: '', department: '' });
-                    setError(null);
-                  }}
-                  className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
-                >
-                  Zrusit
-                </button>
+              <div>
+                <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Oddělení</label>
+                <input
+                  type="text"
+                  placeholder="TRA, CHIR, atd."
+                  value={newRoomData.department}
+                  onChange={(e) => setNewRoomData({ ...newRoomData, department: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50"
+                />
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAddRoom}
+                className="px-6 py-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-semibold hover:bg-cyan-500/30 transition-all flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Přidat sál
+              </button>
+              <button
+                onClick={() => {
+                  setIsAddingNew(false);
+                  setNewRoomData({ name: '', department: '' });
+                  setError(null);
+                }}
+                className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/[0.08] transition-all"
+              >
+                Zrušit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Button */}
       {!isAddingNew && (
