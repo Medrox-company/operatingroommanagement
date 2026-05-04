@@ -97,7 +97,7 @@ const AppContent: React.FC = () => {
   // Emergency alert sound — siréna při aktivaci stavu nouze (isEmergency=true).
   useEmergencyAlert(rooms);
 
-  // Load rooms from API on mount - separated for stability
+  // Load rooms from API on mount + polling fallback for realtime sync
   useEffect(() => {
     let isMounted = true;
     const loadRooms = async () => {
@@ -124,7 +124,19 @@ const AppContent: React.FC = () => {
       }
     };
     loadRooms();
-    return () => { isMounted = false; };
+    
+    // Polling fallback - refresh data every 3 seconds to ensure sync
+    // This acts as a backup for realtime subscriptions
+    const pollingInterval = setInterval(() => {
+      if (isMounted) {
+        loadRooms();
+      }
+    }, 3000);
+    
+    return () => { 
+      isMounted = false;
+      clearInterval(pollingInterval);
+    };
   }, []);
 
   // Track recent local updates to ignore duplicate realtime events (prevents flickering)
@@ -159,13 +171,17 @@ const AppContent: React.FC = () => {
       },
       // Granular update callback (for UPDATE - instant sync)
       (roomId, dbChanges) => {
+        console.log('[v0] Realtime update received for room:', roomId, 'changes:', dbChanges);
+        
         // Skip if we recently made a local update to this room (prevents double-render flickering)
         const lastLocalUpdate = recentLocalUpdates.current.get(roomId);
         if (lastLocalUpdate && Date.now() - lastLocalUpdate < DEBOUNCE_MS) {
+          console.log('[v0] Skipping realtime update - recent local update detected');
           return; // Ignore this realtime update - we already have the data from optimistic update
         }
         
         const appChanges = transformSingleRoom(dbChanges);
+        console.log('[v0] Transformed changes:', appChanges);
         setRooms(prev => prev.map(room =>
           room.id === roomId ? { ...room, ...appChanges } : room
         ));
