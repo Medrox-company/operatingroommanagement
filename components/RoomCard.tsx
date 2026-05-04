@@ -95,7 +95,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   return (
     <div
       onClick={onClick}
-      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full bg-canvas border border-hairline rounded-lg shadow-apple-subtle hover:shadow-apple-product transition-shadow duration-200"
+      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full"
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (

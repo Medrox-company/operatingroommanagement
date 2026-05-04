@@ -3,8 +3,8 @@ import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Operační sály | Apple Design',
-  description: 'Správa operačních sálů s minimalistickým Apple designem',
+  title: 'Operating Room Control | NEXT-GEN',
+  description: 'Operating Room Control - overview and management of operating rooms',
 }
 
 export default function RootLayout({
@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="cs" className="scroll-smooth">
-      <body className="bg-canvas text-ink antialiased font-sans">
+    <html lang="cs">
+      <body className="bg-black text-white antialiased">
         {children}
         <Analytics />
       </body>
