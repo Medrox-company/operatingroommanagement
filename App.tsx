@@ -97,21 +97,30 @@ const AppContent: React.FC = () => {
   // Emergency alert sound — siréna při aktivaci stavu nouze (isEmergency=true).
   useEmergencyAlert(rooms);
 
-  // Load rooms from API on mount - separated for stability
+  // Track recent local updates to ignore the realtime UPDATE event echo from
+  // our own DB write (Supabase broadcasts UPDATE events back to the originating
+  // client). Without this, we'd briefly flicker as the realtime event arrives
+  // and re-applies the same value we already set optimistically.
+  const recentLocalUpdates = useRef<Map<string, number>>(new Map());
+  const DEBOUNCE_MS = 2000;
+
+  // Load rooms on mount. Real-time sync is handled by Supabase realtime subscription.
+  // NO POLLING - polling was causing race conditions where stale data overwrote
+  // optimistic updates before DB write completed.
   useEffect(() => {
     let isMounted = true;
     const loadRooms = async () => {
       try {
-        // Add timeout to prevent hanging
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch('/api/rooms', { signal: controller.signal });
+        const response = await fetch(`/api/rooms?t=${Date.now()}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        });
         clearTimeout(timeout);
-        
-        if (!isMounted) return; // Ignore if unmounted
+        if (!isMounted) return;
         if (!response.ok) throw new Error('Failed to fetch rooms');
-        
         const dbRooms = await response.json();
         if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
           setRooms(dbRooms);
@@ -120,28 +129,22 @@ const AppContent: React.FC = () => {
       } catch (error) {
         if (!isMounted) return;
         console.error("[v0] Failed to load rooms from API:", error);
-        // Keep using MOCK_ROOMS on error - don't crash
       }
     };
     loadRooms();
     return () => { isMounted = false; };
   }, []);
-
-  // Track recent local updates to ignore duplicate realtime events (prevents flickering)
-  const recentLocalUpdates = useRef<Map<string, number>>(new Map());
-  const DEBOUNCE_MS = 2000; // Ignore realtime updates within 2s of local update (increased for stability)
   
-  // Cleanup old entries from recentLocalUpdates to prevent memory growth
+  // Cleanup old entries from recentLocalUpdates to prevent memory growth.
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
       recentLocalUpdates.current.forEach((timestamp, roomId) => {
-        if (now - timestamp > DEBOUNCE_MS * 2) {
+        if (now - timestamp > DEBOUNCE_MS * 3) {
           recentLocalUpdates.current.delete(roomId);
         }
       });
-    }, 10000); // Cleanup every 10 seconds
-    
+    }, 10000);
     return () => clearInterval(cleanupInterval);
   }, []);
 
@@ -290,32 +293,32 @@ const AppContent: React.FC = () => {
   }, [isDbConnected]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
+    const currentRoom = rooms.find(r => r.id === roomId);
+    if (!currentRoom) return;
+    const newValue = !currentRoom.isEmergency;
+    
     recentLocalUpdates.current.set(roomId, Date.now());
-    // Funkční setState — čte aktuální `rooms` z reduceru, takže callback nemusí
-    // mít `rooms` v deps a zůstává referenčně stabilní napříč rendery.
-    let newValue = false;
-    setRooms(prev => prev.map(r => {
-      if (r.id !== roomId) return r;
-      newValue = !r.isEmergency;
-      return { ...r, isEmergency: newValue };
-    }));
+    setRooms(prev => prev.map(room =>
+      room.id === roomId ? { ...room, isEmergency: newValue } : room
+    ));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, rooms]);
 
   const toggleLock = useCallback(async (roomId: string) => {
+    const currentRoom = rooms.find(r => r.id === roomId);
+    if (!currentRoom) return;
+    const newValue = !currentRoom.isLocked;
+    
     recentLocalUpdates.current.set(roomId, Date.now());
-    let newValue = false;
-    setRooms(prev => prev.map(r => {
-      if (r.id !== roomId) return r;
-      newValue = !r.isLocked;
-      return { ...r, isLocked: newValue };
-    }));
+    setRooms(prev => prev.map(room =>
+      room.id === roomId ? { ...room, isLocked: newValue } : room
+    ));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_locked: newValue });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, rooms]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
     recentLocalUpdates.current.set(roomId, Date.now());

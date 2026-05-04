@@ -618,9 +618,12 @@ export function subscribeToOperatingRooms(
         }
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('[DB] Realtime subscription status:', status);
+    });
 
   return () => {
+    console.log('[DB] Unsubscribing from realtime');
     channel.unsubscribe();
   };
 }
@@ -917,7 +920,7 @@ export async function fetchSafetyChecklists(
   }
 }
 
-// ── equipment ──────────────────────────────────────────────────────
+// ── equipment ─────────────────────────────────────────────────────�����
 export interface EquipmentRow {
   id: string;
   name: string;
@@ -945,7 +948,7 @@ export async function fetchEquipment(): Promise<EquipmentRow[] | null> {
   }
 }
 
-// ── staff (full table — pro Personál tab) ─────────────────────────
+// ── staff (full table — pro Personál tab) ─────���───────────────────
 export interface StaffRow {
   id: string;
   name: string;

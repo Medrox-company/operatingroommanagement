@@ -34,6 +34,11 @@ const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subje
     field: 'notify_late_arrival',
     subject: 'Upozornění: Pozdní příjezd'
   },
+  'notify_emergencies': {
+    name: 'Stav nouze',
+    field: 'notify_emergencies',
+    subject: 'STAV NOUZE aktivován'
+  },
   'notify_other': {
     name: 'Jiný důvod',
     field: 'notify_other',

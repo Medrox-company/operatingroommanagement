@@ -1,8 +1,13 @@
-// Email utility - calls Supabase Edge Function to send emails via Resend
-// This avoids CORS issues by routing through Supabase Edge Functions
+// Email utility - uses Resend API directly for reliable email delivery
+// Server-side only - this module should only be imported in API routes
 
-// Supabase project URL
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+import { Resend } from 'resend';
+
+// Initialize Resend client - will be null if API key is not set
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+// Default sender email - use Resend's test email if not configured
+const DEFAULT_FROM = process.env.EMAIL_FROM || 'Operacni Saly <onboarding@resend.dev>';
 
 export interface EmailNotification {
   to: string;
@@ -20,41 +25,31 @@ export interface EmailTemplateData {
 }
 
 /**
- * Send an email notification via our API endpoint
+ * Send an email notification via Resend API (server-side only)
  */
 export async function sendEmailNotification(
   notification: EmailNotification
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
-  if (!SUPABASE_URL) {
-    console.error('[Email] Supabase URL not configured');
-    return { success: false, error: 'Email service not configured' };
+  if (!resend) {
+    console.error('[Email] Resend API key not configured (RESEND_API_KEY)');
+    return { success: false, error: 'Email service not configured - missing RESEND_API_KEY' };
   }
 
   try {
-    // Encode the body as UTF-8 to handle Czech characters properly
-    const bodyData = JSON.stringify({
+    const { data, error } = await resend.emails.send({
+      from: DEFAULT_FROM,
       to: notification.to,
       subject: notification.subject,
       html: notification.html,
     });
-    
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: bodyData,
-    });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('[Email] API error:', data);
-      return { success: false, error: data.error || 'Failed to send email' };
+    if (error) {
+      console.error('[Email] Resend API error:', error);
+      return { success: false, error: error.message || 'Failed to send email' };
     }
 
-    console.log('[Email] Email sent successfully:', data.messageId);
-    return { success: true, messageId: data.messageId };
+    console.log('[Email] Email sent successfully:', data?.id);
+    return { success: true, messageId: data?.id };
   } catch (error) {
     console.error('[Email] Failed to send email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
