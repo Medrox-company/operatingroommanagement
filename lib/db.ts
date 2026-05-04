@@ -572,11 +572,8 @@ export function subscribeToOperatingRooms(
   onRoomUpdate?: (roomId: string, changes: Partial<DBOperatingRoom>) => void
 ): (() => void) | null {
   if (!isSupabaseConfigured || !supabase) {
-    console.warn('[DB] Realtime subscription skipped - Supabase not configured');
     return null;
   }
-
-  console.log('[DB] Setting up realtime subscription for operating_rooms');
 
   const channel = supabase
     .channel('operating_rooms_realtime')
@@ -584,19 +581,9 @@ export function subscribeToOperatingRooms(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'operating_rooms' },
       (payload: { eventType: string; new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
-        console.log('[DB] Realtime event received:', payload.eventType, payload.new?.['id']);
-        
         if (payload.eventType === 'UPDATE' && payload.new && onRoomUpdate) {
           const newRecord = payload.new as unknown as DBOperatingRoom;
           const oldRecord = payload.old as unknown as DBOperatingRoom | null;
-          
-          // Log emergency/lock changes for debugging
-          if (newRecord.is_emergency !== oldRecord?.is_emergency) {
-            console.log('[DB] Emergency status changed:', newRecord.id, '→', newRecord.is_emergency);
-          }
-          if (newRecord.is_locked !== oldRecord?.is_locked) {
-            console.log('[DB] Lock status changed:', newRecord.id, '→', newRecord.is_locked);
-          }
           
           // Check if staff changed - if so, do full refresh to get staff names
           // If we don't have old record (REPLICA IDENTITY not FULL), check if staff IDs exist
@@ -933,7 +920,7 @@ export async function fetchSafetyChecklists(
   }
 }
 
-// ── equipment ─────────────────────────────────────────────────────���
+// ── equipment ─────────────────────────────────────────────────────�����
 export interface EquipmentRow {
   id: string;
   name: string;
