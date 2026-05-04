@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="cs">
-      <body className="bg-black text-white antialiased">
+      <body className="bg-background text-foreground antialiased">
         {children}
         <Analytics />
       </body>
