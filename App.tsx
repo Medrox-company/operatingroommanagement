@@ -104,12 +104,14 @@ const AppContent: React.FC = () => {
   const recentLocalUpdates = useRef<Map<string, number>>(new Map());
   const DEBOUNCE_MS = 2000;
 
-  // Load rooms on mount. Real-time sync is handled by Supabase realtime subscription.
-  // NO POLLING - polling was causing race conditions where stale data overwrote
-  // optimistic updates before DB write completed.
+  // Load rooms on mount + polling fallback for cross-device sync.
+  // Polling is needed because Supabase realtime may not work reliably on all
+  // devices (mobile networks, different browsers). Polling respects recentLocalUpdates
+  // to avoid overwriting optimistic updates.
   useEffect(() => {
     let isMounted = true;
-    const loadRooms = async () => {
+    
+    const loadRooms = async (isPolling = false) => {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
@@ -122,17 +124,44 @@ const AppContent: React.FC = () => {
         if (!isMounted) return;
         if (!response.ok) throw new Error('Failed to fetch rooms');
         const dbRooms = await response.json();
-        if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
+        if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) return;
+        
+        if (!isPolling) {
+          // Initial load - replace all
           setRooms(dbRooms);
           setIsDbConnected(true);
+        } else {
+          // Polling - merge carefully, respecting recent local updates
+          setRooms(prev => {
+            return dbRooms.map((dbRoom: OperatingRoom) => {
+              const lastLocalUpdate = recentLocalUpdates.current.get(dbRoom.id);
+              // If we recently changed this room locally, keep our version
+              if (lastLocalUpdate && Date.now() - lastLocalUpdate < 5000) {
+                const localRoom = prev.find(r => r.id === dbRoom.id);
+                if (localRoom) return localRoom;
+              }
+              return dbRoom;
+            });
+          });
         }
       } catch (error) {
         if (!isMounted) return;
         console.error("[v0] Failed to load rooms from API:", error);
       }
     };
-    loadRooms();
-    return () => { isMounted = false; };
+    
+    // Initial load
+    loadRooms(false);
+    
+    // Polling fallback every 3 seconds for cross-device sync
+    const pollingInterval = setInterval(() => {
+      if (isMounted) loadRooms(true);
+    }, 3000);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(pollingInterval);
+    };
   }, []);
   
   // Cleanup old entries from recentLocalUpdates to prevent memory growth.
