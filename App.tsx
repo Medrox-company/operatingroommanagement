@@ -97,88 +97,86 @@ const AppContent: React.FC = () => {
   // Emergency alert sound — siréna při aktivaci stavu nouze (isEmergency=true).
   useEmergencyAlert(rooms);
 
-  // Load rooms from API on mount + polling fallback for realtime sync
+  // Track recent local updates to ignore the realtime UPDATE event echo from
+  // our own DB write (Supabase broadcasts UPDATE events back to the originating
+  // client). Without this, we'd briefly flicker as the realtime event arrives
+  // and re-applies the same value we already set optimistically.
+  const recentLocalUpdates = useRef<Map<string, number>>(new Map());
+  const DEBOUNCE_MS = 2000;
+  // Polling protection window — must be longer than (polling interval +
+  // DB write latency + network RTT) so a polling fetch in flight before our
+  // toggle can never overwrite the optimistic UI when its response arrives.
+  // Polling runs every 3s, DB write ~500ms, RTT ~500ms → 6000ms is safe.
+  const POLL_PROTECT_MS = 6000;
+
+  // Load rooms on mount + safe polling fallback (3s) for cross-device sync
+  // when Supabase realtime subscription isn't reachable from a device. Polling
+  // never overwrites a freshly toggled room — see POLL_PROTECT_MS guard.
   useEffect(() => {
     let isMounted = true;
-    const loadRooms = async (isInitialLoad = false) => {
+    const loadRooms = async (isInitial: boolean) => {
       try {
-        // Add timeout to prevent hanging
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
-        
-        // CRITICAL: cache: 'no-store' prevents browser/Next.js from returning
-        // stale data which would break cross-device real-time sync
         const response = await fetch(`/api/rooms?t=${Date.now()}`, {
           signal: controller.signal,
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' },
         });
         clearTimeout(timeout);
-        
-        if (!isMounted) return; // Ignore if unmounted
+        if (!isMounted) return;
         if (!response.ok) throw new Error('Failed to fetch rooms');
-        
         const dbRooms = await response.json();
-        if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
-          // On initial load, replace everything. On polling, merge to preserve
-          // recently-changed local optimistic updates (debounce window).
-          if (isInitialLoad) {
-            setRooms(dbRooms);
-          } else {
-            setRooms(prev => dbRooms.map((dbRoom: OperatingRoom) => {
-              const lastLocalUpdate = recentLocalUpdates.current.get(dbRoom.id);
-              // If we just made a local change, keep our optimistic version briefly
-              if (lastLocalUpdate && Date.now() - lastLocalUpdate < DEBOUNCE_MS) {
-                const localRoom = prev.find(r => r.id === dbRoom.id);
-                if (localRoom) return localRoom;
-              }
-              return dbRoom;
-            }));
-          }
+        if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) return;
+
+        if (isInitial) {
+          setRooms(dbRooms);
           setIsDbConnected(true);
+          return;
         }
+
+        // Polling merge: protect rooms with a recent local toggle (e.g. lock
+        // or emergency click). The DB write may not yet be reflected in this
+        // fetch since requests can race — the originating optimistic update
+        // is the authoritative client value until the protection window passes.
+        setRooms(prev => dbRooms.map((dbRoom: OperatingRoom) => {
+          const lastLocalUpdate = recentLocalUpdates.current.get(dbRoom.id);
+          if (lastLocalUpdate && Date.now() - lastLocalUpdate < POLL_PROTECT_MS) {
+            const localRoom = prev.find(r => r.id === dbRoom.id);
+            if (localRoom) return localRoom;
+          }
+          return dbRoom;
+        }));
       } catch (error) {
         if (!isMounted) return;
         console.error("[v0] Failed to load rooms from API:", error);
-        // Keep using MOCK_ROOMS on error - don't crash
       }
     };
     loadRooms(true);
-    
-    // Polling fallback - refresh data every 2 seconds to ensure cross-device sync
-    // This acts as a backup for realtime subscriptions which may not fire reliably
     const pollingInterval = setInterval(() => {
-      if (isMounted) {
-        loadRooms(false);
-      }
-    }, 2000);
-    
-    return () => { 
+      if (isMounted) loadRooms(false);
+    }, 3000);
+    return () => {
       isMounted = false;
       clearInterval(pollingInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Track recent local updates to protect optimistic UI updates from being
-  // overwritten by polling that may have started BEFORE our DB write completed.
-  // Must be longer than polling interval (2000ms) + DB write latency (~500ms)
-  // so a polling fetch in flight before our update can't overwrite us when it returns.
-  const recentLocalUpdates = useRef<Map<string, number>>(new Map());
-  const DEBOUNCE_MS = 4000;
   
-  // Cleanup old entries from recentLocalUpdates to prevent memory growth
+  // Cleanup old entries from recentLocalUpdates to prevent memory growth.
+  // Use POLL_PROTECT_MS (the longer window) as the threshold so we never
+  // delete an entry while polling still needs it for protection.
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
       recentLocalUpdates.current.forEach((timestamp, roomId) => {
-        if (now - timestamp > DEBOUNCE_MS * 2) {
+        if (now - timestamp > POLL_PROTECT_MS * 2) {
           recentLocalUpdates.current.delete(roomId);
         }
       });
-    }, 10000); // Cleanup every 10 seconds
-    
+    }, 15000);
     return () => clearInterval(cleanupInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Subscribe to real-time updates with granular room updates
@@ -330,7 +328,6 @@ const AppContent: React.FC = () => {
   }, [isDbConnected]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
-    // Mark as recently updated to protect optimistic UI from being overwritten by polling
     recentLocalUpdates.current.set(roomId, Date.now());
     let newValue = false;
     let roomName = '';
@@ -341,35 +338,26 @@ const AppContent: React.FC = () => {
       return { ...r, isEmergency: newValue };
     }));
     if (isDbConnected) {
-      try {
-        await updateOperatingRoom(roomId, { is_emergency: newValue });
-        // Refresh timestamp AFTER successful DB write so the next polling tick
-        // (which already queried DB before our write completed) cannot overwrite us.
-        recentLocalUpdates.current.set(roomId, Date.now());
-      } catch (err) {
-        console.error('[v0] Failed to update emergency in DB:', err);
-        // Revert optimistic update on failure
+      const ok = await updateOperatingRoom(roomId, { is_emergency: newValue });
+      if (!ok) {
+        // DB write failed - revert optimistic update
+        console.error('[v0] DB update for is_emergency failed, reverting');
         setRooms(prev => prev.map(r => r.id === roomId ? { ...r, isEmergency: !newValue } : r));
         recentLocalUpdates.current.delete(roomId);
         return;
       }
-
       // Send email notification when emergency is activated
       if (newValue && roomName) {
-        try {
-          await fetch('/api/send-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'notify_emergencies',
-              roomId,
-              roomName,
-              customReason: 'Byl aktivován stav nouze na operačním sále.',
-            }),
-          });
-        } catch (err) {
-          console.error('[v0] Failed to send emergency notification:', err);
-        }
+        fetch('/api/send-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'notify_emergencies',
+            roomId,
+            roomName,
+            customReason: 'Byl aktivován stav nouze na operačním sále.',
+          }),
+        }).catch(err => console.error('[v0] Emergency notification failed:', err));
       }
     }
   }, [isDbConnected]);
@@ -383,13 +371,10 @@ const AppContent: React.FC = () => {
       return { ...r, isLocked: newValue };
     }));
     if (isDbConnected) {
-      try {
-        await updateOperatingRoom(roomId, { is_locked: newValue });
-        // Refresh timestamp AFTER DB write so next polling tick respects our update
-        recentLocalUpdates.current.set(roomId, Date.now());
-      } catch (err) {
-        console.error('[v0] Failed to update lock in DB:', err);
-        // Revert optimistic update on failure
+      const ok = await updateOperatingRoom(roomId, { is_locked: newValue });
+      if (!ok) {
+        // DB write failed - revert optimistic update
+        console.error('[v0] DB update for is_locked failed, reverting');
         setRooms(prev => prev.map(r => r.id === roomId ? { ...r, isLocked: !newValue } : r));
         recentLocalUpdates.current.delete(roomId);
       }
