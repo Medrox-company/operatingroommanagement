@@ -681,16 +681,23 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
       )}
 
       {/* PWA Install Section */}
-      {isInstallable && !isInstalled && (
-        <>
-          <div className="flex items-center gap-3 pt-4">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
-              Mobilní aplikace
-            </span>
-            <div className="h-px flex-1 bg-white/10" />
-          </div>
+      <>
+        <div className="flex items-center gap-3 pt-4">
+          <div className="h-px flex-1 bg-white/10" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
+            Mobilní aplikace
+          </span>
+          <div className="h-px flex-1 bg-white/10" />
+        </div>
 
+        {/* Debug Info */}
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3 mb-3 text-xs font-mono text-white/30 space-y-1">
+          <div>isInstallable: <span className={isInstallable ? 'text-green-400' : 'text-red-400'}>{isInstallable ? 'YES ✓' : 'NO'}</span></div>
+          <div>isInstalled: <span className={isInstalled ? 'text-green-400' : 'text-red-400'}>{isInstalled ? 'YES ✓' : 'NO'}</span></div>
+        </div>
+
+        {/* PWA Install Card - show when installable */}
+        {isInstallable && !isInstalled && (
           <div className="rounded-2xl border border-blue-500/20 bg-blue-500/[0.04] p-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
@@ -719,8 +726,38 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
               Nainstalovat aplikaci
             </button>
           </div>
-        </>
-      )}
+        )}
+
+        {/* PWA Already Installed */}
+        {isInstalled && (
+          <div className="rounded-2xl border border-green-500/20 bg-green-500/[0.04] p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                <Check className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-green-300">Aplikace je již nainstalována</p>
+                <p className="text-xs text-green-300/60">Najdete ji na domovské obrazovce vašeho zařízení</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Help for desktop / non-installable */}
+        {!isInstallable && !isInstalled && (
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <Info className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-300">PWA instalace není dostupná</p>
+                <p className="text-xs text-amber-300/60">Otevřete aplikaci z <strong>mobilního zařízení s Chrome</strong> pro instalaci PWA</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     </div>
   );
 };

@@ -12,61 +12,61 @@ export const usePWAInstall = () => {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' })
-        .then((registration) => {
-          console.log('[PWA] Service Worker registered:', registration);
-        })
-        .catch((error) => {
-          console.error('[PWA] Service Worker registration failed:', error);
-        });
-    }
+    console.log('[v0] usePWAInstall hook initialized');
 
     // Check if already installed as PWA
     const isRunningAsApp = () => {
       const nav = navigator as NavigatorWithStandalone;
-      return (
+      const result = (
         nav.standalone === true ||
         window.matchMedia('(display-mode: standalone)').matches ||
         window.matchMedia('(display-mode: fullscreen)').matches
       );
+      console.log('[v0] isRunningAsApp:', result);
+      return result;
     };
 
     if (isRunningAsApp()) {
       setIsInstalled(true);
+      console.log('[v0] App already running as standalone PWA');
     }
 
     // Listen for install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('[v0] beforeinstallprompt event received');
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
     // Listen for successful installation
-    window.addEventListener('appinstalled', () => {
-      console.log('[PWA] App installed successfully');
+    const handleAppInstalled = () => {
+      console.log('[v0] App installed successfully');
       setIsInstalled(true);
       setIsInstallable(false);
       setDeferredPrompt(null);
-    });
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    console.log('[v0] PWA event listeners registered');
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
+      console.log('[v0] No deferred prompt available');
       return false;
     }
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`[PWA] User response: ${outcome}`);
+    console.log(`[v0] User PWA install response: ${outcome}`);
 
     setDeferredPrompt(null);
     setIsInstallable(false);

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/react'
+import { ServiceWorkerRegister } from './service-worker-register'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" href="/icon-192x192.png" />
       </head>
       <body className="bg-background text-foreground antialiased">
+        <ServiceWorkerRegister />
         {children}
         <Analytics />
       </body>
