@@ -62,10 +62,16 @@ function isRunningAsPWA(): boolean {
 async function registerDevice() {
   try {
     const device_id = getOrCreateDeviceId();
-    if (!device_id) return;
+    console.log('[v0] DeviceRegistration - device_id:', device_id);
+    if (!device_id) {
+      console.log('[v0] DeviceRegistration - no device_id, skipping');
+      return;
+    }
     
     const info = detectDeviceInfo();
     const is_pwa_installed = isRunningAsPWA();
+    
+    console.log('[v0] DeviceRegistration - registering device:', { device_id, ...info, is_pwa_installed });
     
     const response = await fetch('/api/devices', {
       method: 'POST',
@@ -77,15 +83,21 @@ async function registerDevice() {
       }),
     });
     
+    console.log('[v0] DeviceRegistration - response status:', response.status);
+    
     if (response.ok) {
       const data = await response.json();
+      console.log('[v0] DeviceRegistration - success:', data);
       // Store active status for blocking if deactivated
       if (data.isActive === false) {
         console.warn('[Device] This device has been deactivated');
       }
+    } else {
+      const errorText = await response.text();
+      console.error('[v0] DeviceRegistration - error response:', errorText);
     }
   } catch (error) {
-    // Silent fail - device registration is not critical
+    console.error('[v0] DeviceRegistration - failed:', error);
   }
 }
 
@@ -117,9 +129,12 @@ export const DeviceRegistration: React.FC = () => {
   const registeredRef = useRef(false);
 
   useEffect(() => {
+    console.log('[v0] DeviceRegistration component mounted');
+    
     // Register device on mount (only once)
     if (!registeredRef.current) {
       registeredRef.current = true;
+      console.log('[v0] DeviceRegistration - calling registerDevice()');
       registerDevice();
     }
 
