@@ -34,8 +34,10 @@ import {
   HardDriveDownload,
   HardDriveUpload,
   RotateCcw,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
+import { usePWAInstall } from './PWAInstaller';
 
 interface FacilityInfo {
   facility_name?: string | null;
@@ -55,6 +57,8 @@ type TabId = 'facility' | 'modules' | 'database' | 'access';
 const SystemSettingsModule: React.FC = () => {
   const { user, isAdmin, logout, modules, toggleModule, toggleModuleRole } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('facility');
+  const { isInstallable, isInstalled, handleInstall } = usePWAInstall();
+  const [installLoading, setInstallLoading] = useState(false);
 
   // Facility state
   const [facility, setFacility] = useState<FacilityInfo>({});
@@ -133,6 +137,20 @@ const SystemSettingsModule: React.FC = () => {
       setFacilitySaving(false);
     }
   }, [facility]);
+
+  const handlePWAInstall = useCallback(async () => {
+    setInstallLoading(true);
+    try {
+      const success = await handleInstall();
+      if (success) {
+        console.log('[v0] PWA installation completed');
+      }
+    } catch (error) {
+      console.error('[v0] PWA installation error:', error);
+    } finally {
+      setInstallLoading(false);
+    }
+  }, [handleInstall]);
 
   const handleResetConfirm = useCallback(async () => {
     if (!resetMode) return;
@@ -387,15 +405,19 @@ const SystemSettingsModule: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="relative"
             >
-              <FacilityPanel
-                facility={facility}
-                loading={facilityLoading}
-                saving={facilitySaving}
-                message={facilityMessage}
-                onChange={handleFacilityChange}
-                onSave={handleFacilitySave}
-                isAdmin={isAdmin}
-              />
+        <FacilityPanel
+          facility={facility}
+          loading={facilityLoading}
+          saving={facilitySaving}
+          message={facilityMessage}
+          onChange={handleFacilityChange}
+          onSave={handleFacilitySave}
+          isAdmin={isAdmin}
+          isInstallable={isInstallable}
+          isInstalled={isInstalled}
+          onPWAInstall={handlePWAInstall}
+          pwInstallLoading={installLoading}
+        />
             </motion.div>
           )}
 
@@ -514,9 +536,13 @@ interface FacilityPanelProps {
   onChange: (key: keyof FacilityInfo, value: string) => void;
   onSave: () => void;
   isAdmin: boolean;
+  isInstallable?: boolean;
+  isInstalled?: boolean;
+  onPWAInstall?: () => void;
+  pwInstallLoading?: boolean;
 }
 
-const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving, message, onChange, onSave, isAdmin }) => {
+const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving, message, onChange, onSave, isAdmin, isInstallable, isInstalled, onPWAInstall, pwInstallLoading }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -652,6 +678,48 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
           <Lock className="w-4 h-4" />
           <span>Úpravy může provádět pouze administrátor.</span>
         </div>
+      )}
+
+      {/* PWA Install Section */}
+      {isInstallable && !isInstalled && (
+        <>
+          <div className="flex items-center gap-3 pt-4">
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
+              Mobilní aplikace
+            </span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+
+          <div className="rounded-2xl border border-blue-500/20 bg-blue-500/[0.04] p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Nainstalovat jako aplikaci</h3>
+                <p className="text-xs text-blue-300/70 uppercase tracking-wider font-bold">Android, iOS, Mac</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-white/60 leading-relaxed mb-4">
+              Nainstalujte aplikaci přímo na domovskou obrazovku vašeho zařízení. Aplikace bude fungovat bez prohlížeče a podpoří offline režim.
+            </p>
+
+            <button
+              onClick={onPWAInstall}
+              disabled={pwInstallLoading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {pwInstallLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Smartphone className="w-4 h-4" />
+              )}
+              Nainstalovat aplikaci
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

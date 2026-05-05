@@ -9,7 +9,6 @@ import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
-import PWAInstaller from './components/PWAInstaller';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
@@ -648,9 +647,6 @@ const AppContent: React.FC = () => {
 
         </main>
       </div>
-
-      {/* PWA Install Prompt */}
-      <PWAInstaller />
     </div>
     </ErrorBoundary>
   );

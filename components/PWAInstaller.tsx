@@ -6,7 +6,7 @@ interface NavigatorWithStandalone extends Navigator {
   standalone?: boolean;
 }
 
-export const PWAInstaller = () => {
+export const usePWAInstall = () => {
   const [isInstallable, setIsInstallable] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -59,9 +59,9 @@ export const PWAInstaller = () => {
     };
   }, []);
 
-  const handleInstallClick = async () => {
+  const handleInstall = async () => {
     if (!deferredPrompt) {
-      return;
+      return false;
     }
 
     deferredPrompt.prompt();
@@ -70,7 +70,15 @@ export const PWAInstaller = () => {
 
     setDeferredPrompt(null);
     setIsInstallable(false);
+    
+    return outcome === 'accepted';
   };
+
+  return { isInstallable, isInstalled, handleInstall };
+};
+
+export const PWAInstaller = () => {
+  const { isInstallable, isInstalled, handleInstall } = usePWAInstall();
 
   // Don't show anything if already installed or not installable
   if (isInstalled || !isInstallable) {
@@ -80,7 +88,7 @@ export const PWAInstaller = () => {
   return (
     <div className="fixed bottom-6 right-6 z-50 max-w-xs">
       <button
-        onClick={handleInstallClick}
+        onClick={handleInstall}
         className="flex items-center gap-3 px-5 py-3 rounded-xl glass border-blue-500/40 text-foreground hover:border-blue-500/60 hover:bg-blue-500/10 transition-all shadow-lg glow-blue"
       >
         <svg
