@@ -110,28 +110,16 @@ const AppContent: React.FC = () => {
     currentViewRef.current = currentView;
   }, [currentView]);
 
-  // Load rooms on mount + optimized polling for cross-device sync.
-  // OPTIMIZED: 30 second interval + only when tab is visible to reduce Supabase costs
+  // Load rooms on mount (one-time fetch). Supabase Realtime handles all subsequent updates.
   useEffect(() => {
     let isMounted = true;
-    let pollingInterval: ReturnType<typeof setInterval> | null = null;
     
-    // Track if tab is visible
-    const isTabVisible = () => typeof document !== 'undefined' && document.visibilityState === 'visible';
-    
-    const loadRooms = async (isPolling = false) => {
-      // Skip if user is in settings - prevents UI flickering
-      if (currentViewRef.current === 'settings') return;
-      // Skip polling if tab is not visible (save API calls)
-      if (isPolling && !isTabVisible()) return;
-      
+    const loadRooms = async () => {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(`/api/rooms?t=${Date.now()}`, {
+        const response = await fetch(`/api/rooms`, {
           signal: controller.signal,
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
         });
         clearTimeout(timeout);
         if (!isMounted) return;
@@ -139,54 +127,19 @@ const AppContent: React.FC = () => {
         const dbRooms = await response.json();
         if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) return;
         
-        // Double-check we're not in settings before updating state
-        if (currentViewRef.current === 'settings') return;
-        
-        if (!isPolling) {
-          // Initial load - replace all
-          setRooms(dbRooms);
-          setIsDbConnected(true);
-        } else {
-          // Polling - merge carefully, respecting recent local updates
-          setRooms(prev => {
-            return dbRooms.map((dbRoom: OperatingRoom) => {
-              const lastLocalUpdate = recentLocalUpdates.current.get(dbRoom.id);
-              // If we recently changed this room locally, keep our version
-              if (lastLocalUpdate && Date.now() - lastLocalUpdate < 5000) {
-                const localRoom = prev.find(r => r.id === dbRoom.id);
-                if (localRoom) return localRoom;
-              }
-              return dbRoom;
-            });
-          });
-        }
+        setRooms(dbRooms);
+        setIsDbConnected(true);
       } catch (error) {
         if (!isMounted) return;
-        // Silent fail for polling - don't spam console
+        console.error("[App] Failed to load rooms:", error);
       }
     };
     
-    // Initial load
-    loadRooms(false);
-    
-    // OPTIMIZED: Polling every 30 seconds (not 3) to reduce Supabase costs
-    // This reduces API calls from 28,800/day to 2,880/day per user (90% reduction)
-    pollingInterval = setInterval(() => {
-      if (isMounted) loadRooms(true);
-    }, 30000);
-    
-    // Refresh immediately when tab becomes visible after being hidden
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadRooms(true);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Initial load only - Supabase Realtime handles updates
+    loadRooms();
     
     return () => {
       isMounted = false;
-      if (pollingInterval) clearInterval(pollingInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
   
