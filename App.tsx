@@ -110,25 +110,16 @@ const AppContent: React.FC = () => {
     currentViewRef.current = currentView;
   }, [currentView]);
 
-  // Load rooms on mount + polling fallback for cross-device sync.
-  // Polling is needed because Supabase realtime may not work reliably on all
-  // devices (mobile networks, different browsers). Polling respects recentLocalUpdates
-  // to avoid overwriting optimistic updates.
-  // IMPORTANT: Polling is DISABLED when user is in settings to prevent UI flickering.
+  // Load rooms on mount (one-time fetch). Supabase Realtime handles all subsequent updates.
   useEffect(() => {
     let isMounted = true;
     
-    const loadRooms = async (isPolling = false) => {
-      // Skip if user is in settings - prevents UI flickering
-      if (currentViewRef.current === 'settings') return;
-      
+    const loadRooms = async () => {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(`/api/rooms?t=${Date.now()}`, {
+        const response = await fetch(`/api/rooms`, {
           signal: controller.signal,
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
         });
         clearTimeout(timeout);
         if (!isMounted) return;
@@ -136,44 +127,19 @@ const AppContent: React.FC = () => {
         const dbRooms = await response.json();
         if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) return;
         
-        // Double-check we're not in settings before updating state
-        if (currentViewRef.current === 'settings') return;
-        
-        if (!isPolling) {
-          // Initial load - replace all
-          setRooms(dbRooms);
-          setIsDbConnected(true);
-        } else {
-          // Polling - merge carefully, respecting recent local updates
-          setRooms(prev => {
-            return dbRooms.map((dbRoom: OperatingRoom) => {
-              const lastLocalUpdate = recentLocalUpdates.current.get(dbRoom.id);
-              // If we recently changed this room locally, keep our version
-              if (lastLocalUpdate && Date.now() - lastLocalUpdate < 5000) {
-                const localRoom = prev.find(r => r.id === dbRoom.id);
-                if (localRoom) return localRoom;
-              }
-              return dbRoom;
-            });
-          });
-        }
+        setRooms(dbRooms);
+        setIsDbConnected(true);
       } catch (error) {
         if (!isMounted) return;
-        console.error("[v0] Failed to load rooms from API:", error);
+        console.error("[App] Failed to load rooms:", error);
       }
     };
     
-    // Initial load
-    loadRooms(false);
-    
-    // Polling fallback every 3 seconds for cross-device sync
-    const pollingInterval = setInterval(() => {
-      if (isMounted) loadRooms(true);
-    }, 3000);
+    // Initial load only - Supabase Realtime handles updates
+    loadRooms();
     
     return () => {
       isMounted = false;
-      clearInterval(pollingInterval);
     };
   }, []);
   
