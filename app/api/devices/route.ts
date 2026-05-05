@@ -41,22 +41,16 @@ export async function GET() {
 
 // POST - Register or update a device
 export async function POST(request: NextRequest) {
-  console.log('[v0] POST /api/devices - start');
-  
   const supabase = getSupabase();
   if (!supabase) {
-    console.error('[v0] POST /api/devices - Database not configured');
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
   try {
     const body = await request.json();
     const { device_id, device_name, device_type, platform, browser, is_pwa_installed } = body;
-    
-    console.log('[v0] POST /api/devices - body:', { device_id, device_type, platform, browser });
 
     if (!device_id) {
-      console.error('[v0] POST /api/devices - device_id is required');
       return NextResponse.json({ error: 'device_id is required' }, { status: 400 });
     }
 
@@ -67,11 +61,8 @@ export async function POST(request: NextRequest) {
       .eq('device_id', device_id)
       .single();
 
-    console.log('[v0] POST /api/devices - existing device:', existing);
-
     if (existing) {
       // Update existing device
-      console.log('[v0] POST /api/devices - updating existing device');
       const updateData: Record<string, unknown> = {
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -99,7 +90,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ device: data, isNew: false, isActive: existing.is_active });
     } else {
       // Create new device
-      console.log('[v0] POST /api/devices - creating new device');
       const { data, error } = await supabase
         .from('devices')
         .insert({

@@ -1782,6 +1782,33 @@ const DevicesSettingsPanel: React.FC = () => {
   React.useEffect(() => {
     setCurrentDeviceId(getCurrentDeviceIdLocal());
     fetchDevices();
+    
+    // Subscribe to Supabase Realtime for devices table changes
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (supabaseUrl && supabaseKey) {
+      import('@supabase/supabase-js').then(({ createClient }) => {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const channel = supabase
+          .channel('devices-changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, (payload) => {
+            if (payload.eventType === 'INSERT') {
+              setDevices((prev) => [payload.new as DeviceInfo, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              setDevices((prev) => prev.map((d) => d.id === (payload.new as DeviceInfo).id ? payload.new as DeviceInfo : d));
+            } else if (payload.eventType === 'DELETE') {
+              setDevices((prev) => prev.filter((d) => d.id !== (payload.old as { id: string }).id));
+            }
+          })
+          .subscribe();
+          
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      });
+    }
   }, [fetchDevices]);
 
   const handleToggleActive = async (id: string, active: boolean) => {
