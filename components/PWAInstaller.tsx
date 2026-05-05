@@ -12,7 +12,16 @@ export const usePWAInstall = () => {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    console.log('[v0] usePWAInstall hook initialized');
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then((registration) => {
+          console.log('[v0] Service Worker registered:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('[v0] Service Worker registration failed:', error);
+        });
+    }
 
     // Check if already installed as PWA
     const isRunningAsApp = () => {
