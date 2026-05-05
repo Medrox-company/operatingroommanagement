@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
 import { usePWAInstall } from './PWAInstaller';
+import { DevicesPanel } from './DevicesPanel';
 
 interface FacilityInfo {
   facility_name?: string | null;
@@ -57,7 +58,7 @@ type TabId = 'facility' | 'modules' | 'database' | 'access';
 const SystemSettingsModule: React.FC = () => {
   const { user, isAdmin, logout, modules, toggleModule, toggleModuleRole } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('facility');
-  const { isInstallable, isInstalled, handleInstall } = usePWAInstall();
+  const { isInstallable, isInstalled, handleInstall, deviceId } = usePWAInstall();
   const [installLoading, setInstallLoading] = useState(false);
 
   // Facility state
@@ -417,6 +418,7 @@ const SystemSettingsModule: React.FC = () => {
           isInstalled={isInstalled}
           onPWAInstall={handlePWAInstall}
           pwInstallLoading={installLoading}
+          deviceId={deviceId}
         />
             </motion.div>
           )}
@@ -540,9 +542,10 @@ interface FacilityPanelProps {
   isInstalled?: boolean;
   onPWAInstall?: () => void;
   pwInstallLoading?: boolean;
+  deviceId?: string;
 }
 
-const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving, message, onChange, onSave, isAdmin, isInstallable, isInstalled, onPWAInstall, pwInstallLoading }) => {
+const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving, message, onChange, onSave, isAdmin, isInstallable, isInstalled, onPWAInstall, pwInstallLoading, deviceId }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -758,6 +761,17 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
           </div>
         )}
       </>
+
+      {/* Devices Management Section */}
+      <div className="flex items-center gap-3 pt-4">
+        <div className="h-px flex-1 bg-white/10" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
+          Registrovaná zařízení
+        </span>
+        <div className="h-px flex-1 bg-white/10" />
+      </div>
+
+      <DevicesPanel currentDeviceId={deviceId} />
     </div>
   );
 };
@@ -881,7 +895,7 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
             </div>
 
             <p className="text-sm text-white/60 leading-relaxed mb-4 flex-1">
-              Smaže <strong className="text-white/80">veškerá data</strong> kromě uživatelských účtů a aplikačních
+              Smaže <strong className="text-white/80">veškerá data</strong> kromě u��ivatelských účtů a aplikačních
               nastavení. Použijte při nasazení aplikace do zcela nové nemocnice.
             </p>
 
