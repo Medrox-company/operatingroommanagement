@@ -5,6 +5,7 @@ import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
+import DevicesModule from './components/DevicesModule';
 import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
@@ -580,14 +581,23 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
-            {/* Staff */}
-            {currentView === 'staff' && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
-                  <StaffManager />
-                </div>
-              </div>
-            )}
+  {/* Staff */}
+  {currentView === 'staff' && (
+  <div className="w-full h-full overflow-y-auto hide-scrollbar">
+  <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+  <StaffManager />
+  </div>
+  </div>
+  )}
+
+  {/* Devices */}
+  {currentView === 'devices' && (
+  <div className="w-full h-full overflow-y-auto hide-scrollbar">
+  <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+  <DevicesModule />
+  </div>
+  </div>
+  )}
 
             {/* Alerts */}
             {currentView === 'alerts' && (
