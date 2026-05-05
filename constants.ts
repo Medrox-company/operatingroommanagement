@@ -12,7 +12,8 @@ import {
   Scissors,
   Star,
   Sparkles,
-  BarChart3
+  BarChart3,
+  Smartphone
 } from 'lucide-react';
 
 export interface SubDepartment {
@@ -153,8 +154,9 @@ export const SIDEBAR_ITEMS = [
   { icon: BarChart3, label: 'Statistiky', id: 'statistics' },
   { icon: User, label: 'Personál', id: 'staff' },
   { icon: AlertCircle, label: 'Upozornění', id: 'alerts' },
+  { icon: Smartphone, label: 'Zařízení', id: 'devices' },
   { icon: Settings, label: 'Nastavení', id: 'settings' },
-];
+  ];
 
 export const MOCK_ROOMS: OperatingRoom[] = [
   {
