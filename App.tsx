@@ -110,17 +110,20 @@ const AppContent: React.FC = () => {
     currentViewRef.current = currentView;
   }, [currentView]);
 
-  // Load rooms on mount + polling fallback for cross-device sync.
-  // Polling is needed because Supabase realtime may not work reliably on all
-  // devices (mobile networks, different browsers). Polling respects recentLocalUpdates
-  // to avoid overwriting optimistic updates.
-  // IMPORTANT: Polling is DISABLED when user is in settings to prevent UI flickering.
+  // Load rooms on mount + optimized polling for cross-device sync.
+  // OPTIMIZED: 30 second interval + only when tab is visible to reduce Supabase costs
   useEffect(() => {
     let isMounted = true;
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    
+    // Track if tab is visible
+    const isTabVisible = () => typeof document !== 'undefined' && document.visibilityState === 'visible';
     
     const loadRooms = async (isPolling = false) => {
       // Skip if user is in settings - prevents UI flickering
       if (currentViewRef.current === 'settings') return;
+      // Skip polling if tab is not visible (save API calls)
+      if (isPolling && !isTabVisible()) return;
       
       try {
         const controller = new AbortController();
@@ -159,21 +162,31 @@ const AppContent: React.FC = () => {
         }
       } catch (error) {
         if (!isMounted) return;
-        console.error("[v0] Failed to load rooms from API:", error);
+        // Silent fail for polling - don't spam console
       }
     };
     
     // Initial load
     loadRooms(false);
     
-    // Polling fallback every 3 seconds for cross-device sync
-    const pollingInterval = setInterval(() => {
+    // OPTIMIZED: Polling every 30 seconds (not 3) to reduce Supabase costs
+    // This reduces API calls from 28,800/day to 2,880/day per user (90% reduction)
+    pollingInterval = setInterval(() => {
       if (isMounted) loadRooms(true);
-    }, 3000);
+    }, 30000);
+    
+    // Refresh immediately when tab becomes visible after being hidden
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadRooms(true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       isMounted = false;
-      clearInterval(pollingInterval);
+      if (pollingInterval) clearInterval(pollingInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
   
