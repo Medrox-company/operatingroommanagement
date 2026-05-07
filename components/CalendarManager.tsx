@@ -26,6 +26,14 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  MousePointer2,
+  Square,
+  Eraser,
+  Undo2,
+  Redo2,
+  Save,
+  FileDown,
+  Printer,
 } from 'lucide-react';
 
 // Types
@@ -45,11 +53,16 @@ interface CalendarRow {
   order: number;
 }
 
-interface SelectionRange {
-  startRowId: string;
-  startDay: number;
-  endRowId: string;
-  endDay: number;
+interface HistoryState {
+  events: CalendarEvent[];
+  rows: CalendarRow[];
+  specialDays: SpecialDay[];
+}
+
+interface SpecialDay {
+  day: number;
+  label: string;
+  color: string;
 }
 
 // Predefined colors
@@ -79,6 +92,8 @@ const QUICK_FILL_OPTIONS = [
   { label: 'U', color: '#A855F7' },
   { label: '7', color: '#EAB308' },
   { label: '10', color: '#F97316' },
+  { label: '1', color: '#06B6D4' },
+  { label: '4', color: '#EC4899' },
 ];
 
 // Month names
@@ -94,11 +109,16 @@ function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
 
+// Get day of week (0 = Monday, 6 = Sunday)
+function getDayOfWeek(year: number, month: number, day: number): number {
+  const date = new Date(year, month, day);
+  return (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
+}
+
 // Check if day is weekend
 function isWeekend(year: number, month: number, day: number): boolean {
-  const date = new Date(year, month, day);
-  const dayOfWeek = date.getDay();
-  return dayOfWeek === 0 || dayOfWeek === 6;
+  const dayOfWeek = getDayOfWeek(year, month, day);
+  return dayOfWeek === 5 || dayOfWeek === 6; // Saturday or Sunday
 }
 
 // Default rows for hospital calendar
@@ -148,11 +168,10 @@ const EventEditorModal: React.FC<{
   rowName: string;
   day: number;
   month: string;
-  onSave: (event: CalendarEvent) => void;
+  onSave: (event: Omit<CalendarEvent, 'id' | 'rowId' | 'day'>) => void;
   onDelete: () => void;
   onClose: () => void;
-  onExtend: (direction: 'left' | 'right' | 'up' | 'down' | 'all') => void;
-}> = ({ event, rowName, day, month, onSave, onDelete, onClose, onExtend }) => {
+}> = ({ event, rowName, day, month, onSave, onDelete, onClose }) => {
   const [label, setLabel] = useState(event?.label || '');
   const [color, setColor] = useState(event?.color || '#3B82F6');
   const [note, setNote] = useState(event?.note || '');
@@ -178,7 +197,7 @@ const EventEditorModal: React.FC<{
               {event ? 'Upravit událost' : 'Nová událost'}
             </h3>
             <p className="text-sm text-white/50 mt-1">
-              {rowName} • {day}. {month}
+              {rowName} - {day}. {month}
             </p>
           </div>
           <button
@@ -248,61 +267,6 @@ const EventEditorModal: React.FC<{
               className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-yellow-500/50 resize-none"
             />
           </div>
-
-          {/* Extend/Copy to adjacent cells */}
-          {(label || event) && (
-            <div>
-              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
-                Rozšířit na sousední buňky
-              </label>
-              <div className="flex items-center justify-center gap-2">
-                <div className="grid grid-cols-3 gap-1">
-                  <div />
-                  <button
-                    onClick={() => onExtend('up')}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                    title="Rozšířit nahoru"
-                  >
-                    <ArrowUp className="w-4 h-4" />
-                  </button>
-                  <div />
-                  <button
-                    onClick={() => onExtend('left')}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                    title="Rozšířit doleva"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onExtend('all')}
-                    className="p-2 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 transition-colors"
-                    title="Rozšířit všemi směry"
-                  >
-                    <Maximize2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onExtend('right')}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                    title="Rozšířit doprava"
-                  >
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <div />
-                  <button
-                    onClick={() => onExtend('down')}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                    title="Rozšířit dolů"
-                  >
-                    <ArrowDown className="w-4 h-4" />
-                  </button>
-                  <div />
-                </div>
-              </div>
-              <p className="text-xs text-white/30 text-center mt-2">
-                Klikněte na směr pro zkopírování hodnoty do sousední buňky
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Actions */}
@@ -324,16 +288,7 @@ const EventEditorModal: React.FC<{
             Zrušit
           </button>
           <button
-            onClick={() => {
-              onSave({
-                id: event?.id || crypto.randomUUID(),
-                rowId: event?.rowId || '',
-                day: event?.day || day,
-                label,
-                color,
-                note,
-              });
-            }}
+            onClick={() => onSave({ label, color, note })}
             disabled={!label.trim()}
             className="px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm font-medium disabled:opacity-50"
           >
@@ -349,7 +304,7 @@ const EventEditorModal: React.FC<{
 // Row editor modal
 const RowEditorModal: React.FC<{
   row: CalendarRow | null;
-  onSave: (row: CalendarRow) => void;
+  onSave: (row: Omit<CalendarRow, 'id' | 'order'>) => void;
   onDelete?: () => void;
   onClose: () => void;
 }> = ({ row, onSave, onDelete, onClose }) => {
@@ -384,7 +339,6 @@ const RowEditorModal: React.FC<{
         </div>
 
         <div className="space-y-5">
-          {/* Name */}
           <div>
             <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
               Název oddělení / řádku
@@ -398,7 +352,6 @@ const RowEditorModal: React.FC<{
             />
           </div>
 
-          {/* Color */}
           <div>
             <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
               Barva řádku
@@ -407,7 +360,6 @@ const RowEditorModal: React.FC<{
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
           {row && onDelete && (
             <button
@@ -426,16 +378,9 @@ const RowEditorModal: React.FC<{
             Zrušit
           </button>
           <button
-            onClick={() => {
-              onSave({
-                id: row?.id || crypto.randomUUID(),
-                name,
-                color,
-                order: row?.order ?? 999,
-              });
-            }}
+            onClick={() => onSave({ name, color })}
             disabled={!name.trim()}
-            className="px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm font-medium disabled:opacity-50"
           >
             <Check className="w-4 h-4 inline mr-2" />
             Uložit
@@ -446,12 +391,12 @@ const RowEditorModal: React.FC<{
   );
 };
 
-// Special day editor (for holidays, etc)
+// Special day editor
 const SpecialDayEditorModal: React.FC<{
   day: number;
   month: string;
-  specialDay?: { day: number; label: string; color: string };
-  onSave: (specialDay: { day: number; label: string; color: string }) => void;
+  specialDay?: SpecialDay;
+  onSave: (specialDay: SpecialDay) => void;
   onDelete?: () => void;
   onClose: () => void;
 }> = ({ day, month, specialDay, onSave, onDelete, onClose }) => {
@@ -480,9 +425,7 @@ const SpecialDayEditorModal: React.FC<{
             <h3 className="text-lg font-bold text-white">
               {specialDay ? 'Upravit speciální den' : 'Nový speciální den'}
             </h3>
-            <p className="text-sm text-white/50 mt-1">
-              {day}. {month}
-            </p>
+            <p className="text-sm text-white/50 mt-1">{day}. {month}</p>
           </div>
           <button
             onClick={onClose}
@@ -493,7 +436,6 @@ const SpecialDayEditorModal: React.FC<{
         </div>
 
         <div className="space-y-5">
-          {/* Preset labels */}
           <div>
             <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
               Rychlý výběr
@@ -515,7 +457,6 @@ const SpecialDayEditorModal: React.FC<{
             </div>
           </div>
 
-          {/* Label */}
           <div>
             <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
               Vlastní název
@@ -529,7 +470,6 @@ const SpecialDayEditorModal: React.FC<{
             />
           </div>
 
-          {/* Color */}
           <div>
             <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
               Barva sloupce
@@ -538,7 +478,6 @@ const SpecialDayEditorModal: React.FC<{
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
           {specialDay && onDelete && (
             <button
@@ -557,219 +496,12 @@ const SpecialDayEditorModal: React.FC<{
             Zrušit
           </button>
           <button
-            onClick={() => {
-              onSave({ day, label, color });
-            }}
+            onClick={() => onSave({ day, label, color })}
             disabled={!label.trim()}
-            className="px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm font-medium disabled:opacity-50"
           >
             <Check className="w-4 h-4 inline mr-2" />
             Uložit
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// Drag fill modal - for extending values to multiple cells
-const DragFillModal: React.FC<{
-  sourceEvent: CalendarEvent;
-  sourceRowIndex: number;
-  rows: CalendarRow[];
-  daysInMonth: number;
-  onFill: (targetCells: { rowId: string; day: number }[]) => void;
-  onClose: () => void;
-}> = ({ sourceEvent, sourceRowIndex, rows, daysInMonth, onFill, onClose }) => {
-  const [direction, setDirection] = useState<'horizontal' | 'vertical' | 'both'>('horizontal');
-  const [range, setRange] = useState({ start: sourceEvent.day, end: sourceEvent.day + 5 });
-  const [rowRange, setRowRange] = useState({ start: sourceRowIndex, end: sourceRowIndex + 2 });
-
-  const handleFill = () => {
-    const targets: { rowId: string; day: number }[] = [];
-    
-    if (direction === 'horizontal' || direction === 'both') {
-      for (let d = range.start; d <= Math.min(range.end, daysInMonth); d++) {
-        if (d !== sourceEvent.day || direction === 'both') {
-          if (direction === 'both') {
-            for (let r = rowRange.start; r <= Math.min(rowRange.end, rows.length - 1); r++) {
-              if (!(d === sourceEvent.day && rows[r].id === sourceEvent.rowId)) {
-                targets.push({ rowId: rows[r].id, day: d });
-              }
-            }
-          } else {
-            targets.push({ rowId: sourceEvent.rowId, day: d });
-          }
-        }
-      }
-    }
-    
-    if (direction === 'vertical') {
-      for (let r = rowRange.start; r <= Math.min(rowRange.end, rows.length - 1); r++) {
-        if (rows[r].id !== sourceEvent.rowId) {
-          targets.push({ rowId: rows[r].id, day: sourceEvent.day });
-        }
-      }
-    }
-    
-    onFill(targets);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-white">Protáhnout hodnotu</h3>
-            <p className="text-sm text-white/50 mt-1">
-              Zkopírovat "{sourceEvent.label}" do více buněk
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="space-y-5">
-          {/* Direction */}
-          <div>
-            <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
-              Směr protažení
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => setDirection('horizontal')}
-                className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                  direction === 'horizontal'
-                    ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400'
-                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                }`}
-              >
-                <ArrowRight className="w-5 h-5" />
-                <span className="text-xs font-medium">Vodorovně</span>
-              </button>
-              <button
-                onClick={() => setDirection('vertical')}
-                className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                  direction === 'vertical'
-                    ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400'
-                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                }`}
-              >
-                <ArrowDown className="w-5 h-5" />
-                <span className="text-xs font-medium">Svisle</span>
-              </button>
-              <button
-                onClick={() => setDirection('both')}
-                className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                  direction === 'both'
-                    ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400'
-                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                }`}
-              >
-                <Grid3X3 className="w-5 h-5" />
-                <span className="text-xs font-medium">Obojí</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Day range */}
-          {(direction === 'horizontal' || direction === 'both') && (
-            <div>
-              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
-                Rozsah dnů: {range.start} - {range.end}
-              </label>
-              <div className="flex gap-3">
-                <input
-                  type="range"
-                  min={1}
-                  max={daysInMonth}
-                  value={range.start}
-                  onChange={(e) => setRange(r => ({ ...r, start: parseInt(e.target.value) }))}
-                  className="flex-1 accent-yellow-500"
-                />
-                <input
-                  type="range"
-                  min={1}
-                  max={daysInMonth}
-                  value={range.end}
-                  onChange={(e) => setRange(r => ({ ...r, end: parseInt(e.target.value) }))}
-                  className="flex-1 accent-yellow-500"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Row range */}
-          {(direction === 'vertical' || direction === 'both') && (
-            <div>
-              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
-                Rozsah řádků: {rows[rowRange.start]?.name || '-'} - {rows[rowRange.end]?.name || '-'}
-              </label>
-              <div className="flex gap-3">
-                <input
-                  type="range"
-                  min={0}
-                  max={rows.length - 1}
-                  value={rowRange.start}
-                  onChange={(e) => setRowRange(r => ({ ...r, start: parseInt(e.target.value) }))}
-                  className="flex-1 accent-yellow-500"
-                />
-                <input
-                  type="range"
-                  min={0}
-                  max={rows.length - 1}
-                  value={rowRange.end}
-                  onChange={(e) => setRowRange(r => ({ ...r, end: parseInt(e.target.value) }))}
-                  className="flex-1 accent-yellow-500"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Preview */}
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-                style={{ backgroundColor: sourceEvent.color }}
-              >
-                {sourceEvent.label}
-              </div>
-              <span className="text-sm text-white/50">bude zkopírováno do vybraného rozsahu</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
-          >
-            Zrušit
-          </button>
-          <button
-            onClick={handleFill}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm font-medium"
-          >
-            <Move className="w-4 h-4 inline mr-2" />
-            Protáhnout
           </button>
         </div>
       </motion.div>
@@ -784,23 +516,66 @@ const CalendarManager: React.FC = () => {
   const [month, setMonth] = useState(today.getMonth());
   const [rows, setRows] = useState<CalendarRow[]>(DEFAULT_ROWS);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [specialDays, setSpecialDays] = useState<{ day: number; label: string; color: string }[]>([]);
+  const [specialDays, setSpecialDays] = useState<SpecialDay[]>([]);
   
-  // Selection for drag-fill
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState<{ rowId: string; day: number } | null>(null);
-  const [selectionEnd, setSelectionEnd] = useState<{ rowId: string; day: number } | null>(null);
-  const [copiedEvent, setCopiedEvent] = useState<CalendarEvent | null>(null);
+  // Tool mode: 'select' | 'paint' | 'erase'
+  const [toolMode, setToolMode] = useState<'select' | 'paint' | 'erase'>('select');
+  const [paintBrush, setPaintBrush] = useState({ label: 'X', color: '#EF4444' });
+  
+  // Drag selection state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ rowIndex: number; day: number } | null>(null);
+  const [dragEnd, setDragEnd] = useState<{ rowIndex: number; day: number } | null>(null);
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
+  
+  // History for undo/redo
+  const [history, setHistory] = useState<HistoryState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   
   // Modals
-  const [editingEvent, setEditingEvent] = useState<{ event: CalendarEvent | null; rowId: string; day: number } | null>(null);
+  const [editingEvent, setEditingEvent] = useState<{ rowId: string; day: number; event: CalendarEvent | null } | null>(null);
   const [editingRow, setEditingRow] = useState<CalendarRow | null | 'new'>(null);
-  const [editingSpecialDay, setEditingSpecialDay] = useState<{ day: number; specialDay?: { day: number; label: string; color: string } } | null>(null);
-  const [dragFillSource, setDragFillSource] = useState<{ event: CalendarEvent; rowIndex: number } | null>(null);
+  const [editingSpecialDay, setEditingSpecialDay] = useState<{ day: number; specialDay?: SpecialDay } | null>(null);
+  
+  // Refs
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
   const monthName = MONTHS[month];
   const sortedRows = useMemo(() => [...rows].sort((a, b) => a.order - b.order), [rows]);
+
+  // Save state to history
+  const saveToHistory = useCallback(() => {
+    const newState: HistoryState = {
+      events: [...events],
+      rows: [...rows],
+      specialDays: [...specialDays],
+    };
+    setHistory(prev => [...prev.slice(0, historyIndex + 1), newState]);
+    setHistoryIndex(prev => prev + 1);
+  }, [events, rows, specialDays, historyIndex]);
+
+  // Undo
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prevState = history[historyIndex - 1];
+      setEvents(prevState.events);
+      setRows(prevState.rows);
+      setSpecialDays(prevState.specialDays);
+      setHistoryIndex(prev => prev - 1);
+    }
+  }, [history, historyIndex]);
+
+  // Redo
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const nextState = history[historyIndex + 1];
+      setEvents(nextState.events);
+      setRows(nextState.rows);
+      setSpecialDays(nextState.specialDays);
+      setHistoryIndex(prev => prev + 1);
+    }
+  }, [history, historyIndex]);
 
   // Get event for cell
   const getEvent = useCallback((rowId: string, day: number): CalendarEvent | undefined => {
@@ -812,152 +587,162 @@ const CalendarManager: React.FC = () => {
     return specialDays.find(s => s.day === day);
   }, [specialDays]);
 
-  // Handle extend in direction
-  const handleExtend = useCallback((direction: 'left' | 'right' | 'up' | 'down' | 'all') => {
-    if (!editingEvent) return;
+  // Cell key helper
+  const getCellKey = (rowIndex: number, day: number) => `${rowIndex}-${day}`;
+
+  // Get selected range cells
+  const getSelectedRangeCells = useCallback(() => {
+    if (!dragStart || !dragEnd) return new Set<string>();
     
-    const currentEvent = editingEvent.event || {
-      id: crypto.randomUUID(),
-      rowId: editingEvent.rowId,
-      day: editingEvent.day,
-      label: '',
-      color: '#3B82F6',
-    };
+    const minRow = Math.min(dragStart.rowIndex, dragEnd.rowIndex);
+    const maxRow = Math.max(dragStart.rowIndex, dragEnd.rowIndex);
+    const minDay = Math.min(dragStart.day, dragEnd.day);
+    const maxDay = Math.max(dragStart.day, dragEnd.day);
     
-    const rowIndex = sortedRows.findIndex(r => r.id === editingEvent.rowId);
-    const newEvents: CalendarEvent[] = [];
-    
-    if (direction === 'left' && editingEvent.day > 1) {
-      newEvents.push({ ...currentEvent, id: crypto.randomUUID(), day: editingEvent.day - 1 });
-    }
-    if (direction === 'right' && editingEvent.day < daysInMonth) {
-      newEvents.push({ ...currentEvent, id: crypto.randomUUID(), day: editingEvent.day + 1 });
-    }
-    if (direction === 'up' && rowIndex > 0) {
-      newEvents.push({ ...currentEvent, id: crypto.randomUUID(), rowId: sortedRows[rowIndex - 1].id });
-    }
-    if (direction === 'down' && rowIndex < sortedRows.length - 1) {
-      newEvents.push({ ...currentEvent, id: crypto.randomUUID(), rowId: sortedRows[rowIndex + 1].id });
-    }
-    if (direction === 'all') {
-      if (editingEvent.day > 1) newEvents.push({ ...currentEvent, id: crypto.randomUUID(), day: editingEvent.day - 1 });
-      if (editingEvent.day < daysInMonth) newEvents.push({ ...currentEvent, id: crypto.randomUUID(), day: editingEvent.day + 1 });
-      if (rowIndex > 0) newEvents.push({ ...currentEvent, id: crypto.randomUUID(), rowId: sortedRows[rowIndex - 1].id });
-      if (rowIndex < sortedRows.length - 1) newEvents.push({ ...currentEvent, id: crypto.randomUUID(), rowId: sortedRows[rowIndex + 1].id });
-    }
-    
-    setEvents(prev => {
-      const updated = [...prev];
-      for (const newEvent of newEvents) {
-        const existingIdx = updated.findIndex(e => e.rowId === newEvent.rowId && e.day === newEvent.day);
-        if (existingIdx >= 0) {
-          updated[existingIdx] = newEvent;
-        } else {
-          updated.push(newEvent);
-        }
+    const cells = new Set<string>();
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let d = minDay; d <= maxDay; d++) {
+        cells.add(getCellKey(r, d));
       }
-      return updated;
-    });
-  }, [editingEvent, sortedRows, daysInMonth]);
+    }
+    return cells;
+  }, [dragStart, dragEnd]);
 
-  // Handle event save
-  const handleEventSave = useCallback((event: CalendarEvent) => {
-    if (!editingEvent) return;
+  // Handle mouse down on cell
+  const handleCellMouseDown = (rowIndex: number, day: number, e: React.MouseEvent) => {
+    e.preventDefault();
     
-    const newEvent: CalendarEvent = {
-      ...event,
-      rowId: editingEvent.rowId,
-      day: editingEvent.day,
-    };
-
-    setEvents(prev => {
-      const existing = prev.findIndex(e => e.rowId === newEvent.rowId && e.day === newEvent.day);
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = newEvent;
-        return updated;
-      }
-      return [...prev, newEvent];
-    });
-    setEditingEvent(null);
-  }, [editingEvent]);
-
-  // Handle event delete
-  const handleEventDelete = useCallback(() => {
-    if (!editingEvent) return;
-    setEvents(prev => prev.filter(e => !(e.rowId === editingEvent.rowId && e.day === editingEvent.day)));
-    setEditingEvent(null);
-  }, [editingEvent]);
-
-  // Handle drag fill
-  const handleDragFill = useCallback((targetCells: { rowId: string; day: number }[]) => {
-    if (!dragFillSource) return;
-    
-    const { event } = dragFillSource;
-    setEvents(prev => {
-      const updated = [...prev];
-      for (const cell of targetCells) {
-        const newEvent: CalendarEvent = {
-          ...event,
+    if (toolMode === 'select') {
+      setIsDragging(true);
+      setDragStart({ rowIndex, day });
+      setDragEnd({ rowIndex, day });
+      setSelectedCells(new Set([getCellKey(rowIndex, day)]));
+    } else if (toolMode === 'paint') {
+      saveToHistory();
+      const row = sortedRows[rowIndex];
+      const existingEvent = getEvent(row.id, day);
+      if (existingEvent) {
+        setEvents(prev => prev.map(e => 
+          e.id === existingEvent.id 
+            ? { ...e, label: paintBrush.label, color: paintBrush.color }
+            : e
+        ));
+      } else {
+        setEvents(prev => [...prev, {
           id: crypto.randomUUID(),
-          rowId: cell.rowId,
-          day: cell.day,
-        };
-        const existingIdx = updated.findIndex(e => e.rowId === cell.rowId && e.day === cell.day);
-        if (existingIdx >= 0) {
-          updated[existingIdx] = newEvent;
-        } else {
-          updated.push(newEvent);
-        }
+          rowId: row.id,
+          day,
+          label: paintBrush.label,
+          color: paintBrush.color,
+        }]);
       }
-      return updated;
-    });
-    setDragFillSource(null);
-  }, [dragFillSource]);
+      setIsDragging(true);
+      setDragStart({ rowIndex, day });
+    } else if (toolMode === 'erase') {
+      saveToHistory();
+      const row = sortedRows[rowIndex];
+      setEvents(prev => prev.filter(e => !(e.rowId === row.id && e.day === day)));
+      setIsDragging(true);
+      setDragStart({ rowIndex, day });
+    }
+  };
 
-  // Handle row save
-  const handleRowSave = useCallback((row: CalendarRow) => {
-    setRows(prev => {
-      const existing = prev.findIndex(r => r.id === row.id);
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = row;
-        return updated;
+  // Handle mouse enter on cell (during drag)
+  const handleCellMouseEnter = (rowIndex: number, day: number) => {
+    if (!isDragging) return;
+    
+    if (toolMode === 'select') {
+      setDragEnd({ rowIndex, day });
+    } else if (toolMode === 'paint') {
+      const row = sortedRows[rowIndex];
+      const existingEvent = getEvent(row.id, day);
+      if (existingEvent) {
+        setEvents(prev => prev.map(e => 
+          e.id === existingEvent.id 
+            ? { ...e, label: paintBrush.label, color: paintBrush.color }
+            : e
+        ));
+      } else {
+        setEvents(prev => [...prev, {
+          id: crypto.randomUUID(),
+          rowId: row.id,
+          day,
+          label: paintBrush.label,
+          color: paintBrush.color,
+        }]);
       }
-      return [...prev, { ...row, order: prev.length }];
-    });
-    setEditingRow(null);
-  }, []);
+    } else if (toolMode === 'erase') {
+      const row = sortedRows[rowIndex];
+      setEvents(prev => prev.filter(e => !(e.rowId === row.id && e.day === day)));
+    }
+  };
 
-  // Handle row delete
-  const handleRowDelete = useCallback((rowId: string) => {
-    setRows(prev => prev.filter(r => r.id !== rowId));
-    setEvents(prev => prev.filter(e => e.rowId !== rowId));
-    setEditingRow(null);
-  }, []);
+  // Handle mouse up
+  const handleMouseUp = () => {
+    if (isDragging && toolMode === 'select' && dragStart && dragEnd) {
+      setSelectedCells(getSelectedRangeCells());
+    }
+    setIsDragging(false);
+  };
 
-  // Handle special day save
-  const handleSpecialDaySave = useCallback((specialDay: { day: number; label: string; color: string }) => {
-    setSpecialDays(prev => {
-      const existing = prev.findIndex(s => s.day === specialDay.day);
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = specialDay;
-        return updated;
+  // Apply value to selected cells
+  const applyToSelectedCells = (label: string, color: string) => {
+    if (selectedCells.size === 0) return;
+    
+    saveToHistory();
+    const newEvents = [...events];
+    
+    selectedCells.forEach(key => {
+      const [rowIndexStr, dayStr] = key.split('-');
+      const rowIndex = parseInt(rowIndexStr);
+      const day = parseInt(dayStr);
+      const row = sortedRows[rowIndex];
+      
+      const existingIndex = newEvents.findIndex(e => e.rowId === row.id && e.day === day);
+      if (existingIndex >= 0) {
+        newEvents[existingIndex] = { ...newEvents[existingIndex], label, color };
+      } else {
+        newEvents.push({
+          id: crypto.randomUUID(),
+          rowId: row.id,
+          day,
+          label,
+          color,
+        });
       }
-      return [...prev, specialDay];
     });
-    setEditingSpecialDay(null);
-  }, []);
+    
+    setEvents(newEvents);
+    setSelectedCells(new Set());
+  };
 
-  // Handle special day delete
-  const handleSpecialDayDelete = useCallback(() => {
-    if (!editingSpecialDay) return;
-    setSpecialDays(prev => prev.filter(s => s.day !== editingSpecialDay.day));
-    setEditingSpecialDay(null);
-  }, [editingSpecialDay]);
+  // Clear selected cells
+  const clearSelectedCells = () => {
+    if (selectedCells.size === 0) return;
+    
+    saveToHistory();
+    const cellsToRemove = new Set<string>();
+    
+    selectedCells.forEach(key => {
+      const [rowIndexStr, dayStr] = key.split('-');
+      const rowIndex = parseInt(rowIndexStr);
+      const day = parseInt(dayStr);
+      const row = sortedRows[rowIndex];
+      cellsToRemove.add(`${row.id}-${day}`);
+    });
+    
+    setEvents(prev => prev.filter(e => !cellsToRemove.has(`${e.rowId}-${e.day}`)));
+    setSelectedCells(new Set());
+  };
 
-  // Navigate months
+  // Add global mouse up listener
+  useEffect(() => {
+    const handleGlobalMouseUp = () => handleMouseUp();
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [isDragging, dragStart, dragEnd, toolMode]);
+
+  // Navigation
   const prevMonth = () => {
     if (month === 0) {
       setMonth(11);
@@ -976,35 +761,94 @@ const CalendarManager: React.FC = () => {
     }
   };
 
-  // Generate day columns
-  const dayColumns = useMemo(() => {
-    const cols = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month, d);
-      const dayOfWeek = date.getDay();
-      const dayName = DAY_NAMES[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
-      const weekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const special = getSpecialDay(d);
-      
-      cols.push({ day: d, dayName, weekend, special });
-    }
-    return cols;
-  }, [year, month, daysInMonth, getSpecialDay]);
-
-  // Handle cell right-click for drag-fill
-  const handleCellContextMenu = (e: React.MouseEvent, rowId: string, day: number, rowIndex: number) => {
-    e.preventDefault();
-    const event = getEvent(rowId, day);
+  // Handle event save
+  const handleEventSave = (data: Omit<CalendarEvent, 'id' | 'rowId' | 'day'>) => {
+    if (!editingEvent) return;
+    
+    saveToHistory();
+    const { rowId, day, event } = editingEvent;
+    
     if (event) {
-      setDragFillSource({ event, rowIndex });
+      setEvents(prev => prev.map(e => 
+        e.id === event.id ? { ...e, ...data } : e
+      ));
+    } else {
+      setEvents(prev => [...prev, {
+        id: crypto.randomUUID(),
+        rowId,
+        day,
+        ...data,
+      }]);
     }
+    setEditingEvent(null);
   };
 
+  // Handle event delete
+  const handleEventDelete = () => {
+    if (!editingEvent?.event) return;
+    saveToHistory();
+    setEvents(prev => prev.filter(e => e.id !== editingEvent.event!.id));
+    setEditingEvent(null);
+  };
+
+  // Handle row save
+  const handleRowSave = (data: Omit<CalendarRow, 'id' | 'order'>) => {
+    saveToHistory();
+    if (editingRow === 'new') {
+      setRows(prev => [...prev, {
+        id: crypto.randomUUID(),
+        ...data,
+        order: prev.length,
+      }]);
+    } else if (editingRow) {
+      setRows(prev => prev.map(r => 
+        r.id === editingRow.id ? { ...r, ...data } : r
+      ));
+    }
+    setEditingRow(null);
+  };
+
+  // Handle row delete
+  const handleRowDelete = () => {
+    if (!editingRow || editingRow === 'new') return;
+    saveToHistory();
+    setRows(prev => prev.filter(r => r.id !== editingRow.id));
+    setEvents(prev => prev.filter(e => e.rowId !== editingRow.id));
+    setEditingRow(null);
+  };
+
+  // Handle special day save
+  const handleSpecialDaySave = (data: SpecialDay) => {
+    saveToHistory();
+    setSpecialDays(prev => {
+      const existing = prev.findIndex(s => s.day === data.day);
+      if (existing >= 0) {
+        return prev.map((s, i) => i === existing ? data : s);
+      }
+      return [...prev, data];
+    });
+    setEditingSpecialDay(null);
+  };
+
+  // Handle special day delete
+  const handleSpecialDayDelete = () => {
+    if (!editingSpecialDay) return;
+    saveToHistory();
+    setSpecialDays(prev => prev.filter(s => s.day !== editingSpecialDay.day));
+    setEditingSpecialDay(null);
+  };
+
+  // Selected range for visual feedback during drag
+  const dragSelectedCells = useMemo(() => {
+    if (!isDragging || toolMode !== 'select') return new Set<string>();
+    return getSelectedRangeCells();
+  }, [isDragging, toolMode, getSelectedRangeCells]);
+
   return (
-    <div className="w-full">
+    <div className="w-full select-none">
       {/* Header */}
       <motion.header 
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
+        className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8 flex-shrink-0"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -1017,179 +861,297 @@ const CalendarManager: React.FC = () => {
             KALENDÁŘ <span className="text-white/20">UDÁLOSTÍ</span>
           </h1>
         </div>
-
-        <div className="flex items-center gap-3">
+        
+        {/* Month navigation */}
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => setEditingRow('new')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm font-medium"
+            onClick={prevMonth}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Přidat řádek
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="text-center min-w-[180px]">
+            <h2 className="text-2xl font-bold text-white">{monthName}</h2>
+            <p className="text-sm text-white/50">{year}</p>
+          </div>
+          <button
+            onClick={nextMonth}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </motion.header>
 
-      {/* Month Navigation */}
-      <div className="flex items-center justify-between mb-6 p-4 rounded-2xl bg-white/[0.02] border border-white/10">
-        <button
-          onClick={prevMonth}
-          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-white uppercase tracking-wide">
-            {monthName}
-          </h2>
-          <p className="text-sm text-white/50">{year}</p>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 mb-6 p-4 rounded-2xl bg-white/[0.02] border border-white/10">
+        {/* Tool modes */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5">
+          <button
+            onClick={() => setToolMode('select')}
+            className={`p-2.5 rounded-lg transition-all ${
+              toolMode === 'select'
+                ? 'bg-yellow-500/20 text-yellow-400'
+                : 'text-white/50 hover:text-white hover:bg-white/10'
+            }`}
+            title="Výběr (tažením vybere oblast)"
+          >
+            <MousePointer2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setToolMode('paint')}
+            className={`p-2.5 rounded-lg transition-all ${
+              toolMode === 'paint'
+                ? 'bg-yellow-500/20 text-yellow-400'
+                : 'text-white/50 hover:text-white hover:bg-white/10'
+            }`}
+            title="Štětec (tažením maluje)"
+          >
+            <Palette className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setToolMode('erase')}
+            className={`p-2.5 rounded-lg transition-all ${
+              toolMode === 'erase'
+                ? 'bg-yellow-500/20 text-yellow-400'
+                : 'text-white/50 hover:text-white hover:bg-white/10'
+            }`}
+            title="Guma (tažením maže)"
+          >
+            <Eraser className="w-4 h-4" />
+          </button>
         </div>
 
+        {/* Paint brush picker (when paint mode) */}
+        {toolMode === 'paint' && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-xs text-white/50">Štětec:</span>
+            {QUICK_FILL_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => setPaintBrush(opt)}
+                className={`w-7 h-7 rounded-lg font-bold text-xs transition-all ${
+                  paintBrush.label === opt.label && paintBrush.color === opt.color
+                    ? 'ring-2 ring-yellow-400 scale-110'
+                    : 'hover:scale-105'
+                }`}
+                style={{ backgroundColor: opt.color }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Quick fill for selection */}
+        {toolMode === 'select' && selectedCells.size > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+            <span className="text-xs text-yellow-400 font-medium">{selectedCells.size} vybráno:</span>
+            {QUICK_FILL_OPTIONS.slice(0, 6).map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => applyToSelectedCells(opt.label, opt.color)}
+                className="w-7 h-7 rounded-lg font-bold text-xs hover:scale-110 transition-all"
+                style={{ backgroundColor: opt.color }}
+              >
+                {opt.label}
+              </button>
+            ))}
+            <button
+              onClick={clearSelectedCells}
+              className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30"
+              title="Smazat vybrané"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1" />
+
+        {/* Undo/Redo */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={undo}
+            disabled={historyIndex <= 0}
+            className="p-2 rounded-lg bg-white/5 text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            title="Zpět"
+          >
+            <Undo2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={redo}
+            disabled={historyIndex >= history.length - 1}
+            className="p-2 rounded-lg bg-white/5 text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            title="Vpřed"
+          >
+            <Redo2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Add row */}
         <button
-          onClick={nextMonth}
-          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          onClick={() => setEditingRow('new')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-sm font-medium"
         >
-          <ChevronRight className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
+          Přidat řádek
         </button>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="overflow-x-auto rounded-2xl border border-white/10">
-        <div className="min-w-[1400px]">
-          {/* Header Row - Days */}
-          <div className="flex bg-white/[0.03] border-b border-white/10">
-            {/* Row name column */}
-            <div className="w-48 shrink-0 p-3 border-r border-white/10">
-              <span className="text-xs font-bold text-white/40 uppercase tracking-wider">
-                {monthName.toUpperCase()}
-              </span>
-            </div>
-            
-            {/* Day columns */}
-            {dayColumns.map(({ day, dayName, weekend, special }) => (
-              <div
-                key={day}
-                className={`flex-1 min-w-[38px] p-1.5 text-center border-r border-white/5 last:border-r-0 cursor-pointer hover:bg-white/5 transition-colors ${
-                  weekend ? 'bg-white/[0.02]' : ''
-                }`}
-                style={special ? { backgroundColor: `${special.color}20` } : undefined}
-                onClick={() => setEditingSpecialDay({ day, specialDay: special })}
-              >
-                <div className="text-[9px] text-white/40 uppercase">{dayName}</div>
-                <div className={`text-xs font-bold ${weekend ? 'text-white/40' : 'text-white/70'}`}>
-                  {day}
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Info banner */}
+      <div className="flex items-start gap-3 mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+        <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+        <div className="text-sm text-white/70">
+          <strong className="text-white">Jak používat:</strong>{' '}
+          <span className="text-yellow-400">Výběr</span> = tažením myší vyberte oblast a aplikujte hodnotu.{' '}
+          <span className="text-yellow-400">Štětec</span> = tažením malujte hodnotu.{' '}
+          <span className="text-yellow-400">Guma</span> = tažením mažte.{' '}
+          Klikněte na <span className="text-blue-400">záhlaví dne</span> pro speciální den (svátek).{' '}
+          Klikněte na <span className="text-green-400">název řádku</span> pro úpravu.
+        </div>
+      </div>
 
-          {/* Special Days Row (if any) */}
-          {specialDays.length > 0 && (
-            <div className="flex bg-white/[0.01] border-b border-white/10">
-              <div className="w-48 shrink-0 p-2 border-r border-white/10" />
-              {dayColumns.map(({ day, special }) => (
-                <div
-                  key={day}
-                  className="flex-1 min-w-[38px] border-r border-white/5 last:border-r-0"
-                >
-                  {special && (
-                    <div
-                      className="h-full min-h-[60px] flex items-center justify-center p-0.5"
-                      style={{ backgroundColor: `${special.color}30` }}
-                    >
-                      <span
-                        className="text-[7px] font-bold uppercase tracking-wider"
+      {/* Calendar Table */}
+      <div 
+        ref={tableRef}
+        className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02]"
+      >
+        <table className="w-full border-collapse min-w-[1200px]">
+          <thead>
+            <tr>
+              {/* Month header */}
+              <th className="sticky left-0 z-20 bg-[#0d0d15] p-3 text-left border-b border-r border-white/10">
+                <div className="font-bold text-yellow-400 uppercase text-sm">
+                  {monthName.toUpperCase()}
+                </div>
+              </th>
+              {/* Day headers */}
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+                const dayOfWeek = getDayOfWeek(year, month, day);
+                const weekend = isWeekend(year, month, day);
+                const special = getSpecialDay(day);
+                
+                return (
+                  <th
+                    key={day}
+                    onClick={() => setEditingSpecialDay({ day, specialDay: special })}
+                    className={`p-1 border-b border-r border-white/10 cursor-pointer hover:bg-white/10 transition-colors min-w-[36px] ${
+                      weekend ? 'bg-white/[0.03]' : ''
+                    }`}
+                    style={special ? { backgroundColor: `${special.color}30` } : undefined}
+                  >
+                    <div className="text-[10px] text-white/40 font-medium">
+                      {DAY_NAMES[dayOfWeek]}
+                    </div>
+                    <div className={`text-sm font-bold ${weekend ? 'text-white/40' : 'text-white/70'}`}>
+                      {day}
+                    </div>
+                    {special && (
+                      <div 
+                        className="text-[8px] font-bold mt-1 writing-mode-vertical"
                         style={{ 
                           color: special.color,
                           writingMode: 'vertical-rl',
                           textOrientation: 'mixed',
-                          transform: 'rotate(180deg)'
+                          transform: 'rotate(180deg)',
+                          height: '60px',
+                          overflow: 'hidden',
                         }}
                       >
                         {special.label}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Data Rows */}
-          {sortedRows.map((row, rowIndex) => (
-            <div
-              key={row.id}
-              className="flex border-b border-white/5 last:border-b-0 hover:bg-white/[0.01] transition-colors"
-            >
-              {/* Row name */}
-              <div
-                className="w-48 shrink-0 p-1.5 border-r border-white/10 flex items-center gap-2 cursor-pointer hover:bg-white/5"
-                onClick={() => setEditingRow(row)}
-              >
-                <div
-                  className="w-1 h-6 rounded-full shrink-0"
-                  style={{ backgroundColor: row.color }}
-                />
-                <span className="text-[10px] font-semibold text-white/80 truncate">
-                  {row.name}
-                </span>
-              </div>
-
-              {/* Event cells */}
-              {dayColumns.map(({ day, weekend, special }) => {
-                const event = getEvent(row.id, day);
-                
-                return (
-                  <div
-                    key={day}
-                    className={`flex-1 min-w-[38px] min-h-[32px] border-r border-white/5 last:border-r-0 cursor-pointer transition-colors group relative ${
-                      weekend ? 'bg-white/[0.01]' : ''
-                    } ${!event ? 'hover:bg-white/5' : ''}`}
-                    style={special && !event ? { backgroundColor: `${special.color}10` } : undefined}
-                    onClick={() => setEditingEvent({ event: event || null, rowId: row.id, day })}
-                    onContextMenu={(e) => handleCellContextMenu(e, row.id, day, rowIndex)}
-                  >
-                    {event && (
-                      <div
-                        className="w-full h-full flex items-center justify-center p-0.5 relative"
-                        style={{ backgroundColor: event.color }}
-                      >
-                        <span className="text-[10px] font-bold text-white drop-shadow-sm">
-                          {event.label}
-                        </span>
-                        {/* Drag handle indicator */}
-                        <div className="absolute bottom-0 right-0 w-2 h-2 opacity-0 group-hover:opacity-50 transition-opacity">
-                          <div className="w-full h-full border-r-2 border-b-2 border-white" />
-                        </div>
                       </div>
                     )}
-                  </div>
+                  </th>
                 );
               })}
-            </div>
-          ))}
-        </div>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRows.map((row, rowIndex) => (
+              <tr key={row.id} className="group">
+                {/* Row header */}
+                <td
+                  onClick={() => setEditingRow(row)}
+                  className="sticky left-0 z-10 bg-[#0d0d15] p-2 border-b border-r border-white/10 cursor-pointer hover:bg-white/10 transition-colors min-w-[160px] max-w-[200px]"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: row.color }}
+                    />
+                    <span className="text-xs font-bold text-white/80 truncate">
+                      {row.name}
+                    </span>
+                  </div>
+                </td>
+                {/* Day cells */}
+                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+                  const event = getEvent(row.id, day);
+                  const weekend = isWeekend(year, month, day);
+                  const special = getSpecialDay(day);
+                  const cellKey = getCellKey(rowIndex, day);
+                  const isSelected = selectedCells.has(cellKey) || dragSelectedCells.has(cellKey);
+                  
+                  return (
+                    <td
+                      key={day}
+                      onMouseDown={(e) => handleCellMouseDown(rowIndex, day, e)}
+                      onMouseEnter={() => handleCellMouseEnter(rowIndex, day)}
+                      onDoubleClick={() => {
+                        if (toolMode === 'select') {
+                          setEditingEvent({ rowId: row.id, day, event: event || null });
+                        }
+                      }}
+                      className={`p-0.5 border-b border-r border-white/10 cursor-pointer transition-all ${
+                        weekend ? 'bg-white/[0.03]' : ''
+                      } ${isSelected ? 'ring-2 ring-inset ring-yellow-400' : ''}`}
+                      style={special ? { backgroundColor: `${special.color}15` } : undefined}
+                    >
+                      {event ? (
+                        <div
+                          className="w-full h-8 rounded flex items-center justify-center font-bold text-xs transition-transform hover:scale-105"
+                          style={{ backgroundColor: event.color }}
+                          title={event.note || event.label}
+                        >
+                          {event.label}
+                        </div>
+                      ) : (
+                        <div className="w-full h-8 rounded bg-transparent hover:bg-white/5 transition-colors" />
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* Legend / Info */}
-      <div className="mt-6 p-4 rounded-2xl bg-white/[0.02] border border-white/10">
-        <div className="flex items-center gap-2 mb-3">
-          <AlertCircle className="w-4 h-4 text-yellow-400" />
-          <span className="text-xs font-bold text-white/60 uppercase tracking-wider">Nápověda</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-white/50">
-          <div>
-            <strong className="text-white/70">Klikněte na buňku</strong> pro přidání/úpravu události
-          </div>
-          <div>
-            <strong className="text-white/70">Pravé tlačítko na vyplněnou buňku</strong> pro protažení hodnoty
-          </div>
-          <div>
-            <strong className="text-white/70">Klikněte na název řádku</strong> pro úpravu oddělení
-          </div>
-          <div>
-            <strong className="text-white/70">Klikněte na záhlaví dne</strong> pro označení speciálního dne
-          </div>
+      {/* Legend */}
+      <div className="mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/10">
+        <h3 className="text-sm font-bold text-white/60 mb-3 uppercase tracking-wider">Legenda</h3>
+        <div className="flex flex-wrap gap-3">
+          {QUICK_FILL_OPTIONS.map((opt) => (
+            <div key={opt.label} className="flex items-center gap-2">
+              <div
+                className="w-6 h-6 rounded flex items-center justify-center font-bold text-xs"
+                style={{ backgroundColor: opt.color }}
+              >
+                {opt.label}
+              </div>
+              <span className="text-xs text-white/50">
+                {opt.label === 'X' && 'Zavřeno'}
+                {opt.label === 'G' && 'Gynekologie'}
+                {opt.label === 'CH' && 'Chirurgie'}
+                {opt.label === 'U' && 'Urologie'}
+                {opt.label === '7' && 'Sál 7'}
+                {opt.label === '10' && 'Sál 10'}
+                {opt.label === '1' && 'Sál 1'}
+                {opt.label === '4' && 'Sál 4'}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -1204,19 +1166,18 @@ const CalendarManager: React.FC = () => {
             onSave={handleEventSave}
             onDelete={handleEventDelete}
             onClose={() => setEditingEvent(null)}
-            onExtend={handleExtend}
           />
         )}
-
+        
         {editingRow && (
           <RowEditorModal
             row={editingRow === 'new' ? null : editingRow}
             onSave={handleRowSave}
-            onDelete={editingRow !== 'new' ? () => handleRowDelete(editingRow.id) : undefined}
+            onDelete={editingRow !== 'new' ? handleRowDelete : undefined}
             onClose={() => setEditingRow(null)}
           />
         )}
-
+        
         {editingSpecialDay && (
           <SpecialDayEditorModal
             day={editingSpecialDay.day}
@@ -1225,17 +1186,6 @@ const CalendarManager: React.FC = () => {
             onSave={handleSpecialDaySave}
             onDelete={editingSpecialDay.specialDay ? handleSpecialDayDelete : undefined}
             onClose={() => setEditingSpecialDay(null)}
-          />
-        )}
-
-        {dragFillSource && (
-          <DragFillModal
-            sourceEvent={dragFillSource.event}
-            sourceRowIndex={dragFillSource.rowIndex}
-            rows={sortedRows}
-            daysInMonth={daysInMonth}
-            onFill={handleDragFill}
-            onClose={() => setDragFillSource(null)}
           />
         )}
       </AnimatePresence>
