@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft } from 'lucide-react';
+import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft, Smartphone } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
 import ShiftScheduleManager from './ShiftScheduleManager';
@@ -9,6 +9,7 @@ import StaffManager from './StaffManager';
 import StatusesManager from './StatusesManager';
 import BackgroundManager from './BackgroundManager';
 import ManagementManager from './ManagementManager';
+import DevicesManager from './DevicesManager';
 import SystemSettingsModule from './SystemSettingsModule';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom } from '../types';
@@ -113,6 +114,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       accentColor: '#06B6D4',
     },
     {
+      id: 'devices',
+      title: 'Správa zařízení',
+      description: 'Přehled registrovaných zařízení a jejich správa',
+      icon: Smartphone,
+      accentColor: '#3B82F6',
+    },
+    {
       id: 'settings',
       title: 'Nastavení',
       description: 'Konfigurace systému a preferencí',
@@ -180,6 +188,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       ) : selectedModule === 'management' ? (
         <ModuleWrapper>
           <ManagementManager />
+        </ModuleWrapper>
+      ) : selectedModule === 'devices' ? (
+        <ModuleWrapper>
+          <DevicesManager onBack={() => setSelectedModule(null)} />
         </ModuleWrapper>
       ) : selectedModule === 'settings' ? (
         <ModuleWrapper>

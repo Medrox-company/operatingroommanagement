@@ -5,11 +5,11 @@ import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
-import DevicesModule from './components/DevicesModule';
 import StaffManager from './components/StaffManager';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
+import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
@@ -590,16 +590,7 @@ const AppContent: React.FC = () => {
   </div>
   )}
 
-  {/* Devices */}
-  {currentView === 'devices' && (
-  <div className="w-full h-full overflow-y-auto hide-scrollbar">
-  <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
-  <DevicesModule />
-  </div>
-  </div>
-  )}
-
-            {/* Alerts */}
+  {/* Alerts */}
             {currentView === 'alerts' && (
               <div className="w-full h-full">
                 <PlaceholderView
@@ -631,14 +622,15 @@ const AppContent: React.FC = () => {
 // Wrap with AuthProvider and WorkflowStatusesProvider
 const App: React.FC = () => {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <WorkflowStatusesProvider>
-          <AppContent />
-        </WorkflowStatusesProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+  <ErrorBoundary>
+  <AuthProvider>
+  <WorkflowStatusesProvider>
+  <DeviceRegistration />
+  <AppContent />
+  </WorkflowStatusesProvider>
+  </AuthProvider>
+  </ErrorBoundary>
   );
-};
+  };
 
 export default App;
