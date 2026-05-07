@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar, ChevronLeft, ChevronRight, Plus, Trash2, X, Check,
   Palette, AlertCircle, Eraser, Undo2, Redo2, Copy, Download,
-  Lock, Unlock, Eye, EyeOff, Search, Filter, MoreHorizontal,
-  ChevronDown, MousePointer2, PaintBucket,
+  Eye, EyeOff, Search, MousePointer2, PaintBucket, Flag, Settings,
+  GripVertical, Printer, FileText, Save, RefreshCw,
 } from 'lucide-react';
 
 // ─────────────────── Types ───────────────────
@@ -36,6 +36,8 @@ interface HistorySnapshot {
   rows: CalendarRow[];
   specialDays: SpecialDay[];
 }
+
+type ToolMode = 'select' | 'fill' | 'drag-fill' | 'erase';
 
 // ─────────────────── Constants ───────────────────
 const MONTHS = [
@@ -81,6 +83,56 @@ const DEFAULT_ROWS: CalendarRow[] = [
   { id: 'aro_lbc',  name: 'ARO LÉKAŘI LBC',    color: '#06B6D4', order: 16 },
   { id: 'aro_fd',   name: 'ARO LÉKAŘI FD',     color: '#14B8A6', order: 17 },
 ];
+
+// České státní svátky (fixní datumy)
+const CZECH_HOLIDAYS: { month: number; day: number; name: string }[] = [
+  { month: 0, day: 1, name: 'Nový rok' },
+  { month: 4, day: 1, name: 'Svátek práce' },
+  { month: 4, day: 8, name: 'Den vítězství' },
+  { month: 6, day: 5, name: 'Cyril a Metoděj' },
+  { month: 6, day: 6, name: 'Mistr Jan Hus' },
+  { month: 8, day: 28, name: 'Den české státnosti' },
+  { month: 9, day: 28, name: 'Den vzniku ČSR' },
+  { month: 10, day: 17, name: 'Den boje za svobodu' },
+  { month: 11, day: 24, name: 'Štědrý den' },
+  { month: 11, day: 25, name: '1. svátek vánoční' },
+  { month: 11, day: 26, name: '2. svátek vánoční' },
+];
+
+// Výpočet Velikonoc (Gaussův algoritmus)
+function getEasterDate(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month, day);
+}
+
+function getCzechHolidays(year: number): { month: number; day: number; name: string }[] {
+  const holidays = [...CZECH_HOLIDAYS];
+  
+  // Velikonoce - pohyblivé svátky
+  const easter = getEasterDate(year);
+  const easterMonday = new Date(easter);
+  easterMonday.setDate(easter.getDate() + 1);
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(easter.getDate() - 2);
+  
+  holidays.push({ month: goodFriday.getMonth(), day: goodFriday.getDate(), name: 'Velký pátek' });
+  holidays.push({ month: easterMonday.getMonth(), day: easterMonday.getDate(), name: 'Velikonoční pondělí' });
+  
+  return holidays;
+}
 
 // ─────────────────── Helpers ───────────────────
 function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
@@ -299,18 +351,21 @@ const SpecialDayModal: React.FC<{
           <div className="flex flex-wrap gap-2">
             {presets.map(p => (
               <button key={p} onClick={() => setLabel(p)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  label === p ? 'bg-yellow-500/30 text-yellow-400 border border-yellow-500/40' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  label === p ? 'bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/50' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                 }`}>
                 {p}
               </button>
             ))}
           </div>
-          <input type="text" value={label} onChange={e => setLabel(e.target.value)}
-            placeholder="Vlastní název..."
-            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 text-sm" />
           <div>
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva sloupce</p>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Vlastní popis</p>
+            <input type="text" value={label} onChange={e => setLabel(e.target.value)}
+              placeholder="např. CELOZÁVODNÍ DOVOLENÁ"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 text-sm" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva</p>
             <ColorPicker value={color} onChange={setColor} />
           </div>
         </div>
@@ -333,348 +388,435 @@ const SpecialDayModal: React.FC<{
   );
 };
 
-// ─────────────────── Main Component ───────────────────
-type ToolMode = 'select' | 'fill' | 'erase' | 'drag-fill';
+// ─────────────────── Czech Holidays Modal ───────────────────
+const CzechHolidaysModal: React.FC<{
+  year: number;
+  month: number;
+  onAddHoliday: (day: number, name: string) => void;
+  onClose: () => void;
+}> = ({ year, month, onAddHoliday, onClose }) => {
+  const holidays = getCzechHolidays(year).filter(h => h.month === month);
+  const allHolidays = getCzechHolidays(year);
 
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-white">České státní svátky {year}</h3>
+            <p className="text-sm text-white/40 mt-0.5">Klikněte pro přidání do kalendáře</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Current month holidays */}
+        {holidays.length > 0 && (
+          <div className="mb-6">
+            <p className="text-[10px] font-bold text-yellow-400/60 uppercase tracking-widest mb-3">Tento měsíc ({MONTHS[month]})</p>
+            <div className="space-y-2">
+              {holidays.map((h, i) => (
+                <button key={i}
+                  onClick={() => { onAddHoliday(h.day, h.name); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors text-left">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                    <span className="text-yellow-400 font-bold">{h.day}</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">{h.name}</p>
+                    <p className="text-white/40 text-xs">{h.day}. {MONTHS[h.month]}</p>
+                  </div>
+                  <Plus className="w-4 h-4 text-yellow-400 ml-auto" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All holidays */}
+        <div>
+          <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Všechny svátky v roce {year}</p>
+          <div className="space-y-1.5">
+            {allHolidays.sort((a, b) => a.month * 100 + a.day - (b.month * 100 + b.day)).map((h, i) => (
+              <div key={i}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  h.month === month ? 'bg-yellow-500/10' : 'bg-white/[0.02] hover:bg-white/5'
+                }`}>
+                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                  <span className="text-white/60 font-medium text-xs">{h.day}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-white/80 text-sm">{h.name}</p>
+                  <p className="text-white/30 text-xs">{MONTHS[h.month]}</p>
+                </div>
+                {h.month === month && (
+                  <button onClick={() => onAddHoliday(h.day, h.name)}
+                    className="p-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors">
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-5 pt-4 border-t border-white/10">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">
+            Zavřít
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─────────────────── Main Component ───────────────────
 const CalendarManager: React.FC = () => {
-  const today = new Date();
-  const [year,  setYear]  = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const [rows,  setRows]  = useState<CalendarRow[]>(DEFAULT_ROWS);
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [rows, setRows] = useState<CalendarRow[]>(DEFAULT_ROWS);
   const [cells, setCells] = useState<Record<string, CellData>>({});
   const [specialDays, setSpecialDays] = useState<SpecialDay[]>([]);
 
-  // Tool
-  const [toolMode, setToolMode] = useState<ToolMode>('select');
-  const [brush, setBrush] = useState<{ label: string; color: string }>(QUICK_VALUES[0]);
-
-  // Drag-fill state: tracks the source cell being dragged FROM
-  const [dragFillSource, setDragFillSource] = useState<CellData | null>(null);
-  const [isDragging,     setIsDragging]     = useState(false);
-  const [dragStart,      setDragStart]      = useState<{ rowId: string; rowIndex: number; day: number } | null>(null);
-  const [dragCurrent,    setDragCurrent]    = useState<{ rowIndex: number; day: number } | null>(null);
-
-  // Selection (for apply-to-many)
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-
-  // History
-  const historyRef = useRef<HistorySnapshot[]>([]);
-  const histIdxRef = useRef(-1);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-
-  // Modals
-  const [editCell,       setEditCell]       = useState<{ rowId: string; day: number } | null>(null);
-  const [editRow,        setEditRow]        = useState<CalendarRow | null | 'new'>(null);
+  // UI states
+  const [editCell, setEditCell] = useState<{ rowId: string; day: number } | null>(null);
+  const [editRow, setEditRow] = useState<CalendarRow | 'new' | null>(null);
   const [editSpecialDay, setEditSpecialDay] = useState<{ day: number } | null>(null);
-
-  // Search / filter
-  const [search,      setSearch]      = useState('');
-  const [showHidden,  setShowHidden]  = useState(false);
-
-  // Context menu
+  const [showHolidays, setShowHolidays] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; rowId: string; day: number } | null>(null);
 
-  const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
-  const monthName   = MONTHS[month];
+  // Tool states
+  const [toolMode, setToolMode] = useState<ToolMode>('select');
+  const [brush, setBrush] = useState<{ label: string; color: string }>({ label: 'X', color: '#EF4444' });
+  const [search, setSearch] = useState('');
+  const [showHidden, setShowHidden] = useState(false);
 
-  const sortedRows = useMemo(() =>
-    [...rows]
-      .filter(r => showHidden || !r.hidden)
-      .filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => a.order - b.order),
-    [rows, showHidden, search]
-  );
+  // Selection & drag
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ rowId: string; rowIdx: number; day: number } | null>(null);
+  const [dragEnd, setDragEnd] = useState<{ rowId: string; rowIdx: number; day: number } | null>(null);
+  const [dragSourceCell, setDragSourceCell] = useState<CellData | null>(null);
 
-  // ── History helpers ──
-  const snapshot = useCallback((): HistorySnapshot => ({
-    cells: { ...cells },
-    rows:  rows.map(r => ({ ...r })),
-    specialDays: specialDays.map(s => ({ ...s })),
-  }), [cells, rows, specialDays]);
+  // Row clipboard
+  const [rowClipboard, setRowClipboard] = useState<Record<number, CellData>>({});
 
-  const pushHistory = useCallback(() => {
-    const snap = snapshot();
-    historyRef.current = historyRef.current.slice(0, histIdxRef.current + 1);
-    historyRef.current.push(snap);
-    histIdxRef.current = historyRef.current.length - 1;
-    setCanUndo(histIdxRef.current > 0);
-    setCanRedo(false);
-  }, [snapshot]);
+  // History for undo/redo
+  const [history, setHistory] = useState<HistorySnapshot[]>([]);
+  const [historyIdx, setHistoryIdx] = useState(-1);
+  const canUndo = historyIdx >= 0;
+  const canRedo = historyIdx < history.length - 1;
 
-  const undo = useCallback(() => {
-    if (histIdxRef.current <= 0) return;
-    histIdxRef.current--;
-    const s = historyRef.current[histIdxRef.current];
-    setCells(s.cells);
-    setRows(s.rows);
-    setSpecialDays(s.specialDays);
-    setCanUndo(histIdxRef.current > 0);
-    setCanRedo(true);
-  }, []);
-
-  const redo = useCallback(() => {
-    if (histIdxRef.current >= historyRef.current.length - 1) return;
-    histIdxRef.current++;
-    const s = historyRef.current[histIdxRef.current];
-    setCells(s.cells);
-    setRows(s.rows);
-    setSpecialDays(s.specialDays);
-    setCanUndo(true);
-    setCanRedo(histIdxRef.current < historyRef.current.length - 1);
-  }, []);
-
-  // Push initial snapshot
-  useEffect(() => { pushHistory(); }, []); // eslint-disable-line
-
-  // ── Drag range computation ──
-  const dragRangeKeys = useMemo((): Set<string> => {
-    if (!isDragging || !dragStart || !dragCurrent) return new Set();
-    const minRow = Math.min(
-      sortedRows.findIndex(r => r.id === dragStart.rowId),
-      dragCurrent.rowIndex
-    );
-    const maxRow = Math.max(
-      sortedRows.findIndex(r => r.id === dragStart.rowId),
-      dragCurrent.rowIndex
-    );
-    const minDay = Math.min(dragStart.day, dragCurrent.day);
-    const maxDay = Math.max(dragStart.day, dragCurrent.day);
-    const keys = new Set<string>();
-    for (let ri = minRow; ri <= maxRow; ri++) {
-      for (let d = minDay; d <= maxDay; d++) {
-        keys.add(cellKey(sortedRows[ri]?.id ?? '', d));
-      }
-    }
-    return keys;
-  }, [isDragging, dragStart, dragCurrent, sortedRows]);
-
-  // ── Mouse events ──
-  const handleCellMouseDown = useCallback((e: React.MouseEvent, rowId: string, rowIndex: number, day: number) => {
-    e.preventDefault();
-    const key  = cellKey(rowId, day);
-    const data = cells[key] ?? null;
-
-    if (e.button === 2) {
-      // Right-click context menu
-      setCtxMenu({ x: e.clientX, y: e.clientY, rowId, day });
-      return;
-    }
-
-    if (toolMode === 'erase') {
-      pushHistory();
-      setCells(prev => { const n = { ...prev }; delete n[key]; return n; });
-      setIsDragging(true);
-      setDragStart({ rowId, rowIndex, day });
-      setDragCurrent({ rowIndex, day });
-      return;
-    }
-
-    if (toolMode === 'fill') {
-      pushHistory();
-      setCells(prev => ({ ...prev, [key]: { label: brush.label, color: brush.color } }));
-      setIsDragging(true);
-      setDragStart({ rowId, rowIndex, day });
-      setDragCurrent({ rowIndex, day });
-      return;
-    }
-
-    if (toolMode === 'drag-fill') {
-      // Drag-fill: if source cell has data, start filling; else start from scratch with last brush
-      const src = data ?? { label: brush.label, color: brush.color };
-      setDragFillSource(src);
-      pushHistory();
-      setCells(prev => ({ ...prev, [key]: src }));
-      setIsDragging(true);
-      setDragStart({ rowId, rowIndex, day });
-      setDragCurrent({ rowIndex, day });
-      return;
-    }
-
-    // select mode
-    setIsDragging(true);
-    setDragStart({ rowId, rowIndex, day });
-    setDragCurrent({ rowIndex, day });
-    setSelectedKeys(new Set([key]));
-  }, [toolMode, cells, brush, pushHistory]);
-
-  const handleCellMouseEnter = useCallback((rowId: string, rowIndex: number, day: number) => {
-    if (!isDragging || !dragStart) return;
-    setDragCurrent({ rowIndex, day });
-
-    const key = cellKey(rowId, day);
-
-    if (toolMode === 'fill') {
-      setCells(prev => ({ ...prev, [key]: { label: brush.label, color: brush.color } }));
-    } else if (toolMode === 'erase') {
-      setCells(prev => { const n = { ...prev }; delete n[key]; return n; });
-    } else if (toolMode === 'drag-fill' && dragFillSource) {
-      setCells(prev => ({ ...prev, [key]: { ...dragFillSource } }));
-    }
-  }, [isDragging, dragStart, toolMode, brush, dragFillSource]);
-
-  const handleMouseUp = useCallback(() => {
-    if (isDragging && toolMode === 'select') {
-      setSelectedKeys(dragRangeKeys);
-    }
-    setIsDragging(false);
-    setDragFillSource(null);
-  }, [isDragging, toolMode, dragRangeKeys]);
-
-  useEffect(() => {
-    const up = () => handleMouseUp();
-    window.addEventListener('mouseup', up);
-    return () => window.removeEventListener('mouseup', up);
-  }, [handleMouseUp]);
+  // Derived
+  const daysInMonth = getDaysInMonth(year, month);
+  const monthName = MONTHS[month];
+  const sortedRows = useMemo(() => {
+    let r = [...rows].sort((a, b) => a.order - b.order);
+    if (search) r = r.filter(row => row.name.toLowerCase().includes(search.toLowerCase()));
+    if (!showHidden) r = r.filter(row => !row.hidden);
+    return r;
+  }, [rows, search, showHidden]);
 
   // Close context menu on click outside
   useEffect(() => {
-    if (!ctxMenu) return;
-    const close = () => setCtxMenu(null);
-    window.addEventListener('click', close);
-    return () => window.removeEventListener('click', close);
-  }, [ctxMenu]);
+    const handler = () => setCtxMenu(null);
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
-      if (e.key === 'Delete' && selectedKeys.size > 0) {
-        pushHistory();
-        setCells(prev => {
-          const n = { ...prev };
-          selectedKeys.forEach(k => delete n[k]);
-          return n;
-        });
-        setSelectedKeys(new Set());
-      }
-      if (e.key === 'Escape') { setSelectedKeys(new Set()); setCtxMenu(null); }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+      if (e.key === 'y' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); redo(); }
+      if (e.key === 'Delete' && selectedKeys.size > 0) { clearSelection(); }
+      if (e.key === 'Escape') { setSelectedKeys(new Set()); setIsDragging(false); }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [undo, redo, selectedKeys, pushHistory]);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedKeys, historyIdx, history]);
 
-  // ── Apply to selection ──
-  const applyToSelection = useCallback((label: string, color: string) => {
-    if (!selectedKeys.size) return;
+  // ─── History ───
+  const pushHistory = useCallback(() => {
+    const snapshot: HistorySnapshot = { cells: { ...cells }, rows: [...rows], specialDays: [...specialDays] };
+    setHistory(prev => [...prev.slice(0, historyIdx + 1), snapshot]);
+    setHistoryIdx(prev => prev + 1);
+  }, [cells, rows, specialDays, historyIdx]);
+
+  const undo = useCallback(() => {
+    if (!canUndo) return;
+    const snap = history[historyIdx];
+    setCells(snap.cells);
+    setRows(snap.rows);
+    setSpecialDays(snap.specialDays);
+    setHistoryIdx(prev => prev - 1);
+  }, [canUndo, history, historyIdx]);
+
+  const redo = useCallback(() => {
+    if (!canRedo) return;
+    const snap = history[historyIdx + 1];
+    setCells(snap.cells);
+    setRows(snap.rows);
+    setSpecialDays(snap.specialDays);
+    setHistoryIdx(prev => prev + 1);
+  }, [canRedo, history, historyIdx]);
+
+  // ─── Actions ───
+  const applyToSelection = (label: string, color: string) => {
+    if (selectedKeys.size === 0) return;
     pushHistory();
     setCells(prev => {
-      const n = { ...prev };
-      selectedKeys.forEach(k => { n[k] = { label, color }; });
-      return n;
+      const next = { ...prev };
+      selectedKeys.forEach(k => { next[k] = { label, color }; });
+      return next;
     });
     setSelectedKeys(new Set());
-  }, [selectedKeys, pushHistory]);
+  };
 
-  const clearSelection = useCallback(() => {
-    if (!selectedKeys.size) return;
+  const clearSelection = () => {
+    if (selectedKeys.size === 0) return;
     pushHistory();
     setCells(prev => {
-      const n = { ...prev };
-      selectedKeys.forEach(k => delete n[k]);
-      return n;
+      const next = { ...prev };
+      selectedKeys.forEach(k => delete next[k]);
+      return next;
     });
     setSelectedKeys(new Set());
-  }, [selectedKeys, pushHistory]);
+  };
 
-  // Copy row to clipboard
-  const copyRow = useCallback((rowId: string) => {
-    const rowCells: Record<number, CellData> = {};
+  const copyRow = (rowId: string) => {
+    const clip: Record<number, CellData> = {};
     for (let d = 1; d <= daysInMonth; d++) {
       const k = cellKey(rowId, d);
-      if (cells[k]) rowCells[d] = cells[k];
+      if (cells[k]) clip[d] = cells[k];
     }
-    (window as typeof window & { _copiedRow?: typeof rowCells })._copiedRow = rowCells;
-  }, [cells, daysInMonth]);
+    setRowClipboard(clip);
+  };
 
-  const pasteRow = useCallback((targetRowId: string) => {
-    const src = (window as typeof window & { _copiedRow?: Record<number, CellData> })._copiedRow;
-    if (!src) return;
+  const pasteRow = (rowId: string) => {
+    if (Object.keys(rowClipboard).length === 0) return;
     pushHistory();
     setCells(prev => {
-      const n = { ...prev };
-      Object.entries(src).forEach(([d, data]) => {
-        n[cellKey(targetRowId, Number(d))] = { ...data };
+      const next = { ...prev };
+      Object.entries(rowClipboard).forEach(([d, data]) => {
+        next[cellKey(rowId, Number(d))] = data;
       });
-      return n;
+      return next;
     });
-  }, [pushHistory]);
+  };
 
-  // Clear entire row
-  const clearRow = useCallback((rowId: string) => {
+  const clearRow = (rowId: string) => {
     pushHistory();
     setCells(prev => {
-      const n = { ...prev };
-      for (let d = 1; d <= daysInMonth; d++) delete n[cellKey(rowId, d)];
-      return n;
+      const next = { ...prev };
+      for (let d = 1; d <= daysInMonth; d++) delete next[cellKey(rowId, d)];
+      return next;
     });
-  }, [pushHistory, daysInMonth]);
+  };
 
-  // Clear entire month
-  const clearMonth = useCallback(() => {
+  const fillWeekdays = (rowId: string) => {
     pushHistory();
     setCells(prev => {
-      const n = { ...prev };
-      rows.forEach(r => {
-        for (let d = 1; d <= daysInMonth; d++) delete n[cellKey(r.id, d)];
-      });
-      return n;
-    });
-  }, [pushHistory, rows, daysInMonth]);
-
-  // Fill weekdays of a row
-  const fillWeekdays = useCallback((rowId: string) => {
-    pushHistory();
-    setCells(prev => {
-      const n = { ...prev };
+      const next = { ...prev };
       for (let d = 1; d <= daysInMonth; d++) {
         if (!isWeekend(year, month, d)) {
-          const k = cellKey(rowId, d);
-          if (!n[k]) n[k] = { label: brush.label, color: brush.color };
+          next[cellKey(rowId, d)] = { ...brush };
         }
       }
-      return n;
+      return next;
     });
-  }, [pushHistory, daysInMonth, year, month, brush]);
+  };
 
-  // Export as CSV
-  const exportCSV = useCallback(() => {
-    const header = ['Oddělení', ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1))].join(';');
-    const rowLines = rows.map(r =>
-      [r.name, ...Array.from({ length: daysInMonth }, (_, i) => cells[cellKey(r.id, i + 1)]?.label ?? '')].join(';')
-    );
-    const csv = [header, ...rowLines].join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const clearMonth = () => {
+    pushHistory();
+    setCells({});
+    setSpecialDays([]);
+  };
+
+  const exportCSV = () => {
+    let csv = `${monthName} ${year},${Array.from({ length: daysInMonth }, (_, i) => i + 1).join(',')}\n`;
+    sortedRows.forEach(row => {
+      const vals = Array.from({ length: daysInMonth }, (_, i) => cells[cellKey(row.id, i + 1)]?.label || '');
+      csv += `${row.name},${vals.join(',')}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kalendar-${monthName}-${year}.csv`;
+    a.download = `kalendar-${year}-${String(month + 1).padStart(2, '0')}.csv`;
     a.click();
-  }, [cells, rows, daysInMonth, monthName, year]);
+    URL.revokeObjectURL(url);
+  };
 
-  // ── Drag range highlight ──
-  const isInDragRange = (key: string) => dragRangeKeys.has(key);
-  const isSelected    = (key: string) => selectedKeys.has(key);
+  const addCzechHoliday = (day: number, name: string) => {
+    pushHistory();
+    setSpecialDays(prev => {
+      const existing = prev.findIndex(s => s.day === day);
+      if (existing >= 0) {
+        const next = [...prev];
+        next[existing] = { day, label: name, color: '#EAB308' };
+        return next;
+      }
+      return [...prev, { day, label: name, color: '#EAB308' }];
+    });
+  };
 
-  // ── Navigation ──
-  const prevMonth = () => month === 0  ? (setMonth(11), setYear(y => y - 1)) : setMonth(m => m - 1);
-  const nextMonth = () => month === 11 ? (setMonth(0),  setYear(y => y + 1)) : setMonth(m => m + 1);
+  const addAllCzechHolidays = () => {
+    pushHistory();
+    const holidays = getCzechHolidays(year).filter(h => h.month === month);
+    setSpecialDays(prev => {
+      const next = [...prev];
+      holidays.forEach(h => {
+        const existing = next.findIndex(s => s.day === h.day);
+        if (existing >= 0) {
+          next[existing] = { day: h.day, label: h.name, color: '#EAB308' };
+        } else {
+          next.push({ day: h.day, label: h.name, color: '#EAB308' });
+        }
+      });
+      return next;
+    });
+  };
 
-  // ── Cursor style per tool ──
+  // ─── Drag handling ───
+  const handleCellMouseDown = (e: React.MouseEvent, rowId: string, rowIdx: number, day: number) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    
+    const key = cellKey(rowId, day);
+    const existingCell = cells[key];
+    
+    if (toolMode === 'drag-fill' && existingCell) {
+      // Start drag-fill from existing cell
+      setDragSourceCell(existingCell);
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+      setDragEnd({ rowId, rowIdx, day });
+    } else if (toolMode === 'select') {
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+      setDragEnd({ rowId, rowIdx, day });
+      setSelectedKeys(new Set([key]));
+    } else if (toolMode === 'fill') {
+      pushHistory();
+      setCells(prev => ({ ...prev, [key]: { ...brush } }));
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+    } else if (toolMode === 'erase') {
+      pushHistory();
+      setCells(prev => { const n = { ...prev }; delete n[key]; return n; });
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+    }
+  };
+
+  const handleCellMouseEnter = (rowId: string, rowIdx: number, day: number) => {
+    if (!isDragging || !dragStart) return;
+    
+    const key = cellKey(rowId, day);
+    
+    if (toolMode === 'drag-fill' && dragSourceCell) {
+      setDragEnd({ rowId, rowIdx, day });
+    } else if (toolMode === 'select') {
+      setDragEnd({ rowId, rowIdx, day });
+      // Update selection based on drag range
+      const minRow = Math.min(dragStart.rowIdx, rowIdx);
+      const maxRow = Math.max(dragStart.rowIdx, rowIdx);
+      const minDay = Math.min(dragStart.day, day);
+      const maxDay = Math.max(dragStart.day, day);
+      const keys = new Set<string>();
+      for (let r = minRow; r <= maxRow; r++) {
+        const row = sortedRows[r];
+        if (!row) continue;
+        for (let d = minDay; d <= maxDay; d++) {
+          keys.add(cellKey(row.id, d));
+        }
+      }
+      setSelectedKeys(keys);
+    } else if (toolMode === 'fill') {
+      setCells(prev => ({ ...prev, [key]: { ...brush } }));
+    } else if (toolMode === 'erase') {
+      setCells(prev => { const n = { ...prev }; delete n[key]; return n; });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging && toolMode === 'drag-fill' && dragSourceCell && dragStart && dragEnd) {
+      // Apply drag-fill
+      pushHistory();
+      const minRow = Math.min(dragStart.rowIdx, dragEnd.rowIdx);
+      const maxRow = Math.max(dragStart.rowIdx, dragEnd.rowIdx);
+      const minDay = Math.min(dragStart.day, dragEnd.day);
+      const maxDay = Math.max(dragStart.day, dragEnd.day);
+      
+      setCells(prev => {
+        const next = { ...prev };
+        for (let r = minRow; r <= maxRow; r++) {
+          const row = sortedRows[r];
+          if (!row) continue;
+          for (let d = minDay; d <= maxDay; d++) {
+            next[cellKey(row.id, d)] = { ...dragSourceCell };
+          }
+        }
+        return next;
+      });
+    }
+    
+    setIsDragging(false);
+    setDragSourceCell(null);
+  };
+
+  useEffect(() => {
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, [isDragging, toolMode, dragSourceCell, dragStart, dragEnd, sortedRows]);
+
+  const isInDragRange = (key: string) => {
+    if (!dragStart || !dragEnd) return false;
+    const [rowId, dayStr] = key.split(':');
+    const day = Number(dayStr);
+    const rowIdx = sortedRows.findIndex(r => r.id === rowId);
+    if (rowIdx < 0) return false;
+    const minRow = Math.min(dragStart.rowIdx, dragEnd.rowIdx);
+    const maxRow = Math.max(dragStart.rowIdx, dragEnd.rowIdx);
+    const minDay = Math.min(dragStart.day, dragEnd.day);
+    const maxDay = Math.max(dragStart.day, dragEnd.day);
+    return rowIdx >= minRow && rowIdx <= maxRow && day >= minDay && day <= maxDay;
+  };
+
+  const isSelected = (key: string) => selectedKeys.has(key);
+
+  // Cursor styles
   const cursors: Record<ToolMode, string> = {
-    select:    'cursor-default',
-    fill:      'cursor-crosshair',
-    erase:     'cursor-cell',
-    'drag-fill': 'cursor-copy',
+    select: 'cursor-crosshair',
+    fill: 'cursor-cell',
+    'drag-fill': 'cursor-grab',
+    erase: 'cursor-cell',
+  };
+
+  const prevMonth = () => {
+    if (month === 0) { setMonth(11); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (month === 11) { setMonth(0); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
   };
 
   return (
-    <div className="w-full select-none" onContextMenu={e => e.preventDefault()}>
-
-      {/* ── Header ── */}
-      <motion.header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8"
-        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+    <div className="w-full select-none" onMouseLeave={() => { if (isDragging) handleMouseUp(); }}>
+      {/* Header */}
+      <motion.header 
+        className="flex items-center justify-between gap-6 mb-8 flex-shrink-0"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div>
           <div className="flex items-center gap-3 mb-2 opacity-60">
             <Calendar className="w-4 h-4 text-yellow-400" />
@@ -685,30 +827,31 @@ const CalendarManager: React.FC = () => {
           </h1>
         </div>
 
-        {/* Month nav */}
+        {/* Month navigation */}
         <div className="flex items-center gap-3">
-          <button onClick={prevMonth} className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+          <button onClick={prevMonth}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <div className="text-center min-w-[160px]">
-            <div className="text-2xl font-bold text-white">{monthName}</div>
-            <div className="text-sm text-white/40">{year}</div>
+          <div className="min-w-[180px] text-center">
+            <span className="text-2xl font-bold text-white">{monthName}</span>
+            <span className="text-2xl font-bold text-white/30 ml-2">{year}</span>
           </div>
-          <button onClick={nextMonth} className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+          <button onClick={nextMonth}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors">
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </motion.header>
 
-      {/* ── Toolbar ── */}
+      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 mb-5 p-3 rounded-2xl bg-white/[0.02] border border-white/10">
-
         {/* Tool group */}
         <div className="flex items-center gap-1 p-1 rounded-xl bg-black/20 border border-white/5">
           {([
             { mode: 'select'    as ToolMode, icon: <MousePointer2 className="w-4 h-4" />, title: 'Výběr — tažením vyberete oblast' },
             { mode: 'fill'      as ToolMode, icon: <PaintBucket   className="w-4 h-4" />, title: 'Štětec — tažením malujete' },
-            { mode: 'drag-fill' as ToolMode, icon: <Copy          className="w-4 h-4" />, title: 'Přetáhni hodnotu — tažením z buňky zkopíruje její obsah' },
+            { mode: 'drag-fill' as ToolMode, icon: <GripVertical  className="w-4 h-4" />, title: 'Protáhnout — tažením z vyplněné buňky zkopíruje její hodnotu' },
             { mode: 'erase'     as ToolMode, icon: <Eraser        className="w-4 h-4" />, title: 'Guma — tažením mažete' },
           ]).map(t => (
             <button key={t.mode} title={t.title} onClick={() => setToolMode(t.mode)}
@@ -720,8 +863,8 @@ const CalendarManager: React.FC = () => {
           ))}
         </div>
 
-        {/* Brush picker — shown for fill & drag-fill */}
-        {(toolMode === 'fill' || toolMode === 'drag-fill') && (
+        {/* Brush picker */}
+        {toolMode === 'fill' && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
             <span className="text-[10px] text-white/40 uppercase tracking-widest">Štětec</span>
             <div className="flex gap-1.5 flex-wrap">
@@ -739,21 +882,13 @@ const CalendarManager: React.FC = () => {
                 </button>
               ))}
             </div>
-            {/* Custom color for brush */}
-            <input
-              type="text"
-              value={brush.label}
-              onChange={e => setBrush(b => ({ ...b, label: e.target.value }))}
-              placeholder="text"
-              className="w-14 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-yellow-500/50"
-            />
           </div>
         )}
 
         {/* Selection actions */}
         {toolMode === 'select' && selectedKeys.size > 0 && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
-            <span className="text-xs text-yellow-400 font-medium">{selectedKeys.size}×</span>
+            <span className="text-xs text-yellow-400 font-medium">{selectedKeys.size}x</span>
             {QUICK_VALUES.slice(0, 6).map(q => (
               <button key={q.label}
                 onClick={() => applyToSelection(q.label, q.color)}
@@ -779,13 +914,27 @@ const CalendarManager: React.FC = () => {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
           <Search className="w-4 h-4 text-white/30" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Hledat řádek..."
-            className="w-28 bg-transparent text-white text-xs placeholder-white/30 focus:outline-none" />
+            placeholder="Hledat..."
+            className="w-24 bg-transparent text-white text-xs placeholder-white/30 focus:outline-none" />
         </div>
+
+        {/* Czech holidays */}
+        <button onClick={() => setShowHolidays(true)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-xs font-medium">
+          <Flag className="w-4 h-4" />
+          Svátky CZ
+        </button>
+
+        {/* Add all holidays for current month */}
+        <button onClick={addAllCzechHolidays}
+          className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors"
+          title="Přidat všechny svátky tohoto měsíce">
+          <RefreshCw className="w-4 h-4" />
+        </button>
 
         {/* Toggle hidden */}
         <button onClick={() => setShowHidden(v => !v)}
-          className={`p-2.5 rounded-xl transition-all ${showHidden ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-white/40 hover:text-white hover:bg-white/10'}`}
+          className={`p-2 rounded-xl transition-all ${showHidden ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-white/40 hover:text-white hover:bg-white/10'}`}
           title={showHidden ? 'Skrýt skryté řádky' : 'Zobrazit skryté řádky'}>
           {showHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
         </button>
@@ -804,16 +953,9 @@ const CalendarManager: React.FC = () => {
 
         {/* Export */}
         <button onClick={exportCSV}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium"
-          title="Export do CSV">
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium">
           <Download className="w-4 h-4" />
-          Export
-        </button>
-
-        {/* Clear month */}
-        <button onClick={() => { if (confirm('Smazat celý měsíc?')) clearMonth(); }}
-          className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Smazat celý měsíc">
-          <Trash2 className="w-4 h-4" />
+          CSV
         </button>
 
         {/* Add row */}
@@ -823,23 +965,28 @@ const CalendarManager: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Info bar ── */}
+      {/* Info bar */}
       <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-white/[0.02] border border-white/10 text-xs text-white/40">
         <AlertCircle className="w-4 h-4 text-blue-400/60 shrink-0" />
         {toolMode === 'select'    && <span><strong className="text-white/70">Výběr:</strong> Tažením vyberete oblast buněk a aplikujete hodnotu. Delete = smazat. Dvojklik = detail.</span>}
         {toolMode === 'fill'      && <span><strong className="text-yellow-400">Štětec:</strong> Tažením malujete zvolenou hodnotou do buněk.</span>}
-        {toolMode === 'drag-fill' && <span><strong className="text-yellow-400">Přetáhni hodnotu:</strong> Tažením z vyplněné buňky zkopíruje její obsah do všech buněk které přetáhnete. Funguje do všech směrů.</span>}
-        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažením mažete obsah buněk. Pravý klik = kontextové menu.</span>}
-        <span className="ml-auto opacity-60">Klikněte na záhlaví dne = svátek • Klikněte na název řádku = upravit • Pravý klik na buňku = menu</span>
+        {toolMode === 'drag-fill' && <span><strong className="text-yellow-400">Protáhnout:</strong> Klikněte na vyplněnou buňku a tažením zkopírujte její hodnotu do okolních buněk (všemi směry).</span>}
+        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažením mažete obsah buněk.</span>}
       </div>
 
-      {/* ── Table ── */}
+      {/* Table */}
       <div className={`overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02] ${cursors[toolMode]}`}>
-        <table className="border-collapse min-w-[1200px] w-full">
+        <table className="border-collapse w-full" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }} />
+            {Array.from({ length: daysInMonth }).map((_, i) => (
+              <col key={i} style={{ width: '36px', minWidth: '36px' }} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
               {/* Month label */}
-              <th className="sticky left-0 z-20 bg-[#0d0d18] p-3 text-left border-b border-r border-white/10 min-w-[180px]">
+              <th className="sticky left-0 z-20 bg-[#0d0d18] p-3 text-left border-b border-r border-white/10">
                 <span className="font-black text-yellow-400 uppercase text-sm tracking-wider">{monthName.toUpperCase()}</span>
               </th>
               {/* Day headers */}
@@ -847,13 +994,14 @@ const CalendarManager: React.FC = () => {
                 const dow  = getDayOfWeek(year, month, d);
                 const wknd = isWeekend(year, month, d);
                 const sp   = specialDays.find(s => s.day === d);
+                const holiday = getCzechHolidays(year).find(h => h.month === month && h.day === d);
                 return (
                   <th key={d}
                     onClick={() => setEditSpecialDay({ day: d })}
                     style={sp ? { backgroundColor: `${sp.color}25` } : undefined}
-                    className={`p-0.5 border-b border-r border-white/10 cursor-pointer hover:bg-white/10 transition-colors min-w-[34px] text-center ${wknd ? 'bg-white/[0.025]' : ''}`}>
+                    className={`p-0.5 border-b border-r border-white/10 cursor-pointer hover:bg-white/10 transition-colors text-center ${wknd ? 'bg-white/[0.025]' : ''}`}>
                     <div className="text-[9px] text-white/30 font-medium">{DAY_NAMES[dow]}</div>
-                    <div className={`text-[13px] font-bold ${wknd ? 'text-white/30' : 'text-white/60'}`}>{d}</div>
+                    <div className={`text-[13px] font-bold ${wknd ? 'text-white/30' : 'text-white/60'} ${holiday ? 'text-yellow-400' : ''}`}>{d}</div>
                     {sp && (
                       <div className="overflow-hidden" style={{ height: 56 }}>
                         <div className="text-[8px] font-bold"
@@ -877,38 +1025,32 @@ const CalendarManager: React.FC = () => {
             {sortedRows.map((row, rowIndex) => (
               <tr key={row.id}
                 className={`group transition-all ${row.hidden ? 'opacity-40' : ''}`}>
-                {/* Row header */}
-                <td className="sticky left-0 z-10 bg-[#0d0d18] border-b border-r border-white/10 min-w-[180px]">
-                  <div className="flex items-center justify-between pr-2">
+                {/* Row header - FIXED WIDTH */}
+                <td className="sticky left-0 z-10 bg-[#0d0d18] border-b border-r border-white/10">
+                  <div className="flex items-center h-9">
                     <button
                       onClick={() => setEditRow(row)}
-                      className="flex items-center gap-2 px-3 py-2.5 w-full hover:bg-white/5 transition-colors text-left">
+                      className="flex items-center gap-2 px-3 py-2 flex-1 min-w-0 hover:bg-white/5 transition-colors text-left">
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />
                       <span className="text-xs font-bold text-white/80 truncate">{row.name}</span>
                     </button>
-                    {/* Row actions */}
-                    <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+                    {/* Row actions - always visible but subtle */}
+                    <div className="flex items-center gap-0.5 pr-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => copyRow(row.id)}
-                        className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors" title="Kopírovat řádek">
+                        className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors" title="Kopírovat">
                         <Copy className="w-3 h-3" />
                       </button>
                       <button onClick={() => pasteRow(row.id)}
-                        className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors" title="Vložit řádek">
+                        className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors" title="Vložit">
                         <Download className="w-3 h-3" />
                       </button>
                       <button onClick={() => fillWeekdays(row.id)}
                         className="p-1 rounded text-white/30 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors" title="Vyplnit pracovní dny">
-                        <Filter className="w-3 h-3" />
+                        <PaintBucket className="w-3 h-3" />
                       </button>
                       <button onClick={() => clearRow(row.id)}
-                        className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Smazat řádek">
+                        className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Smazat">
                         <Eraser className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => {
-                        setRows(prev => prev.map(r => r.id === row.id ? { ...r, hidden: !r.hidden } : r));
-                      }}
-                        className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors" title="Skrýt/zobrazit">
-                        {row.hidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                       </button>
                     </div>
                   </div>
@@ -919,7 +1061,7 @@ const CalendarManager: React.FC = () => {
                   const data  = cells[key];
                   const wknd  = isWeekend(year, month, d);
                   const sp    = specialDays.find(s => s.day === d);
-                  const inDrag = isInDragRange(key) && isDragging && toolMode === 'select';
+                  const inDrag = isInDragRange(key) && isDragging && (toolMode === 'select' || toolMode === 'drag-fill');
                   const sel    = isSelected(key);
 
                   return (
@@ -959,15 +1101,15 @@ const CalendarManager: React.FC = () => {
         </table>
       </div>
 
-      {/* ── Stats bar ── */}
+      {/* Stats bar */}
       <div className="mt-4 flex flex-wrap items-center gap-4 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 text-xs text-white/40">
-        <span>Řádků: <strong className="text-white/70">{sortedRows.length}</strong></span>
-        <span>Buněk vyplněno: <strong className="text-white/70">{Object.keys(cells).length}</strong></span>
-        <span>Speciálních dnů: <strong className="text-white/70">{specialDays.length}</strong></span>
+        <span>Radku: <strong className="text-white/70">{sortedRows.length}</strong></span>
+        <span>Vyplneno: <strong className="text-white/70">{Object.keys(cells).length}</strong></span>
+        <span>Svatku: <strong className="text-white/70">{specialDays.length}</strong></span>
         <div className="flex-1" />
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-3">
-          {QUICK_VALUES.map(q => (
+          {QUICK_VALUES.slice(0, 6).map(q => (
             <div key={q.label} className="flex items-center gap-1.5">
               <div style={{ backgroundColor: q.color }} className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] text-white">{q.label}</div>
               <span>{q.desc}</span>
@@ -976,7 +1118,7 @@ const CalendarManager: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Context Menu ── */}
+      {/* Context Menu */}
       <AnimatePresence>
         {ctxMenu && (
           <motion.div
@@ -985,12 +1127,12 @@ const CalendarManager: React.FC = () => {
             className="fixed z-50 bg-[#13131f] border border-white/10 rounded-xl shadow-2xl p-1 min-w-[180px]"
             onClick={e => e.stopPropagation()}>
             {([
-              { label: 'Upravit buňku',        icon: <Palette className="w-3.5 h-3.5" />,  action: () => { setEditCell({ rowId: ctxMenu.rowId, day: ctxMenu.day }); setCtxMenu(null); } },
-              { label: 'Smazat buňku',          icon: <Trash2 className="w-3.5 h-3.5" />,   action: () => { pushHistory(); setCells(p => { const n = {...p}; delete n[cellKey(ctxMenu.rowId, ctxMenu.day)]; return n; }); setCtxMenu(null); } },
-              { label: 'Nastavit jako štětec',  icon: <PaintBucket className="w-3.5 h-3.5" />, action: () => { const d = cells[cellKey(ctxMenu.rowId, ctxMenu.day)]; if (d) { setBrush({ label: d.label, color: d.color }); setToolMode('fill'); } setCtxMenu(null); } },
-              { label: 'Kopírovat řádek',       icon: <Copy className="w-3.5 h-3.5" />,    action: () => { copyRow(ctxMenu.rowId); setCtxMenu(null); } },
-              { label: 'Vložit do řádku',       icon: <Download className="w-3.5 h-3.5" />, action: () => { pasteRow(ctxMenu.rowId); setCtxMenu(null); } },
-              { label: 'Smazat celý řádek',     icon: <Eraser className="w-3.5 h-3.5" />,  action: () => { clearRow(ctxMenu.rowId); setCtxMenu(null); } },
+              { label: 'Upravit bunku',        icon: <Palette className="w-3.5 h-3.5" />,  action: () => { setEditCell({ rowId: ctxMenu.rowId, day: ctxMenu.day }); setCtxMenu(null); } },
+              { label: 'Smazat bunku',          icon: <Trash2 className="w-3.5 h-3.5" />,   action: () => { pushHistory(); setCells(p => { const n = {...p}; delete n[cellKey(ctxMenu.rowId, ctxMenu.day)]; return n; }); setCtxMenu(null); } },
+              { label: 'Nastavit jako stetec',  icon: <PaintBucket className="w-3.5 h-3.5" />, action: () => { const d = cells[cellKey(ctxMenu.rowId, ctxMenu.day)]; if (d) { setBrush({ label: d.label, color: d.color }); setToolMode('fill'); } setCtxMenu(null); } },
+              { label: 'Kopirovat radek',       icon: <Copy className="w-3.5 h-3.5" />,    action: () => { copyRow(ctxMenu.rowId); setCtxMenu(null); } },
+              { label: 'Vlozit do radku',       icon: <Download className="w-3.5 h-3.5" />, action: () => { pasteRow(ctxMenu.rowId); setCtxMenu(null); } },
+              { label: 'Smazat cely radek',     icon: <Eraser className="w-3.5 h-3.5" />,  action: () => { clearRow(ctxMenu.rowId); setCtxMenu(null); } },
             ]).map(item => (
               <button key={item.label} onClick={item.action}
                 className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs text-white/70 hover:text-white hover:bg-white/10 transition-colors">
@@ -1002,7 +1144,7 @@ const CalendarManager: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Modals ── */}
+      {/* Modals */}
       <AnimatePresence>
         {editCell && (
           <CellEditorModal
@@ -1059,7 +1201,8 @@ const CalendarManager: React.FC = () => {
               pushHistory();
               setSpecialDays(p => {
                 const idx = p.findIndex(x => x.day === s.day);
-                return idx >= 0 ? p.map((x, i) => i === idx ? s : x) : [...p, s];
+                if (idx >= 0) { const n = [...p]; n[idx] = s; return n; }
+                return [...p, s];
               });
               setEditSpecialDay(null);
             }}
@@ -1069,6 +1212,15 @@ const CalendarManager: React.FC = () => {
               setEditSpecialDay(null);
             }}
             onClose={() => setEditSpecialDay(null)}
+          />
+        )}
+
+        {showHolidays && (
+          <CzechHolidaysModal
+            year={year}
+            month={month}
+            onAddHoliday={addCzechHoliday}
+            onClose={() => setShowHolidays(false)}
           />
         )}
       </AnimatePresence>
