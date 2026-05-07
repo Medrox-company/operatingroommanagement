@@ -37,6 +37,9 @@ import {
   Smartphone,
   Edit3,
   ShieldOff,
+  Globe,
+  Monitor,
+  Tablet,
 } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
 import { usePWAInstall } from './PWAInstaller';
@@ -1718,6 +1721,7 @@ interface DeviceInfo {
   last_seen_at: string;
   installed_at: string | null;
   created_at: string;
+  ip_address: string | null;
 }
 
 // Helper functions for device panel
@@ -1747,14 +1751,10 @@ function formatLastSeen(dateStr: string): string {
   return date.toLocaleDateString('cs-CZ');
 }
 
-function getDeviceTypeIcon(deviceType: string, platform: string) {
-  if (deviceType === 'mobile' || platform === 'Android' || platform === 'iOS') {
-    return Smartphone;
-  }
-  if (deviceType === 'tablet' || platform === 'iPad') {
-    return Smartphone; // Using Smartphone for tablet too
-  }
-  return Smartphone;
+function getDeviceTypeIcon(deviceType: string) {
+  if (deviceType === 'mobile') return Smartphone;
+  if (deviceType === 'tablet') return Tablet;
+  return Monitor;
 }
 
 const DevicesSettingsPanel: React.FC = () => {
@@ -1960,7 +1960,7 @@ const DevicesSettingsPanel: React.FC = () => {
           {devices.map((device) => {
             const isCurrentDevice = device.device_id === currentDeviceId;
             const online = isDeviceOnline(device.last_seen_at);
-            const DeviceIcon = getDeviceTypeIcon(device.device_type, device.platform);
+            const DeviceIcon = getDeviceTypeIcon(device.device_type);
 
             return (
               <div
@@ -2038,6 +2038,22 @@ const DevicesSettingsPanel: React.FC = () => {
                       <span>{device.browser}</span>
                       <span>•</span>
                       <span>{formatLastSeen(device.last_seen_at)}</span>
+                    </div>
+                    
+                    {/* Detailed info */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 pt-2 border-t border-white/5 text-xs text-white/30">
+                      {device.ip_address && (
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-3 h-3" />
+                          <span>{device.ip_address}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <span>ID: {device.device_id.slice(0, 12)}...</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Registrace: {new Date(device.created_at).toLocaleDateString('cs-CZ')}</span>
+                      </div>
                     </div>
                   </div>
 

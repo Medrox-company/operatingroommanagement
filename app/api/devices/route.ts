@@ -50,6 +50,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { device_id, device_name, device_type, platform, browser, is_pwa_installed } = body;
 
+    // Get IP address from request headers
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    const ip_address = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
+
     if (!device_id) {
       return NextResponse.json({ error: 'device_id is required' }, { status: 400 });
     }
@@ -66,6 +71,7 @@ export async function POST(request: NextRequest) {
       const updateData: Record<string, unknown> = {
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        ip_address,
       };
 
       if (device_name) updateData.device_name = device_name;
@@ -101,6 +107,7 @@ export async function POST(request: NextRequest) {
           is_pwa_installed: is_pwa_installed || false,
           installed_at: is_pwa_installed ? new Date().toISOString() : null,
           is_active: true,
+          ip_address,
         })
         .select()
         .single();
