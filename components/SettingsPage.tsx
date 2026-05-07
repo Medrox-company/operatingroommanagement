@@ -10,6 +10,7 @@ import StatusesManager from './StatusesManager';
 import BackgroundManager from './BackgroundManager';
 import ManagementManager from './ManagementManager';
 import DevicesManager from './DevicesManager';
+import CalendarManager from './CalendarManager';
 import SystemSettingsModule from './SystemSettingsModule';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom } from '../types';
@@ -184,6 +185,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       ) : selectedModule === 'background' ? (
         <ModuleWrapper>
           <BackgroundManager />
+        </ModuleWrapper>
+      ) : selectedModule === 'calendar' ? (
+        <ModuleWrapper>
+          <CalendarManager />
         </ModuleWrapper>
       ) : selectedModule === 'management' ? (
         <ModuleWrapper>

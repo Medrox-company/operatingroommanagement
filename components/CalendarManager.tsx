@@ -1,0 +1,1233 @@
+'use client';
+
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Calendar, ChevronLeft, ChevronRight, Plus, Trash2, X, Check,
+  Palette, AlertCircle, Eraser, Undo2, Redo2, Copy, Download,
+  Eye, EyeOff, Search, MousePointer2, PaintBucket, Flag, Settings,
+  GripVertical, Printer, FileText, Save, RefreshCw,
+} from 'lucide-react';
+
+// ─────────────────── Types ───────────────────
+interface CellData {
+  label: string;
+  color: string;
+  note?: string;
+  locked?: boolean;
+}
+
+interface CalendarRow {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+  hidden?: boolean;
+}
+
+interface SpecialDay {
+  day: number;
+  label: string;
+  color: string;
+}
+
+interface HistorySnapshot {
+  cells: Record<string, CellData>;
+  rows: CalendarRow[];
+  specialDays: SpecialDay[];
+}
+
+type ToolMode = 'select' | 'fill' | 'drag-fill' | 'erase';
+
+// ─────────────────── Constants ───────────────────
+const MONTHS = [
+  'Leden','Únor','Březen','Duben','Květen','Červen',
+  'Červenec','Srpen','Září','Říjen','Listopad','Prosinec',
+];
+const DAY_NAMES = ['PO','ÚT','ST','ČT','PÁ','SO','NE'];
+
+const PRESET_COLORS = [
+  '#EF4444','#F97316','#EAB308','#84CC16','#22C55E',
+  '#14B8A6','#06B6D4','#3B82F6','#6366F1','#8B5CF6',
+  '#A855F7','#D946EF','#EC4899','#64748B','#FFFFFF',
+];
+
+const QUICK_VALUES: { label: string; color: string; desc: string }[] = [
+  { label: 'X',   color: '#EF4444', desc: 'Zavřeno' },
+  { label: 'G',   color: '#22C55E', desc: 'Gynekologie' },
+  { label: 'CH',  color: '#3B82F6', desc: 'Chirurgie' },
+  { label: 'U',   color: '#A855F7', desc: 'Urologie' },
+  { label: '7',   color: '#EAB308', desc: 'Sál 7' },
+  { label: '10',  color: '#F97316', desc: 'Sál 10' },
+  { label: '1',   color: '#06B6D4', desc: 'Sál 1' },
+  { label: '4',   color: '#EC4899', desc: 'Sál 4' },
+];
+
+const DEFAULT_ROWS: CalendarRow[] = [
+  { id: 'tra1',     name: 'TRAUMATOLOGIE 1',   color: '#22C55E', order: 0 },
+  { id: 'tra3',     name: 'TRAUMATOLOGIE 3',   color: '#22C55E', order: 1 },
+  { id: 'chir1',    name: 'CHIRURGIE',          color: '#EAB308', order: 2 },
+  { id: 'chir2',    name: 'CHIRURGIE',          color: '#EAB308', order: 3 },
+  { id: 'davinci',  name: 'DaVinci (do 15:30)', color: '#A855F7', order: 4 },
+  { id: 'uro',      name: 'UROLOGIE (č. sálu)', color: '#3B82F6', order: 5 },
+  { id: 'nch',      name: 'NEUROCHIRURGIE',     color: '#06B6D4', order: 6 },
+  { id: 'orto',     name: 'ORTOPEDIE',          color: '#14B8A6', order: 7 },
+  { id: 'gyn',      name: 'GYNEKOLOGIE',        color: '#EC4899', order: 8 },
+  { id: 'orl',      name: 'ORL / ÚČOCH/OČNÍ',  color: '#F97316', order: 9 },
+  { id: 'sanace',   name: 'SANACE V CA',        color: '#EF4444', order: 10 },
+  { id: 'akut',     name: 'AKUTNÍ',             color: '#DC2626', order: 11 },
+  { id: 'turnov1',  name: 'TURNOV',             color: '#84CC16', order: 12 },
+  { id: 'turnov2',  name: 'TURNOV',             color: '#84CC16', order: 13 },
+  { id: 'fry1',     name: 'FRÝDLANT',           color: '#8B5CF6', order: 14 },
+  { id: 'fry2',     name: 'FRÝDLANT',           color: '#8B5CF6', order: 15 },
+  { id: 'aro_lbc',  name: 'ARO LÉKAŘI LBC',    color: '#06B6D4', order: 16 },
+  { id: 'aro_fd',   name: 'ARO LÉKAŘI FD',     color: '#14B8A6', order: 17 },
+];
+
+// České státní svátky (fixní datumy)
+const CZECH_HOLIDAYS: { month: number; day: number; name: string }[] = [
+  { month: 0, day: 1, name: 'Nový rok' },
+  { month: 4, day: 1, name: 'Svátek práce' },
+  { month: 4, day: 8, name: 'Den vítězství' },
+  { month: 6, day: 5, name: 'Cyril a Metoděj' },
+  { month: 6, day: 6, name: 'Mistr Jan Hus' },
+  { month: 8, day: 28, name: 'Den české státnosti' },
+  { month: 9, day: 28, name: 'Den vzniku ČSR' },
+  { month: 10, day: 17, name: 'Den boje za svobodu' },
+  { month: 11, day: 24, name: 'Štědrý den' },
+  { month: 11, day: 25, name: '1. svátek vánoční' },
+  { month: 11, day: 26, name: '2. svátek vánoční' },
+];
+
+// Výpočet Velikonoc (Gaussův algoritmus)
+function getEasterDate(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month, day);
+}
+
+function getCzechHolidays(year: number): { month: number; day: number; name: string }[] {
+  const holidays = [...CZECH_HOLIDAYS];
+  
+  // Velikonoce - pohyblivé svátky
+  const easter = getEasterDate(year);
+  const easterMonday = new Date(easter);
+  easterMonday.setDate(easter.getDate() + 1);
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(easter.getDate() - 2);
+  
+  holidays.push({ month: goodFriday.getMonth(), day: goodFriday.getDate(), name: 'Velký pátek' });
+  holidays.push({ month: easterMonday.getMonth(), day: easterMonday.getDate(), name: 'Velikonoční pondělí' });
+  
+  return holidays;
+}
+
+// ─────────────────── Helpers ───────────────────
+function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
+function getDayOfWeek(y: number, m: number, d: number) { return (new Date(y, m, d).getDay() + 6) % 7; }
+function isWeekend(y: number, m: number, d: number) { const dw = getDayOfWeek(y, m, d); return dw === 5 || dw === 6; }
+function cellKey(rowId: string, day: number) { return `${rowId}:${day}`; }
+
+// ─────────────────── Color Picker ───────────────────
+const ColorPicker: React.FC<{ value: string; onChange: (c: string) => void }> = ({ value, onChange }) => (
+  <div className="grid grid-cols-5 gap-2">
+    {PRESET_COLORS.map(c => (
+      <button
+        key={c}
+        onClick={() => onChange(c)}
+        style={{ backgroundColor: c }}
+        className={`w-8 h-8 rounded-lg transition-all border-2 ${
+          value === c ? 'border-white scale-110' : 'border-transparent hover:scale-105'
+        }`}
+      />
+    ))}
+  </div>
+);
+
+// ─────────────────── Cell Editor Modal ───────────────────
+const CellEditorModal: React.FC<{
+  cell: CellData | null;
+  rowName: string;
+  day: number;
+  month: string;
+  onSave: (data: CellData) => void;
+  onDelete: () => void;
+  onClose: () => void;
+}> = ({ cell, rowName, day, month, onSave, onDelete, onClose }) => {
+  const [label, setLabel] = useState(cell?.label || '');
+  const [color, setColor] = useState(cell?.color || '#3B82F6');
+  const [note,  setNote]  = useState(cell?.note  || '');
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-white">{cell ? 'Upravit buňku' : 'Nová buňka'}</h3>
+            <p className="text-sm text-white/40 mt-0.5">{rowName} — {day}. {month}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Quick fill */}
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Rychlé hodnoty</p>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_VALUES.map(q => (
+                <button key={q.label}
+                  onClick={() => { setLabel(q.label); setColor(q.color); }}
+                  style={{ backgroundColor: q.color }}
+                  className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                    label === q.label && color === q.color ? 'ring-2 ring-white scale-105' : 'hover:scale-105 opacity-80 hover:opacity-100'
+                  }`}
+                  title={q.desc}
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Label */}
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Vlastní text</p>
+            <input
+              type="text"
+              value={label}
+              onChange={e => setLabel(e.target.value)}
+              placeholder="např. X, G, CH, DOVOLENÁ..."
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 text-sm"
+            />
+          </div>
+
+          {/* Color */}
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva</p>
+            <ColorPicker value={color} onChange={setColor} />
+            {/* Preview */}
+            <div className="mt-3 flex items-center gap-3">
+              <div style={{ backgroundColor: color }} className="w-12 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-white shadow">
+                {label || '?'}
+              </div>
+              <span className="text-white/40 text-xs">Náhled buňky</span>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Poznámka</p>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Volitelná poznámka..."
+              rows={2}
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 resize-none text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-5 pt-4 border-t border-white/10">
+          {cell && (
+            <button onClick={onDelete}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-sm">
+              <Trash2 className="w-4 h-4" /> Smazat
+            </button>
+          )}
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">
+            Zrušit
+          </button>
+          <button onClick={() => onSave({ label, color, note })} disabled={!label.trim()}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm disabled:opacity-40">
+            <Check className="w-4 h-4" /> Uložit
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─────────────────── Row Editor Modal ───────────────────
+const RowEditorModal: React.FC<{
+  row: CalendarRow | null;
+  onSave: (data: Pick<CalendarRow, 'name' | 'color'>) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+}> = ({ row, onSave, onDelete, onClose }) => {
+  const [name,  setName]  = useState(row?.name  || '');
+  const [color, setColor] = useState(row?.color || '#3B82F6');
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold text-white">{row ? 'Upravit řádek' : 'Nový řádek'}</h3>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Název oddělení</p>
+            <input type="text" value={name} onChange={e => setName(e.target.value)}
+              placeholder="např. TRAUMATOLOGIE 1"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 text-sm" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva řádku</p>
+            <ColorPicker value={color} onChange={setColor} />
+          </div>
+        </div>
+        <div className="flex gap-3 mt-5 pt-4 border-t border-white/10">
+          {row && onDelete && (
+            <button onClick={onDelete}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-sm">
+              <Trash2 className="w-4 h-4" /> Smazat
+            </button>
+          )}
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">Zrušit</button>
+          <button onClick={() => onSave({ name, color })} disabled={!name.trim()}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm disabled:opacity-40">
+            <Check className="w-4 h-4" /> Uložit
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─────────────────── Special Day Modal ───────────────────
+const SpecialDayModal: React.FC<{
+  day: number; month: string; existing?: SpecialDay;
+  onSave: (s: SpecialDay) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+}> = ({ day, month, existing, onSave, onDelete, onClose }) => {
+  const [label, setLabel] = useState(existing?.label || '');
+  const [color, setColor] = useState(existing?.color || '#EAB308');
+  const presets = ['STÁTNÍ SVÁTEK', 'ASANAČNÍ DEN', 'CELOZÁVODNÍ DOVOLENÁ', 'UZAVŘENO', 'ŠKOLENÍ'];
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-white">{existing ? 'Upravit speciální den' : 'Označit den'}</h3>
+            <p className="text-sm text-white/40 mt-0.5">{day}. {month}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {presets.map(p => (
+              <button key={p} onClick={() => setLabel(p)}
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  label === p ? 'bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/50' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                }`}>
+                {p}
+              </button>
+            ))}
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Vlastní popis</p>
+            <input type="text" value={label} onChange={e => setLabel(e.target.value)}
+              placeholder="např. CELOZÁVODNÍ DOVOLENÁ"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 text-sm" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva</p>
+            <ColorPicker value={color} onChange={setColor} />
+          </div>
+        </div>
+        <div className="flex gap-3 mt-5 pt-4 border-t border-white/10">
+          {existing && onDelete && (
+            <button onClick={onDelete}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-sm">
+              <Trash2 className="w-4 h-4" /> Smazat
+            </button>
+          )}
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">Zrušit</button>
+          <button onClick={() => onSave({ day, label, color })} disabled={!label.trim()}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm disabled:opacity-40">
+            <Check className="w-4 h-4" /> Uložit
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─────────────────── Czech Holidays Modal ───────────────────
+const CzechHolidaysModal: React.FC<{
+  year: number;
+  month: number;
+  onAddHoliday: (day: number, name: string) => void;
+  onClose: () => void;
+}> = ({ year, month, onAddHoliday, onClose }) => {
+  const holidays = getCzechHolidays(year).filter(h => h.month === month);
+  const allHolidays = getCzechHolidays(year);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-white">České státní svátky {year}</h3>
+            <p className="text-sm text-white/40 mt-0.5">Klikněte pro přidání do kalendáře</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Current month holidays */}
+        {holidays.length > 0 && (
+          <div className="mb-6">
+            <p className="text-[10px] font-bold text-yellow-400/60 uppercase tracking-widest mb-3">Tento měsíc ({MONTHS[month]})</p>
+            <div className="space-y-2">
+              {holidays.map((h, i) => (
+                <button key={i}
+                  onClick={() => { onAddHoliday(h.day, h.name); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors text-left">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                    <span className="text-yellow-400 font-bold">{h.day}</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">{h.name}</p>
+                    <p className="text-white/40 text-xs">{h.day}. {MONTHS[h.month]}</p>
+                  </div>
+                  <Plus className="w-4 h-4 text-yellow-400 ml-auto" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All holidays */}
+        <div>
+          <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Všechny svátky v roce {year}</p>
+          <div className="space-y-1.5">
+            {allHolidays.sort((a, b) => a.month * 100 + a.day - (b.month * 100 + b.day)).map((h, i) => (
+              <div key={i}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  h.month === month ? 'bg-yellow-500/10' : 'bg-white/[0.02] hover:bg-white/5'
+                }`}>
+                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                  <span className="text-white/60 font-medium text-xs">{h.day}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-white/80 text-sm">{h.name}</p>
+                  <p className="text-white/30 text-xs">{MONTHS[h.month]}</p>
+                </div>
+                {h.month === month && (
+                  <button onClick={() => onAddHoliday(h.day, h.name)}
+                    className="p-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors">
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-5 pt-4 border-t border-white/10">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">
+            Zavřít
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─────────────────── Main Component ───────────────────
+const CalendarManager: React.FC = () => {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [rows, setRows] = useState<CalendarRow[]>(DEFAULT_ROWS);
+  const [cells, setCells] = useState<Record<string, CellData>>({});
+  const [specialDays, setSpecialDays] = useState<SpecialDay[]>([]);
+
+  // UI states
+  const [editCell, setEditCell] = useState<{ rowId: string; day: number } | null>(null);
+  const [editRow, setEditRow] = useState<CalendarRow | 'new' | null>(null);
+  const [editSpecialDay, setEditSpecialDay] = useState<{ day: number } | null>(null);
+  const [showHolidays, setShowHolidays] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; rowId: string; day: number } | null>(null);
+
+  // Tool states
+  const [toolMode, setToolMode] = useState<ToolMode>('select');
+  const [brush, setBrush] = useState<{ label: string; color: string }>({ label: 'X', color: '#EF4444' });
+  const [search, setSearch] = useState('');
+  const [showHidden, setShowHidden] = useState(false);
+
+  // Selection & drag
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ rowId: string; rowIdx: number; day: number } | null>(null);
+  const [dragEnd, setDragEnd] = useState<{ rowId: string; rowIdx: number; day: number } | null>(null);
+  const [dragSourceCell, setDragSourceCell] = useState<CellData | null>(null);
+
+  // Row clipboard
+  const [rowClipboard, setRowClipboard] = useState<Record<number, CellData>>({});
+
+  // History for undo/redo
+  const [history, setHistory] = useState<HistorySnapshot[]>([]);
+  const [historyIdx, setHistoryIdx] = useState(-1);
+  const canUndo = historyIdx >= 0;
+  const canRedo = historyIdx < history.length - 1;
+
+  // Derived
+  const daysInMonth = getDaysInMonth(year, month);
+  const monthName = MONTHS[month];
+  const sortedRows = useMemo(() => {
+    let r = [...rows].sort((a, b) => a.order - b.order);
+    if (search) r = r.filter(row => row.name.toLowerCase().includes(search.toLowerCase()));
+    if (!showHidden) r = r.filter(row => !row.hidden);
+    return r;
+  }, [rows, search, showHidden]);
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handler = () => setCtxMenu(null);
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+      if (e.key === 'y' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); redo(); }
+      if (e.key === 'Delete' && selectedKeys.size > 0) { clearSelection(); }
+      if (e.key === 'Escape') { setSelectedKeys(new Set()); setIsDragging(false); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedKeys, historyIdx, history]);
+
+  // ─── History ───
+  const pushHistory = useCallback(() => {
+    const snapshot: HistorySnapshot = { cells: { ...cells }, rows: [...rows], specialDays: [...specialDays] };
+    setHistory(prev => [...prev.slice(0, historyIdx + 1), snapshot]);
+    setHistoryIdx(prev => prev + 1);
+  }, [cells, rows, specialDays, historyIdx]);
+
+  const undo = useCallback(() => {
+    if (!canUndo) return;
+    const snap = history[historyIdx];
+    setCells(snap.cells);
+    setRows(snap.rows);
+    setSpecialDays(snap.specialDays);
+    setHistoryIdx(prev => prev - 1);
+  }, [canUndo, history, historyIdx]);
+
+  const redo = useCallback(() => {
+    if (!canRedo) return;
+    const snap = history[historyIdx + 1];
+    setCells(snap.cells);
+    setRows(snap.rows);
+    setSpecialDays(snap.specialDays);
+    setHistoryIdx(prev => prev + 1);
+  }, [canRedo, history, historyIdx]);
+
+  // ─── Actions ───
+  const applyToSelection = (label: string, color: string) => {
+    if (selectedKeys.size === 0) return;
+    pushHistory();
+    setCells(prev => {
+      const next = { ...prev };
+      selectedKeys.forEach(k => { next[k] = { label, color }; });
+      return next;
+    });
+    setSelectedKeys(new Set());
+  };
+
+  const clearSelection = () => {
+    if (selectedKeys.size === 0) return;
+    pushHistory();
+    setCells(prev => {
+      const next = { ...prev };
+      selectedKeys.forEach(k => delete next[k]);
+      return next;
+    });
+    setSelectedKeys(new Set());
+  };
+
+  const copyRow = (rowId: string) => {
+    const clip: Record<number, CellData> = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const k = cellKey(rowId, d);
+      if (cells[k]) clip[d] = cells[k];
+    }
+    setRowClipboard(clip);
+  };
+
+  const pasteRow = (rowId: string) => {
+    if (Object.keys(rowClipboard).length === 0) return;
+    pushHistory();
+    setCells(prev => {
+      const next = { ...prev };
+      Object.entries(rowClipboard).forEach(([d, data]) => {
+        next[cellKey(rowId, Number(d))] = data;
+      });
+      return next;
+    });
+  };
+
+  const clearRow = (rowId: string) => {
+    pushHistory();
+    setCells(prev => {
+      const next = { ...prev };
+      for (let d = 1; d <= daysInMonth; d++) delete next[cellKey(rowId, d)];
+      return next;
+    });
+  };
+
+  const fillWeekdays = (rowId: string) => {
+    pushHistory();
+    setCells(prev => {
+      const next = { ...prev };
+      for (let d = 1; d <= daysInMonth; d++) {
+        if (!isWeekend(year, month, d)) {
+          next[cellKey(rowId, d)] = { ...brush };
+        }
+      }
+      return next;
+    });
+  };
+
+  const clearMonth = () => {
+    pushHistory();
+    setCells({});
+    setSpecialDays([]);
+  };
+
+  const exportCSV = () => {
+    let csv = `${monthName} ${year},${Array.from({ length: daysInMonth }, (_, i) => i + 1).join(',')}\n`;
+    sortedRows.forEach(row => {
+      const vals = Array.from({ length: daysInMonth }, (_, i) => cells[cellKey(row.id, i + 1)]?.label || '');
+      csv += `${row.name},${vals.join(',')}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kalendar-${year}-${String(month + 1).padStart(2, '0')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const addCzechHoliday = (day: number, name: string) => {
+    pushHistory();
+    setSpecialDays(prev => {
+      const existing = prev.findIndex(s => s.day === day);
+      if (existing >= 0) {
+        const next = [...prev];
+        next[existing] = { day, label: name, color: '#EAB308' };
+        return next;
+      }
+      return [...prev, { day, label: name, color: '#EAB308' }];
+    });
+  };
+
+  const addAllCzechHolidays = () => {
+    pushHistory();
+    const holidays = getCzechHolidays(year).filter(h => h.month === month);
+    setSpecialDays(prev => {
+      const next = [...prev];
+      holidays.forEach(h => {
+        const existing = next.findIndex(s => s.day === h.day);
+        if (existing >= 0) {
+          next[existing] = { day: h.day, label: h.name, color: '#EAB308' };
+        } else {
+          next.push({ day: h.day, label: h.name, color: '#EAB308' });
+        }
+      });
+      return next;
+    });
+  };
+
+  // ─── Drag handling ───
+  const handleCellMouseDown = (e: React.MouseEvent, rowId: string, rowIdx: number, day: number) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    
+    const key = cellKey(rowId, day);
+    const existingCell = cells[key];
+    
+    if (toolMode === 'drag-fill' && existingCell) {
+      // Start drag-fill from existing cell
+      setDragSourceCell(existingCell);
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+      setDragEnd({ rowId, rowIdx, day });
+    } else if (toolMode === 'select') {
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+      setDragEnd({ rowId, rowIdx, day });
+      setSelectedKeys(new Set([key]));
+    } else if (toolMode === 'fill') {
+      pushHistory();
+      setCells(prev => ({ ...prev, [key]: { ...brush } }));
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+    } else if (toolMode === 'erase') {
+      pushHistory();
+      setCells(prev => { const n = { ...prev }; delete n[key]; return n; });
+      setIsDragging(true);
+      setDragStart({ rowId, rowIdx, day });
+    }
+  };
+
+  const handleCellMouseEnter = (rowId: string, rowIdx: number, day: number) => {
+    if (!isDragging || !dragStart) return;
+    
+    const key = cellKey(rowId, day);
+    
+    if (toolMode === 'drag-fill' && dragSourceCell) {
+      setDragEnd({ rowId, rowIdx, day });
+    } else if (toolMode === 'select') {
+      setDragEnd({ rowId, rowIdx, day });
+      // Update selection based on drag range
+      const minRow = Math.min(dragStart.rowIdx, rowIdx);
+      const maxRow = Math.max(dragStart.rowIdx, rowIdx);
+      const minDay = Math.min(dragStart.day, day);
+      const maxDay = Math.max(dragStart.day, day);
+      const keys = new Set<string>();
+      for (let r = minRow; r <= maxRow; r++) {
+        const row = sortedRows[r];
+        if (!row) continue;
+        for (let d = minDay; d <= maxDay; d++) {
+          keys.add(cellKey(row.id, d));
+        }
+      }
+      setSelectedKeys(keys);
+    } else if (toolMode === 'fill') {
+      setCells(prev => ({ ...prev, [key]: { ...brush } }));
+    } else if (toolMode === 'erase') {
+      setCells(prev => { const n = { ...prev }; delete n[key]; return n; });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging && toolMode === 'drag-fill' && dragSourceCell && dragStart && dragEnd) {
+      // Apply drag-fill
+      pushHistory();
+      const minRow = Math.min(dragStart.rowIdx, dragEnd.rowIdx);
+      const maxRow = Math.max(dragStart.rowIdx, dragEnd.rowIdx);
+      const minDay = Math.min(dragStart.day, dragEnd.day);
+      const maxDay = Math.max(dragStart.day, dragEnd.day);
+      
+      setCells(prev => {
+        const next = { ...prev };
+        for (let r = minRow; r <= maxRow; r++) {
+          const row = sortedRows[r];
+          if (!row) continue;
+          for (let d = minDay; d <= maxDay; d++) {
+            next[cellKey(row.id, d)] = { ...dragSourceCell };
+          }
+        }
+        return next;
+      });
+    }
+    
+    setIsDragging(false);
+    setDragSourceCell(null);
+  };
+
+  useEffect(() => {
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, [isDragging, toolMode, dragSourceCell, dragStart, dragEnd, sortedRows]);
+
+  const isInDragRange = (key: string) => {
+    if (!dragStart || !dragEnd) return false;
+    const [rowId, dayStr] = key.split(':');
+    const day = Number(dayStr);
+    const rowIdx = sortedRows.findIndex(r => r.id === rowId);
+    if (rowIdx < 0) return false;
+    const minRow = Math.min(dragStart.rowIdx, dragEnd.rowIdx);
+    const maxRow = Math.max(dragStart.rowIdx, dragEnd.rowIdx);
+    const minDay = Math.min(dragStart.day, dragEnd.day);
+    const maxDay = Math.max(dragStart.day, dragEnd.day);
+    return rowIdx >= minRow && rowIdx <= maxRow && day >= minDay && day <= maxDay;
+  };
+
+  const isSelected = (key: string) => selectedKeys.has(key);
+
+  // Cursor styles
+  const cursors: Record<ToolMode, string> = {
+    select: 'cursor-crosshair',
+    fill: 'cursor-cell',
+    'drag-fill': 'cursor-grab',
+    erase: 'cursor-cell',
+  };
+
+  const prevMonth = () => {
+    if (month === 0) { setMonth(11); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (month === 11) { setMonth(0); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  };
+
+  return (
+    <div className="w-full select-none" onMouseLeave={() => { if (isDragging) handleMouseUp(); }}>
+  {/* Header */}
+  <header className="flex items-start justify-between gap-6 mb-16">
+    <div className="text-left">
+      <div className="flex items-center gap-3 mb-2 opacity-60">
+        <Calendar className="w-4 h-4 text-[#FBBF24]" />
+        <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">SPRÁVA KALENDÁŘE</p>
+      </div>
+      <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
+        KALENDÁŘ <span className="text-white/20">UDÁLOSTÍ</span>
+      </h1>
+    </div>
+
+    {/* Month navigation - Right side */}
+    <div className="flex items-center gap-2 mt-2">
+      <button
+        onClick={prevMonth}
+        className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        title="Předchozí měsíc"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      <div className="min-w-[140px] text-center">
+        <span className="text-lg font-bold text-white">{monthName}</span>
+        <span className="text-lg font-bold text-white/30 ml-2">{year}</span>
+      </div>
+      <button
+        onClick={nextMonth}
+        className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        title="Další měsíc"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
+    </div>
+  </header>
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 mb-8 p-3 rounded-2xl bg-white/[0.02] border border-white/10">
+        {/* Tool group */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-black/20 border border-white/5">
+          {([
+            { mode: 'select'    as ToolMode, icon: <MousePointer2 className="w-4 h-4" />, title: 'Výběr — tažením vyberete oblast' },
+            { mode: 'fill'      as ToolMode, icon: <PaintBucket   className="w-4 h-4" />, title: 'Štětec — tažením malujete' },
+            { mode: 'drag-fill' as ToolMode, icon: <GripVertical  className="w-4 h-4" />, title: 'Protáhnout — tažením z vyplněné buňky zkopíruje její hodnotu' },
+            { mode: 'erase'     as ToolMode, icon: <Eraser        className="w-4 h-4" />, title: 'Guma — tažením mažete' },
+          ]).map(t => (
+            <button key={t.mode} title={t.title} onClick={() => setToolMode(t.mode)}
+              className={`p-2.5 rounded-lg transition-all ${
+                toolMode === t.mode ? 'bg-yellow-500/20 text-yellow-400' : 'text-white/40 hover:text-white hover:bg-white/10'
+              }`}>
+              {t.icon}
+            </button>
+          ))}
+        </div>
+
+        {/* Brush picker */}
+        {toolMode === 'fill' && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-white/40 uppercase tracking-widest">Štětec</span>
+            <div className="flex gap-1.5 flex-wrap">
+              {QUICK_VALUES.map(q => (
+                <button key={q.label}
+                  onClick={() => setBrush({ label: q.label, color: q.color })}
+                  style={{ backgroundColor: q.color }}
+                  title={q.desc}
+                  className={`w-7 h-7 rounded-lg font-bold text-[11px] transition-all ${
+                    brush.label === q.label && brush.color === q.color
+                      ? 'ring-2 ring-white scale-110'
+                      : 'opacity-70 hover:opacity-100 hover:scale-105'
+                  }`}>
+                  {q.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Selection actions */}
+        {toolMode === 'select' && selectedKeys.size > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+            <span className="text-xs text-yellow-400 font-medium">{selectedKeys.size}x</span>
+            {QUICK_VALUES.slice(0, 6).map(q => (
+              <button key={q.label}
+                onClick={() => applyToSelection(q.label, q.color)}
+                style={{ backgroundColor: q.color }}
+                className="w-7 h-7 rounded-lg font-bold text-[11px] hover:scale-110 transition-all">
+                {q.label}
+              </button>
+            ))}
+            <button onClick={clearSelection}
+              className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors" title="Smazat vybrané">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setSelectedKeys(new Set())}
+              className="p-1.5 rounded-lg bg-white/10 text-white/50 hover:bg-white/20 hover:text-white transition-colors" title="Zrušit výběr">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1" />
+
+        {/* Search */}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
+          <Search className="w-4 h-4 text-white/30" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Hledat..."
+            className="w-24 bg-transparent text-white text-xs placeholder-white/30 focus:outline-none" />
+        </div>
+
+        {/* Czech holidays */}
+        <button onClick={() => setShowHolidays(true)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-xs font-medium">
+          <Flag className="w-4 h-4" />
+          Svátky CZ
+        </button>
+
+        {/* Add all holidays for current month */}
+        <button onClick={addAllCzechHolidays}
+          className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors"
+          title="Přidat všechny svátky tohoto měsíce">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+
+        {/* Toggle hidden */}
+        <button onClick={() => setShowHidden(v => !v)}
+          className={`p-2 rounded-xl transition-all ${showHidden ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-white/40 hover:text-white hover:bg-white/10'}`}
+          title={showHidden ? 'Skrýt skryté řádky' : 'Zobrazit skryté řádky'}>
+          {showHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+        </button>
+
+        {/* Undo/Redo */}
+        <div className="flex items-center gap-1">
+          <button onClick={undo} disabled={!canUndo}
+            className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all" title="Zpět (Ctrl+Z)">
+            <Undo2 className="w-4 h-4" />
+          </button>
+          <button onClick={redo} disabled={!canRedo}
+            className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all" title="Vpřed (Ctrl+Y)">
+            <Redo2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Export */}
+        <button onClick={exportCSV}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium">
+          <Download className="w-4 h-4" />
+          CSV
+        </button>
+
+        {/* Add row */}
+        <button onClick={() => setEditRow('new')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-sm font-medium">
+          <Plus className="w-4 h-4" /> Řádek
+        </button>
+      </div>
+
+      {/* Info bar */}
+      <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-white/[0.02] border border-white/10 text-xs text-white/40">
+        <AlertCircle className="w-4 h-4 text-blue-400/60 shrink-0" />
+        {toolMode === 'select'    && <span><strong className="text-white/70">Výběr:</strong> Tažením vyberete oblast buněk a aplikujete hodnotu. Delete = smazat. Dvojklik = detail.</span>}
+        {toolMode === 'fill'      && <span><strong className="text-yellow-400">Štětec:</strong> Tažením malujete zvolenou hodnotou do buněk.</span>}
+        {toolMode === 'drag-fill' && <span><strong className="text-yellow-400">Protáhnout:</strong> Klikněte na vyplněnou buňku a tažením zkopírujte její hodnotu do okolních buněk (všemi směry).</span>}
+        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažením mažete obsah buněk.</span>}
+      </div>
+
+      {/* Table */}
+      <div className={`overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02] ${cursors[toolMode]}`}>
+        <table className="border-collapse w-full" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }} />
+            {Array.from({ length: daysInMonth }).map((_, i) => (
+              <col key={i} style={{ width: '36px', minWidth: '36px' }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr>
+              {/* Month label */}
+              <th className="sticky left-0 z-20 bg-[#0d0d18] p-3 text-left border-b border-r border-white/10">
+                <span className="font-black text-yellow-400 uppercase text-sm tracking-wider">{monthName.toUpperCase()}</span>
+              </th>
+              {/* Day headers */}
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+                const dow  = getDayOfWeek(year, month, d);
+                const wknd = isWeekend(year, month, d);
+                const sp   = specialDays.find(s => s.day === d);
+                const holiday = getCzechHolidays(year).find(h => h.month === month && h.day === d);
+                return (
+                  <th key={d}
+                    onClick={() => setEditSpecialDay({ day: d })}
+                    style={sp ? { backgroundColor: `${sp.color}25` } : undefined}
+                    className={`p-0.5 border-b border-r border-white/10 cursor-pointer hover:bg-white/10 transition-colors text-center ${wknd ? 'bg-white/[0.025]' : ''}`}>
+                    <div className="text-[9px] text-white/30 font-medium">{DAY_NAMES[dow]}</div>
+                    <div className={`text-[13px] font-bold ${wknd ? 'text-white/30' : 'text-white/60'} ${holiday ? 'text-yellow-400' : ''}`}>{d}</div>
+                    {sp && (
+                      <div className="overflow-hidden" style={{ height: 56 }}>
+                        <div className="text-[8px] font-bold"
+                          style={{
+                            color: sp.color,
+                            writingMode: 'vertical-rl',
+                            textOrientation: 'mixed',
+                            transform: 'rotate(180deg)',
+                            lineHeight: 1,
+                          }}>
+                          {sp.label}
+                        </div>
+                      </div>
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRows.map((row, rowIndex) => (
+              <tr key={row.id}
+                className={`group transition-all ${row.hidden ? 'opacity-40' : ''}`}>
+                {/* Row header - FIXED WIDTH */}
+                <td className="sticky left-0 z-10 bg-[#0d0d18] border-b border-r border-white/10">
+                  <div className="flex items-center h-9">
+                    <button
+                      onClick={() => setEditRow(row)}
+                      className="flex items-center gap-2 px-3 py-2 flex-1 min-w-0 hover:bg-white/5 transition-colors text-left">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />
+                      <span className="text-xs font-bold text-white/80 truncate">{row.name}</span>
+                    </button>
+                    {/* Row actions - always visible but subtle */}
+                    <div className="flex items-center gap-0.5 pr-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => copyRow(row.id)}
+                        className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors" title="Kopírovat">
+                        <Copy className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => pasteRow(row.id)}
+                        className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors" title="Vložit">
+                        <Download className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => fillWeekdays(row.id)}
+                        className="p-1 rounded text-white/30 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors" title="Vyplnit pracovní dny">
+                        <PaintBucket className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => clearRow(row.id)}
+                        className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Smazat">
+                        <Eraser className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </td>
+                {/* Day cells */}
+                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+                  const key   = cellKey(row.id, d);
+                  const data  = cells[key];
+                  const wknd  = isWeekend(year, month, d);
+                  const sp    = specialDays.find(s => s.day === d);
+                  const inDrag = isInDragRange(key) && isDragging && (toolMode === 'select' || toolMode === 'drag-fill');
+                  const sel    = isSelected(key);
+
+                  return (
+                    <td key={d}
+                      onMouseDown={e => handleCellMouseDown(e, row.id, rowIndex, d)}
+                      onMouseEnter={() => handleCellMouseEnter(row.id, rowIndex, d)}
+                      onDoubleClick={() => {
+                        if (toolMode === 'select') setEditCell({ rowId: row.id, day: d });
+                      }}
+                      onContextMenu={e => {
+                        e.preventDefault();
+                        setCtxMenu({ x: e.clientX, y: e.clientY, rowId: row.id, day: d });
+                      }}
+                      style={sp && !data ? { backgroundColor: `${sp.color}10` } : undefined}
+                      className={`p-0.5 border-b border-r border-white/5 transition-all ${
+                        wknd ? 'bg-white/[0.015]' : ''
+                      } ${sel || inDrag ? 'ring-2 ring-inset ring-yellow-400/80' : ''}`}>
+                      {data ? (
+                        <div
+                          style={{ backgroundColor: data.color }}
+                          title={data.note ? `${data.label}\n${data.note}` : data.label}
+                          className="w-full h-7 rounded flex items-center justify-center font-bold text-[11px] text-white shadow-sm transition-transform hover:scale-105 relative">
+                          {data.label}
+                          {data.note && (
+                            <span className="absolute top-0 right-0.5 w-1.5 h-1.5 rounded-full bg-white/60" />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-full h-7 rounded hover:bg-white/5 transition-colors" />
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Stats bar */}
+      <div className="mt-4 flex flex-wrap items-center gap-4 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 text-xs text-white/40">
+        <span>Radku: <strong className="text-white/70">{sortedRows.length}</strong></span>
+        <span>Vyplneno: <strong className="text-white/70">{Object.keys(cells).length}</strong></span>
+        <span>Svatku: <strong className="text-white/70">{specialDays.length}</strong></span>
+        <div className="flex-1" />
+        {/* Legend */}
+        <div className="flex flex-wrap items-center gap-3">
+          {QUICK_VALUES.slice(0, 6).map(q => (
+            <div key={q.label} className="flex items-center gap-1.5">
+              <div style={{ backgroundColor: q.color }} className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] text-white">{q.label}</div>
+              <span>{q.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Context Menu */}
+      <AnimatePresence>
+        {ctxMenu && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+            style={{ top: ctxMenu.y, left: ctxMenu.x }}
+            className="fixed z-50 bg-[#13131f] border border-white/10 rounded-xl shadow-2xl p-1 min-w-[180px]"
+            onClick={e => e.stopPropagation()}>
+            {([
+              { label: 'Upravit bunku',        icon: <Palette className="w-3.5 h-3.5" />,  action: () => { setEditCell({ rowId: ctxMenu.rowId, day: ctxMenu.day }); setCtxMenu(null); } },
+              { label: 'Smazat bunku',          icon: <Trash2 className="w-3.5 h-3.5" />,   action: () => { pushHistory(); setCells(p => { const n = {...p}; delete n[cellKey(ctxMenu.rowId, ctxMenu.day)]; return n; }); setCtxMenu(null); } },
+              { label: 'Nastavit jako stetec',  icon: <PaintBucket className="w-3.5 h-3.5" />, action: () => { const d = cells[cellKey(ctxMenu.rowId, ctxMenu.day)]; if (d) { setBrush({ label: d.label, color: d.color }); setToolMode('fill'); } setCtxMenu(null); } },
+              { label: 'Kopirovat radek',       icon: <Copy className="w-3.5 h-3.5" />,    action: () => { copyRow(ctxMenu.rowId); setCtxMenu(null); } },
+              { label: 'Vlozit do radku',       icon: <Download className="w-3.5 h-3.5" />, action: () => { pasteRow(ctxMenu.rowId); setCtxMenu(null); } },
+              { label: 'Smazat cely radek',     icon: <Eraser className="w-3.5 h-3.5" />,  action: () => { clearRow(ctxMenu.rowId); setCtxMenu(null); } },
+            ]).map(item => (
+              <button key={item.label} onClick={item.action}
+                className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                <span className="text-white/40">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {editCell && (
+          <CellEditorModal
+            cell={cells[cellKey(editCell.rowId, editCell.day)] ?? null}
+            rowName={rows.find(r => r.id === editCell.rowId)?.name ?? ''}
+            day={editCell.day}
+            month={monthName}
+            onSave={data => {
+              pushHistory();
+              setCells(p => ({ ...p, [cellKey(editCell.rowId, editCell.day)]: data }));
+              setEditCell(null);
+            }}
+            onDelete={() => {
+              pushHistory();
+              setCells(p => { const n = {...p}; delete n[cellKey(editCell.rowId, editCell.day)]; return n; });
+              setEditCell(null);
+            }}
+            onClose={() => setEditCell(null)}
+          />
+        )}
+
+        {editRow && (
+          <RowEditorModal
+            row={editRow === 'new' ? null : editRow}
+            onSave={data => {
+              pushHistory();
+              if (editRow === 'new') {
+                setRows(p => [...p, { id: crypto.randomUUID(), ...data, order: p.length }]);
+              } else {
+                setRows(p => p.map(r => r.id === editRow.id ? { ...r, ...data } : r));
+              }
+              setEditRow(null);
+            }}
+            onDelete={editRow !== 'new' ? () => {
+              pushHistory();
+              setRows(p => p.filter(r => r.id !== (editRow as CalendarRow).id));
+              setCells(p => {
+                const n = {...p};
+                for (let d = 1; d <= daysInMonth; d++) delete n[cellKey((editRow as CalendarRow).id, d)];
+                return n;
+              });
+              setEditRow(null);
+            } : undefined}
+            onClose={() => setEditRow(null)}
+          />
+        )}
+
+        {editSpecialDay && (
+          <SpecialDayModal
+            day={editSpecialDay.day}
+            month={monthName}
+            existing={specialDays.find(s => s.day === editSpecialDay.day)}
+            onSave={s => {
+              pushHistory();
+              setSpecialDays(p => {
+                const idx = p.findIndex(x => x.day === s.day);
+                if (idx >= 0) { const n = [...p]; n[idx] = s; return n; }
+                return [...p, s];
+              });
+              setEditSpecialDay(null);
+            }}
+            onDelete={() => {
+              pushHistory();
+              setSpecialDays(p => p.filter(s => s.day !== editSpecialDay.day));
+              setEditSpecialDay(null);
+            }}
+            onClose={() => setEditSpecialDay(null)}
+          />
+        )}
+
+        {showHolidays && (
+          <CzechHolidaysModal
+            year={year}
+            month={month}
+            onAddHoliday={addCzechHoliday}
+            onClose={() => setShowHolidays(false)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default CalendarManager;
