@@ -812,39 +812,42 @@ const CalendarManager: React.FC = () => {
   return (
     <div className="w-full select-none" onMouseLeave={() => { if (isDragging) handleMouseUp(); }}>
   {/* Header */}
-  <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
-  <div className="text-center lg:text-left">
-  <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-  <Calendar className="w-4 h-4 text-[#FBBF24]" />
-  <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">SPRÁVA KALENDÁŘE</p>
-  </div>
-  <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-  KALENDÁŘ <span className="text-white/20">UDÁLOSTÍ</span>
-  </h1>
-  </div>
+  <header className="flex items-start justify-between gap-6 mb-16">
+    <div className="text-left">
+      <div className="flex items-center gap-3 mb-2 opacity-60">
+        <Calendar className="w-4 h-4 text-[#FBBF24]" />
+        <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">SPRÁVA KALENDÁŘE</p>
+      </div>
+      <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
+        KALENDÁŘ <span className="text-white/20">UDÁLOSTÍ</span>
+      </h1>
+    </div>
+
+    {/* Month navigation - Right side */}
+    <div className="flex items-center gap-2 mt-2">
+      <button
+        onClick={prevMonth}
+        className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        title="Předchozí měsíc"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      <div className="min-w-[140px] text-center">
+        <span className="text-lg font-bold text-white">{monthName}</span>
+        <span className="text-lg font-bold text-white/30 ml-2">{year}</span>
+      </div>
+      <button
+        onClick={nextMonth}
+        className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        title="Další měsíc"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
+    </div>
   </header>
 
-      {/* Month navigation + Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        {/* Month navigation */}
-        <div className="flex items-center gap-3">
-          <button onClick={prevMonth}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="min-w-[180px] text-center">
-            <span className="text-2xl font-bold text-white">{monthName}</span>
-            <span className="text-2xl font-bold text-white/30 ml-2">{year}</span>
-          </div>
-          <button onClick={nextMonth}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 mb-5 p-3 rounded-2xl bg-white/[0.02] border border-white/10">
+      <div className="flex flex-wrap items-center gap-2 mb-8 p-3 rounded-2xl bg-white/[0.02] border border-white/10">
         {/* Tool group */}
         <div className="flex items-center gap-1 p-1 rounded-xl bg-black/20 border border-white/5">
           {([
