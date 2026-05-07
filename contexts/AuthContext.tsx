@@ -93,6 +93,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshModules]);
 
+  // Realtime subscription for app_modules changes
+  useEffect(() => {
+    if (!supabase) return;
+    
+    const channel = supabase
+      .channel('app-modules-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_modules' }, () => {
+        refreshModules();
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refreshModules]);
+
   const login = useCallback(
     async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
       try {
