@@ -811,22 +811,21 @@ const CalendarManager: React.FC = () => {
 
   return (
     <div className="w-full select-none" onMouseLeave={() => { if (isDragging) handleMouseUp(); }}>
-      {/* Header */}
-      <motion.header 
-        className="flex items-center justify-between gap-6 mb-8 flex-shrink-0"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div>
-          <div className="flex items-center gap-3 mb-2 opacity-60">
-            <Calendar className="w-4 h-4 text-yellow-400" />
-            <p className="text-[10px] font-bold text-yellow-400 tracking-[0.4em] uppercase">SPRÁVA KALENDÁŘE</p>
-          </div>
-          <h1 className="text-[clamp(2rem,5vw,3.5rem)] font-bold tracking-tight uppercase leading-none">
-            KALENDÁŘ <span className="text-white/20">UDÁLOSTÍ</span>
-          </h1>
-        </div>
+  {/* Header */}
+  <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
+  <div className="text-center lg:text-left">
+  <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
+  <Calendar className="w-4 h-4 text-[#FBBF24]" />
+  <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">SPRÁVA KALENDÁŘE</p>
+  </div>
+  <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
+  KALENDÁŘ <span className="text-white/20">UDÁLOSTÍ</span>
+  </h1>
+  </div>
+  </header>
 
+      {/* Month navigation + Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         {/* Month navigation */}
         <div className="flex items-center gap-3">
           <button onClick={prevMonth}
@@ -842,7 +841,7 @@ const CalendarManager: React.FC = () => {
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
-      </motion.header>
+      </div>
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 mb-5 p-3 rounded-2xl bg-white/[0.02] border border-white/10">
