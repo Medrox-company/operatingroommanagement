@@ -180,38 +180,39 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
+      <motion.header 
+        className="flex items-center justify-between gap-6 mb-12 flex-shrink-0"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center gap-4">
           {onBack && (
             <button
               onClick={onBack}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
             >
-              <ChevronLeft className="w-5 h-5 text-white/60" />
+              <ChevronLeft className="w-5 h-5 text-white/60 hover:text-white" />
             </button>
           )}
           <div>
-            <p className="text-xs font-bold text-blue-400/60 uppercase tracking-[0.2em] mb-1">SPRÁVA ZAŘÍZENÍ</p>
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-              REGISTROVANÁ <span className="text-white/40">ZAŘÍZENÍ</span>
+            <div className="flex items-center gap-3 mb-2 opacity-60">
+              <Smartphone className="w-4 h-4 text-blue-400" />
+              <p className="text-[10px] font-bold text-blue-400 tracking-[0.4em] uppercase">SPRÁVA ZAŘÍZENÍ</p>
+            </div>
+            <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
+              REGISTROVANÁ <span className="text-white/20">ZAŘÍZENÍ</span>
             </h1>
           </div>
         </div>
-        
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-white/50 leading-relaxed max-w-2xl">
-            Přehled všech zařízení, která přistupují k aplikaci. Můžete jednotlivá zařízení aktivovat, deaktivovat nebo odstranit.
-          </p>
-          <button
-            onClick={fetchDevices}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 transition-colors text-sm font-medium"
-          >
-            <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Obnovit
-          </button>
-        </div>
-      </div>
+        <button
+          onClick={fetchDevices}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 transition-colors text-sm font-medium"
+        >
+          <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Obnovit
+        </button>
+      </motion.header>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
