@@ -40,6 +40,7 @@ import {
   Globe,
   Monitor,
   Tablet,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
 import { usePWAInstall } from './PWAInstaller';
@@ -57,7 +58,7 @@ interface FacilityInfo {
   facility_notes?: string | null;
 }
 
-type TabId = 'facility' | 'modules' | 'database' | 'access' | 'devices';
+type TabId = 'facility' | 'modules' | 'database' | 'access';
 
 const SystemSettingsModule: React.FC = () => {
   const { user, isAdmin, logout, modules, toggleModule, toggleModuleRole } = useAuth();
@@ -360,7 +361,6 @@ const SystemSettingsModule: React.FC = () => {
 {([
   { id: 'facility' as const, label: 'Zdravotnické zařízení', icon: Building2, color: '#0EA5E9' },
   { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal, color: '#A855F7' },
-  { id: 'devices' as const,  label: 'Správa zařízení',       icon: Smartphone, color: '#3B82F6' },
   { id: 'database' as const, label: 'Administrace databáze', icon: Database, color: '#EC4899' },
   { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog, color: '#10B981' },
   ]).map(tab => {
@@ -397,6 +397,7 @@ const SystemSettingsModule: React.FC = () => {
               activeTab === 'facility' ? '#0EA5E9'
               : activeTab === 'modules' ? '#A855F7'
               : activeTab === 'database' ? '#EC4899'
+              : activeTab === 'access' ? '#10B981'
               : '#10B981',
           }}
         />
@@ -480,19 +481,6 @@ const SystemSettingsModule: React.FC = () => {
                 }}
               />
             </motion.div>
-  )}
-
-  {activeTab === 'devices' && (
-  <motion.div
-  key="devices"
-  initial={{ opacity: 0, y: 8 }}
-  animate={{ opacity: 1, y: 0 }}
-  exit={{ opacity: 0, y: -8 }}
-  transition={{ duration: 0.2 }}
-  className="relative"
-  >
-  <DevicesSettingsPanel />
-  </motion.div>
   )}
   
   {activeTab === 'access' && (
@@ -1384,6 +1372,7 @@ const MODULE_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
 
 const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleModule, onToggleRole }) => {
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [expandedModule, setExpandedModule] = useState<string | null>(null);
 
   if (!isAdmin) {
     return (
@@ -1558,6 +1547,32 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleM
                     <AlertTriangle className="w-3 h-3" />
                     Modul je globálně vypnutý — role nelze nastavovat.
                   </p>
+                )}
+                
+                {/* Devices module - expandable management section */}
+                {mod.id === 'devices' && mod.is_enabled && (
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <button
+                      onClick={() => setExpandedModule(expandedModule === 'devices' ? null : 'devices')}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-sm font-bold transition-all w-full justify-center"
+                    >
+                      <Smartphone className="w-4 h-4" />
+                      {expandedModule === 'devices' ? 'Skrýt správu zařízení' : 'Spravovat zařízení'}
+                      <ChevronDown className={`w-4 h-4 transition-transform ${expandedModule === 'devices' ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {expandedModule === 'devices' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="mt-4"
+                      >
+                        <DevicesSettingsPanel />
+                      </motion.div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
