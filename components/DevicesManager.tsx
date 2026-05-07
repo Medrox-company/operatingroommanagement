@@ -186,14 +186,6 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center gap-4">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 text-white/60 hover:text-white" />
-            </button>
-          )}
           <div>
             <div className="flex items-center gap-3 mb-2 opacity-60">
               <Smartphone className="w-4 h-4 text-blue-400" />
