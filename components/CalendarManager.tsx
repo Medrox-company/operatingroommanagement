@@ -1014,9 +1014,9 @@ const CalendarManager: React.FC = () => {
   };
 
   return (
-    <div className="w-full select-none" onMouseLeave={() => { if (isDragging) handleMouseUp(); }}>
+    <div className="w-full h-full flex flex-col overflow-hidden select-none" onMouseLeave={() => { if (isDragging) handleMouseUp(); }}>
   {/* Header */}
-  <header className="flex items-start justify-between gap-6 mb-16">
+  <header className="flex items-start justify-between gap-6 mb-4 flex-shrink-0">
     <div className="text-left">
       <div className="flex items-center gap-3 mb-2 opacity-60">
         <Calendar className="w-4 h-4 text-[#FBBF24]" />
@@ -1050,6 +1050,10 @@ const CalendarManager: React.FC = () => {
     </div>
   </header>
 
+      {/* Main content: toolbar + table on left, right panel on right */}
+      <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
+        {/* Left content area */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 mb-8 p-3 rounded-2xl bg-white/[0.02] border border-white/10">
         {/* Tool group */}
@@ -1191,7 +1195,7 @@ const CalendarManager: React.FC = () => {
         {toolMode === 'select'    && <span><strong className="text-white/70">Výběr:</strong> Tažením vyberete oblast buněk a aplikujete hodnotu. Delete = smazat. Dvojklik = detail.</span>}
         {toolMode === 'fill'      && <span><strong className="text-yellow-400">Štětec:</strong> Tažením malujete zvolenou hodnotou do buněk.</span>}
         {toolMode === 'drag-fill' && <span><strong className="text-yellow-400">Protáhnout:</strong> Klikněte na vyplněnou buňku a tažením zkopírujte její hodnotu do okolních buněk (všemi směry).</span>}
-        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažen��m mažete obsah buněk.</span>}
+        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažen����m mažete obsah buněk.</span>}
       </div>
 
       {/* Table */}
@@ -1319,6 +1323,88 @@ const CalendarManager: React.FC = () => {
             ))}
           </tbody>
         </table>
+      </div>
+        </div>
+
+        {/* Right panel - Mini calendar and stats */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="w-80 flex flex-col gap-4 pb-4 overflow-y-auto pl-4 border-l border-white/10 flex-shrink-0"
+        >
+          {/* Quick preview section */}
+          <div>
+            <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">Rychlý náhled</p>
+            
+            {/* Mini Calendar */}
+            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10">
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {DAY_NAMES.map(day => (
+                  <div key={day} className="text-center text-[9px] font-bold text-white/40 py-1">{day}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {(() => {
+                  const firstDayOfMonth = new Date(year, month, 1).getDay();
+                  const firstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+                  const days = [];
+                  
+                  for (let i = 0; i < firstDay; i++) days.push(null);
+                  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+                  
+                  return days.map((day, i) => (
+                    <div
+                      key={i}
+                      className={`text-xs py-1.5 rounded-lg text-center font-semibold transition-colors ${
+                        !day ? 'text-transparent' :
+                        isWeekend(year, month, day) ? 'bg-white/10 text-white/50' :
+                        specialDays.some(s => s.day === day) ? 'bg-yellow-500/30 text-yellow-400 border border-yellow-500/50' :
+                        'text-white/60 hover:bg-white/5'
+                      }`}
+                    >
+                      {day}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-white/0 via-white/10 to-white/0" />
+
+          {/* Stats section */}
+          <div>
+            <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">Přehled</p>
+            <div className="space-y-2">
+              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Řádky</p>
+                <p className="text-2xl font-bold text-white">{sortedRows.length}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-widest mb-1">Vyplneno</p>
+                <p className="text-2xl font-bold text-white">{Object.keys(cells).length}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1">Svátky</p>
+                <p className="text-2xl font-bold text-white">{specialDays.length}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Legend section */}
+          <div>
+            <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Legenda</p>
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {quickValues.map(q => (
+                <div key={q.label} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/10 hover:bg-white/[0.05] transition-colors">
+                  <div style={{ backgroundColor: q.color }} className="w-4 h-4 rounded flex items-center justify-center font-bold text-[9px] text-white flex-shrink-0">{q.label}</div>
+                  <span className="text-white/70 text-xs truncate">{q.desc || q.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Context Menu */}
