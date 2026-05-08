@@ -162,10 +162,11 @@ const CellEditorModal: React.FC<{
   rowName: string;
   day: number;
   month: string;
+  quickValues: QuickValue[];
   onSave: (data: CellData) => void;
   onDelete: () => void;
   onClose: () => void;
-}> = ({ cell, rowName, day, month, onSave, onDelete, onClose }) => {
+}> = ({ cell, rowName, day, month, quickValues, onSave, onDelete, onClose }) => {
   const [label, setLabel] = useState(cell?.label || '');
   const [color, setColor] = useState(cell?.color || '#3B82F6');
   const [note,  setNote]  = useState(cell?.note  || '');
@@ -192,7 +193,7 @@ const CellEditorModal: React.FC<{
           <div>
             <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Rychlé hodnoty</p>
             <div className="flex flex-wrap gap-2">
-              {QUICK_VALUES.map(q => (
+              {quickValues.map(q => (
                 <button key={q.label}
                   onClick={() => { setLabel(q.label); setColor(q.color); }}
                   style={{ backgroundColor: q.color }}
@@ -475,6 +476,125 @@ const CzechHolidaysModal: React.FC<{
   );
 };
 
+// ─────────────────── Quick Values Editor Modal ───────────────────
+interface QuickValue { label: string; color: string; desc: string; }
+
+const QuickValuesEditorModal: React.FC<{
+  values: QuickValue[];
+  onSave: (values: QuickValue[]) => void;
+  onClose: () => void;
+}> = ({ values, onSave, onClose }) => {
+  const [list, setList] = useState<QuickValue[]>(values.map(v => ({ ...v })));
+  const [editing, setEditing] = useState<number | null>(null);
+
+  const updateItem = (i: number, field: keyof QuickValue, val: string) => {
+    setList(prev => prev.map((v, idx) => idx === i ? { ...v, [field]: val } : v));
+  };
+  const deleteItem = (i: number) => setList(prev => prev.filter((_, idx) => idx !== i));
+  const addItem = () => {
+    setList(prev => [...prev, { label: '', color: '#3B82F6', desc: '' }]);
+    setEditing(list.length);
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] flex flex-col"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5 flex-shrink-0">
+          <div>
+            <h3 className="text-lg font-bold text-white">Rychlé hodnoty</h3>
+            <p className="text-sm text-white/40 mt-0.5">Přidejte, upravte nebo odstraňte rychlé hodnoty pro vyplňování</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 space-y-2 pr-1">
+          {list.map((item, i) => (
+            <div key={i} className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/20 transition-colors">
+              {/* Color preview */}
+              <div style={{ backgroundColor: item.color }} className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm text-white flex-shrink-0 shadow">
+                {item.label || '?'}
+              </div>
+
+              {editing === i ? (
+                /* Expanded edit */
+                <div className="flex-1 grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      autoFocus
+                      value={item.label}
+                      onChange={e => updateItem(i, 'label', e.target.value)}
+                      placeholder="Zkratka (X, G, CH...)"
+                      className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-yellow-500/50"
+                    />
+                    <input
+                      value={item.desc}
+                      onChange={e => updateItem(i, 'desc', e.target.value)}
+                      placeholder="Popis (volitelný)"
+                      className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-yellow-500/50"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRESET_COLORS.map(c => (
+                      <button key={c} onClick={() => updateItem(i, 'color', c)}
+                        style={{ backgroundColor: c }}
+                        className={`w-6 h-6 rounded-md transition-all border-2 ${item.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105'}`}
+                      />
+                    ))}
+                  </div>
+                  <button onClick={() => setEditing(null)} className="self-start flex items-center gap-1 px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 text-xs font-medium hover:bg-yellow-500/30 transition-colors">
+                    <Check className="w-3 h-3" /> Hotovo
+                  </button>
+                </div>
+              ) : (
+                /* Collapsed view */
+                <div className="flex-1 flex items-center gap-3">
+                  <div className="flex-1">
+                    <span className="text-white font-bold text-sm">{item.label || '—'}</span>
+                    {item.desc && <span className="text-white/40 text-xs ml-2">{item.desc}</span>}
+                  </div>
+                  <button onClick={() => setEditing(i)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all">
+                    <Settings className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <button onClick={() => deleteItem(i)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all flex-shrink-0">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+
+          <button onClick={addItem}
+            className="flex items-center gap-2 w-full px-4 py-3 rounded-xl border border-dashed border-white/20 text-white/40 hover:text-white hover:border-white/40 transition-colors text-sm">
+            <Plus className="w-4 h-4" /> Přidat hodnotu
+          </button>
+        </div>
+
+        <div className="flex gap-3 mt-5 pt-4 border-t border-white/10 flex-shrink-0">
+          <button onClick={() => setList(QUICK_VALUES.map(v => ({ ...v })))}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">
+            <RefreshCw className="w-4 h-4" /> Výchozí
+          </button>
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">
+            Zrušit
+          </button>
+          <button onClick={() => { onSave(list.filter(v => v.label.trim())); onClose(); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm">
+            <Check className="w-4 h-4" /> Uložit
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 // ─────────────────── Main Component ───────────────────
 const CalendarManager: React.FC = () => {
   const now = new Date();
@@ -483,12 +603,14 @@ const CalendarManager: React.FC = () => {
   const [rows, setRows] = useState<CalendarRow[]>(DEFAULT_ROWS);
   const [cells, setCells] = useState<Record<string, CellData>>({});
   const [specialDays, setSpecialDays] = useState<SpecialDay[]>([]);
+  const [quickValues, setQuickValues] = useState<QuickValue[]>(QUICK_VALUES.map(v => ({ ...v })));
 
   // UI states
   const [editCell, setEditCell] = useState<{ rowId: string; day: number } | null>(null);
   const [editRow, setEditRow] = useState<CalendarRow | 'new' | null>(null);
   const [editSpecialDay, setEditSpecialDay] = useState<{ day: number } | null>(null);
   const [showHolidays, setShowHolidays] = useState(false);
+  const [showQuickValuesEditor, setShowQuickValuesEditor] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; rowId: string; day: number } | null>(null);
 
   // Tool states
@@ -637,6 +759,88 @@ const CalendarManager: React.FC = () => {
     pushHistory();
     setCells({});
     setSpecialDays([]);
+  };
+
+  const printCalendar = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const DAY_SHORT = ['PO','ÚT','ST','ČT','PÁ','SO','NE'];
+
+    const headerCells = days.map(d => {
+      const dw = getDayOfWeek(year, month, d);
+      const weekend = dw === 5 || dw === 6;
+      const special = specialDays.find(s => s.day === d);
+      const isHoliday = getCzechHolidays(year).some(h => h.month === month && h.day === d);
+      const bg = special ? special.color : isHoliday ? '#EAB308' : weekend ? '#374151' : '#1f2937';
+      return `<th style="background:${bg};color:${weekend||special||isHoliday?'#fff':'#9ca3af'};padding:4px 2px;text-align:center;font-size:9px;min-width:28px;border:1px solid #374151;">
+        <div>${DAY_SHORT[dw]}</div><div style="font-weight:bold;color:${weekend?'#f97316':'#fff'}">${d}</div>
+        ${special ? `<div style="font-size:7px;writing-mode:vertical-lr;transform:rotate(180deg);max-height:50px;overflow:hidden">${special.label}</div>` : ''}
+      </th>`;
+    }).join('');
+
+    const bodyRows = sortedRows.map(row => {
+      const tds = days.map(d => {
+        const cell = cells[cellKey(row.id, d)];
+        const weekend = isWeekend(year, month, d);
+        const bg = cell ? cell.color : weekend ? '#1a1a2e' : 'transparent';
+        const text = cell?.label || '';
+        return `<td style="background:${bg};color:#fff;text-align:center;font-size:10px;font-weight:bold;padding:3px 1px;border:1px solid #2d3748;">${text}</td>`;
+      }).join('');
+      return `<tr>
+        <td style="padding:4px 8px;font-size:10px;font-weight:600;color:#e2e8f0;border:1px solid #2d3748;white-space:nowrap;background:#111827;">${row.name}</td>
+        ${tds}
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kalendář — ${monthName} ${year}</title>
+  <style>
+    @page { size: A4 landscape; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #0a0a14; color: #fff; margin: 0; padding: 10px; }
+    h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 4px; color: #fff; }
+    .subtitle { font-size: 10px; color: #6b7280; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; }
+    table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 9px; }
+    th { padding: 4px 2px; border: 1px solid #374151; }
+    td { padding: 3px 1px; border: 1px solid #2d3748; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #9ca3af; }
+    .legend-dot { width: 14px; height: 14px; border-radius: 3px; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="subtitle">SPRÁVA KALENDÁŘE</div>
+  <h1>KALENDÁŘ <span style="color:#374151">${monthName.toUpperCase()}</span> ${year}</h1>
+  <table>
+    <colgroup>
+      <col style="width:140px">
+      ${days.map(() => '<col style="width:auto">').join('')}
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="background:#111827;color:#6b7280;text-align:left;padding:4px 8px;border:1px solid #374151;font-size:9px;">ODDĚLENÍ</th>
+        ${headerCells}
+      </tr>
+    </thead>
+    <tbody>${bodyRows}</tbody>
+  </table>
+  ${quickValues.length > 0 ? `
+  <div class="legend">
+    ${quickValues.map(q => `<div class="legend-item"><div class="legend-dot" style="background:${q.color}"></div><strong style="color:${q.color}">${q.label}</strong>${q.desc ? ` — ${q.desc}` : ''}</div>`).join('')}
+  </div>` : ''}
+  <div style="margin-top:8px;font-size:8px;color:#4b5563;">Vytištěno: ${new Date().toLocaleString('cs-CZ')}</div>
+  <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
+</body>
+</html>`;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   const exportCSV = () => {
@@ -953,18 +1157,32 @@ const CalendarManager: React.FC = () => {
           </button>
         </div>
 
-        {/* Export */}
-        <button onClick={exportCSV}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium">
-          <Download className="w-4 h-4" />
-          CSV
-        </button>
+  {/* Quick values editor */}
+  <button onClick={() => setShowQuickValuesEditor(true)}
+  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-yellow-400 hover:border-yellow-500/30 hover:bg-yellow-500/10 transition-colors text-xs font-medium">
+  <Palette className="w-4 h-4" />
+  Rychlé hodnoty
+  </button>
 
-        {/* Add row */}
-        <button onClick={() => setEditRow('new')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-sm font-medium">
-          <Plus className="w-4 h-4" /> Řádek
-        </button>
+  {/* Print */}
+  <button onClick={printCalendar}
+  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-blue-400 hover:border-blue-500/30 hover:bg-blue-500/10 transition-colors text-xs font-medium">
+  <Printer className="w-4 h-4" />
+  Tisk
+  </button>
+
+  {/* Export */}
+  <button onClick={exportCSV}
+  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium">
+  <Download className="w-4 h-4" />
+  CSV
+  </button>
+  
+  {/* Add row */}
+  <button onClick={() => setEditRow('new')}
+  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-sm font-medium">
+  <Plus className="w-4 h-4" /> Řádek
+  </button>
       </div>
 
       {/* Info bar */}
@@ -1148,13 +1366,14 @@ const CalendarManager: React.FC = () => {
 
       {/* Modals */}
       <AnimatePresence>
-        {editCell && (
-          <CellEditorModal
-            cell={cells[cellKey(editCell.rowId, editCell.day)] ?? null}
-            rowName={rows.find(r => r.id === editCell.rowId)?.name ?? ''}
-            day={editCell.day}
-            month={monthName}
-            onSave={data => {
+  {editCell && (
+  <CellEditorModal
+  cell={cells[cellKey(editCell.rowId, editCell.day)] ?? null}
+  rowName={rows.find(r => r.id === editCell.rowId)?.name ?? ''}
+  day={editCell.day}
+  month={monthName}
+  quickValues={quickValues}
+  onSave={data => {
               pushHistory();
               setCells(p => ({ ...p, [cellKey(editCell.rowId, editCell.day)]: data }));
               setEditCell(null);
@@ -1217,15 +1436,22 @@ const CalendarManager: React.FC = () => {
           />
         )}
 
-        {showHolidays && (
-          <CzechHolidaysModal
-            year={year}
-            month={month}
-            onAddHoliday={addCzechHoliday}
-            onClose={() => setShowHolidays(false)}
-          />
-        )}
-      </AnimatePresence>
+  {showHolidays && (
+  <CzechHolidaysModal
+  year={year}
+  month={month}
+  onAddHoliday={addCzechHoliday}
+  onClose={() => setShowHolidays(false)}
+  />
+  )}
+  {showQuickValuesEditor && (
+  <QuickValuesEditorModal
+  values={quickValues}
+  onSave={setQuickValues}
+  onClose={() => setShowQuickValuesEditor(false)}
+  />
+  )}
+  </AnimatePresence>
     </div>
   );
 };
