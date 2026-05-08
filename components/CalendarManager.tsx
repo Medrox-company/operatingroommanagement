@@ -185,6 +185,7 @@ const CellEditorModal: React.FC<{
   onDelete: () => void;
   onClose: () => void;
 }> = ({ cell, rowName, day, month, maxColspan, quickValues, onSave, onDelete, onClose }) => {
+  console.log("[v0] CellEditorModal opened with maxColspan:", maxColspan, "cell:", cell);
   const [label, setLabel] = useState(cell?.label || '');
   const [color, setColor] = useState(cell?.color || '#3B82F6');
   const [note,  setNote]  = useState(cell?.note  || '');
