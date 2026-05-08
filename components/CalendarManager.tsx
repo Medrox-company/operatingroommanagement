@@ -6,15 +6,23 @@ import {
   Calendar, ChevronLeft, ChevronRight, Plus, Trash2, X, Check,
   Palette, AlertCircle, Eraser, Undo2, Redo2, Copy, Download,
   Eye, EyeOff, Search, MousePointer2, PaintBucket, Flag, Settings,
-  GripVertical, Printer, FileText, Save, RefreshCw,
+  GripVertical, Printer, FileText, Save, RefreshCw, Type, AlignLeft,
+  AlignCenter, AlignRight, Merge, ChevronDown,
 } from 'lucide-react';
 
 // ─────────────────── Types ───────────────────
+type FontSize = 'xs' | 'sm' | 'base' | 'lg';
+
 interface CellData {
   label: string;
   color: string;
   note?: string;
   locked?: boolean;
+  // New features
+  colspan?: number;      // Span across multiple days (1 = normal, 2+ = merged)
+  fontSize?: FontSize;   // Text size: xs, sm, base, lg
+  textColor?: string;    // Custom text color (default white)
+  textAlign?: 'left' | 'center' | 'right';
 }
 
 interface CalendarRow {
@@ -51,6 +59,15 @@ const PRESET_COLORS = [
   '#14B8A6','#06B6D4','#3B82F6','#6366F1','#8B5CF6',
   '#A855F7','#D946EF','#EC4899','#64748B','#FFFFFF',
 ];
+
+const FONT_SIZE_OPTIONS: { value: FontSize; label: string; class: string }[] = [
+  { value: 'xs', label: 'Malé', class: 'text-[8px]' },
+  { value: 'sm', label: 'Střední', class: 'text-[10px]' },
+  { value: 'base', label: 'Velké', class: 'text-xs' },
+  { value: 'lg', label: 'Extra', class: 'text-sm' },
+];
+
+const TEXT_COLORS = ['#FFFFFF', '#000000', '#FDE047', '#86EFAC', '#93C5FD', '#FCA5A5'];
 
 const QUICK_VALUES: { label: string; color: string; desc: string }[] = [
   { label: 'X',   color: '#EF4444', desc: 'Zavřeno' },
@@ -162,26 +179,34 @@ const CellEditorModal: React.FC<{
   rowName: string;
   day: number;
   month: string;
+  maxColspan: number;
   quickValues: QuickValue[];
   onSave: (data: CellData) => void;
   onDelete: () => void;
   onClose: () => void;
-}> = ({ cell, rowName, day, month, quickValues, onSave, onDelete, onClose }) => {
+}> = ({ cell, rowName, day, month, maxColspan, quickValues, onSave, onDelete, onClose }) => {
   const [label, setLabel] = useState(cell?.label || '');
   const [color, setColor] = useState(cell?.color || '#3B82F6');
   const [note,  setNote]  = useState(cell?.note  || '');
+  const [colspan, setColspan] = useState(cell?.colspan || 1);
+  const [fontSize, setFontSize] = useState<FontSize>(cell?.fontSize || 'sm');
+  const [textColor, setTextColor] = useState(cell?.textColor || '#FFFFFF');
+  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>(cell?.textAlign || 'center');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const fontSizeClass = FONT_SIZE_OPTIONS.find(f => f.value === fontSize)?.class || 'text-[10px]';
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}>
       <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl"
+        className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-lg font-bold text-white">{cell ? 'Upravit buňku' : 'Nová buňka'}</h3>
-            <p className="text-sm text-white/40 mt-0.5">{rowName} — {day}. {month}</p>
+            <p className="text-sm text-white/40 mt-0.5">{rowName} — {day}. {month}{colspan > 1 ? ` (${colspan} dny)` : ''}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
             <X className="w-4 h-4" />
@@ -210,40 +235,144 @@ const CellEditorModal: React.FC<{
 
           {/* Label */}
           <div>
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Vlastní text</p>
-            <input
-              type="text"
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Text buňky</p>
+            <textarea
               value={label}
               onChange={e => setLabel(e.target.value)}
-              placeholder="např. X, G, CH, DOVOLENÁ..."
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 text-sm"
+              placeholder="např. X, G, CH, DOVOLENÁ, TRA LA+CA (ARO SDÍLENO)..."
+              rows={2}
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 text-sm resize-none"
             />
           </div>
 
           {/* Color */}
           <div>
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva</p>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva pozadí</p>
             <ColorPicker value={color} onChange={setColor} />
-            {/* Preview */}
-            <div className="mt-3 flex items-center gap-3">
-              <div style={{ backgroundColor: color }} className="w-12 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-white shadow">
+          </div>
+
+          {/* Preview */}
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Náhled</p>
+            <div 
+              style={{ 
+                backgroundColor: color,
+                width: colspan > 1 ? `${Math.min(colspan * 40, 200)}px` : '60px',
+              }} 
+              className={`h-10 rounded-lg flex items-center justify-${textAlign === 'left' ? 'start' : textAlign === 'right' ? 'end' : 'center'} px-2 font-bold shadow ${fontSizeClass}`}
+            >
+              <span style={{ color: textColor }} className={`${textAlign === 'center' ? 'text-center w-full' : ''} leading-tight`}>
                 {label || '?'}
-              </div>
-              <span className="text-white/40 text-xs">Náhled buňky</span>
+              </span>
             </div>
           </div>
 
-          {/* Note */}
-          <div>
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Poznámka</p>
-            <textarea
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              placeholder="Volitelná poznámka..."
-              rows={2}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 resize-none text-sm"
-            />
-          </div>
+          {/* Advanced options toggle */}
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-xs"
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+            Pokročilé možnosti
+          </button>
+
+          {showAdvanced && (
+            <div className="space-y-4 p-4 rounded-xl bg-white/[0.02] border border-white/10">
+              {/* Colspan - merge cells */}
+              <div>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Merge className="w-3 h-3" /> Spojit buňky (dnů)
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min={1}
+                    max={Math.min(maxColspan, 7)}
+                    value={colspan}
+                    onChange={e => setColspan(Number(e.target.value))}
+                    className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-yellow-400"
+                  />
+                  <span className="text-white font-bold w-8 text-center">{colspan}</span>
+                </div>
+                <p className="text-[9px] text-white/30 mt-1">Buňka se roztáhne přes {colspan} {colspan === 1 ? 'den' : colspan < 5 ? 'dny' : 'dní'}</p>
+              </div>
+
+              {/* Font size */}
+              <div>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Type className="w-3 h-3" /> Velikost textu
+                </p>
+                <div className="flex gap-2">
+                  {FONT_SIZE_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFontSize(opt.value)}
+                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                        fontSize === opt.value 
+                          ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400' 
+                          : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Text color */}
+              <div>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Barva textu</p>
+                <div className="flex gap-2">
+                  {TEXT_COLORS.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setTextColor(c)}
+                      style={{ backgroundColor: c }}
+                      className={`w-8 h-8 rounded-lg border-2 transition-all ${
+                        textColor === c ? 'border-yellow-400 scale-110' : 'border-white/20 hover:scale-105'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Text alignment */}
+              <div>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Zarovnání textu</p>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'left', icon: <AlignLeft className="w-4 h-4" /> },
+                    { value: 'center', icon: <AlignCenter className="w-4 h-4" /> },
+                    { value: 'right', icon: <AlignRight className="w-4 h-4" /> },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTextAlign(opt.value as 'left' | 'center' | 'right')}
+                      className={`flex-1 px-3 py-2 rounded-lg flex items-center justify-center transition-colors ${
+                        textAlign === opt.value 
+                          ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400' 
+                          : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                      }`}
+                    >
+                      {opt.icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Note */}
+              <div>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Poznámka</p>
+                <textarea
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder="Volitelná poznámka (zobrazí se při najetí myší)..."
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-yellow-500/50 resize-none text-sm"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 mt-5 pt-4 border-t border-white/10">
@@ -257,7 +386,7 @@ const CellEditorModal: React.FC<{
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">
             Zrušit
           </button>
-          <button onClick={() => onSave({ label, color, note })} disabled={!label.trim()}
+          <button onClick={() => onSave({ label, color, note, colspan, fontSize, textColor, textAlign })} disabled={!label.trim()}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm disabled:opacity-40">
             <Check className="w-4 h-4" /> Uložit
           </button>
@@ -784,16 +913,28 @@ const CalendarManager: React.FC = () => {
     }).join('');
 
     const bodyRows = sortedRows.map(row => {
-      const tds = days.map(d => {
+      let skipUntil = 0;
+      const tds: string[] = [];
+      
+      for (let d = 1; d <= daysInMonth; d++) {
+        if (d < skipUntil) continue;
+        
         const cell = cells[ck(row.id, d)];
         const weekend = isWeekend(year, month, d);
         const bg = cell ? cell.color : weekend ? '#1a1a2e' : 'transparent';
         const text = cell?.label || '';
-        return `<td style="background:${bg};color:#fff;text-align:center;font-size:10px;font-weight:bold;padding:3px 1px;border:1px solid #2d3748;">${text}</td>`;
-      }).join('');
+        const textColor = cell?.textColor || '#fff';
+        const colspan = cell?.colspan || 1;
+        const fontSize = cell?.fontSize === 'xs' ? '8px' : cell?.fontSize === 'lg' ? '12px' : cell?.fontSize === 'base' ? '11px' : '10px';
+        
+        if (colspan > 1) skipUntil = d + colspan;
+        
+        tds.push(`<td ${colspan > 1 ? `colspan="${colspan}"` : ''} style="background:${bg};color:${textColor};text-align:center;font-size:${fontSize};font-weight:bold;padding:3px 1px;border:1px solid #2d3748;">${text}</td>`);
+      }
+      
       return `<tr>
         <td style="padding:4px 8px;font-size:10px;font-weight:600;color:#e2e8f0;border:1px solid #2d3748;white-space:nowrap;background:#111827;">${row.name}</td>
-        ${tds}
+        ${tds.join('')}
       </tr>`;
     }).join('');
 
@@ -1281,46 +1422,83 @@ const CalendarManager: React.FC = () => {
                     </div>
                   </div>
                 </td>
-                {/* Day cells */}
-                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
-                  const key   = ck(row.id, d);
-                  const data  = cells[key];
-                  const wknd  = isWeekend(year, month, d);
-                  const sp    = specialDays.find(s => s.day === d);
-                  const inDrag = isInDragRange(key) && isDragging && (toolMode === 'select' || toolMode === 'drag-fill');
-                  const sel    = isSelected(key);
-
-                  return (
-                    <td key={d}
-                      onMouseDown={e => handleCellMouseDown(e, row.id, rowIndex, d)}
-                      onMouseEnter={() => handleCellMouseEnter(row.id, rowIndex, d)}
-                      onDoubleClick={() => {
-                        if (toolMode === 'select') setEditCell({ rowId: row.id, day: d });
-                      }}
-                      onContextMenu={e => {
-                        e.preventDefault();
-                        setCtxMenu({ x: e.clientX, y: e.clientY, rowId: row.id, day: d });
-                      }}
-                      style={sp && !data ? { backgroundColor: `${sp.color}10` } : undefined}
-                      className={`p-0.5 border-b border-r border-white/5 transition-all ${
-                        wknd ? 'bg-white/[0.015]' : ''
-                      } ${sel || inDrag ? 'ring-2 ring-inset ring-yellow-400/80' : ''}`}>
-                      {data ? (
-                        <div
-                          style={{ backgroundColor: data.color }}
-                          title={data.note ? `${data.label}\n${data.note}` : data.label}
-                          className="w-full h-7 rounded flex items-center justify-center font-bold text-[11px] text-white shadow-sm transition-transform hover:scale-105 relative">
-                          {data.label}
-                          {data.note && (
-                            <span className="absolute top-0 right-0.5 w-1.5 h-1.5 rounded-full bg-white/60" />
-                          )}
-                        </div>
-                      ) : (
-                        <div className="w-full h-7 rounded hover:bg-white/5 transition-colors" />
-                      )}
-                    </td>
-                  );
-                })}
+  {/* Day cells with colspan support */}
+  {(() => {
+    const cellElements: React.ReactNode[] = [];
+    let skipUntil = 0;
+    
+    for (let d = 1; d <= daysInMonth; d++) {
+      // Skip cells covered by colspan
+      if (d < skipUntil) continue;
+      
+      const key   = ck(row.id, d);
+      const data  = cells[key];
+      const wknd  = isWeekend(year, month, d);
+      const sp    = specialDays.find(s => s.day === d);
+      const inDrag = isInDragRange(key) && isDragging && (toolMode === 'select' || toolMode === 'drag-fill');
+      const sel    = isSelected(key);
+      
+      const colspan = data?.colspan || 1;
+      if (colspan > 1) {
+        skipUntil = d + colspan;
+      }
+      
+      // Font size class
+      const fontSizeClass = data?.fontSize 
+        ? FONT_SIZE_OPTIONS.find(f => f.value === data.fontSize)?.class || 'text-[11px]'
+        : 'text-[11px]';
+      
+      // Text alignment
+      const alignClass = data?.textAlign === 'left' ? 'justify-start pl-1' 
+        : data?.textAlign === 'right' ? 'justify-end pr-1' 
+        : 'justify-center';
+      
+      cellElements.push(
+        <td 
+          key={d}
+          colSpan={colspan}
+          onMouseDown={e => handleCellMouseDown(e, row.id, rowIndex, d)}
+          onMouseEnter={() => handleCellMouseEnter(row.id, rowIndex, d)}
+          onDoubleClick={() => {
+            if (toolMode === 'select') setEditCell({ rowId: row.id, day: d });
+          }}
+          onContextMenu={e => {
+            e.preventDefault();
+            setCtxMenu({ x: e.clientX, y: e.clientY, rowId: row.id, day: d });
+          }}
+          style={sp && !data ? { backgroundColor: `${sp.color}10` } : undefined}
+          className={`p-0.5 border-b border-r border-white/5 transition-all ${
+            wknd && !data ? 'bg-white/[0.015]' : ''
+          } ${sel || inDrag ? 'ring-2 ring-inset ring-yellow-400/80' : ''}`}
+        >
+          {data ? (
+            <div
+              style={{ backgroundColor: data.color }}
+              title={data.note ? `${data.label}\n${data.note}` : data.label}
+              className={`w-full h-7 rounded flex items-center ${alignClass} font-bold ${fontSizeClass} shadow-sm transition-transform hover:scale-[1.02] relative px-1 overflow-hidden`}
+            >
+              <span 
+                style={{ color: data.textColor || '#FFFFFF' }}
+                className="leading-tight line-clamp-2 text-center"
+              >
+                {data.label}
+              </span>
+              {data.note && (
+                <span className="absolute top-0 right-0.5 w-1.5 h-1.5 rounded-full bg-white/60" />
+              )}
+              {colspan > 1 && (
+                <span className="absolute bottom-0 right-0.5 text-[7px] text-white/40">{colspan}d</span>
+              )}
+            </div>
+          ) : (
+            <div className="w-full h-7 rounded hover:bg-white/5 transition-colors" />
+          )}
+        </td>
+      );
+    }
+    
+    return cellElements;
+  })()}
               </tr>
             ))}
           </tbody>
@@ -1443,6 +1621,7 @@ const CalendarManager: React.FC = () => {
   rowName={rows.find(r => r.id === editCell.rowId)?.name ?? ''}
   day={editCell.day}
   month={monthName}
+  maxColspan={daysInMonth - editCell.day + 1}
   quickValues={quickValues}
   onSave={data => {
               pushHistory();
