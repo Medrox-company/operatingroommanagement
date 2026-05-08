@@ -1191,7 +1191,7 @@ const CalendarManager: React.FC = () => {
         {toolMode === 'select'    && <span><strong className="text-white/70">Výběr:</strong> Tažením vyberete oblast buněk a aplikujete hodnotu. Delete = smazat. Dvojklik = detail.</span>}
         {toolMode === 'fill'      && <span><strong className="text-yellow-400">Štětec:</strong> Tažením malujete zvolenou hodnotou do buněk.</span>}
         {toolMode === 'drag-fill' && <span><strong className="text-yellow-400">Protáhnout:</strong> Klikněte na vyplněnou buňku a tažením zkopírujte její hodnotu do okolních buněk (všemi směry).</span>}
-        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažením mažete obsah buněk.</span>}
+        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažen��m mažete obsah buněk.</span>}
       </div>
 
       {/* Table */}
@@ -1207,7 +1207,7 @@ const CalendarManager: React.FC = () => {
             <tr>
               {/* Month label */}
               <th className="sticky left-0 z-20 bg-[#0d0d18] p-3 text-left border-b border-r border-white/10">
-                <span className="font-black text-yellow-400 uppercase text-sm tracking-wider">{monthName.toUpperCase()}</span>
+                <span className="font-medium text-yellow-400 uppercase text-2xl tracking-wider">{monthName.toUpperCase()}</span>
               </th>
               {/* Day headers */}
               {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
@@ -1319,23 +1319,6 @@ const CalendarManager: React.FC = () => {
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* Stats bar */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 text-xs text-white/40">
-        <span>Radku: <strong className="text-white/70">{sortedRows.length}</strong></span>
-        <span>Vyplneno: <strong className="text-white/70">{Object.keys(cells).length}</strong></span>
-        <span>Svatku: <strong className="text-white/70">{specialDays.length}</strong></span>
-        <div className="flex-1" />
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-3">
-          {QUICK_VALUES.slice(0, 6).map(q => (
-            <div key={q.label} className="flex items-center gap-1.5">
-              <div style={{ backgroundColor: q.color }} className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] text-white">{q.label}</div>
-              <span>{q.desc}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Context Menu */}
