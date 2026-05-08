@@ -138,7 +138,7 @@ function getCzechHolidays(year: number): { month: number; day: number; name: str
 function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 function getDayOfWeek(y: number, m: number, d: number) { return (new Date(y, m, d).getDay() + 6) % 7; }
 function isWeekend(y: number, m: number, d: number) { const dw = getDayOfWeek(y, m, d); return dw === 5 || dw === 6; }
-function cellKey(rowId: string, day: number) { return `${rowId}:${day}`; }
+function cellKey(rowId: string, day: number, year: number, month: number) { return `${year}:${month}:${rowId}:${day}`; }
 
 // ─────────────────── Color Picker ───────────────────
 const ColorPicker: React.FC<{ value: string; onChange: (c: string) => void }> = ({ value, onChange }) => (
@@ -605,6 +605,9 @@ const CalendarManager: React.FC = () => {
   const [specialDays, setSpecialDays] = useState<SpecialDay[]>([]);
   const [quickValues, setQuickValues] = useState<QuickValue[]>(QUICK_VALUES.map(v => ({ ...v })));
 
+  // Month-aware cell key helper (data je oddělená pro každý měsíc a rok)
+  const ck = useCallback((rowId: string, day: number) => cellKey(rowId, day, year, month), [year, month]);
+
   // UI states
   const [editCell, setEditCell] = useState<{ rowId: string; day: number } | null>(null);
   const [editRow, setEditRow] = useState<CalendarRow | 'new' | null>(null);
@@ -715,7 +718,7 @@ const CalendarManager: React.FC = () => {
   const copyRow = (rowId: string) => {
     const clip: Record<number, CellData> = {};
     for (let d = 1; d <= daysInMonth; d++) {
-      const k = cellKey(rowId, d);
+      const k = ck(rowId, d);
       if (cells[k]) clip[d] = cells[k];
     }
     setRowClipboard(clip);
@@ -727,7 +730,7 @@ const CalendarManager: React.FC = () => {
     setCells(prev => {
       const next = { ...prev };
       Object.entries(rowClipboard).forEach(([d, data]) => {
-        next[cellKey(rowId, Number(d))] = data;
+        next[ck(rowId, Number(d))] = data;
       });
       return next;
     });
@@ -737,7 +740,7 @@ const CalendarManager: React.FC = () => {
     pushHistory();
     setCells(prev => {
       const next = { ...prev };
-      for (let d = 1; d <= daysInMonth; d++) delete next[cellKey(rowId, d)];
+      for (let d = 1; d <= daysInMonth; d++) delete next[ck(rowId, d)];
       return next;
     });
   };
@@ -748,7 +751,7 @@ const CalendarManager: React.FC = () => {
       const next = { ...prev };
       for (let d = 1; d <= daysInMonth; d++) {
         if (!isWeekend(year, month, d)) {
-          next[cellKey(rowId, d)] = { ...brush };
+          next[ck(rowId, d)] = { ...brush };
         }
       }
       return next;
@@ -782,7 +785,7 @@ const CalendarManager: React.FC = () => {
 
     const bodyRows = sortedRows.map(row => {
       const tds = days.map(d => {
-        const cell = cells[cellKey(row.id, d)];
+        const cell = cells[ck(row.id, d)];
         const weekend = isWeekend(year, month, d);
         const bg = cell ? cell.color : weekend ? '#1a1a2e' : 'transparent';
         const text = cell?.label || '';
@@ -846,7 +849,7 @@ const CalendarManager: React.FC = () => {
   const exportCSV = () => {
     let csv = `${monthName} ${year},${Array.from({ length: daysInMonth }, (_, i) => i + 1).join(',')}\n`;
     sortedRows.forEach(row => {
-      const vals = Array.from({ length: daysInMonth }, (_, i) => cells[cellKey(row.id, i + 1)]?.label || '');
+      const vals = Array.from({ length: daysInMonth }, (_, i) => cells[ck(row.id, i + 1)]?.label || '');
       csv += `${row.name},${vals.join(',')}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -893,11 +896,10 @@ const CalendarManager: React.FC = () => {
     if (e.button !== 0) return;
     e.preventDefault();
     
-    const key = cellKey(rowId, day);
+    const key = ck(rowId, day);
     const existingCell = cells[key];
     
     if (toolMode === 'drag-fill' && existingCell) {
-      // Start drag-fill from existing cell
       setDragSourceCell(existingCell);
       setIsDragging(true);
       setDragStart({ rowId, rowIdx, day });
@@ -923,13 +925,12 @@ const CalendarManager: React.FC = () => {
   const handleCellMouseEnter = (rowId: string, rowIdx: number, day: number) => {
     if (!isDragging || !dragStart) return;
     
-    const key = cellKey(rowId, day);
+    const key = ck(rowId, day);
     
     if (toolMode === 'drag-fill' && dragSourceCell) {
       setDragEnd({ rowId, rowIdx, day });
     } else if (toolMode === 'select') {
       setDragEnd({ rowId, rowIdx, day });
-      // Update selection based on drag range
       const minRow = Math.min(dragStart.rowIdx, rowIdx);
       const maxRow = Math.max(dragStart.rowIdx, rowIdx);
       const minDay = Math.min(dragStart.day, day);
@@ -939,7 +940,7 @@ const CalendarManager: React.FC = () => {
         const row = sortedRows[r];
         if (!row) continue;
         for (let d = minDay; d <= maxDay; d++) {
-          keys.add(cellKey(row.id, d));
+          keys.add(ck(row.id, d));
         }
       }
       setSelectedKeys(keys);
@@ -952,7 +953,6 @@ const CalendarManager: React.FC = () => {
 
   const handleMouseUp = () => {
     if (isDragging && toolMode === 'drag-fill' && dragSourceCell && dragStart && dragEnd) {
-      // Apply drag-fill
       pushHistory();
       const minRow = Math.min(dragStart.rowIdx, dragEnd.rowIdx);
       const maxRow = Math.max(dragStart.rowIdx, dragEnd.rowIdx);
@@ -965,7 +965,7 @@ const CalendarManager: React.FC = () => {
           const row = sortedRows[r];
           if (!row) continue;
           for (let d = minDay; d <= maxDay; d++) {
-            next[cellKey(row.id, d)] = { ...dragSourceCell };
+            next[ck(row.id, d)] = { ...dragSourceCell };
           }
         }
         return next;
@@ -983,8 +983,10 @@ const CalendarManager: React.FC = () => {
 
   const isInDragRange = (key: string) => {
     if (!dragStart || !dragEnd) return false;
-    const [rowId, dayStr] = key.split(':');
-    const day = Number(dayStr);
+    // Key format: year:month:rowId:day
+    const parts = key.split(':');
+    const rowId = parts[2];
+    const day = Number(parts[3]);
     const rowIdx = sortedRows.findIndex(r => r.id === rowId);
     if (rowIdx < 0) return false;
     const minRow = Math.min(dragStart.rowIdx, dragEnd.rowIdx);
@@ -1281,7 +1283,7 @@ const CalendarManager: React.FC = () => {
                 </td>
                 {/* Day cells */}
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
-                  const key   = cellKey(row.id, d);
+                  const key   = ck(row.id, d);
                   const data  = cells[key];
                   const wknd  = isWeekend(year, month, d);
                   const sp    = specialDays.find(s => s.day === d);
@@ -1417,8 +1419,8 @@ const CalendarManager: React.FC = () => {
             onClick={e => e.stopPropagation()}>
             {([
               { label: 'Upravit bunku',        icon: <Palette className="w-3.5 h-3.5" />,  action: () => { setEditCell({ rowId: ctxMenu.rowId, day: ctxMenu.day }); setCtxMenu(null); } },
-              { label: 'Smazat bunku',          icon: <Trash2 className="w-3.5 h-3.5" />,   action: () => { pushHistory(); setCells(p => { const n = {...p}; delete n[cellKey(ctxMenu.rowId, ctxMenu.day)]; return n; }); setCtxMenu(null); } },
-              { label: 'Nastavit jako stetec',  icon: <PaintBucket className="w-3.5 h-3.5" />, action: () => { const d = cells[cellKey(ctxMenu.rowId, ctxMenu.day)]; if (d) { setBrush({ label: d.label, color: d.color }); setToolMode('fill'); } setCtxMenu(null); } },
+              { label: 'Smazat bunku',          icon: <Trash2 className="w-3.5 h-3.5" />,   action: () => { pushHistory(); setCells(p => { const n = {...p}; delete n[ck(ctxMenu.rowId, ctxMenu.day)]; return n; }); setCtxMenu(null); } },
+              { label: 'Nastavit jako stetec',  icon: <PaintBucket className="w-3.5 h-3.5" />, action: () => { const d = cells[ck(ctxMenu.rowId, ctxMenu.day)]; if (d) { setBrush({ label: d.label, color: d.color }); setToolMode('fill'); } setCtxMenu(null); } },
               { label: 'Kopirovat radek',       icon: <Copy className="w-3.5 h-3.5" />,    action: () => { copyRow(ctxMenu.rowId); setCtxMenu(null); } },
               { label: 'Vlozit do radku',       icon: <Download className="w-3.5 h-3.5" />, action: () => { pasteRow(ctxMenu.rowId); setCtxMenu(null); } },
               { label: 'Smazat cely radek',     icon: <Eraser className="w-3.5 h-3.5" />,  action: () => { clearRow(ctxMenu.rowId); setCtxMenu(null); } },
@@ -1437,19 +1439,19 @@ const CalendarManager: React.FC = () => {
       <AnimatePresence>
   {editCell && (
   <CellEditorModal
-  cell={cells[cellKey(editCell.rowId, editCell.day)] ?? null}
+  cell={cells[ck(editCell.rowId, editCell.day)] ?? null}
   rowName={rows.find(r => r.id === editCell.rowId)?.name ?? ''}
   day={editCell.day}
   month={monthName}
   quickValues={quickValues}
   onSave={data => {
               pushHistory();
-              setCells(p => ({ ...p, [cellKey(editCell.rowId, editCell.day)]: data }));
+              setCells(p => ({ ...p, [ck(editCell.rowId, editCell.day)]: data }));
               setEditCell(null);
             }}
             onDelete={() => {
               pushHistory();
-              setCells(p => { const n = {...p}; delete n[cellKey(editCell.rowId, editCell.day)]; return n; });
+              setCells(p => { const n = {...p}; delete n[ck(editCell.rowId, editCell.day)]; return n; });
               setEditCell(null);
             }}
             onClose={() => setEditCell(null)}
@@ -1473,7 +1475,7 @@ const CalendarManager: React.FC = () => {
               setRows(p => p.filter(r => r.id !== (editRow as CalendarRow).id));
               setCells(p => {
                 const n = {...p};
-                for (let d = 1; d <= daysInMonth; d++) delete n[cellKey((editRow as CalendarRow).id, d)];
+                for (let d = 1; d <= daysInMonth; d++) delete n[ck((editRow as CalendarRow).id, d)];
                 return n;
               });
               setEditRow(null);
