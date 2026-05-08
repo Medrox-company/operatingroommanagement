@@ -19,7 +19,8 @@ interface CellData {
   note?: string;
   locked?: boolean;
   // New features
-  colspan?: number;      // Span across multiple days (1 = normal, 2+ = merged)
+  colspan?: number;      // Span across multiple days horizontally (1 = normal, 2+ = merged)
+  rowspan?: number;      // Span across multiple rows vertically (1 = normal, 2+ = merged)
   fontSize?: FontSize;   // Text size: xs, sm, base, lg
   textColor?: string;    // Custom text color (default white)
   textAlign?: 'left' | 'center' | 'right';
@@ -180,16 +181,17 @@ const CellEditorModal: React.FC<{
   day: number;
   month: string;
   maxColspan: number;
+  maxRowspan: number;
   quickValues: QuickValue[];
   onSave: (data: CellData) => void;
   onDelete: () => void;
   onClose: () => void;
-}> = ({ cell, rowName, day, month, maxColspan, quickValues, onSave, onDelete, onClose }) => {
-  console.log("[v0] CellEditorModal opened with maxColspan:", maxColspan, "cell:", cell);
+}> = ({ cell, rowName, day, month, maxColspan, maxRowspan, quickValues, onSave, onDelete, onClose }) => {
   const [label, setLabel] = useState(cell?.label || '');
   const [color, setColor] = useState(cell?.color || '#3B82F6');
   const [note,  setNote]  = useState(cell?.note  || '');
   const [colspan, setColspan] = useState(cell?.colspan || 1);
+  const [rowspan, setRowspan] = useState(cell?.rowspan || 1);
   const [fontSize, setFontSize] = useState<FontSize>(cell?.fontSize || 'sm');
   const [textColor, setTextColor] = useState(cell?.textColor || '#FFFFFF');
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>(cell?.textAlign || 'center');
@@ -207,7 +209,7 @@ const CellEditorModal: React.FC<{
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-lg font-bold text-white">{cell ? 'Upravit buňku' : 'Nová buňka'}</h3>
-            <p className="text-sm text-white/40 mt-0.5">{rowName} — {day}. {month}{colspan > 1 ? ` (${colspan} dny)` : ''}</p>
+            <p className="text-sm text-white/40 mt-0.5">{rowName} — {day}. {month}{colspan > 1 || rowspan > 1 ? ` (${colspan}x${rowspan})` : ''}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
             <X className="w-4 h-4" />
@@ -279,24 +281,45 @@ const CellEditorModal: React.FC<{
 
           {showAdvanced && (
             <div className="space-y-4 p-4 rounded-xl bg-white/[0.02] border border-white/10">
-              {/* Colspan - merge cells */}
-              <div>
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <Merge className="w-3 h-3" /> Spojit buňky (dnů)
-                </p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min={1}
-                    max={Math.min(maxColspan, 7)}
-                    value={colspan}
-                    onChange={e => setColspan(Number(e.target.value))}
-                    className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-yellow-400"
-                  />
-                  <span className="text-white font-bold w-8 text-center">{colspan}</span>
+              {/* Merge cells section */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Colspan - horizontal merge */}
+                <div>
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <Merge className="w-3 h-3" /> Vodorovně (dnů)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min={1}
+                      max={Math.min(maxColspan, 14)}
+                      value={colspan}
+                      onChange={e => setColspan(Number(e.target.value))}
+                      className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-yellow-400"
+                    />
+                    <span className="text-white font-bold w-8 text-center">{colspan}</span>
+                  </div>
                 </div>
-                <p className="text-[9px] text-white/30 mt-1">Buňka se roztáhne přes {colspan} {colspan === 1 ? 'den' : colspan < 5 ? 'dny' : 'dní'}</p>
+                
+                {/* Rowspan - vertical merge */}
+                <div>
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <Merge className="w-3 h-3 rotate-90" /> Svisle (řádků)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min={1}
+                      max={Math.min(maxRowspan, 10)}
+                      value={rowspan}
+                      onChange={e => setRowspan(Number(e.target.value))}
+                      className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-400"
+                    />
+                    <span className="text-white font-bold w-8 text-center">{rowspan}</span>
+                  </div>
+                </div>
               </div>
+              <p className="text-[9px] text-white/30">Buňka zabere {colspan} {colspan === 1 ? 'den' : colspan < 5 ? 'dny' : 'dní'} x {rowspan} {rowspan === 1 ? 'řádek' : rowspan < 5 ? 'řádky' : 'řádků'}</p>
 
               {/* Font size */}
               <div>
@@ -387,7 +410,7 @@ const CellEditorModal: React.FC<{
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm">
             Zrušit
           </button>
-          <button onClick={() => onSave({ label, color, note, colspan, fontSize, textColor, textAlign })} disabled={!label.trim()}
+          <button onClick={() => onSave({ label, color, note, colspan, rowspan, fontSize, textColor, textAlign })} disabled={!label.trim()}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors text-sm disabled:opacity-40">
             <Check className="w-4 h-4" /> Uložit
           </button>
@@ -1388,13 +1411,40 @@ const CalendarManager: React.FC = () => {
                 );
               })}
             </tr>
-          </thead>
-          <tbody>
-            {sortedRows.map((row, rowIndex) => (
-              <tr key={row.id}
-                className={`group transition-all ${row.hidden ? 'opacity-40' : ''}`}>
-                {/* Row header - FIXED WIDTH */}
-                <td className="sticky left-0 z-10 bg-[#0d0d18] border-b border-r border-white/10">
+  </thead>
+  <tbody>
+  {(() => {
+    // Track cells covered by rowspan from previous rows
+    // Key: "rowIndex:day" -> true if covered
+    const coveredCells = new Map<string, boolean>();
+    
+    // Pre-calculate rowspan coverage
+    sortedRows.forEach((row, rIdx) => {
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cellData = cells[ck(row.id, d)];
+        if (cellData?.rowspan && cellData.rowspan > 1) {
+          // Mark cells below as covered
+          for (let r = 1; r < cellData.rowspan; r++) {
+            const colspanRange = cellData.colspan || 1;
+            for (let c = 0; c < colspanRange; c++) {
+              coveredCells.set(`${rIdx + r}:${d + c}`, true);
+            }
+          }
+        }
+        if (cellData?.colspan && cellData.colspan > 1) {
+          // Mark horizontal cells as covered (for same row)
+          for (let c = 1; c < cellData.colspan; c++) {
+            coveredCells.set(`${rIdx}:${d + c}`, true);
+          }
+        }
+      }
+    });
+    
+    return sortedRows.map((row, rowIndex) => (
+  <tr key={row.id}
+  className={`group transition-all ${row.hidden ? 'opacity-40' : ''}`}>
+  {/* Row header - FIXED WIDTH */}
+  <td className="sticky left-0 z-10 bg-[#0d0d18] border-b border-r border-white/10">
                   <div className="flex items-center h-9">
                     <button
                       onClick={() => setEditRow(row)}
@@ -1423,14 +1473,13 @@ const CalendarManager: React.FC = () => {
                     </div>
                   </div>
                 </td>
-  {/* Day cells with colspan support */}
+  {/* Day cells with colspan and rowspan support */}
   {(() => {
     const cellElements: React.ReactNode[] = [];
-    let skipUntil = 0;
     
     for (let d = 1; d <= daysInMonth; d++) {
-      // Skip cells covered by colspan
-      if (d < skipUntil) continue;
+      // Skip cells covered by colspan or rowspan
+      if (coveredCells.has(`${rowIndex}:${d}`)) continue;
       
       const key   = ck(row.id, d);
       const data  = cells[key];
@@ -1440,9 +1489,7 @@ const CalendarManager: React.FC = () => {
       const sel    = isSelected(key);
       
       const colspan = data?.colspan || 1;
-      if (colspan > 1) {
-        skipUntil = d + colspan;
-      }
+      const rowspan = data?.rowspan || 1;
       
       // Font size class
       const fontSizeClass = data?.fontSize 
@@ -1454,10 +1501,14 @@ const CalendarManager: React.FC = () => {
         : data?.textAlign === 'right' ? 'justify-end pr-1' 
         : 'justify-center';
       
+      // Calculate height based on rowspan
+      const cellHeight = rowspan > 1 ? `${rowspan * 36 - 4}px` : 'h-7';
+      
       cellElements.push(
         <td 
           key={d}
-          colSpan={colspan}
+          colSpan={colspan > 1 ? colspan : undefined}
+          rowSpan={rowspan > 1 ? rowspan : undefined}
           onMouseDown={e => handleCellMouseDown(e, row.id, rowIndex, d)}
           onMouseEnter={() => handleCellMouseEnter(row.id, rowIndex, d)}
           onDoubleClick={() => {
@@ -1470,25 +1521,28 @@ const CalendarManager: React.FC = () => {
           style={sp && !data ? { backgroundColor: `${sp.color}10` } : undefined}
           className={`p-0.5 border-b border-r border-white/5 transition-all ${
             wknd && !data ? 'bg-white/[0.015]' : ''
-          } ${sel || inDrag ? 'ring-2 ring-inset ring-yellow-400/80' : ''}`}
+          } ${sel || inDrag ? 'ring-2 ring-inset ring-yellow-400/80' : ''} ${rowspan > 1 ? 'align-top' : ''}`}
         >
           {data ? (
             <div
-              style={{ backgroundColor: data.color }}
+              style={{ 
+                backgroundColor: data.color,
+                height: rowspan > 1 ? cellHeight : undefined,
+              }}
               title={data.note ? `${data.label}\n${data.note}` : data.label}
-              className={`w-full h-7 rounded flex items-center ${alignClass} font-bold ${fontSizeClass} shadow-sm transition-transform hover:scale-[1.02] relative px-1 overflow-hidden`}
+              className={`w-full ${rowspan > 1 ? '' : 'h-7'} rounded flex items-center ${alignClass} font-bold ${fontSizeClass} shadow-sm transition-transform hover:scale-[1.01] relative px-1 overflow-hidden`}
             >
               <span 
                 style={{ color: data.textColor || '#FFFFFF' }}
-                className="leading-tight line-clamp-2 text-center"
+                className="leading-tight line-clamp-3 text-center"
               >
                 {data.label}
               </span>
               {data.note && (
-                <span className="absolute top-0 right-0.5 w-1.5 h-1.5 rounded-full bg-white/60" />
+                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-white/60" />
               )}
-              {colspan > 1 && (
-                <span className="absolute bottom-0 right-0.5 text-[7px] text-white/40">{colspan}d</span>
+              {(colspan > 1 || rowspan > 1) && (
+                <span className="absolute bottom-0.5 right-0.5 text-[7px] text-white/40">{colspan}x{rowspan}</span>
               )}
             </div>
           ) : (
@@ -1500,9 +1554,10 @@ const CalendarManager: React.FC = () => {
     
     return cellElements;
   })()}
-              </tr>
-            ))}
-          </tbody>
+  </tr>
+  ));
+  })()}
+  </tbody>
         </table>
       </div>
         </div>
@@ -1623,6 +1678,7 @@ const CalendarManager: React.FC = () => {
   day={editCell.day}
   month={monthName}
   maxColspan={daysInMonth - editCell.day + 1}
+  maxRowspan={sortedRows.length - sortedRows.findIndex(r => r.id === editCell.rowId)}
   quickValues={quickValues}
   onSave={data => {
               pushHistory();
