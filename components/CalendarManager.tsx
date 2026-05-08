@@ -1191,7 +1191,7 @@ const CalendarManager: React.FC = () => {
         {toolMode === 'select'    && <span><strong className="text-white/70">Výběr:</strong> Tažením vyberete oblast buněk a aplikujete hodnotu. Delete = smazat. Dvojklik = detail.</span>}
         {toolMode === 'fill'      && <span><strong className="text-yellow-400">Štětec:</strong> Tažením malujete zvolenou hodnotou do buněk.</span>}
         {toolMode === 'drag-fill' && <span><strong className="text-yellow-400">Protáhnout:</strong> Klikněte na vyplněnou buňku a tažením zkopírujte její hodnotu do okolních buněk (všemi směry).</span>}
-        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažením mažete obsah buněk.</span>}
+        {toolMode === 'erase'     && <span><strong className="text-red-400">Guma:</strong> Tažen��m mažete obsah buněk.</span>}
       </div>
 
       {/* Table */}
@@ -1207,7 +1207,7 @@ const CalendarManager: React.FC = () => {
             <tr>
               {/* Month label */}
               <th className="sticky left-0 z-20 bg-[#0d0d18] p-3 text-left border-b border-r border-white/10">
-                <span className="font-black text-yellow-400 uppercase text-sm tracking-wider">{monthName.toUpperCase()}</span>
+                <span className="font-medium text-yellow-400 uppercase text-2xl tracking-wider">{monthName.toUpperCase()}</span>
               </th>
               {/* Day headers */}
               {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
