@@ -1384,7 +1384,7 @@ const CalendarManager: React.FC = () => {
                 <p className="text-2xl font-bold text-white">{sortedRows.length}</p>
               </div>
               <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-widest mb-1">Vyplneno</p>
+                <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-widest mb-1">Vyplněno</p>
                 <p className="text-2xl font-bold text-white">{Object.keys(cells).length}</p>
               </div>
               <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
