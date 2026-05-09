@@ -22,7 +22,14 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none">
       
-      <div className="mb-12 w-14 h-14 flex-shrink-0" />
+      {/* App Logo */}
+      <div className="mb-8 w-14 h-14 flex-shrink-0 pointer-events-auto">
+        <img 
+          src="/icon.png" 
+          alt="OR Logo" 
+          className="w-full h-full object-contain rounded-xl bg-white p-1.5 shadow-lg"
+        />
+      </div>
 
       <nav className="flex-1 flex flex-col gap-4 w-full px-4 pointer-events-auto min-h-0">
         {enabledItems.map((item, index) => {
