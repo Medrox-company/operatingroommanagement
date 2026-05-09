@@ -254,7 +254,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     boxShadow: `0 0 30px ${C.accent}15`,
                   }}
                 >
-                  <img src="/images/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+                  <img src="/icon.png" alt="OR Logo" className="w-10 h-10 object-contain" />
                 </div>
                 <h2 className="text-2xl font-bold text-white tracking-tight">Přihlášení</h2>
                 <p className="text-sm text-white/40 mt-2">Zadejte přihlašovací údaje</p>
