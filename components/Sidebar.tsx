@@ -21,10 +21,15 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-6 z-[100] pointer-events-none">
+      {/* Glass background */}
+      <div className="absolute inset-0 glass-base pointer-events-none" />
+      
+      {/* Accent border right */}
+      <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/50 via-cyan-500/10 to-transparent" />
       
       <div className="mb-12 w-14 h-14 flex-shrink-0" />
 
-      <nav className="flex-1 flex flex-col gap-4 w-full px-4 pointer-events-auto min-h-0">
+      <nav className="flex-1 flex flex-col gap-3 w-full px-3 pointer-events-auto min-h-0">
         {enabledItems.map((item, index) => {
           const isActive = currentView === item.id;
           return (
@@ -35,16 +40,20 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
               aria-label={item.label}
               className={`
                 relative w-full aspect-square flex flex-col items-center justify-center transition-all duration-300 group rounded-2xl
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
-                ${isActive ? 'bg-white/[0.15] text-white shadow-xl' : 'text-white/40 hover:bg-white/5 hover:text-white'}
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black/20
+                glass-interactive
+                ${isActive 
+                  ? 'bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 text-cyan-300 shadow-lg glow-accent' 
+                  : 'text-white/50 hover:text-white/80'
+                }
               `}
             >
               <item.icon 
-                className={`w-6 h-6 transition-all duration-300 group-hover:-translate-y-0.5`} 
+                className={`w-5 h-5 transition-all duration-300 group-hover:-translate-y-1`} 
                 strokeWidth={isActive ? 2.5 : 2}
               />
 
-              <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
+              <span className="absolute left-full ml-3 px-3 py-2 bg-gradient-to-br from-slate-900 to-slate-950 text-white text-[8px] font-bold uppercase tracking-widest rounded-xl opacity-0 translate-x-[-8px] group-hover:opacity-100 group-hover:translate-x-1 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono border border-white/10">
                 {item.label}
               </span>
             </button>
@@ -52,14 +61,14 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
         })}
       </nav>
 
-      <div className="mt-auto flex flex-col items-center gap-4 pb-4 w-full px-4 pointer-events-auto flex-shrink-0">
+      <div className="mt-auto flex flex-col items-center gap-3 pb-4 w-full px-3 pointer-events-auto flex-shrink-0">
         {/* Logout Button */}
         <button 
           onClick={logout}
-          className="w-full aspect-square rounded-2xl bg-white/5 flex flex-col items-center justify-center text-white/30 hover:text-red-400 hover:bg-white/10 transition-all duration-300 group relative"
+          className="w-full aspect-square rounded-2xl glass-interactive bg-gradient-to-br from-red-500/10 to-transparent text-white/40 hover:text-red-300 relative"
         >
-          <LogOut className="w-6 h-6 transition-transform group-hover:scale-110" />
-          <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
+          <LogOut className="w-5 h-5 transition-transform group-hover:scale-110" />
+          <span className="absolute left-full ml-3 px-3 py-2 bg-gradient-to-br from-slate-900 to-slate-950 text-white text-[8px] font-bold uppercase tracking-widest rounded-xl opacity-0 translate-x-[-8px] group-hover:opacity-100 group-hover:translate-x-1 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono border border-white/10">
             Odhlásit
           </span>
         </button>

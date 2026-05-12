@@ -453,8 +453,13 @@ const AppContent: React.FC = () => {
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
-      {/* Dynamic Background Layer - Controlled by BackgroundManager settings */}
+      {/* Dynamic Background Layer - Ultra-premium with animated gradients */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Ambient glow layers */}
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/30 via-slate-950 to-blue-950/20 animate-drift" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse-subtle" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse-subtle" style={{ animationDelay: '1s' }} />
+        
         {/* Background Image Layer - lazy loaded for performance */}
         {bgSettings.imageUrl && (
           <img
@@ -470,9 +475,9 @@ const AppContent: React.FC = () => {
           />
         )}
         
-        {/* Color/Gradient Overlay */}
+        {/* Color/Gradient Overlay - enhanced */}
         <div
-          className="absolute inset-0 transition-all duration-500"
+          className="absolute inset-0 transition-all duration-500 backdrop-blur-[0.5px]"
           style={{
             background: backgroundStyle,
             opacity: (bgSettings.opacity ?? 100) / 100,
