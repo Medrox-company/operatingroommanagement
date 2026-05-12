@@ -453,11 +453,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           borderBottom: `1px solid ${C.border}`,
         }}
       >
-        {/* Top rainbow accent line */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-[2px]"
-          style={{ background: `linear-gradient(90deg, ${C.accent}, ${C.green}, ${C.yellow}, ${C.orange}, ${C.pink})` }}
-        />
         {/* Ambient glow */}
         <div 
           className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
