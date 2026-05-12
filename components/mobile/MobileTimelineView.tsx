@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { OperatingRoom } from '../../types';
 import {
   MobileHeader,
@@ -9,7 +9,7 @@ import {
   MobilePillTabs,
   MobileSectionLabel,
 } from './MobileShell';
-import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 
 /* =============================================================================
    MobileTimelineView
@@ -18,6 +18,22 @@ import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle } from 'lu
    - "Osa"    — horizontálně scrollovatelná 24h timeline (7:00–7:00)
    Barvy stavů se čerpají ŽIVĚ z `statusByOrderIndex` (DB → modul Statusy).
    ========================================================================== */
+
+// Design tokens
+const C = {
+  accent: '#00D9FF',
+  green: '#00F5A0',
+  yellow: '#FFE66D',
+  orange: '#FF9F43',
+  red: '#FF6B6B',
+  purple: '#A78BFA',
+  surface: 'rgba(255,255,255,0.03)',
+  surface2: 'rgba(255,255,255,0.06)',
+  border: 'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.15)',
+  muted: 'rgba(255,255,255,0.45)',
+  text: 'rgba(255,255,255,0.85)',
+};
 
 const TIMELINE_START_HOUR = 7;
 const TIMELINE_HOURS = 24;
@@ -119,36 +135,40 @@ const MobileTimelineView: React.FC<Props> = ({
   const totalSteps = activeStatuses.length || 1;
 
   const kpis = [
-    { label: 'Aktivní', value: stats.operations, color: '#22C55E', icon: Activity },
-    { label: 'Úklid', value: stats.cleaning, color: '#F97316', icon: Sparkles },
-    { label: 'Volné', value: stats.free, color: '#22D3EE', icon: Stethoscope },
-    { label: 'Dnes', value: stats.completed, color: '#6366F1', icon: CheckCircle2 },
+    { label: 'Aktivní', value: stats.operations, color: C.green, icon: Activity },
+    { label: 'Úklid', value: stats.cleaning, color: C.orange, icon: Sparkles },
+    { label: 'Volné', value: stats.free, color: C.accent, icon: Stethoscope },
+    { label: 'Dnes', value: stats.completed, color: C.purple, icon: CheckCircle2 },
     ...(stats.emergencyCount > 0
-      ? [{ label: 'Emergency', value: stats.emergencyCount, color: '#EF4444', icon: AlertTriangle } as const]
+      ? [{ label: 'Emergency', value: stats.emergencyCount, color: C.red, icon: AlertTriangle } as const]
       : []),
   ];
 
   return (
     <>
-      {/* Mobile background — unified with RoomDetail / NotificationOverlay */}
+      {/* Mobile background — modern glass-morphism */}
       <div
         aria-hidden
         className="fixed inset-0 md:hidden pointer-events-none"
         style={{
           zIndex: 0,
           background:
-            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
+            'radial-gradient(120% 80% at 50% 0%, #0a1525 0%, #050d18 45%, #000810 100%)',
         }}
       />
-      {/* Ambient cyan glow */}
+      {/* Ambient cyan glow - enhanced */}
       <div
         aria-hidden
         className="fixed inset-0 md:hidden pointer-events-none overflow-hidden"
         style={{ zIndex: 0 }}
       >
         <div
-          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-15"
+          style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 60%)` }}
+        />
+        <div
+          className="absolute top-1/3 -right-20 w-[300px] h-[300px] rounded-full opacity-10"
+          style={{ background: `radial-gradient(circle, ${C.green} 0%, transparent 60%)` }}
         />
       </div>
 
@@ -185,33 +205,41 @@ const MobileTimelineView: React.FC<Props> = ({
           }
         />
 
-        {/* KPI chipy */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-1 px-1">
-          {kpis.map(k => {
+        {/* KPI chipy - enhanced design */}
+        <div className="flex gap-2.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-1">
+          {kpis.map((k, idx) => {
             const Icon = k.icon;
             return (
-              <div
+              <motion.div
                 key={k.label}
-                className="flex items-center gap-2.5 shrink-0 rounded-2xl px-3.5 py-2.5"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex items-center gap-2.5 shrink-0 rounded-2xl px-4 py-3"
                 style={{
-                  background: `linear-gradient(135deg, ${k.color}14 0%, rgba(255,255,255,0.02) 100%)`,
-                  border: `1px solid ${k.color}33`,
-                  backdropFilter: 'blur(12px)',
+                  background: `linear-gradient(135deg, ${k.color}12 0%, ${C.surface} 100%)`,
+                  border: `1px solid ${k.color}30`,
+                  backdropFilter: 'blur(16px)',
+                  boxShadow: `0 4px 20px rgba(0,0,0,0.2), 0 0 20px ${k.color}10`,
                 }}
               >
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: `${k.color}22` }}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ 
+                    background: `${k.color}20`, 
+                    border: `1px solid ${k.color}40`,
+                    boxShadow: `0 0 12px ${k.color}20`,
+                  }}
                 >
-                  <Icon className="w-3.5 h-3.5" style={{ color: k.color }} strokeWidth={2.25} />
+                  <Icon className="w-4 h-4" style={{ color: k.color }} strokeWidth={2.25} />
                 </div>
                 <div className="min-w-0 leading-tight">
-                  <p className="text-[9px] uppercase tracking-[0.2em] text-white/50 leading-none">
+                  <p className="text-[9px] uppercase tracking-[0.2em] font-semibold" style={{ color: C.muted }}>
                     {k.label}
                   </p>
-                  <p className="text-base font-semibold text-white tabular-nums">{k.value}</p>
+                  <p className="text-lg font-bold tabular-nums" style={{ color: k.color }}>{k.value}</p>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -315,10 +343,10 @@ const MobileTimelineView: React.FC<Props> = ({
                       )}
                     </div>
 
-                    {/* Progress */}
+                    {/* Progress - enhanced */}
                     <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: 'rgba(255,255,255,0.06)' }}
+                      className="h-2 rounded-full overflow-hidden"
+                      style={{ background: C.surface2 }}
                     >
                       <motion.div
                         initial={false}
@@ -326,8 +354,8 @@ const MobileTimelineView: React.FC<Props> = ({
                         transition={{ type: 'spring', stiffness: 180, damping: 28 }}
                         className="h-full rounded-full"
                         style={{
-                          background: `linear-gradient(90deg, ${color} 0%, ${color}aa 100%)`,
-                          boxShadow: `0 0 12px ${color}55`,
+                          background: `linear-gradient(90deg, ${color} 0%, ${color}bb 100%)`,
+                          boxShadow: `0 0 16px ${color}50`,
                         }}
                       />
                     </div>
