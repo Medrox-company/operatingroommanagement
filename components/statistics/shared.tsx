@@ -145,44 +145,38 @@ export interface CardProps {
   accent?: string;
   className?: string;
   children?: React.ReactNode;
-  /** Vyssi vizualni vaha — vyraznejsi border + jemny gradient */
+  /** Vyšší vizuální váha — výraznější border + jemný gradient */
   elevated?: boolean;
   noPadding?: boolean;
-  /** Lucide ikona renderovana v hlavicce vedle title */
+  /** Lucide ikona renderovaná v hlavičce vedle title */
   icon?: React.ComponentType<any>;
 }
 export const Card: React.FC<CardProps> = memo(({
   title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon,
 }) => {
   return (
-    <div className={`rounded-2xl ${noPadding ? '' : 'p-5'} transition-all duration-300 ${className ?? ''}`}
+    <div className={`rounded-xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
       style={{
         background: elevated
-          ? `linear-gradient(135deg, ${C.surface2} 0%, ${C.surface} 100%)`
-          : `linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)`,
-        border: `1px solid ${elevated ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.05)'}`,
-        boxShadow: elevated 
-          ? '0 8px 32px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)' 
-          : 'inset 0 1px 0 rgba(255,255,255,0.02)',
+          ? `linear-gradient(180deg, ${C.surface2} 0%, ${C.surface} 100%)`
+          : C.surface,
+        border: `1px solid ${elevated ? 'rgba(255,255,255,0.1)' : C.border}`,
       }}>
       {(title || action) && (
-        <div className={`flex items-start justify-between ${noPadding ? 'p-5 pb-4' : 'mb-4'}`}>
-          <div className="flex items-center gap-2.5 min-w-0">
+        <div className={`flex items-start justify-between ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
+          <div className="flex items-center gap-2 min-w-0">
             {accent && (
-              <div className="w-1 h-6 rounded-full shrink-0" style={{ background: accent }} />
+              <div className="w-1 h-5 rounded-full shrink-0" style={{ background: accent }} />
             )}
             {Icon && (
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                style={{ 
-                  background: `linear-gradient(135deg, ${accent ?? C.accent}15 0%, ${accent ?? C.accent}08 100%)`, 
-                  border: `1px solid ${accent ?? C.accent}25` 
-                }}>
-                <Icon size={15} color={accent ?? C.accent} strokeWidth={2.2} />
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: `${accent ?? C.accent}1a`, border: `1px solid ${accent ?? C.accent}33` }}>
+                <Icon size={14} color={accent ?? C.accent} strokeWidth={2.2} />
               </div>
             )}
             <div className="min-w-0">
               {title && (
-                <h3 className="text-[11px] font-bold uppercase tracking-wider truncate" style={{ color: C.textHi }}>
+                <h3 className="text-xs font-bold uppercase tracking-wider truncate" style={{ color: C.textHi }}>
                   {title}
                 </h3>
               )}
@@ -671,7 +665,7 @@ export function useTickEverySecond(): number {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pomocné generátory pseudo-trend dat (pro sparkliny bez backend dotazu)
-// ────────────────────────────────────────────────────────────────────���────────
+// ─────────────────────────────────────────────────────────────────────────────
 /**
  * Generuje deterministickou trend serii délky `n` končící na `endValue`.
  * Pro stejný klíč vždy vrátí stejnou křivku — ideální pro sparkline mock.

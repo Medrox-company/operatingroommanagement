@@ -66,16 +66,6 @@ export const tw = {
   /** Glassmorph karta s vyšším zvýrazněním (dialog, modal) */
   glassCardElevated:
     'bg-white/[0.06] border border-white/[0.12] rounded-2xl backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
-  
-  // ---- Premium Box Styling --------
-  /** Premium glass box — base (všechny boxy) */
-  boxGlass: 'card-glass hover-lift',
-  /** Premium elevated box — se shadow efekty */
-  boxGlassElevated: 'card-glass-elevated hover-lift',
-  /** Interactive box s animations */
-  boxGlassInteractive: 'card-glass-interactive',
-  /** Box se žlutým accent borderem */
-  boxAccent: 'border-accent-glass glow-yellow-sm',
 
   // ---- Buttons ------------------------------------------
   /** Primary button (LoginPage žluté tlačítko) */
