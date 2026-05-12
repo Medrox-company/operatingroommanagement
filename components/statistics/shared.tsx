@@ -161,6 +161,7 @@ export const Card: React.FC<CardProps> = memo(({
           ? `linear-gradient(180deg, ${C.surface2} 0%, ${C.surface} 100%)`
           : C.surface,
         border: `1px solid ${elevated ? 'rgba(255,255,255,0.1)' : C.border}`,
+        minWidth: 0,
       }}>
       {(title || action) && (
         <div className={`flex items-start justify-between ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
@@ -665,7 +666,7 @@ export function useTickEverySecond(): number {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pomocné generátory pseudo-trend dat (pro sparkliny bez backend dotazu)
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────���────────
 /**
  * Generuje deterministickou trend serii délky `n` končící na `endValue`.
  * Pro stejný klíč vždy vrátí stejnou křivku — ideální pro sparkline mock.
