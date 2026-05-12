@@ -653,11 +653,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 return (
                   <div 
                     key={`h-${hour}-${i}`} 
-                    className="absolute top-0 h-full flex items-center" 
+                    className="absolute top-0 h-full flex items-center justify-center" 
                     style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                   >
                     <div 
-                      className={`w-px h-full transition-all duration-300`}
+                      className={`absolute left-0 w-px h-full transition-all duration-300`}
                       style={{ 
                         background: isNightHour 
                           ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
@@ -666,9 +666,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - yellow highlighted, compact */
+                        /* Current hour - yellow highlighted, compact, centered */
                         <span 
-                          className="ml-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
                           style={{ 
                             background: '#f1ff00', 
                             color: '#000',
@@ -677,8 +677,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
                         </span>
                       ) : (
-                        /* Other hours - simple number only, no box */
-                        <span className={`ml-1 text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
+                        /* Other hours - simple number only, no box, centered */
+                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
                           {hourLabelCompact(hour)}
                         </span>
                       )
