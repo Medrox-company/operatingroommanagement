@@ -666,46 +666,21 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        <>
-                          {/* Desktop: Full time with box */}
-                          <div 
-                            className="hidden lg:block ml-2 px-2.5 py-1 rounded-lg"
-                            style={{ 
-                              background: '#f1ff00', 
-                              boxShadow: `0 2px 8px #f1ff0060` 
-                            }}
-                          >
-                            <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
-                              {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
-                            </span>
-                          </div>
-                          {/* Small screens: Just number with subtle highlight */}
-                          <span 
-                            className="lg:hidden ml-1 text-[9px] font-mono font-bold px-1 rounded"
-                            style={{ color: '#f1ff00' }}
-                          >
-                            {currentHour}
-                          </span>
-                        </>
+                        /* Current hour - yellow highlighted, compact */
+                        <span 
+                          className="ml-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                          style={{ 
+                            background: '#f1ff00', 
+                            color: '#000',
+                          }}
+                        >
+                          {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
+                        </span>
                       ) : (
-                        <>
-                          {/* Desktop: Full time with box */}
-                          <div 
-                            className="hidden lg:block ml-2 px-2.5 py-1 rounded-lg"
-                            style={{ 
-                              background: isNightHour ? 'rgba(255,255,255,0.05)' : '#73ff0015',
-                              border: `1px solid ${isNightHour ? 'rgba(255,255,255,0.08)' : '#73ff0040'}`,
-                            }}
-                          >
-                            <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/50'}`}>
-                              {hourLabel(hour)}
-                            </span>
-                          </div>
-                          {/* Small screens: Just number, no box */}
-                          <span className={`lg:hidden ml-1 text-[8px] font-mono font-medium ${isNightHour ? 'text-white/15' : 'text-white/40'}`}>
-                            {hourLabelCompact(hour)}
-                          </span>
-                        </>
+                        /* Other hours - simple number only, no box */
+                        <span className={`ml-1 text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
+                          {hourLabelCompact(hour)}
+                        </span>
                       )
                     )}
                   </div>
