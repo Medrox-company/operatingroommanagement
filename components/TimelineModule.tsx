@@ -694,40 +694,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - Modern cyan accent with pulse */}
+            {/* Now indicator - Simple line without glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
+                <div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  {/* Wide ambient glow */}
-                  <div className="absolute -left-8 top-0 bottom-0 w-16 opacity-20 blur-2xl" style={{ background: C.accent }} />
-                  {/* Secondary glow */}
-                  <div className="absolute -left-3 top-0 bottom-0 w-6 opacity-30 blur-md" style={{ background: C.accent }} />
-                  {/* Main line */}
-                  <motion.div 
-                    className="absolute -left-px top-0 bottom-0 w-[3px] rounded-full" 
-                    style={{ 
-                      background: `linear-gradient(to bottom, ${C.accent} 0%, ${C.accent}90 30%, ${C.accent}50 70%, ${C.accent}20 100%)`,
-                      boxShadow: `0 0 20px ${C.accent}60, 0 0 40px ${C.accent}30`,
-                    }} 
-                    animate={{ opacity: [1, 0.8, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                  {/* Main line - clean and simple */}
+                  <div 
+                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
+                    style={{ background: '#73ff00' }}
                   />
-                  {/* Top dot with pulse */}
-                  <motion.div 
-                    className="absolute -left-2 -top-1 w-4 h-4 rounded-full"
-                    style={{ 
-                      background: C.accent, 
-                      boxShadow: `0 0 16px ${C.accent}, 0 0 32px ${C.accent}80`,
-                    }}
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                </motion.div>
+                </div>
               )}
             </AnimatePresence>
 
