@@ -662,8 +662,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         <div 
                           className="ml-2 px-2.5 py-1 rounded-lg"
                           style={{ 
-                            background: C.accent, 
-                            boxShadow: `0 2px 8px ${C.accent}40` 
+                            background: '#f1ff00', 
+                            boxShadow: `0 2px 8px #f1ff0060` 
                           }}
                         >
                           <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
@@ -671,8 +671,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           </span>
                         </div>
                       ) : (
-                        <div className="ml-2 flex items-center gap-1">
-                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                        <div 
+                          className="ml-2 px-2.5 py-1 rounded-lg"
+                          style={{ 
+                            background: isNightHour ? 'rgba(255,255,255,0.05)' : '#73ff0015',
+                            border: `1px solid ${isNightHour ? 'rgba(255,255,255,0.08)' : '#73ff0040'}`,
+                          }}
+                        >
+                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/50'}`}>
                             {hourLabel(hour)}
                           </span>
                         </div>
