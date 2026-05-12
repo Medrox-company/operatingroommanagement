@@ -100,44 +100,47 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
         <div 
-          className={`absolute -inset-1 z-0 rounded-[1.85rem] sm:rounded-[2.6rem] blur-xl pointer-events-none ${room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10'}`}
+          className={`absolute -inset-1.5 z-0 rounded-[2rem] sm:rounded-[2.75rem] blur-2xl pointer-events-none transition-opacity duration-500 ${room.isEmergency ? 'bg-red-500/25' : 'bg-amber-500/15'}`}
         />
       )}
 
-      {/* Main Card Container — Enhanced Premium Design */}
-      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.6)] 
+      {/* Main Card Container — Ultra Premium Glass Design */}
+      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border overflow-hidden backdrop-blur-[80px] transition-all duration-500
         ${room.isEmergency 
-            ? 'bg-gradient-to-br from-red-950/25 to-red-950/15 border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.15)]' 
+            ? 'bg-gradient-to-br from-red-950/30 via-red-950/20 to-red-950/10 border-red-500/40 shadow-[0_8px_40px_-12px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]' 
             : (room.isLocked 
-                ? 'bg-gradient-to-br from-amber-950/20 to-amber-950/10 border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.12)] group-hover:border-amber-400/60' 
-                : 'bg-gradient-to-br from-white/[0.04] to-white/[0.02] border-white/[0.08] group-hover:border-[#FBBF24]/30 group-hover:bg-gradient-to-br group-hover:from-white/[0.06] group-hover:to-white/[0.03]')}
+                ? 'bg-gradient-to-br from-amber-950/25 via-amber-950/15 to-amber-950/5 border-amber-500/35 shadow-[0_8px_40px_-12px_rgba(245,158,11,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] group-hover:border-amber-400/50' 
+                : 'bg-gradient-to-br from-white/[0.05] via-white/[0.03] to-white/[0.01] border-white/[0.07] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.03)] group-hover:border-[#FBBF24]/25 group-hover:shadow-[0_12px_50px_-15px_rgba(251,191,36,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]')}
       `}>
         {room.isEmergency && (
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-red-600/15 via-transparent to-red-600/5 pointer-events-none" />
         )}
         {room.isLocked && (
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/15 via-transparent to-amber-500/5 pointer-events-none" />
         )}
         
-        {/* Enhanced Glow Layer — Premium effect */}
+        {/* Enhanced Glow Layer */}
         <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 rounded-full blur-[80px] pointer-events-none transition-all duration-700"
           style={{ 
             backgroundColor: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.35 : 0.18 
+            opacity: (room.isEmergency || room.isLocked) ? 0.25 : 0.12 
           }}
         />
         
-        {/* Premium accent highlight — top edge */}
+        {/* Premium top accent highlight */}
         {!room.isEmergency && (
           <div 
-            className="absolute inset-x-0 top-0 h-[2px] rounded-t-[1.75rem] sm:rounded-t-[2.5rem]"
+            className="absolute inset-x-0 top-0 h-[1px] rounded-t-[1.75rem] sm:rounded-t-[2.5rem]"
             style={{ 
-              background: `linear-gradient(90deg, transparent, ${themeColor}40, transparent)`,
-              opacity: 0.5
+              background: `linear-gradient(90deg, transparent 10%, ${themeColor}30 50%, transparent 90%)`,
             }}
           />
         )}
+        
+        {/* Corner accent dots */}
+        <div className="absolute top-4 left-4 w-1 h-1 rounded-full bg-white/10" />
+        <div className="absolute top-4 right-4 w-1 h-1 rounded-full bg-white/10" />
       </div>
 
       {/* Content Container */}
@@ -240,38 +243,38 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Bottom Info */}
         <div className="w-full space-y-2 sm:space-y-3 shrink-0">
           <div className="w-full text-center">
-            <p className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
+            <p className={`text-[8px] sm:text-[9px] font-bold tracking-[0.12em] sm:tracking-[0.15em] truncate uppercase py-1.5 sm:py-2 px-3 sm:px-4 rounded-xl border transition-all inline-block w-full
               ${room.isEmergency 
-                  ? 'bg-red-600 text-white border-red-500' 
+                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white border-red-400/50 shadow-[0_4px_16px_-4px_rgba(239,68,68,0.4)]' 
                   : (room.isLocked 
-                      ? 'bg-amber-500 text-white border-amber-600' 
-                      : 'bg-white/5 border-white/5 text-white/50')}
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-black font-extrabold border-amber-300/50 shadow-[0_4px_16px_-4px_rgba(245,158,11,0.4)]' 
+                      : 'bg-white/[0.04] border-white/[0.06] text-white/50 group-hover:bg-white/[0.06] group-hover:border-white/[0.08]')}
             `}>
-              {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
+              {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SAL UZAMCEN' : currentStep.title)}
             </p>
           </div>
           
             <div className={`flex items-center justify-between pt-2 sm:pt-3 border-t gap-1.5 sm:gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
+            ${room.isEmergency ? 'border-red-500/15' : (room.isLocked ? 'border-amber-500/15' : (room.isPaused ? 'border-cyan-500/15' : 'border-white/[0.04]'))}
           `}>
             {/* Left: avatar + names */}
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-              <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border shrink-0 flex items-center justify-center
-                ${room.isEmergency ? 'border-red-500/30 bg-red-500/10' : (room.isLocked ? 'border-amber-500/30 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/30 bg-cyan-500/10' : 'border-white/10 bg-white/5'))}
+              <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border shrink-0 flex items-center justify-center transition-all
+                ${room.isEmergency ? 'border-red-500/25 bg-red-500/10' : (room.isLocked ? 'border-amber-500/25 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/25 bg-cyan-500/10' : 'border-white/[0.06] bg-white/[0.03] group-hover:bg-white/[0.05]'))}
               `}>
                 <User className={`w-3 h-3 sm:w-4 sm:h-4 transition-opacity
-                  ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : (room.isPaused ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/60'))}
+                  ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : (room.isPaused ? 'text-cyan-400' : 'text-white/30 group-hover:text-white/50'))}
                 `} />
               </div>
               <div className="min-w-0 flex flex-col gap-0.5">
                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-tight truncate transition-colors
-                  ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/40 group-hover:text-white/60'))}
+                  ${room.isEmergency ? 'text-red-200' : (room.isLocked ? 'text-amber-200' : (room.isPaused ? 'text-cyan-200' : 'text-white/35 group-hover:text-white/55'))}
                 `}>
-                  {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
+                  {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurcen'}
                 </span>
                 {room?.staff?.nurse?.name && (
                   <span className={`hidden sm:inline text-[9px] font-medium uppercase tracking-tight truncate transition-colors
-                    ${room.isEmergency ? 'text-red-300/60' : (room.isLocked ? 'text-amber-300/60' : (room.isPaused ? 'text-cyan-300/60' : 'text-white/25 group-hover:text-white/40'))}
+                    ${room.isEmergency ? 'text-red-300/50' : (room.isLocked ? 'text-amber-300/50' : (room.isPaused ? 'text-cyan-300/50' : 'text-white/20 group-hover:text-white/35'))}
                   `}>
                     {room?.staff?.nurse?.name?.split(' ').pop()}
                   </span>
@@ -282,21 +285,21 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             {/* Right: action buttons / status badges */}
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {room.isSeptic && (
-                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/20 backdrop-blur-md">
-                  <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/70" />
+                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/15 backdrop-blur-md">
+                  <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/60" />
                 </div>
               )}
 
               {/* Patient called indicator */}
               {room.patientCalledAt && !room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">
+                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-blue-500/15 border-blue-400/30">
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
                 </div>
               )}
 
               {/* Patient arrived indicator */}
               {room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-green-500/20 border-green-400/40">
+                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-green-500/15 border-green-400/30">
                   <BedDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
                 </div>
               )}
@@ -304,11 +307,11 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               {/* Emergency button */}
               <button
                 onClick={(e) => handleAction(e, onEmergency)}
-                aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
+                aria-label={room.isEmergency ? 'Zrusit stav nouze' : 'Vyhlasit stav nouze'}
                 className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md
                   ${room.isEmergency
-                    ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
-                    : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
+                    ? 'bg-red-600 text-white border-red-400/50 shadow-[0_0_20px_-4px_rgba(239,68,68,0.5)]'
+                    : 'bg-white/[0.03] hover:bg-red-500/15 border-white/[0.06] text-white/30 hover:text-red-400 hover:border-red-500/25'}
                 `}
               >
                 <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -317,11 +320,11 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               {/* Lock button */}
               <button
                 onClick={(e) => handleAction(e, onLock)}
-                aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
+                aria-label={room.isLocked ? 'Odemknout sal' : 'Uzamknout sal'}
                 className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md
                   ${room.isLocked
-                    ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
-                    : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
+                    ? 'bg-amber-500 text-black border-amber-300/50 shadow-[0_0_20px_-4px_rgba(245,158,11,0.5)]'
+                    : 'bg-white/[0.03] hover:bg-amber-500/15 border-white/[0.06] text-white/30 hover:text-amber-400 hover:border-amber-500/25'}
                 `}
               >
                 <Lock className="w-3 h-3 sm:w-4 sm:h-4" />

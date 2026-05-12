@@ -131,6 +131,38 @@ body {
   box-shadow: 0 20px 50px -15px rgba(0,0,0,0.3);
 }
 
+/* Premium floating animation for cards */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pulse glow effect */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(251,191,36,0.1); }
+  50% { box-shadow: 0 0 30px rgba(251,191,36,0.2); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Gradient border animation */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-border {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
 /* Safe area for mobile bottom navigation (MobileNav ~ 80px + safe-area-inset-bottom) */
 .pb-mobile-nav {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
