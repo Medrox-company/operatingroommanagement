@@ -93,6 +93,13 @@ const hourLabel = (hour: number): string => {
   return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
 };
 
+// Compact label for smaller screens - just the hour number
+const hourLabelCompact = (hour: number): string => {
+  const actualHour = TIMELINE_START_HOUR + hour;
+  const displayHour = actualHour % 24;
+  return `${displayHour}`;
+};
+
 const isNextDayHour = (hour: number): boolean => hour >= 24;
 
 // Check if operation should be displayed in current 24-hour window (7:00 today to 7:00 tomorrow)
@@ -659,29 +666,46 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        <div 
-                          className="ml-2 px-2.5 py-1 rounded-lg"
-                          style={{ 
-                            background: '#f1ff00', 
-                            boxShadow: `0 2px 8px #f1ff0060` 
-                          }}
-                        >
-                          <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
-                            {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
+                        <>
+                          {/* Desktop: Full time with box */}
+                          <div 
+                            className="hidden lg:block ml-2 px-2.5 py-1 rounded-lg"
+                            style={{ 
+                              background: '#f1ff00', 
+                              boxShadow: `0 2px 8px #f1ff0060` 
+                            }}
+                          >
+                            <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
+                              {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
+                            </span>
+                          </div>
+                          {/* Small screens: Just number with subtle highlight */}
+                          <span 
+                            className="lg:hidden ml-1 text-[9px] font-mono font-bold px-1 rounded"
+                            style={{ color: '#f1ff00' }}
+                          >
+                            {currentHour}
                           </span>
-                        </div>
+                        </>
                       ) : (
-                        <div 
-                          className="ml-2 px-2.5 py-1 rounded-lg"
-                          style={{ 
-                            background: isNightHour ? 'rgba(255,255,255,0.05)' : '#73ff0015',
-                            border: `1px solid ${isNightHour ? 'rgba(255,255,255,0.08)' : '#73ff0040'}`,
-                          }}
-                        >
-                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/50'}`}>
-                            {hourLabel(hour)}
+                        <>
+                          {/* Desktop: Full time with box */}
+                          <div 
+                            className="hidden lg:block ml-2 px-2.5 py-1 rounded-lg"
+                            style={{ 
+                              background: isNightHour ? 'rgba(255,255,255,0.05)' : '#73ff0015',
+                              border: `1px solid ${isNightHour ? 'rgba(255,255,255,0.08)' : '#73ff0040'}`,
+                            }}
+                          >
+                            <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/50'}`}>
+                              {hourLabel(hour)}
+                            </span>
+                          </div>
+                          {/* Small screens: Just number, no box */}
+                          <span className={`lg:hidden ml-1 text-[8px] font-mono font-medium ${isNightHour ? 'text-white/15' : 'text-white/40'}`}>
+                            {hourLabelCompact(hour)}
                           </span>
-                        </div>
+                        </>
                       )
                     )}
                   </div>
@@ -1478,7 +1502,7 @@ style={{
                                 <div
                                   className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md"
                                   style={{
-                                    // Badge předpokládaného zbývajícího času — laděný do barvy
+                                    // Badge předpokládaného zbývaj��cího času — laděný do barvy
                                     // aktuálního statusu sálu, aby vizuálně tvořil pár se zbytkem
                                     // řádku a okamžitě signalizoval, ke které fázi se vztahuje.
                                     background: `${stepColor}26`,
