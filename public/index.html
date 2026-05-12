@@ -78,21 +78,17 @@
   </div>
   
   <script>
-    // Capacitor iOS app - redirect to deployed server or local dev
-    const SERVER_URL = window.location.hostname === 'localhost' 
-      ? 'http://localhost:3000'
-      : 'https://your-deployed-app.vercel.app'; // Replace with your Vercel URL
+    // Capacitor iOS app - redirect to deployed server
+    const SERVER_URL = 'https://www.operatingroom.eu';
     
-    // For development: redirect to Next.js dev server
-    // For production: this file won't be used, the app will load from server
+    // For Capacitor native app - redirect to the server
     if (window.Capacitor) {
-      // Running in Capacitor native app
       window.location.href = SERVER_URL;
     } else {
-      // Running in browser - just refresh to load Next.js app
+      // Fallback - redirect to server
       setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+        window.location.href = SERVER_URL;
+      }, 1500);
     }
   </script>
 </body>
