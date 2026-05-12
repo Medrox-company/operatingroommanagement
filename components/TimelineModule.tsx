@@ -9,21 +9,31 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (LoginPage style) ==========
+// ========== DESIGN TOKENS (Modern glass-morphism style) ==========
 const C = {
-  accent: '#FBBF24',
-  cyan: '#06B6D4',
-  yellow: '#FBBF24',
-  green: '#10B981',
-  orange: '#F97316',
-  red: '#EF4444',
+  // Primary colors
+  accent: '#00D9FF',    // Vivid cyan
+  cyan: '#00D9FF',
+  yellow: '#FFE66D',
+  green: '#00F5A0',
+  orange: '#FF9F43',
+  red: '#FF6B6B',
   purple: '#A78BFA',
-  pink: '#EC4899',
-  border: 'rgba(255,255,255,0.07)',
-  surface: 'rgba(255,255,255,0.025)',
+  pink: '#F472B6',
+  blue: '#60A5FA',
+  
+  // Surface & backgrounds
+  border: 'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.15)',
+  surface: 'rgba(255,255,255,0.03)',
+  surface2: 'rgba(255,255,255,0.06)',
   glass: 'rgba(255,255,255,0.04)',
-  muted: 'rgba(255,255,255,0.35)',
+  glassHover: 'rgba(255,255,255,0.08)',
+  
+  // Text
+  muted: 'rgba(255,255,255,0.45)',
   text: 'rgba(255,255,255,0.85)',
+  textHi: 'rgba(255,255,255,0.95)',
 };
 
 // ========== CONSTANTS ==========
@@ -39,13 +49,13 @@ const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hou
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#FB923C', border: '#FDBA74', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(251,146,60,0.2)' },
-  purple: { bg: '#C084FC', border: '#D8B4FE', stripe: '#E9D5FF', text: '#FFF', glow: 'rgba(192,132,252,0.2)' },
-  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.2)' },
-  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.2)' },
-  green: { bg: '#4ADE80', border: '#86EFAC', stripe: '#BBF7D0', text: '#FFF', glow: 'rgba(74,222,128,0.2)' },
-  red: { bg: '#F87171', border: '#FCA5A5', stripe: '#FECACA', text: '#FFF', glow: 'rgba(248,113,113,0.2)' },
-  cyan: { bg: '#22D3EE', border: '#67E8F9', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(34,211,238,0.2)' },
+  orange: { bg: '#FF9F43', border: '#FFB76B', stripe: '#FFD1A3', text: '#FFF', glow: 'rgba(255,159,67,0.25)' },
+  purple: { bg: '#A78BFA', border: '#C4B5FD', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(167,139,250,0.25)' },
+  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.25)' },
+  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.25)' },
+  green: { bg: '#00F5A0', border: '#5FFFC1', stripe: '#B8FFE0', text: '#000', glow: 'rgba(0,245,160,0.25)' },
+  red: { bg: '#FF6B6B', border: '#FF9999', stripe: '#FFC7C7', text: '#FFF', glow: 'rgba(255,107,107,0.25)' },
+  cyan: { bg: '#00D9FF', border: '#5AE8FF', stripe: '#B0F4FF', text: '#000', glow: 'rgba(0,217,255,0.25)' },
 };
 
   // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
@@ -437,16 +447,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
       {/* ======== Header with Title and Stats ======== */}
       <div 
-        className="sticky top-0 z-40 backdrop-blur-xl flex-shrink-0"
+        className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, rgba(5,13,24,0.95) 0%, rgba(5,13,24,0.85) 100%)',
+          background: 'linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,10,20,0.92) 100%)',
           borderBottom: `1px solid ${C.border}`,
         }}
       >
-        {/* Top highlight line (LoginPage style) */}
+        {/* Ambient glow */}
         <div 
-          className="absolute top-0 left-0 right-0 h-px"
-          style={{ background: `linear-gradient(90deg, transparent 0%, ${C.accent}20 50%, transparent 100%)` }}
+          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
+          style={{ background: C.accent }}
         />
         <div className="px-8 md:pl-32 md:pr-10 py-6">
 
@@ -652,8 +662,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         <div 
                           className="ml-2 px-2.5 py-1 rounded-lg"
                           style={{ 
-                            background: C.accent, 
-                            boxShadow: `0 2px 8px ${C.accent}40` 
+                            background: '#f1ff00', 
+                            boxShadow: `0 2px 8px #f1ff0060` 
                           }}
                         >
                           <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
@@ -661,8 +671,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           </span>
                         </div>
                       ) : (
-                        <div className="ml-2 flex items-center gap-1">
-                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/40'}`}>
+                        <div 
+                          className="ml-2 px-2.5 py-1 rounded-lg"
+                          style={{ 
+                            background: isNightHour ? 'rgba(255,255,255,0.05)' : '#73ff0015',
+                            border: `1px solid ${isNightHour ? 'rgba(255,255,255,0.08)' : '#73ff0040'}`,
+                          }}
+                        >
+                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/50'}`}>
                             {hourLabel(hour)}
                           </span>
                         </div>
@@ -678,28 +694,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - LoginPage accent yellow */}
+            {/* Now indicator - Simple line without glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
+                <div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  {/* Ambient glow */}
-                  <div className="absolute -left-4 top-0 bottom-0 w-8 opacity-15 blur-lg" style={{ background: C.accent }} />
-                  {/* Main line */}
+                  {/* Main line - clean and simple */}
                   <div 
                     className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ background: `linear-gradient(to bottom, ${C.accent} 0%, ${C.accent}80 50%, ${C.accent}30 100%)` }} 
+                    style={{ background: '#73ff00' }}
                   />
-                  {/* Top dot */}
-                  <div 
-                    className="absolute -left-1.5 -top-0.5 w-3 h-3 rounded-full"
-                    style={{ background: C.accent, boxShadow: `0 0 8px ${C.accent}80` }}
-                  />
-                </motion.div>
+                </div>
               )}
             </AnimatePresence>
 
@@ -1573,7 +1580,7 @@ style={{
 const TimelineModule = React.memo(TimelineModuleImpl);
 export default TimelineModule;
 
-// Helper Component - Stat Box
+// Helper Component - Stat Box (Modern glass-morphism)
 interface StatBoxProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -1583,46 +1590,51 @@ interface StatBoxProps {
 }
 
 const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
-  <div
-    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02] ${glow ? 'shadow-lg' : ''}`}
+  <motion.div
+    whileHover={{ scale: 1.03, y: -2 }}
+    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-xl cursor-pointer ${glow ? 'shadow-lg' : ''}`}
     style={{
       background: glow
-        ? `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`
-        : C.glass,
-      border: glow ? `1px solid ${color}40` : `1px solid ${C.border}`,
-      boxShadow: glow ? `0 0 24px ${color}25, inset 0 1px 0 rgba(255,255,255,0.05)` : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+        ? `linear-gradient(135deg, ${color}18 0%, ${color}08 100%)`
+        : `linear-gradient(135deg, ${C.surface2} 0%, ${C.surface} 100%)`,
+      border: glow ? `1px solid ${color}50` : `1px solid ${C.border}`,
+      boxShadow: glow 
+        ? `0 0 30px ${color}20, 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)` 
+        : '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
     }}
   >
     {/* Ambient glow for emergency/special states */}
     {glow && (
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-50"
         style={{
-          background: `radial-gradient(ellipse at 50% 0%, ${color}25 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse at 50% -20%, ${color}30 0%, transparent 60%)`,
         }}
       />
     )}
-    {/* Top highlight line (LoginPage style) */}
+    {/* Top accent line */}
     <div 
-      className="absolute top-0 left-4 right-4 h-px opacity-30"
-      style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }}
+      className="absolute top-0 left-0 right-0 h-[2px]"
+      style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)`, opacity: glow ? 0.8 : 0.4 }}
     />
     <div className="relative flex items-center gap-3 h-full">
       <div
         className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
         style={{
-          background: `${color}15`,
-          border: `1px solid ${color}30`,
+          background: `${color}20`,
+          border: `1px solid ${color}40`,
+          boxShadow: `0 0 12px ${color}20`,
         }}
       >
         <span style={{ color }}><Icon className="w-4 h-4" /></span>
       </div>
       <div className="min-w-0">
-        <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">{label}</p>
-        <p className="text-sm font-bold text-white leading-tight">{value}</p>
+        <p className="text-[9px] text-white/50 uppercase tracking-[0.25em] font-semibold">{label}</p>
+        <p className="text-sm font-bold leading-tight" style={{ color: glow ? color : C.textHi }}>{value}</p>
       </div>
     </div>
-  </div>
+  </motion.div>
 );
 
 // Helper Component - Room Detail Popup (Design matching screenshot)
@@ -1688,19 +1700,20 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        initial={{ scale: 0.9, opacity: 0, y: 30 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
         className="rounded-3xl overflow-hidden max-w-2xl w-full relative"
         style={{
-          background: 'linear-gradient(180deg, rgba(15,31,58,0.98) 0%, rgba(10,21,40,0.98) 100%)',
-          border: `1px solid ${C.border}`,
-          boxShadow: `0 25px 60px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
+          background: 'linear-gradient(180deg, rgba(10,20,35,0.98) 0%, rgba(5,12,25,0.98) 100%)',
+          border: `1px solid ${C.borderHover}`,
+          boxShadow: `0 30px 80px -15px rgba(0, 0, 0, 0.7), 0 0 60px ${stepColor}15, inset 0 1px 0 rgba(255,255,255,0.08)`,
         }}
       >
         {/* Ambient glow at top */}

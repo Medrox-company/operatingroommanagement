@@ -19,26 +19,37 @@ import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design tokens — sdíleno se zbytkem modulu
+// Design tokens — vylepšená paleta s lepším kontrastem a glow efekty
 // ─────────────────────────────────────────────────────────────────────────────
 export const C = {
-  accent:  '#06B6D4',
-  cyan:    '#06B6D4',     // alias k accent — používá se v některých tabech sémanticky
-  green:   '#10B981',
-  orange:  '#F97316',
-  yellow:  '#FBBF24',
-  red:     '#EF4444',
-  purple:  '#A78BFA',
-  pink:    '#EC4899',
-  blue:    '#3B82F6',
-  border:  'rgba(255,255,255,0.07)',
-  surface: 'rgba(255,255,255,0.025)',
-  surface2:'rgba(255,255,255,0.045)',
-  muted:   'rgba(255,255,255,0.35)',
-  faint:   'rgba(255,255,255,0.15)',
-  ghost:   'rgba(255,255,255,0.07)',
+  // Primary accent colors - více živé a kontrastní
+  accent:  '#00D9FF',  // Vivid cyan - main accent
+  cyan:    '#00D9FF',  // Alias
+  green:   '#00F5A0',  // Emerald green - success
+  orange:  '#FF9F43',  // Warm orange - warning  
+  yellow:  '#FFE66D',  // Bright yellow
+  red:     '#FF6B6B',  // Soft red - error/critical
+  purple:  '#A78BFA',  // Soft purple
+  pink:    '#F472B6',  // Rose pink
+  blue:    '#60A5FA',  // Sky blue
+  teal:    '#2DD4BF',  // Teal
+  
+  // Surface & background - glass morphism style
+  surface:   'rgba(255,255,255,0.03)',
+  surface2:  'rgba(255,255,255,0.06)',
+  surface3:  'rgba(255,255,255,0.09)',
+  surfaceHover: 'rgba(255,255,255,0.08)',
+  
+  // Border & dividers
+  border:  'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.15)',
+  
+  // Text hierarchy
   text:    'rgba(255,255,255,0.85)',
   textHi:  'rgba(255,255,255,0.95)',
+  muted:   'rgba(255,255,255,0.45)',
+  faint:   'rgba(255,255,255,0.20)',
+  ghost:   'rgba(255,255,255,0.08)',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

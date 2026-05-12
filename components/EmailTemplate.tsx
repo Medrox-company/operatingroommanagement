@@ -88,7 +88,7 @@ export const EmailTemplate: React.FC<EmailTemplateProps> = ({
                     <tr>
                       <td style={{ padding: '48px 40px 32px', textAlign: 'center' }}>
                         <img
-                          src="https://operatingroommanagement.vercel.app/logo.png"
+                          src={`${process.env.NEXT_PUBLIC_APP_URL || ''}/logo.png`}
                           alt="Operating Room Manager"
                           width="120"
                           height="120"

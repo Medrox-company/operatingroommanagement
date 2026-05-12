@@ -13,19 +13,19 @@
 'use client';
 
 import React, { useMemo, memo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Gauge, Timer, ClockArrowUp, RefreshCw, Sparkles, Activity,
   TrendingUp, TrendingDown, AlertOctagon, ShieldCheck, Workflow,
-  Hourglass,
+  Hourglass, Target, AlertTriangle, BarChart3,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, ResponsiveContainer, XAxis, YAxis,
-  Tooltip, CartesianGrid, Cell,
+  Tooltip, CartesianGrid, Cell, ComposedChart, Line,
 } from 'recharts';
 import {
   C, Card, KPIBlock, ProgressRing, SectionHeader, DeltaBadge, IconBubble,
-  hashStr, formatMinutes, formatPercent,
+  hashStr, formatMinutes, formatPercent, AnimatedCounter,
 } from './shared';
 import { OperatingRoom } from '../../types';
 
@@ -40,6 +40,32 @@ interface EfficiencyTabProps {
   avgStepDurations: number[];
   periodLabel: string;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom Tooltip pro Recharts
+// ─────────────────────────────────────────────────────────────────────────────
+const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div 
+      className="rounded-xl px-3 py-2"
+      style={{ 
+        background: 'rgba(0,0,0,0.9)', 
+        border: `1px solid ${C.border}`,
+        backdropFilter: 'blur(10px)',
+      }}
+    >
+      <p className="text-[10px] font-bold mb-1" style={{ color: C.textHi }}>{label}</p>
+      {payload.map((p: any, i: number) => (
+        <div key={i} className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+          <span className="text-[10px]" style={{ color: C.muted }}>{p.name}:</span>
+          <span className="text-[10px] font-bold" style={{ color: p.color }}>{p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Throughput chart — operace per hour (24 hod)
