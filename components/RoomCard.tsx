@@ -104,13 +104,13 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         />
       )}
 
-      {/* Main Card Container — Enhanced Premium Design */}
-      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.6)] 
+      {/* Main Card Container */}
+      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
         ${room.isEmergency 
-            ? 'bg-gradient-to-br from-red-950/25 to-red-950/15 border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.15)]' 
+            ? 'bg-red-950/20 border-red-500/40' 
             : (room.isLocked 
-                ? 'bg-gradient-to-br from-amber-950/20 to-amber-950/10 border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.12)] group-hover:border-amber-400/60' 
-                : 'bg-gradient-to-br from-white/[0.04] to-white/[0.02] border-white/[0.08] group-hover:border-[#FBBF24]/30 group-hover:bg-gradient-to-br group-hover:from-white/[0.06] group-hover:to-white/[0.03]')}
+                ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
+                : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]')}
       `}>
         {room.isEmergency && (
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
@@ -119,25 +119,14 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
         )}
         
-        {/* Enhanced Glow Layer — Premium effect */}
+        {/* Static Glow Layer */}
         <div 
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
           style={{ 
             backgroundColor: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.35 : 0.18 
+            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15 
           }}
         />
-        
-        {/* Premium accent highlight — top edge */}
-        {!room.isEmergency && (
-          <div 
-            className="absolute inset-x-0 top-0 h-[2px] rounded-t-[1.75rem] sm:rounded-t-[2.5rem]"
-            style={{ 
-              background: `linear-gradient(90deg, transparent, ${themeColor}40, transparent)`,
-              opacity: 0.5
-            }}
-          />
-        )}
       </div>
 
       {/* Content Container */}
