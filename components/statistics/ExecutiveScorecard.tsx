@@ -267,15 +267,27 @@ export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) 
   const insights = useMemo(() => generateInsights(data, score), [data, score]);
 
   return (
-    <div className="rounded-2xl overflow-hidden relative"
+    <motion.div 
+      className="rounded-3xl overflow-hidden relative"
       style={{
-        background: `linear-gradient(135deg, ${C.surface2} 0%, ${C.surface} 60%, rgba(6,182,212,0.04) 100%)`,
-        border: `1px solid rgba(255,255,255,0.1)`,
-      }}>
+        background: `linear-gradient(135deg, ${C.surface3} 0%, ${C.surface} 60%, rgba(0,217,255,0.03) 100%)`,
+        border: `1px solid ${C.borderHover}`,
+        backdropFilter: 'blur(20px)',
+      }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* Decorative top accent line */}
-      <div className="h-[2px] w-full" style={{
-        background: `linear-gradient(90deg, ${C.accent}, ${C.green}, ${C.yellow}, ${C.orange})`,
+      <div className="h-1 w-full" style={{
+        background: `linear-gradient(90deg, ${C.accent}, ${C.green}, ${C.yellow}, ${C.orange}, ${C.pink})`,
       }} />
+      
+      {/* Background glow effects */}
+      <div className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-3xl opacity-10 pointer-events-none"
+        style={{ background: C.accent }} />
+      <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
+        style={{ background: C.green }} />
 
       <div className="p-4 md:p-5">
         {/* ── Header row: Grade + Title + Live indicator ───────────────── */}
@@ -406,6 +418,6 @@ export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) 
           </Card>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
