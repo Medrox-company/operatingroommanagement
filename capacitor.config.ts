@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     // For development: use local server
-    // url: 'http://localhost:3000',
+    // url: 'https://operatingroom.eu',
     // cleartext: true,
     androidScheme: 'https',
     iosScheme: 'https',
