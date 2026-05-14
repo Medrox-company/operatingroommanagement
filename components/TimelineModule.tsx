@@ -471,44 +471,35 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       {/* ======== Main Timeline ======== */}
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
-        {/* Time Axis Header - Fixed, Premium glassmorph */}
+        {/* Time Axis Header - Fixed, LoginPage glassmorph */}
         <div 
-          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-xl overflow-hidden" 
+          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-md" 
           style={{ 
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-            borderBottom: `1px solid rgba(255,255,255,0.08)`,
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 20px rgba(0,0,0,0.3)',
+            background: C.glass, 
+            borderBottom: `1px solid ${C.border}`,
           }}
         >
           {/* Room label header - fixed */}
           <div 
-            className="flex-shrink-0 flex items-center px-4 gap-3" 
+            className="flex-shrink-0 flex items-center px-4 gap-2" 
             style={{ 
               width: ROOM_LABEL_WIDTH, 
               minWidth: ROOM_LABEL_WIDTH, 
-              borderRight: `1px solid rgba(255,255,255,0.06)`,
-              background: 'linear-gradient(90deg, rgba(0,217,255,0.03) 0%, transparent 100%)',
+              borderRight: `1px solid ${C.border}`,
             }}
           >
             <div 
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ 
-                background: 'linear-gradient(135deg, rgba(0,217,255,0.2) 0%, rgba(0,217,255,0.1) 100%)',
-                border: `1px solid rgba(0,217,255,0.3)`,
-                boxShadow: '0 2px 8px rgba(0,217,255,0.15)',
-              }}
+              className="w-6 h-6 rounded-lg flex items-center justify-center"
+              style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}25` }}
             >
-              <Activity className="w-4 h-4" style={{ color: C.accent }} />
+              <Activity className="w-3.5 h-3.5" style={{ color: C.accent }} />
             </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: 'rgba(0,217,255,0.9)' }}>Operacni</span>
-              <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/50">Saly</span>
-            </div>
+            <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">OPERAČNÍ SÁLY</span>
           </div>
           
           {/* Time markers - no scroll, full width for 24h */}
           <div className="flex-1 overflow-hidden" ref={timelineRef}>
-            <div className="flex items-center h-14 relative w-full">
+            <div className="flex items-center h-12 relative w-full">
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
@@ -519,7 +510,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 const isNightHour = displayHour >= 19 || displayHour < 7;
                 const isNextDay = actualHour >= 24;
                 const isCurrentHour = displayHour === currentHour && !isLast;
-                const isMainHour = displayHour % 3 === 0; // Highlight every 3rd hour
                 
                 return (
                   <div 
@@ -527,43 +517,29 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     className="absolute top-0 h-full flex items-center justify-center" 
                     style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                   >
-                    {/* Hour divider line with gradient */}
                     <div 
-                      className="absolute left-0 w-px h-full"
+                      className={`absolute left-0 w-px h-full transition-all duration-300`}
                       style={{ 
-                        background: isMainHour && !isNightHour
-                          ? 'linear-gradient(to bottom, transparent 10%, rgba(0,217,255,0.15) 30%, rgba(0,217,255,0.2) 50%, rgba(0,217,255,0.15) 70%, transparent 90%)'
-                          : isNightHour 
-                            ? 'linear-gradient(to bottom, transparent 20%, rgba(255,255,255,0.03) 50%, transparent 80%)'
-                            : 'linear-gradient(to bottom, transparent 15%, rgba(255,255,255,0.08) 50%, transparent 85%)',
+                        background: isNightHour 
+                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
+                          : 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
                       }} 
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - premium highlighted badge */
-                        <div 
-                          className="relative px-2.5 py-1 rounded-lg"
-                          style={{ 
-                            background: 'linear-gradient(135deg, #84ff00 0%, #73ff00 100%)',
-                            boxShadow: '0 2px 12px rgba(132,255,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
-                          }}
-                        >
-                          <span className="text-[11px] font-mono font-bold text-black tracking-tight">
-                            {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
-                          </span>
-                        </div>
-                      ) : (
-                        /* Other hours - elegant typography */
+                        /* Current hour - yellow highlighted, compact, centered */
                         <span 
-                          className={`text-[10px] font-mono font-semibold tabular-nums transition-colors duration-300`}
+                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
                           style={{ 
-                            color: isMainHour && !isNightHour 
-                              ? 'rgba(0,217,255,0.7)' 
-                              : isNightHour 
-                                ? 'rgba(255,255,255,0.2)' 
-                                : 'rgba(255,255,255,0.5)',
+                            background: '#f1ff00', 
+                            color: '#000',
                           }}
                         >
+                          {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
+                        </span>
+                      ) : (
+                        /* Other hours - simple number only, no box, centered */
+                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
                           {hourLabelCompact(hour)}
                         </span>
                       )
@@ -578,39 +554,25 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - Premium line with glow effect */}
+            {/* Now indicator - Simple line without glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  {/* Outer glow */}
-                  <div 
-                    className="absolute -left-[3px] top-0 bottom-0 w-[7px] blur-[3px]" 
-                    style={{ background: 'rgba(132,255,0,0.3)' }}
-                  />
-                  {/* Main line */}
+                  {/* Main line - clean and simple */}
                   <div 
                     className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ 
-                      background: 'linear-gradient(to bottom, rgba(132,255,0,0.4) 0%, #84ff00 20%, #84ff00 80%, rgba(132,255,0,0.4) 100%)',
-                    }}
-                  />
-                  {/* Top marker dot */}
-                  <div 
-                    className="absolute -left-[4px] -top-1 w-[9px] h-[9px] rounded-full"
-                    style={{ 
-                      background: '#84ff00',
-                      boxShadow: '0 0 8px rgba(132,255,0,0.6)',
-                    }}
+                    style={{ background: '#73ff00' }}
                   />
                 </div>
               )}
             </AnimatePresence>
 
-            {/* Room Rows - Premium flex container with subtle separators */}
-            <div className="flex flex-col gap-[3px] px-1">
+            {/* Room Rows - Flex container. gap-1 (4px) — minimální mezera, aby se vešlo
+               co nejvíce sálů bez scrollu. Kontejner i výpočet rowHeight používá ROW_GAP_PX=4. */}
+            <div className="flex flex-col gap-1 px-1">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -813,26 +775,30 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Active / Free row - Premium design */
+              /* Active / Free row */
               return (
                 <div
                   key={room.id}
-                  className="relative flex items-stretch group cursor-pointer transition-all duration-300 rounded-lg hover:bg-white/[0.03]"
+                  className="relative flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
                   style={{
                     height: rowHeight,
-                    background: roomIndex % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                    borderBottom: `1px solid ${C.border}`,
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Premium sticky LEFT column */}
+                  {/* Room Label - Sticky LEFT column.
+                     Vnější `py-1.5` ZARUČUJE, že vnitřní glassmorph karta (vyplňující rodiče
+                     pomocí self-stretch) má SHODNOU vertikální výšku jako zaoblený timeline bar
+                     v pravé části (ten má `top-1.5 bottom-1.5` = inset 6px). Tím obě "kapsle"
+                     na řádku vypadají jako vizuálně sladěný pár. */}
                   <div 
-                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-300 group-hover:bg-white/[0.02] sticky left-0 z-20 rounded-l-lg" 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      background: 'linear-gradient(90deg, rgba(11,17,32,0.98) 0%, rgba(11,17,32,0.95) 100%)',
-                      backdropFilter: 'blur(12px)',
-                      borderRight: `1px solid rgba(255,255,255,0.05)`,
+                      background: 'rgba(11,17,32,0.98)',
+                      backdropFilter: 'blur(8px)',
+                      borderRight: `1px solid ${C.border}`,
                     }}
                   >
                     {/* ARO Overtime Badge - softer */}
@@ -902,13 +868,16 @@ style={{
                       )}
                     </div>
 
-                    {/* Room info - Premium glassmorph card */}
+                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN.
+                       Stretchuje se na plnou výšku rodiče (díky `items-stretch` na rodiči),
+                       takže vizuálně koresponduje s timeline barem napravo, který má stejné
+                       inset (top-1.5 bottom-1.5). Vertikální padding NEpotřebuje — content
+                       je centrovaný přes flex justify-center. */}
                     <div 
-                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-lg flex items-center ${rowHeight < 44 ? 'px-2.5' : 'px-3'} backdrop-blur-xl transition-all duration-300 overflow-hidden group-hover:border-white/[0.12]`}
+                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-md flex items-center ${rowHeight < 44 ? 'px-2' : 'px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
                       style={{ 
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                        border: `1px solid rgba(255,255,255,0.07)`,
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                        background: C.glass, 
+                        border: `1px solid ${C.border}`,
                       }}
                     >
                       <div className="flex items-center gap-2 w-full">
