@@ -5,1267 +5,1889 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Operating Room Management System - Kompletní Dokumentace</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.7;
-      color: #333;
-      background: #fff;
+    :root {
+      --primary: #0f172a;
+      --primary-light: #1e293b;
+      --accent: #f59e0b;
+      --accent-light: #fbbf24;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --surface: rgba(255,255,255,0.03);
+      --surface-hover: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.08);
     }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.7;
+      color: var(--text);
+      background: linear-gradient(135deg, #0a0e1a 0%, #0f172a 50%, #1e1b4b 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    
+    /* Cover Page */
     .cover {
-      page-break-after: always;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      text-align: center;
-      padding: 120px 40px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-    }
-    .cover h1 { font-size: 48px; margin-bottom: 15px; }
-    .cover .subtitle { font-size: 24px; opacity: 0.9; margin-bottom: 60px; }
-    .cover .details { font-size: 14px; opacity: 0.8; }
-    .toc {
-      page-break-after: always;
+      text-align: center;
       padding: 60px 40px;
-      background: #f9f9f9;
+      position: relative;
+      overflow: hidden;
     }
-    .toc h2 { color: #667eea; margin-bottom: 30px; font-size: 28px; }
-    .toc ul { list-style: none; }
-    .toc li { margin-bottom: 12px; }
-    .toc a { color: #667eea; text-decoration: none; font-weight: 500; }
-    .toc a:hover { text-decoration: underline; }
-    .content { padding: 40px; max-width: 1000px; margin: 0 auto; }
-    .section { page-break-after: auto; margin-bottom: 50px; }
+    
+    .cover::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 30%, rgba(245,158,11,0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 70%, rgba(59,130,246,0.06) 0%, transparent 50%);
+      animation: rotate 60s linear infinite;
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .cover-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .cover .logo {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 40px;
+      font-size: 48px;
+      box-shadow: 0 20px 60px rgba(245,158,11,0.3);
+    }
+    
+    .cover h1 {
+      font-size: 56px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff 0%, var(--accent-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .cover .subtitle {
+      font-size: 24px;
+      color: var(--text-muted);
+      margin-bottom: 60px;
+      font-weight: 400;
+    }
+    
+    .cover .meta {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .cover .meta-item {
+      text-align: center;
+    }
+    
+    .cover .meta-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    
+    .cover .meta-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    /* Table of Contents */
+    .toc {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 40px;
+    }
+    
+    .toc h2 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 40px;
+      color: var(--text);
+    }
+    
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    
+    .toc-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.3s ease;
+    }
+    
+    .toc-item:hover {
+      background: var(--surface-hover);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    
+    .toc-number {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: #000;
+      flex-shrink: 0;
+    }
+    
+    .toc-text {
+      font-weight: 500;
+      font-size: 15px;
+    }
+    
+    /* Content */
+    .content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    
+    .section {
+      margin-bottom: 80px;
+      scroll-margin-top: 40px;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+    }
+    
+    .section-number {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 24px;
+      color: #000;
+      flex-shrink: 0;
+    }
+    
     .section h2 {
-      color: #667eea;
       font-size: 32px;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 3px solid #667eea;
+      font-weight: 700;
+      color: var(--text);
     }
+    
     .section h3 {
-      color: #764ba2;
       font-size: 22px;
-      margin-top: 25px;
-      margin-bottom: 15px;
+      font-weight: 600;
+      color: var(--accent-light);
+      margin-top: 40px;
+      margin-bottom: 16px;
     }
+    
     .section h4 {
-      color: #555;
       font-size: 18px;
-      margin-top: 15px;
-      margin-bottom: 10px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 24px;
+      margin-bottom: 12px;
     }
-    p { margin-bottom: 15px; text-align: justify; }
-    code {
-      background: #f0f0f0;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9em;
+    
+    p {
+      margin-bottom: 16px;
+      color: var(--text-muted);
+      text-align: justify;
     }
-    pre {
-      background: #2d2d2d;
-      color: #f8f8f2;
-      padding: 15px;
-      border-radius: 5px;
-      overflow-x: auto;
-      margin: 15px 0;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85em;
-      page-break-inside: avoid;
+    
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 20px 0;
     }
+    
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+    }
+    
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    
+    .feature-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    
+    .feature-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    
+    /* Tables */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 15px 0;
-      page-break-inside: avoid;
+      margin: 20px 0;
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
     }
-    table thead {
-      background: #667eea;
-      color: white;
+    
+    thead {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     }
-    table th, table td {
-      padding: 12px;
+    
+    th {
+      padding: 16px 20px;
       text-align: left;
-      border-bottom: 1px solid #ddd;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
     }
-    table tbody tr:nth-child(even) {
-      background: #f9f9f9;
+    
+    td {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 14px;
     }
-    ul, ol {
-      margin-left: 30px;
-      margin-bottom: 15px;
+    
+    tbody tr:hover {
+      background: var(--surface-hover);
     }
-    li { margin-bottom: 8px; }
-    .note {
-      background: #e3f2fd;
-      border-left: 4px solid #2196F3;
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 4px;
-      page-break-inside: avoid;
+    
+    tbody tr:last-child td {
+      border-bottom: none;
     }
-    .warning {
-      background: #fff3e0;
-      border-left: 4px solid #ff9800;
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 4px;
+    
+    /* Code */
+    code {
+      background: rgba(245,158,11,0.15);
+      color: var(--accent-light);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
     }
-    .success {
-      background: #e8f5e9;
-      border-left: 4px solid #4caf50;
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 4px;
-    }
-    .diagram {
-      background: #f5f5f5;
-      border: 1px solid #ddd;
+    
+    pre {
+      background: #0d1117;
+      color: #e6edf3;
       padding: 20px;
-      margin: 15px 0;
-      border-radius: 5px;
-      font-family: monospace;
+      border-radius: 12px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      border: 1px solid var(--border);
+    }
+    
+    /* Lists */
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+    }
+    
+    li {
+      margin-bottom: 8px;
+      padding-left: 8px;
+    }
+    
+    li::marker {
+      color: var(--accent);
+    }
+    
+    /* Alerts */
+    .alert {
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin: 20px 0;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    
+    .alert-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    
+    .alert-content h4 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+    }
+    
+    .alert-content p {
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .alert-info {
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+    }
+    
+    .alert-info .alert-icon { color: var(--info); }
+    .alert-info h4 { color: var(--info); }
+    
+    .alert-success {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+    }
+    
+    .alert-success .alert-icon { color: var(--success); }
+    .alert-success h4 { color: var(--success); }
+    
+    .alert-warning {
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.3);
+    }
+    
+    .alert-warning .alert-icon { color: var(--warning); }
+    .alert-warning h4 { color: var(--warning); }
+    
+    .alert-danger {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    
+    .alert-danger .alert-icon { color: var(--danger); }
+    .alert-danger h4 { color: var(--danger); }
+    
+    /* Diagram */
+    .diagram {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      padding: 24px;
+      margin: 20px 0;
+      border-radius: 12px;
+      font-family: 'JetBrains Mono', monospace;
       white-space: pre-wrap;
       overflow-x: auto;
-      page-break-inside: avoid;
+      color: var(--text-muted);
+      font-size: 13px;
     }
-    .highlight { background: #fffacd; padding: 2px 4px; }
-    @media print {
-      body { margin: 0; padding: 0; background: white; }
-      .section { page-break-inside: avoid; }
-      .toc { page-break-after: always; }
+    
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
+    
+    .badge-success { background: rgba(16,185,129,0.2); color: var(--success); }
+    .badge-warning { background: rgba(245,158,11,0.2); color: var(--warning); }
+    .badge-danger { background: rgba(239,68,68,0.2); color: var(--danger); }
+    .badge-info { background: rgba(59,130,246,0.2); color: var(--info); }
+    
+    /* Status Colors */
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    
+    .status-idle { background: #6b7280; }
+    .status-preparing { background: #3b82f6; }
+    .status-procedure { background: #10b981; }
+    .status-closing { background: #f59e0b; }
+    .status-maintenance { background: #ef4444; }
+    
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 40px;
+      margin: 24px 0;
+    }
+    
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    
+    .timeline-item {
+      position: relative;
+      padding-bottom: 24px;
+    }
+    
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -29px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+    }
+    
+    .timeline-title {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    
+    .timeline-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    /* Risk Matrix */
+    .risk-matrix {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      margin: 20px 0;
+    }
+    
+    .risk-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .risk-low { background: rgba(16,185,129,0.3); color: var(--success); }
+    .risk-medium { background: rgba(245,158,11,0.3); color: var(--warning); }
+    .risk-high { background: rgba(239,68,68,0.3); color: var(--danger); }
+    
+    /* Footer */
     footer {
       text-align: center;
-      padding: 20px;
-      color: #999;
-      margin-top: 40px;
-      border-top: 1px solid #ddd;
-      font-size: 12px;
+      padding: 40px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+    }
+    
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+        color: #333;
+      }
+      
+      .cover {
+        page-break-after: always;
+      }
+      
+      .section {
+        page-break-inside: avoid;
+      }
+      
+      .toc {
+        page-break-after: always;
+      }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .cover h1 { font-size: 36px; }
+      .cover .subtitle { font-size: 18px; }
+      .content { padding: 20px; }
+      .section h2 { font-size: 24px; }
+      .toc-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <!-- COVER PAGE -->
-  <div class="cover">
-    <h1>Operating Room Management System</h1>
-    <p class="subtitle">Kompletní Technická Dokumentace</p>
-    <div class="details">
-      <p>Verze 1.0 | Duben 2026</p>
-      <p style="margin-top: 20px;">Systém pro správu a monitorování operačních sálů</p>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="cover-content">
+    <div class="logo">OR</div>
+    <h1>Operating Room Management</h1>
+    <p class="subtitle">Kompletní Technická a Regulační Dokumentace</p>
+    <div class="meta">
+      <div class="meta-item">
+        <div class="meta-label">Verze</div>
+        <div class="meta-value">2.0</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Datum</div>
+        <div class="meta-value">Kveten 2026</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Klasifikace</div>
+        <div class="meta-value">MDR Class IIa</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Standard</div>
+        <div class="meta-value">IEC 62304</div>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- TABLE OF CONTENTS -->
-  <div class="toc">
-    <h2>Obsah dokumentace</h2>
-    <ul>
-      <li><a href="#1">1. Přehled aplikace</a></li>
-      <li><a href="#2">2. Architektura systému</a></li>
-      <li><a href="#3">3. Databázové schéma</a></li>
-      <li><a href="#4">4. Moduly a komponenty</a></li>
-      <li><a href="#5">5. Dashboard - Hlavní modul</a></li>
-      <li><a href="#6">6. OperatingRoomsManager - Správa sálů</a></li>
-      <li><a href="#7">7. Notifikační systém</a></li>
-      <li><a href="#8">8. StatisticsModule - Statistiky</a></li>
-      <li><a href="#9">9. SettingsPage - Nastavení</a></li>
-      <li><a href="#10">10. API a datové operace</a></li>
-      <li><a href="#11">11. Pracovní procesy</a></li>
-      <li><a href="#12">12. Nasazení a údržba</a></li>
-      <li><a href="#13">13. Řešení problémů</a></li>
-    </ul>
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Obsah dokumentace</h2>
+  <div class="toc-grid">
+    <a href="#sec1" class="toc-item">
+      <div class="toc-number">1</div>
+      <div class="toc-text">Prehled aplikace</div>
+    </a>
+    <a href="#sec2" class="toc-item">
+      <div class="toc-number">2</div>
+      <div class="toc-text">Architektura systemu</div>
+    </a>
+    <a href="#sec3" class="toc-item">
+      <div class="toc-number">3</div>
+      <div class="toc-text">Databazove schema</div>
+    </a>
+    <a href="#sec4" class="toc-item">
+      <div class="toc-number">4</div>
+      <div class="toc-text">Moduly a komponenty</div>
+    </a>
+    <a href="#sec5" class="toc-item">
+      <div class="toc-number">5</div>
+      <div class="toc-text">Klasifikace softwaru (MDR)</div>
+    </a>
+    <a href="#sec6" class="toc-item">
+      <div class="toc-number">6</div>
+      <div class="toc-text">Řízení rizik (ISO 14971)</div>
+    </a>
+    <a href="#sec7" class="toc-item">
+      <div class="toc-number">7</div>
+      <div class="toc-text">Dokumentace softwaru (IEC 62304)</div>
+    </a>
+    <a href="#sec8" class="toc-item">
+      <div class="toc-number">8</div>
+      <div class="toc-text">Klinicke hodnoceni</div>
+    </a>
+    <a href="#sec9" class="toc-item">
+      <div class="toc-number">9</div>
+      <div class="toc-text">Kyberbezpečnost</div>
+    </a>
+    <a href="#sec10" class="toc-item">
+      <div class="toc-number">10</div>
+      <div class="toc-text">Post-Market Surveillance</div>
+    </a>
+    <a href="#sec11" class="toc-item">
+      <div class="toc-number">11</div>
+      <div class="toc-text">Technická dokumentace</div>
+    </a>
+    <a href="#sec12" class="toc-item">
+      <div class="toc-number">12</div>
+      <div class="toc-text">Akcni plan implementace</div>
+    </a>
   </div>
+</div>
 
-  <!-- CONTENT -->
-  <div class="content">
-    <!-- 1. OVERVIEW -->
-    <div class="section" id="1">
-      <h2>1. Přehled aplikace</h2>
-      
-      <h3>1.1 O aplikaci</h3>
-      <p>Operating Room Management System je komplexní webová aplikace pro efektivní řízení operačních sálů v zdravotnických zařízeních. Aplikace umožňuje reálné sledování stavu jednotlivých sálů, správu pracovních časů, automatické notifikace operačního personálu a detailní analýzu efektivity provozu. Všechny statistiky a údaje vycházejí z reálných dat v databázi, nikoliv z předpokládaných či mockovaných hodnot.</p>
-      
-      <h3>1.2 Hlavní cíle</h3>
-      <ul>
-        <li>Centralizované řízení operačních sálů a jejich statusu</li>
-        <li>Reálný monitoring stavu jednotlivých sálů v reálném čase</li>
-        <li>Automatické notifikace při kritických stavech (pozdní příchod, nepřipravený pacient)</li>
-        <li>Detailní statistiky a reporting využití sálů</li>
-        <li>Řízení workflow procesu operačních postupů</li>
-        <li>Správa notifikací a komunikace se zdravotnickým personálem</li>
-      </ul>
+<!-- CONTENT -->
+<div class="content">
 
-      <h3>1.3 Klíčové vlastnosti</h3>
-      <ul>
-        <li><strong>Reálné monitorování:</strong> Live dashboard s aktuálním stavem všech sálů, animované přechody stavů</li>
-        <li><strong>Workflow management:</strong> Detailné sledování fází operačních postupů (příprava, chirurgický výkon, sešívání, údržba)</li>
-        <li><strong>Notifikační systém:</strong> Automatické notifikace pro pozdní příjezdy, nepřipravené pacienty, ostatní problémy</li>
-        <li><strong>Statistiky z reálných dat:</strong> Analýza vytížení sálů, efektivity, časových řad, vše z tabulky room_status_history</li>
-        <li><strong>Správa konfigurace:</strong> Flexibilní nastavení pracovních hodin, workflow kroků, kritérií notifikací</li>
-        <li><strong>Historické údaje:</strong> Úplná historie všech stavů a aktivit v databázi s RLS ochranou</li>
-      </ul>
-
-      <h3>1.4 Technologický stack</h3>
-      <table>
+  <!-- SECTION 1: OVERVIEW -->
+  <div class="section" id="sec1">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Prehled aplikace</h2>
+    </div>
+    
+    <h3>1.1 O aplikaci</h3>
+    <p>Operating Room Management System je komplexni webová aplikace pro efektivni rizeni operačních sálů ve zdravotnických zařízeních. Aplikace umožňuje reálné sledování stavu jednotlivych sálů, správu pracovních času, automaticke notifikace operacniho personálu a detailni analýzu efektivity provozu.</p>
+    
+    <div class="alert alert-success">
+      <div class="alert-icon">&#10003;</div>
+      <div class="alert-content">
+        <h4>Všechny statistiky z realnych dat</h4>
+        <p>Aplikace nepoužívá žádná mockovaná data. Všechny metriky vychází z reálné databáze a historických záznamů.</p>
+      </div>
+    </div>
+    
+    <h3>1.2 Hlavni funkcionality</h3>
+    <div class="card-grid">
+      <div class="feature-card">
+        <div class="feature-icon">&#128203;</div>
+        <div class="feature-title">Real-time monitoring</div>
+        <div class="feature-desc">Live dashboard s aktualni stavem vsech sálů, animovane přechody stavu a okamzita aktualizace.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#9201;</div>
+        <div class="feature-title">Timeline modul</div>
+        <div class="feature-desc">Casova osa s vizualizaci operaci, fazi a planovanych zakroku pro cely den.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128276;</div>
+        <div class="feature-title">Notifikacni system</div>
+        <div class="feature-desc">Automatické upozorneni pri pozdnich prichodech, nepripravenych pacientech a dalsich problemech.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128202;</div>
+        <div class="feature-title">Pokrocile statistiky</div>
+        <div class="feature-desc">Detailní analyza vyuziti sálů, efektivity, casovych rad a predikci.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128101;</div>
+        <div class="feature-title">Sprava personálu</div>
+        <div class="feature-desc">Evidence lekaru, sester, anesteziologu s jejich dostupnosti a smenami.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#9881;</div>
+        <div class="feature-title">Systemova nastaveni</div>
+        <div class="feature-desc">Flexibilni konfigurace workflow, pracovních hodin, oddelen a kontaktu.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128197;</div>
+        <div class="feature-title">Planovani operaci</div>
+        <div class="feature-desc">Kalendar s planovanymi zakroky, prioritami a automatickym rozvrhem.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#9989;</div>
+        <div class="feature-title">Bezpečnostní checklisty</div>
+        <div class="feature-desc">WHO Surgical Safety Checklist (Sign-In, Time-Out, Sign-Out) integrovaný do workflow.</div>
+      </div>
+    </div>
+    
+    <h3>1.3 Technologický stack</h3>
+    <table>
+      <thead>
         <tr>
           <th>Vrstva</th>
           <th>Technologie</th>
           <th>Popis</th>
         </tr>
+      </thead>
+      <tbody>
         <tr>
           <td>Frontend</td>
-          <td>React 18+, TypeScript</td>
-          <td>Interaktivní UI s moderním komponentovým modelem</td>
+          <td>React 18+, TypeScript, Next.js 16</td>
+          <td>Moderní komponentový model s SSR</td>
         </tr>
         <tr>
           <td>Styling</td>
           <td>Tailwind CSS</td>
-          <td>Utility-first CSS framework pro rychlé stylování</td>
+          <td>Utility-first CSS framework</td>
         </tr>
         <tr>
           <td>Animace</td>
           <td>Framer Motion</td>
-          <td>Plynulé animace a přechody</td>
+          <td>Plynule animace a přechody</td>
         </tr>
         <tr>
           <td>Grafy</td>
           <td>Recharts</td>
-          <td>Reaktivní grafy a vizualizace dat</td>
+          <td>Reaktivní vizualizace dat</td>
         </tr>
         <tr>
           <td>Backend</td>
           <td>Supabase (PostgreSQL)</td>
-          <td>Databáze s realtime API a autentizací</td>
+          <td>Databaze s realtime API a RLS</td>
         </tr>
         <tr>
-          <td>Emaily</td>
+          <td>Autentizace</td>
+          <td>Custom Auth + bcrypt</td>
+          <td>Bezpečně přihlašování s hašováním</td>
+        </tr>
+        <tr>
+          <td>E-maily</td>
           <td>Resend API</td>
-          <td>Profesionální odesílání emailových notifikací</td>
+          <td>Profesionalni emailove notifikace</td>
         </tr>
         <tr>
-          <td>Nasazení</td>
+          <td>Nasazeni</td>
           <td>Vercel</td>
-          <td>Optimalizované hostování Next.js aplikace</td>
+          <td>Edge deployment s CDN</td>
         </tr>
-      </table>
+        <tr>
+          <td>Mobilni</td>
+          <td>PWA + Capacitor</td>
+          <td>Instalovatelna aplikace pro iOS/Android</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 2: ARCHITECTURE -->
+  <div class="section" id="sec2">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Architektura systemu</h2>
     </div>
-
-    <!-- 2. ARCHITECTURE -->
-    <div class="section" id="2">
-      <h2>2. Architektura systému</h2>
-      
-      <h3>2.1 Celková architektura</h3>
-      <div class="diagram">Frontend (React/TypeScript)
-        ↓
-React Components + Hooks (Dashboard, Statistics, Settings)
-        ↓
-State Management (useState, useContext, useMemo)
-        ↓
-API Layer (lib/db.ts)
-        ↓
-Supabase Client (PostgreSQL + Realtime)
-        ↓
-Database (PostgreSQL)
-        ↓
-External Services (Resend Email, RLS)
-      </div>
-
-      <h3>2.2 Struktura projektu</h3>
-      <pre>
+    
+    <h3>2.1 Celkova architektura</h3>
+    <div class="diagram">
++------------------+     +------------------+     +------------------+
+|                  |     |                  |     |                  |
+|   Web Browser    |     |   iOS/Android    |     |   Admin Panel    |
+|   (Next.js)      |     |   (Capacitor)    |     |   (React)        |
+|                  |     |                  |     |                  |
++--------+---------+     +--------+---------+     +--------+---------+
+         |                        |                        |
+         +------------------------+------------------------+
+                                  |
+                    +-------------v--------------+
+                    |                            |
+                    |      Vercel Edge CDN       |
+                    |      (Next.js Runtime)     |
+                    |                            |
+                    +-------------+--------------+
+                                  |
+                    +-------------v--------------+
+                    |                            |
+                    |    Supabase Backend        |
+                    |    - PostgreSQL Database   |
+                    |    - Realtime WebSocket    |
+                    |    - Row Level Security    |
+                    |    - Auth & Sessions       |
+                    |                            |
+                    +-------------+--------------+
+                                  |
+              +-------------------+-------------------+
+              |                   |                   |
+    +---------v--------+ +--------v--------+ +-------v--------+
+    |                  | |                 | |                |
+    |   Resend API     | |   File Storage  | |   Analytics    |
+    |   (Emails)       | |   (Blob)        | |   (Logs)       |
+    |                  | |                 | |                |
+    +------------------+ +-----------------+ +----------------+
+    </div>
+    
+    <h3>2.2 Struktura projektu</h3>
+    <pre>
 operatingroommanagement/
-├── app/
-│   ├── page.tsx              # Hlavní stránka
-│   ├── layout.tsx            # Root layout s metadata
-│   ├── api/
-│   │   └── notifications/    # API endpoint pro notifikace
-│   └── globals.css
-├── components/
-│   ├── Dashboard.tsx         # Hlavní dashboard orchestrator
-│   ├── OperatingRoomsManager.tsx  # Správa a monitoring sálů
-│   ├── StatisticsModule.tsx  # Statistiky a reporting
-│   ├── SettingsPage.tsx      # Nastavení aplikace
-│   ├── NotificationOverlay.tsx   # Circular menu pro notifikace
-│   └── (další UI komponenty)
-├── lib/
-│   ├── db.ts                 # Databázové operace a queries
-│   └── supabase.ts          # Supabase klient
-├── types.ts                  # TypeScript definice (OperatingRoom, etc.)
-├── constants.ts              # Globální konstanty (workflow kroky, defaulty)
-├── public/
-│   └── docs/                # Dokumentace (tento soubor)
-└── scripts/
-    └── generate-documentation.js  # Skript pro generování dokumentace
-      </pre>
-
-      <h3>2.3 Tok dat v aplikaci</h3>
-      <h4>Realtime updates</h4>
-      <ol>
-        <li>Supabase realtime subscription naslouchá změnám v tabulce <code>operating_rooms</code></li>
-        <li>Při změně stavu sálu se vyvolá callback funkce v komponentě</li>
-        <li>React state se aktualizuje a UI se překreslí s animacemi</li>
-        <li>Uživatel vidí změny v reálném čase bez nutnosti obnovování</li>
-      </ol>
-
-      <h4>Notifikace</h4>
-      <ol>
-        <li>Uživatel vytvoří notifikaci v NotificationOverlay (circular menu)</li>
-        <li>Notifikace se uloží do tabulky <code>notifications_log</code></li>
-        <li>API endpoint zavolá Resend API s emailem a zprávou</li>
-        <li>Email se pošle na nastavené adresy zdravotnického personálu</li>
-      </ol>
-
-      <h4>Statistiky</h4>
-      <ol>
-        <li>Uživatel vybere časový úsek (den/týden/měsíc/rok)</li>
-        <li>StatisticsModule zavolá fetchStatusHistory s filtry</li>
-        <li>Data se načtou z <code>room_status_history</code> z databáze</li>
-        <li>Helper funkce počítají agregace respektující <code>weekly_schedule</code> sálů</li>
-        <li>Grafy se vykreslí s reálnými daty</li>
-      </ol>
-
-      <h3>2.4 Komponenty a jejich odpovědnosti</h3>
-      <table>
-        <tr>
-          <th>Komponenta</th>
-          <th>Soubor</th>
-          <th>Zodpovídá za</th>
-        </tr>
-        <tr>
-          <td>Dashboard</td>
-          <td>App.tsx</td>
-          <td>Orchestrace, přepínání modulů, globální state</td>
-        </tr>
-        <tr>
-          <td>OperatingRoomsManager</td>
-          <td>OperatingRoomsManager.tsx</td>
-          <td>Live view sálů, detaily, notifikace, filtrování</td>
-        </tr>
-        <tr>
-          <td>StatisticsModule</td>
-          <td>StatisticsModule.tsx</td>
-          <td>Grafy, heatmapy, statistiky z reálných DB dat</td>
-        </tr>
-        <tr>
-          <td>SettingsPage</td>
-          <td>SettingsPage.tsx</td>
-          <td>Konfiguraci aplikace (workflow, sály, notifikace)</td>
-        </tr>
-        <tr>
-          <td>NotificationOverlay</td>
-          <td>NotificationOverlay.tsx</td>
-          <td>Circular menu pro vytváření notifikací</td>
-        </tr>
-      </table>
++-- app/
+|   +-- page.tsx                    # Hlavni stranka
+|   +-- layout.tsx                  # Root layout s metadata
+|   +-- api/                        # API endpointy
+|   +-- email-preview/              # Preview emailovych sablon
+|   +-- globals.css                 # Globalni styly
++-- components/
+|   +-- App.tsx                     # Hlavni dashboard orchestrator
+|   +-- OperatingRoomsManager.tsx   # Sprava operačních sálů
+|   +-- TimelineModule.tsx          # Casova osa operaci
+|   +-- StatisticsModule.tsx        # Statistiky a reporting
+|   +-- SettingsPage.tsx            # Systemova nastaveni
+|   +-- StaffManager.tsx            # Sprava personálu
+|   +-- ScheduleManager.tsx         # Planovani operaci
+|   +-- CalendarManager.tsx         # Kalendar
+|   +-- NotificationOverlay.tsx     # Notifikacni system
+|   +-- LoginPage.tsx               # Prihlasovaci stranka
+|   +-- statistics/                 # Statisticke komponenty
+|   +-- mobile/                     # Mobilni komponenty
++-- contexts/
+|   +-- AuthContext.tsx             # Autentizacni kontext
+|   +-- WorkflowStatusesContext.tsx # Workflow stavy
++-- lib/
+|   +-- db.ts                       # Databazove operace
+|   +-- supabase.ts                 # Supabase klient
+|   +-- designTokens.ts             # Design system
++-- types.ts                        # TypeScript definice
++-- constants.ts                    # Globalni konstanty
++-- ios/                            # iOS Capacitor projekt
++-- docs/                           # Dokumentace
+    </pre>
+    
+    <h3>2.3 Datovy tok</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-title">1. Uzivatel provede akci</div>
+        <div class="timeline-desc">Kliknuti, zmena stavu, odeslani formulare</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">2. React komponenta zpracuje</div>
+        <div class="timeline-desc">State management, validace, UI update</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">3. Supabase API volani</div>
+        <div class="timeline-desc">INSERT/UPDATE/DELETE s RLS overenim</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">4. Realtime broadcast</div>
+        <div class="timeline-desc">WebSocket notifikace vsem pripojenym klientum</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">5. UI aktualizace</div>
+        <div class="timeline-desc">Automatické prekresleni s animacemi</div>
+      </div>
     </div>
+  </div>
 
-    <!-- 3. DATABASE SCHEMA -->
-    <div class="section" id="3">
-      <h2>3. Databázové schéma</h2>
-
-      <h3>3.1 Přehled tabulek</h3>
-      <table>
+  <!-- SECTION 3: DATABASE -->
+  <div class="section" id="sec3">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Databazove schema</h2>
+    </div>
+    
+    <h3>3.1 Prehled tabulek</h3>
+    <table>
+      <thead>
         <tr>
           <th>Tabulka</th>
-          <th>Účel</th>
-          <th>Klíčová pole</th>
+          <th>Ucel</th>
+          <th>RLS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>operating_rooms</code></td>
+          <td>Informace o operačních salech, stav, rozvrh</td>
+          <td><span class="badge badge-success">Enabled</span></td>
         </tr>
         <tr>
-          <td>operating_rooms</td>
-          <td>Informace o jednotlivých operačních sálech</td>
-          <td>id, name, status, weekly_schedule, operations24h</td>
+          <td><code>room_status_history</code></td>
+          <td>Historie vsech stavu sálů pro statistiky</td>
+          <td><span class="badge badge-success">Enabled</span></td>
         </tr>
         <tr>
-          <td>room_status_history</td>
-          <td>Detailní historie všech stavů sálů (pro statistiky)</td>
-          <td>id, room_id, event_type, duration_seconds, timestamp</td>
+          <td><code>staff</code></td>
+          <td>Evidence zdravotnickeho personálu</td>
+          <td><span class="badge badge-success">Enabled</span></td>
         </tr>
         <tr>
-          <td>notifications_log</td>
-          <td>Log všech odeslaných notifikací (audit trail)</td>
-          <td>id, room_id, category, email, status</td>
+          <td><code>schedules</code></td>
+          <td>Planovane operace a zakroky</td>
+          <td><span class="badge badge-success">Enabled</span></td>
         </tr>
         <tr>
-          <td>workflow_statuses</td>
-          <td>Definice workflow kroků a fází</td>
-          <td>id, title, color, order_index</td>
+          <td><code>shift_schedules</code></td>
+          <td>Smeny personálu</td>
+          <td><span class="badge badge-success">Enabled</span></td>
         </tr>
         <tr>
-          <td>contact_groups</td>
-          <td>Skupiny kontaktů pro notifikace</td>
-          <td>id, name, description</td>
+          <td><code>safety_checklists</code></td>
+          <td>WHO Surgical Safety Checklist</td>
+          <td><span class="badge badge-success">Enabled</span></td>
         </tr>
-      </table>
-
-      <h3>3.2 Detailní popis tabulek</h3>
-
-      <h4>operating_rooms</h4>
-      <p>Hlavní tabulka obsahující aktuální informace o operačních sálech.</p>
-      <pre>
+        <tr>
+          <td><code>workflow_statuses</code></td>
+          <td>Definice workflow fazi</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>departments</code></td>
+          <td>Oddeleni nemocnice</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>equipment</code></td>
+          <td>Vybaveni a pristroje</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>notifications_log</code></td>
+          <td>Log odeslanych notifikaci</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>management_contacts</code></td>
+          <td>Kontakty managementu</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>app_users</code></td>
+          <td>Uzivatele systemu</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>app_settings</code></td>
+          <td>Globalni nastaveni aplikace</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>app_modules</code></td>
+          <td>Konfigurace modulu</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+        <tr>
+          <td><code>devices</code></td>
+          <td>Registrovana zarizeni</td>
+          <td><span class="badge badge-success">Enabled</span></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>3.2 Klicova tabulka: operating_rooms</h3>
+    <pre>
 CREATE TABLE operating_rooms (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   department TEXT,
   status TEXT DEFAULT 'idle',
-  operations24h INTEGER DEFAULT 0,
-  completed_operations INTEGER DEFAULT 0,
-  queueCount INTEGER DEFAULT 0,
-  isEmergency BOOLEAN DEFAULT FALSE,
-  weekly_schedule JSONB DEFAULT '{
-    "monday": {"startHour": 7, "startMinute": 0, "endHour": 19, "endMinute": 0, "enabled": true},
-    "tuesday": {...},
-    ...
-  }',
-  currentProcedure JSONB,
+  current_step_index INTEGER DEFAULT 0,
+  phase_started_at TIMESTAMPTZ,
+  operation_started_at TIMESTAMPTZ,
+  estimated_end_time TIMESTAMPTZ,
+  
+  -- Pocty operaci
+  operations_24h INTEGER DEFAULT 0,
+  queue_count INTEGER DEFAULT 0,
+  completed_operations JSONB,
+  
+  -- Specialni priznaky
+  is_emergency BOOLEAN DEFAULT FALSE,
+  is_locked BOOLEAN DEFAULT FALSE,
+  is_paused BOOLEAN DEFAULT FALSE,
+  is_septic BOOLEAN DEFAULT FALSE,
+  
+  -- Prirazeny personal
+  doctor_id TEXT,
+  nurse_id TEXT,
+  anesthesiologist_id TEXT,
+  current_patient_id TEXT,
+  current_procedure_id TEXT,
+  
+  -- Financni data
+  hourly_operating_cost NUMERIC,
+  
+  -- Rozvrh
+  weekly_schedule JSONB,
   status_history JSONB,
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now()
+  
+  -- Metadata
+  sort_order INTEGER,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
-      </pre>
-
-      <h4>room_status_history</h4>
-      <p>Detailní historická data každé změny stavu sálu. <strong>Toto je nejdůležitější tabulka pro statistiky!</strong></p>
-      <pre>
+    </pre>
+    
+    <h3>3.3 Tabulka historie: room_status_history</h3>
+    <div class="alert alert-info">
+      <div class="alert-icon">&#9432;</div>
+      <div class="alert-content">
+        <h4>Dulezite pro statistiky</h4>
+        <p>Tato tabulka je zakladem vsech statistickych vypoctu. Kazda zmena stavu sálů se zaznamenava.</p>
+      </div>
+    </div>
+    <pre>
 CREATE TABLE room_status_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  room_id UUID NOT NULL REFERENCES operating_rooms(id),
-  event_type TEXT NOT NULL,  -- 'operation_start', 'step_change', 'operation_end'
-  step_name TEXT,            -- Jméno workflow fáze
-  step_index INTEGER,        -- 0, 1, 2, ...
-  duration_seconds INTEGER,  -- Jak dlouho trvala fáze
-  timestamp TIMESTAMP NOT NULL,
+  operating_room_id TEXT NOT NULL REFERENCES operating_rooms(id),
+  event_type TEXT NOT NULL,     -- 'operation_start', 'step_change', 'operation_end'
+  step_name TEXT,               -- Nazev workflow faze
+  step_index INTEGER,           -- Index faze (0, 1, 2, ...)
+  duration_seconds INTEGER,     -- Delka trvani v sekundach
+  timestamp TIMESTAMPTZ NOT NULL,
   metadata JSONB,
-  created_at TIMESTAMP DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE INDEX idx_room_status_history_room_id ON room_status_history(room_id);
-CREATE INDEX idx_room_status_history_timestamp ON room_status_history(timestamp);
-      </pre>
 
-      <h4>notifications_log</h4>
-      <p>Log pro audit trail všech odeslaných notifikací.</p>
-      <pre>
-CREATE TABLE notifications_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  room_id UUID NOT NULL REFERENCES operating_rooms(id),
-  category TEXT NOT NULL,
-  email TEXT,
-  sent_at TIMESTAMP DEFAULT now(),
-  status TEXT DEFAULT 'pending',
-  error_message TEXT,
-  created_at TIMESTAMP DEFAULT now()
-);
-      </pre>
+-- Indexy pro rychle dotazy
+CREATE INDEX idx_room_status_history_room ON room_status_history(operating_room_id);
+CREATE INDEX idx_room_status_history_time ON room_status_history(timestamp);
+CREATE INDEX idx_room_status_history_type ON room_status_history(event_type);
+    </pre>
+  </div>
 
-      <h3>3.3 Práce s weekly_schedule</h3>
-      <p>Každý sál má vlastní rozvrh pracovní doby ve formátu JSONB:</p>
-      <div class="note">
-        <strong>Struktura weekly_schedule:</strong>
-        <pre>
-{
-  "monday": {
-    "startHour": 7,
-    "startMinute": 0,
-    "endHour": 19,
-    "endMinute": 0,
-    "enabled": true
-  },
-  "tuesday": { ... },
-  ...,
-  "sunday": {
-    "startHour": 0,
-    "startMinute": 0,
-    "endHour": 0,
-    "endMinute": 0,
-    "enabled": false
-  }
-}
-        </pre>
-      </div>
-
-      <p>Statistiky automaticky respektují tyto pracovní doby - mimo pracovní dobu se data nezapočítávají.</p>
+  <!-- SECTION 4: MODULES -->
+  <div class="section" id="sec4">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Moduly a komponenty</h2>
     </div>
-
-    <!-- 4. MODULES -->
-    <div class="section" id="4">
-      <h2>4. Moduly a komponenty</h2>
-
-      <h3>4.1 Obecná struktura</h3>
-      <p>Aplikace je rozdělena do čtyř hlavních modulů, které si uživatel může přepínat v navigační lišti.</p>
-
-      <table>
+    
+    <h3>4.1 Prehled modulu</h3>
+    <table>
+      <thead>
         <tr>
           <th>Modul</th>
-          <th>Popis</th>
-          <th>Klíčové funkce</th>
+          <th>Komponenta</th>
+          <th>Funkce</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Operacni saly</strong></td>
+          <td>OperatingRoomsManager.tsx</td>
+          <td>Live monitor sálů, detaily, zmena stavu</td>
         </tr>
         <tr>
-          <td><strong>Sály</strong></td>
-          <td>OperatingRoomsManager.tsx</td>
-          <td>Live monitor všech sálů, detaily, notifikace</td>
+          <td><strong>Casova osa</strong></td>
+          <td>TimelineModule.tsx</td>
+          <td>24h prehled operaci, fazi, planovani</td>
         </tr>
         <tr>
           <td><strong>Statistiky</strong></td>
           <td>StatisticsModule.tsx</td>
-          <td>Grafy, heatmapy, analýza z reálných dat</td>
+          <td>Grafy, heatmapy, KPI, predikce</td>
         </tr>
         <tr>
-          <td><strong>Nastavení</strong></td>
+          <td><strong>Personal</strong></td>
+          <td>StaffManager.tsx</td>
+          <td>Evidence lekaru, sester, dostupnost</td>
+        </tr>
+        <tr>
+          <td><strong>Kalendar</strong></td>
+          <td>CalendarManager.tsx</td>
+          <td>Planovani operaci, rozvrhy</td>
+        </tr>
+        <tr>
+          <td><strong>Nastaveni</strong></td>
           <td>SettingsPage.tsx</td>
-          <td>Konfigurace workflow, sálů, notifikací</td>
+          <td>Konfigurace systemu</td>
         </tr>
         <tr>
-          <td><strong>Dashboard</strong></td>
-          <td>App.tsx</td>
-          <td>Orchestrace, přepínání modulů</td>
+          <td><strong>Management</strong></td>
+          <td>ManagementManager.tsx</td>
+          <td>Kontakty vedeni, notifikace</td>
         </tr>
-      </table>
-
-      <h3>4.2 Key Props a State</h3>
-      <p>Globální state se předává mezi komponentami a obsahuje:</p>
-      <ul>
-        <li><code>rooms: OperatingRoom[]</code> - Všechny operační sály</li>
-        <li><code>workflowSteps: WorkflowStep[]</code> - Definice workflow fází</li>
-        <li><code>settings: AppSettings</code> - Globální nastavení</li>
-        <li><code>isLoading: boolean</code> - Stav načítání</li>
-        <li><code>error: string | null</code> - Chybové zprávy</li>
-      </ul>
-    </div>
-
-    <!-- 5. DASHBOARD -->
-    <div class="section" id="5">
-      <h2>5. Dashboard - Hlavní modul</h2>
-
-      <h3>5.1 Přehled</h3>
-      <p>Dashboard (App.tsx) je hlavní komponentou aplikace. Slouží jako centrální orchestrator, který:</p>
-      <ul>
-        <li>Spravuje globální state (rooms, settings, workflowSteps)</li>
-        <li>Naslouchá realtime změnám v Supabase</li>
-        <li>Přepíná mezi jednotlivými moduly</li>
-        <li>Řídí autentizaci a autorizaci</li>
-        <li>Handleuje error stavy a loading</li>
-      </ul>
-
-      <h3>5.2 Struktura kódu</h3>
-      <pre>
-export const Dashboard: React.FC = () => {
-  const [activeModule, setActiveModule] = useState('rooms');
-  const [rooms, setRooms] = useState<OperatingRoom[]>([]);
-  const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([]);
-  
-  // Načtení dat z databáze
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-  
-  // Realtime subscription
-  useEffect(() => {
-    const subscription = setupRealtimeUpdates(setRooms);
-    return () => subscription?.unsubscribe();
-  }, []);
-  
-  // Render podle aktivního modulu
-  return (
-    &lt;div&gt;
-      {activeModule === 'rooms' && &lt;OperatingRoomsManager /&gt;}
-      {activeModule === 'stats' && &lt;StatisticsModule /&gt;}
-      {activeModule === 'settings' && &lt;SettingsPage /&gt;}
-    &lt;/div&gt;
-  );
-};
-      </pre>
-
-      <h3>5.3 Realtime Subscriptions</h3>
-      <p>Dashboard se přihlašuje k realtime aktualizacím:</p>
-      <pre>
-const setupRealtimeUpdates = (setRooms: (rooms: OperatingRoom[]) => void) => {
-  return supabase
-    .channel('public:operating_rooms')
-    .on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'operating_rooms' },
-      (payload) => {
-        // Aktualizace lokálního stavu
-        setRooms(prev => updateRoomInList(prev, payload.new));
-      }
-    )
-    .subscribe();
-};
-      </pre>
-    </div>
-
-    <!-- 6. OPERATING ROOMS MANAGER -->
-    <div class="section" id="6">
-      <h2>6. OperatingRoomsManager - Správa sálů</h2>
-
-      <h3>6.1 Přehled</h3>
-      <p>OperatingRoomsManager je modul pro reálné monitorování a správu operačních sálů. Umožňuje:</p>
-      <ul>
-        <li>Live view všech sálů s aktuálním stavem</li>
-        <li>Změnu stavu sálu (idle → preparing → procedure → closing)</li>
-        <li>Vytváření notifikací přes circular menu overlay</li>
-        <li>Zobrazení detailního pohledu na jednotlivý sál</li>
-        <li>Timeline aktivit a přechody stavů</li>
-        <li>Filtrování a vyhledávání sálů</li>
-      </ul>
-
-      <h3>6.2 Barvy statusů</h3>
-      <table>
+        <tr>
+          <td><strong>Oddeleni</strong></td>
+          <td>DepartmentsManager.tsx</td>
+          <td>Sprava oddelen nemocnice</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>4.2 Workflow stavy</h3>
+    <table>
+      <thead>
         <tr>
           <th>Status</th>
           <th>Barva</th>
           <th>Popis</th>
         </tr>
+      </thead>
+      <tbody>
         <tr>
-          <td>idle</td>
-          <td>Šedá</td>
-          <td>Sál není v provozu</td>
+          <td><span class="status-dot status-idle"></span>Idle</td>
+          <td>Seda</td>
+          <td>Sal neni v provozu, ceka na dalsi operaci</td>
         </tr>
         <tr>
-          <td>preparing</td>
-          <td>Modrá</td>
-          <td>Příprava pacienta a sálu</td>
+          <td><span class="status-dot status-preparing"></span>Priprava</td>
+          <td>Modra</td>
+          <td>Priprava pacienta, sterilizace, anestezie</td>
         </tr>
         <tr>
-          <td>procedure</td>
-          <td>Zelená</td>
-          <td>Operace je v průběhu</td>
+          <td><span class="status-dot status-procedure"></span>Operace</td>
+          <td>Zelena</td>
+          <td>Probiha chirurgicky vykon</td>
         </tr>
         <tr>
-          <td>closing</td>
-          <td>Oranžová</td>
-          <td>Ukončování operace</td>
+          <td><span class="status-dot status-closing"></span>Sesivani</td>
+          <td>Oranzova</td>
+          <td>Zavreni ran, priprava na prevoz</td>
         </tr>
         <tr>
-          <td>maintenance</td>
-          <td>Červená</td>
-          <td>Údržba a čištění</td>
+          <td><span class="status-dot status-maintenance"></span>Udrzba</td>
+          <td>Cervena</td>
+          <td>Uklid, dezinfekce, sterilizace nastroju</td>
         </tr>
-      </table>
-
-      <h3>6.3 Detailní pohled na sál</h3>
-      <p>Kliknutím na sál se otevře detailní panel (RoomDetailPanel) obsahující:</p>
-      <ul>
-        <li><strong>Timeline:</strong> Vizualizace jednotlivých fází operace</li>
-        <li><strong>Statistika sálu:</strong> Operace, vytížení, fronta pacientů</li>
-        <li><strong>Měsíční data:</strong> Kumulativní graf operací za 30 dní</li>
-        <li><strong>Radar graf:</strong> Multidimenzionální analýza efektivity (využití, operace, průchodnost, aktivita)</li>
-        <li><strong>Historie akcí:</strong> Seznam nedávných změn stavu</li>
-      </ul>
-    </div>
-
-    <!-- 7. NOTIFICATIONS -->
-    <div class="section" id="7">
-      <h2>7. Notifikační systém</h2>
-
-      <h3>7.1 Přehled</h3>
-      <p>Notifikační systém umožňuje odesílání upozornění zdravotnickému personálu v případě problémů nebo změn v operačních sálech.</p>
-
-      <h3>7.2 Kategorie notifikací</h3>
-      <table>
-        <tr>
-          <th>Kategorie</th>
-          <th>Barva</th>
-          <th>Účel</th>
-          <th>Příjemce</th>
-        </tr>
-        <tr>
-          <td>Pozdní příchod operatéra</td>
-          <td>Červená</td>
-          <td>Upozornit na pozdní příchod chirurga</td>
-          <td>Vedoucí oddělení</td>
-        </tr>
-        <tr>
-          <td>Pozdní příchod ARO</td>
-          <td>Oranžová</td>
-          <td>Upozornit na pozdní příchod anesteziologa</td>
-          <td>Vedoucí ARO</td>
-        </tr>
-        <tr>
-          <td>Pozdní příjezd z oddělení</td>
-          <td>Modrá</td>
-          <td>Upozornit na zpoždění přesunu pacienta</td>
-          <td>Koordinátor</td>
-        </tr>
-        <tr>
-          <td>Nepřipravený pacient</td>
-          <td>Žlutá</td>
-          <td>Upozornit na nepřipravenost pacienta</td>
-          <td>Zdravotní sestra</td>
-        </tr>
-        <tr>
-          <td>Jiný důvod</td>
-          <td>Fialová</td>
-          <td>Ostatní problémy a upozornění</td>
-          <td>Definuje uživatel</td>
-        </tr>
-      </table>
-
-      <h3>7.3 Circular menu overlay</h3>
-      <p>Notifikace se vytváří přes circular menu, které se zobrazí při kliknutí na sál v režimu OperatingRoomsManager. Menu obsahuje 5 možností pro různé kategorie notifikací.</p>
-
-      <h3>7.4 Tok notifikace</h3>
-      <ol>
-        <li>Uživatel klikne na sál a otevře se notifikační menu</li>
-        <li>Vybere kategorii notifikace</li>
-        <li>Vybere skupinu příjemců (podle nastavení)</li>
-        <li>Notifikace se uloží do <code>notifications_log</code></li>
-        <li>API endpoint zavolá Resend API</li>
-        <li>Email se pošle na email adresy příjemců</li>
-        <li>Log zůstává v databázi pro audit trail</li>
-      </ol>
-
-      <h3>7.5 Resend Email API</h3>
-      <p>Email notifikace se odesílají přes Resend API s HTML šablonami.</p>
-      <pre>
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-await resend.emails.send({
-  from: 'notifications@hospital.com',
-  to: recipients,
-  subject: 'Operační sál - Kritická notifikace',
-  html: generateEmailHTML(notification)
-});
-      </pre>
-    </div>
-
-    <!-- 8. STATISTICS MODULE -->
-    <div class="section" id="8">
-      <h2>8. StatisticsModule - Statistiky a reporting</h2>
-
-      <h3>8.1 Důležité: Pouze reálná data!</h3>
-      <div class="success">
-        <strong>Všechny statistiky v tomto modulu se počítají VÝHRADNĚ z reálných dat uložených v databázi (tabulka room_status_history). Nepoužívají se žádná mockovaná, statická ani předpokládaná data.</strong>
+      </tbody>
+    </table>
+    
+    <h3>4.3 Statisticke taby</h3>
+    <div class="card-grid">
+      <div class="feature-card">
+        <div class="feature-title">Saly (RoomsTab)</div>
+        <div class="feature-desc">Vyuziti jednotlivych sálů, operace za 24h, scatterplot efektivity.</div>
       </div>
-
-      <h3>8.2 Sekce "Sály"</h3>
-      <ul>
-        <li><strong>Operace za 24h:</strong> Počet operací na jednotlivý sál za poslední 24 hodin</li>
-        <li><strong>Využití (%):</strong> Procento času, kdy sál aktivně provádí operaci</li>
-        <li><strong>Fronta:</strong> Počet pacientů čekajících na operaci</li>
-        <li><strong>Scatterplot:</strong> Graf vztahu mezi počtem operací a vyu
-žitím na sál</li>
-      </ul>
-
-      <h3>8.3 Sekce "Fáze"</h3>
-      <ul>
-        <li><strong>Průměrné trvání fází:</strong> Z reálných dat (v minutách). Počítá se z tabulky room_status_history kde duration_seconds se převede na minuty</li>
-        <li><strong>Procentuální zastoupení:</strong> Jak velkou část času zaberá každá fáze (Příprava, Chirurgický výkon, Sešívání, Údržba)</li>
-        <li><strong>Kumulativní graf:</strong> Příspěvek jednotlivých fází k celkovému času operace</li>
-        <li><strong>Heatmapa fází:</strong> Procentuální zastoupení fází na jednotlivý sál</li>
-      </ul>
-
-      <h3>8.4 Sekce "Heatmapa"</h3>
-      <ul>
-        <li><strong>Heatmapa den × hodina:</strong> Vizualizace vytížení v jednotlivých hodinách a dnech (0-24h)</li>
-        <li><strong>Denní průměr:</strong> Průměrné vytížení dle dne v týdnu (pondělí-neděle)</li>
-        <li><strong>Hodinový průběh:</strong> Vytížení v jednotlivých hodinách (pracovní vs. víkend)</li>
-        <li><strong>Statistiky:</strong> Špička, minimum, průměr, pracovní hodiny (respektují weekly_schedule)</li>
-      </ul>
-
-      <h3>8.5 Filtrace dat podle období</h3>
-      <table>
-        <tr>
-          <th>Období</th>
-          <th>Rozsah</th>
-          <th>Seskupení</th>
-          <th>Pracovní doby</th>
-        </tr>
-        <tr>
-          <td>Den</td>
-          <td>Posledních 24 hodin</td>
-          <td>Po hodinách (0-24)</td>
-          <td>Dle weekly_schedule daného sálu</td>
-        </tr>
-        <tr>
-          <td>Týden</td>
-          <td>Posledních 7 dní</td>
-          <td>Po dnech (Po-Ne)</td>
-          <td>Dle weekly_schedule pro každý den</td>
-        </tr>
-        <tr>
-          <td>Měsíc</td>
-          <td>Posledních 30 dní</td>
-          <td>Po dnech měsíce (1-30)</td>
-          <td>Dle weekly_schedule</td>
-        </tr>
-        <tr>
-          <td>Rok</td>
-          <td>Posledních 12 měsíců</td>
-          <td>Po měsících (Led-Pro)</td>
-          <td>Dle weekly_schedule</td>
-        </tr>
-      </table>
-
-      <h3>8.6 Klíčové helper funkce</h3>
-      <pre>
-// Výpočet průměrného trvání fází z reálných dat
-calculateAvgStepDurations(
-  history: StatusHistoryRow[], 
-  workflowSteps: { title: string }[]
-): number[]
-
-// Výpočet workflow distribuce (% zastoupení)
-calculateWorkflowDistribution(
-  history: StatusHistoryRow[],
-  workflowSteps: { title: string; color: string }[]
-): { title, color, pct, totalMinutes }[]
-
-// Výpočet per-room distribuci
-calculateRoomWorkflowDistribution(
-  history: StatusHistoryRow[],
-  rooms: OperatingRoom[],
-  workflowSteps: { title: string }[]
-): Record<string, Record<string, number>>
-
-// Budování heatmapy z reálných dat
-buildHeatmapFromHistory(
-  history: StatusHistoryRow[], 
-  rooms: OperatingRoom[]
-): number[][] // 7x24 matice
-      </pre>
-
-      <h3>8.7 Počítání pracovní doby</h3>
-      <p>Funkce <code>dayMinutes(room)</code> počítá pracovní minuty daného dne v týdnu z weekly_schedule:</p>
-      <pre>
-// Pro UPS sály (emergency): 24h × 60 = 1440 minut
-// Pro normální sály: (endHour - startHour) × 60 - odpočet startMinute, endMinute
-
-// Příklad:
-// Pondělí: 7:00 - 19:00 = 12 hodin = 720 minut
-// Sobota: disabled = 0 minut
-// Neděle (UPS): 0:00 - 24:00 = 1440 minut
-      </pre>
-    </div>
-
-    <!-- 9. SETTINGS PAGE -->
-    <div class="section" id="9">
-      <h2>9. SettingsPage - Nastavení</h2>
-
-      <h3>9.1 Přehled</h3>
-      <p>SettingsPage je modul pro konfiguraci celé aplikace. Umožňuje správcům nastavit všechny aspekty systému.</p>
-
-      <h3>9.2 Sekce nastavení</h3>
-
-      <h4>Workflow kroky</h4>
-      <ul>
-        <li>Vytváření/editace/mazání workflow fází</li>
-        <li>Nastavení barvy pro každou fázi</li>
-        <li>Definice odpovědné osoby (Zdravotní sestra, Chirurg, apod.)</li>
-        <li>Pořadí v procesu (0, 1, 2, ...)</li>
-        <li>Zahrnutí do statistik (ano/ne)</li>
-      </ul>
-
-      <h4>Operační sály</h4>
-      <ul>
-        <li>Přidávání nových sálů</li>
-        <li>Úprava informací (název, oddělení)</li>
-        <li>Nastavení týdenního rozvrhu pracovní doby</li>
-        <li>Označení jako nouzový sál (UPS - 24/7)</li>
-        <li>Mazání sálů</li>
-      </ul>
-
-      <h4>Kontakty a notifikace</h4>
-      <ul>
-        <li>Vytváření skupin kontaktů (Vedoucí, Zdravotní sestry, apod.)</li>
-        <li>Přidávání email adres do skupin</li>
-        <li>Nastavení, která skupina se notifikuje pro jakou kategorii</li>
-      </ul>
-
-      <h4>Kritéria notifikací</h4>
-      <ul>
-        <li>Pozdní příchod operatéra: Za jak dlouho po plánované době notifikovat?</li>
-        <li>Pozdní příchod anesteziologa: Nastavitelný čas</li>
-        <li>Pozdní příjezd z oddělení: Nastavitelný čas</li>
-        <li>Nepřipravený pacient: Nastavitelný čas</li>
-      </ul>
-
-      <h3>9.3 Uložení nastavení</h3>
-      <p>Všechna nastavení se ukládají do databáze:
-      </p>
-      <ul>
-        <li><code>operating_rooms</code> - informace o sálech a weekly_schedule</li>
-        <li><code>workflow_statuses</code> - definice workflow kroků</li>
-        <li><code>contact_groups</code> - skupiny kontaktů</li>
-      </ul>
-    </div>
-
-    <!-- 10. API -->
-    <div class="section" id="10">
-      <h2>10. API a datové operace</h2>
-
-      <h3>10.1 Databázové funkce (lib/db.ts)</h3>
-
-      <h4>Operační sály</h4>
-      <pre>
-// Načíst všechny sály
-async fetchOperatingRooms(filter?: RoomFilter): Promise<OperatingRoom[]>
-
-// Aktualizovat stav sálu
-async updateRoomStatus(roomId: string, status: RoomStatus): Promise<void>
-
-// Aktualizovat počet operací za 24h
-async updateRoomOperationCount(roomId: string, count: number): Promise<void>
-
-// Aktualizovat pracovní rozvrh
-async updateRoomSchedule(roomId: string, schedule: WeeklySchedule): Promise<void>
-
-// Vytvořit nový sál
-async createOperatingRoom(room: Omit<OperatingRoom, 'id'>): Promise<OperatingRoom>
-
-// Smazat sál
-async deleteOperatingRoom(roomId: string): Promise<void>
-      </pre>
-
-      <h4>Historické data</h4>
-      <pre>
-// Načíst historii stavů
-async fetchStatusHistory(filter: {
-  roomId?: string
-  fromDate: Date
-  toDate: Date
-  eventTypes?: string[]
-  limit?: number
-}): Promise<StatusHistoryRow[]>
-
-// Vložit nový event do historie
-async insertStatusHistoryEvent(event: StatusHistoryRow): Promise<void>
-
-// Agregace dat pro statistiky
-async getAggregatedStats(period: 'day' | 'week' | 'month' | 'year'): Promise<AggregatedStats>
-      </pre>
-
-      <h4>Notifikace</h4>
-      <pre>
-// Poslat notifikaci
-async sendNotification(notification: NotificationRequest): Promise<void>
-
-// Načíst historii notifikací
-async fetchNotificationHistory(filter?: NotificationFilter): Promise<Notification[]>
-
-// Vložit do logu
-async logNotification(log: NotificationLog): Promise<void>
-      </pre>
-
-      <h4>Realtime subscriptions</h4>
-      <pre>
-// Naslouchat změnám sálů
-subscribeToRoomChanges(callback: (change: RealtimeChange) => void): Subscription
-
-// Naslouchat změnám historie
-subscribeToHistoryChanges(callback: (change: RealtimeChange) => void): Subscription
-
-// Odpojit od realtime
-unsubscribeAll(): void
-      </pre>
-
-      <h3>10.2 API endpointy (Next.js)</h3>
-
-      <h4>POST /api/notifications</h4>
-      <p><strong>Odesílání notifikace emailem</strong></p>
-      <p>Request body:</p>
-      <pre>
-{
-  roomId: string
-  category: "late_surgeon" | "late_anesthesiologist" | "late_arrival" | "patient_not_ready" | "other"
-  message: string
-  recipients: string[] // email adresy
-  metadata?: object
-}
-      </pre>
-
-      <h4>GET /api/statistics?period=day|week|month|year</h4>
-      <p><strong>Načtení statistických dat</strong></p>
-      <p>Response:</p>
-      <pre>
-{
-  operationsByDay: Record<string, number>
-  averageUtilization: number
-  peakHour: number
-  roomStats: Record<roomId, RoomStats>
-  ...
-}
-      </pre>
-
-      <h4>PUT /api/rooms/:id</h4>
-      <p><strong>Aktualizace stavu sálu</strong></p>
-      <p>Request body:</p>
-      <pre>
-{
-  status?: RoomStatus
-  operations24h?: number
-  queueCount?: number
-  weekly_schedule?: WeeklySchedule
-}
-      </pre>
-    </div>
-
-    <!-- 11. WORKFLOWS -->
-    <div class="section" id="11">
-      <h2>11. Pracovní procesy a stavy</h2>
-
-      <h3>11.1 Workflow stavy operačního sálu</h3>
-      <p>Každý sál prochází definovanými fázemi během operace:</p>
-
-      <div class="diagram">
-        idle (Volný)
-          ↓
-        preparing (Příprava sálu a pacienta)
-          ↓
-        procedure (Chirurgický výkon)
-          ↓
-        closing (Sešívání a epilog)
-          ↓
-        maintenance (Čištění a sterilizace)
-          ↓
-        idle (Volný - připraven na další operaci)
+      <div class="feature-card">
+        <div class="feature-title">Faze (PhasesTab)</div>
+        <div class="feature-desc">Prumerne trvani fazi, procentualni zastoupeni, heatmapa.</div>
       </div>
-
-      <h3>11.2 Detailní popis fází</h3>
-
-      <h4>Idle (Volný)</h4>
-      <ul>
-        <li>Sál není v provozu</li>
-        <li>Je připraven na další operaci</li>
-        <li>Barva: Šedá</li>
-      </ul>
-
-      <h4>Preparing (Příprava)</h4>
-      <ul>
-        <li>Doba: 15-30 minut (configurable)</li>
-        <li>Aktivity: Příprava pacienta, sterilizace, anestézie</li>
-        <li>Odpovědnost: Zdravotní sestra, Anestezioloд</li>
-        <li>Barva: Modrá</li>
-      </ul>
-
-      <h4>Procedure (Chirurgický výkon)</h4>
-      <ul>
-        <li>Doba: Variabilní dle typu operace (30-300 minut)</li>
-        <li>Aktivity: Samotný chirurgický zákrok</li>
-        <li>Odpovědnost: Chirurg + tým</li>
-        <li>Barva: Zelená</li>
-        <li><strong>Důležité:</strong> Tato fáze se počítá jako "Utilization" v statistikách</li>
-      </ul>
-
-      <h4>Closing (Sešívání)</h4>
-      <ul>
-        <li>Doba: 10-20 minut</li>
-        <li>Aktivity: Zavření ran, příprava na převoz</li>
-        <li>Odpovědnost: Chirurg, Zdravotní sestra</li>
-        <li>Barva: Oranžová</li>
-      </ul>
-
-      <h4>Maintenance (Údržba)</h4>
-      <ul>
-        <li>Doba: 15-45 minut</li>
-        <li>Aktivity: Úklid, dezinfekce, sterilizace nástrojů</li>
-        <li>Odpovědnost: Údržbový personál</li>
-        <li>Barva: Červená</li>
-      </ul>
-
-      <h3>11.3 Notifikační stavy</h3>
-
-      <h4>Trigger: Pozdní příchod operatéra</h4>
-      <ul>
-        <li><strong>Podmínka:</strong> Operátor se nedostavil v čas (nastavitelný offset)</li>
-        <li><strong>Akce:</strong> Email notifikace vedoucího oddělení</li>
-        <li><strong>Záznam:</strong> notifications_log s kategoriím "late_surgeon"</li>
-      </ul>
-
-      <h4>Trigger: Nepřipravený pacient</h4>
-      <ul>
-        <li><strong>Podmínka:</strong> Pacient není připraven v čase</li>
-        <li><strong>Akce:</strong> Email notifikace zdravotní sestry</li>
-        <li><strong>Záznam:</strong> notifications_log s kategoriím "patient_not_ready"</li>
-      </ul>
-
-      <h4>Trigger: Pozdní příjezd z oddělení</h4>
-      <ul>
-        <li><strong>Podmínka:</strong> Přesun pacienta z oddělení zpožďuje operaci</li>
-        <li><strong>Akce:</strong> Email notifikace koordinátora</li>
-        <li><strong>Záznam:</strong> notifications_log s kategoriím "late_arrival"</li>
-      </ul>
-    </div>
-
-    <!-- 12. DEPLOYMENT -->
-    <div class="section" id="12">
-      <h2>12. Nasazení a údržba</h2>
-
-      <h3>12.1 Vývojové prostředí</h3>
-      <pre>
-# Klonování repozitáře
-git clone https://github.com/Medrox-company/operatingroommanagement.git
-cd operatingroommanagement
-
-# Instalace závislostí
-npm install
-
-# Nastavení environment proměnných
-cp .env.example .env.local
-# Vyplnit: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, RESEND_API_KEY
-
-# Spuštění dev serveru
-npm run dev
-
-# Otevření v prohlížeči
-# http://localhost:3000
-      </pre>
-
-      <h3>12.2 Environment proměnné</h3>
-      <pre>
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Resend (Email)
-RESEND_API_KEY=re_xxxxxxxxxxxxx
-
-# Vercel
-VERCEL_URL=your-vercel-url
-      </pre>
-
-      <h3>12.3 Supabase nastavení</h3>
-
-      <h4>Inicializace databáze</h4>
-      <p>Spustit SQL migrations z Supabase SQL editor pro vytvoření všech tabulek a indexů.</p>
-
-      <h4>Realtime subscriptions</h4>
-      <ul>
-        <li>Aktivovat realtime pro tabulku <code>operating_rooms</code></li>
-        <li>Aktivovat realtime pro tabulku <code>room_status_history</code></li>
-      </ul>
-
-      <h4>RLS politiky</h4>
-      <p>Nastavit Row Level Security politiky podle role uživatele.</p>
-
-      <h3>12.4 Vercel nasazení</h3>
-      <pre>
-# Připojit repozitář k Vercelu
-vercel link
-
-# Nastavit environment proměnné v Vercel dashboardu
-# Settings → Environment Variables
-
-# Deploy do produkce
-vercel --prod
-      </pre>
-
-      <h3>12.5 Backupy</h3>
-      <ul>
-        <li>Supabase automaticky backupuje databázi denně</li>
-        <li>Point-in-time recovery dostupné</li>
-        <li>Doporučuje se manuální backup jednou týdně</li>
-      </ul>
-
-      <h3>12.6 Údržba</h3>
-
-      <h4>Čištění staré historie</h4>
-      <pre>
--- Smazání záznamů starších než 1 rok
-DELETE FROM room_status_history
-WHERE created_at < NOW() - INTERVAL '1 year';
-
--- Optimalizace tabulky
-VACUUM ANALYZE operating_rooms;
-      </pre>
-
-      <h4>Update aplikace</h4>
-      <pre>
-git pull origin main
-npm install
-npm run build
-# Deploy je automatický přes Vercel
-      </pre>
-    </div>
-
-    <!-- 13. TROUBLESHOOTING -->
-    <div class="section" id="13">
-      <h2>13. Řešení problémů</h2>
-
-      <h3>13.1 Realtime updates se nezobrazují</h3>
-      <div class="warning">
-        <strong>Problém:</strong> Změny stavu sálů se neaktualizují v reálném čase.
+      <div class="feature-card">
+        <div class="feature-title">Efektivita (EfficiencyTab)</div>
+        <div class="feature-desc">Turnover time, vyuziti času, benchmarking.</div>
       </div>
-      <ul>
-        <li>Ověřit, že realtime je aktivní v Supabase dashboardu</li>
-        <li>Zkontrolovat console.log pro chyby připojení</li>
-        <li>Ověřit síťové připojení a CORS nastavení</li>
-        <li>Restartovat dev server</li>
-      </ul>
-
-      <h3>13.2 Notifikace se neposílají</h3>
-      <div class="warning">
-        <strong>Problém:</strong> Email notifikace se neposílají příjemcům.
+      <div class="feature-card">
+        <div class="feature-title">Personal (StaffTab)</div>
+        <div class="feature-desc">Vytizenost lekaru, sester, dostupnost.</div>
       </div>
-      <ul>
-        <li>Ověřit RESEND_API_KEY v environment proměnných</li>
-        <li>Zkontrolovat, zda nejsou překročeny limity Resend API</li>
-        <li>Ověřit, že email adresy jsou validní</li>
-        <li>Podívat se na error logy v Vercel dashboardu</li>
-      </ul>
-
-      <h3>13.3 Statistiky se nezměnily při filtrování</h3>
-      <div class="warning">
-        <strong>Problém:</strong> Statistiky se zobrazují stejně bez ohledu na zvolené období.
+      <div class="feature-card">
+        <div class="feature-title">Finance (FinanceTab)</div>
+        <div class="feature-desc">Naklady na operace, revenue, ROI.</div>
       </div>
-      <ul>
-        <li>Zkontrolovat, že se data zapisují do room_status_history</li>
-        <li>Ověřit datumové filtry - jsou data v daném rozsahu?</li>
-        <li>Zkontrolovat weekly_schedule - je nastaven správně?</li>
-        <li>Zkontrolovat dev tools → Network → fetchStatusHistory API call</li>
-      </ul>
-
-      <h3>13.4 TypeError: Cannot read property weekly_schedule</h3>
-      <div class="warning">
-        <strong>Problém:</strong> Chyba při přístupu k weekly_schedule.
+      <div class="feature-card">
+        <div class="feature-title">Predikce (ForecastTab)</div>
+        <div class="feature-desc">AI predikce vytizeni, trendy, scenare.</div>
       </div>
-      <ul>
-        <li>Ověřit, že operační sál má nastavenou weekly_schedule</li>
-        <li>Zkontrolovat, že DEFAULT_WEEKLY_SCHEDULE je importován</li>
-        <li>Ověřit, že struktura obsahuje všechny 7 dní</li>
-      </ul>
-
-      <h3>13.5 Performance problémy - pomalé statistiky</h3>
-      <div class="warning">
-        <strong>Problém:</strong> Načítání statistik trvá dlouho.
+      <div class="feature-card">
+        <div class="feature-title">Bezpečnost (SafetyTab)</div>
+        <div class="feature-desc">Kompletnost checklistu, incidenty.</div>
       </div>
-      <ul>
-        <li>Ověřit indexy na room_id a timestamp v room_status_history</li>
-        <li>Zvážit archivaci starších dat (>1 roku)</li>
-        <li>Zvýšit limit dotazu nebo implementovat pagination</li>
-      </ul>
-
-      <h3>13.6 Neoprávněný přístup k datům</h3>
-      <div class="warning">
-        <strong>Problém:</strong> Chyba autentizace nebo "permission denied".
+      <div class="feature-card">
+        <div class="feature-title">Vybaveni (EquipmentTab)</div>
+        <div class="feature-desc">Dostupnost pristroju, udrzba.</div>
       </div>
-      <ul>
-        <li>Ověřit RLS politiky v Supabase</li>
-        <li>Zkontrolovat, že token je validní</li>
-        <li>Ověřit role uživatele a oprávnění</li>
-        <li>Restartovat autentizaci</li>
-      </ul>
-
-      <h3>13.7 Debug nástroje</h3>
-      <ul>
-        <li><strong>Supabase Studio:</strong> SQL editor a data browser</li>
-        <li><strong>Browser DevTools:</strong> Console, Network, Application tabs</li>
-        <li><strong>React DevTools:</strong> Component profiler a state inspection</li>
-        <li><strong>Vercel Analytics:</strong> Performance monitoring a error tracking</li>
-      </ul>
     </div>
   </div>
 
-  <footer>
-    <p>© 2026 Operating Room Management System. Všechna práva vyhrazena.</p>
-    <p>Tato dokumentace je určena pro interní použití. Kopírování bez souhlasu je zakázáno.</p>
-    <p style="margin-top: 20px; font-size: 12px;">
-      <strong>Jak otevřít v PDF:</strong> V prohlížeči stiskněte Ctrl+P (nebo Cmd+P), vyberte "Uložit jako PDF" a uložte soubor.
-    </p>
-  </footer>
+  <!-- SECTION 5: MDR CLASSIFICATION -->
+  <div class="section" id="sec5">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Klasifikace softwaru (MDR)</h2>
+    </div>
+    
+    <h3>5.1 Urceni klasifikace dle MDR 2017/745</h3>
+    <div class="alert alert-warning">
+      <div class="alert-icon">&#9888;</div>
+      <div class="alert-content">
+        <h4>Klasifikace: Třída IIa</h4>
+        <p>Software jako zdravotnicsky prostredek (SaMD) urceny pro podporu klinickych rozhodnuti v operacnim prostredi.</p>
+      </div>
+    </div>
+    
+    <h3>5.2 Pravidla klasifikace</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Pravidlo</th>
+          <th>Aplikace</th>
+          <th>Vysledek</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pravidlo 11</td>
+          <td>Software poskytujici informace pro klinicka rozhodnuti</td>
+          <td>Třída IIa</td>
+        </tr>
+        <tr>
+          <td>Ucel pouziti</td>
+          <td>Monitorovani a koordinace operačních zakroku</td>
+          <td>Zdravotnicka funkce</td>
+        </tr>
+        <tr>
+          <td>Rizikovy profil</td>
+          <td>Stredni riziko - neprimý vliv na pacienta</td>
+          <td>Odpovida IIa</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>5.3 Regulační pozadavky</h3>
+    <ul>
+      <li><strong>CE znaceni</strong> - Povinne pro uvedeni na trh EU</li>
+      <li><strong>QMS (ISO 13485)</strong> - System managementu kvality</li>
+      <li><strong>Technická dokumentace</strong> - Dle Annex II a III MDR</li>
+      <li><strong>Klinicke hodnoceni</strong> - Dle Annex XIV MDR</li>
+      <li><strong>Post-market surveillance</strong> - Kontinualni sledování</li>
+      <li><strong>UDI</strong> - Unikatni identifikator zarizeni</li>
+    </ul>
+    
+    <h3>5.4 Intended Purpose</h3>
+    <div class="card">
+      <p><strong>Ucel pouziti:</strong> Operating Room Management System je software urceny pro podporu koordinace a monitorovani operačních sálů ve zdravotnických zařízeních. System umožňuje:</p>
+      <ul>
+        <li>Real-time sledování stavu operačních sálů</li>
+        <li>Koordinaci zdravotnickeho personálu</li>
+        <li>Spravu workflow operačních zakroku</li>
+        <li>Generovani statistik a analytickych reportu</li>
+        <li>Notifikaci pri kritickych stavech</li>
+      </ul>
+      <p><strong>Cilova skupina:</strong> Zdravotnicky personal (chirurgove, anesteziologove, sestry, koordinatori)</p>
+      <p><strong>Prostredi pouziti:</strong> Nemocnice, chirurgicka centra, ambulantni operacni saly</p>
+    </div>
+  </div>
+
+  <!-- SECTION 6: RISK MANAGEMENT -->
+  <div class="section" id="sec6">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2>Řízení rizik (ISO 14971)</h2>
+    </div>
+    
+    <h3>6.1 Proces rizeni rizik</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-title">Identifikace rizik</div>
+        <div class="timeline-desc">Analyza vsech potencialnich nebezpeci a jejich pricin</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Odhad rizik</div>
+        <div class="timeline-desc">Urceni pravdepodobnosti a zavaznosti nasledku</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Hodnoceni rizik</div>
+        <div class="timeline-desc">Porovnani s kriterii prijatelnosti</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Řízení rizik</div>
+        <div class="timeline-desc">Implementace opatření pro snizeni rizik</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Hodnoceni zbytkoveho rizika</div>
+        <div class="timeline-desc">Overeni efektivity opatření</div>
+      </div>
+    </div>
+    
+    <h3>6.2 Identifikovana rizika</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Riziko</th>
+          <th>Zavaznost</th>
+          <th>Pravdepodobnost</th>
+          <th>Opatreni</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>R-001</td>
+          <td>Vypadek realtime aktualizaci</td>
+          <td><span class="badge badge-warning">Stredni</span></td>
+          <td>Nizka</td>
+          <td>Automatické obnovovani, offline cache</td>
+        </tr>
+        <tr>
+          <td>R-002</td>
+          <td>Nespravne zobrazeni stavu sálů</td>
+          <td><span class="badge badge-danger">Vysoka</span></td>
+          <td>Velmi nizka</td>
+          <td>Validace dat, audit log</td>
+        </tr>
+        <tr>
+          <td>R-003</td>
+          <td>Selhani notifikacniho systemu</td>
+          <td><span class="badge badge-warning">Stredni</span></td>
+          <td>Nizka</td>
+          <td>Redundantni kanaly, retry logika</td>
+        </tr>
+        <tr>
+          <td>R-004</td>
+          <td>Neopravneny pristup k datum</td>
+          <td><span class="badge badge-danger">Vysoka</span></td>
+          <td>Nizka</td>
+          <td>RLS, autentizace, sifrovani</td>
+        </tr>
+        <tr>
+          <td>R-005</td>
+          <td>Ztrata dat historie</td>
+          <td><span class="badge badge-warning">Stredni</span></td>
+          <td>Velmi nizka</td>
+          <td>Automatické zalohy, replikace</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>6.3 Matice rizik</h3>
+    <p>Matice pravdepodobnosti vs. zavaznosti pro hodnoceni prijatelnosti rizik:</p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Zanedbatelna</th>
+            <th>Nizka</th>
+            <th>Stredni</th>
+            <th>Vysoka</th>
+            <th>Kriticka</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Casta</strong></td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-medium">ALARP</td>
+            <td class="risk-high">Neprijatelne</td>
+            <td class="risk-high">Neprijatelne</td>
+            <td class="risk-high">Neprijatelne</td>
+          </tr>
+          <tr>
+            <td><strong>Pravdepodobna</strong></td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-medium">ALARP</td>
+            <td class="risk-medium">ALARP</td>
+            <td class="risk-high">Neprijatelne</td>
+            <td class="risk-high">Neprijatelne</td>
+          </tr>
+          <tr>
+            <td><strong>Obcasna</strong></td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-medium">ALARP</td>
+            <td class="risk-medium">ALARP</td>
+            <td class="risk-high">Neprijatelne</td>
+          </tr>
+          <tr>
+            <td><strong>Vzacna</strong></td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-medium">ALARP</td>
+            <td class="risk-medium">ALARP</td>
+          </tr>
+          <tr>
+            <td><strong>Nepravdepodobna</strong></td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-low">Prijatelne</td>
+            <td class="risk-medium">ALARP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 7: IEC 62304 -->
+  <div class="section" id="sec7">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2>Dokumentace softwaru (IEC 62304)</h2>
+    </div>
+    
+    <h3>7.1 Klasifikace bezpecnosti softwaru</h3>
+    <div class="alert alert-info">
+      <div class="alert-icon">&#9432;</div>
+      <div class="alert-content">
+        <h4>Software Safety Class: B</h4>
+        <p>Software může způsobit zranění, ale ne smrt nebo vážné zranění. Požadovaný stredni úroveň dokumentace a testovani.</p>
+      </div>
+    </div>
+    
+    <h3>7.2 Softwarovy vyvojovy proces</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Faze</th>
+          <th>Aktivita</th>
+          <th>Vystup</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Planovani</td>
+          <td>Definice vyvojoveho planu</td>
+          <td>Software Development Plan</td>
+        </tr>
+        <tr>
+          <td>Pozadavky</td>
+          <td>Analyza a specifikace pozadavku</td>
+          <td>Software Requirements Specification</td>
+        </tr>
+        <tr>
+          <td>Architektura</td>
+          <td>Navrh architektury systemu</td>
+          <td>Software Architecture Document</td>
+        </tr>
+        <tr>
+          <td>Implementace</td>
+          <td>Kodovani a unit testy</td>
+          <td>Zdrojovy kod, Unit test reports</td>
+        </tr>
+        <tr>
+          <td>Integrace</td>
+          <td>Integracni testovani</td>
+          <td>Integration Test Report</td>
+        </tr>
+        <tr>
+          <td>Verifikace</td>
+          <td>Systemove testovani</td>
+          <td>System Test Report</td>
+        </tr>
+        <tr>
+          <td>Validace</td>
+          <td>Validace proti pozadavkum</td>
+          <td>Validation Report</td>
+        </tr>
+        <tr>
+          <td>Release</td>
+          <td>Priprava na vydani</td>
+          <td>Release Notes, User Manual</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>7.3 Trasovatelnost pozadavku</h3>
+    <p>Kazdy pozadavek je trasovatelny od specifikace az po test:</p>
+    <div class="diagram">
+User Need --> System Requirement --> Software Requirement --> Design --> Code --> Test --> Validation
+    |              |                       |                    |        |       |         |
+    +-- UN-xxx     +-- SYS-xxx             +-- SWR-xxx          +-- DES  +-- SRC +-- TC    +-- VR
+    </div>
+    
+    <h3>7.4 Konfiguracni management</h3>
+    <ul>
+      <li><strong>Version Control:</strong> Git (GitHub)</li>
+      <li><strong>Branching Strategy:</strong> GitFlow (main, develop, feature/*)</li>
+      <li><strong>Code Review:</strong> Pull Request s min. 1 reviewer</li>
+      <li><strong>CI/CD:</strong> Vercel automaticke deploymenty</li>
+      <li><strong>Artifact Storage:</strong> GitHub Releases</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 8: CLINICAL EVALUATION -->
+  <div class="section" id="sec8">
+    <div class="section-header">
+      <div class="section-number">8</div>
+      <h2>Klinicke hodnoceni</h2>
+    </div>
+    
+    <h3>8.1 Plan klinickeho hodnoceni</h3>
+    <p>Klinicke hodnoceni dle Annex XIV MDR zahrnuje:</p>
+    <ul>
+      <li>Identifikace relevantni klinicke literatury</li>
+      <li>Analyza ekvivalentnich prostredku na trhu</li>
+      <li>Sber klinickych dat z pouziti</li>
+      <li>Hodnoceni klinickeho prinosu vs. rizika</li>
+    </ul>
+    
+    <h3>8.2 Klinicke pozadavky</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Pozadavek</th>
+          <th>Metrika</th>
+          <th>Cilova hodnota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Presnost zobrazeni stavu</td>
+          <td>% spravnych zobrazeni</td>
+          <td>>99.9%</td>
+        </tr>
+        <tr>
+          <td>Latence realtime dat</td>
+          <td>Cas aktualizace (ms)</td>
+          <td><500ms</td>
+        </tr>
+        <tr>
+          <td>Dostupnost systemu</td>
+          <td>Uptime (%)</td>
+          <td>>99.5%</td>
+        </tr>
+        <tr>
+          <td>Usability skore</td>
+          <td>SUS (System Usability Scale)</td>
+          <td>>80</td>
+        </tr>
+        <tr>
+          <td>Spokojenost uzivatelu</td>
+          <td>NPS skore</td>
+          <td>>50</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>8.3 Post-market klinicky follow-up (PMCF)</h3>
+    <p>PMCF plan definuje kontinualni sber klinickych dat:</p>
+    <ul>
+      <li>Uzivatelske feedbacky a incidenty</li>
+      <li>Analyza vykonu systemu v provozu</li>
+      <li>Sledovani nezadoucich udalosti</li>
+      <li>Pravidelne reporty (rocne)</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 9: CYBERSECURITY -->
+  <div class="section" id="sec9">
+    <div class="section-header">
+      <div class="section-number">9</div>
+      <h2>Kyberbezpečnost</h2>
+    </div>
+    
+    <h3>9.1 Bezpečnostní architektura</h3>
+    <div class="card-grid">
+      <div class="feature-card">
+        <div class="feature-title">Autentizace</div>
+        <div class="feature-desc">Custom auth s bcrypt hašováním, session tokens, automaticke odhlaseni.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Autorizace</div>
+        <div class="feature-desc">Row Level Security (RLS) na vsech tabulkach, role-based access.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Sifrovani</div>
+        <div class="feature-desc">HTTPS/TLS 1.3, sifrovani dat v klidu (AES-256).</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Audit</div>
+        <div class="feature-desc">Logovani vsech pristupua akci, notifications_log.</div>
+      </div>
+    </div>
+    
+    <h3>9.2 Bezpečnostní opatření</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Oblast</th>
+          <th>Implementace</th>
+          <th>Standard</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pristupova kontrola</td>
+          <td>Role-based, session management</td>
+          <td>ISO 27001</td>
+        </tr>
+        <tr>
+          <td>Ochrana dat</td>
+          <td>RLS, sifrovani, pseudonymizace</td>
+          <td>GDPR</td>
+        </tr>
+        <tr>
+          <td>Sitova bezpecnost</td>
+          <td>Firewall, rate limiting, CORS</td>
+          <td>OWASP</td>
+        </tr>
+        <tr>
+          <td>Incident response</td>
+          <td>Monitorovani, alerting, playbook</td>
+          <td>NIST CSF</td>
+        </tr>
+        <tr>
+          <td>Zalohovani</td>
+          <td>Point-in-time recovery, geo-replikace</td>
+          <td>ISO 27001</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>9.3 Vulnerability management</h3>
+    <ul>
+      <li>Pravidelny security audit (ctvrletne)</li>
+      <li>Automatické skenovani zavislosti (Dependabot)</li>
+      <li>Penetracni testovani (rocne)</li>
+      <li>Bug bounty program</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 10: POST-MARKET SURVEILLANCE -->
+  <div class="section" id="sec10">
+    <div class="section-header">
+      <div class="section-number">10</div>
+      <h2>Post-Market Surveillance</h2>
+    </div>
+    
+    <h3>10.1 PMS plan</h3>
+    <p>Post-market surveillance dle Article 83-86 MDR:</p>
+    <ul>
+      <li>Sber a analyza dat z provozu</li>
+      <li>Sledovani nezadoucich udalosti</li>
+      <li>Vigilance reporting</li>
+      <li>Pravidelne aktualizace klinickeho hodnoceni</li>
+      <li>Trendova analyza</li>
+    </ul>
+    
+    <h3>10.2 Zdroje dat</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Zdroj</th>
+          <th>Typ dat</th>
+          <th>Frekvence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>System logy</td>
+          <td>Chyby, vyjimky, performance</td>
+          <td>Kontinualne</td>
+        </tr>
+        <tr>
+          <td>Uzivatelsky feedback</td>
+          <td>Stiznosti, navrhy, chyby</td>
+          <td>Prubezne</td>
+        </tr>
+        <tr>
+          <td>Support tickety</td>
+          <td>Technicke problemy</td>
+          <td>Prubezne</td>
+        </tr>
+        <tr>
+          <td>Analytics</td>
+          <td>Pouzivani, adopce, churn</td>
+          <td>Mesicne</td>
+        </tr>
+        <tr>
+          <td>Audit</td>
+          <td>Compliance, bezpecnost</td>
+          <td>Rocne</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>10.3 Vigilance</h3>
+    <div class="alert alert-danger">
+      <div class="alert-icon">&#9888;</div>
+      <div class="alert-content">
+        <h4>Hlaseni vaznych incidentu</h4>
+        <p>Vazne incidenty je nutno hlasit prislusnym organum do 15 dnu (nebo 2 dny pro bezprostredni ohrozeni).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11: TECHNICAL DOCUMENTATION -->
+  <div class="section" id="sec11">
+    <div class="section-header">
+      <div class="section-number">11</div>
+      <h2>Technická dokumentace</h2>
+    </div>
+    
+    <h3>11.1 Struktura technicke dokumentace (Annex II)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Sekce</th>
+          <th>Obsah</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1. Popis prostredku</td>
+          <td>Intended purpose, funkce, varianty</td>
+          <td><span class="badge badge-success">Hotovo</span></td>
+        </tr>
+        <tr>
+          <td>2. Informace od vyrobce</td>
+          <td>Labeling, IFU, navody</td>
+          <td><span class="badge badge-warning">V priprave</span></td>
+        </tr>
+        <tr>
+          <td>3. Design a vyroba</td>
+          <td>Architektura, vyvojovy proces</td>
+          <td><span class="badge badge-success">Hotovo</span></td>
+        </tr>
+        <tr>
+          <td>4. Obecne pozadavky na bezpecnost</td>
+          <td>GSPR checklist</td>
+          <td><span class="badge badge-warning">V priprave</span></td>
+        </tr>
+        <tr>
+          <td>5. Analyza rizik</td>
+          <td>Risk management file</td>
+          <td><span class="badge badge-success">Hotovo</span></td>
+        </tr>
+        <tr>
+          <td>6. Verifikace a validace</td>
+          <td>Testovaci protokoly</td>
+          <td><span class="badge badge-warning">V priprave</span></td>
+        </tr>
+        <tr>
+          <td>7. Klinicke hodnoceni</td>
+          <td>CER, literatura, data</td>
+          <td><span class="badge badge-warning">V priprave</span></td>
+        </tr>
+        <tr>
+          <td>8. PMS/PMCF</td>
+          <td>PMS plan, PMCF plan</td>
+          <td><span class="badge badge-warning">V priprave</span></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>11.2 Environment promenne</h3>
+    <pre>
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
+SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
+
+# Email
+RESEND_API_KEY=re_xxx...
+
+# Vercel
+VERCEL_URL=https://www.operatingroom.eu
+    </pre>
+    
+    <h3>11.3 Deployment</h3>
+    <pre>
+# Klonovani repozitare
+git clone https://github.com/Medrox-company/operatingroommanagement.git
+cd operatingroommanagement
+
+# Instalace zavislosti
+pnpm install
+
+# Lokalni vyvoj
+pnpm dev
+
+# Produk build
+pnpm build
+
+# iOS build (Capacitor)
+pnpm exec cap sync ios
+pnpm exec cap open ios
+    </pre>
+  </div>
+
+  <!-- SECTION 12: ACTION PLAN -->
+  <div class="section" id="sec12">
+    <div class="section-header">
+      <div class="section-number">12</div>
+      <h2>Akcni plan implementace</h2>
+    </div>
+    
+    <h3>12.1 Roadmap MDR certifikace</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-title">Faze 1: Gap analyza (1-2 měsíce)</div>
+        <div class="timeline-desc">Audit současného stavu, identifikace chybějící dokumentace</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Faze 2: QMS implementace (2-3 měsíce)</div>
+        <div class="timeline-desc">ISO 13485 system, procesy, SOP dokumenty</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Faze 3: Technická dokumentace (2-3 měsíce)</div>
+        <div class="timeline-desc">Kompletace dokumentace dle Annex II/III</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Faze 4: Klinicke hodnoceni (1-2 měsíce)</div>
+        <div class="timeline-desc">CER, literatura review, PMCF plan</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Faze 5: Notified Body audit (2-3 měsíce)</div>
+        <div class="timeline-desc">Vyber NB, aplikace, audit, certifikace</td>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-title">Faze 6: CE marking</div>
+        <div class="timeline-desc">Vydani CE certifikatu, registrace v EUDAMED</div>
+      </div>
+    </div>
+    
+    <h3>12.2 Prioritni ukoly</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Priorita</th>
+          <th>Ukol</th>
+          <th>Zodpovednost</th>
+          <th>Termin</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-danger">Vysoka</span></td>
+          <td>Dokoncit risk management file</td>
+          <td>RA/QA Manager</td>
+          <td>Q2 2026</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-danger">Vysoka</span></td>
+          <td>GSPR checklist</td>
+          <td>RA Manager</td>
+          <td>Q2 2026</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">Stredni</span></td>
+          <td>Clinical Evaluation Report</td>
+          <td>Clinical Affairs</td>
+          <td>Q3 2026</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">Stredni</span></td>
+          <td>IFU a labeling</td>
+          <td>Technical Writer</td>
+          <td>Q3 2026</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">Nizka</span></td>
+          <td>EUDAMED registrace</td>
+          <td>RA Manager</td>
+          <td>Q4 2026</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>12.3 Kontakty</h3>
+    <div class="card">
+      <p><strong>Vyrobce:</strong> Medrox s.r.o.</p>
+      <p><strong>Web:</strong> <a href="https://www.operatingroom.eu">www.operatingroom.eu</a></p>
+      <p><strong>Repository:</strong> <a href="https://github.com/Medrox-company/operatingroommanagement">github.com/Medrox-company/operatingroommanagement</a></p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Operating Room Management System - Kompletní Dokumentace v2.0</p>
+  <p>Medrox s.r.o. | Kveten 2026 | Vsechna prava vyhrazena</p>
+</footer>
+
 </body>
 </html>

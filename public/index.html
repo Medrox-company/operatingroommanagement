@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>Operating Room Management</title>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" href="/favicon.png">
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0a0e1a 100%);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      overflow: hidden;
+    }
+    #app-loader {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+    .loader-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 60px rgba(251, 191, 36, 0.3);
+    }
+    .loader-icon svg {
+      width: 40px;
+      height: 40px;
+      fill: #000;
+    }
+    .loader-text {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.5px;
+    }
+    .loader-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(251, 191, 36, 0.2);
+      border-top-color: #FBBF24;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-loader">
+    <div class="loader-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/>
+      </svg>
+    </div>
+    <div class="loader-spinner"></div>
+    <p class="loader-text">Načítání aplikace...</p>
+  </div>
+  
+  <script>
+    // Capacitor iOS app - redirect to deployed server
+    const SERVER_URL = 'https://www.operatingroom.eu';
+    
+    // For Capacitor native app - redirect to the server
+    if (window.Capacitor) {
+      window.location.href = SERVER_URL;
+    } else {
+      // Fallback - redirect to server
+      setTimeout(() => {
+        window.location.href = SERVER_URL;
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
+</content>
+<parameter name="taskNameActive">Vytvářím index.html pro Capacitor

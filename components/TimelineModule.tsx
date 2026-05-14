@@ -93,6 +93,13 @@ const hourLabel = (hour: number): string => {
   return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
 };
 
+// Compact label for smaller screens - just the hour number
+const hourLabelCompact = (hour: number): string => {
+  const actualHour = TIMELINE_START_HOUR + hour;
+  const displayHour = actualHour % 24;
+  return `${displayHour}`;
+};
+
 const isNextDayHour = (hour: number): boolean => hour >= 24;
 
 // Check if operation should be displayed in current 24-hour window (7:00 today to 7:00 tomorrow)
@@ -458,146 +465,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
           style={{ background: C.accent }}
         />
-        <div className="px-8 md:pl-32 md:pr-10 py-6">
 
-
-          {/* Stats Boxes Row */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
-            <StatBox 
-              icon={Activity} 
-              label="Aktivní" 
-              value={`${stats.operations} operací`} 
-              color="#22C55E" 
-            />
-            <StatBox 
-              icon={Loader2} 
-              label="Úklid" 
-              value={`${stats.cleaning} sálů`} 
-              color="#F97316" 
-            />
-            <StatBox 
-              icon={Stethoscope} 
-              label="Volné" 
-              value={`${stats.free} sálů`} 
-              color="#22D3EE" 
-            />
-            <StatBox 
-              icon={Shield} 
-              label="Dokončeno" 
-              value={`${stats.completed} dnes`} 
-              color="#22D3EE" 
-            />
-
-            {stats.emergencyCount > 0 && (
-              <StatBox 
-                icon={AlertTriangle} 
-                label="Emergency" 
-                value={`${stats.emergencyCount} sálů`} 
-                color="#EF4444" 
-                glow 
-              />
-            )}
-
-            {/* ARO Overtime indicator - LoginPage glassmorph with red accent */}
-            {aroOvertimeRooms.length > 0 && (
-              <motion.div
-                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{
-                  background: `${C.red}15`,
-                  border: `2px solid ${C.red}40`,
-                  boxShadow: `0 0 24px ${C.red}25, inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${C.red}15`,
-                }}
-              >
-                {/* Animated gradient border effect */}
-                <div 
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${C.red}20, transparent)`,
-                    animation: 'shimmer 2s infinite',
-                  }}
-                />
-                {/* Top highlight line with accent */}
-                <div 
-                  className="absolute top-0 left-4 right-4 h-px opacity-60"
-                  style={{ background: `linear-gradient(90deg, transparent, ${C.red}80, transparent)` }}
-                />
-                <div
-                  className="absolute inset-0 opacity-40"
-                  style={{
-                    background: `radial-gradient(ellipse at 50% 0%, ${C.red}30 0%, transparent 70%)`,
-                  }}
-                />
-                <div className="relative flex items-center gap-3 h-full">
-                  <motion.div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    style={{
-                      background: `${C.red}25`,
-                      border: `1.5px solid ${C.red}50`,
-                    }}
-                  >
-                    <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
-                  </motion.div>
-                  <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.3em] font-semibold" style={{ color: `${C.red}a0` }}>ARO PŘESAH</p>
-                    <p className="text-sm font-bold leading-tight" style={{ color: C.red }}>{aroOvertimeRooms.length} sálů</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Spacer */}
-            <div className="flex-1 min-w-4" />
-
-            {/* Date Box */}
-            <StatBox 
-              icon={CalendarDays} 
-              label="Datum" 
-              value={formatDate(currentTime)} 
-              color="#6366F1" 
-            />
-
-            {/* Time Box - LoginPage glassmorph style */}
-            <div
-              className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
-              style={{
-                background: C.glass,
-                border: `1px solid ${C.border}`,
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-              }}
-            >
-              {/* Top highlight line */}
-              <div 
-                className="absolute top-0 left-4 right-4 h-px opacity-30"
-                style={{ background: `linear-gradient(90deg, transparent, ${C.accent}60, transparent)` }}
-              />
-              <div className="relative flex items-center gap-3 h-full">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: `${C.accent}15`,
-                    border: `1px solid ${C.accent}25`,
-                  }}
-                >
-                  <Clock className="w-4 h-4" style={{ color: C.accent }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Čas</p>
-                  <p className="text-sm font-bold leading-tight tabular-nums" style={{ color: C.accent }}>
-                    {currentTime.toLocaleTimeString("cs-CZ", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ======== Main Timeline ======== */}
@@ -646,11 +514,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 return (
                   <div 
                     key={`h-${hour}-${i}`} 
-                    className="absolute top-0 h-full flex items-center" 
+                    className="absolute top-0 h-full flex items-center justify-center" 
                     style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                   >
                     <div 
-                      className={`w-px h-full transition-all duration-300`}
+                      className={`absolute left-0 w-px h-full transition-all duration-300`}
                       style={{ 
                         background: isNightHour 
                           ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
@@ -659,29 +527,21 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        <div 
-                          className="ml-2 px-2.5 py-1 rounded-lg"
+                        /* Current hour - yellow highlighted, compact, centered */
+                        <span 
+                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
                           style={{ 
                             background: '#f1ff00', 
-                            boxShadow: `0 2px 8px #f1ff0060` 
+                            color: '#000',
                           }}
                         >
-                          <span className="text-[10px] font-mono font-bold text-slate-900 tracking-wide">
-                            {`${currentHour < 10 ? '0' : ''}${currentHour}:${currentMin < 10 ? '0' : ''}${currentMin}`}
-                          </span>
-                        </div>
+                          {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
+                        </span>
                       ) : (
-                        <div 
-                          className="ml-2 px-2.5 py-1 rounded-lg"
-                          style={{ 
-                            background: isNightHour ? 'rgba(255,255,255,0.05)' : '#73ff0015',
-                            border: `1px solid ${isNightHour ? 'rgba(255,255,255,0.08)' : '#73ff0040'}`,
-                          }}
-                        >
-                          <span className={`text-[11px] font-mono font-semibold ${isNightHour ? 'text-white/20' : 'text-white/50'}`}>
-                            {hourLabel(hour)}
-                          </span>
-                        </div>
+                        /* Other hours - simple number only, no box, centered */
+                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
+                          {hourLabelCompact(hour)}
+                        </span>
                       )
                     )}
                   </div>
@@ -1478,7 +1338,7 @@ style={{
                                 <div
                                   className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md"
                                   style={{
-                                    // Badge předpokládaného zbývajícího času — laděný do barvy
+                                    // Badge předpokládaného zbývaj��cího času — laděný do barvy
                                     // aktuálního statusu sálu, aby vizuálně tvořil pár se zbytkem
                                     // řádku a okamžitě signalizoval, ke které fázi se vztahuje.
                                     background: `${stepColor}26`,
