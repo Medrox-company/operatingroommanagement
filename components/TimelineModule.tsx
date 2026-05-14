@@ -473,19 +473,28 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         
         {/* Time Axis Header - Fixed, LoginPage glassmorph */}
         <div 
-          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-md items-center px-4" 
+          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-md" 
           style={{ 
             background: C.glass, 
             borderBottom: `1px solid ${C.border}`,
           }}
         >
-          {/* Current time only */}
-          <div className="text-lg font-bold tabular-nums" style={{ color: C.accent }}>
-            {currentTime.toLocaleTimeString("cs-CZ", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            })}
+          {/* Room label header - fixed */}
+          <div 
+            className="flex-shrink-0 flex items-center px-4 gap-2" 
+            style={{ 
+              width: ROOM_LABEL_WIDTH, 
+              minWidth: ROOM_LABEL_WIDTH, 
+              borderRight: `1px solid ${C.border}`,
+            }}
+          >
+            <div 
+              className="w-6 h-6 rounded-lg flex items-center justify-center"
+              style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}25` }}
+            >
+              <Activity className="w-3.5 h-3.5" style={{ color: C.accent }} />
+            </div>
+            <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">OPERAČNÍ SÁLY</span>
           </div>
           
           {/* Time markers - no scroll, full width for 24h */}
