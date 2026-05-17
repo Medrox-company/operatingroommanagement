@@ -1235,3 +1235,205 @@ export async function saveBackgroundSettings(settings: BackgroundSettings): Prom
     return false;
   }
 }
+
+// ============= NOTIFICATIONS LOG =============
+
+export interface NotificationLogRow {
+  id: string;
+  notification_type: string;
+  room_id: string | null;
+  room_name: string | null;
+  recipient_count: number;
+  custom_reason: string | null;
+  created_at: string;
+}
+
+export async function fetchNotificationsLog(
+  options?: { fromDate?: Date; toDate?: Date; limit?: number }
+): Promise<NotificationLogRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    let query = supabase
+      .from('notifications_log')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (options?.fromDate) query = query.gte('created_at', options.fromDate.toISOString());
+    if (options?.toDate) query = query.lte('created_at', options.toDate.toISOString());
+    if (options?.limit) query = query.limit(options.limit);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as NotificationLogRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch notifications_log:', error);
+    return null;
+  }
+}
+
+// ============= SHIFT SCHEDULES =============
+
+export interface ShiftScheduleRow {
+  id: string;
+  staff_id: string;
+  operating_room_id: string | null;
+  shift_date: string;
+  shift_type: string;
+  start_time: string | null;
+  end_time: string | null;
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchShiftSchedules(
+  options?: { fromDate?: Date; toDate?: Date; staffId?: string }
+): Promise<ShiftScheduleRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    let query = supabase
+      .from('shift_schedules')
+      .select('*')
+      .order('shift_date', { ascending: true })
+      .order('start_time', { ascending: true, nullsFirst: false });
+
+    if (options?.fromDate) {
+      const from = options.fromDate.toISOString().split('T')[0];
+      query = query.gte('shift_date', from);
+    }
+    if (options?.toDate) {
+      const to = options.toDate.toISOString().split('T')[0];
+      query = query.lte('shift_date', to);
+    }
+    if (options?.staffId) query = query.eq('staff_id', options.staffId);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as ShiftScheduleRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch shift_schedules:', error);
+    return null;
+  }
+}
+
+// ============= DEPARTMENTS =============
+
+export interface DepartmentRow {
+  id: string;
+  name: string;
+  description: string | null;
+  accent_color: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubDepartmentRow {
+  id: string;
+  department_id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchDepartments(): Promise<DepartmentRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as DepartmentRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch departments:', error);
+    return null;
+  }
+}
+
+export async function fetchSubDepartments(): Promise<SubDepartmentRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('sub_departments')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as SubDepartmentRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch sub_departments:', error);
+    return null;
+  }
+}
+
+// ============= MANAGEMENT CONTACTS =============
+
+export interface ManagementContactRow {
+  id: string;
+  name: string;
+  position: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  is_active: boolean;
+  sort_order: number;
+  notify_emergencies: boolean;
+  notify_daily_reports: boolean;
+  notify_statistics: boolean;
+  notify_late_surgeon: boolean;
+  notify_late_anesthesiologist: boolean;
+  notify_late_arrival: boolean;
+  notify_patient_not_ready: boolean;
+  notify_other: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchManagementContacts(): Promise<ManagementContactRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('management_contacts')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as ManagementContactRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch management_contacts:', error);
+    return null;
+  }
+}
+
+// ============= DEVICES =============
+
+export interface DeviceRow {
+  id: string;
+  device_id: string;
+  device_name: string | null;
+  device_type: string | null;
+  platform: string | null;
+  browser: string | null;
+  ip_address: string | null;
+  is_active: boolean;
+  is_pwa_installed: boolean;
+  last_seen_at: string | null;
+  installed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchDevices(): Promise<DeviceRow[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('devices')
+      .select('*')
+      .order('last_seen_at', { ascending: false, nullsFirst: false });
+    if (error) throw error;
+    return (data ?? []) as DeviceRow[];
+  } catch (error) {
+    console.error('[DB] Failed to fetch devices:', error);
+    return null;
+  }
+}

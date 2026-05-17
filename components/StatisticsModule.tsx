@@ -13,10 +13,20 @@ import {
   fetchStatusHistory,
   fetchAllStaff,
   fetchPeriodComparison,
+  fetchNotificationsLog,
+  fetchShiftSchedules,
+  fetchDepartments,
+  fetchSubDepartments,
+  fetchDevices,
   type RoomStatistics,
   type StatusHistoryRow,
   type StaffRow,
   type PeriodComparisonStats,
+  type NotificationLogRow,
+  type ShiftScheduleRow,
+  type DepartmentRow,
+  type SubDepartmentRow,
+  type DeviceRow,
 } from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -36,12 +46,16 @@ import { StaffTab } from './statistics/StaffTab';
 import { FinanceTab } from './statistics/FinanceTab';
 import { RoomsTab } from './statistics/RoomsTab';
 import { PhasesTab } from './statistics/PhasesTab';
+import { NotificationsTab } from './statistics/NotificationsTab';
+import { ShiftsTab } from './statistics/ShiftsTab';
+import { DepartmentsTab } from './statistics/DepartmentsTab';
+import { DevicesTab } from './statistics/DevicesTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
-            | 'saly' | 'faze' | 'heatmapa';
+            | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'smeny' | 'oddeleni' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -1329,6 +1343,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   // ── REÁLNÁ DB DATA pro tab moduly (Staff) ──
   // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
   const [staffList, setStaffList] = useState<StaffRow[] | null>(null);
+  // ── NOVÁ REÁLNÁ DB DATA pro rozšířené taby ──
+  const [notifications, setNotifications] = useState<NotificationLogRow[] | null>(null);
+  const [shifts, setShifts] = useState<ShiftScheduleRow[] | null>(null);
+  const [departments, setDepartments] = useState<DepartmentRow[] | null>(null);
+  const [subDepartments, setSubDepartments] = useState<SubDepartmentRow[] | null>(null);
+  const [devices, setDevices] = useState<DeviceRow[] | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
@@ -1395,13 +1415,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     'rok':   'Posledních 365 dní',
   };
   const tabLabelMap: Record<Tab, string> = {
-    'prehled':    'Přehled',
-    'efektivita': 'Efektivita',
-    'finance':    'Finance',
-    'personal':   'Personál',
-    'saly':       'Sály',
-    'faze':       'Fáze',
-    'heatmapa':   'Heatmapa',
+'prehled':    'Přehled',
+'efektivita': 'Efektivita',
+'finance':    'Finance',
+'personal':   'Personál',
+'saly':       'Sály',
+'faze':       'Fáze',
+'heatmapa':   'Heatmapa',
+'notifikace': 'Notifikace',
+'smeny':      'Směny',
+'oddeleni':   'Oddělení',
+'zarizeni':   'Zařízení',
   };
 
   // Load statistics from database
@@ -1427,18 +1451,28 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           break;
       }
 
-      const [stats, history, staffRows, comparison] = await Promise.all([
-        fetchRoomStatistics(fromDate, now),
-        fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
-        fetchAllStaff(),
-        fetchPeriodComparison(period),
-      ]);
-
-      if (stats) setDbStats(stats);
-      setStatusHistory(history ?? []);
-      setStaffList(staffRows);
-      setPeriodComparison(comparison);
-      setIsLoadingStats(false);
+const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, subDeptRows, deviceRows] = await Promise.all([
+  fetchRoomStatistics(fromDate, now),
+  fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
+  fetchAllStaff(),
+  fetchPeriodComparison(period),
+  fetchNotificationsLog({ fromDate, toDate: now, limit: 1000 }),
+  fetchShiftSchedules({ fromDate, toDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) }),
+  fetchDepartments(),
+  fetchSubDepartments(),
+  fetchDevices(),
+  ]);
+  
+  if (stats) setDbStats(stats);
+  setStatusHistory(history ?? []);
+  setStaffList(staffRows);
+  setPeriodComparison(comparison);
+  setNotifications(notifRows);
+  setShifts(shiftRows);
+  setDepartments(deptRows);
+  setSubDepartments(subDeptRows);
+  setDevices(deviceRows);
+  setIsLoadingStats(false);
     };
 
     loadStats();
@@ -1665,14 +1699,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return base;
   }), [rooms, roomDistributions, WORKFLOW_STEPS]);
 
-  const TABS:{ id:Tab; label:string }[]=[
-    {id:'prehled',    label:'Přehled'},
-    {id:'efektivita', label:'Efektivita'},
-    {id:'finance',    label:'Finance'},
-    {id:'personal',   label:'Personál'},
-    {id:'saly',       label:'Sály'},
-    {id:'faze',       label:'Fáze'},
-    {id:'heatmapa',   label:'Heatmapa'},
+const TABS:{ id:Tab; label:string }[]=[
+{id:'prehled',    label:'Přehled'},
+{id:'efektivita', label:'Efektivita'},
+{id:'finance',    label:'Finance'},
+{id:'personal',   label:'Personál'},
+{id:'saly',       label:'Sály'},
+{id:'faze',       label:'Fáze'},
+{id:'heatmapa',   label:'Heatmapa'},
+{id:'notifikace', label:'Notifikace'},
+{id:'smeny',      label:'Směny'},
+{id:'oddeleni',   label:'Oddělení'},
+{id:'zarizeni',   label:'Zařízení'},
   ];
 
   return(
@@ -1801,15 +1839,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {/* Tab toggle */}
           <div className="print-hide">
             <MobilePillTabs<Tab>
-              tabs={[
-                { id: 'prehled', label: 'Přehled' },
-                { id: 'efektivita', label: 'Efektivita' },
-                { id: 'finance', label: 'Finance' },
-                { id: 'personal', label: 'Personál' },
-                { id: 'saly', label: 'Sály' },
-                { id: 'faze', label: 'Fáze' },
-                { id: 'heatmapa', label: 'Heatmapa' },
-              ]}
+tabs={[
+{ id: 'prehled', label: 'Přehled' },
+{ id: 'efektivita', label: 'Efektivita' },
+{ id: 'finance', label: 'Finance' },
+{ id: 'personal', label: 'Personál' },
+{ id: 'saly', label: 'Sály' },
+{ id: 'faze', label: 'Fáze' },
+{ id: 'heatmapa', label: 'Heatmapa' },
+{ id: 'notifikace', label: 'Notifikace' },
+{ id: 'smeny', label: 'Směny' },
+{ id: 'oddeleni', label: 'Oddělení' },
+{ id: 'zarizeni', label: 'Zařízení' },
+  ]}
               value={tab}
               onChange={setTab}
             />
@@ -2042,6 +2084,55 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   );
                 })()}
               </MobileCard>
+            </div>
+          )}
+
+          {/* ── Notifikace ── */}
+          {(tab === 'notifikace' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <MobileSectionLabel>Přehled notifikací</MobileSectionLabel>
+              <NotificationsTab
+                notifications={notifications}
+                rooms={rooms}
+                periodLabel={periodLabelMap[period]}
+              />
+            </div>
+          )}
+
+          {/* ── Směny ── */}
+          {(tab === 'smeny' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <MobileSectionLabel>Přehled směn</MobileSectionLabel>
+              <ShiftsTab
+                shifts={shifts}
+                staff={staffList}
+                rooms={rooms}
+                periodLabel={periodLabelMap[period]}
+              />
+            </div>
+          )}
+
+          {/* ── Oddělení ── */}
+          {(tab === 'oddeleni' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <MobileSectionLabel>Přehled oddělení</MobileSectionLabel>
+              <DepartmentsTab
+                departments={departments}
+                subDepartments={subDepartments}
+                rooms={rooms}
+                periodLabel={periodLabelMap[period]}
+              />
+            </div>
+          )}
+
+          {/* ── Zařízení ── */}
+          {(tab === 'zarizeni' || isPrinting) && (
+            <div className="flex flex-col gap-3">
+              <MobileSectionLabel>Připojená zařízení</MobileSectionLabel>
+              <DevicesTab
+                devices={devices}
+                periodLabel={periodLabelMap[period]}
+              />
             </div>
           )}
         </div>
@@ -2823,6 +2914,75 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </Card>
 
           </motion.div>
+        )}
+
+        {/* ── Notifikace ── (nový tab) */}
+        {(tab==='notifikace' || isPrinting) && (
+        <motion.div key="notifikace"
+        initial={isPrinting ? false : {opacity:0,y:10}}
+        animate={{opacity:1,y:0}}
+        exit={{opacity:0,y:-6}}
+        transition={{duration:0.22}}
+        className="flex flex-col gap-5"
+        >
+          <NotificationsTab
+            notifications={notifications}
+            rooms={rooms}
+            periodLabel={periodLabelMap[period]}
+          />
+        </motion.div>
+        )}
+
+        {/* ── Směny ── (nový tab) */}
+        {(tab==='smeny' || isPrinting) && (
+        <motion.div key="smeny"
+        initial={isPrinting ? false : {opacity:0,y:10}}
+        animate={{opacity:1,y:0}}
+        exit={{opacity:0,y:-6}}
+        transition={{duration:0.22}}
+        className="flex flex-col gap-5"
+        >
+          <ShiftsTab
+            shifts={shifts}
+            staff={staffList}
+            rooms={rooms}
+            periodLabel={periodLabelMap[period]}
+          />
+        </motion.div>
+        )}
+
+        {/* ── Oddělení ── (nový tab) */}
+        {(tab==='oddeleni' || isPrinting) && (
+        <motion.div key="oddeleni"
+        initial={isPrinting ? false : {opacity:0,y:10}}
+        animate={{opacity:1,y:0}}
+        exit={{opacity:0,y:-6}}
+        transition={{duration:0.22}}
+        className="flex flex-col gap-5"
+        >
+          <DepartmentsTab
+            departments={departments}
+            subDepartments={subDepartments}
+            rooms={rooms}
+            periodLabel={periodLabelMap[period]}
+          />
+        </motion.div>
+        )}
+
+        {/* ── Zařízení ── (nový tab) */}
+        {(tab==='zarizeni' || isPrinting) && (
+        <motion.div key="zarizeni"
+        initial={isPrinting ? false : {opacity:0,y:10}}
+        animate={{opacity:1,y:0}}
+        exit={{opacity:0,y:-6}}
+        transition={{duration:0.22}}
+        className="flex flex-col gap-5"
+        >
+          <DevicesTab
+            devices={devices}
+            periodLabel={periodLabelMap[period]}
+          />
+        </motion.div>
         )}
 
         </AnimatePresence>
