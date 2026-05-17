@@ -1787,7 +1787,7 @@ const TABS:{ id:Tab; label:string }[]=[
           </p>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 print-section">
           <div className="print-hide">
             <MobileHeader
               kicker="Statistiky"
@@ -1859,7 +1859,8 @@ tabs={[
 
           {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
           {(tab === 'prehled' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Přehled</h2>}
               {/* Executive scorecard hero (mobile/print verze) */}
               <ExecutiveScorecard data={scorecardData} />
 
@@ -1941,7 +1942,8 @@ tabs={[
 
           {/* ── Sály ── (propracovaný RoomsTab) */}
           {(tab === 'saly' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Sály</h2>}
               <RoomsTab
                 rooms={rooms}
                 statusHistory={statusHistory}
@@ -1956,7 +1958,8 @@ tabs={[
 
           {/* ── Fáze — propracovaný PhasesTab ── */}
           {(tab === 'faze' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Fáze</h2>}
               <PhasesTab
                 rooms={rooms}
                 statusHistory={statusHistory}
@@ -1970,7 +1973,8 @@ tabs={[
 
           {/* ── Efektivita & KPI dashboard ── */}
           {(tab === 'efektivita' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Efektivita</h2>}
               <EfficiencyTab
                 rooms={rooms}
                 totalOps={totalOps}
@@ -1983,7 +1987,8 @@ tabs={[
 
           {/* ── Personál & týmy ── */}
           {(tab === 'personal' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Personál</h2>}
               <StaffTab
                 staff={staffList}
                 rooms={rooms}
@@ -1994,7 +1999,8 @@ tabs={[
           
           {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
           {(tab === 'finance' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Finance</h2>}
               <FinanceTab
                 rooms={rooms}
                 totalOps={totalOps}
@@ -2007,7 +2013,8 @@ tabs={[
 
           {/* ── Heatmapa ── (vždy renderováno při tisku) */}
           {(tab === 'heatmapa' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Heatmapa</h2>}
               <MobileSectionLabel>Heatmapa 7 × 24 h</MobileSectionLabel>
               <MobileCard>
                 {(() => {
@@ -2089,7 +2096,8 @@ tabs={[
 
           {/* ── Notifikace ── */}
           {(tab === 'notifikace' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Notifikace</h2>}
               <MobileSectionLabel>Přehled notifikací</MobileSectionLabel>
               <NotificationsTab
                 notifications={notifications}
@@ -2101,7 +2109,8 @@ tabs={[
 
           {/* ── Směny ── */}
           {(tab === 'smeny' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Směny</h2>}
               <MobileSectionLabel>Přehled směn</MobileSectionLabel>
               <ShiftsTab
                 shifts={shifts}
@@ -2114,7 +2123,8 @@ tabs={[
 
           {/* ── Oddělení ── */}
           {(tab === 'oddeleni' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Oddělení</h2>}
               <MobileSectionLabel>Přehled oddělení</MobileSectionLabel>
               <DepartmentsTab
                 departments={departments}
@@ -2127,7 +2137,8 @@ tabs={[
 
           {/* ── Zařízení ── */}
           {(tab === 'zarizeni' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Zařízení</h2>}
               <MobileSectionLabel>Připojená zařízení</MobileSectionLabel>
               <DevicesTab
                 devices={devices}
@@ -2271,7 +2282,7 @@ tabs={[
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Přehled
@@ -2633,7 +2644,7 @@ tabs={[
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Efektivita & KPI
@@ -2656,7 +2667,7 @@ tabs={[
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Personál & týmy
@@ -2677,7 +2688,7 @@ tabs={[
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Finance & náklady provozu
@@ -2700,7 +2711,7 @@ tabs={[
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Operační sály — detailní přehled
@@ -2725,10 +2736,10 @@ tabs={[
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Workflow fáze — detailní analýza
+                Workflow fáze �� detailní analýza
               </h2>
             )}
             <PhasesTab
@@ -2748,7 +2759,7 @@ tabs={[
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Heatmapa
@@ -2923,7 +2934,7 @@ tabs={[
         animate={{opacity:1,y:0}}
         exit={{opacity:0,y:-6}}
         transition={{duration:0.22}}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-5 print-section"
         >
           <NotificationsTab
             notifications={notifications}
@@ -2940,7 +2951,7 @@ tabs={[
         animate={{opacity:1,y:0}}
         exit={{opacity:0,y:-6}}
         transition={{duration:0.22}}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-5 print-section"
         >
           <ShiftsTab
             shifts={shifts}
@@ -2958,7 +2969,7 @@ tabs={[
         animate={{opacity:1,y:0}}
         exit={{opacity:0,y:-6}}
         transition={{duration:0.22}}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-5 print-section"
         >
           <DepartmentsTab
             departments={departments}
@@ -2976,7 +2987,7 @@ tabs={[
         animate={{opacity:1,y:0}}
         exit={{opacity:0,y:-6}}
         transition={{duration:0.22}}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-5 print-section"
         >
           <DevicesTab
             devices={devices}
