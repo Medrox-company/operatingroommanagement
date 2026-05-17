@@ -34,28 +34,29 @@ export const C = {
   blue:    '#3B82F6',  // Vercel blue
   teal:    '#2DD4BF',  // Teal
   
-  // Surface & background - modernější glass morphism
-  surface:   'rgba(255,255,255,0.025)',
-  surface2:  'rgba(255,255,255,0.04)',
-  surface3:  'rgba(255,255,255,0.06)',
-  surfaceHover: 'rgba(255,255,255,0.05)',
-  cardBg: 'rgba(17,17,17,0.8)',
+  // Surface & background - Vercel-style tmavé plochy
+  surface:   'rgba(255,255,255,0.02)',
+  surface2:  'rgba(255,255,255,0.03)',
+  surface3:  'rgba(255,255,255,0.05)',
+  surfaceHover: 'rgba(255,255,255,0.04)',
+  cardBg: 'rgba(10,10,10,0.95)',
   
-  // Glass efekty - jemnější
-  glass: 'rgba(255,255,255,0.02)',
-  glassHover: 'rgba(255,255,255,0.04)',
+  // Glass efekty - subtilní
+  glass: 'rgba(255,255,255,0.015)',
+  glassHover: 'rgba(255,255,255,0.03)',
   
-  // Border & dividers - subtilnější
-  border:  'rgba(255,255,255,0.06)',
-  borderHover: 'rgba(255,255,255,0.1)',
-  borderLight: 'rgba(255,255,255,0.04)',
+  // Border & dividers - Vercel-style jemné hranice
+  border:  'rgba(255,255,255,0.05)',
+  borderHover: 'rgba(255,255,255,0.08)',
+  borderLight: 'rgba(255,255,255,0.03)',
+  borderActive: 'rgba(255,255,255,0.12)',
   
-  // Text hierarchy - lepší kontrast
-  text:    'rgba(255,255,255,0.9)',
+  // Text hierarchy - čistý kontrast
+  text:    'rgba(255,255,255,0.88)',
   textHi:  '#ffffff',
-  muted:   'rgba(255,255,255,0.5)',
-  faint:   'rgba(255,255,255,0.25)',
-  ghost:   'rgba(255,255,255,0.1)',
+  muted:   'rgba(255,255,255,0.45)',
+  faint:   'rgba(255,255,255,0.2)',
+  ghost:   'rgba(255,255,255,0.08)',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -167,36 +168,30 @@ export const Card: React.FC<CardProps> = memo(({
   const isClickable = !!onClick;
   return (
     <div 
-      className={`rounded-xl ${noPadding ? '' : 'p-4'} transition-all duration-200 ${isClickable ? 'cursor-pointer' : ''} ${className ?? ''}`}
+      className={`rounded-xl overflow-hidden ${noPadding ? '' : 'p-5'} transition-all duration-200 ${isClickable ? 'cursor-pointer group' : ''} ${className ?? ''}`}
       onClick={onClick}
       style={{
-        background: elevated
-          ? `linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%)`
-          : 'rgba(18,18,18,0.8)',
-        border: `1px solid ${elevated ? 'rgba(255,255,255,0.08)' : C.border}`,
+        background: '#0a0a0a',
+        border: `1px solid ${C.border}`,
         minWidth: 0,
       }}
       onMouseEnter={(e) => {
         if (isClickable) {
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-          e.currentTarget.style.background = 'rgba(25,25,25,0.9)';
+          e.currentTarget.style.borderColor = C.borderHover;
         }
       }}
       onMouseLeave={(e) => {
         if (isClickable) {
-          e.currentTarget.style.borderColor = elevated ? 'rgba(255,255,255,0.08)' : C.border;
-          e.currentTarget.style.background = elevated 
-            ? 'linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%)'
-            : 'rgba(18,18,18,0.8)';
+          e.currentTarget.style.borderColor = C.border;
         }
       }}
     >
       {(title || action) && (
-        <div className={`flex items-center justify-between ${noPadding ? 'p-4 pb-3' : 'mb-4'}`}>
-          <div className="flex items-center gap-2.5 min-w-0">
+        <div className={`flex items-center justify-between ${noPadding ? 'px-5 pt-5 pb-4' : 'mb-4'}`}>
+          <div className="flex items-center gap-3 min-w-0">
             {Icon && (
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: `${accent ?? C.accent}12`, border: `1px solid ${accent ?? C.accent}20` }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                style={{ background: `${accent ?? C.accent}10` }}>
                 <Icon size={16} color={accent ?? C.accent} strokeWidth={2} />
               </div>
             )}
@@ -205,7 +200,7 @@ export const Card: React.FC<CardProps> = memo(({
             )}
             <div className="min-w-0">
               {title && (
-                <h3 className="text-sm font-semibold tracking-tight" style={{ color: C.textHi }}>
+                <h3 className="text-[13px] font-medium" style={{ color: C.text }}>
                   {title}
                 </h3>
               )}
@@ -217,7 +212,7 @@ export const Card: React.FC<CardProps> = memo(({
           <div className="flex items-center gap-2 shrink-0">
             {action && <div>{action}</div>}
             {showArrow && (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: C.muted }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:translate-x-0.5" style={{ color: C.muted }}>
                 <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
@@ -931,59 +926,48 @@ export const MetricTile: React.FC<MetricTileProps> = memo(({
 }) => {
   const valueSize = size === 'lg' ? 'text-3xl' : size === 'md' ? 'text-2xl' : 'text-xl';
   const labelSize = size === 'lg' ? 'text-xs' : 'text-[11px]';
-  const padding = size === 'lg' ? 'p-5' : size === 'md' ? 'p-4' : 'p-3';
+  const padding = size === 'lg' ? 'p-5' : size === 'md' ? 'p-4' : 'p-3.5';
   
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }} 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`relative rounded-xl overflow-hidden group ${padding} ${className ?? ''}`}
+      className={`relative rounded-xl overflow-hidden ${padding} ${className ?? ''}`}
       style={{ 
-        background: 'rgba(18,18,18,0.6)', 
+        background: '#0a0a0a', 
         border: `1px solid ${C.border}`,
       }}
     >
-      {/* Subtle gradient overlay on hover */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-        style={{ background: `linear-gradient(135deg, ${color}05 0%, transparent 50%)` }}
-      />
-      
-      {/* Header row */}
-      <div className="flex items-center justify-between gap-2 mb-3 relative">
-        <div className="flex items-center gap-2 min-w-0">
-          {Icon && (
-            <div 
-              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105"
-              style={{ background: `${color}15`, border: `1px solid ${color}25` }}
-            >
-              <Icon size={14} color={color} strokeWidth={2} />
-            </div>
-          )}
-          <span className={`${labelSize} font-medium tracking-wide`} style={{ color: C.muted }}>
-            {label}
-          </span>
-        </div>
-        {typeof delta === 'number' && (
-          <DeltaBadge delta={delta} inverted={invertedDelta} hideZero size="sm" />
+      {/* Header row - Vercel style */}
+      <div className="flex items-center gap-2 mb-3 relative">
+        {Icon && (
+          <Icon size={14} color={C.muted} strokeWidth={2} />
         )}
+        <span className={`${labelSize} font-medium`} style={{ color: C.muted }}>
+          {label}
+        </span>
       </div>
       
-      {/* Value */}
-      <div className={`${valueSize} font-bold leading-none font-mono tabular-nums relative`} style={{ color }}>
-        {typeof value === 'number' ? <AnimatedCounter value={value} /> : value}
+      {/* Value row with delta */}
+      <div className="flex items-baseline gap-2.5 relative">
+        <div className={`${valueSize} font-semibold leading-none tabular-nums`} style={{ color }}>
+          {typeof value === 'number' ? <AnimatedCounter value={value} /> : value}
+        </div>
+        {typeof delta === 'number' && (
+          <DeltaBadge delta={delta} inverted={invertedDelta} hideZero size="xs" />
+        )}
       </div>
       
       {/* Sublabel */}
       {sublabel && (
-        <div className="text-xs mt-2 relative" style={{ color: C.muted }}>{sublabel}</div>
+        <div className="text-[11px] mt-2 relative" style={{ color: C.muted }}>{sublabel}</div>
       )}
       
       {/* Background sparkline trend */}
       {trend && trend.length > 1 && (
-        <div className="absolute bottom-0 right-0 left-0 opacity-40 pointer-events-none">
-          <Sparkline data={trend} width={160} height={32} color={color} fillOpacity={0.15} />
+        <div className="absolute bottom-0 right-0 left-0 opacity-30 pointer-events-none">
+          <Sparkline data={trend} width={160} height={28} color={color} fillOpacity={0.1} />
         </div>
       )}
     </motion.div>

@@ -57,19 +57,25 @@ type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
             | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'smeny' | 'oddeleni' | 'zarizeni';
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
+// ── Design tokens (modernizovaná Vercel-style paleta) ───────────────────────────
 const C = {
-  accent:  '#06B6D4',
-  green:   '#10B981',
-  orange:  '#F97316',
-  yellow:  '#FBBF24',
-  red:     '#EF4444',
-  border:  'rgba(255,255,255,0.07)',
-  surface: 'rgba(255,255,255,0.025)',
-  muted:   'rgba(255,255,255,0.35)',
-  faint:   'rgba(255,255,255,0.15)',
-  ghost:   'rgba(255,255,255,0.07)',
-  text:    'rgba(255,255,255,0.85)',
+  accent:  '#00D9FF',
+  green:   '#00F5A0',
+  orange:  '#FF9F43',
+  yellow:  '#FFE66D',
+  red:     '#FF6B6B',
+  purple:  '#A78BFA',
+  blue:    '#3B82F6',
+  border:  'rgba(255,255,255,0.05)',
+  borderHover: 'rgba(255,255,255,0.08)',
+  surface: 'rgba(255,255,255,0.02)',
+  surface2: 'rgba(255,255,255,0.03)',
+  surface3: 'rgba(255,255,255,0.05)',
+  muted:   'rgba(255,255,255,0.45)',
+  faint:   'rgba(255,255,255,0.2)',
+  ghost:   'rgba(255,255,255,0.08)',
+  text:    'rgba(255,255,255,0.88)',
+  textHi:  '#ffffff',
 };
 
 const DEPT_COLORS: Record<string,string> = {
@@ -2203,67 +2209,74 @@ tabs={[
         </h1>
       </div>
 
-      {/* ── Period + Tab navigation ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7 print-hide">
-  {/* Tabs — horizontálně scrollovatelný strip pro 12 záložek */}
-  <div className="flex items-center gap-1 p-1 rounded-lg overflow-x-auto max-w-full"
-    style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      scrollbarWidth: 'thin',
-      scrollbarColor: `${C.faint} transparent`,
-    }}>
-    {TABS.map(t => (
-      <button key={t.id} onClick={() => setTab(t.id)}
-        className="px-3.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0"
-        style={{
-          background: tab === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
-          color: tab === t.id ? C.text : C.muted,
-          boxShadow: tab === t.id ? `inset 0 0 0 1px ${C.border}` : 'none',
-        }}>
-        {t.label}
-      </button>
-    ))}
-  </div>
-        {/* Period switcher + Export */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5">
+      {/* ── Period + Tab navigation ── Vercel-style clean design */}
+      <div className="flex flex-col gap-4 mb-6 print-hide">
+        {/* Tabs — horizontální underline-style navigace */}
+        <div className="flex items-center gap-0.5 overflow-x-auto pb-px"
+          style={{
+            borderBottom: `1px solid ${C.border}`,
+            scrollbarWidth: 'thin',
+            scrollbarColor: `${C.faint} transparent`,
+          }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="relative px-4 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap shrink-0"
+              style={{
+                color: tab === t.id ? C.textHi : C.muted,
+              }}>
+              {t.label}
+              {/* Active indicator line */}
+              {tab === t.id && (
+                <motion.div 
+                  layoutId="tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-[2px]"
+                  style={{ background: C.textHi }}
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+        
+        {/* Period switcher + Export - right aligned */}
+        <div className="flex items-center justify-between gap-4">
+          {/* Period pills */}
+          <div className="flex items-center gap-1 p-1 rounded-lg"
+            style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
               <button key={p} onClick={()=>setPeriod(p)}
-                className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
+                className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-all"
                 style={{
-                  background:period===p?`${C.accent}18`:'transparent',
-                  color:period===p?C.accent:C.muted,
-                  border:`1px solid ${period===p?C.accent:C.border}`,
+                  background: period === p ? C.surface3 : 'transparent',
+                  color: period === p ? C.textHi : C.muted,
                 }}>
-                {p}
+                {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
           </div>
+          
           {/* Export buttons */}
-          <div className="flex items-center gap-1.5 pl-3" style={{ borderLeft: `1px solid ${C.border}` }}>
+          <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
               title="Vytisknout aktuální zobrazení"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:bg-white/[0.04]"
               style={{
-                background: `${C.accent}14`,
-                color: C.accent,
-                border: `1px solid ${C.accent}40`,
+                color: C.muted,
+                border: `1px solid ${C.border}`,
               }}>
-              <Printer className="w-3.5 h-3.5" />
+              <Printer className="w-4 h-4" />
               Tisk
             </button>
             <button
               onClick={handleExportPdf}
-              title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
+              title='Uložit aktuální zobrazení jako PDF'
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:bg-white/[0.04]"
               style={{
-                background: `${C.yellow}14`,
-                color: C.yellow,
-                border: `1px solid ${C.yellow}40`,
+                color: C.muted,
+                border: `1px solid ${C.border}`,
               }}>
-              <FileDown className="w-3.5 h-3.5" />
+              <FileDown className="w-4 h-4" />
               PDF
             </button>
           </div>
@@ -2292,25 +2305,25 @@ tabs={[
             {/* Executive scorecard hero — celkové hodnocení A-F + AI insighty + live ticker */}
             <ExecutiveScorecard data={scorecardData} />
 
-            {/* KPI strip */}
-            <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
-              style={{border:`1px solid ${C.border}`}}>
+            {/* KPI strip - Vercel-style grid */}
+            <div className="grid grid-cols-4 lg:grid-cols-8 gap-px rounded-xl overflow-hidden"
+              style={{background: C.border}}>
               {[
-                {l:'Sálů celkem',      v:rooms.length,                          c:C.text},
-                {l:'Obsazeno',         v:`${busyCount} / ${rooms.length}`,       c:C.orange},
-                {l:'Volno',            v:`${freeCount} / ${rooms.length}`,       c:C.green},
+                {l:'Sálů celkem',      v:rooms.length,                          c:C.textHi},
+                {l:'Obsazeno',         v:`${busyCount}/${rooms.length}`,         c:C.orange},
+                {l:'Volno',            v:`${freeCount}/${rooms.length}`,         c:C.green},
                 {l:'Úklid + Údržba',  v:`${cleanCount+maintCount}`,             c:C.accent},
-                {l:`Využití (${period})`,v:`${avgUtil}%`,                        c:C.text},
-                {l:'Peak využití',     v:`${peakUtil}%`,                         c:peakUtil>90?C.red:C.orange},
-                {l:'Min využití',      v:`${minUtil}%`,                          c:C.muted},
-                {l:`Výkony (${period})`,v:totalOps,                             c:C.accent},
+                {l:`Využití`,         v:`${avgUtil}%`,                           c:C.textHi},
+                {l:'Peak',             v:`${peakUtil}%`,                         c:peakUtil>90?C.red:C.orange},
+                {l:'Min',              v:`${minUtil}%`,                          c:C.muted},
+                {l:`Výkony`,          v:totalOps,                                c:C.accent},
               ].map((k,i)=>(
                 <motion.div key={i} className="flex flex-col justify-between px-4 py-4"
-                  style={{background:C.surface,borderRight:i<7?`1px solid ${C.border}`:undefined}}
+                  style={{background:'#0a0a0a'}}
                   initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}
                   transition={{duration:0.3,delay:i*0.04}}>
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2.5" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-2xl font-bold leading-none" style={{color:k.c}}>{k.v}</p>
+                  <p className="text-[10px] font-medium mb-2" style={{color:C.muted}}>{k.l}</p>
+                  <p className="text-xl font-semibold leading-none tabular-nums" style={{color:k.c}}>{k.v}</p>
                 </motion.div>
               ))}
             </div>
