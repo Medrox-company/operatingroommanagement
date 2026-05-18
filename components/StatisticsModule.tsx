@@ -1978,6 +1978,7 @@ tabs={[
                 avgUtilization={avgUtil}
                 avgStepDurations={avgStepDurations}
                 periodLabel={period}
+                statusHistory={statusHistory}
               />
             </div>
           )}
@@ -2635,6 +2636,7 @@ tabs={[
               avgUtilization={avgUtil}
               avgStepDurations={avgStepDurations}
               periodLabel={period}
+              statusHistory={statusHistory}
             />
           </motion.div>
         )}
