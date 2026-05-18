@@ -746,6 +746,10 @@ export async function fetchStatusHistory(
 
     const { data, error } = await query;
     if (error) throw error;
+    console.log("[v0] fetchStatusHistory - returned", data?.length, "records");
+    if (data && data.length > 0) {
+      console.log("[v0] fetchStatusHistory - first record:", data[0]);
+    }
     return data || [];
   } catch (error) {
     console.error('[DB] Failed to fetch status history:', error);
