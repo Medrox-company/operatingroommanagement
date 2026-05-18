@@ -866,248 +866,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Locked row - shows timeline with colored statuses, yellow room label with icons */
-              if (room.isLocked) {
-                // Calculate operation positions for locked rooms that have active operations
-                const lockedStepIndex = room.currentStepIndex ?? 0;
-                const lockedIsActive = lockedStepIndex > 0 && lockedStepIndex < 6; // Active operation (not free/ready)
-                let lockedBoxLeftPct = 0;
-                let lockedBoxWidthPct = 0;
-                let lockedStartDate: Date | null = null;
-                
-                if (lockedIsActive && room.operationStartedAt) {
-                  lockedStartDate = new Date(room.operationStartedAt);
-                  
-                  // Calculate window start: 7:00 today (or yesterday if before 7:00)
-                  const activeWindowStart = new Date(currentTime);
-                  if (currentTime.getHours() < TIMELINE_START_HOUR) {
-                    activeWindowStart.setDate(activeWindowStart.getDate() - 1);
-                  }
-                  activeWindowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-                  
-                  const rawLeftPct = getTimePercentForTimeline(lockedStartDate, activeWindowStart);
-                  lockedBoxLeftPct = Math.max(0, rawLeftPct);
-                  
-                  if (room.estimatedEndTime) {
-                    const estEnd = new Date(room.estimatedEndTime);
-                    const endPct = getTimePercentForTimeline(estEnd, activeWindowStart);
-                    lockedBoxWidthPct = Math.max(0.5, endPct - lockedBoxLeftPct);
-                  } else {
-                    const nowPct = getTimePercentForTimeline(currentTime, activeWindowStart);
-                    lockedBoxWidthPct = Math.max(0.5, nowPct - lockedBoxLeftPct);
-                  }
-                }
-                
-                return (
-                  <div
-                    key={room.id}
-                    className="flex items-stretch cursor-pointer transition-all duration-200 group"
-                    style={{ height: rowHeight, borderBottom: `1px solid ${C.border}` }}
-                    onClick={() => setSelectedRoom(room)}
-                  >
-                    {/* Room label - YELLOW background for locked state with badges */}
-                    <div 
-                      className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
-                      style={{ 
-                        width: ROOM_LABEL_WIDTH, 
-                        minWidth: ROOM_LABEL_WIDTH, 
-                        background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
-                        borderRight: `1px solid ${C.accent}40`,
-                      }}
-                    >
-                      {/* Patient Called Badge */}
-                      {room.patientCalledAt && !room.patientArrivedAt && (
-                        <div
-                          className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-                          style={{
-                            background: 'rgba(59, 130, 246, 0.1)',
-                            border: '1px solid rgba(96, 165, 250, 0.96)',
-                          }}
-                          title="Pacient volán"
-                        >
-                          <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(96, 165, 250, 0.96)' }}>VOLÁN</span>
-                          <Phone className="w-3 h-3" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
-                        </div>
-                      )}
-
-                      {/* Patient Arrived Badge */}
-                      {room.patientArrivedAt && (
-                        <div
-                          className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-                          style={{
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            border: '1px solid rgba(52, 211, 153, 0.96)',
-                          }}
-                          title="Pacient v operačním traktu"
-                        >
-                          <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
-                          <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
-                        </div>
-                      )}
-
-                      {/* Room info card - Yellow themed for locked */}
-                      <div 
-                        className="flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-md flex items-center px-2.5 backdrop-blur-md transition-all duration-200 overflow-hidden"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${C.accent}20 0%, ${C.accent}10 100%)`, 
-                          border: `1px solid ${C.accent}50`,
-                        }}
-                      >
-                        <div className="flex items-center gap-2 w-full">
-                          <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: C.accent }} />
-                          <p className="text-sm font-semibold tracking-tight truncate" style={{ color: C.accent }}>{room.name}</p>
-                          {room.isSeptic && (
-                            <span className="text-[8px] font-semibold px-2 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,0.15)', color: 'rgba(216,180,254,0.9)', textTransform: 'uppercase' }}>SEPTIKA</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Timeline section - shows active operation and completed operations */}
-                    <div className="relative flex-1 overflow-hidden">
-                      {/* Time grid lines */}
-                      <div className="absolute inset-0 flex">
-                        {Array.from({ length: TIMELINE_HOURS }).map((_, i) => (
-                          <div 
-                            key={i} 
-                            className="flex-1 border-r opacity-30" 
-                            style={{ borderColor: C.border }}
-                          />
-                        ))}
-                      </div>
-                      
-                      {/* Active operation bar with status colors */}
-                      {lockedIsActive && lockedBoxWidthPct > 0 && (
-                        <div
-                          className="absolute top-1 bottom-1 overflow-hidden rounded-md"
-                          style={{ 
-                            left: `${lockedBoxLeftPct}%`, 
-                            width: `${lockedBoxWidthPct}%`,
-                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.25)',
-                            border: '1px solid rgba(255,255,255,0.06)',
-                          }}
-                        >
-                          {/* Background with current phase color */}
-                          <div 
-                            className="absolute inset-0"
-                            style={{
-                              background: statusByOrderIndex[lockedStepIndex]?.accent_color 
-                                ? `linear-gradient(180deg, ${statusByOrderIndex[lockedStepIndex].accent_color}66 0%, ${statusByOrderIndex[lockedStepIndex].accent_color}33 100%)`
-                                : C.glass
-                            }}
-                          />
-                          
-                          {/* Status history segments */}
-                          {room.statusHistory && room.statusHistory.length > 0 && lockedStartDate && (
-                            <div className="absolute inset-0 flex overflow-hidden rounded-md">
-                              {(() => {
-                                const opStart = lockedStartDate.getTime();
-                                const opEnd = room.estimatedEndTime ? new Date(room.estimatedEndTime).getTime() : currentTime.getTime();
-                                const opDuration = Math.max(1, opEnd - opStart);
-
-                                return room.statusHistory.map((entry, idx) => {
-                                  const segStart = new Date(entry.startedAt).getTime();
-                                  const nextEntry = room.statusHistory![idx + 1];
-                                  const segEnd = nextEntry ? new Date(nextEntry.startedAt).getTime() : currentTime.getTime();
-                                  const segDuration = Math.max(0, segEnd - segStart);
-                                  const segWidthPct = (segDuration / opDuration) * 100;
-                                  const segLeftPct = ((segStart - opStart) / opDuration) * 100;
-                                  if (segWidthPct <= 0) return null;
-                                  const phaseColor = statusByOrderIndex[entry.stepIndex]?.accent_color || entry.color || '#6b7280';
-
-                                  return (
-                                    <div
-                                      key={`locked-active-seg-${idx}`}
-                                      className="absolute top-0 bottom-0"
-                                      style={{
-                                        left: `${Math.max(0, segLeftPct)}%`,
-                                        width: `${Math.max(0.5, segWidthPct)}%`,
-                                        background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
-                                        borderRight: idx < room.statusHistory!.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
-                                      }}
-                                      title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                    />
-                                  );
-                                }).filter(Boolean);
-                              })()}
-                            </div>
-                          )}
-                          
-                          {/* Status text overlay */}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[10px] font-bold text-white/90 drop-shadow-md px-2 truncate">
-                              {statusByOrderIndex[lockedStepIndex]?.title || 'Probíhá'}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Completed operations from today */}
-                      {room.completedOperations && room.completedOperations.filter(op => {
-                        const opDate = new Date(op.startedAt);
-                        const today = new Date(currentTime);
-                        return opDate.toDateString() === today.toDateString();
-                      }).map((operation, opIdx) => {
-                        if (!operation.startedAt || !operation.endedAt) return null;
-                        const opStartDate = new Date(operation.startedAt);
-                        const opEndDate = new Date(operation.endedAt);
-                        const position = getOperationPosition(opStartDate, opEndDate, currentTime);
-                        if (position.width <= 0) return null;
-                        
-                        return (
-                          <div
-                            key={`locked-completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-md"
-                            style={{ 
-                              left: `${position.left}%`, 
-                              width: `${Math.max(0.3, position.width)}%`,
-                              background: C.glass,
-                              border: `1px solid ${C.border}`,
-                            }}
-                          >
-                            {operation.statusHistory && operation.statusHistory.length > 0 && (
-                              <div className="absolute inset-0 flex overflow-hidden rounded-md">
-                                {(() => {
-                                  const opStart = new Date(operation.startedAt).getTime();
-                                  const opEnd = new Date(operation.endedAt).getTime();
-                                  const opDuration = Math.max(1, opEnd - opStart);
-
-                                  return operation.statusHistory.map((entry, idx) => {
-                                    const segStart = new Date(entry.startedAt).getTime();
-                                    const nextEntry = operation.statusHistory[idx + 1];
-                                    const segEnd = nextEntry ? new Date(nextEntry.startedAt).getTime() : opEnd;
-                                    const segDuration = Math.max(0, segEnd - segStart);
-                                    const segWidthPct = (segDuration / opDuration) * 100;
-                                    const segLeftPct = ((segStart - opStart) / opDuration) * 100;
-                                    if (segWidthPct <= 0) return null;
-                                    const phaseColor = statusByOrderIndex[entry.stepIndex]?.accent_color || entry.color || '#6b7280';
-
-                                    return (
-                                      <div
-                                        key={`locked-comp-seg-${idx}`}
-                                        className="absolute top-0 bottom-0"
-                                        style={{
-                                          left: `${Math.max(0, segLeftPct)}%`,
-                                          width: `${Math.max(0.5, segWidthPct)}%`,
-                                          background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
-                                          borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
-                                        }}
-                                        title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                      />
-                                    );
-                                  }).filter(Boolean);
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              }
-
-              /* Active / Free row */
+              /* Active / Free / Locked row - unified design with yellow gradient background */
               return (
                 <div
                   key={room.id}
@@ -1118,19 +877,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column.
-                     Vnější `py-1.5` ZARUČUJE, že vnitřní glassmorph karta (vyplňující rodiče
-                     pomocí self-stretch) má SHODNOU vertikální výšku jako zaoblený timeline bar
-                     v pravé části (ten má `top-1.5 bottom-1.5` = inset 6px). Tím obě "kapsle"
-                     na řádku vypadají jako vizuálně sladěný pár. */}
+                  {/* Room Label - Sticky LEFT column with yellow gradient background (same as locked) */}
                   <div 
-                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      background: 'rgba(11,17,32,0.98)',
-                      backdropFilter: 'blur(8px)',
-                      borderRight: `1px solid ${C.border}`,
+                      background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
+                      borderRight: `1px solid ${C.accent}40`,
                     }}
                   >
                     {/* ARO Overtime Badge - softer */}
@@ -1156,9 +910,7 @@ style={{
                       return null;
                     })()}
 
-                    {/* Patient Called Badge — stejný design jako ARO (vertikální stack
-                        label nad ikonou, glassmorph s barevným borderem). Přesunuto z name
-                        karty na pozici před názvem sálu, aby vizuálně korespondovalo s ARO. */}
+                    {/* Patient Called Badge */}
                     {room.patientCalledAt && !room.patientArrivedAt && (
                       <div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
@@ -1173,7 +925,7 @@ style={{
                       </div>
                     )}
 
-                    {/* Patient Arrived Badge — stejný design jako ARO. */}
+                    {/* Patient Arrived Badge */}
                     {room.patientArrivedAt && (
                       <div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
@@ -1185,6 +937,21 @@ style={{
                       >
                         <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
                         <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
+                      </div>
+                    )}
+
+                    {/* Lock Badge - when room is locked */}
+                    {room.isLocked && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: `${C.accent}20`,
+                          border: `1px solid ${C.accent}`,
+                        }}
+                        title="Sál uzamčen"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: C.accent }}>LOCK</span>
+                        <Lock className="w-3 h-3" style={{ color: C.accent }} />
                       </div>
                     )}
                     
