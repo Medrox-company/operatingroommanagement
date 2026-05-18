@@ -47,35 +47,36 @@ interface HeatmapCellProps {
 }
 
 const HeatmapCell = memo(({ value, label, time, onClick }: HeatmapCellProps) => {
-  // Color gradient from cool (low utilization) to hot (high utilization)
-  let color: string = C.green;
-  let intensity: string = 'rgba(0, 245, 160, ';
+  // Color gradient from red (0%) through yellow to green (100%)
+  // Using HSL interpolation for smooth color transition
+  // Red: HSL(0, 100%, 50%)
+  // Yellow: HSL(60, 100%, 50%)
+  // Green: HSL(120, 100%, 50%)
   
-  if (value < 20) {
-    color = '#404040';
-    intensity = 'rgba(64, 64, 64, ';
-  } else if (value < 40) {
-    color = '#2DD4BF';
-    intensity = 'rgba(45, 212, 191, ';
-  } else if (value < 60) {
-    color = C.accent;
-    intensity = 'rgba(0, 217, 255, ';
-  } else if (value < 80) {
-    color = C.orange;
-    intensity = 'rgba(255, 159, 67, ';
+  let hue: number;
+  let saturation: number = 100;
+  let lightness: number = 45;
+  
+  if (value <= 50) {
+    // Red to Yellow (0% to 50%)
+    hue = (value / 50) * 60; // 0 to 60 degrees
   } else {
-    color = C.red;
-    intensity = 'rgba(255, 107, 107, ';
+    // Yellow to Green (50% to 100%)
+    hue = 60 + ((value - 50) / 50) * 60; // 60 to 120 degrees
   }
+  
+  const bgColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const opacity = Math.max(0.2, value / 100);
 
   return (
     <motion.div
-      whileHover={{ scale: 1.08, boxShadow: `0 0 16px ${color}40` }}
+      whileHover={{ scale: 1.08, boxShadow: `0 0 16px ${bgColor}40` }}
       onClick={onClick}
       className="cursor-pointer relative rounded-lg transition-all"
       style={{
-        background: `${intensity}${Math.max(0.15, value / 100)})`,
-        border: `1px solid ${color}40`,
+        background: bgColor,
+        opacity: opacity,
+        border: `1px solid ${bgColor}60`,
         aspectRatio: '1 / 1',
         display: 'flex',
         alignItems: 'center',
@@ -84,14 +85,7 @@ const HeatmapCell = memo(({ value, label, time, onClick }: HeatmapCellProps) => 
       }}
       title={`${label}${time ? ` @ ${time}` : ''}: ${value.toFixed(0)}%`}
     >
-      <div className="text-xs font-bold text-center leading-tight" style={{ color: C.textHi }}>
-        {value.toFixed(0)}%
-      </div>
-      {time && (
-        <div className="text-[8px] text-center mt-0.5" style={{ color: C.muted }}>
-          {time}
-        </div>
-      )}
+      {/* Bez textu - pouze barevné buňky */}
     </motion.div>
   );
 });
@@ -191,7 +185,7 @@ export const HeatmapTab = memo(({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ── KPI Stats Row ──────────────────────────────────────────────────────────── */}
+      {/* ── KPI Stats Row ───────────────────────────────────��──────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KPIBlock
           label="Průměrné využití"
