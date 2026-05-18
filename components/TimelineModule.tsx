@@ -1002,7 +1002,12 @@ style={{
                   </div>
 
                   {/* Timeline section - RIGHT side, scrollable with rounded-r corners */}
-                  <div className="relative flex-1 overflow-hidden rounded-r-lg">
+                  <div 
+                    className="relative flex-1 overflow-hidden rounded-r-lg"
+                    style={{
+                      background: room.isLocked ? `${C.accent}12` : 'transparent'
+                    }}
+                  >
                     {/* Hour grid lines */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                       const displayHour = hour % 24;
