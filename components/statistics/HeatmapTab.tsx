@@ -111,6 +111,9 @@ export const HeatmapTab = memo(({
     // Group status history by room and hour
     const roomHourMap = new Map<string, Map<number, { operating: number; total: number }>>();
 
+    console.log("[v0] HeatmapTab - statusHistory length:", statusHistory.length);
+    console.log("[v0] HeatmapTab - rooms count:", rooms.length);
+
     statusHistory.forEach(entry => {
       const date = new Date(entry.created_at);
       const hour = date.getHours();
@@ -134,7 +137,7 @@ export const HeatmapTab = memo(({
 
     // Build hourly data
     const hours = Array.from({ length: 24 }, (_, i) => i);
-    return hours.map(hour => {
+    const result = hours.map(hour => {
       const timeLabel = `${hour.toString().padStart(2, '0')}:00`;
       const roomData = rooms.map(room => {
         const hourMap = roomHourMap.get(room.id);
@@ -151,6 +154,9 @@ export const HeatmapTab = memo(({
       });
       return { hour, timeLabel, roomData };
     });
+
+    console.log("[v0] HeatmapTab - hourlyHeatmap first hour:", result[0]);
+    return result;
   }, [rooms, statusHistory]);
 
   // Calculate statistics
