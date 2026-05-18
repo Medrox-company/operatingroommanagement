@@ -6,7 +6,7 @@ import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext'
 import MobileTimelineView from './mobile/MobileTimelineView';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
 // ========== DESIGN TOKENS (Modern glass-morphism style) ==========
@@ -866,7 +866,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Locked row - LoginPage style with accent yellow */
+              /* Locked row - shows timeline with lock indicator overlay */
               if (room.isLocked) {
                 return (
                   <div
@@ -890,21 +890,96 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
                       </div>
                     </div>
-                    {/* Locked timeline box - LoginPage glassmorph */}
+                    {/* Locked timeline - shows completed operations and lock overlay */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                    <div className="absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden">
+                      {/* Time grid lines */}
+                      <div className="absolute inset-0 flex">
+                        {Array.from({ length: TIMELINE_HOURS }).map((_, i) => (
+                          <div 
+                            key={i} 
+                            className="flex-1 border-r opacity-30" 
+                            style={{ borderColor: C.border }}
+                          />
+                        ))}
+                      </div>
+                      
+                      {/* Completed operations from today */}
+                      {room.completedOperations && room.completedOperations.filter(op => {
+                        const opDate = new Date(op.startedAt);
+                        const today = new Date(currentTime);
+                        return opDate.toDateString() === today.toDateString();
+                      }).map((operation, opIdx) => {
+                        if (!operation.startedAt || !operation.endedAt) return null;
+                        const opStartDate = new Date(operation.startedAt);
+                        const opEndDate = new Date(operation.endedAt);
+                        const position = getOperationPosition(opStartDate, opEndDate, currentTime);
+                        if (position.width <= 0) return null;
+                        
+                        return (
+                          <div
+                            key={`locked-op-${opIdx}`}
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-md"
+                            style={{ 
+                              left: `${position.left}%`, 
+                              width: `${Math.max(0.3, position.width)}%`,
+                              background: C.glass,
+                              border: `1px solid ${C.border}`,
+                            }}
+                          >
+                            {/* Completed operation segments with colors */}
+                            {operation.statusHistory && operation.statusHistory.length > 0 && (
+                              <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                                {(() => {
+                                  const stepColorMap: Record<number, string> = {};
+                                  activeStatuses.forEach((s, idx) => {
+                                    stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
+                                  });
+                                  const opStart = new Date(operation.startedAt).getTime();
+                                  const opEnd = new Date(operation.endedAt).getTime();
+                                  const opDuration = Math.max(1, opEnd - opStart);
+
+                                  return operation.statusHistory.map((entry, idx) => {
+                                    const segStart = new Date(entry.startedAt).getTime();
+                                    const nextEntry = operation.statusHistory[idx + 1];
+                                    const segEnd = nextEntry ? new Date(nextEntry.startedAt).getTime() : opEnd;
+                                    const segDuration = Math.max(0, segEnd - segStart);
+                                    const segWidthPct = (segDuration / opDuration) * 100;
+                                    const segLeftPct = ((segStart - opStart) / opDuration) * 100;
+                                    if (segWidthPct <= 0) return undefined;
+                                    const phaseColor = stepColorMap[entry.stepIndex] || entry.color || '#6b7280';
+
+                                    return (
+                                      <div
+                                        key={`locked-seg-${idx}`}
+                                        className="absolute top-0 bottom-0"
+                                        style={{
+                                          left: `${Math.max(0, segLeftPct)}%`,
+                                          width: `${Math.max(0.5, segWidthPct)}%`,
+                                          background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
+                                          borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
+                                        }}
+                                        title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                      />
+                                    );
+                                  }).filter(Boolean);
+                                })()}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Lock overlay indicator */}
                       <div 
-                        className="absolute inset-0 rounded-md backdrop-blur-md"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${C.accent}15 0%, ${C.accent}05 100%)`,
-                            border: `1px solid ${C.accent}25`,
-                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
-                          }}
-                        />
-                        {/* Content */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-2">
-                          <Lock className="w-4 h-4" style={{ color: `${C.accent}99` }} />
-                          <span className="text-xs font-bold tracking-[0.2em] uppercase select-none" style={{ color: `${C.accent}bb` }}>
+                        className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center pointer-events-none"
+                        style={{ 
+                          background: `linear-gradient(90deg, ${C.accent}08 0%, ${C.accent}03 50%, ${C.accent}08 100%)`,
+                          border: `1px solid ${C.accent}15`,
+                        }}
+                      >
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg" style={{ background: `${C.accent}10` }}>
+                          <Lock className="w-3.5 h-3.5" style={{ color: `${C.accent}80` }} />
+                          <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: `${C.accent}90` }}>
                             UZAMCENO
                           </span>
                         </div>
@@ -1497,18 +1572,28 @@ style={{
                       </div>
                     )}
 
-                    {/* Free room indicator - LoginPage glass style */}
+                    {/* Free room indicator - clean style WITHOUT blur */}
                     {isFree && (
                       <div 
                         className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
                         style={{ 
-                          background: C.glass,
-                          border: `1px dashed ${C.border}`,
-                          backdropFilter: 'blur(4px)'
+                          background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 50%, rgba(34, 197, 94, 0.05) 100%)',
+                          border: `1px solid rgba(34, 197, 94, 0.15)`,
                         }}
                       >
-                        <div className="text-center px-3">
-                          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-[0.2em]">{stepName}</p>
+                        {/* Subtle ready indicator line on left */}
+                        <div 
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-md"
+                          style={{ background: 'rgba(34, 197, 94, 0.4)' }}
+                        />
+                        <div className="flex items-center gap-2 px-3">
+                          <div 
+                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+                          >
+                            <CheckCircle className="w-3 h-3" style={{ color: 'rgba(34, 197, 94, 0.7)' }} />
+                          </div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(34, 197, 94, 0.5)' }}>{stepName}</p>
                         </div>
                       </div>
                     )}
