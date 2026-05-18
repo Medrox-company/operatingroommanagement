@@ -284,8 +284,8 @@ export const ShiftsTab: React.FC<ShiftsTabProps> = memo(({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pie chart - by type */}
         <Card icon={Clock} title="Podle typu směny">
-          <div style={{ height: 200, width: '100%' }}>
-            <ResponsiveContainer width="100%" height={200}>
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={stats.byType}
@@ -326,8 +326,8 @@ export const ShiftsTab: React.FC<ShiftsTabProps> = memo(({
 
         {/* By day */}
         <Card icon={Calendar} title="Podle dne v týdnu">
-          <div style={{ height: 200, width: '100%' }}>
-            <ResponsiveContainer width="100%" height={200}>
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.byDay}>
                 <XAxis dataKey="day" stroke={C.muted} fontSize={10} />
                 <YAxis stroke={C.muted} fontSize={10} />
@@ -394,8 +394,8 @@ export const ShiftsTab: React.FC<ShiftsTabProps> = memo(({
 
         {/* Trend */}
         <Card icon={TrendingUp} title="Plán na příštích 14 dní" className="lg:col-span-2">
-          <div style={{ height: 180, width: '100%' }}>
-            <ResponsiveContainer width="100%" height={180}>
+          <div className="h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.dailyCounts}>
                 <defs>
                   <linearGradient id="shiftGrad" x1="0" y1="0" x2="0" y2="1">
