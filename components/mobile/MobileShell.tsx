@@ -114,7 +114,7 @@ export function MobilePillTabs<T extends string>({
     <div
       className={`grid rounded-2xl p-1 gap-1 ${className}`}
       style={{
-        gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
         background: 'rgba(255,255,255,0.04)',
         border: '1px solid rgba(255,255,255,0.06)',
         backdropFilter: 'blur(12px)',
@@ -126,7 +126,7 @@ export function MobilePillTabs<T extends string>({
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            className={`relative rounded-xl text-xs font-semibold py-2.5 px-2 transition-colors outline-none ${
+            className={`relative rounded-xl text-xs font-semibold py-2.5 px-1.5 transition-colors outline-none truncate ${
               active ? 'text-white' : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -141,7 +141,7 @@ export function MobilePillTabs<T extends string>({
                 transition={{ type: 'spring', stiffness: 420, damping: 36 }}
               />
             )}
-            <span className="relative truncate">{tab.label}</span>
+            <span className="relative truncate text-[11px]">{tab.label}</span>
           </button>
         );
       })}
