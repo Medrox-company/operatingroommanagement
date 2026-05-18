@@ -221,8 +221,8 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = memo(({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Radar chart */}
         <Card icon={BarChart3} title="Porovnání oddělení">
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ height: 250, width: '100%' }}>
+            <ResponsiveContainer width="100%" height={250}>
               <RadarChart data={stats.radarData}>
                 <PolarGrid stroke={C.border} />
                 <PolarAngleAxis dataKey="name" stroke={C.muted} fontSize={10} />
@@ -244,8 +244,8 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = memo(({
 
         {/* Room distribution pie */}
         <Card icon={Activity} title="Distribuce sálů">
-          <div className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ height: 220, width: '100%' }}>
+            <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
                   data={stats.roomDistribution}
@@ -287,8 +287,8 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = memo(({
         {/* Operations by department */}
         {stats.opsByDept.length > 0 && (
           <Card icon={TrendingUp} title="Operace za 24h podle oddělení">
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ height: 200, width: '100%' }}>
+              <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={stats.opsByDept} layout="vertical">
                   <XAxis type="number" stroke={C.muted} fontSize={10} />
                   <YAxis type="category" dataKey="name" stroke={C.muted} fontSize={10} width={90} />

@@ -347,8 +347,8 @@ export function FinanceTab({
       {/* ─── DENNÍ TREND NÁKLADŮ ────────────────────────────────── */}
       {dailySeries.length > 0 && (
         <Card title="Denní vývoj nákladů" subtitle="Skutečné hodiny × hodinová sazba" icon={TrendingUp} accent={C.accent}>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ height: 224, width: '100%' }}>
+            <ResponsiveContainer width="100%" height={224}>
               <ComposedChart data={dailySeries} margin={{ top: 8, right: 8, left: 8, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
                 <XAxis dataKey="label" tick={{ fontSize: 9, fill: C.muted }} />
