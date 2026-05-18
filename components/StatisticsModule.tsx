@@ -47,6 +47,7 @@ import { FinanceTab } from './statistics/FinanceTab';
 import { RoomsTab } from './statistics/RoomsTab';
 import { PhasesTab } from './statistics/PhasesTab';
 import { NotificationsTab } from './statistics/NotificationsTab';
+import { HeatmapTab } from './statistics/HeatmapTab';
 import { DepartmentsTab } from './statistics/DepartmentsTab';
 import { DevicesTab } from './statistics/DevicesTab';
 
@@ -2743,165 +2744,12 @@ tabs={[
                 Heatmapa
               </h2>
             )}
-
-            {/* Peak cards - calculated from real heatmap data */}
-            {(() => {
-              // Find peak utilization from heatmap
-              const workingHourValues = heatmapData.flat().filter(v => v >= 0);
-              const peakHeatUtil = workingHourValues.length > 0 ? Math.max(...workingHourValues) : 0;
-              const minHeatUtil = workingHourValues.length > 0 ? Math.min(...workingHourValues) : 0;
-              
-              // Find when peak occurs
-              let peakDay = 0, peakHour = 0;
-              heatmapData.forEach((row, di) => {
-                row.forEach((v, hi) => {
-                  if (v === peakHeatUtil && v >= 0) { peakDay = di; peakHour = hi; }
-                });
-              });
-              
-              // Calculate average working hours from rooms
-              const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-              const avgWorkingMins = rooms.length > 0 
-                ? Math.round(rooms.reduce((sum, r) => sum + getRoomWorkingMinutes(r, todayIndex), 0) / rooms.length)
-                : 0;
-              const avgWorkingHours = Math.round(avgWorkingMins / 60);
-              const workingRange = getCombinedWorkingHoursRange(rooms, todayIndex);
-              
-              return (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                {l:'Nejvyšší vytížení',     v:`${peakHeatUtil}%`, sub:`${DAYS[peakDay]} ${peakHour}:00–${peakHour+1}:00`, c:C.red},
-                {l:'Průměrné vytížení',     v:`${avgUtil}%`, sub:'Pracovní dny', c:C.accent},
-                {l:'Nejnižší vytížení',     v:`${minHeatUtil}%`,  sub:'Mimo špičku', c:C.green},
-                {l:'Operační hodiny / den', v:`${avgWorkingHours} h`, sub:`${workingRange.start}:00–${workingRange.end}:00`, c:C.muted},
-              ].map(k=>(
-                <Card key={k.l} className="p-4">
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-3xl font-bold leading-none mb-1" style={{color:k.c}}>{k.v}</p>
-                  <p className="text-[10px]" style={{color:C.faint}}>{k.sub}</p>
-                </Card>
-              ))}
-            </div>
-              );
-            })()}
-
-            {/* Heatmap grid */}
-            <Card className="p-5">
-              <SectionLabel>Heatmapa vytížení — den × hodina ({period})</SectionLabel>
-              <div className="overflow-x-auto">
-                <div className="inline-flex flex-col gap-1" style={{minWidth:560}}>
-                  <div className="flex gap-1 pl-8">
-                    {Array.from({length:24},(_,h)=>(
-                      <div key={h} className="w-5 text-center text-[9px] font-bold shrink-0" style={{color:C.faint}}>{h}</div>
-                    ))}
-                  </div>
-                  {DAYS.map((day,di)=>(
-                    <div key={di} className="flex items-center gap-1">
-                      <span className="w-7 text-xs font-bold shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
-                      {heatmapData[di].map((v,hi)=>(
-                        <motion.div key={hi} className="w-5 h-5 rounded-[3px] shrink-0"
-                          style={{background:heatColor(v)}}
-                          initial={{opacity:0,scale:0.5}}
-                          animate={{opacity:1,scale:1}}
-                          transition={{duration:0.2,delay:(di*24+hi)*0.003}}
-                          title={`${day} ${hi}:00 — ${v}%`}/>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-4 mt-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{color:C.muted}}>Legenda</span>
-                {[
-                  {c:'rgba(30,41,59,0.45)',l:'< 25%'},
-                  {c:'rgba(16,185,129,0.62)',l:'25–50%'},
-                  {c:'rgba(251,191,36,0.68)',l:'50–70%'},
-                  {c:'rgba(249,115,22,0.78)',l:'70–90%'},
-                  {c:'rgba(255,59,48,0.88)', l:'> 90%'},
-                ].map(l=>(
-                  <div key={l.l} className="flex items-center gap-1.5">
-                    <div className="w-3.5 h-3.5 rounded-[2px]" style={{background:l.c}}/>
-                    <span className="text-xs" style={{color:C.muted}}>{l.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Hourly avg line across week */}
-            <Card className="p-5">
-              <SectionLabel>Průměrné hodinové vytížení — pracovní týden ({period})</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
-                <AreaChart
-                  data={Array.from({length:24},(_,h)=>{
-                    const pracValues = heatmapData.slice(0,5).map(d => d[h]).filter(v => v >= 0);
-                    const vikendValues = heatmapData.slice(5).map(d => d[h]).filter(v => v >= 0);
-                    return {
-                      h:`${h}`,
-                      prac: pracValues.length > 0 ? Math.round(pracValues.reduce((s,v)=>s+v,0)/pracValues.length) : 0,
-                      vikend: vikendValues.length > 0 ? Math.round(vikendValues.reduce((s,v)=>s+v,0)/vikendValues.length) : 0,
-                    };
-                  })}
-                  margin={{top:4,right:0,bottom:0,left:-24}}>
-                  <defs>
-                    <linearGradient id="hg1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={C.accent} stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor={C.accent} stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="hg2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={C.muted} stopOpacity={0.12}/>
-                      <stop offset="95%" stopColor={C.muted} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                  <XAxis dataKey="h" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} domain={[0,100]} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number,name:string)=>[`${v}%`,name==='prac'?'Pracovní dny':'Víkend']}/>
-                  <Area type="monotone" dataKey="prac"   stroke={C.accent} fill="url(#hg1)" strokeWidth={1.5} dot={false} name="prac"/>
-                  <Area type="monotone" dataKey="vikend" stroke={C.muted}  fill="url(#hg2)" strokeWidth={1}   dot={false} name="vikend"/>
-                </AreaChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{c:C.accent,l:'Pracovní dny'},{c:C.muted,l:'Víkend'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-1 rounded-full" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Daily peak bar */}
-            <Card className="p-5">
-              <SectionLabel>Denní průměrné vytížení dle dne v týdnu (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart
-                  data={DAYS.map((day,di)=>{
-                    const workingHours = heatmapData[di].filter(v => v >= 0);
-                    return {
-                      day,
-                      avg: workingHours.length > 0 ? Math.round(workingHours.reduce((s,v)=>s+v,0)/workingHours.length) : 0,
-                      peak: workingHours.length > 0 ? Math.max(...workingHours) : 0,
-                    };
-                  })}
-                  margin={{top:4,right:0,bottom:0,left:-24}} barSize={20}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                  <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number,name:string)=>[`${v}%`,name==='avg'?'Průměr':'Peak']}/>
-                  <Bar dataKey="avg"  fill={C.accent} opacity={0.5}  radius={[2,2,0,0]} name="avg"/>
-                  <Bar dataKey="peak" fill={C.orange} opacity={0.65} radius={[2,2,0,0]} name="peak"/>
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{c:C.accent,l:'Průměrné využití'},{c:C.orange,l:'Peak využití'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
+            <HeatmapTab
+              rooms={rooms}
+              statusHistory={statusHistory}
+              periodLabel={period}
+              calculateRoomUtilization={calculateRoomUtilization}
+            />
           </motion.div>
         )}
 
