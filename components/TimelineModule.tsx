@@ -1015,23 +1015,37 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       borderRight: `1px solid ${C.border}`,
                     }}
                   >
-                    {/* ARO Overtime Badge - softer */}
+                    {/* ARO Overtime Badge - zobrazuje název sálu s pořadím střídání */}
                     {(() => {
                       const aroPosition = getAroPosition(room.id);
                       const overtimeInfo = getOvertimeInfo(room.id);
                       
                       if (aroPosition && overtimeInfo) {
-  return (
-  <div
-className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-style={{
-  background: 'rgba(132, 255, 0, 0.1)',
-  border: '1px solid rgba(132, 255, 0, 0.96)'
-}}
+                        return (
+                          <div 
+                            className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-md"
+                            style={{
+                              background: 'rgba(132, 255, 0, 0.1)',
+                              border: '1px solid rgba(132, 255, 0, 0.96)'
+                            }}
+                            title={`Střídání #${aroPosition} - přesah ${overtimeInfo.overtimeMinutes} min`}
                           >
-                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
-                            <span className="text-xs font-bold text-white/80">{aroPosition}</span>
-                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
+                            {/* Pořadové číslo střídání v kruhu */}
+                            <div 
+                              className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ 
+                                background: 'rgba(132, 255, 0, 0.25)', 
+                                color: 'rgba(132, 255, 0, 0.96)',
+                                border: '1px solid rgba(132, 255, 0, 0.5)'
+                              }}
+                            >
+                              {aroPosition}
+                            </div>
+                            {/* Název sálu */}
+                            <div className="flex flex-col items-start">
+                              <span className="text-[10px] font-bold text-white/90">{room.name}</span>
+                              <span className="text-[7px] font-medium" style={{ color: 'rgba(132, 255, 0, 0.8)' }}>+{overtimeInfo.overtimeMinutes}m</span>
+                            </div>
                           </div>
                         );
                       }
