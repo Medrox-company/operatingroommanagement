@@ -47,7 +47,6 @@ import { FinanceTab } from './statistics/FinanceTab';
 import { RoomsTab } from './statistics/RoomsTab';
 import { PhasesTab } from './statistics/PhasesTab';
 import { NotificationsTab } from './statistics/NotificationsTab';
-import { ShiftsTab } from './statistics/ShiftsTab';
 import { DepartmentsTab } from './statistics/DepartmentsTab';
 import { DevicesTab } from './statistics/DevicesTab';
 
@@ -55,7 +54,7 @@ interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
-            | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'smeny' | 'oddeleni' | 'zarizeni';
+            | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'oddeleni' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -1423,7 +1422,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 'faze':       'Fáze',
 'heatmapa':   'Heatmapa',
 'notifikace': 'Notifikace',
-'smeny':      'Směny',
 'oddeleni':   'Oddělení',
 'zarizeni':   'Zařízení',
   };
@@ -1708,7 +1706,6 @@ const TABS:{ id:Tab; label:string }[]=[
 {id:'faze',       label:'Fáze'},
 {id:'heatmapa',   label:'Heatmapa'},
 {id:'notifikace', label:'Notifikace'},
-{id:'smeny',      label:'Směny'},
 {id:'oddeleni',   label:'Oddělení'},
 {id:'zarizeni',   label:'Zařízení'},
   ];
@@ -1848,7 +1845,6 @@ tabs={[
 { id: 'faze', label: 'Fáze' },
 { id: 'heatmapa', label: 'Heatmapa' },
 { id: 'notifikace', label: 'Notifikace' },
-{ id: 'smeny', label: 'Směny' },
 { id: 'oddeleni', label: 'Oddělení' },
 { id: 'zarizeni', label: 'Zařízení' },
   ]}
@@ -2107,20 +2103,6 @@ tabs={[
             </div>
           )}
 
-          {/* ── Směny ── */}
-          {(tab === 'smeny' || isPrinting) && (
-            <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Směny</h2>}
-              <MobileSectionLabel>Přehled směn</MobileSectionLabel>
-              <ShiftsTab
-                shifts={shifts}
-                staff={staffList}
-                rooms={rooms}
-                periodLabel={periodLabelMap[period]}
-              />
-            </div>
-          )}
-
           {/* ── Oddělení ── */}
           {(tab === 'oddeleni' || isPrinting) && (
             <div className="flex flex-col gap-3 print-section">
@@ -2203,70 +2185,66 @@ tabs={[
         </h1>
       </div>
 
-      {/* ── Period + Tab navigation ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7 print-hide">
-  {/* Tabs — horizontálně scrollovatelný strip pro 12 záložek */}
-  <div className="flex items-center gap-1 p-1 rounded-lg overflow-x-auto max-w-full"
-    style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      scrollbarWidth: 'thin',
-      scrollbarColor: `${C.faint} transparent`,
-    }}>
-    {TABS.map(t => (
-      <button key={t.id} onClick={() => setTab(t.id)}
-        className="px-3.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0"
+      {/* ── Row 1: Tab navigation ── */}
+      <div className="print-hide flex items-center overflow-x-auto pb-px"
         style={{
-          background: tab === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
-          color: tab === t.id ? C.text : C.muted,
-          boxShadow: tab === t.id ? `inset 0 0 0 1px ${C.border}` : 'none',
+          borderBottom: `1px solid ${C.border}`,
+          scrollbarWidth: 'thin',
+          scrollbarColor: `${C.faint} transparent`,
         }}>
-        {t.label}
-      </button>
-    ))}
-  </div>
-        {/* Period switcher + Export */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-              <button key={p} onClick={()=>setPeriod(p)}
-                className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
-                style={{
-                  background:period===p?`${C.accent}18`:'transparent',
-                  color:period===p?C.accent:C.muted,
-                  border:`1px solid ${period===p?C.accent:C.border}`,
-                }}>
-                {p}
-              </button>
-            ))}
-          </div>
-          {/* Export buttons */}
-          <div className="flex items-center gap-1.5 pl-3" style={{ borderLeft: `1px solid ${C.border}` }}>
-            <button
-              onClick={handlePrint}
-              title="Vytisknout aktuální zobrazení"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="px-4 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap shrink-0"
+            style={{
+              color: tab === t.id ? 'white' : C.muted,
+              borderBottom: tab === t.id ? `2px solid white` : '2px solid transparent',
+            }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Row 2: Period selector + Export ── */}
+      <div className="print-hide flex items-center justify-between gap-4 mb-6">
+        {/* Period pills */}
+        <div className="flex items-center gap-1 p-1 rounded-lg"
+          style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+          {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
+            <button key={p} onClick={()=>setPeriod(p)}
+              className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-all"
               style={{
-                background: `${C.accent}14`,
-                color: C.accent,
-                border: `1px solid ${C.accent}40`,
+                background: period === p ? C.surface : 'transparent',
+                color: period === p ? 'white' : C.muted,
               }}>
-              <Printer className="w-3.5 h-3.5" />
-              Tisk
+              {p.charAt(0).toUpperCase() + p.slice(1)}
             </button>
-            <button
-              onClick={handleExportPdf}
-              title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
-              style={{
-                background: `${C.yellow}14`,
-                color: C.yellow,
-                border: `1px solid ${C.yellow}40`,
-              }}>
-              <FileDown className="w-3.5 h-3.5" />
-              PDF
-            </button>
-          </div>
+          ))}
+        </div>
+        
+        {/* Export buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrint}
+            title="Vytisknout aktuální zobrazení"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:scale-[1.02]"
+            style={{
+              color: C.muted,
+              border: `1px solid ${C.border}`,
+            }}>
+            <Printer className="w-4 h-4" />
+            Tisk
+          </button>
+          <button
+            onClick={handleExportPdf}
+            title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:scale-[1.02]"
+            style={{
+              color: C.muted,
+              border: `1px solid ${C.border}`,
+            }}>
+            <FileDown className="w-4 h-4" />
+            PDF
+          </button>
         </div>
       </div>
 
@@ -2938,24 +2916,6 @@ tabs={[
         >
           <NotificationsTab
             notifications={notifications}
-            rooms={rooms}
-            periodLabel={periodLabelMap[period]}
-          />
-        </motion.div>
-        )}
-
-        {/* ── Směny ── (nový tab) */}
-        {(tab==='smeny' || isPrinting) && (
-        <motion.div key="smeny"
-        initial={isPrinting ? false : {opacity:0,y:10}}
-        animate={{opacity:1,y:0}}
-        exit={{opacity:0,y:-6}}
-        transition={{duration:0.22}}
-        className="flex flex-col gap-5 print-section"
-        >
-          <ShiftsTab
-            shifts={shifts}
-            staff={staffList}
             rooms={rooms}
             periodLabel={periodLabelMap[period]}
           />
