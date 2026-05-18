@@ -230,7 +230,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         const containerHeight = rowsContainerRef.current.clientHeight;
         const totalGapPx = (rooms.length - 1) * ROW_GAP_PX;
         const availableHeight = Math.max(0, containerHeight - totalGapPx);
-        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
+        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezp��sobil overflow
         const calculatedHeight = Math.floor(availableHeight / rooms.length);
         const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
         setRowHeight(clampedHeight);
@@ -866,7 +866,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Locked row - shows timeline with lock indicator overlay */
+              /* Locked row - shows timeline with colored statuses, yellow room label */
               if (room.isLocked) {
                 return (
                   <div
@@ -875,22 +875,28 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     style={{ height: rowHeight }}
                     onClick={() => setSelectedRoom(room)}
                   >
+                    {/* Room label - YELLOW background for locked state */}
                     <div 
-                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:brightness-110 rounded-l-lg" 
+                      style={{ 
+                        width: ROOM_LABEL_WIDTH, 
+                        minWidth: ROOM_LABEL_WIDTH, 
+                        background: `linear-gradient(135deg, ${C.accent}25 0%, ${C.accent}15 100%)`,
+                        borderLeft: `3px solid ${C.accent}`,
+                      }}
                     >
                       <div 
                         className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
+                        style={{ background: `${C.accent}30`, border: `1px solid ${C.accent}50` }}
                       >
                         <Lock className="w-3.5 h-3.5" style={{ color: C.accent }} />
                       </div>
                       <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
+                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: C.accent }}>{room.name}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${C.accent}90` }}>UZAMCENO</p>
                       </div>
                     </div>
-                    {/* Locked timeline - shows completed operations and lock overlay */}
+                    {/* Timeline - shows colored status bars without lock overlay */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
                       {/* Time grid lines */}
                       <div className="absolute inset-0 flex">
@@ -903,7 +909,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         ))}
                       </div>
                       
-                      {/* Completed operations from today */}
+                      {/* Completed operations from today - with colored status segments */}
                       {room.completedOperations && room.completedOperations.filter(op => {
                         const opDate = new Date(op.startedAt);
                         const today = new Date(currentTime);
@@ -968,22 +974,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           </div>
                         );
                       })}
-
-                      {/* Lock overlay indicator */}
-                      <div 
-                        className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center pointer-events-none"
-                        style={{ 
-                          background: `linear-gradient(90deg, ${C.accent}08 0%, ${C.accent}03 50%, ${C.accent}08 100%)`,
-                          border: `1px solid ${C.accent}15`,
-                        }}
-                      >
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg" style={{ background: `${C.accent}10` }}>
-                          <Lock className="w-3.5 h-3.5" style={{ color: `${C.accent}80` }} />
-                          <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: `${C.accent}90` }}>
-                            UZAMCENO
-                          </span>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 );
