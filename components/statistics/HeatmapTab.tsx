@@ -110,19 +110,19 @@ export const HeatmapTab = memo(({
   const hourlyHeatmap = useMemo(() => {
     // Group status history by room and hour
     const roomHourMap = new Map<string, Map<number, { operating: number; total: number }>>();
-    const eventTypes = new Set<string>();
-
-    console.log("[v0] HeatmapTab - statusHistory length:", statusHistory.length);
-    console.log("[v0] HeatmapTab - rooms count:", rooms.length);
 
     statusHistory.forEach(entry => {
-      eventTypes.add(entry.event_type);
-      
       const date = new Date(entry.created_at);
       const hour = date.getHours();
       const roomId = entry.operating_room_id;
-      // Počítáme všechny event_type obsahující 'operation' jako operating
-      const isOperating = entry.event_type && entry.event_type.includes('operation');
+      
+      // Počítáme všechny event_type jako "operating" pokud nejsou pause nebo enhanced_hygiene
+      const isOperating = !entry.event_type || (
+        !entry.event_type.includes('pause') && 
+        !entry.event_type.includes('hygiene') &&
+        !entry.event_type.includes('call') &&
+        !entry.event_type.includes('arrival')
+      );
 
       if (!roomHourMap.has(roomId)) {
         roomHourMap.set(roomId, new Map());
@@ -138,11 +138,9 @@ export const HeatmapTab = memo(({
       if (isOperating) hourData.operating += 1;
     });
 
-    console.log("[v0] HeatmapTab - unique event_types:", Array.from(eventTypes));
-
     // Build hourly data
     const hours = Array.from({ length: 24 }, (_, i) => i);
-    const result = hours.map(hour => {
+    return hours.map(hour => {
       const timeLabel = `${hour.toString().padStart(2, '0')}:00`;
       const roomData = rooms.map(room => {
         const hourMap = roomHourMap.get(room.id);
@@ -159,9 +157,6 @@ export const HeatmapTab = memo(({
       });
       return { hour, timeLabel, roomData };
     });
-
-    console.log("[v0] HeatmapTab - hourlyHeatmap first hour:", result[0]);
-    return result;
   }, [rooms, statusHistory]);
 
   // Calculate statistics

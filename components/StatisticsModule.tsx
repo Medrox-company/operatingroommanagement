@@ -1464,7 +1464,6 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
   ]);
   
   if (stats) setDbStats(stats);
-  console.log("[v0] StatisticsModule - history loaded:", history?.length, "records");
   setStatusHistory(history ?? []);
   setStaffList(staffRows);
   setPeriodComparison(comparison);
