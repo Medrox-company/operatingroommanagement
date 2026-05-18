@@ -17,7 +17,7 @@ import { RoomStatus } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
   C, Card, KPIBlock, ProgressRing, Sparkline, AnimatedCounter,
-  DeltaBadge, formatMinutes, formatPercent, hashStr, seededPreviousValue, computeDelta
+  DeltaBadge, formatMinutes, formatPercent, seededPreviousValue, computeDelta
 } from './shared';
 
 // ─────────────────────────────────────────────────────────────────────────────
