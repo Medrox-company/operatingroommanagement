@@ -742,9 +742,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               const stepColor = room.isPaused 
                 ? PAUSE_COLOR 
                 : (currentStep?.accent_color || currentStep?.color || '#6B7280');
-              const stepName = room.isPaused 
-                ? 'Pauza' 
-                : (currentStep?.title || currentStep?.name || 'Status');
+              const stepName = room.isLocked
+                ? 'Sál uzamčen'
+                : room.isPaused 
+                  ? 'Pauza' 
+                  : (currentStep?.title || currentStep?.name || 'Status');
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -1005,7 +1007,7 @@ style={{
                   <div 
                     className="relative flex-1 overflow-hidden rounded-r-lg"
                     style={{
-                      background: room.isLocked ? `linear-gradient(90deg, ${C.accent}25 0%, ${C.accent}15 100%)` : 'transparent'
+                      background: room.isLocked ? `linear-gradient(90deg, ${C.accent}40 0%, ${C.accent}25 100%)` : 'transparent'
                     }}
                   >
                     {/* Hour grid lines */}
