@@ -693,19 +693,58 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - Simple line without glow */}
+            {/* Now indicator - Enhanced with glow, pulse, and tooltip */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <div 
-                  className="absolute top-0 bottom-0 z-30 pointer-events-none" 
+                <motion.div 
+                  className="absolute top-0 bottom-0 z-30 pointer-events-none group" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
-                  {/* Main line - clean and simple */}
-                  <div 
-                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ background: '#73ff00' }}
+                  {/* Glow halo effect */}
+                  <motion.div 
+                    className="absolute -left-6 -right-6 top-0 bottom-0 pointer-events-none" 
+                    animate={{ 
+                      boxShadow: [
+                        '0 0 0 0 rgba(115, 255, 0, 0.4)',
+                        '0 0 0 8px rgba(115, 255, 0, 0.2)',
+                        '0 0 0 0 rgba(115, 255, 0, 0)',
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
                   />
-                </div>
+                  
+                  {/* Main line with gradient */}
+                  <motion.div 
+                    className="absolute -left-px top-0 bottom-0 w-[3px]" 
+                    style={{ 
+                      background: 'linear-gradient(to bottom, #73ff00, #00ff88, #73ff00)',
+                      boxShadow: '0 0 12px rgba(115, 255, 0, 0.6), 0 0 24px rgba(115, 255, 0, 0.3)'
+                    }}
+                    animate={{ 
+                      boxShadow: [
+                        '0 0 12px rgba(115, 255, 0, 0.6), 0 0 24px rgba(115, 255, 0, 0.3)',
+                        '0 0 16px rgba(115, 255, 0, 0.8), 0 0 32px rgba(115, 255, 0, 0.4)',
+                        '0 0 12px rgba(115, 255, 0, 0.6), 0 0 24px rgba(115, 255, 0, 0.3)',
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  
+                  {/* Time tooltip */}
+                  <motion.div 
+                    className="absolute left-1/2 -translate-x-1/2 -top-7 px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ 
+                      background: 'rgba(115, 255, 0, 0.15)',
+                      border: '1px solid rgba(115, 255, 0, 0.4)',
+                      color: '#73ff00'
+                    }}
+                  >
+                    {currentTime.toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' })}
+                  </motion.div>
+                </motion.div>
               )}
             </AnimatePresence>
 
