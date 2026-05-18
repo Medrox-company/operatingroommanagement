@@ -307,8 +307,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     }> = [];
     
     rooms.forEach(room => {
-      // Skip non-active, emergency, or locked rooms
-      if (room.currentStepIndex >= 6 || room.isEmergency || room.isLocked) return;
+      // Skip non-active or emergency rooms (locked rooms CAN be in ARO overtime)
+      if (room.currentStepIndex >= 6 || room.isEmergency) return;
       
       // Get estimated end time
       let endTime: Date | null = null;
