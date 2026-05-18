@@ -19,10 +19,10 @@ import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design tokens — vylepšená paleta s lepším kontrastem a glow efekty
+// Design tokens — vylepšená paleta s lepším kontrastem, glows a vygenerovanými shadow efekty
 // ─────────────────────────────────────────────────────────────────────────────
 export const C = {
-  // Primary accent colors - více živé a kontrastní
+  // Primary accent colors - více živé a kontrastní s glow capabilities
   accent:  '#00D9FF',  // Vivid cyan - main accent
   cyan:    '#00D9FF',  // Alias
   green:   '#00F5A0',  // Emerald green - success
@@ -34,22 +34,31 @@ export const C = {
   blue:    '#60A5FA',  // Sky blue
   teal:    '#2DD4BF',  // Teal
   
-  // Surface & background - glass morphism style
-  surface:   'rgba(255,255,255,0.03)',
-  surface2:  'rgba(255,255,255,0.06)',
-  surface3:  'rgba(255,255,255,0.09)',
-  surfaceHover: 'rgba(255,255,255,0.08)',
+  // Surface & background - vylepšené glass morphism style s vrstvami
+  bg:        '#0a0a0a',      // Pure black background
+  surface:   'rgba(255,255,255,0.025)',  // Subtle surface
+  surface2:  'rgba(255,255,255,0.04)',   // Mid surface
+  surface3:  'rgba(255,255,255,0.06)',   // Elevated surface
+  surfaceHover: 'rgba(255,255,255,0.08)',  // Hover state
+  surfaceActive: 'rgba(255,255,255,0.10)',  // Active state
   
-  // Border & dividers
-  border:  'rgba(255,255,255,0.08)',
-  borderHover: 'rgba(255,255,255,0.15)',
+  // Border & dividers - více viditelné a lépe strukturované
+  border:      'rgba(255,255,255,0.06)',
+  borderHover: 'rgba(255,255,255,0.12)',
+  borderActive: 'rgba(255,255,255,0.18)',
   
-  // Text hierarchy
-  text:    'rgba(255,255,255,0.85)',
-  textHi:  'rgba(255,255,255,0.95)',
-  muted:   'rgba(255,255,255,0.45)',
-  faint:   'rgba(255,255,255,0.20)',
-  ghost:   'rgba(255,255,255,0.08)',
+  // Text hierarchy - optimalizované pro readability
+  text:    'rgba(255,255,255,0.88)',   // Primary text
+  textHi:  'rgba(255,255,255,0.95)',   // High emphasis text
+  muted:   'rgba(255,255,255,0.50)',   // Muted text
+  faint:   'rgba(255,255,255,0.25)',   // Faint text
+  ghost:   'rgba(255,255,255,0.08)',   // Ghost text (very subtle)
+  
+  // Semantic colors
+  success: '#00F5A0',
+  warning: '#FFE66D',
+  error:   '#FF6B6B',
+  info:    '#00D9FF',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,23 +164,41 @@ export const Card: React.FC<CardProps> = memo(({
   title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon,
 }) => {
   return (
-    <div className={`rounded-xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
+    <motion.div 
+      className={`rounded-2xl transition-all ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
+      whileHover={{ 
+        boxShadow: elevated 
+          ? `0 12px 40px rgba(0,217,255,0.15), inset 0 1px 0 rgba(255,255,255,0.1)`
+          : '0 8px 24px rgba(0,217,255,0.08)'
+      }}
       style={{
         background: elevated
-          ? `linear-gradient(180deg, ${C.surface2} 0%, ${C.surface} 100%)`
+          ? `linear-gradient(180deg, ${C.surface3} 0%, ${C.surface2} 100%)`
           : C.surface,
-        border: `1px solid ${elevated ? 'rgba(255,255,255,0.1)' : C.border}`,
+        border: `1px solid ${elevated ? C.borderActive : C.border}`,
         minWidth: 0,
+        boxShadow: elevated 
+          ? `0 8px 32px rgba(0,217,255,0.08), inset 0 1px 0 rgba(255,255,255,0.08)`
+          : `0 4px 16px rgba(0,0,0,0.4)`,
+        backdropFilter: elevated ? 'blur(16px)' : 'blur(12px)',
       }}>
       {(title || action) && (
         <div className={`flex items-start justify-between ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
           <div className="flex items-center gap-2 min-w-0">
             {accent && (
-              <div className="w-1 h-5 rounded-full shrink-0" style={{ background: accent }} />
+              <motion.div 
+                className="w-1 h-5 rounded-full shrink-0" 
+                style={{ background: accent }}
+                whileHover={{ boxShadow: `0 0 8px ${accent}` }}
+              />
             )}
             {Icon && (
               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: `${accent ?? C.accent}1a`, border: `1px solid ${accent ?? C.accent}33` }}>
+                style={{ 
+                  background: `${accent ?? C.accent}1a`, 
+                  border: `1px solid ${accent ?? C.accent}33`,
+                  boxShadow: `0 0 8px ${accent ?? C.accent}15`
+                }}>
                 <Icon size={14} color={accent ?? C.accent} strokeWidth={2.2} />
               </div>
             )}
@@ -190,7 +217,7 @@ export const Card: React.FC<CardProps> = memo(({
         </div>
       )}
       {children}
-    </div>
+    </motion.div>
   );
 });
 Card.displayName = 'Card';
@@ -470,20 +497,35 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
   const showProgress = effectiveTarget !== undefined && Number.isFinite(progressBase) && effectiveTarget > 0;
   const progressPct = showProgress ? Math.min(100, (progressBase / effectiveTarget!) * 100) : 0;
   return (
-    <div className="rounded-xl p-3 relative overflow-hidden"
-      style={{ background: C.surface, border: `1px solid ${C.border}` }}>
-      {/* Decorative accent corner */}
-      <div className="absolute top-0 right-0 w-8 h-8 rounded-bl-2xl"
-        style={{ background: `${accentColor}10` }} />
-      <div className="flex items-start justify-between mb-1.5 relative">
-        <div className="flex items-center gap-1.5 min-w-0">
+    <motion.div 
+      className="rounded-2xl p-4 relative overflow-hidden transition-all"
+      whileHover={{ scale: 1.02, boxShadow: `0 12px 32px ${accentColor}20` }}
+      style={{ 
+        background: C.surface2, 
+        border: `1px solid ${C.borderHover}`,
+        boxShadow: `0 4px 16px rgba(0,0,0,0.3)`,
+      }}>
+      {/* Decorative accent corner with glow */}
+      <div className="absolute top-0 right-0 w-12 h-12 rounded-bl-3xl"
+        style={{ background: `${accentColor}12` }} />
+      <div className="absolute top-1 right-1 w-8 h-8 rounded-bl-2xl"
+        style={{ background: `${accentColor}08` }} />
+      
+      <div className="flex items-start justify-between mb-2 relative">
+        <div className="flex items-center gap-2 min-w-0">
           {Icon && (
-            <div className="w-5 h-5 rounded flex items-center justify-center shrink-0"
-              style={{ background: `${accentColor}18` }}>
-              <Icon size={11} color={accentColor} strokeWidth={2.5} />
-            </div>
+            <motion.div 
+              className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+              whileHover={{ boxShadow: `0 0 12px ${accentColor}40` }}
+              style={{ 
+                background: `${accentColor}18`, 
+                border: `1px solid ${accentColor}30`,
+                boxShadow: `0 0 8px ${accentColor}15`
+              }}>
+              <Icon size={13} color={accentColor} strokeWidth={2.4} />
+            </motion.div>
           )}
-          <span className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: C.muted }}>
+          <span className="text-[10px] font-bold uppercase tracking-wider truncate" style={{ color: C.muted }}>
             {label}
           </span>
         </div>
@@ -491,42 +533,46 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
           <DeltaBadge delta={delta} inverted={deltaInverted} hideZero />
         )}
       </div>
-      <div className="flex items-baseline gap-1 relative">
+      <div className="flex items-baseline gap-1.5 relative mb-2">
         {typeof value === 'number'
           ? <AnimatedCounter value={value} format={format}
-              className="text-xl font-bold leading-none tabular-nums"
+              className="text-2xl font-bold leading-none tabular-nums"
               style={{ color: C.textHi }} />
-          : <span className="text-xl font-bold leading-none tabular-nums" style={{ color: C.textHi }}>
+          : <span className="text-2xl font-bold leading-none tabular-nums" style={{ color: C.textHi }}>
               {value}
             </span>
         }
-        {unit && <span className="text-[10px]" style={{ color: C.muted }}>{unit}</span>}
+        {unit && <span className="text-[11px] font-medium" style={{ color: C.muted }}>{unit}</span>}
       </div>
       {sublabel && (
-        <p className="text-[9px] mt-1" style={{ color: C.muted }}>{sublabel}</p>
+        <p className="text-[10px] mb-2" style={{ color: C.faint }}>{sublabel}</p>
       )}
+      {/* Sparkline if trend data exists */}
       {trend && trend.length >= 2 && (
-        <div className="mt-2">
-          <Sparkline data={trend} width={Math.max(80, trend.length * 6)} height={20} color={accentColor} />
+        <div className="mb-3">
+          <Sparkline data={trend} width={Math.max(80, trend.length * 6)} height={24} color={accentColor} fillOpacity={0.12} />
         </div>
       )}
+      {/* Progress bar if target is set */}
       {showProgress && (
-        <div className="mt-2">
-          <div className="flex items-baseline justify-between text-[8px] mb-1" style={{ color: C.muted }}>
-            <span>cíl {effectiveTarget!.toLocaleString('cs-CZ')}{unit ?? ''}</span>
-            <span>{progressPct.toFixed(0)}%</span>
+        <div>
+          <div className="flex items-baseline justify-between text-[8px] mb-1.5" style={{ color: C.muted }}>
+            <span>Cíl: {effectiveTarget!.toLocaleString('cs-CZ')}{unit ?? ''}</span>
+            <motion.span initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{ color: accentColor }}>
+              {progressPct.toFixed(0)}%
+            </motion.span>
           </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: C.ghost }}>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: C.border }}>
             <motion.div className="h-full rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              style={{ background: accentColor }}
+              style={{ background: `linear-gradient(90deg, ${accentColor}, ${C.green})` }}
             />
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 });
 KPIBlock.displayName = 'KPIBlock';
@@ -664,7 +710,7 @@ export function useTickEverySecond(): number {
   return tick;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────��──────────────────────────────────────────────
 // Pomocné generátory pseudo-trend dat (pro sparkliny bez backend dotazu)
 // ────────────────────────────────────────────────────────────────────���────────
 /**
