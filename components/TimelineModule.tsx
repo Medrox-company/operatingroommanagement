@@ -1428,7 +1428,12 @@ style={{
                             <>
                               {boxWidthPct > 8 && (
                                 <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
-                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.14em] leading-tight truncate w-full">
+                                  <p 
+                                    className="text-[10px] font-semibold uppercase tracking-[0.15em] leading-tight truncate w-full"
+                                    style={{
+                                      color: room.isLocked ? 'rgba(27, 227, 101, 0.50)' : 'rgba(255, 255, 255, 0.85)'
+                                    }}
+                                  >
                                     {stepName}
                                   </p>
                                   {boxWidthPct > 14 && (room.staff?.doctor?.name || room.staff?.nurse?.name) && (
