@@ -1005,7 +1005,7 @@ style={{
                   <div 
                     className="relative flex-1 overflow-hidden rounded-r-lg"
                     style={{
-                      background: room.isLocked ? `${C.accent}12` : 'transparent'
+                      background: room.isLocked ? `linear-gradient(90deg, ${C.accent}25 0%, ${C.accent}15 100%)` : 'transparent'
                     }}
                   >
                     {/* Hour grid lines */}
