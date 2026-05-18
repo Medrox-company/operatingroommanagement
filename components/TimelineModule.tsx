@@ -230,7 +230,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         const containerHeight = rowsContainerRef.current.clientHeight;
         const totalGapPx = (rooms.length - 1) * ROW_GAP_PX;
         const availableHeight = Math.max(0, containerHeight - totalGapPx);
-        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
+        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezp��sobil overflow
         const calculatedHeight = Math.floor(availableHeight / rooms.length);
         const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
         setRowHeight(clampedHeight);
@@ -307,8 +307,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     }> = [];
     
     rooms.forEach(room => {
-      // Skip non-active, emergency, or locked rooms
-      if (room.currentStepIndex >= 6 || room.isEmergency || room.isLocked) return;
+      // Skip non-active or emergency rooms (locked rooms CAN be in ARO overtime)
+      if (room.currentStepIndex >= 6 || room.isEmergency) return;
       
       // Get estimated end time
       let endTime: Date | null = null;
@@ -742,9 +742,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               const stepColor = room.isPaused 
                 ? PAUSE_COLOR 
                 : (currentStep?.accent_color || currentStep?.color || '#6B7280');
-              const stepName = room.isPaused 
-                ? 'Pauza' 
-                : (currentStep?.title || currentStep?.name || 'Status');
+              const stepName = room.isLocked
+                ? 'Sál uzamčen'
+                : room.isPaused 
+                  ? 'Pauza' 
+                  : (currentStep?.title || currentStep?.name || 'Status');
               const StepIcon = Activity; // Default icon
 
               // Calculate operation bar position
@@ -866,130 +868,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Locked row - shows timeline with lock indicator overlay */
-              if (room.isLocked) {
-                return (
-                  <div
-                    key={room.id}
-                    className="flex items-stretch cursor-pointer transition-all duration-200 group rounded-lg"
-                    style={{ height: rowHeight }}
-                    onClick={() => setSelectedRoom(room)}
-                  >
-                    <div 
-                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
-                    >
-                      <div 
-                        className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
-                      >
-                        <Lock className="w-3.5 h-3.5" style={{ color: C.accent }} />
-                      </div>
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${C.accent}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${C.accent}80` }}>UZAMCENO</p>
-                      </div>
-                    </div>
-                    {/* Locked timeline - shows completed operations and lock overlay */}
-                    <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                      {/* Time grid lines */}
-                      <div className="absolute inset-0 flex">
-                        {Array.from({ length: TIMELINE_HOURS }).map((_, i) => (
-                          <div 
-                            key={i} 
-                            className="flex-1 border-r opacity-30" 
-                            style={{ borderColor: C.border }}
-                          />
-                        ))}
-                      </div>
-                      
-                      {/* Completed operations from today */}
-                      {room.completedOperations && room.completedOperations.filter(op => {
-                        const opDate = new Date(op.startedAt);
-                        const today = new Date(currentTime);
-                        return opDate.toDateString() === today.toDateString();
-                      }).map((operation, opIdx) => {
-                        if (!operation.startedAt || !operation.endedAt) return null;
-                        const opStartDate = new Date(operation.startedAt);
-                        const opEndDate = new Date(operation.endedAt);
-                        const position = getOperationPosition(opStartDate, opEndDate, currentTime);
-                        if (position.width <= 0) return null;
-                        
-                        return (
-                          <div
-                            key={`locked-op-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-md"
-                            style={{ 
-                              left: `${position.left}%`, 
-                              width: `${Math.max(0.3, position.width)}%`,
-                              background: C.glass,
-                              border: `1px solid ${C.border}`,
-                            }}
-                          >
-                            {/* Completed operation segments with colors */}
-                            {operation.statusHistory && operation.statusHistory.length > 0 && (
-                              <div className="absolute inset-0 flex overflow-hidden rounded-md">
-                                {(() => {
-                                  const stepColorMap: Record<number, string> = {};
-                                  activeStatuses.forEach((s, idx) => {
-                                    stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
-                                  });
-                                  const opStart = new Date(operation.startedAt).getTime();
-                                  const opEnd = new Date(operation.endedAt).getTime();
-                                  const opDuration = Math.max(1, opEnd - opStart);
-
-                                  return operation.statusHistory.map((entry, idx) => {
-                                    const segStart = new Date(entry.startedAt).getTime();
-                                    const nextEntry = operation.statusHistory[idx + 1];
-                                    const segEnd = nextEntry ? new Date(nextEntry.startedAt).getTime() : opEnd;
-                                    const segDuration = Math.max(0, segEnd - segStart);
-                                    const segWidthPct = (segDuration / opDuration) * 100;
-                                    const segLeftPct = ((segStart - opStart) / opDuration) * 100;
-                                    if (segWidthPct <= 0) return undefined;
-                                    const phaseColor = stepColorMap[entry.stepIndex] || entry.color || '#6b7280';
-
-                                    return (
-                                      <div
-                                        key={`locked-seg-${idx}`}
-                                        className="absolute top-0 bottom-0"
-                                        style={{
-                                          left: `${Math.max(0, segLeftPct)}%`,
-                                          width: `${Math.max(0.5, segWidthPct)}%`,
-                                          background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
-                                          borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
-                                        }}
-                                        title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                      />
-                                    );
-                                  }).filter(Boolean);
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                      {/* Lock overlay indicator */}
-                      <div 
-                        className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center pointer-events-none"
-                        style={{ 
-                          background: `linear-gradient(90deg, ${C.accent}08 0%, ${C.accent}03 50%, ${C.accent}08 100%)`,
-                          border: `1px solid ${C.accent}15`,
-                        }}
-                      >
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg" style={{ background: `${C.accent}10` }}>
-                          <Lock className="w-3.5 h-3.5" style={{ color: `${C.accent}80` }} />
-                          <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: `${C.accent}90` }}>
-                            UZAMCENO
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              /* Active / Free row */
+              /* Active / Free / Locked row - unified design with yellow gradient background */
               return (
                 <div
                   key={room.id}
@@ -1000,19 +879,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column.
-                     Vnější `py-1.5` ZARUČUJE, že vnitřní glassmorph karta (vyplňující rodiče
-                     pomocí self-stretch) má SHODNOU vertikální výšku jako zaoblený timeline bar
-                     v pravé části (ten má `top-1.5 bottom-1.5` = inset 6px). Tím obě "kapsle"
-                     na řádku vypadají jako vizuálně sladěný pár. */}
+                  {/* Room Label - Sticky LEFT column with yellow gradient background (same as locked) */}
                   <div 
-                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:bg-white/[0.03] sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      background: 'rgba(11,17,32,0.98)',
-                      backdropFilter: 'blur(8px)',
-                      borderRight: `1px solid ${C.border}`,
+                      background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
+                      borderRight: `1px solid ${C.accent}40`,
                     }}
                   >
                     {/* ARO Overtime Badge - softer */}
@@ -1038,9 +912,7 @@ style={{
                       return null;
                     })()}
 
-                    {/* Patient Called Badge — stejný design jako ARO (vertikální stack
-                        label nad ikonou, glassmorph s barevným borderem). Přesunuto z name
-                        karty na pozici před názvem sálu, aby vizuálně korespondovalo s ARO. */}
+                    {/* Patient Called Badge */}
                     {room.patientCalledAt && !room.patientArrivedAt && (
                       <div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
@@ -1055,7 +927,7 @@ style={{
                       </div>
                     )}
 
-                    {/* Patient Arrived Badge — stejný design jako ARO. */}
+                    {/* Patient Arrived Badge */}
                     {room.patientArrivedAt && (
                       <div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
@@ -1067,6 +939,21 @@ style={{
                       >
                         <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
                         <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
+                      </div>
+                    )}
+
+                    {/* Lock Badge - when room is locked */}
+                    {room.isLocked && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: `${C.accent}20`,
+                          border: `1px solid ${C.accent}`,
+                        }}
+                        title="Sál uzamčen"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: C.accent }}>LOCK</span>
+                        <Lock className="w-3 h-3" style={{ color: C.accent }} />
                       </div>
                     )}
                     
@@ -1117,7 +1004,12 @@ style={{
                   </div>
 
                   {/* Timeline section - RIGHT side, scrollable with rounded-r corners */}
-                  <div className="relative flex-1 overflow-hidden rounded-r-lg">
+                  <div 
+                    className="relative flex-1 overflow-hidden rounded-r-lg"
+                    style={{
+                      background: room.isLocked ? `linear-gradient(90deg, ${C.accent}40 0%, ${C.accent}25 100%)` : 'transparent'
+                    }}
+                  >
                     {/* Hour grid lines */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                       const displayHour = hour % 24;
@@ -1536,7 +1428,12 @@ style={{
                             <>
                               {boxWidthPct > 8 && (
                                 <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
-                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.14em] leading-tight truncate w-full">
+                                  <p 
+                                    className="text-[10px] font-semibold uppercase tracking-[0.15em] leading-tight truncate w-full"
+                                    style={{
+                                      color: room.isLocked ? 'rgba(27, 227, 101, 0.50)' : 'rgba(255, 255, 255, 0.85)'
+                                    }}
+                                  >
                                     {stepName}
                                   </p>
                                   {boxWidthPct > 14 && (room.staff?.doctor?.name || room.staff?.nurse?.name) && (
