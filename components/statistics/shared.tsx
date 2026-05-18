@@ -19,10 +19,10 @@ import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design tokens — modernizovaná paleta inspirovaná Vercel dashboardem
+// Design tokens — vylepšená paleta s lepším kontrastem a glow efekty
 // ─────────────────────────────────────────────────────────────────────────────
 export const C = {
-  // Primary accent colors - čisté a živé
+  // Primary accent colors - více živé a kontrastní
   accent:  '#00D9FF',  // Vivid cyan - main accent
   cyan:    '#00D9FF',  // Alias
   green:   '#00F5A0',  // Emerald green - success
@@ -31,31 +31,24 @@ export const C = {
   red:     '#FF6B6B',  // Soft red - error/critical
   purple:  '#A78BFA',  // Soft purple
   pink:    '#F472B6',  // Rose pink
-  blue:    '#3B82F6',  // Vercel blue
+  blue:    '#60A5FA',  // Sky blue
   teal:    '#2DD4BF',  // Teal
   
-  // Surface & background - Vercel-style tmavé plochy
-  surface:   'rgba(255,255,255,0.02)',
-  surface2:  'rgba(255,255,255,0.03)',
-  surface3:  'rgba(255,255,255,0.05)',
-  surfaceHover: 'rgba(255,255,255,0.04)',
-  cardBg: 'rgba(10,10,10,0.95)',
+  // Surface & background - glass morphism style
+  surface:   'rgba(255,255,255,0.03)',
+  surface2:  'rgba(255,255,255,0.06)',
+  surface3:  'rgba(255,255,255,0.09)',
+  surfaceHover: 'rgba(255,255,255,0.08)',
   
-  // Glass efekty - subtilní
-  glass: 'rgba(255,255,255,0.015)',
-  glassHover: 'rgba(255,255,255,0.03)',
+  // Border & dividers
+  border:  'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.15)',
   
-  // Border & dividers - Vercel-style jemné hranice
-  border:  'rgba(255,255,255,0.05)',
-  borderHover: 'rgba(255,255,255,0.08)',
-  borderLight: 'rgba(255,255,255,0.03)',
-  borderActive: 'rgba(255,255,255,0.12)',
-  
-  // Text hierarchy - čistý kontrast
-  text:    'rgba(255,255,255,0.88)',
-  textHi:  '#ffffff',
+  // Text hierarchy
+  text:    'rgba(255,255,255,0.85)',
+  textHi:  'rgba(255,255,255,0.95)',
   muted:   'rgba(255,255,255,0.45)',
-  faint:   'rgba(255,255,255,0.2)',
+  faint:   'rgba(255,255,255,0.20)',
   ghost:   'rgba(255,255,255,0.08)',
 } as const;
 
@@ -143,7 +136,7 @@ export function gradeFromScore(score: number): { letter: string; color: string; 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Card — modernizovaná Vercel-style karta s čistým designem
+// Card — sjednocená glass surface s volitelným nadpisem a action slotem
 // ─────────────────────────────────────────────────────────────────────────────
 export interface CardProps {
   title?: string;
@@ -152,71 +145,48 @@ export interface CardProps {
   accent?: string;
   className?: string;
   children?: React.ReactNode;
-  /** Vyšší vizuální váha — výraznější border */
+  /** Vyšší vizuální váha — výraznější border + jemný gradient */
   elevated?: boolean;
   noPadding?: boolean;
   /** Lucide ikona renderovaná v hlavičce vedle title */
   icon?: React.ComponentType<any>;
-  /** Kliknutelná karta */
-  onClick?: () => void;
-  /** Zobrazit šipku vpravo (navigační indikátor) */
-  showArrow?: boolean;
 }
 export const Card: React.FC<CardProps> = memo(({
-  title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon, onClick, showArrow,
+  title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon,
 }) => {
-  const isClickable = !!onClick;
   return (
-    <div 
-      className={`rounded-xl overflow-hidden ${noPadding ? '' : 'p-5'} transition-all duration-200 ${isClickable ? 'cursor-pointer group' : ''} ${className ?? ''}`}
-      onClick={onClick}
+    <div className={`rounded-xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
       style={{
-        background: '#0a0a0a',
-        border: `1px solid ${C.border}`,
+        background: elevated
+          ? `linear-gradient(180deg, ${C.surface2} 0%, ${C.surface} 100%)`
+          : C.surface,
+        border: `1px solid ${elevated ? 'rgba(255,255,255,0.1)' : C.border}`,
         minWidth: 0,
-      }}
-      onMouseEnter={(e) => {
-        if (isClickable) {
-          e.currentTarget.style.borderColor = C.borderHover;
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (isClickable) {
-          e.currentTarget.style.borderColor = C.border;
-        }
-      }}
-    >
+      }}>
       {(title || action) && (
-        <div className={`flex items-center justify-between ${noPadding ? 'px-5 pt-5 pb-4' : 'mb-4'}`}>
-          <div className="flex items-center gap-3 min-w-0">
-            {Icon && (
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
-                style={{ background: `${accent ?? C.accent}10` }}>
-                <Icon size={16} color={accent ?? C.accent} strokeWidth={2} />
-              </div>
-            )}
-            {accent && !Icon && (
+        <div className={`flex items-start justify-between ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
+          <div className="flex items-center gap-2 min-w-0">
+            {accent && (
               <div className="w-1 h-5 rounded-full shrink-0" style={{ background: accent }} />
+            )}
+            {Icon && (
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: `${accent ?? C.accent}1a`, border: `1px solid ${accent ?? C.accent}33` }}>
+                <Icon size={14} color={accent ?? C.accent} strokeWidth={2.2} />
+              </div>
             )}
             <div className="min-w-0">
               {title && (
-                <h3 className="text-[13px] font-medium" style={{ color: C.text }}>
+                <h3 className="text-xs font-bold uppercase tracking-wider truncate" style={{ color: C.textHi }}>
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-xs mt-0.5" style={{ color: C.muted }}>{subtitle}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>{subtitle}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {action && <div>{action}</div>}
-            {showArrow && (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:translate-x-0.5" style={{ color: C.muted }}>
-                <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </div>
+          {action && <div className="shrink-0">{action}</div>}
         </div>
       )}
       {children}
@@ -250,18 +220,18 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = memo(({ value, fo
 AnimatedCounter.displayName = 'AnimatedCounter';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DeltaBadge — modernizovaný period-over-period % delta badge
+// DeltaBadge — period-over-period % delta s ikonkou a barvou
 // ─────────────────────────────────────────────────────────────────────────────
 interface DeltaBadgeProps {
   delta: number;          // v % (např. -3.2 = pokles o 3.2 %)
   /** True = vyšší hodnota je horší (např. čekací doba) */
   inverted?: boolean;
-  size?: 'xs' | 'sm' | 'md';
+  size?: 'xs' | 'sm';
   className?: string;
   /** Skrýt 0 % delty (žádná změna) */
   hideZero?: boolean;
 }
-export const DeltaBadge: React.FC<DeltaBadgeProps> = memo(({ delta, inverted, size = 'sm', className, hideZero }) => {
+export const DeltaBadge: React.FC<DeltaBadgeProps> = memo(({ delta, inverted, size = 'xs', className, hideZero }) => {
   if (!Number.isFinite(delta)) return null;
   const isZero = Math.abs(delta) < 0.5;
   if (isZero && hideZero) return null;
@@ -271,20 +241,12 @@ export const DeltaBadge: React.FC<DeltaBadgeProps> = memo(({ delta, inverted, si
   const color = isZero ? C.muted : (positive ? C.green : C.red);
   const Icon = isZero ? Minus : (isUp ? TrendingUp : TrendingDown);
   const sign = isUp ? '+' : '';
-  
-  const sizeStyles = {
-    xs: { px: 'px-1.5 py-0.5', fs: 'text-[9px]', iconSize: 9 },
-    sm: { px: 'px-2 py-1', fs: 'text-[10px]', iconSize: 11 },
-    md: { px: 'px-2.5 py-1.5', fs: 'text-xs', iconSize: 13 },
-  };
-  const s = sizeStyles[size];
-  
+  const px = size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-1';
+  const fs = size === 'xs' ? 'text-[9px]' : 'text-[10px]';
   return (
-    <span 
-      className={`inline-flex items-center gap-1 ${s.px} ${s.fs} font-semibold rounded-md transition-colors ${className ?? ''}`}
-      style={{ background: `${color}12`, color }}
-    >
-      <Icon size={s.iconSize} strokeWidth={2.5} />
+    <span className={`inline-flex items-center gap-0.5 ${px} ${fs} font-bold rounded ${className ?? ''}`}
+      style={{ background: `${color}15`, color }}>
+      <Icon size={size === 'xs' ? 9 : 10} strokeWidth={2.5} />
       {sign}{delta.toFixed(1)}%
     </span>
   );
@@ -702,7 +664,7 @@ export function useTickEverySecond(): number {
   return tick;
 }
 
-// ──────────────────────────────��──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Pomocné generátory pseudo-trend dat (pro sparkliny bez backend dotazu)
 // ────────────────────────────────────────────────────────────────────���────────
 /**
@@ -906,7 +868,7 @@ export const ComplianceMeter: React.FC<ComplianceMeterProps> = memo(({ value, ta
 ComplianceMeter.displayName = 'ComplianceMeter';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MetricTile — modernizovaná Vercel-style metrika s velkým číslem
+// MetricTile — kompaktní informační dlaždice (label/value/icon/sublabel)
 // ─────────────────────────────────────────────────────────────────────────────
 export interface MetricTileProps {
   label: string;
@@ -918,56 +880,41 @@ export interface MetricTileProps {
   invertedDelta?: boolean;
   trend?: number[];
   className?: string;
-  /** Velikost - 'sm' pro kompaktnější zobrazení */
-  size?: 'sm' | 'md' | 'lg';
 }
 export const MetricTile: React.FC<MetricTileProps> = memo(({
-  label, value, sublabel, color = C.textHi, icon: Icon, delta, invertedDelta, trend, className, size = 'md',
+  label, value, sublabel, color = C.text, icon: Icon, delta, invertedDelta, trend, className,
 }) => {
-  const valueSize = size === 'lg' ? 'text-3xl' : size === 'md' ? 'text-2xl' : 'text-xl';
-  const labelSize = size === 'lg' ? 'text-xs' : 'text-[11px]';
-  const padding = size === 'lg' ? 'p-5' : size === 'md' ? 'p-4' : 'p-3.5';
-  
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }} 
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`relative rounded-xl overflow-hidden ${padding} ${className ?? ''}`}
-      style={{ 
-        background: '#0a0a0a', 
-        border: `1px solid ${C.border}`,
-      }}
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className={`relative rounded-lg p-3 overflow-hidden ${className ?? ''}`}
+      style={{ background: C.surface, border: `1px solid ${C.border}` }}
     >
-      {/* Header row - Vercel style */}
-      <div className="flex items-center gap-2 mb-3 relative">
-        {Icon && (
-          <Icon size={14} color={C.muted} strokeWidth={2} />
-        )}
-        <span className={`${labelSize} font-medium`} style={{ color: C.muted }}>
-          {label}
-        </span>
-      </div>
-      
-      {/* Value row with delta */}
-      <div className="flex items-baseline gap-2.5 relative">
-        <div className={`${valueSize} font-semibold leading-none tabular-nums`} style={{ color }}>
-          {typeof value === 'number' ? <AnimatedCounter value={value} /> : value}
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {Icon && (
+            <div className="rounded-md p-1 shrink-0" style={{ background: `${color}1a` }}>
+              <Icon size={11} color={color} strokeWidth={2.4} />
+            </div>
+          )}
+          <span className="text-[9px] uppercase tracking-wider font-medium truncate" style={{ color: C.muted }}>
+            {label}
+          </span>
         </div>
         {typeof delta === 'number' && (
           <DeltaBadge delta={delta} inverted={invertedDelta} hideZero size="xs" />
         )}
       </div>
-      
-      {/* Sublabel */}
+      <div className="text-lg font-bold leading-none font-mono tabular-nums" style={{ color }}>
+        {typeof value === 'number' ? <AnimatedCounter value={value} /> : value}
+      </div>
       {sublabel && (
-        <div className="text-[11px] mt-2 relative" style={{ color: C.muted }}>{sublabel}</div>
+        <div className="text-[9px] mt-1" style={{ color: C.muted }}>{sublabel}</div>
       )}
-      
-      {/* Background sparkline trend */}
       {trend && trend.length > 1 && (
-        <div className="absolute bottom-0 right-0 left-0 opacity-30 pointer-events-none">
-          <Sparkline data={trend} width={160} height={28} color={color} fillOpacity={0.1} />
+        <div className="absolute bottom-0 right-0 left-0 opacity-50 pointer-events-none">
+          <Sparkline data={trend} width={120} height={20} color={color} fillOpacity={0.12} />
         </div>
       )}
     </motion.div>
@@ -1133,210 +1080,3 @@ export const CategoryBarList: React.FC<{
   );
 });
 CategoryBarList.displayName = 'CategoryBarList';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// StatCard — Vercel-style statistická karta s velkým číslem a area chartem
-// ─────────────────────────────────────────────────────────────────────────────
-export interface StatCardProps {
-  title: string;
-  value: string | number;
-  /** Formátování hodnoty */
-  format?: (v: number) => string;
-  /** Legenda barev - max 4 položky */
-  legend?: Array<{ label: string; color: string; value?: string | number }>;
-  /** Data pro area chart - pole hodnot */
-  chartData?: number[];
-  /** Barva hlavního area grafu */
-  chartColor?: string;
-  /** Sekundární chart data (overlay) */
-  chartData2?: number[];
-  chartColor2?: string;
-  /** Popisek osy X */
-  xAxisLabel?: string;
-  /** Sublabel pod title */
-  subtitle?: string;
-  /** Kliknutelná karta */
-  onClick?: () => void;
-  className?: string;
-}
-export const StatCard: React.FC<StatCardProps> = memo(({
-  title, value, format, legend, chartData, chartColor = C.blue, chartData2, chartColor2 = C.yellow,
-  xAxisLabel, subtitle, onClick, className,
-}) => {
-  const chartHeight = 80;
-  const chartWidth = 300;
-  
-  // Generate path for area chart
-  const generatePath = (data: number[], width: number, height: number) => {
-    if (!data || data.length < 2) return { line: '', area: '' };
-    const max = Math.max(...data, 1);
-    const min = Math.min(...data, 0);
-    const range = max - min || 1;
-    const stepX = width / (data.length - 1);
-    const pad = 4;
-    const innerH = height - pad * 2;
-    
-    const points = data.map((v, i) => {
-      const x = i * stepX;
-      const y = pad + innerH - ((v - min) / range) * innerH;
-      return [x, y];
-    });
-    
-    const linePath = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
-    const areaPath = `${linePath} L${width} ${height} L0 ${height} Z`;
-    
-    return { line: linePath, area: areaPath };
-  };
-  
-  const path1 = chartData ? generatePath(chartData, chartWidth, chartHeight) : null;
-  const path2 = chartData2 ? generatePath(chartData2, chartWidth, chartHeight) : null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`rounded-xl overflow-hidden ${onClick ? 'cursor-pointer' : ''} ${className ?? ''}`}
-      onClick={onClick}
-      style={{
-        background: 'rgba(18,18,18,0.7)',
-        border: `1px solid ${C.border}`,
-      }}
-    >
-      {/* Header */}
-      <div className="p-4 pb-2">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold" style={{ color: C.textHi }}>{title}</h3>
-              {onClick && (
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ color: C.muted }}>
-                  <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-              )}
-            </div>
-            {subtitle && <p className="text-xs mt-0.5" style={{ color: C.muted }}>{subtitle}</p>}
-          </div>
-          
-          {/* Legend */}
-          {legend && legend.length > 0 && (
-            <div className="flex items-center gap-4">
-              {legend.map((item, i) => (
-                <div key={i} className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                  <span className="text-xs" style={{ color: C.muted }}>{item.label}</span>
-                  {item.value !== undefined && (
-                    <span className="text-xs font-semibold ml-1" style={{ color: item.color }}>
-                      {typeof item.value === 'number' ? formatNumber(item.value) : item.value}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        {/* Main value */}
-        <div className="mt-2 text-2xl font-bold font-mono tabular-nums" style={{ color: C.textHi }}>
-          {typeof value === 'number' 
-            ? <AnimatedCounter value={value} format={format} />
-            : value
-          }
-        </div>
-      </div>
-      
-      {/* Chart area */}
-      {(path1 || path2) && (
-        <div className="relative" style={{ height: chartHeight + 20 }}>
-          <svg 
-            width="100%" 
-            height={chartHeight} 
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
-            preserveAspectRatio="none"
-            className="block"
-          >
-            <defs>
-              <linearGradient id="stat-grad-1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={chartColor} stopOpacity="0.02" />
-              </linearGradient>
-              {chartData2 && (
-                <linearGradient id="stat-grad-2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={chartColor2} stopOpacity="0.2" />
-                  <stop offset="100%" stopColor={chartColor2} stopOpacity="0.01" />
-                </linearGradient>
-              )}
-            </defs>
-            
-            {/* Grid lines */}
-            {[0.25, 0.5, 0.75].map((pct) => (
-              <line 
-                key={pct}
-                x1="0" y1={chartHeight * pct} 
-                x2={chartWidth} y2={chartHeight * pct}
-                stroke="rgba(255,255,255,0.04)" 
-                strokeWidth="1"
-              />
-            ))}
-            
-            {/* Area fills */}
-            {path2 && <path d={path2.area} fill="url(#stat-grad-2)" />}
-            {path1 && <path d={path1.area} fill="url(#stat-grad-1)" />}
-            
-            {/* Lines */}
-            {path2 && (
-              <path d={path2.line} fill="none" stroke={chartColor2} strokeWidth="1.5" strokeLinecap="round" />
-            )}
-            {path1 && (
-              <path d={path1.line} fill="none" stroke={chartColor} strokeWidth="2" strokeLinecap="round" />
-            )}
-          </svg>
-          
-          {/* X-axis label */}
-          {xAxisLabel && (
-            <div className="absolute bottom-0 left-4 right-4 flex justify-between text-[10px]" style={{ color: C.muted }}>
-              <span>12 hours ago</span>
-              <span>Now</span>
-            </div>
-          )}
-        </div>
-      )}
-    </motion.div>
-  );
-});
-StatCard.displayName = 'StatCard';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// QuickStat — ultra-kompaktní inline stat pro řádkové zobrazení
-// ─────────────────────────────────────────────────────────────────────────────
-export interface QuickStatProps {
-  label: string;
-  value: string | number;
-  color?: string;
-  className?: string;
-}
-export const QuickStat: React.FC<QuickStatProps> = memo(({ label, value, color = C.accent, className }) => (
-  <div className={`flex items-baseline gap-2 ${className ?? ''}`}>
-    <span className="text-xs" style={{ color: C.muted }}>{label}</span>
-    <span className="text-sm font-bold font-mono tabular-nums" style={{ color }}>
-      {typeof value === 'number' ? formatNumber(value) : value}
-    </span>
-  </div>
-));
-QuickStat.displayName = 'QuickStat';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SectionDivider — vizuální oddělovač sekcí s volitelným labelem
-// ─────────────────────────────────────────────────────────────────────────────
-export const SectionDivider: React.FC<{ label?: string; className?: string }> = memo(({ label, className }) => (
-  <div className={`flex items-center gap-3 my-6 ${className ?? ''}`}>
-    <div className="flex-1 h-px" style={{ background: C.border }} />
-    {label && (
-      <span className="text-[10px] font-medium uppercase tracking-widest" style={{ color: C.muted }}>
-        {label}
-      </span>
-    )}
-    <div className="flex-1 h-px" style={{ background: C.border }} />
-  </div>
-));
-SectionDivider.displayName = 'SectionDivider';
