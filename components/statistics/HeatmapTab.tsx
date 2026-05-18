@@ -47,22 +47,28 @@ interface HeatmapCellProps {
 }
 
 const HeatmapCell = memo(({ value, label, time, onClick }: HeatmapCellProps) => {
-  // Color gradient from red (0%) through yellow to green (100%)
+  // Color gradient: Cold Gray (0%) → Yellow (50%) → Green (100%)
   // Using HSL interpolation for smooth color transition
-  // Red: HSL(0, 100%, 50%)
+  // Cold Gray: HSL(200, 20%, 35%)
   // Yellow: HSL(60, 100%, 50%)
   // Green: HSL(120, 100%, 50%)
   
   let hue: number;
-  let saturation: number = 100;
-  let lightness: number = 45;
+  let saturation: number;
+  let lightness: number;
   
   if (value <= 50) {
-    // Red to Yellow (0% to 50%)
-    hue = (value / 50) * 60; // 0 to 60 degrees
+    // Cold Gray to Yellow (0% to 50%)
+    const t = value / 50; // 0 to 1
+    hue = 200 + (t * (60 - 200)); // 200 to 60 degrees
+    saturation = 20 + (t * (100 - 20)); // 20% to 100%
+    lightness = 35 + (t * (50 - 35)); // 35% to 50%
   } else {
     // Yellow to Green (50% to 100%)
-    hue = 60 + ((value - 50) / 50) * 60; // 60 to 120 degrees
+    const t = (value - 50) / 50; // 0 to 1
+    hue = 60 + (t * (120 - 60)); // 60 to 120 degrees
+    saturation = 100;
+    lightness = 50;
   }
   
   const bgColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
