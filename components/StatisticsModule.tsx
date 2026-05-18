@@ -13,10 +13,20 @@ import {
   fetchStatusHistory,
   fetchAllStaff,
   fetchPeriodComparison,
+  fetchNotificationsLog,
+  fetchShiftSchedules,
+  fetchDepartments,
+  fetchSubDepartments,
+  fetchDevices,
   type RoomStatistics,
   type StatusHistoryRow,
   type StaffRow,
   type PeriodComparisonStats,
+  type NotificationLogRow,
+  type ShiftScheduleRow,
+  type DepartmentRow,
+  type SubDepartmentRow,
+  type DeviceRow,
 } from '../lib/db';
 import {
   AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -31,17 +41,22 @@ import {
   MobileSectionLabel,
 } from './mobile/MobileShell';
 import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
+import { SmartRecommendations } from './statistics/SmartRecommendations';
 import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
 import { FinanceTab } from './statistics/FinanceTab';
 import { RoomsTab } from './statistics/RoomsTab';
 import { PhasesTab } from './statistics/PhasesTab';
+import { NotificationsTab } from './statistics/NotificationsTab';
+import { HeatmapTab } from './statistics/HeatmapTab';
+import { DepartmentsTab } from './statistics/DepartmentsTab';
+import { DevicesTab } from './statistics/DevicesTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
-            | 'saly' | 'faze' | 'heatmapa';
+            | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'oddeleni' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -1329,6 +1344,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   // ── REÁLNÁ DB DATA pro tab moduly (Staff) ──
   // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
   const [staffList, setStaffList] = useState<StaffRow[] | null>(null);
+  // ── NOVÁ REÁLNÁ DB DATA pro rozšířené taby ──
+  const [notifications, setNotifications] = useState<NotificationLogRow[] | null>(null);
+  const [shifts, setShifts] = useState<ShiftScheduleRow[] | null>(null);
+  const [departments, setDepartments] = useState<DepartmentRow[] | null>(null);
+  const [subDepartments, setSubDepartments] = useState<SubDepartmentRow[] | null>(null);
+  const [devices, setDevices] = useState<DeviceRow[] | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
@@ -1395,13 +1416,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     'rok':   'Posledních 365 dní',
   };
   const tabLabelMap: Record<Tab, string> = {
-    'prehled':    'Přehled',
-    'efektivita': 'Efektivita',
-    'finance':    'Finance',
-    'personal':   'Personál',
-    'saly':       'Sály',
-    'faze':       'Fáze',
-    'heatmapa':   'Heatmapa',
+'prehled':    'Přehled',
+'efektivita': 'Efektivita',
+'finance':    'Finance',
+'personal':   'Personál',
+'saly':       'Sály',
+'faze':       'Fáze',
+'heatmapa':   'Heatmapa',
+'notifikace': 'Notifikace',
+'oddeleni':   'Oddělení',
+'zarizeni':   'Zařízení',
   };
 
   // Load statistics from database
@@ -1427,18 +1451,28 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           break;
       }
 
-      const [stats, history, staffRows, comparison] = await Promise.all([
-        fetchRoomStatistics(fromDate, now),
-        fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
-        fetchAllStaff(),
-        fetchPeriodComparison(period),
-      ]);
-
-      if (stats) setDbStats(stats);
-      setStatusHistory(history ?? []);
-      setStaffList(staffRows);
-      setPeriodComparison(comparison);
-      setIsLoadingStats(false);
+const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, subDeptRows, deviceRows] = await Promise.all([
+  fetchRoomStatistics(fromDate, now),
+  fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
+  fetchAllStaff(),
+  fetchPeriodComparison(period),
+  fetchNotificationsLog({ fromDate, toDate: now, limit: 1000 }),
+  fetchShiftSchedules({ fromDate, toDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) }),
+  fetchDepartments(),
+  fetchSubDepartments(),
+  fetchDevices(),
+  ]);
+  
+  if (stats) setDbStats(stats);
+  setStatusHistory(history ?? []);
+  setStaffList(staffRows);
+  setPeriodComparison(comparison);
+  setNotifications(notifRows);
+  setShifts(shiftRows);
+  setDepartments(deptRows);
+  setSubDepartments(subDeptRows);
+  setDevices(deviceRows);
+  setIsLoadingStats(false);
     };
 
     loadStats();
@@ -1665,14 +1699,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return base;
   }), [rooms, roomDistributions, WORKFLOW_STEPS]);
 
-  const TABS:{ id:Tab; label:string }[]=[
-    {id:'prehled',    label:'Přehled'},
-    {id:'efektivita', label:'Efektivita'},
-    {id:'finance',    label:'Finance'},
-    {id:'personal',   label:'Personál'},
-    {id:'saly',       label:'Sály'},
-    {id:'faze',       label:'Fáze'},
-    {id:'heatmapa',   label:'Heatmapa'},
+const TABS:{ id:Tab; label:string }[]=[
+{id:'prehled',    label:'Přehled'},
+{id:'efektivita', label:'Efektivita'},
+{id:'finance',    label:'Finance'},
+{id:'personal',   label:'Personál'},
+{id:'saly',       label:'Sály'},
+{id:'faze',       label:'Fáze'},
+{id:'heatmapa',   label:'Heatmapa'},
+{id:'notifikace', label:'Notifikace'},
+{id:'oddeleni',   label:'Oddělení'},
+{id:'zarizeni',   label:'Zařízení'},
   ];
 
   return(
@@ -1749,7 +1786,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </p>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 print-section">
           <div className="print-hide">
             <MobileHeader
               kicker="Statistiky"
@@ -1801,15 +1838,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {/* Tab toggle */}
           <div className="print-hide">
             <MobilePillTabs<Tab>
-              tabs={[
-                { id: 'prehled', label: 'Přehled' },
-                { id: 'efektivita', label: 'Efektivita' },
-                { id: 'finance', label: 'Finance' },
-                { id: 'personal', label: 'Personál' },
-                { id: 'saly', label: 'Sály' },
-                { id: 'faze', label: 'Fáze' },
-                { id: 'heatmapa', label: 'Heatmapa' },
-              ]}
+tabs={[
+{ id: 'prehled', label: 'Přehled' },
+{ id: 'efektivita', label: 'Efektivita' },
+{ id: 'finance', label: 'Finance' },
+{ id: 'personal', label: 'Personál' },
+{ id: 'saly', label: 'Sály' },
+{ id: 'faze', label: 'Fáze' },
+{ id: 'heatmapa', label: 'Heatmapa' },
+{ id: 'notifikace', label: 'Notifikace' },
+{ id: 'oddeleni', label: 'Oddělení' },
+{ id: 'zarizeni', label: 'Zařízení' },
+  ]}
               value={tab}
               onChange={setTab}
             />
@@ -1817,9 +1857,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
           {(tab === 'prehled' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Přehled</h2>}
               {/* Executive scorecard hero (mobile/print verze) */}
               <ExecutiveScorecard data={scorecardData} />
+
+              {/* Smart recommendations based on real data */}
+              <SmartRecommendations
+                rooms={rooms}
+                statusHistory={statusHistory}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                periodLabel={period}
+              />
 
               <div className="grid grid-cols-2 gap-2.5">
                 {[
@@ -1899,7 +1949,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Sály ── (propracovaný RoomsTab) */}
           {(tab === 'saly' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Sály</h2>}
               <RoomsTab
                 rooms={rooms}
                 statusHistory={statusHistory}
@@ -1914,7 +1965,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Fáze — propracovaný PhasesTab ── */}
           {(tab === 'faze' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Fáze</h2>}
               <PhasesTab
                 rooms={rooms}
                 statusHistory={statusHistory}
@@ -1928,20 +1980,23 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Efektivita & KPI dashboard ── */}
           {(tab === 'efektivita' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Efektivita</h2>}
               <EfficiencyTab
                 rooms={rooms}
                 totalOps={totalOps}
                 avgUtilization={avgUtil}
                 avgStepDurations={avgStepDurations}
                 periodLabel={period}
+                statusHistory={statusHistory}
               />
             </div>
           )}
 
           {/* ── Personál & týmy ── */}
           {(tab === 'personal' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Personál</h2>}
               <StaffTab
                 staff={staffList}
                 rooms={rooms}
@@ -1952,7 +2007,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           
           {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
           {(tab === 'finance' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Finance</h2>}
               <FinanceTab
                 rooms={rooms}
                 totalOps={totalOps}
@@ -1965,7 +2021,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* ── Heatmapa ── (vždy renderováno při tisku) */}
           {(tab === 'heatmapa' || isPrinting) && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Heatmapa</h2>}
               <MobileSectionLabel>Heatmapa 7 × 24 h</MobileSectionLabel>
               <MobileCard>
                 {(() => {
@@ -2044,6 +2101,45 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </MobileCard>
             </div>
           )}
+
+          {/* ── Notifikace ── */}
+          {(tab === 'notifikace' || isPrinting) && (
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Notifikace</h2>}
+              <MobileSectionLabel>Přehled notifikací</MobileSectionLabel>
+              <NotificationsTab
+                notifications={notifications}
+                rooms={rooms}
+                periodLabel={periodLabelMap[period]}
+              />
+            </div>
+          )}
+
+          {/* ── Oddělení ── */}
+          {(tab === 'oddeleni' || isPrinting) && (
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Oddělení</h2>}
+              <MobileSectionLabel>Přehled oddělení</MobileSectionLabel>
+              <DepartmentsTab
+                departments={departments}
+                subDepartments={subDepartments}
+                rooms={rooms}
+                periodLabel={periodLabelMap[period]}
+              />
+            </div>
+          )}
+
+          {/* ── Zařízení ── */}
+          {(tab === 'zarizeni' || isPrinting) && (
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Zařízení</h2>}
+              <MobileSectionLabel>Připojená zařízení</MobileSectionLabel>
+              <DevicesTab
+                devices={devices}
+                periodLabel={periodLabelMap[period]}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -2101,70 +2197,66 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         </h1>
       </div>
 
-      {/* ── Period + Tab navigation ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-7 print-hide">
-  {/* Tabs — horizontálně scrollovatelný strip pro 12 záložek */}
-  <div className="flex items-center gap-1 p-1 rounded-lg overflow-x-auto max-w-full"
-    style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      scrollbarWidth: 'thin',
-      scrollbarColor: `${C.faint} transparent`,
-    }}>
-    {TABS.map(t => (
-      <button key={t.id} onClick={() => setTab(t.id)}
-        className="px-3.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0"
+      {/* ── Row 1: Tab navigation ── */}
+      <div className="print-hide flex items-center overflow-x-auto pb-px"
         style={{
-          background: tab === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
-          color: tab === t.id ? C.text : C.muted,
-          boxShadow: tab === t.id ? `inset 0 0 0 1px ${C.border}` : 'none',
+          borderBottom: `1px solid ${C.border}`,
+          scrollbarWidth: 'thin',
+          scrollbarColor: `${C.faint} transparent`,
         }}>
-        {t.label}
-      </button>
-    ))}
-  </div>
-        {/* Period switcher + Export */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-              <button key={p} onClick={()=>setPeriod(p)}
-                className="px-3.5 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all"
-                style={{
-                  background:period===p?`${C.accent}18`:'transparent',
-                  color:period===p?C.accent:C.muted,
-                  border:`1px solid ${period===p?C.accent:C.border}`,
-                }}>
-                {p}
-              </button>
-            ))}
-          </div>
-          {/* Export buttons */}
-          <div className="flex items-center gap-1.5 pl-3" style={{ borderLeft: `1px solid ${C.border}` }}>
-            <button
-              onClick={handlePrint}
-              title="Vytisknout aktuální zobrazení"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="px-4 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap shrink-0"
+            style={{
+              color: tab === t.id ? 'white' : C.muted,
+              borderBottom: tab === t.id ? `2px solid white` : '2px solid transparent',
+            }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Row 2: Period selector + Export ── */}
+      <div className="print-hide flex items-center justify-between gap-4 mb-6">
+        {/* Period pills */}
+        <div className="flex items-center gap-1 p-1 rounded-lg"
+          style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+          {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
+            <button key={p} onClick={()=>setPeriod(p)}
+              className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-all"
               style={{
-                background: `${C.accent}14`,
-                color: C.accent,
-                border: `1px solid ${C.accent}40`,
+                background: period === p ? C.surface : 'transparent',
+                color: period === p ? 'white' : C.muted,
               }}>
-              <Printer className="w-3.5 h-3.5" />
-              Tisk
+              {p.charAt(0).toUpperCase() + p.slice(1)}
             </button>
-            <button
-              onClick={handleExportPdf}
-              title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
-              style={{
-                background: `${C.yellow}14`,
-                color: C.yellow,
-                border: `1px solid ${C.yellow}40`,
-              }}>
-              <FileDown className="w-3.5 h-3.5" />
-              PDF
-            </button>
-          </div>
+          ))}
+        </div>
+        
+        {/* Export buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrint}
+            title="Vytisknout aktuální zobrazení"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:scale-[1.02]"
+            style={{
+              color: C.muted,
+              border: `1px solid ${C.border}`,
+            }}>
+            <Printer className="w-4 h-4" />
+            Tisk
+          </button>
+          <button
+            onClick={handleExportPdf}
+            title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:scale-[1.02]"
+            style={{
+              color: C.muted,
+              border: `1px solid ${C.border}`,
+            }}>
+            <FileDown className="w-4 h-4" />
+            PDF
+          </button>
         </div>
       </div>
 
@@ -2180,7 +2272,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Přehled
@@ -2542,7 +2634,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Efektivita & KPI
@@ -2554,6 +2646,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               avgUtilization={avgUtil}
               avgStepDurations={avgStepDurations}
               periodLabel={period}
+              statusHistory={statusHistory}
             />
           </motion.div>
         )}
@@ -2565,7 +2658,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Personál & týmy
@@ -2586,7 +2679,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Finance & náklady provozu
@@ -2609,7 +2702,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Operační sály — detailní přehled
@@ -2634,10 +2727,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Workflow fáze — detailní analýza
+                Workflow fáze �� detailní analýza
               </h2>
             )}
             <PhasesTab
@@ -2657,178 +2750,76 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             animate={{opacity:1,y:0}}
             exit={{opacity:0,y:-6}}
             transition={{duration:0.22}}
-            className="space-y-5">
+            className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Heatmapa
               </h2>
             )}
-
-            {/* Peak cards - calculated from real heatmap data */}
-            {(() => {
-              // Find peak utilization from heatmap
-              const workingHourValues = heatmapData.flat().filter(v => v >= 0);
-              const peakHeatUtil = workingHourValues.length > 0 ? Math.max(...workingHourValues) : 0;
-              const minHeatUtil = workingHourValues.length > 0 ? Math.min(...workingHourValues) : 0;
-              
-              // Find when peak occurs
-              let peakDay = 0, peakHour = 0;
-              heatmapData.forEach((row, di) => {
-                row.forEach((v, hi) => {
-                  if (v === peakHeatUtil && v >= 0) { peakDay = di; peakHour = hi; }
-                });
-              });
-              
-              // Calculate average working hours from rooms
-              const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-              const avgWorkingMins = rooms.length > 0 
-                ? Math.round(rooms.reduce((sum, r) => sum + getRoomWorkingMinutes(r, todayIndex), 0) / rooms.length)
-                : 0;
-              const avgWorkingHours = Math.round(avgWorkingMins / 60);
-              const workingRange = getCombinedWorkingHoursRange(rooms, todayIndex);
-              
-              return (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                {l:'Nejvyšší vytížení',     v:`${peakHeatUtil}%`, sub:`${DAYS[peakDay]} ${peakHour}:00–${peakHour+1}:00`, c:C.red},
-                {l:'Průměrné vytížení',     v:`${avgUtil}%`, sub:'Pracovní dny', c:C.accent},
-                {l:'Nejnižší vytížení',     v:`${minHeatUtil}%`,  sub:'Mimo špičku', c:C.green},
-                {l:'Operační hodiny / den', v:`${avgWorkingHours} h`, sub:`${workingRange.start}:00–${workingRange.end}:00`, c:C.muted},
-              ].map(k=>(
-                <Card key={k.l} className="p-4">
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-3xl font-bold leading-none mb-1" style={{color:k.c}}>{k.v}</p>
-                  <p className="text-[10px]" style={{color:C.faint}}>{k.sub}</p>
-                </Card>
-              ))}
-            </div>
-              );
-            })()}
-
-            {/* Heatmap grid */}
-            <Card className="p-5">
-              <SectionLabel>Heatmapa vytížení — den × hodina ({period})</SectionLabel>
-              <div className="overflow-x-auto">
-                <div className="inline-flex flex-col gap-1" style={{minWidth:560}}>
-                  <div className="flex gap-1 pl-8">
-                    {Array.from({length:24},(_,h)=>(
-                      <div key={h} className="w-5 text-center text-[9px] font-bold shrink-0" style={{color:C.faint}}>{h}</div>
-                    ))}
-                  </div>
-                  {DAYS.map((day,di)=>(
-                    <div key={di} className="flex items-center gap-1">
-                      <span className="w-7 text-xs font-bold shrink-0 text-right pr-1" style={{color:C.muted}}>{day}</span>
-                      {heatmapData[di].map((v,hi)=>(
-                        <motion.div key={hi} className="w-5 h-5 rounded-[3px] shrink-0"
-                          style={{background:heatColor(v)}}
-                          initial={{opacity:0,scale:0.5}}
-                          animate={{opacity:1,scale:1}}
-                          transition={{duration:0.2,delay:(di*24+hi)*0.003}}
-                          title={`${day} ${hi}:00 — ${v}%`}/>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-4 mt-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{color:C.muted}}>Legenda</span>
-                {[
-                  {c:'rgba(30,41,59,0.45)',l:'< 25%'},
-                  {c:'rgba(16,185,129,0.62)',l:'25–50%'},
-                  {c:'rgba(251,191,36,0.68)',l:'50–70%'},
-                  {c:'rgba(249,115,22,0.78)',l:'70–90%'},
-                  {c:'rgba(255,59,48,0.88)', l:'> 90%'},
-                ].map(l=>(
-                  <div key={l.l} className="flex items-center gap-1.5">
-                    <div className="w-3.5 h-3.5 rounded-[2px]" style={{background:l.c}}/>
-                    <span className="text-xs" style={{color:C.muted}}>{l.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Hourly avg line across week */}
-            <Card className="p-5">
-              <SectionLabel>Průměrné hodinové vytížení — pracovní týden ({period})</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
-                <AreaChart
-                  data={Array.from({length:24},(_,h)=>{
-                    const pracValues = heatmapData.slice(0,5).map(d => d[h]).filter(v => v >= 0);
-                    const vikendValues = heatmapData.slice(5).map(d => d[h]).filter(v => v >= 0);
-                    return {
-                      h:`${h}`,
-                      prac: pracValues.length > 0 ? Math.round(pracValues.reduce((s,v)=>s+v,0)/pracValues.length) : 0,
-                      vikend: vikendValues.length > 0 ? Math.round(vikendValues.reduce((s,v)=>s+v,0)/vikendValues.length) : 0,
-                    };
-                  })}
-                  margin={{top:4,right:0,bottom:0,left:-24}}>
-                  <defs>
-                    <linearGradient id="hg1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={C.accent} stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor={C.accent} stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="hg2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={C.muted} stopOpacity={0.12}/>
-                      <stop offset="95%" stopColor={C.muted} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                  <XAxis dataKey="h" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} domain={[0,100]} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number,name:string)=>[`${v}%`,name==='prac'?'Pracovní dny':'Víkend']}/>
-                  <Area type="monotone" dataKey="prac"   stroke={C.accent} fill="url(#hg1)" strokeWidth={1.5} dot={false} name="prac"/>
-                  <Area type="monotone" dataKey="vikend" stroke={C.muted}  fill="url(#hg2)" strokeWidth={1}   dot={false} name="vikend"/>
-                </AreaChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{c:C.accent,l:'Pracovní dny'},{c:C.muted,l:'Víkend'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-1 rounded-full" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Daily peak bar */}
-            <Card className="p-5">
-              <SectionLabel>Denní průměrné vytížení dle dne v týdnu (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart
-                  data={DAYS.map((day,di)=>{
-                    const workingHours = heatmapData[di].filter(v => v >= 0);
-                    return {
-                      day,
-                      avg: workingHours.length > 0 ? Math.round(workingHours.reduce((s,v)=>s+v,0)/workingHours.length) : 0,
-                      peak: workingHours.length > 0 ? Math.max(...workingHours) : 0,
-                    };
-                  })}
-                  margin={{top:4,right:0,bottom:0,left:-24}} barSize={20}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                  <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                  <Tooltip {...TIP} formatter={(v:number,name:string)=>[`${v}%`,name==='avg'?'Průměr':'Peak']}/>
-                  <Bar dataKey="avg"  fill={C.accent} opacity={0.5}  radius={[2,2,0,0]} name="avg"/>
-                  <Bar dataKey="peak" fill={C.orange} opacity={0.65} radius={[2,2,0,0]} name="peak"/>
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex gap-5 mt-2">
-                {[{c:C.accent,l:'Průměrné využití'},{c:C.orange,l:'Peak využití'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
+            <HeatmapTab
+              rooms={rooms}
+              statusHistory={statusHistory}
+              periodLabel={period}
+              calculateRoomUtilization={calculateRoomUtilization}
+            />
           </motion.div>
+        )}
+
+        {/* ── Notifikace ── (nový tab) */}
+        {(tab==='notifikace' || isPrinting) && (
+        <motion.div key="notifikace"
+        initial={isPrinting ? false : {opacity:0,y:10}}
+        animate={{opacity:1,y:0}}
+        exit={{opacity:0,y:-6}}
+        transition={{duration:0.22}}
+        className="flex flex-col gap-5 print-section"
+        >
+          <NotificationsTab
+            notifications={notifications}
+            rooms={rooms}
+            periodLabel={periodLabelMap[period]}
+          />
+        </motion.div>
+        )}
+
+        {/* ── Oddělení ── (nový tab) */}
+        {(tab==='oddeleni' || isPrinting) && (
+        <motion.div key="oddeleni"
+        initial={isPrinting ? false : {opacity:0,y:10}}
+        animate={{opacity:1,y:0}}
+        exit={{opacity:0,y:-6}}
+        transition={{duration:0.22}}
+        className="flex flex-col gap-5 print-section"
+        >
+          <DepartmentsTab
+            departments={departments}
+            subDepartments={subDepartments}
+            rooms={rooms}
+            periodLabel={periodLabelMap[period]}
+          />
+        </motion.div>
+        )}
+
+        {/* ── Zařízení ── (nový tab) */}
+        {(tab==='zarizeni' || isPrinting) && (
+        <motion.div key="zarizeni"
+        initial={isPrinting ? false : {opacity:0,y:10}}
+        animate={{opacity:1,y:0}}
+        exit={{opacity:0,y:-6}}
+        transition={{duration:0.22}}
+        className="flex flex-col gap-5 print-section"
+        >
+          <DevicesTab
+            devices={devices}
+            periodLabel={periodLabelMap[period]}
+          />
+        </motion.div>
         )}
 
         </AnimatePresence>
 
       </div>
-      {/* ── Room detail panel (shared mobile + desktop) ── */}
+      {/* ── Room detail panel (shared mobile + desktop) ���─ */}
       <AnimatePresence>
         {selectedRoom&&(
           <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>

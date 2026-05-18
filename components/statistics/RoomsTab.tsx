@@ -27,7 +27,7 @@ import type { OperatingRoom } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
   C, Card, KPIBlock, ProgressRing, Sparkline, AnimatedCounter,
-  DeltaBadge, formatMinutes, formatPercent, formatNumber, hashStr,
+  DeltaBadge, formatMinutes, formatPercent, formatNumber,
   seededPreviousValue, computeDelta
 } from './shared';
 
@@ -109,6 +109,7 @@ const RoomCard = memo(({
   avgOpTime,
   onClick,
   index,
+  statusHistory,
 }: {
   room: OperatingRoom;
   utilization: number;
@@ -116,6 +117,7 @@ const RoomCard = memo(({
   avgOpTime: number;
   onClick: () => void;
   index: number;
+  statusHistory?: StatusHistoryRow[];
 }) => {
   const statusMap: Record<string, { label: string; color: string }> = {
     'volny': { label: 'Volný', color: C.green },
@@ -128,14 +130,50 @@ const RoomCard = memo(({
 
   const utilColor = utilization >= 80 ? C.green : utilization >= 50 ? C.yellow : utilization > 0 ? C.orange : C.muted;
 
-  // Simulated trend data based on room ID
+  // Calculate trend data from REAL statusHistory (last 12 periods/hours)
   const trend = useMemo(() => {
-    const base = hashStr(room.id + 'trend');
-    return Array.from({ length: 12 }, (_, i) => {
-      const noise = hashStr(room.id + i.toString()) * 20 - 10;
-      return Math.max(0, Math.min(100, utilization + noise + (i - 6) * 2));
-    });
-  }, [room.id, utilization]);
+    if (!statusHistory || statusHistory.length === 0) {
+      // Fallback if no history available
+      return Array.from({ length: 12 }, () => utilization);
+    }
+
+    // Filter status history for this room and group by hour (last 12 hours)
+    const now = new Date();
+    const roomHistory = statusHistory
+      .filter(entry => entry.operating_room_id === room.id)
+      .filter(entry => {
+        const entryTime = new Date(entry.created_at).getTime();
+        const hoursDiff = (now.getTime() - entryTime) / (1000 * 60 * 60);
+        return hoursDiff <= 12;
+      })
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    // Group by hour and calculate utilization for each
+    const hourlyUtilization: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      const hourStart = new Date(now.getTime() - (12 - i) * 60 * 60 * 1000);
+      const hourEnd = new Date(now.getTime() - (11 - i) * 60 * 60 * 1000);
+      
+      const hourEntries = roomHistory.filter(entry => {
+        const entryTime = new Date(entry.created_at);
+        return entryTime >= hourStart && entryTime < hourEnd;
+      });
+
+      if (hourEntries.length > 0) {
+        const operatingCount = hourEntries.filter(
+          e => e.event_type === 'in_use' || e.event_type === 'started' || e.event_type === 'occupied'
+        ).length;
+        const utilPct = Math.round((operatingCount / hourEntries.length) * 100);
+        hourlyUtilization.push(utilPct);
+      } else {
+        hourlyUtilization.push(0);
+      }
+    }
+
+    return hourlyUtilization.length === 12 
+      ? hourlyUtilization 
+      : Array.from({ length: 12 }, () => utilization);
+  }, [room.id, statusHistory, utilization]);
 
   return (
     <motion.div
@@ -394,7 +432,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
-                Průměrné využití
+                Průměrné vyu��ití
               </p>
               <p className="text-3xl font-bold mt-1" style={{ color: C.textHi }}>
                 {formatPercent(avgUtilization, 1)}
@@ -613,6 +651,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               avgOpTime={data.avgOpTime}
               onClick={() => onRoomSelect?.(data.room)}
               index={idx}
+              statusHistory={statusHistory}
             />
           ))}
         </motion.div>

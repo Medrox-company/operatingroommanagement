@@ -67,11 +67,12 @@ body {
      • Borders rgba(255,255,255,*) → světle šedé
      • HEX accent barvy (KPI hodnoty, badges, status) ZACHOVÁNY
      • Recharts grid lines udržíme viditelné na bílém
-     • Per-room KPI strip vynutíme do JEDNOHO řádku (8 sloupců) */
+     • Per-room KPI strip vynutíme do JEDNOHO řádku (8 sloupců)
+     • MULTI-PAGE: každý tab na nové stránce, auto page breaks */
 @media print {
   @page {
     size: A4;
-    margin: 6mm;
+    margin: 8mm 6mm;
   }
 
   /* Vynutit zachování barev — bez tohoto by prohlížeč v "úsporném"
@@ -89,6 +90,8 @@ body {
     background: #ffffff !important;
     color: #0f172a !important;
     color-scheme: light !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   /* Skrýt vše mimo print target */
@@ -100,18 +103,21 @@ body {
     visibility: visible;
   }
 
-  /* Print target na origin (sidebar offset pryč) */
+  /* Print target - DŮLEŽITÉ: static position pro multi-page */
   [data-print-area="statistics"] {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-height: auto !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
-    z-index: 9999 !important;
+    z-index: auto !important;
     background: #ffffff !important;
     color: #0f172a !important;
+    overflow: visible !important;
     /* Override inline isPrinting offscreen style */
     opacity: 1 !important;
     pointer-events: auto !important;
@@ -287,7 +293,20 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
-  /* Page breaks: pouze nezalamovat uvnitř karet/grafů */
+  /* Page breaks: každý tab section začne na nové stránce */
+  [data-print-area="statistics"] .print-section {
+    page-break-before: always !important;
+    break-before: page !important;
+    padding-top: 4mm !important;
+  }
+  /* První section bez page-break */
+  [data-print-area="statistics"] .print-section:first-of-type {
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    padding-top: 0 !important;
+  }
+
+  /* Nezalamovat uvnitř karet/grafů */
   [data-print-area="statistics"] .recharts-wrapper,
   [data-print-area="statistics"] [data-no-break],
   [data-print-area="statistics"] .print-card {
@@ -298,6 +317,23 @@ body {
   [data-print-area="statistics"] h2 {
     page-break-after: avoid;
     break-after: avoid;
+  }
+  /* Tab label (section header) - nová stránka před každou sekcí */
+  [data-print-area="statistics"] .print-tab-header {
+    page-break-before: always !important;
+    break-before: page !important;
+    margin-top: 0 !important;
+    padding-top: 2mm !important;
+    font-size: 14pt !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #0f172a !important;
+    margin-bottom: 4mm !important;
+    padding-bottom: 2mm !important;
+  }
+  /* První tab header bez page break */
+  [data-print-area="statistics"] .print-tab-header:first-of-type {
+    page-break-before: avoid !important;
+    break-before: avoid !important;
   }
 
   /* Minimalistická typografie — kompaktní pro A4 */

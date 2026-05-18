@@ -17,7 +17,7 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity, Zap, Users, Clock, AlertTriangle, CheckCircle2,
-  Target, Sparkles, ArrowUpRight, ArrowDownRight, Radio,
+  Target, Sparkles, ArrowUpRight, ArrowDownRight, Radio, RefreshCw, BarChart3,
 } from 'lucide-react';
 import {
   C, Card, GradeBadge, KPIBlock, LiveDot,
@@ -416,6 +416,31 @@ export const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ data }) 
               )}
             </div>
           </Card>
+        </div>
+
+        {/* ── Quick Action Buttons — Responsive row ─────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
+          {[
+            { icon: RefreshCw, label: 'Obnovit', color: C.accent },
+            { icon: AlertTriangle, label: 'Výstrahy', color: C.orange },
+            { icon: Activity, label: 'Naplánovat', color: C.green },
+            { icon: Target, label: 'Export', color: C.blue },
+          ].map((action, i) => (
+            <motion.button
+              key={i}
+              whileHover={{ scale: 1.05, boxShadow: `0 8px 24px ${action.color}20` }}
+              whileTap={{ scale: 0.98 }}
+              className="py-2.5 px-3 rounded-xl flex flex-col items-center gap-1.5 transition-all"
+              style={{
+                background: `${action.color}10`,
+                border: `1px solid ${action.color}30`,
+              }}>
+              <action.icon size={16} color={action.color} strokeWidth={2} />
+              <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: action.color }}>
+                {action.label}
+              </span>
+            </motion.button>
+          ))}
         </div>
       </div>
     </motion.div>

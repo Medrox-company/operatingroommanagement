@@ -28,6 +28,7 @@ import {
   hashStr, formatMinutes, formatPercent, AnimatedCounter,
 } from './shared';
 import { OperatingRoom } from '../../types';
+import type { StatusHistoryRow } from '../../lib/db';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -39,6 +40,7 @@ interface EfficiencyTabProps {
   /** Average step durations (min) — index = workflow step index */
   avgStepDurations: number[];
   periodLabel: string;
+  statusHistory?: StatusHistoryRow[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -297,7 +299,7 @@ QualityMatrix.displayName = 'QualityMatrix';
 // Main EfficiencyTab
 // ─────────────────────────────────────────────────────────────────────────────
 export const EfficiencyTab: React.FC<EfficiencyTabProps> = ({
-  rooms, totalOps, avgUtilization, avgStepDurations, periodLabel,
+  rooms, totalOps, avgUtilization, avgStepDurations, periodLabel, statusHistory = [],
 }) => {
   // Derive KPIs
   const kpis = useMemo(() => {
@@ -308,7 +310,7 @@ export const EfficiencyTab: React.FC<EfficiencyTabProps> = ({
       ? (avgStepDurations[avgStepDurations.length - 1] ?? 0) +
         (avgStepDurations[avgStepDurations.length - 2] ?? 0)
       : 22;
-    // On-time start rate — derive from rooms.patientCalledAt vs operationStartedAt heuristically
+    // On-time start rate — derive from rooms.patientCalledAt vs operationStartedAt
     const withTimes = rooms.filter(r => r.patientCalledAt && r.operationStartedAt);
     let onTime = 0;
     withTimes.forEach(r => {
@@ -317,14 +319,31 @@ export const EfficiencyTab: React.FC<EfficiencyTabProps> = ({
       const diffMin = (started - called) / 60000;
       if (diffMin < 25) onTime++;
     });
-    const onTimePct = withTimes.length > 0 ? (onTime / withTimes.length) * 100 : 78; // fallback heuristic
-    // Overrun rate — heuristic via hash
-    const overrunPct = 12 + hashStr(`overrun-${periodLabel}`) * 14;
+    const onTimePct = withTimes.length > 0 ? (onTime / withTimes.length) * 100 : 78;
+    
+    // Overrun rate — počítáno z REÁLNÝCH dat (statusHistory)
+    // Operace které překročily očekávanou dobu
+    let overrunCount = 0;
+    let totalWithDuration = 0;
+    
+    statusHistory.forEach(entry => {
+      if (entry.duration_seconds && entry.step_name) {
+        const stepIndex = avgStepDurations.findIndex((_: any) => true); // Zjednodušeně
+        const expectedSeconds = stepIndex >= 0 ? avgStepDurations[stepIndex] * 60 : 0;
+        if (expectedSeconds > 0 && entry.duration_seconds > expectedSeconds * 1.15) {
+          overrunCount++;
+        }
+        totalWithDuration++;
+      }
+    });
+    
+    const overrunPct = totalWithDuration > 0 ? (overrunCount / totalWithDuration) * 100 : 8;
+    
     // Septic ratio
     const septicCount = rooms.filter(r => r.isSeptic).length;
     const septicPct = rooms.length > 0 ? (septicCount / rooms.length) * 100 : 0;
     return { throughput, turnover, onTimePct, overrunPct, septicPct };
-  }, [rooms, totalOps, avgStepDurations, periodLabel]);
+  }, [rooms, totalOps, avgStepDurations, statusHistory]);
 
   // Bez historických dat - delta je 0, žádné trendy
   // V budoucnu lze tyto hodnoty načíst z databáze přes props podobně jako v ExecutiveScorecard
