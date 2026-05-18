@@ -7,6 +7,8 @@ import MobileTimelineView from './mobile/MobileTimelineView';
 import { TimelineHeader } from './timeline/TimelineHeader';
 import { TimelineLegend, NowLine, MiniSparkline } from './timeline/TimelineLegend';
 import { MiniMap, OperationTooltip } from './timeline/MiniMap';
+import { TimelineKPIPanel } from './timeline/TimelineKPIPanel';
+import { OperationProgressBar } from './timeline/OperationProgressBar';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
@@ -1678,6 +1680,9 @@ style={{
         onShowAll={handleShowAllStatuses}
         onHideAll={handleHideAllStatuses}
       />
+
+      {/* Floating KPI Panel - Real-time metrics */}
+      <TimelineKPIPanel rooms={rooms} currentTime={currentTime} />
 
       {/* Operation Tooltip */}
       <AnimatePresence>

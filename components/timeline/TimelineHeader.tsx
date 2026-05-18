@@ -35,7 +35,7 @@ interface TimelineHeaderProps {
   onZoomChange: (zoom: number) => void;
 }
 
-// KPI Card component
+// KPI Card component - with enhanced animations and glow effects
 const KPICard = ({ 
   icon: Icon, 
   label, 
@@ -54,19 +54,31 @@ const KPICard = ({
   pulse?: boolean;
 }) => (
   <motion.div
-    whileHover={{ scale: 1.02, y: -2 }}
-    className="relative flex items-center gap-3 px-4 py-3 rounded-xl overflow-hidden"
+    whileHover={{ scale: 1.03, y: -4 }}
+    whileTap={{ scale: 0.98 }}
+    className="relative flex items-center gap-3 px-4 py-3 rounded-xl overflow-hidden transition-all"
     style={{
       background: `linear-gradient(135deg, ${accent}08 0%, ${accent}03 100%)`,
       border: `1px solid ${accent}20`,
     }}
   >
-    {/* Glow effect */}
-    <div 
+    {/* Animated glow effect on hover */}
+    <motion.div 
       className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300"
       style={{ 
-        background: `radial-gradient(circle at center, ${accent}10 0%, transparent 70%)` 
+        background: `radial-gradient(circle at center, ${accent}15 0%, transparent 70%)` 
       }}
+    />
+    
+    {/* Animated border glow */}
+    <motion.div
+      animate={{ 
+        boxShadow: pulse 
+          ? `0 0 20px ${accent}40, 0 0 40px ${accent}20`
+          : 'none'
+      }}
+      transition={{ duration: 2, repeat: Infinity }}
+      className="absolute inset-0 rounded-xl"
     />
     
     {/* Icon */}
@@ -86,19 +98,28 @@ const KPICard = ({
         {label}
       </p>
       <div className="flex items-baseline gap-1">
-        <p className="text-xl font-bold tabular-nums" style={{ color: C.textHi }}>
+        <motion.p 
+          key={value}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', bounce: 0.3 }}
+          className="text-xl font-bold tabular-nums" 
+          style={{ color: C.textHi }}
+        >
           {value}
-        </p>
+        </motion.p>
         {suffix && (
           <span className="text-xs font-medium" style={{ color: C.muted }}>{suffix}</span>
         )}
         {trend && (
-          <span 
+          <motion.span 
             className="text-[10px] font-semibold ml-1"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1, delay: 0.5 }}
             style={{ color: trend.positive ? C.green : C.red }}
           >
-            {trend.positive ? '+' : ''}{trend.value}%
-          </span>
+            {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
+          </motion.span>
         )}
       </div>
     </div>
