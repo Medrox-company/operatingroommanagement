@@ -1,18 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
-import { TimelineHeader } from './timeline/TimelineHeader';
-import { TimelineLegend, NowLine, MiniSparkline } from './timeline/TimelineLegend';
-import { MiniMap, OperationTooltip } from './timeline/MiniMap';
-import { TimelineKPIPanel } from './timeline/TimelineKPIPanel';
-import { OperationProgressBar } from './timeline/OperationProgressBar';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
-  ZoomIn, ZoomOut
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
 // ========== DESIGN TOKENS (Modern glass-morphism style) ==========
@@ -215,26 +209,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
-  
-  // NEW: Timeline enhancement states
-  const [zoomLevel, setZoomLevel] = useState(100);
-  const [period, setPeriod] = useState<'12h' | '24h' | '7d'>('24h');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [hiddenStatuses, setHiddenStatuses] = useState<string[]>([]);
-  const [viewportStart, setViewportStart] = useState(0);
-  const [viewportEnd, setViewportEnd] = useState(100);
-  const [tooltipData, setTooltipData] = useState<{
-    visible: boolean;
-    x: number;
-    y: number;
-    room: OperatingRoom | null;
-    stepName: string;
-    stepColor: string;
-    startTime: string;
-    duration: string;
-    progress: number;
-  }>({ visible: false, x: 0, y: 0, room: null, stepName: '', stepColor: '', startTime: '', duration: '', progress: 0 });
-  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
@@ -302,73 +276,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     const emergencyCount = rooms.filter(r => r.isEmergency).length;
     return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
   }, [rooms]);
-
-  // NEW: Timeline enhancement handlers
-  const handleRefresh = useCallback(() => {
-    setCurrentTime(new Date());
-  }, []);
-
-  const handleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      timelineRef.current?.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  }, []);
-
-  const handleExport = useCallback(() => {
-    // Simple export - trigger print or screenshot
-    window.print();
-  }, []);
-
-  const handleToggleStatus = useCallback((statusId: string) => {
-    setHiddenStatuses(prev => 
-      prev.includes(statusId) 
-        ? prev.filter(id => id !== statusId)
-        : [...prev, statusId]
-    );
-  }, []);
-
-  const handleShowAllStatuses = useCallback(() => {
-    setHiddenStatuses([]);
-  }, []);
-
-  const handleHideAllStatuses = useCallback(() => {
-    setHiddenStatuses(activeStatuses.map(s => s.id));
-  }, [activeStatuses]);
-
-  const handleViewportChange = useCallback((start: number, end: number) => {
-    setViewportStart(start);
-    setViewportEnd(end);
-  }, []);
-
-  // Prepare status items for legend
-  const statusItems = useMemo(() => {
-    return activeStatuses.map(status => {
-      const count = rooms.filter(r => 
-        r.currentStepIndex === status.order_index && 
-        !r.isEmergency && 
-        !r.isLocked
-      ).length;
-      return {
-        id: status.id,
-        name: status.title || status.name,
-        color: status.accent_color || status.color || '#6B7280',
-        count,
-      };
-    });
-  }, [activeStatuses, rooms]);
-
-  // Status color map for minimap
-  const statusColorMap = useMemo(() => {
-    const map: Record<number, string> = {};
-    activeStatuses.forEach(s => {
-      map[s.order_index] = s.accent_color || s.color || '#6B7280';
-    });
-    return map;
-  }, [activeStatuses]);
 
   /* --- Rooms in original order - emergency/locked stay on their position --- */
   const sortedRooms = useMemo(() => {
@@ -543,9 +450,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       />
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
-      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden" ref={timelineRef}>
+      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
 
-      {/* ======== NEW Enhanced Header with KPIs ======== */}
+      {/* ======== Header with Title and Stats ======== */}
       <div 
         className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
         style={{ 
@@ -558,28 +465,146 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
           style={{ background: C.accent }}
         />
-        
-        <TimelineHeader
-          rooms={rooms}
-          currentTime={currentTime}
-          period={period}
-          onPeriodChange={setPeriod}
-          onRefresh={handleRefresh}
-          onFullscreen={handleFullscreen}
-          onExport={handleExport}
-          zoomLevel={zoomLevel}
-          onZoomChange={setZoomLevel}
-        />
+        <div className="px-8 md:pl-32 md:pr-10 py-6">
 
-        {/* Mini Map Navigator */}
-        <MiniMap
-          rooms={rooms}
-          viewportStart={viewportStart}
-          viewportEnd={viewportEnd}
-          nowPercent={nowPercent}
-          onViewportChange={handleViewportChange}
-          statusColors={statusColorMap}
-        />
+
+          {/* Stats Boxes Row */}
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
+            <StatBox 
+              icon={Activity} 
+              label="Aktivní" 
+              value={`${stats.operations} operací`} 
+              color="#22C55E" 
+            />
+            <StatBox 
+              icon={Loader2} 
+              label="Úklid" 
+              value={`${stats.cleaning} sálů`} 
+              color="#F97316" 
+            />
+            <StatBox 
+              icon={Stethoscope} 
+              label="Volné" 
+              value={`${stats.free} sálů`} 
+              color="#22D3EE" 
+            />
+            <StatBox 
+              icon={Shield} 
+              label="Dokončeno" 
+              value={`${stats.completed} dnes`} 
+              color="#22D3EE" 
+            />
+
+            {stats.emergencyCount > 0 && (
+              <StatBox 
+                icon={AlertTriangle} 
+                label="Emergency" 
+                value={`${stats.emergencyCount} sálů`} 
+                color="#EF4444" 
+                glow 
+              />
+            )}
+
+            {/* ARO Overtime indicator - LoginPage glassmorph with red accent */}
+            {aroOvertimeRooms.length > 0 && (
+              <motion.div
+                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{
+                  background: `${C.red}15`,
+                  border: `2px solid ${C.red}40`,
+                  boxShadow: `0 0 24px ${C.red}25, inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${C.red}15`,
+                }}
+              >
+                {/* Animated gradient border effect */}
+                <div 
+                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: `linear-gradient(90deg, transparent, ${C.red}20, transparent)`,
+                    animation: 'shimmer 2s infinite',
+                  }}
+                />
+                {/* Top highlight line with accent */}
+                <div 
+                  className="absolute top-0 left-4 right-4 h-px opacity-60"
+                  style={{ background: `linear-gradient(90deg, transparent, ${C.red}80, transparent)` }}
+                />
+                <div
+                  className="absolute inset-0 opacity-40"
+                  style={{
+                    background: `radial-gradient(ellipse at 50% 0%, ${C.red}30 0%, transparent 70%)`,
+                  }}
+                />
+                <div className="relative flex items-center gap-3 h-full">
+                  <motion.div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    style={{
+                      background: `${C.red}25`,
+                      border: `1.5px solid ${C.red}50`,
+                    }}
+                  >
+                    <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
+                  </motion.div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-semibold" style={{ color: `${C.red}a0` }}>ARO PŘESAH</p>
+                    <p className="text-sm font-bold leading-tight" style={{ color: C.red }}>{aroOvertimeRooms.length} sálů</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1 min-w-4" />
+
+            {/* Date Box */}
+            <StatBox 
+              icon={CalendarDays} 
+              label="Datum" 
+              value={formatDate(currentTime)} 
+              color="#6366F1" 
+            />
+
+            {/* Time Box - LoginPage glassmorph style */}
+            <div
+              className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
+              style={{
+                background: C.glass,
+                border: `1px solid ${C.border}`,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+              }}
+            >
+              {/* Top highlight line */}
+              <div 
+                className="absolute top-0 left-4 right-4 h-px opacity-30"
+                style={{ background: `linear-gradient(90deg, transparent, ${C.accent}60, transparent)` }}
+              />
+              <div className="relative flex items-center gap-3 h-full">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: `${C.accent}15`,
+                    border: `1px solid ${C.accent}25`,
+                  }}
+                >
+                  <Clock className="w-4 h-4" style={{ color: C.accent }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Čas</p>
+                  <p className="text-sm font-bold leading-tight tabular-nums" style={{ color: C.accent }}>
+                    {currentTime.toLocaleTimeString("cs-CZ", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ======== Main Timeline ======== */}
@@ -668,62 +693,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Enhanced Now indicator with glow effect */}
+            {/* Now indicator - Simple line without glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                <div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
                 >
-                  {/* Glow effect */}
+                  {/* Main line - clean and simple */}
                   <div 
-                    className="absolute -left-4 top-0 bottom-0 w-8"
-                    style={{ 
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(115, 255, 0, 0.08) 50%, transparent 100%)'
-                    }}
+                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
+                    style={{ background: '#73ff00' }}
                   />
-                  
-                  {/* Main line with gradient and glow */}
-                  <div 
-                    className="absolute -left-[1px] top-0 bottom-0 w-[2px]" 
-                    style={{ 
-                      background: 'linear-gradient(180deg, #73ff00 0%, #73ff00 90%, transparent 100%)',
-                      boxShadow: '0 0 12px rgba(115, 255, 0, 0.5), 0 0 24px rgba(115, 255, 0, 0.3)'
-                    }}
-                  />
-                  
-                  {/* Top label */}
-                  <div 
-                    className="absolute -left-6 -top-6 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
-                    style={{ 
-                      background: 'rgba(115, 255, 0, 0.15)',
-                      color: '#73ff00',
-                      border: '1px solid rgba(115, 255, 0, 0.3)'
-                    }}
-                  >
-                    Nyni
-                  </div>
-                  
-                  {/* Animated pulse dot at top */}
-                  <motion.div
-                    animate={{ 
-                      scale: [1, 1.5, 1],
-                      opacity: [1, 0.5, 1]
-                    }}
-                    transition={{ 
-                      duration: 2, 
-                      repeat: Infinity,
-                      ease: 'easeInOut'
-                    }}
-                    className="absolute -left-1.5 top-0 w-3 h-3 rounded-full"
-                    style={{ 
-                      background: '#73ff00',
-                      boxShadow: '0 0 12px #73ff00'
-                    }}
-                  />
-                </motion.div>
+                </div>
               )}
             </AnimatePresence>
 
@@ -1671,35 +1653,6 @@ style={{
       </div>
 
       </div>{/* end desktop wrapper */}
-
-      {/* Floating Status Legend Panel */}
-      <TimelineLegend
-        statuses={statusItems}
-        hiddenStatuses={hiddenStatuses}
-        onToggleStatus={handleToggleStatus}
-        onShowAll={handleShowAllStatuses}
-        onHideAll={handleHideAllStatuses}
-      />
-
-      {/* Floating KPI Panel - Real-time metrics */}
-      <TimelineKPIPanel rooms={rooms} currentTime={currentTime} />
-
-      {/* Operation Tooltip */}
-      <AnimatePresence>
-        {tooltipData.visible && tooltipData.room && (
-          <OperationTooltip
-            visible={tooltipData.visible}
-            x={tooltipData.x}
-            y={tooltipData.y}
-            room={tooltipData.room}
-            stepName={tooltipData.stepName}
-            stepColor={tooltipData.stepColor}
-            startTime={tooltipData.startTime}
-            duration={tooltipData.duration}
-            progress={tooltipData.progress}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
