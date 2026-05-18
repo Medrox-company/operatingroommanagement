@@ -41,6 +41,7 @@ import {
   MobileSectionLabel,
 } from './mobile/MobileShell';
 import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
+import { SmartRecommendations } from './statistics/SmartRecommendations';
 import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
 import { FinanceTab } from './statistics/FinanceTab';
@@ -1860,6 +1861,15 @@ tabs={[
               {isPrinting && <h2 className="print-tab-header print-only">Přehled</h2>}
               {/* Executive scorecard hero (mobile/print verze) */}
               <ExecutiveScorecard data={scorecardData} />
+
+              {/* Smart recommendations based on real data */}
+              <SmartRecommendations
+                rooms={rooms}
+                statusHistory={statusHistory}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                periodLabel={period}
+              />
 
               <div className="grid grid-cols-2 gap-2.5">
                 {[
