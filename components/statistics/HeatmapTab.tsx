@@ -21,7 +21,7 @@ import { ResponsiveContainer, Tooltip } from 'recharts';
 import type { OperatingRoom } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card, KPIBlock, formatPercent, hashStr, formatNumber
+  C, Card, KPIBlock, formatPercent, formatNumber
 } from './shared';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,22 +106,52 @@ export const HeatmapTab = memo(({
   periodLabel,
   calculateRoomUtilization,
 }: HeatmapTabProps) => {
-  // Generate hourly heatmap data for current day
+  // Calculate hourly heatmap from REAL database data (statusHistory)
   const hourlyHeatmap = useMemo(() => {
+    // Group status history by room and hour
+    const roomHourMap = new Map<string, Map<number, { operating: number; total: number }>>();
+
+    statusHistory.forEach(entry => {
+      const date = new Date(entry.created_at);
+      const hour = date.getHours();
+      const roomId = entry.operating_room_id;
+      // Consider 'in_use' event type as operating
+      const isOperating = entry.event_type === 'in_use' || entry.event_type === 'occupied' || entry.event_type === 'started';
+
+      if (!roomHourMap.has(roomId)) {
+        roomHourMap.set(roomId, new Map());
+      }
+
+      const hourMap = roomHourMap.get(roomId)!;
+      if (!hourMap.has(hour)) {
+        hourMap.set(hour, { operating: 0, total: 0 });
+      }
+
+      const hourData = hourMap.get(hour)!;
+      hourData.total += 1;
+      if (isOperating) hourData.operating += 1;
+    });
+
+    // Build hourly data
     const hours = Array.from({ length: 24 }, (_, i) => i);
     return hours.map(hour => {
       const timeLabel = `${hour.toString().padStart(2, '0')}:00`;
-      const roomData = rooms.map(room => ({
-        roomId: room.id,
-        roomName: room.name,
-        utilization: Math.max(0, Math.min(100, 
-          hashStr(room.id + hour.toString()) * 60 + 20 +
-          (hour >= 6 && hour <= 18 ? 40 : 10)
-        )),
-      }));
+      const roomData = rooms.map(room => {
+        const hourMap = roomHourMap.get(room.id);
+        const hourData = hourMap?.get(hour);
+        const utilization = hourData && hourData.total > 0
+          ? Math.round((hourData.operating / hourData.total) * 100)
+          : 0;
+
+        return {
+          roomId: room.id,
+          roomName: room.name,
+          utilization,
+        };
+      });
       return { hour, timeLabel, roomData };
     });
-  }, [rooms]);
+  }, [rooms, statusHistory]);
 
   // Calculate statistics
   const stats = useMemo(() => {
