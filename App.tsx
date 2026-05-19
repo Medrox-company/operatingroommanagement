@@ -6,6 +6,7 @@ import RoomDetail from './components/RoomDetail';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
 import StaffManager from './components/StaffManager';
+import StaffOverviewModule from './components/StaffOverviewModule';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
@@ -187,7 +188,7 @@ const AppContent: React.FC = () => {
   }, []);
 
   // Memoize selectedRoom — bez useMemo se find() spouští každý render a `selectedRoom`
-  // má pokaždé jinou referenci, což spouští re-render RoomDetailu i když data sálu jsou
+  // má pokaždé jinou referenci, což spou��tí re-render RoomDetailu i když data sálu jsou
   // stejná. setRooms s funkčním updaterem zachovává reference nezměněných sálů, takže
   // useMemo zde reálně sníží re-rendery RoomDetailu na minimum.
   const selectedRoom = useMemo(
@@ -585,7 +586,7 @@ const AppContent: React.FC = () => {
   {currentView === 'staff' && (
   <div className="w-full h-full overflow-y-auto hide-scrollbar">
   <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
-  <StaffManager />
+  <StaffOverviewModule />
   </div>
   </div>
   )}
