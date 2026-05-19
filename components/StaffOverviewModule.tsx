@@ -186,7 +186,7 @@ const StaffOverviewModule: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-white/[0.03]"
+        className="flex flex-col items-center gap-2 p-2.5 rounded-lg transition-all hover:bg-white/[0.03]"
         style={{ 
           background: status.isWorking ? status.bgColor : C.glass,
           border: `1px solid ${status.isWorking ? status.color + '30' : C.border}`,
@@ -194,29 +194,31 @@ const StaffOverviewModule: React.FC = () => {
       >
         {/* Avatar/Icon */}
         <div 
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ background: roleColor + '20' }}
         >
           {member.role === 'DOCTOR' ? (
-            <Stethoscope className="w-5 h-5" style={{ color: roleColor }} />
+            <Stethoscope className="w-4 h-4" style={{ color: roleColor }} />
           ) : (
-            <Heart className="w-5 h-5" style={{ color: roleColor }} />
+            <Heart className="w-4 h-4" style={{ color: roleColor }} />
           )}
         </div>
 
-        {/* Name and status */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{member.name}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <StatusIcon className="w-3 h-3" style={{ color: status.color }} />
-            <span className="text-xs" style={{ color: status.color }}>{status.label}</span>
-          </div>
+        {/* Name */}
+        <p className="text-xs font-semibold text-white text-center leading-tight line-clamp-2 w-full">{member.name}</p>
+        
+        {/* Status */}
+        <div className="flex items-center gap-1 text-center w-full">
+          <StatusIcon className="w-3 h-3 flex-shrink-0 mx-auto" style={{ color: status.color }} />
+          <span className="text-[10px] text-center flex-1" style={{ color: status.color }}>
+            {status.label.length > 10 ? status.label.slice(0, 8) + '..' : status.label}
+          </span>
         </div>
 
         {/* Working indicator */}
         {status.isWorking && (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: status.color + '20' }}>
-            <Activity className="w-3 h-3 animate-pulse" style={{ color: status.color }} />
+          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md" style={{ background: status.color + '20' }}>
+            <Activity className="w-2.5 h-2.5 animate-pulse" style={{ color: status.color }} />
           </div>
         )}
       </motion.div>
@@ -239,7 +241,7 @@ const StaffOverviewModule: React.FC = () => {
     workingCount: number;
     availableCount: number;
   }) => (
-    <div className="flex-1 min-w-[300px]">
+    <div className="w-full">
       {/* Section Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -268,10 +270,10 @@ const StaffOverviewModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Staff List */}
-      <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+      {/* Staff Grid - bez rolování */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 w-full">
         {members.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-white/30">
+          <div className="col-span-full flex flex-col items-center justify-center py-10 text-white/30">
             <Users className="w-10 h-10 mb-2 opacity-50" />
             <p className="text-sm">Žádný personál</p>
           </div>
@@ -323,8 +325,8 @@ const StaffOverviewModule: React.FC = () => {
           <Loader2 className="w-8 h-8 text-white/30 animate-spin" />
         </div>
       ) : (
-        /* Two Column Layout */
-        <div className="flex flex-col lg:flex-row gap-8">
+        /* Full Width Sections */
+        <div className="flex flex-col gap-6 w-full">
           {/* Doctors Section */}
           <StaffSection
             title="Lékaři"
@@ -336,8 +338,7 @@ const StaffOverviewModule: React.FC = () => {
           />
 
           {/* Divider */}
-          <div className="hidden lg:block w-px bg-white/10" />
-          <div className="lg:hidden h-px bg-white/10" />
+          <div className="h-px bg-white/10" />
 
           {/* Nurses Section */}
           <StaffSection
