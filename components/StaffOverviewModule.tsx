@@ -111,17 +111,19 @@ const StaffOverviewModule: React.FC = () => {
   return (
     <div className="w-full min-h-full">
       {/* Header Section */}
-      <header className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] font-bold text-emerald-400 tracking-[0.3em] uppercase">LIVE</span>
+      <header className="mb-12 space-y-6">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Users className="w-4 h-4 text-[#FBBF24]" />
+            <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">REAL-TIME OVERVIEW</p>
+          </div>
+          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
+            Přehled <span className="text-white/20">PERSONÁLU</span>
+          </h1>
+          <p className="text-white/40 text-sm font-medium">
+            Přiřazení personálu k operačním sálům a jejich dostupnost
+          </p>
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-          Přehled personálu
-        </h1>
-        <p className="text-white/40 mt-2 text-sm">
-          Reálný přehled přiřazení personálu k operačním sálům
-        </p>
       </header>
 
       {/* Stats Cards */}
