@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft, Smartphone } from 'lucide-react';
+import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft, Smartphone, ClipboardList } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
 import ShiftScheduleManager from './ShiftScheduleManager';
 import StatisticsModule from './StatisticsModule';
 import StaffManager from './StaffManager';
+import StaffOverviewModule from './StaffOverviewModule';
 import StatusesManager from './StatusesManager';
 import BackgroundManager from './BackgroundManager';
 import ManagementManager from './ManagementManager';
@@ -57,6 +58,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       description: 'Správa zaměstnanců a jejich přiřazení',
       icon: Users,
       accentColor: '#10B981',
+    },
+    {
+      id: 'staff-overview',
+      title: 'Přehled',
+      description: 'Přehled personálu - kdo pracuje, kdo je volný',
+      icon: ClipboardList,
+      accentColor: '#FBBF24',
     },
     {
       id: 'departments',
@@ -177,6 +185,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       ) : selectedModule === 'staff' ? (
         <ModuleWrapper>
           <StaffManager />
+        </ModuleWrapper>
+      ) : selectedModule === 'staff-overview' ? (
+        <ModuleWrapper>
+          <StaffOverviewModule />
         </ModuleWrapper>
       ) : selectedModule === 'statuses' ? (
         <ModuleWrapper>
