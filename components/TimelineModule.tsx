@@ -1131,8 +1131,8 @@ style={{
                                 </div>
                               )}
                               
-                              {/* Label for operation */}
-                              <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                              {/* Label for operation - HIDDEN by design */}
+                              {/* <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
                                 {position.width > 6 && (
                                   <span className={`text-[10px] font-semibold truncate uppercase tracking-wide ${
                                     isContinuingOp ? 'text-white' : 'text-white/50'
@@ -1140,7 +1140,7 @@ style={{
                                     {isContinuingOp ? 'POKRAČUJÍCÍ VÝKON' : 'Dokončeno'}
                                   </span>
                                 )}
-                              </div>
+                              </div> */}
                           </div>
                         );
                       })
@@ -1185,12 +1185,13 @@ style={{
                             zIndex: 1,
                           }}
                         >
-                          <span className="text-[11px] font-semibold text-white uppercase tracking-[0.15em] truncate">
+                          {/* Text hidden by design - empty bar per Medrox design */}
+                          {/* <span className="text-[11px] font-semibold text-white uppercase tracking-[0.15em] truncate">
                             POKRAČUJÍCÍ VÝKON
                           </span>
                           <span className="text-[10px] font-bold ml-2 whitespace-nowrap" style={{ color: stepColor }}>
                             do {endHours}:{endMinutes}
-                          </span>
+                          </span> */}
                         </div>
                       );
                     })()}
@@ -1359,9 +1360,10 @@ style={{
                                   )}
                                   {segWidthPct > 7 && (
                                     <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
-                                      <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
+                                      {/* Step name hidden by design - empty segment per Medrox design */}
+                                      {/* <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
                                         {step.title || step.name}
-                                      </span>
+                                      </span> */}
                                     </div>
                                   )}
                                 </motion.div>
@@ -1426,7 +1428,8 @@ style={{
                             /* Normal state — STATUS centrovaný uppercase, pod ním lékař + sestra
                                (každý normal case, oddělené tečkou). RemainingTime jako floating badge. */
                             <>
-                              {boxWidthPct > 8 && (
+                              {/* Status and staff info hidden by design - empty card per Medrox design */}
+                              {/* {boxWidthPct > 8 && (
                                 <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
                                   <p 
                                     className="text-[10px] font-semibold uppercase tracking-[0.15em] leading-tight truncate w-full"
@@ -1444,14 +1447,12 @@ style={{
                                     </p>
                                   )}
                                 </div>
-                              )}
-                              {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
+                              )} */}
+                              {/* Remaining time badge hidden by design */}
+                              {/* {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
                                 <div
                                   className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md"
                                   style={{
-                                    // Badge předpokládaného zbývaj��cího času — laděný do barvy
-                                    // aktuálního statusu sálu, aby vizuálně tvořil pár se zbytkem
-                                    // řádku a okamžitě signalizoval, ke které fázi se vztahuje.
                                     background: `${stepColor}26`,
                                     border: `1px solid ${stepColor}66`,
                                     color: '#ffffff',
@@ -1460,7 +1461,7 @@ style={{
                                 >
                                   {remainingTime}
                                 </div>
-                              )}
+                              )} */}
                             </>
                           )}
                         </div>
