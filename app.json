@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Operating Room Management",
+    "slug": "operatingroom-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./operatingroom-mobile/assets/images/icon.png",
+    "scheme": "operatingroommobile",
+    "userInterfaceStyle": "dark",
+    "extra": {
+      "eas": {
+        "projectId": "7f533add-5090-4884-8945-8580b485670f"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.operatingroom.mobile",
+      "supportsTabletMode": true,
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app uses local network access",
+        "UIDeviceFamily": [1, 2]
+      },
+      "splash": {
+        "image": "./operatingroom-mobile/assets/images/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#0F172A"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A",
+        "foregroundImage": "./operatingroom-mobile/assets/images/android-icon-foreground.png"
+      },
+      "package": "com.operatingroom.mobile"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0F172A",
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
