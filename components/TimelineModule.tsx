@@ -9,38 +9,31 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (Premium Healthcare Logistics - Dark Blue + Yellow Accents) ==========
+// ========== DESIGN TOKENS (Modern glass-morphism style) ==========
 const C = {
-  // Primary colors - Premium healthcare logistics design
-  accent: '#FBBF24',      // Premium yellow accent
-  yellow: '#FBBF24',      // Yellow for highlights & CTAs
-  darkBlue: '#001f3d',    // Deep navy background
-  lightBlue: '#0f3a5f',   // Light navy for panels/cards
-  mediumBlue: '#1a4d7a',  // Medium navy for surfaces
-  cyan: '#06B6D4',        // Cyan for secondary accents
+  // Primary colors
+  accent: '#00D9FF',    // Vivid cyan
+  cyan: '#00D9FF',
+  yellow: '#FFE66D',
+  green: '#00F5A0',
+  orange: '#FF9F43',
+  red: '#FF6B6B',
+  purple: '#A78BFA',
+  pink: '#F472B6',
+  blue: '#60A5FA',
   
-  // Status colors - Healthcare standard
-  green: '#10b981',       // Success/Active operations
-  orange: '#f59e0b',      // Warning/Cleaning
-  red: '#ef4444',         // Error/Critical alerts
-  purple: '#a78bfa',      // Secondary accent/Breaks
+  // Surface & backgrounds
+  border: 'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.15)',
+  surface: 'rgba(255,255,255,0.03)',
+  surface2: 'rgba(255,255,255,0.06)',
+  glass: 'rgba(255,255,255,0.04)',
+  glassHover: 'rgba(255,255,255,0.08)',
   
-  // Surface & backgrounds - Logistics premium
-  border: 'rgba(251, 191, 36, 0.15)',      // Yellow-tinted borders
-  borderHover: 'rgba(251, 191, 36, 0.25)', // Yellow hover borders
-  surface: 'rgba(15, 58, 95, 0.4)',        // Light blue surface
-  surface2: 'rgba(15, 58, 95, 0.6)',       // Stronger surface
-  glass: 'rgba(15, 58, 95, 0.3)',          // Glass effect
-  glassHover: 'rgba(251, 191, 36, 0.1)',   // Yellow glass hover
-  
-  // Text colors
-  muted: 'rgba(255, 255, 255, 0.45)',
-  text: 'rgba(255, 255, 255, 0.85)',
-  textHi: 'rgba(255, 255, 255, 0.95)',
-  
-  // Yellow accent for important KPIs
-  yellowGlow: 'rgba(251, 191, 36, 0.15)',
-  yellowBg: 'rgba(251, 191, 36, 0.08)',
+  // Text
+  muted: 'rgba(255,255,255,0.45)',
+  text: 'rgba(255,255,255,0.85)',
+  textHi: 'rgba(255,255,255,0.95)',
 };
 
 // ========== CONSTANTS ==========
@@ -56,13 +49,13 @@ const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hou
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#f59e0b', border: '#fbbf24', stripe: '#fcd34d', text: '#fff', glow: 'rgba(251, 191, 36, 0.2)' },
-  purple: { bg: '#a78bfa', border: '#c4b5fd', stripe: '#ddd6fe', text: '#fff', glow: 'rgba(167, 139, 250, 0.2)' },
-  pink: { bg: '#06b6d4', border: '#22d3ee', stripe: '#67e8f9', text: '#fff', glow: 'rgba(6, 182, 212, 0.2)' },
-  blue: { bg: '#0f3a5f', border: '#06b6d4', stripe: '#06b6d4', text: '#fff', glow: 'rgba(6, 182, 212, 0.2)' },
-  green: { bg: '#10b981', border: '#6ee7b7', stripe: '#a7f3d0', text: '#fff', glow: 'rgba(16, 185, 129, 0.2)' },
-  red: { bg: '#ef4444', border: '#fca5a5', stripe: '#fecaca', text: '#fff', glow: 'rgba(239, 68, 68, 0.2)' },
-  cyan: { bg: '#0891b2', border: '#06b6d4', stripe: '#67e8f9', text: '#fff', glow: 'rgba(6, 182, 212, 0.2)' },
+  orange: { bg: '#FF9F43', border: '#FFB76B', stripe: '#FFD1A3', text: '#FFF', glow: 'rgba(255,159,67,0.25)' },
+  purple: { bg: '#A78BFA', border: '#C4B5FD', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(167,139,250,0.25)' },
+  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.25)' },
+  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.25)' },
+  green: { bg: '#00F5A0', border: '#5FFFC1', stripe: '#B8FFE0', text: '#000', glow: 'rgba(0,245,160,0.25)' },
+  red: { bg: '#FF6B6B', border: '#FF9999', stripe: '#FFC7C7', text: '#FFF', glow: 'rgba(255,107,107,0.25)' },
+  cyan: { bg: '#00D9FF', border: '#5AE8FF', stripe: '#B0F4FF', text: '#000', glow: 'rgba(0,217,255,0.25)' },
 };
 
   // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
@@ -459,15 +452,15 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
       <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
 
-      {/* ======== Header with Title and Stats - Premium Healthcare Logistics ======== */}
+      {/* ======== Header with Title and Stats ======== */}
       <div 
         className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, rgba(0,31,61,0.98) 0%, rgba(15,58,95,0.92) 100%)',
+          background: 'linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,10,20,0.92) 100%)',
           borderBottom: `1px solid ${C.border}`,
         }}
       >
-        {/* Ambient glow with yellow accent */}
+        {/* Ambient glow */}
         <div 
           className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
           style={{ background: C.accent }}
@@ -475,31 +468,31 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         <div className="px-8 md:pl-32 md:pr-10 py-6">
 
 
-          {/* Stats Boxes Row - Yellow Highlight Boxes */}
+          {/* Stats Boxes Row */}
           <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
             <StatBox 
               icon={Activity} 
               label="Aktivní" 
               value={`${stats.operations} operací`} 
-              color="#FBBF24" 
+              color="#22C55E" 
             />
             <StatBox 
               icon={Loader2} 
               label="Úklid" 
               value={`${stats.cleaning} sálů`} 
-              color="#10b981" 
+              color="#F97316" 
             />
             <StatBox 
               icon={Stethoscope} 
               label="Volné" 
               value={`${stats.free} sálů`} 
-              color="#06B6D4" 
+              color="#22D3EE" 
             />
             <StatBox 
               icon={Shield} 
               label="Dokončeno" 
               value={`${stats.completed} dnes`} 
-              color="#FBBF24" 
+              color="#22D3EE" 
             />
 
             {stats.emergencyCount > 0 && (
@@ -886,14 +879,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column with yellow gradient premium design */}
+                  {/* Room Label - Sticky LEFT column with yellow gradient background (same as locked) */}
                   <div 
                     className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
                       background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
-                      borderRight: `1px solid ${C.border}`,
+                      borderRight: `1px solid ${C.accent}40`,
                     }}
                   >
                     {/* ARO Overtime Badge - softer */}
