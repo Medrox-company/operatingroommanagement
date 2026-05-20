@@ -1,0 +1,11 @@
+# Expo mobile app - budujeme přes EAS, ne Vercel
+operatingroom-mobile/
+operatingroom-mobile/**
+
+# Node modules
+node_modules/
+
+# Build artifacts
+.expo/
+dist/
+build/
