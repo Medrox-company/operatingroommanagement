@@ -46,6 +46,7 @@ operatingroom-mobile/.expo-shared/
 operatingroom-mobile/build/
 operatingroom-mobile/.env.local
 operatingroom-mobile/.env.*.local
+operatingroom-mobile/.git/
 
 # IDE
 operatingroom-mobile/.vscode/
