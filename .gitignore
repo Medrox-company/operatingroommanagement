@@ -38,3 +38,19 @@ yarn-error.log*
 *.pem
 *.key
 secrets.json
+# Expo
+operatingroom-mobile/node_modules/
+operatingroom-mobile/dist/
+operatingroom-mobile/.expo/
+operatingroom-mobile/.expo-shared/
+operatingroom-mobile/build/
+operatingroom-mobile/.env.local
+operatingroom-mobile/.env.*.local
+
+# IDE
+operatingroom-mobile/.vscode/
+operatingroom-mobile/.idea/
+
+# OS
+operatingroom-mobile/.DS_Store
+operatingroom-mobile/Thumbs.db
