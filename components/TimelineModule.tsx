@@ -818,114 +818,53 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 const bannerLabel = 'STAV NOUZE';
                 const shouldPulse = true;
                 return (
-                  <motion.div
+                  <div
                     key={room.id}
-                    className="flex items-stretch cursor-pointer transition-all duration-200 group rounded-lg overflow-hidden"
+                    className="flex items-stretch cursor-pointer transition-all duration-200 group rounded-lg"
                     style={{ height: rowHeight }}
                     onClick={() => setSelectedRoom(room)}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
                   >
-                    {/* Emergency Left Panel - enhanced */}
-                    <motion.div 
-                      className="flex-shrink-0 flex items-center gap-2 px-4 py-1 min-h-0 overflow-hidden sticky left-0 z-20 rounded-l-lg" 
-                      animate={{ backgroundColor: ['rgba(11,17,32,0.95)', 'rgba(11,17,32,0.98)', 'rgba(11,17,32,0.95)'] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      style={{ 
-                        width: ROOM_LABEL_WIDTH, 
-                        minWidth: ROOM_LABEL_WIDTH,
-                        borderRight: `2px solid ${bannerColor}60`,
-                      }}
+                    <div 
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-lg" 
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(11,17,32,0.95)' }}
                     >
-                      {/* Pulsing Alert Icon */}
-                      <motion.div 
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        animate={{ boxShadow: [
-                          `0 0 8px ${bannerColor}40`,
-                          `0 0 16px ${bannerColor}80`,
-                          `0 0 8px ${bannerColor}40`
-                        ]}}
-                        transition={{ duration: 1.2, repeat: Infinity }}
-                        style={{ 
-                          background: `linear-gradient(135deg, ${bannerColor}30 0%, ${bannerColor}15 100%)`,
-                          border: `1.5px solid ${bannerColor}80`
-                        }}
+                      <div 
+                        className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${bannerColor}26`, border: `1px solid ${bannerColor}55` }}
                       >
-                        <AlertTriangle className="w-4 h-4" style={{ color: bannerColor }} />
-                      </motion.div>
-                      
-                      {/* Room Name and Label */}
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className="text-sm font-bold tracking-tight truncate" style={{ color: `${bannerColor}dd` }}>{room.name}</p>
-                        <motion.p 
-                          className="text-[8px] font-black uppercase tracking-[0.3em] truncate"
-                          animate={{ opacity: [0.8, 1, 0.8] }}
-                          transition={{ duration: 1.2, repeat: Infinity }}
-                          style={{ color: bannerColor }}
-                        >
-                          {bannerLabel}
-                        </motion.p>
+                        <AlertTriangle className="w-3.5 h-3.5" style={{ color: bannerColor }} />
                       </div>
-                    </motion.div>
-
-                    {/* Emergency Timeline Box - enhanced with animations */}
-                    <motion.div 
-                      className="relative flex-1 overflow-hidden rounded-r-lg"
-                      animate={{ backgroundColor: [`${bannerColor}08`, `${bannerColor}12`, `${bannerColor}08`] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      {/* Pulsing background */}
-                      <motion.div
-                        className="absolute inset-0"
-                        animate={{ opacity: [0.3, 0.6, 0.3] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        style={{
-                          background: `radial-gradient(circle at center, ${bannerColor}20 0%, transparent 70%)`
-                        }}
-                      />
-
-                      {/* Main content box */}
-                      <motion.div 
-                        className="absolute inset-y-1 left-2 right-2 rounded-lg overflow-hidden"
-                        animate={{ 
-                          boxShadow: [
-                            `0 0 12px ${bannerColor}40, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                            `0 0 24px ${bannerColor}60, inset 0 1px 0 rgba(255,255,255,0.08)`,
-                            `0 0 12px ${bannerColor}40, inset 0 1px 0 rgba(255,255,255,0.05)`
-                          ]
-                        }}
-                        transition={{ duration: 1.2, repeat: Infinity }}
-                      >
-                        <div 
-                          className="absolute inset-0 rounded-lg backdrop-blur-lg"
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
+                      </div>
+                    </div>
+                    {/* Emergency timeline box - tinted glassmorph */}
+                    <div className="relative flex-1 overflow-hidden rounded-r-lg">
+                    <div className={`absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
+                      <div 
+                        className="absolute inset-0 rounded-md backdrop-blur-md"
                           style={{ 
-                            background: `linear-gradient(135deg, ${bannerColor}25 0%, ${bannerColor}10 100%)`,
-                            border: `1.5px solid ${bannerColor}60`,
+                            background: `linear-gradient(135deg, ${bannerColor}20 0%, ${bannerColor}08 100%)`,
+                            border: `1px solid ${bannerColor}55`,
+                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
                           }}
                         />
-                        
-                        {/* Content with icon and labels */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-3">
-                          <motion.div
-                            animate={{ rotate: [0, -3, 3, 0] }}
-                            transition={{ duration: 0.4, repeat: Infinity }}
-                          >
-                            <AlertTriangle className="w-5 h-5 text-white" />
-                          </motion.div>
-                          
-                          <span className="font-black tracking-[0.15em] uppercase select-none text-base text-white">
+                        {/* Content */}
+                        <div className="absolute inset-0 flex items-center justify-center gap-2">
+                          <AlertTriangle className="w-4 h-4" style={{ color: '#ffffff' }} />
+                          <span className="font-bold tracking-[0.2em] uppercase select-none" style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.93)' }}>
                             {bannerLabel}
                           </span>
-                          
                           {room.currentProcedure?.name && (
-                            <span className="font-semibold tracking-wide truncate max-w-[35ch] text-white/85">
+                            <span className="font-medium tracking-wide truncate max-w-[40ch]" style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.80)' }}>
                               · {room.currentProcedure.name}
                             </span>
                           )}
                         </div>
-                      </motion.div>
-                    </motion.div>
-                  </motion.div>
+                      </div>
+                    </div>
+                  </div>
                 );
               }
 
@@ -940,131 +879,127 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column with enhanced design */}
+                  {/* Room Label - Sticky LEFT column with yellow gradient background (same as locked) */}
                   <div 
-                    className="flex-shrink-0 flex items-stretch gap-0 px-3 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      background: `linear-gradient(135deg, ${roomColor.bg}15 0%, ${roomColor.bg}05 100%)`,
-                      borderRight: `1.5px solid ${roomColor.border}40`,
+                      background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
+                      borderRight: `1px solid ${C.accent}40`,
                     }}
                   >
-                    {/* Status Badges Column - left side */}
-                    <div className="flex flex-col gap-1 items-center justify-center flex-shrink-0 pr-2">
-                      {/* ARO Overtime Badge - enhanced */}
-                      {(() => {
-                        const aroPosition = getAroPosition(room.id);
-                        const overtimeInfo = getOvertimeInfo(room.id);
-                        
-                        if (aroPosition && overtimeInfo) {
-                          return (
-                            <motion.div
-                              className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg backdrop-blur-md"
-                              animate={{ scale: [1, 1.05, 1] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                              style={{
-                                background: 'linear-gradient(135deg, rgba(132, 255, 0, 0.15) 0%, rgba(132, 255, 0, 0.05) 100%)',
-                                border: `1.5px solid rgba(132, 255, 0, 0.6)`,
-                                boxShadow: '0 0 12px rgba(132, 255, 0, 0.2)'
-                              }}
-                            >
-                              <span className="text-[6px] font-bold tracking-wider uppercase" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
-                              <span className="text-xs font-black text-white">{aroPosition}</span>
-                              <span className="text-[5px] font-semibold" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
-                            </motion.div>
-                          );
-                        }
-                        return null;
-                      })()}
+                    {/* ARO Overtime Badge - softer */}
+                    {(() => {
+                      const aroPosition = getAroPosition(room.id);
+                      const overtimeInfo = getOvertimeInfo(room.id);
+                      
+                      if (aroPosition && overtimeInfo) {
+  return (
+  <div
+className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+style={{
+  background: 'rgba(132, 255, 0, 0.1)',
+  border: '1px solid rgba(132, 255, 0, 0.96)'
+}}
+                          >
+                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
+                            <span className="text-xs font-bold text-white/80">{aroPosition}</span>
+                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
 
-                      {/* Patient Called Badge */}
-                      {room.patientCalledAt && !room.patientArrivedAt && (
-                        <motion.div
-                          className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg backdrop-blur-md"
-                          animate={{ opacity: [0.6, 1, 0.6] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                          style={{
-                            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)',
-                            border: `1.5px solid rgba(96, 165, 250, 0.6)`,
-                            boxShadow: '0 0 8px rgba(96, 165, 250, 0.25)'
-                          }}
-                          title="Pacient volán"
-                        >
-                          <Phone className="w-3.5 h-3.5" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
-                        </motion.div>
-                      )}
+                    {/* Patient Called Badge */}
+                    {room.patientCalledAt && !room.patientArrivedAt && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          border: '1px solid rgba(96, 165, 250, 0.96)',
+                        }}
+                        title="Pacient volán"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(96, 165, 250, 0.96)' }}>VOLÁN</span>
+                        <Phone className="w-3 h-3" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
+                      </div>
+                    )}
 
-                      {/* Patient Arrived Badge */}
-                      {room.patientArrivedAt && (
-                        <div
-                          className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg backdrop-blur-md"
-                          style={{
-                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
-                            border: `1.5px solid rgba(52, 211, 153, 0.6)`,
-                            boxShadow: '0 0 8px rgba(52, 211, 153, 0.25)'
-                          }}
-                          title="Pacient v operačním traktu"
-                        >
-                          <BedDouble className="w-3.5 h-3.5" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
-                        </div>
-                      )}
+                    {/* Patient Arrived Badge */}
+                    {room.patientArrivedAt && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(52, 211, 153, 0.96)',
+                        }}
+                        title="Pacient v operačním traktu"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
+                        <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
+                      </div>
+                    )}
 
-                      {/* Lock Badge */}
-                      {room.isLocked && (
-                        <div
-                          className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg backdrop-blur-md"
-                          style={{
-                            background: `linear-gradient(135deg, ${roomColor.bg}20 0%, ${roomColor.bg}05 100%)`,
-                            border: `1.5px solid ${roomColor.border}60`,
-                            boxShadow: `0 0 8px ${roomColor.glow}`
-                          }}
-                          title="Sál uzamčen"
-                        >
-                          <Lock className="w-3.5 h-3.5" style={{ color: roomColor.bg }} />
-                        </div>
-                      )}
-
-                      {/* Numbered badge for active rooms */}
+                    {/* Lock Badge - when room is locked */}
+                    {room.isLocked && (
+                      <div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: `${C.accent}20`,
+                          border: `1px solid ${C.accent}`,
+                        }}
+                        title="Sál uzamčen"
+                      >
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: C.accent }}>LOCK</span>
+                        <Lock className="w-3 h-3" style={{ color: C.accent }} />
+                      </div>
+                    )}
+                    
+                    {/* Numbered badge for active rooms - softer */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {isActive && !getAroPosition(room.id) && (
                         <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black text-white flex-shrink-0"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${roomColor.bg} 0%, ${roomColor.border} 100%)`,
-                            boxShadow: `0 4px 16px ${roomColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`
-                          }}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white/90"
+                          style={{ background: `${roomColor.bg}90`, boxShadow: `0 1px 4px ${roomColor.glow}` }}
                         >
                           {currentRoomNumber}
                         </div>
                       )}
                     </div>
 
-                    {/* Room Name & Info Card - enhanced glassmorph */}
+                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN.
+                       Stretchuje se na plnou výšku rodiče (díky `items-stretch` na rodiči),
+                       takže vizuálně koresponduje s timeline barem napravo, který má stejné
+                       inset (top-1.5 bottom-1.5). Vertikální padding NEpotřebuje — content
+                       je centrovaný přes flex justify-center. */}
                     <div 
-                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-lg flex flex-col items-start justify-center ${rowHeight < 44 ? 'px-3' : 'px-3'} backdrop-blur-xl transition-all duration-200 overflow-hidden`}
+                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-md flex items-center ${rowHeight < 44 ? 'px-2' : 'px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
                       style={{ 
-                        background: `linear-gradient(135deg, ${roomColor.bg}10 0%, ${roomColor.bg}02 100%)`,
-                        border: `1px solid ${roomColor.border}50`,
-                        boxShadow: `0 8px 32px -8px ${roomColor.glow}, inset 0 1px 0 rgba(255,255,255,0.05)`
+                        background: C.glass, 
+                        border: `1px solid ${C.border}`,
                       }}
                     >
-                      {/* Room Name */}
-                      <p className="text-sm font-bold tracking-tight text-white truncate w-full" style={{ color: `${roomColor.text}` }}>
-                        {room.name}
-                      </p>
-                      
-                      {/* Status badges in card - second row */}
-                      <div className="flex items-center gap-2 mt-1 w-full overflow-x-hidden">
+                      <div className="flex items-center gap-2 w-full">
+                        <p className="text-sm font-semibold tracking-tight text-white truncate">
+                          {room.name}
+                        </p>
                         {room.isSeptic && (
-                          <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 uppercase tracking-wider" style={{ background: 'rgba(168,85,247,0.2)', color: 'rgba(216,180,254,0.95)' }}>SEPTIKA</span>
+                          <span className="text-[8px] font-semibold px-2 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,0.15)', color: 'rgba(216,180,254,0.9)', textTransform: 'uppercase' }}>SEPTIKA</span>
                         )}
                         {room.isPaused && !room.isEmergency && !room.isLocked && (
-                          <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-md uppercase flex-shrink-0 flex items-center gap-1 tracking-wider" style={{ background: 'rgba(6,182,212,0.2)', color: 'rgba(34,211,238,0.95)' }}>
-                            <Pause className="w-2 h-2" />
+                          <span className="text-[8px] font-semibold px-2 py-1 rounded-lg uppercase flex-shrink-0 flex items-center gap-1" style={{ background: 'rgba(6,182,212,0.15)', color: 'rgba(34,211,238,0.9)' }}>
+                            <Pause className="w-2.5 h-2.5" />
                             PAUZA
                           </span>
                         )}
+                        {/* Patient called / arrived indicators přesunuty na pozici před name
+                            kartou (stejné místo jako ARO badge), pro jednotný vizuální jazyk. */}
                       </div>
+                      {/* Sekundární řádek (status / department / remainingTime) odstraněn —
+                          aktuální status se nyní zobrazuje uppercase ve středu timeline baru,
+                          takže duplicita pod názvem sálu byla redundantní. */}
                     </div>
                   </div>
 

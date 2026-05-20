@@ -43,7 +43,6 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "operatingroom-mobile"
+    "node_modules"
   ]
 }
