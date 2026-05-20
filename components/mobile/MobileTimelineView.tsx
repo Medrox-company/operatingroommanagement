@@ -19,23 +19,20 @@ import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle, Clock } f
    Barvy stavů se čerpají ŽIVĚ z `statusByOrderIndex` (DB → modul Statusy).
    ========================================================================== */
 
-// Design tokens - Premium Logistics Style
+// Design tokens
 const C = {
-  accent: '#FBBF24',        // Premium Yellow
-  darkBlue: '#001f3d',      // Deep navy
-  lightBlue: '#0f3a5f',     // Light navy
-  cyan: '#06B6D4',          // Cyan accent
-  green: '#10b981',         // Success
-  yellow: '#FBBF24',        // Yellow
-  orange: '#f59e0b',        // Warning
-  red: '#ef4444',           // Error
-  purple: '#a78bfa',        // Secondary
-  surface: 'rgba(15, 58, 95, 0.3)',
-  surface2: 'rgba(15, 58, 95, 0.6)',
-  border: 'rgba(251, 191, 36, 0.15)',
-  borderHover: 'rgba(251, 191, 36, 0.25)',
-  muted: 'rgba(255, 255, 255, 0.45)',
-  text: 'rgba(255, 255, 255, 0.85)',
+  accent: '#00D9FF',
+  green: '#00F5A0',
+  yellow: '#FFE66D',
+  orange: '#FF9F43',
+  red: '#FF6B6B',
+  purple: '#A78BFA',
+  surface: 'rgba(255,255,255,0.03)',
+  surface2: 'rgba(255,255,255,0.06)',
+  border: 'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.15)',
+  muted: 'rgba(255,255,255,0.45)',
+  text: 'rgba(255,255,255,0.85)',
 };
 
 const TIMELINE_START_HOUR = 7;
