@@ -874,13 +874,15 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               return (
                 <motion.div
                   key={room.id}
-                  className="relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden"
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
                     background: isActive 
                       ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
                       : C.bgSurface,
-                    border: `1px solid ${isActive ? `${stepColor}20` : C.border}`,
+                    border: room.isLocked 
+                      ? `1.5px solid rgba(6, 182, 212, 0.4)`
+                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
                     boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
                   }}
                   onClick={() => setSelectedRoom(room)}
@@ -1028,11 +1030,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
                   {/* Timeline section - Premium glass with grid */}
                   <div 
-                    className={`relative flex-1 overflow-hidden ${room.isLocked ? 'locked-room-animated' : ''}`}
+                    className="relative flex-1 overflow-hidden"
                     style={{
-                      background: room.isLocked 
-                        ? undefined  /* CSS class handles stripes */
-                        : 'transparent'
+                      background: 'transparent'
                     }}
                   >
                     {/* Locked room overlay with icon */}
@@ -1538,7 +1538,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 // Memoized export — TimelineModule je drahý (1500+ řádků s framer-motion animacemi
 // a iterací nad rooms × hours). Default shallow compare zajistí, že když App.tsx
 // re-renderuje z nesouvisejícího důvodu (otevření modalu, změna current view),
-// TimelineModule re-render přeskočí. Re-renderne se jen když se reálně změní `rooms`.
+// TimelineModule re-render přeskoč��. Re-renderne se jen když se reálně změní `rooms`.
 const TimelineModule = React.memo(TimelineModuleImpl);
 export default TimelineModule;
 
