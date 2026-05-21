@@ -9,35 +9,31 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (Professional Healthcare - Medrox inspired) ==========
+// ========== DESIGN TOKENS (Modern glass-morphism style) ==========
 const C = {
-  // Primary colors - Healthcare professional palette
-  accent: '#06B6D4',      // Medical cyan
-  cyan: '#06B6D4',        // Cyan accent
-  yellow: '#F59E0B',      // Medical amber/warning
-  green: '#10B981',       // Success/Active
-  orange: '#F97316',      // Alert/Preparation  
-  red: '#EF4444',         // Critical/Delay
-  purple: '#8B5CF6',      // Planning
-  pink: '#EC4899',        // Special procedures
-  blue: '#3B82F6',        // Information
+  // Primary colors
+  accent: '#00D9FF',    // Vivid cyan
+  cyan: '#00D9FF',
+  yellow: '#FFE66D',
+  green: '#00F5A0',
+  orange: '#FF9F43',
+  red: '#FF6B6B',
+  purple: '#A78BFA',
+  pink: '#F472B6',
+  blue: '#60A5FA',
   
-  // Surface & backgrounds - Subtle, professional
-  border: 'rgba(107, 114, 128, 0.2)',      // Gray borders
-  borderHover: 'rgba(6, 182, 212, 0.3)',   // Cyan hover
-  surface: 'rgba(107, 114, 128, 0.08)',    // Light gray surface
-  surface2: 'rgba(107, 114, 128, 0.12)',   // Darker gray surface
-  glass: 'rgba(107, 114, 128, 0.05)',      // Glass effect
-  glassHover: 'rgba(6, 182, 212, 0.1)',    // Cyan glass hover
+  // Surface & backgrounds
+  border: 'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.15)',
+  surface: 'rgba(255,255,255,0.03)',
+  surface2: 'rgba(255,255,255,0.06)',
+  glass: 'rgba(255,255,255,0.04)',
+  glassHover: 'rgba(255,255,255,0.08)',
   
-  // Text - Clear hierarchy
-  muted: 'rgba(255, 255, 255, 0.50)',
-  text: 'rgba(255, 255, 255, 0.87)',
-  textHi: 'rgba(255, 255, 255, 1.00)',
-  
-  // Backgrounds
-  darkBg: '#0F172A',      // Deep navy background
-  cardBg: 'rgba(15, 23, 42, 0.6)',  // Card backgrounds
+  // Text
+  muted: 'rgba(255,255,255,0.45)',
+  text: 'rgba(255,255,255,0.85)',
+  textHi: 'rgba(255,255,255,0.95)',
 };
 
 // ========== CONSTANTS ==========
@@ -53,25 +49,25 @@ const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hou
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#F97316', border: '#FB923C', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(249, 115, 22, 0.2)' },
-  purple: { bg: '#8B5CF6', border: '#A78BFA', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(139, 92, 246, 0.2)' },
-  pink: { bg: '#EC4899', border: '#F472B6', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(236, 72, 153, 0.2)' },
-  blue: { bg: '#3B82F6', border: '#60A5FA', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(59, 130, 246, 0.2)' },
-  green: { bg: '#10B981', border: '#6EE7B7', stripe: '#A7F3D0', text: '#FFF', glow: 'rgba(16, 185, 129, 0.2)' },
-  red: { bg: '#EF4444', border: '#F87171', stripe: '#FCA5A5', text: '#FFF', glow: 'rgba(239, 68, 68, 0.2)' },
-  cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(6, 182, 212, 0.2)' },
+  orange: { bg: '#FF9F43', border: '#FFB76B', stripe: '#FFD1A3', text: '#FFF', glow: 'rgba(255,159,67,0.25)' },
+  purple: { bg: '#A78BFA', border: '#C4B5FD', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(167,139,250,0.25)' },
+  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.25)' },
+  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.25)' },
+  green: { bg: '#00F5A0', border: '#5FFFC1', stripe: '#B8FFE0', text: '#000', glow: 'rgba(0,245,160,0.25)' },
+  red: { bg: '#FF6B6B', border: '#FF9999', stripe: '#FFC7C7', text: '#FFF', glow: 'rgba(255,107,107,0.25)' },
+  cyan: { bg: '#00D9FF', border: '#5AE8FF', stripe: '#B0F4FF', text: '#000', glow: 'rgba(0,217,255,0.25)' },
 };
 
-  // Step colors podle step_index z databáze - healthcare status colors
+  // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
   const STEP_INDEX_COLORS: Record<number, string> = {
-  0: '#6B7280',   // Gray - Empty/Preparation
-  1: '#8B5CF6',   // Purple - Planning
-  2: '#EC4899',   // Pink - Setup
-  3: '#EF4444',   // Red - In Progress (can be delayed)
-  4: '#F97316',   // Orange - Preparation/Cleanup
-  5: '#F59E0B',   // Amber - Cleaning
-  6: '#10B981',   // Green - Free/Available
-  7: '#06B6D4',   // Cyan - Next procedure
+  0: '#6b7280',
+  1: '#8b5cf6',
+  2: '#ec4899',
+  3: '#ef4444',
+  4: '#f59e0b',
+  5: '#a855f7',
+  6: '#10b981',
+  7: '#f97316',
 };
 
 // ========== HELPER FUNCTIONS ==========
@@ -460,42 +456,43 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       <div 
         className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%)',
-          borderBottom: `2px solid ${C.border}`,
+          background: 'linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,10,20,0.92) 100%)',
+          borderBottom: `1px solid ${C.border}`,
         }}
       >
-        {/* Subtle ambient glow */}
+        {/* Ambient glow */}
         <div 
-          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-5 pointer-events-none"
-          style={{ background: C.cyan }}
+          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
+          style={{ background: C.accent }}
         />
-        <div className="px-8 md:pl-32 md:pr-10 py-6 relative z-10">
+        <div className="px-8 md:pl-32 md:pr-10 py-6">
 
-          {/* Stats Boxes Row - Enhanced with better styling */}
+
+          {/* Stats Boxes Row */}
           <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
             <StatBox 
               icon={Activity} 
               label="Aktivní" 
               value={`${stats.operations} operací`} 
-              color={C.green} 
+              color="#22C55E" 
             />
             <StatBox 
               icon={Loader2} 
               label="Úklid" 
               value={`${stats.cleaning} sálů`} 
-              color={C.orange} 
+              color="#F97316" 
             />
             <StatBox 
               icon={Stethoscope} 
               label="Volné" 
               value={`${stats.free} sálů`} 
-              color={C.cyan} 
+              color="#22D3EE" 
             />
             <StatBox 
               icon={Shield} 
               label="Dokončeno" 
               value={`${stats.completed} dnes`} 
-              color={C.yellow} 
+              color="#22D3EE" 
             />
 
             {stats.emergencyCount > 0 && (
@@ -663,29 +660,25 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       className={`absolute left-0 w-px h-full transition-all duration-300`}
                       style={{ 
                         background: isNightHour 
-                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))'
-                          : 'linear-gradient(to bottom, rgba(107,114,128,0.15), rgba(107,114,128,0.25), rgba(107,114,128,0.15))',
+                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
+                          : 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
                       }} 
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - cyan highlighted, professional look */
-                        <motion.span 
-                          className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg"
+                        /* Current hour - yellow highlighted, compact, centered */
+                        <span 
+                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
                           style={{ 
-                            background: `${C.cyan}30`,
-                            color: C.cyan,
-                            border: `1px solid ${C.cyan}60`,
-                            boxShadow: `0 0 12px ${C.cyan}20`,
+                            background: '#f1ff00', 
+                            color: '#000',
                           }}
-                          animate={{ scale: [1, 1.05, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
                         >
                           {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
-                        </motion.span>
+                        </span>
                       ) : (
-                        /* Other hours - subtle professional style */
-                        <span className={`text-[9px] font-mono font-medium tabular-nums transition-colors ${isNightHour ? 'text-white/25' : 'text-white/55'}`}>
+                        /* Other hours - simple number only, no box, centered */
+                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
                           {hourLabelCompact(hour)}
                         </span>
                       )
@@ -700,26 +693,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - Animated line with glow */}
+            {/* Now indicator - Simple line without glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <motion.div 
+                <div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
-                  animate={{ opacity: [0.8, 1, 0.8] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  {/* Main line - healthcare red */}
+                  {/* Main line - clean and simple */}
                   <div 
-                    className="absolute -left-[1.5px] top-0 bottom-0 w-1" 
-                    style={{ background: C.red }}
+                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
+                    style={{ background: '#73ff00' }}
                   />
-                  {/* Glow effect */}
-                  <div 
-                    className="absolute -left-1 top-0 bottom-0 w-3" 
-                    style={{ background: `linear-gradient(90deg, transparent, ${C.red}30, transparent)` }}
-                  />
-                </motion.div>
+                </div>
               )}
             </AnimatePresence>
 
@@ -893,37 +879,34 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column with professional gradient background */}
-                  <motion.div 
-                    className="flex-shrink-0 flex items-stretch gap-2 px-3 py-1.5 min-h-0 overflow-hidden transition-all duration-200 sticky left-0 z-20 border-r" 
+                  {/* Room Label - Sticky LEFT column with yellow gradient background (same as locked) */}
+                  <div 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      background: `linear-gradient(135deg, ${C.cyan}12 0%, ${C.cyan}06 100%)`,
-                      borderRightColor: C.border,
+                      background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
+                      borderRight: `1px solid ${C.accent}40`,
                     }}
-                    whileHover={{ background: `linear-gradient(135deg, ${C.cyan}18 0%, ${C.cyan}10 100%)` }}
                   >
-                    {/* ARO Overtime Badge - healthcare styling */}
+                    {/* ARO Overtime Badge - softer */}
                     {(() => {
                       const aroPosition = getAroPosition(room.id);
                       const overtimeInfo = getOvertimeInfo(room.id);
                       
                       if (aroPosition && overtimeInfo) {
   return (
-  <motion.div
-    className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-    style={{
-      background: `${C.yellow}15`,
-      border: `1px solid ${C.yellow}70`
-    }}
-    animate={{ scale: [1, 1.05, 1] }}
-    transition={{ duration: 2, repeat: Infinity }}
+  <div
+className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+style={{
+  background: 'rgba(132, 255, 0, 0.1)',
+  border: '1px solid rgba(132, 255, 0, 0.96)'
+}}
                           >
-                            <span className="text-[7px] font-semibold tracking-wider" style={{ color: C.yellow }}>ARO</span>
+                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
                             <span className="text-xs font-bold text-white/80">{aroPosition}</span>
-                            <span className="text-[6px] font-normal" style={{ color: C.yellow }}>+{overtimeInfo.overtimeMinutes}m</span>
-                          </motion.div>
+                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
+                          </div>
                         );
                       }
                       return null;
@@ -931,34 +914,32 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
                     {/* Patient Called Badge */}
                     {room.patientCalledAt && !room.patientArrivedAt && (
-                      <motion.div
+                      <div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
                         style={{
-                          background: `${C.blue}15`,
-                          border: `1px solid ${C.blue}70`,
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          border: '1px solid rgba(96, 165, 250, 0.96)',
                         }}
                         title="Pacient volán"
-                        animate={{ opacity: [0.7, 1, 0.7] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
                       >
-                        <span className="text-[7px] font-semibold tracking-wider" style={{ color: C.blue }}>VOLÁN</span>
-                        <Phone className="w-3 h-3" style={{ color: C.blue }} />
-                      </motion.div>
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(96, 165, 250, 0.96)' }}>VOLÁN</span>
+                        <Phone className="w-3 h-3" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
+                      </div>
                     )}
 
                     {/* Patient Arrived Badge */}
                     {room.patientArrivedAt && (
-                      <motion.div
+                      <div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
                         style={{
-                          background: `${C.green}15`,
-                          border: `1px solid ${C.green}70`,
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(52, 211, 153, 0.96)',
                         }}
-                        title="Pacient přijat"
+                        title="Pacient v operačním traktu"
                       >
-                        <span className="text-[7px] font-semibold tracking-wider" style={{ color: C.green }}>PŘIJAT</span>
-                        <CheckCircle className="w-3 h-3" style={{ color: C.green }} />
-                      </motion.div>
+                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
+                        <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
+                      </div>
                     )}
 
                     {/* Lock Badge - when room is locked */}
@@ -1261,7 +1242,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                 const nextEntry = history[idx + 1];
                                 const isCurrentSeg = idx === history.length - 1;
                                 
-                                // Pro aktuální segment: prodloužit na aktuální čas pokud p��esahuje odhadovaný konec
+                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
                                   : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
