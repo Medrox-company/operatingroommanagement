@@ -893,34 +893,37 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Room Label - Sticky LEFT column with yellow gradient background (same as locked) */}
-                  <div 
-                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
+                  {/* Room Label - Sticky LEFT column with professional gradient background */}
+                  <motion.div 
+                    className="flex-shrink-0 flex items-stretch gap-2 px-3 py-1.5 min-h-0 overflow-hidden transition-all duration-200 sticky left-0 z-20 border-r" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
-                      borderRight: `1px solid ${C.accent}40`,
+                      background: `linear-gradient(135deg, ${C.cyan}12 0%, ${C.cyan}06 100%)`,
+                      borderRightColor: C.border,
                     }}
+                    whileHover={{ background: `linear-gradient(135deg, ${C.cyan}18 0%, ${C.cyan}10 100%)` }}
                   >
-                    {/* ARO Overtime Badge - softer */}
+                    {/* ARO Overtime Badge - healthcare styling */}
                     {(() => {
                       const aroPosition = getAroPosition(room.id);
                       const overtimeInfo = getOvertimeInfo(room.id);
                       
                       if (aroPosition && overtimeInfo) {
   return (
-  <div
-className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-style={{
-  background: 'rgba(132, 255, 0, 0.1)',
-  border: '1px solid rgba(132, 255, 0, 0.96)'
-}}
+  <motion.div
+    className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+    style={{
+      background: `${C.yellow}15`,
+      border: `1px solid ${C.yellow}70`
+    }}
+    animate={{ scale: [1, 1.05, 1] }}
+    transition={{ duration: 2, repeat: Infinity }}
                           >
-                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
+                            <span className="text-[7px] font-semibold tracking-wider" style={{ color: C.yellow }}>ARO</span>
                             <span className="text-xs font-bold text-white/80">{aroPosition}</span>
-                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
-                          </div>
+                            <span className="text-[6px] font-normal" style={{ color: C.yellow }}>+{overtimeInfo.overtimeMinutes}m</span>
+                          </motion.div>
                         );
                       }
                       return null;
@@ -928,32 +931,34 @@ style={{
 
                     {/* Patient Called Badge */}
                     {room.patientCalledAt && !room.patientArrivedAt && (
-                      <div
+                      <motion.div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
                         style={{
-                          background: 'rgba(59, 130, 246, 0.1)',
-                          border: '1px solid rgba(96, 165, 250, 0.96)',
+                          background: `${C.blue}15`,
+                          border: `1px solid ${C.blue}70`,
                         }}
                         title="Pacient volán"
+                        animate={{ opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
                       >
-                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(96, 165, 250, 0.96)' }}>VOLÁN</span>
-                        <Phone className="w-3 h-3" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
-                      </div>
+                        <span className="text-[7px] font-semibold tracking-wider" style={{ color: C.blue }}>VOLÁN</span>
+                        <Phone className="w-3 h-3" style={{ color: C.blue }} />
+                      </motion.div>
                     )}
 
                     {/* Patient Arrived Badge */}
                     {room.patientArrivedAt && (
-                      <div
+                      <motion.div
                         className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
                         style={{
-                          background: 'rgba(16, 185, 129, 0.1)',
-                          border: '1px solid rgba(52, 211, 153, 0.96)',
+                          background: `${C.green}15`,
+                          border: `1px solid ${C.green}70`,
                         }}
-                        title="Pacient v operačním traktu"
+                        title="Pacient přijat"
                       >
-                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
-                        <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
-                      </div>
+                        <span className="text-[7px] font-semibold tracking-wider" style={{ color: C.green }}>PŘIJAT</span>
+                        <CheckCircle className="w-3 h-3" style={{ color: C.green }} />
+                      </motion.div>
                     )}
 
                     {/* Lock Badge - when room is locked */}
