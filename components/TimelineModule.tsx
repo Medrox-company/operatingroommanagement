@@ -712,14 +712,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
             {/* Grid View - New compact card-based layout */}
             <TimelineGridView rooms={sortedRooms} currentTime={currentTime} />
-            </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* end desktop wrapper */}
-      </div>
     </div>
   );
 }
