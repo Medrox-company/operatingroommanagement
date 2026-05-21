@@ -679,7 +679,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <motion.div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
-                  style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
+                  style={{ 
+                    left: `calc(32px + ${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100}))`
+                  }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
