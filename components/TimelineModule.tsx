@@ -1278,9 +1278,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                 ? new Date(room.phaseStartedAt).getTime()
                                 : Date.now() - 30 * 60 * 1000;
                             const now = Date.now();
-                            const totalDuration = Math.max(1, now - operationStart);
+                            
+                            // Estimate end time: use provided estimate or default to 120 min
+                            const estimatedEndTime = room.estimatedEndTime
+                              ? new Date(room.estimatedEndTime).getTime()
+                              : operationStart + 120 * 60 * 1000;
+                            
+                            // Total duration is from start to estimated end (not to "now")
+                            const totalDuration = Math.max(1, estimatedEndTime - operationStart);
 
-                                            const stepColorMap: Record<number, string> = {};
+                            const stepColorMap: Record<number, string> = {};
                             activeStatuses.forEach((s, idx) => {
                               stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                             });
@@ -1294,7 +1301,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                     const nextEntry = history[idx + 1];
                                     const segEnd = nextEntry
                                       ? new Date(nextEntry.startedAt).getTime()
-                                      : now; // Current segment extends to now
+                                      : estimatedEndTime; // Current segment extends to estimated end
                                     const segDuration = Math.max(0, segEnd - segStart);
                                     const segWidthPct = (segDuration / totalDuration) * 100;
                                     const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
@@ -1337,26 +1344,23 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                             }
                             
                             // Fallback: single color progress if no history
-                            const estimatedEndTime = room.estimatedEndTime
+                            const estimatedEndTimeFallback = room.estimatedEndTime
                               ? new Date(room.estimatedEndTime).getTime()
                               : operationStart + 120 * 60 * 1000;
-                            const effectiveEndTime = Math.max(estimatedEndTime, now);
+                            const effectiveEndTime = Math.max(estimatedEndTimeFallback, now);
                             const totalDurationFallback = Math.max(1, effectiveEndTime - operationStart);
                             const elapsed = now - operationStart;
                             const progressPct = Math.min(100, Math.max(0, (elapsed / totalDurationFallback) * 100));
 
                             return (
-                              <motion.div 
+                              <div 
                                 className="h-full relative"
                                 style={{
                                   width: `${progressPct}%`,
                                   background: `linear-gradient(180deg, ${stepColor}50 0%, ${stepColor}25 100%)`,
                                 }}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${progressPct}%` }}
-                                transition={{ duration: 0.8, ease: 'easeOut' }}
                               >
-                                {/* Animated edge glow */}
+                                {/* Edge glow */}
                                 <div 
                                   className="absolute right-0 top-0 bottom-0 w-px"
                                   style={{ 
@@ -1364,7 +1368,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                     boxShadow: `0 0 8px ${stepColor}50`,
                                   }}
                                 />
-                              </motion.div>
+                              </div>
                             );
                           })()}
                         </div>
