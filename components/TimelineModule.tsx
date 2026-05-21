@@ -1126,6 +1126,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         if (position.width <= 0) return null;
                         
                         const isContinuingOp = position.isContinuing;
+                        const isRoomReady = (room.statusHistory && room.statusHistory.length > 0);
                         
                         return (
                           <motion.div
@@ -1135,10 +1136,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
                               background: isContinuingOp 
-                                ? `linear-gradient(135deg, ${C.green}20 0%, ${C.green}10 100%)`
-                                : `linear-gradient(135deg, ${C.slate}15 0%, ${C.slate}08 100%)`,
-                              border: `1px solid ${isContinuingOp ? `${C.green}30` : `${C.slate}20`}`,
-                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                                ? `linear-gradient(135deg, ${C.green}25 0%, ${C.green}15 100%)`
+                                : isRoomReady
+                                  ? `linear-gradient(135deg, ${C.blue}35 0%, ${C.slate}20 100%)`
+                                  : `linear-gradient(135deg, ${C.slate}18 0%, ${C.slate}10 100%)`,
+                              border: `1px solid ${isContinuingOp ? `${C.green}40` : isRoomReady ? `${C.blue}35` : `${C.slate}25`}`,
+                              boxShadow: isRoomReady 
+                                ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 8px ${C.blue}20`
+                                : 'inset 0 1px 0 rgba(255,255,255,0.03)',
                             }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
