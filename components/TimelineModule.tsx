@@ -985,34 +985,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       </div>
                     )}
                     
-                    {/* Numbered badge for active rooms - Premium glowing */}
-                    {isActive && !getAroPosition(room.id) && (
-                      <motion.div 
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${stepColor} 0%, ${stepColor}cc 100%)`,
-                          boxShadow: `0 0 12px ${stepColor}50`,
-                          color: '#fff',
-                        }}
-                        animate={{ scale: [1, 1.05, 1] }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                      >
-                        {currentRoomNumber}
-                      </motion.div>
-                    )}
-
+                    
                     {/* Room info card - Premium glass */}
                     <div 
                       className="flex-1 min-w-0 flex items-center gap-3"
                     >
-                      <div className="flex flex-col min-w-0">
-                        <p className="text-sm font-semibold tracking-tight text-white truncate">
-                          {room.name}
-                        </p>
-                        {room.department && (
-                          <p className="text-[10px] text-white/40 truncate">{room.department}</p>
-                        )}
-                      </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {room.isSeptic && (
                           <span 
@@ -1439,40 +1416,12 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                               {/* Card content */}
                               {boxWidthPct > 10 && (
                                 <div className="min-w-0 flex-1 flex flex-col">
-                                  {/* Title + Room ID */}
+                                  {/* Title only */}
                                   <div className="flex items-center gap-2">
                                     <p className="text-xs font-semibold text-white/95 truncate">
                                       {stepName}
                                     </p>
-                                    {boxWidthPct > 20 && (
-                                      <span className="text-[9px] text-white/35 font-mono flex-shrink-0">
-                                        {room.id}
-                                      </span>
-                                    )}
                                   </div>
-                                  
-                                  {/* Person + Status badge - Premium */}
-                                  {boxWidthPct > 16 && (
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      {room.staff?.doctor?.name && (
-                                        <p className="text-[9px] text-white/45 truncate flex items-center gap-1">
-                                          <User className="w-2.5 h-2.5" />
-                                          {room.staff.doctor.name}
-                                        </p>
-                                      )}
-                                      <span 
-                                        className="text-[8px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide"
-                                        style={{ 
-                                          background: `linear-gradient(135deg, ${stepColor}30 0%, ${stepColor}15 100%)`,
-                                          color: stepColor,
-                                          border: `1px solid ${stepColor}30`,
-                                          boxShadow: `0 0 8px ${stepColor}15`,
-                                        }}
-                                      >
-                                        {room.isLocked ? 'Locked' : 'Active'}
-                                      </span>
-                                    </div>
-                                  )}
                                 </div>
                               )}
                               
