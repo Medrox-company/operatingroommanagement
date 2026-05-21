@@ -58,7 +58,8 @@ const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 320;
 const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
-const ROW_GAP_PX = 4;      // gap-1 mezi řádky (Tailwind: 0.25rem) — musí korespondovat s `gap-1` v JSX
+const ROW_GAP_PX = 6;      // gap-1.5 mezi řádky (Tailwind: 0.375rem = 6px) — musí korespondovat s `gap-1.5` v JSX
+const ROW_PADDING_PX = 8;  // p-2 padding kolem všech řádků (Tailwind: 0.5rem = 8px)
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
@@ -236,16 +237,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return () => clearInterval(interval);
   }, []);
   
-  // Calculate responsive row height — všechny sály se MUS�� vejít bez scrollování.
-  // Předtím výpočet ignoroval `gap` mezi řádky (8px × N-1) → součet všech řádků
-  // přesáhl výšku kontejneru a vznikal scroll. Nyní gap odečteme PŘED dělením.
+  // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
+  // Výpočet: dostupná výška = výška kontejneru - padding - gap mezi řádky
   useEffect(() => {
     const calculateRowHeight = () => {
       if (rowsContainerRef.current && rooms.length > 0) {
         const containerHeight = rowsContainerRef.current.clientHeight;
         const totalGapPx = (rooms.length - 1) * ROW_GAP_PX;
-        const availableHeight = Math.max(0, containerHeight - totalGapPx);
-        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezp��sobil overflow
+        const totalPaddingPx = ROW_PADDING_PX * 2; // top + bottom
+        const availableHeight = Math.max(0, containerHeight - totalGapPx - totalPaddingPx);
+        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
         const calculatedHeight = Math.floor(availableHeight / rooms.length);
         const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
         setRowHeight(clampedHeight);
