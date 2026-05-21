@@ -1951,16 +1951,16 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           </div>
         </div>
       </motion.div>
-    </motion.div>
 
-    {/* ARO Overtime Popup */}
-    <AroOvertimePopup
-      isOpen={showAroPopup}
-      onClose={() => setShowAroPopup(false)}
-      overtimeRooms={aroOvertimeRooms}
-      roomsMap={new Map(rooms.map(r => [r.id, r]))}
-      currentTime={currentTime}
-    />
+      {/* ARO Overtime Popup */}
+      <AroOvertimePopup
+        isOpen={showAroPopup}
+        onClose={() => setShowAroPopup(false)}
+        overtimeRooms={aroOvertimeRooms}
+        roomsMap={new Map(rooms.map(r => [r.id, r]))}
+        currentTime={currentTime}
+      />
+    </motion.div>
   );
 };
 
