@@ -992,6 +992,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     <div 
                       className="flex-1 min-w-0 flex items-center gap-3"
                     >
+                      {/* Live indicator dot for active operations */}
+                      {isActive && (
+                        <motion.div 
+                          className="flex-shrink-0 w-2 h-2 rounded-full"
+                          style={{ 
+                            background: stepColor,
+                            boxShadow: `0 0 8px ${stepColor}`,
+                          }}
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        />
+                      )}
+
                       {/* Room name and details */}
                       <div className="flex flex-col min-w-0">
                         <p className="text-sm font-semibold tracking-tight text-white truncate">
