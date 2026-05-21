@@ -874,16 +874,30 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               return (
                 <motion.div
                   key={room.id}
-                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${
+                    isActive 
+                      ? 'operation-row-active' 
+                      : room.isLocked 
+                      ? 'room-status-locked'
+                      : 'room-status-free'
+                  }`}
                   style={{
                     height: rowHeight,
                     background: isActive 
                       ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
-                      : C.bgSurface,
+                      : room.isLocked
+                      ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, transparent 100%)'
+                      : 'linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, transparent 100%)',
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
-                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
+                      : isActive
+                      ? `1.5px solid ${stepColor}30`
+                      : `1px solid rgba(16, 185, 129, 0.2)`,
+                    boxShadow: isActive 
+                      ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 12px ${stepColor}08`
+                      : room.isLocked
+                      ? '0 4px 16px rgba(6, 182, 212, 0.08)'
+                      : 'none',
                   }}
                   onClick={() => setSelectedRoom(room)}
                   initial={{ opacity: 0, y: 10 }}
@@ -1035,7 +1049,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
                   {/* Timeline section - Premium glass with grid */}
                   <div 
-                    className="relative flex-1 overflow-hidden"
+                    className={`relative flex-1 overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
                     style={{
                       background: 'transparent'
                     }}
