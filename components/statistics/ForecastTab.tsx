@@ -260,7 +260,7 @@ export const ForecastTab: React.FC<ForecastTabProps> = memo(({
           subtitle="Počet plánovaných výkonů per den"
           className="md:col-span-2">
           <div style={{ width: '100%', height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={stats.dayBreakdown}>
                 <defs>
                   <linearGradient id="day-gradient" x1="0" y1="0" x2="0" y2="1">

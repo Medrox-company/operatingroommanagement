@@ -101,7 +101,7 @@ const ThroughputChart: React.FC<{
 
   return (
     <div className="w-full" style={{ height: 240 }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <AreaChart data={data} margin={{ top: 10, right: 8, left: -16, bottom: 0 }}>
           <defs>
             <linearGradient id="capacity-grad" x1="0" y1="0" x2="0" y2="1">
@@ -165,7 +165,7 @@ const TurnoverChart: React.FC<{ avgStepDurations: number[] }> = memo(({ avgStepD
 
   return (
     <div className="w-full" style={{ height: 180 }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <BarChart data={buckets} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <CartesianGrid stroke={C.ghost} strokeDasharray="2 4" vertical={false} />
           <XAxis dataKey="bucket" tick={{ fill: C.muted, fontSize: 9 }}

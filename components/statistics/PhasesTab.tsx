@@ -536,7 +536,7 @@ export function PhasesTab({
                 <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
                   Trvání fází (minuty)
                 </h4>
-                <ResponsiveContainer width="100%" height={220} minWidth={0}>
+                <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0}>
                   <BarChart data={barChartData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 70 }} barSize={18}>
                     <CartesianGrid stroke={C.ghost} strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} />
@@ -558,7 +558,7 @@ export function PhasesTab({
                   Rozložení cyklu
                 </h4>
                 <div className="flex items-center gap-6">
-                  <ResponsiveContainer width="45%" height={180} minWidth={0}>
+                  <ResponsiveContainer width="45%" height={180} minWidth={0} minHeight={0}>
                     <PieChart>
                       <Pie
                         data={pieData}
@@ -607,7 +607,7 @@ export function PhasesTab({
           <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
             Kumulativní průběh cyklu
           </h4>
-          <ResponsiveContainer width="100%" height={200} minWidth={0}>
+          <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={0}>
             <AreaChart data={cumulativeData} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
               <defs>
                 <linearGradient id="cumGradient" x1="0" y1="0" x2="0" y2="1">
@@ -640,7 +640,7 @@ export function PhasesTab({
           <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
             Aktuální distribuce sálů
           </h4>
-          <ResponsiveContainer width="100%" height={200} minWidth={0}>
+          <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={0}>
             <BarChart data={workflowSteps.map((step, i) => ({
               name: step.title.split(' ').slice(-1)[0],
               count: roomsPerPhase[i],

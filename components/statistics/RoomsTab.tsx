@@ -486,7 +486,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
             Rozložení statusů
           </p>
           <div className="flex items-center gap-4">
-            <ResponsiveContainer width={80} height={80} minWidth={0}>
+            <ResponsiveContainer width={80} height={80} minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={statusPieData}
@@ -556,7 +556,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           </div>
         </div>
         
-        <ResponsiveContainer width="100%" height={220} minWidth={0}>
+        <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0}>
           <BarChart data={barData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }} barSize={20}>
             <XAxis
               dataKey="name"
