@@ -9,31 +9,46 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (Modern glass-morphism style) ==========
+// ========== DESIGN TOKENS (Premium Medical Dashboard - Futuristic Control Center) ==========
 const C = {
-  // Primary colors
-  accent: '#00D9FF',    // Vivid cyan
-  cyan: '#00D9FF',
-  yellow: '#FFE66D',
-  green: '#00F5A0',
-  orange: '#FF9F43',
-  red: '#FF6B6B',
-  purple: '#A78BFA',
-  pink: '#F472B6',
-  blue: '#60A5FA',
+  // Primary accent - Medical Cyan
+  accent: '#06B6D4',
+  cyan: '#06B6D4',
   
-  // Surface & backgrounds
-  border: 'rgba(255,255,255,0.08)',
-  borderHover: 'rgba(255,255,255,0.15)',
-  surface: 'rgba(255,255,255,0.03)',
-  surface2: 'rgba(255,255,255,0.06)',
-  glass: 'rgba(255,255,255,0.04)',
-  glassHover: 'rgba(255,255,255,0.08)',
+  // Status colors - Vivid & Professional
+  green: '#10B981',       // Active/Success - Emerald
+  yellow: '#F59E0B',      // Preparation/Warning - Amber  
+  orange: '#F97316',      // Alert - Orange
+  red: '#EF4444',         // Delayed/Critical - Red
+  purple: '#8B5CF6',      // Planning - Violet
+  pink: '#EC4899',        // Special - Pink
+  blue: '#3B82F6',        // Info - Blue
+  slate: '#64748B',       // Completed - Slate
+  
+  // Surface & Glass Effects
+  bgDeep: '#030712',                        // Deep space black
+  bgSurface: 'rgba(15, 23, 42, 0.85)',      // Glass surface
+  bgElevated: 'rgba(30, 41, 59, 0.9)',      // Elevated cards
+  bgCard: 'rgba(15, 23, 42, 0.95)',         // Card background
+  
+  // Borders & Lines
+  border: 'rgba(148, 163, 184, 0.08)',      // Subtle border
+  borderHover: 'rgba(6, 182, 212, 0.3)',    // Cyan hover
+  borderActive: 'rgba(6, 182, 212, 0.5)',   // Active state
+  gridLine: 'rgba(148, 163, 184, 0.06)',    // Timeline grid
+  
+  // Glass & Glow
+  glass: 'rgba(255, 255, 255, 0.02)',
+  glassHover: 'rgba(6, 182, 212, 0.08)',
+  glowCyan: '0 0 20px rgba(6, 182, 212, 0.4)',
+  glowGreen: '0 0 16px rgba(16, 185, 129, 0.4)',
+  glowRed: '0 0 16px rgba(239, 68, 68, 0.5)',
   
   // Text
-  muted: 'rgba(255,255,255,0.45)',
-  text: 'rgba(255,255,255,0.85)',
-  textHi: 'rgba(255,255,255,0.95)',
+  textHi: 'rgba(255, 255, 255, 0.95)',
+  text: 'rgba(255, 255, 255, 0.80)',
+  muted: 'rgba(255, 255, 255, 0.45)',
+  faint: 'rgba(255, 255, 255, 0.25)',
 };
 
 // ========== CONSTANTS ==========
@@ -43,19 +58,20 @@ const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 320;
 const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
-const ROW_GAP_PX = 4;      // gap-1 mezi řádky (Tailwind: 0.25rem) — musí korespondovat s `gap-1` v JSX
+const ROW_GAP_PX = 6;      // gap-1.5 mezi řádky (Tailwind: 0.375rem = 6px) — musí korespondovat s `gap-1.5` v JSX
+const ROW_PADDING_PX = 8;  // p-2 padding kolem všech řádků (Tailwind: 0.5rem = 8px)
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#FF9F43', border: '#FFB76B', stripe: '#FFD1A3', text: '#FFF', glow: 'rgba(255,159,67,0.25)' },
-  purple: { bg: '#A78BFA', border: '#C4B5FD', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(167,139,250,0.25)' },
-  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.25)' },
-  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.25)' },
-  green: { bg: '#00F5A0', border: '#5FFFC1', stripe: '#B8FFE0', text: '#000', glow: 'rgba(0,245,160,0.25)' },
-  red: { bg: '#FF6B6B', border: '#FF9999', stripe: '#FFC7C7', text: '#FFF', glow: 'rgba(255,107,107,0.25)' },
-  cyan: { bg: '#00D9FF', border: '#5AE8FF', stripe: '#B0F4FF', text: '#000', glow: 'rgba(0,217,255,0.25)' },
+  orange: { bg: '#F97316', border: '#FB923C', stripe: '#FDBA74', text: '#FFF', glow: '0 0 20px rgba(249, 115, 22, 0.4)' },
+  purple: { bg: '#8B5CF6', border: '#A78BFA', stripe: '#C4B5FD', text: '#FFF', glow: '0 0 20px rgba(139, 92, 246, 0.4)' },
+  pink: { bg: '#EC4899', border: '#F472B6', stripe: '#F9A8D4', text: '#FFF', glow: '0 0 20px rgba(236, 72, 153, 0.4)' },
+  blue: { bg: '#3B82F6', border: '#60A5FA', stripe: '#93C5FD', text: '#FFF', glow: '0 0 20px rgba(59, 130, 246, 0.4)' },
+  green: { bg: '#10B981', border: '#34D399', stripe: '#6EE7B7', text: '#FFF', glow: '0 0 20px rgba(16, 185, 129, 0.4)' },
+  red: { bg: '#EF4444', border: '#F87171', stripe: '#FCA5A5', text: '#FFF', glow: '0 0 20px rgba(239, 68, 68, 0.4)' },
+  cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#67E8F9', text: '#FFF', glow: '0 0 20px rgba(6, 182, 212, 0.4)' },
 };
 
   // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
@@ -221,16 +237,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return () => clearInterval(interval);
   }, []);
   
-  // Calculate responsive row height — všechny sály se MUS�� vejít bez scrollování.
-  // Předtím výpočet ignoroval `gap` mezi řádky (8px × N-1) → součet všech řádků
-  // přesáhl výšku kontejneru a vznikal scroll. Nyní gap odečteme PŘED dělením.
+  // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
+  // Výpočet: dostupná výška = výška kontejneru - padding - gap mezi řádky
   useEffect(() => {
     const calculateRowHeight = () => {
       if (rowsContainerRef.current && rooms.length > 0) {
         const containerHeight = rowsContainerRef.current.clientHeight;
         const totalGapPx = (rooms.length - 1) * ROW_GAP_PX;
-        const availableHeight = Math.max(0, containerHeight - totalGapPx);
-        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezp��sobil overflow
+        const totalPaddingPx = ROW_PADDING_PX * 2; // top + bottom
+        const availableHeight = Math.max(0, containerHeight - totalGapPx - totalPaddingPx);
+        // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
         const calculatedHeight = Math.floor(availableHeight / rooms.length);
         const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
         setRowHeight(clampedHeight);
@@ -465,162 +481,115 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
           style={{ background: C.accent }}
         />
-        <div className="px-8 md:pl-32 md:pr-10 py-6">
+        <div className="px-8 md:pl-32 md:pr-10 py-4">
 
+          {/* Header Row - Time Center, ARO Right */}
+          <div className="flex items-center justify-between gap-4">
 
-          {/* Stats Boxes Row */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
-            <StatBox 
-              icon={Activity} 
-              label="Aktivní" 
-              value={`${stats.operations} operací`} 
-              color="#22C55E" 
-            />
-            <StatBox 
-              icon={Loader2} 
-              label="Úklid" 
-              value={`${stats.cleaning} sálů`} 
-              color="#F97316" 
-            />
-            <StatBox 
-              icon={Stethoscope} 
-              label="Volné" 
-              value={`${stats.free} sálů`} 
-              color="#22D3EE" 
-            />
-            <StatBox 
-              icon={Shield} 
-              label="Dokončeno" 
-              value={`${stats.completed} dnes`} 
-              color="#22D3EE" 
-            />
+            {/* Center: Current Time (no box, just prominent display) */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
+                {formatDate(currentTime)}
+              </p>
+              <motion.p 
+                className="text-3xl font-bold tabular-nums tracking-tight"
+                style={{ 
+                  color: C.textHi,
+                  textShadow: `0 0 40px ${C.cyan}40`,
+                }}
+                animate={{ opacity: [0.9, 1, 0.9] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {currentTime.toLocaleTimeString("cs-CZ", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </motion.p>
+            </div>
 
-            {stats.emergencyCount > 0 && (
-              <StatBox 
-                icon={AlertTriangle} 
-                label="Emergency" 
-                value={`${stats.emergencyCount} sálů`} 
-                color="#EF4444" 
-                glow 
-              />
-            )}
-
-            {/* ARO Overtime indicator - LoginPage glassmorph with red accent */}
-            {aroOvertimeRooms.length > 0 && (
+            {/* Right: ARO Overtime indicator */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+            {aroOvertimeRooms.length > 0 ? (
               <motion.div
-                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
+                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
-                  background: `${C.red}15`,
-                  border: `2px solid ${C.red}40`,
-                  boxShadow: `0 0 24px ${C.red}25, inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${C.red}15`,
+                  background: `linear-gradient(135deg, ${C.red}20 0%, ${C.red}10 100%)`,
+                  border: `2px solid ${C.red}50`,
+                  boxShadow: `0 0 30px ${C.red}30, inset 0 1px 0 rgba(255,255,255,0.05)`,
                 }}
               >
-                {/* Animated gradient border effect */}
-                <div 
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${C.red}20, transparent)`,
-                    animation: 'shimmer 2s infinite',
-                  }}
-                />
-                {/* Top highlight line with accent */}
-                <div 
-                  className="absolute top-0 left-4 right-4 h-px opacity-60"
-                  style={{ background: `linear-gradient(90deg, transparent, ${C.red}80, transparent)` }}
-                />
-                <div
-                  className="absolute inset-0 opacity-40"
-                  style={{
-                    background: `radial-gradient(ellipse at 50% 0%, ${C.red}30 0%, transparent 70%)`,
-                  }}
-                />
                 <div className="relative flex items-center gap-3 h-full">
                   <motion.div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    animate={{ scale: [1, 1.1, 1] }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    animate={{ scale: [1, 1.15, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                     style={{
-                      background: `${C.red}25`,
-                      border: `1.5px solid ${C.red}50`,
+                      background: `${C.red}30`,
+                      border: `2px solid ${C.red}60`,
+                      boxShadow: `0 0 12px ${C.red}40`,
                     }}
                   >
-                    <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
+                    <AlertTriangle className="w-5 h-5" style={{ color: C.red }} />
                   </motion.div>
                   <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.3em] font-semibold" style={{ color: `${C.red}a0` }}>ARO PŘESAH</p>
-                    <p className="text-sm font-bold leading-tight" style={{ color: C.red }}>{aroOvertimeRooms.length} sálů</p>
+                    <p className="text-[9px] uppercase tracking-[0.25em] font-bold" style={{ color: C.red }}>ARO PŘESAH</p>
+                    <p className="text-xl font-black leading-tight tabular-nums" style={{ color: C.red }}>
+                      {aroOvertimeRooms.length}
+                      <span className="text-xs font-medium ml-1 opacity-70">sálů</span>
+                    </p>
                   </div>
                 </div>
               </motion.div>
-            )}
-
-            {/* Spacer */}
-            <div className="flex-1 min-w-4" />
-
-            {/* Date Box */}
-            <StatBox 
-              icon={CalendarDays} 
-              label="Datum" 
-              value={formatDate(currentTime)} 
-              color="#6366F1" 
-            />
-
-            {/* Time Box - LoginPage glassmorph style */}
-            <div
-              className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
-              style={{
-                background: C.glass,
-                border: `1px solid ${C.border}`,
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-              }}
-            >
-              {/* Top highlight line */}
+            ) : (
               <div 
-                className="absolute top-0 left-4 right-4 h-px opacity-30"
-                style={{ background: `linear-gradient(90deg, transparent, ${C.accent}60, transparent)` }}
-              />
-              <div className="relative flex items-center gap-3 h-full">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: `${C.accent}15`,
-                    border: `1px solid ${C.accent}25`,
-                  }}
+                className="flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 flex items-center gap-3"
+                style={{
+                  background: `linear-gradient(135deg, ${C.green}15 0%, ${C.green}05 100%)`,
+                  border: `1px solid ${C.green}30`,
+                }}
+              >
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: `${C.green}20`, border: `1px solid ${C.green}30` }}
                 >
-                  <Clock className="w-4 h-4" style={{ color: C.accent }} />
+                  <CheckCircle className="w-4 h-4" style={{ color: C.green }} />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Čas</p>
-                  <p className="text-sm font-bold leading-tight tabular-nums" style={{ color: C.accent }}>
-                    {currentTime.toLocaleTimeString("cs-CZ", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    })}
-                  </p>
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.25em] font-medium text-white/40">ARO STATUS</p>
+                  <p className="text-sm font-semibold" style={{ color: C.green }}>V pořádku</p>
                 </div>
               </div>
+            )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ======== Main Timeline ======== */}
+      {/* ======== Main Timeline - Premium Glass Container ======== */}
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
-        {/* Time Axis Header - Fixed, LoginPage glassmorph */}
+        {/* Ambient Glow Effects */}
+        <div className="absolute top-0 left-1/4 w-96 h-64 rounded-full blur-3xl opacity-[0.03] pointer-events-none" style={{ background: C.cyan }} />
+        <div className="absolute bottom-0 right-1/4 w-80 h-48 rounded-full blur-3xl opacity-[0.02] pointer-events-none" style={{ background: C.purple }} />
+        
+        {/* Time Axis Header - Premium Glass */}
         <div 
-          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-md" 
+          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-xl relative overflow-hidden" 
           style={{ 
-            background: C.glass, 
+            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%)', 
             borderBottom: `1px solid ${C.border}`,
+            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
           }}
         >
-          {/* Room label header - fixed */}
+          {/* Subtle top gradient line */}
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}30, transparent)` }} />
+          
+          {/* Room label header */}
           <div 
-            className="flex-shrink-0 flex items-center px-4 gap-2" 
+            className="flex-shrink-0 flex items-center px-5 gap-3" 
             style={{ 
               width: ROOM_LABEL_WIDTH, 
               minWidth: ROOM_LABEL_WIDTH, 
@@ -636,19 +605,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">OPERAČNÍ SÁLY</span>
           </div>
           
-          {/* Time markers - no scroll, full width for 24h */}
+          {/* Time markers - Premium style with elegant grid */}
           <div className="flex-1 overflow-hidden" ref={timelineRef}>
             <div className="flex items-center h-12 relative w-full">
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
-                // Convert timeline hour (0-24) to actual 24-hour format (7-31 represents 7:00 to 7:00 next day)
-                const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
-                const displayHour = actualHour % 24; // 7-23, 0-6 for next day hours
+                const actualHour = TIMELINE_START_HOUR + hour;
+                const displayHour = actualHour % 24;
                 const isNightHour = displayHour >= 19 || displayHour < 7;
                 const isNextDay = actualHour >= 24;
                 const isCurrentHour = displayHour === currentHour && !isLast;
+                const isMajorHour = displayHour % 3 === 0; // Every 3 hours is major
                 
                 return (
                   <div 
@@ -656,29 +625,35 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     className="absolute top-0 h-full flex items-center justify-center" 
                     style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                   >
+                    {/* Vertical grid line with gradient */}
                     <div 
-                      className={`absolute left-0 w-px h-full transition-all duration-300`}
+                      className="absolute left-0 w-px h-full"
                       style={{ 
-                        background: isNightHour 
-                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
-                          : 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
+                        background: isMajorHour 
+                          ? `linear-gradient(to bottom, ${C.cyan}20, ${C.cyan}08, transparent)` 
+                          : `linear-gradient(to bottom, ${C.border}, transparent)` 
                       }} 
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - yellow highlighted, compact, centered */
-                        <span 
-                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                        /* Current hour - Glowing pill */
+                        <motion.span 
+                          className="text-[10px] font-mono font-bold px-3 py-1 rounded-full relative"
                           style={{ 
-                            background: '#f1ff00', 
+                            background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
                             color: '#000',
+                            boxShadow: C.glowCyan,
                           }}
+                          animate={{ scale: [1, 1.02, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
                         >
                           {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
-                        </span>
+                        </motion.span>
                       ) : (
-                        /* Other hours - simple number only, no box, centered */
-                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
+                        /* Other hours */
+                        <span className={`text-[9px] font-mono font-medium tabular-nums transition-colors ${
+                          isNightHour ? 'text-white/20' : isMajorHour ? 'text-white/60' : 'text-white/35'
+                        }`}>
                           {hourLabelCompact(hour)}
                         </span>
                       )
@@ -690,28 +665,55 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           </div>
         </div>
 
-        {/* Room Rows - Responsive height, no scroll */}
-        <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
-          <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - Simple line without glow */}
+        {/* Room Rows Container - Premium Glass */}
+        <div className="flex-1 min-h-0 overflow-hidden rounded-b-2xl" ref={rowsContainerRef}>
+          <div 
+            className="relative w-full h-full"
+            ref={scrollContainerRef}
+            style={{
+              background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)',
+            }}
+          >
+            {/* Now indicator - Premium animated line with glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <div 
+                <motion.div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                 >
-                  {/* Main line - clean and simple */}
+                  {/* Glow effect */}
                   <div 
-                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ background: '#73ff00' }}
+                    className="absolute -left-3 top-0 bottom-0 w-6"
+                    style={{ 
+                      background: `linear-gradient(90deg, transparent, ${C.red}15, transparent)`,
+                    }}
                   />
-                </div>
+                  {/* Main line */}
+                  <motion.div 
+                    className="absolute -left-[1px] top-0 bottom-0 w-[2px] rounded-full"
+                    style={{ 
+                      background: `linear-gradient(to bottom, ${C.red}, ${C.red}80)`,
+                      boxShadow: `0 0 8px ${C.red}, 0 0 16px ${C.red}50`,
+                    }}
+                    animate={{ opacity: [0.8, 1, 0.8] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                  {/* Top dot */}
+                  <motion.div 
+                    className="absolute -left-1 -top-1 w-2 h-2 rounded-full"
+                    style={{ 
+                      background: C.red,
+                      boxShadow: `0 0 8px ${C.red}`,
+                    }}
+                  />
+                </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Room Rows - Flex container. gap-1 (4px) — minimální mezera, aby se vešlo
-               co nejvíce sálů bez scrollu. Kontejner i výpočet rowHeight používá ROW_GAP_PX=4. */}
-            <div className="flex flex-col gap-1 px-1">
+            {/* Room Rows */}
+            <div className="flex flex-col gap-1.5 p-2">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -868,167 +870,230 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Active / Free / Locked row - unified design with yellow gradient background */
+              /* Active / Free / Locked row - Premium glass card design */
               return (
-                <div
+                <motion.div
                   key={room.id}
-                  className="relative flex items-stretch group cursor-pointer transition-all duration-200 hover:bg-white/[0.04]"
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
-                    borderBottom: `1px solid ${C.border}`,
+                    background: isActive 
+                      ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
+                      : C.bgSurface,
+                    border: room.isLocked 
+                      ? `1.5px solid rgba(6, 182, 212, 0.4)`
+                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
+                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
                   }}
                   onClick={() => setSelectedRoom(room)}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: roomIndex * 0.03 }}
+                  whileHover={{ 
+                    borderColor: isActive ? `${stepColor}40` : C.borderHover,
+                    boxShadow: isActive ? `0 0 20px ${stepColor}15` : '0 4px 20px rgba(0,0,0,0.2)',
+                  }}
                 >
-                  {/* Room Label - Sticky LEFT column with yellow gradient background (same as locked) */}
+                  {/* Colored left accent bar */}
                   <div 
-                    className="flex-shrink-0 flex items-stretch gap-2 px-2 py-1.5 min-h-0 overflow-hidden transition-all duration-200 group-hover:brightness-110 sticky left-0 z-20" 
+                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                    style={{ 
+                      background: isActive 
+                        ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}80)`
+                        : `linear-gradient(to bottom, ${C.slate}40, transparent)`,
+                      boxShadow: isActive ? `0 0 8px ${stepColor}40` : 'none',
+                    }}
+                  />
+                  
+                  {/* Room Label - Premium glass panel */}
+                  <div 
+                    className="flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
-                      background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.accent}08 100%)`,
-                      borderRight: `1px solid ${C.accent}40`,
+                      borderRight: `1px solid ${C.border}`,
                     }}
                   >
-                    {/* ARO Overtime Badge - softer */}
+                    {/* ARO Overtime Badge - Premium style */}
                     {(() => {
                       const aroPosition = getAroPosition(room.id);
                       const overtimeInfo = getOvertimeInfo(room.id);
                       
                       if (aroPosition && overtimeInfo) {
-  return (
-  <div
-className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
-style={{
-  background: 'rgba(132, 255, 0, 0.1)',
-  border: '1px solid rgba(132, 255, 0, 0.96)'
-}}
+                        return (
+                          <motion.div
+                            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
+                            style={{
+                              background: `linear-gradient(135deg, ${C.yellow}20 0%, ${C.yellow}10 100%)`,
+                              border: `1px solid ${C.yellow}50`,
+                              boxShadow: `0 0 12px ${C.yellow}20`,
+                            }}
+                            animate={{ scale: [1, 1.02, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
                           >
-                            <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>ARO</span>
-                            <span className="text-xs font-bold text-white/80">{aroPosition}</span>
-                            <span className="text-[6px] font-normal" style={{ color: 'rgba(132, 255, 0, 0.96)' }}>+{overtimeInfo.overtimeMinutes}m</span>
-                          </div>
+                            <span className="text-[7px] font-bold tracking-wider" style={{ color: C.yellow }}>ARO</span>
+                            <span className="text-xs font-bold text-white/90">{aroPosition}</span>
+                            <span className="text-[6px] font-medium" style={{ color: C.yellow }}>+{overtimeInfo.overtimeMinutes}m</span>
+                          </motion.div>
                         );
                       }
                       return null;
                     })()}
 
-                    {/* Patient Called Badge */}
+                    {/* Patient Called Badge - Premium */}
                     {room.patientCalledAt && !room.patientArrivedAt && (
-                      <div
-                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                      <motion.div
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
                         style={{
-                          background: 'rgba(59, 130, 246, 0.1)',
-                          border: '1px solid rgba(96, 165, 250, 0.96)',
+                          background: `linear-gradient(135deg, ${C.blue}20 0%, ${C.blue}10 100%)`,
+                          border: `1px solid ${C.blue}50`,
                         }}
                         title="Pacient volán"
+                        animate={{ opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
                       >
-                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(96, 165, 250, 0.96)' }}>VOLÁN</span>
-                        <Phone className="w-3 h-3" style={{ color: 'rgba(96, 165, 250, 0.96)' }} />
-                      </div>
+                        <span className="text-[7px] font-bold tracking-wider" style={{ color: C.blue }}>VOLÁN</span>
+                        <Phone className="w-3 h-3" style={{ color: C.blue }} />
+                      </motion.div>
                     )}
 
-                    {/* Patient Arrived Badge */}
+                    {/* Patient Arrived Badge - Premium */}
                     {room.patientArrivedAt && (
                       <div
-                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
                         style={{
-                          background: 'rgba(16, 185, 129, 0.1)',
-                          border: '1px solid rgba(52, 211, 153, 0.96)',
+                          background: `linear-gradient(135deg, ${C.green}20 0%, ${C.green}10 100%)`,
+                          border: `1px solid ${C.green}50`,
                         }}
                         title="Pacient v operačním traktu"
                       >
-                        <span className="text-[7px] font-medium tracking-wider" style={{ color: 'rgba(52, 211, 153, 0.96)' }}>NA SÁLE</span>
-                        <BedDouble className="w-3 h-3" style={{ color: 'rgba(52, 211, 153, 0.96)' }} />
+                        <span className="text-[7px] font-bold tracking-wider" style={{ color: C.green }}>NA SÁLE</span>
+                        <BedDouble className="w-3 h-3" style={{ color: C.green }} />
                       </div>
                     )}
 
-                    {/* Lock Badge - when room is locked */}
+                    {/* Lock Badge - Premium */}
                     {room.isLocked && (
                       <div
-                        className="flex-shrink-0 flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md"
+                        className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-1 rounded-lg"
                         style={{
-                          background: `${C.accent}20`,
-                          border: `1px solid ${C.accent}`,
+                          background: `linear-gradient(135deg, ${C.cyan}20 0%, ${C.cyan}10 100%)`,
+                          border: `1px solid ${C.cyan}50`,
                         }}
                         title="Sál uzamčen"
                       >
-                        <span className="text-[7px] font-medium tracking-wider" style={{ color: C.accent }}>LOCK</span>
-                        <Lock className="w-3 h-3" style={{ color: C.accent }} />
+                        <span className="text-[7px] font-bold tracking-wider" style={{ color: C.cyan }}>LOCK</span>
+                        <Lock className="w-3 h-3" style={{ color: C.cyan }} />
                       </div>
                     )}
                     
-                    {/* Numbered badge for active rooms - softer */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {isActive && !getAroPosition(room.id) && (
-                        <div 
-                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white/90"
-                          style={{ background: `${roomColor.bg}90`, boxShadow: `0 1px 4px ${roomColor.glow}` }}
-                        >
-                          {currentRoomNumber}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Room info - Rounded glassmorph card IN LEFT COLUMN.
-                       Stretchuje se na plnou výšku rodiče (díky `items-stretch` na rodiči),
-                       takže vizuálně koresponduje s timeline barem napravo, který má stejné
-                       inset (top-1.5 bottom-1.5). Vertikální padding NEpotřebuje — content
-                       je centrovaný přes flex justify-center. */}
+                    
+                    {/* Room info card - Premium glass */}
                     <div 
-                      className={`flex-shrink-0 flex-1 min-w-0 max-w-xs rounded-md flex items-center ${rowHeight < 44 ? 'px-2' : 'px-2.5'} backdrop-blur-md transition-all duration-200 overflow-hidden`}
-                      style={{ 
-                        background: C.glass, 
-                        border: `1px solid ${C.border}`,
-                      }}
+                      className="flex-1 min-w-0 flex items-center gap-3"
                     >
-                      <div className="flex items-center gap-2 w-full">
+                      {/* Live indicator dot for active operations */}
+                      {isActive && (
+                        <motion.div 
+                          className="flex-shrink-0 w-2 h-2 rounded-full"
+                          style={{ 
+                            background: stepColor,
+                            boxShadow: `0 0 8px ${stepColor}`,
+                          }}
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        />
+                      )}
+
+                      {/* Room name and details */}
+                      <div className="flex flex-col min-w-0">
                         <p className="text-sm font-semibold tracking-tight text-white truncate">
                           {room.name}
                         </p>
+                        {room.department && (
+                          <p className="text-[10px] text-white/40 truncate mt-0.5">
+                            {room.department}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
                         {room.isSeptic && (
-                          <span className="text-[8px] font-semibold px-2 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,0.15)', color: 'rgba(216,180,254,0.9)', textTransform: 'uppercase' }}>SEPTIKA</span>
+                          <span 
+                            className="text-[8px] font-bold px-2 py-0.5 rounded-md uppercase"
+                            style={{ 
+                              background: `${C.purple}20`,
+                              color: C.purple,
+                              border: `1px solid ${C.purple}40`,
+                            }}
+                          >
+                            SEPTIKA
+                          </span>
                         )}
                         {room.isPaused && !room.isEmergency && !room.isLocked && (
-                          <span className="text-[8px] font-semibold px-2 py-1 rounded-lg uppercase flex-shrink-0 flex items-center gap-1" style={{ background: 'rgba(6,182,212,0.15)', color: 'rgba(34,211,238,0.9)' }}>
+                          <span 
+                            className="text-[8px] font-bold px-2 py-0.5 rounded-md uppercase flex items-center gap-1"
+                            style={{ 
+                              background: `${C.cyan}20`,
+                              color: C.cyan,
+                              border: `1px solid ${C.cyan}40`,
+                            }}
+                          >
                             <Pause className="w-2.5 h-2.5" />
                             PAUZA
                           </span>
                         )}
-                        {/* Patient called / arrived indicators přesunuty na pozici před name
-                            kartou (stejné místo jako ARO badge), pro jednotný vizuální jazyk. */}
                       </div>
-                      {/* Sekundární řádek (status / department / remainingTime) odstraněn —
-                          aktuální status se nyní zobrazuje uppercase ve středu timeline baru,
-                          takže duplicita pod názvem sálu byla redundantní. */}
                     </div>
                   </div>
 
-                  {/* Timeline section - RIGHT side, scrollable with rounded-r corners */}
+                  {/* Timeline section - Premium glass with grid */}
                   <div 
-                    className="relative flex-1 overflow-hidden rounded-r-lg"
+                    className="relative flex-1 overflow-hidden"
                     style={{
-                      background: room.isLocked ? `linear-gradient(90deg, ${C.accent}40 0%, ${C.accent}25 100%)` : 'transparent'
+                      background: 'transparent'
                     }}
                   >
-                    {/* Hour grid lines */}
+                    {/* Locked room overlay with icon */}
+                    {room.isLocked && (
+                      <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                        <div 
+                          className="flex items-center gap-3 px-6 py-3 rounded-xl backdrop-blur-sm"
+                          style={{
+                            background: 'rgba(6, 182, 212, 0.15)',
+                            border: `2px solid ${C.cyan}50`,
+                            boxShadow: `0 0 20px ${C.cyan}30`,
+                          }}
+                        >
+                          <Lock className="w-5 h-5" style={{ color: C.cyan }} />
+                          <span className="text-sm font-bold uppercase tracking-[0.2em]" style={{ color: C.cyan }}>
+                            UZAMČENO
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {/* Hour grid lines - Premium gradient */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                       const displayHour = hour % 24;
                       const isNight = displayHour >= 19 || displayHour < 7;
+                      const isMajor = displayHour % 3 === 0;
                       return (
                         <div 
                           key={i} 
                           className="absolute top-0 bottom-0 w-px" 
                           style={{ 
                             left: `${(i / TIMELINE_HOURS) * 100}%`,
-                            background: isNight ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)'
+                            background: isMajor 
+                              ? `linear-gradient(to bottom, ${C.cyan}15, transparent)`
+                              : isNight 
+                                ? 'rgba(255,255,255,0.02)' 
+                                : 'rgba(255,255,255,0.04)'
                           }} 
                         />
                       );
                     })}
 
-                    {/* Completed operations - soft gray inactive bars */}
+                    {/* Completed operations - Premium glass cards */}
                     {(() => {
-                      // Use completedOperations from room data
                       const opsToRender = room.completedOperations || [];
                       
                       if (opsToRender.length === 0) return null;
@@ -1047,30 +1112,31 @@ style={{
                         const opEndDate = new Date(operation.endedAt);
                         const exceedsDay = exceedsT24Hours(opStartDate, opEndDate);
                         
-                        // Get single continuous position (even if crossing 7:00)
                         const position = getOperationPosition(opStartDate, opEndDate, currentTime);
                         
-                        // Skip if width is 0
                         if (position.width <= 0) return null;
                         
-                        // Check if this is a continuing operation (started before 7:00)
                         const isContinuingOp = position.isContinuing;
                         
                         return (
-                          <div
+                          <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-md"
+                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-lg"
                             style={{ 
                               left: `${position.left}%`, 
-                              width: `${Math.max(0.3, position.width)}%`,
-                              // Green pro continuing, glass pro completed; jednotný refined shadow
-                              background: isContinuingOp ? `${C.green}30` : C.glass,
-                              border: `1px solid ${isContinuingOp ? `${C.green}40` : C.border}`,
-                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.15)',
+                              width: `${Math.max(0.5, position.width)}%`,
+                              background: isContinuingOp 
+                                ? `linear-gradient(135deg, ${C.green}20 0%, ${C.green}10 100%)`
+                                : `linear-gradient(135deg, ${C.slate}15 0%, ${C.slate}08 100%)`,
+                              border: `1px solid ${isContinuingOp ? `${C.green}30` : `${C.slate}20`}`,
+                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
                             }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: opIdx * 0.05 }}
                           >
                               {/* Completed operation segments with colors from database context */}
-                              {!isContinuingOp && operation.statusHistory && operation.statusHistory.length > 0 && (
+                              {operation.statusHistory && operation.statusHistory.length > 0 && (
                                 <div className="absolute inset-0 flex overflow-hidden rounded-md">
                                   {(() => {
                                     // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
@@ -1131,7 +1197,7 @@ style={{
                                 </div>
                               )}
                               
-                              {/* Label for operation */}
+                              {/* Label for operation - RESTORED per Medrox design */}
                               <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
                                 {position.width > 6 && (
                                   <span className={`text-[10px] font-semibold truncate uppercase tracking-wide ${
@@ -1141,7 +1207,7 @@ style={{
                                   </span>
                                 )}
                               </div>
-                          </div>
+                          </motion.div>
                         );
                       })
                     })()}
@@ -1177,8 +1243,6 @@ style={{
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
-                            // Použijeme aktuální barvu statusu sálu (accent_color z DB),
-                            // aby celá lišta pokračujícího výkonu odpovídala statusu na řádku.
                             background: `linear-gradient(90deg, ${stepColor}35 0%, ${stepColor}20 100%)`,
                             borderRight: `2px solid ${stepColor}`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2)`,
@@ -1195,24 +1259,35 @@ style={{
                       );
                     })()}
 
-                    {/* Active operation bar — refined design:
-                       • menší zaoblení (rounded-md = 6px) pro precíznější/clinical look,
-                       • dvojitá vrstva shadow (top highlight + outer drop) pro hloubku,
-                       • jemný hairline border pro vizuální separaci od pozadí.
-                       Inset top/bottom snížen z 1.5 (6px) na 1 (4px) — bar je vyšší a lépe
-                       vyplňuje řádek, status text získává více vertikálního prostoru. */}
+                    {/* Active operation bar — Premium Futuristic Control Center style:
+                       • Glassmorphism with subtle gradients
+                       • Animated glow effects based on status
+                       • Professional card-like appearance */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
-                      <div
-                        className="absolute top-1 bottom-1 overflow-hidden rounded-md"
+                      <motion.div
+                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.25)',
-                          border: '1px solid rgba(255,255,255,0.06)',
+                          background: `linear-gradient(135deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
+                          boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 20px ${stepColor}15, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                          border: `1px solid ${stepColor}30`,
                         }}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        {/* Multi-segment colored bar */}
-                        <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                        {/* Animated colored left border with glow */}
+                        <div 
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                          style={{ 
+                            background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`,
+                            boxShadow: `0 0 12px ${stepColor}60, 0 0 24px ${stepColor}30`,
+                          }}
+                        />
+                        
+                        {/* Premium progress bar with gradient */}
+                        <div className="absolute left-1 right-0 top-0 bottom-0 overflow-hidden rounded-r-xl">
                           {(() => {
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt
@@ -1220,279 +1295,205 @@ style={{
                               : room.phaseStartedAt
                                 ? new Date(room.phaseStartedAt).getTime()
                                 : Date.now() - 30 * 60 * 1000;
+                            const now = Date.now();
+                            
+                            // Estimate end time: use provided estimate or default to 120 min
                             const estimatedEndTime = room.estimatedEndTime
                               ? new Date(room.estimatedEndTime).getTime()
                               : operationStart + 120 * 60 * 1000;
-                            const now = Date.now();
-                            // Pokud operace přesáhla odhadovaný čas, použijeme aktuální čas jako koncový bod
-                            const effectiveEndTime = Math.max(estimatedEndTime, now);
-                            const totalDuration = Math.max(1, effectiveEndTime - operationStart);
+                            
+                            // Total duration is from start to estimated end (not to "now")
+                            const totalDuration = Math.max(1, estimatedEndTime - operationStart);
 
-                            // KLÍČOVÉ: stejné mapování jako u dokončených operací výše —
-                            // `stepIndex` v room_status_history je POZICE v poli `activeDbStatuses`,
-                            // NE order_index z DB. Indexujeme tedy podle pozice (idx), aby barvy
-                            // odpovídaly přesně statusu, který uživatel vybral v RoomDetailu.
                             const stepColorMap: Record<number, string> = {};
                             activeStatuses.forEach((s, idx) => {
                               stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                             });
 
-                            // If we have real status history → render exact segments
+                            // If we have status history, render colored segments
                             if (history.length > 0) {
-                              return history.map((entry, idx) => {
-                                const segStart = new Date(entry.startedAt).getTime();
-                                const nextEntry = history[idx + 1];
-                                const isCurrentSeg = idx === history.length - 1;
-                                
-                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
-                                const segEnd = nextEntry
-                                  ? new Date(nextEntry.startedAt).getTime()
-                                  : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
-                                
-                                const segDuration = Math.max(0, segEnd - segStart);
-                                const segWidthPct = (segDuration / totalDuration) * 100;
-                                const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
-                                if (segWidthPct <= 0) return null;
-                                
-                                // AKTUÁLNÍ barva z DB má VŽDY přednost (live z "Správa statusů").
-                                // stepColorMap je indexována podle pozice v `activeStatuses` —
-                                // sjednoceno s tím, jak App.tsx ukládá `stepIndex` do historie.
-                                // entry.color je jen fallback pro statusy, které byly smazány.
-                                const phaseColor =
-                                  stepColorMap[entry.stepIndex]
-                                  || entry.color
-                                  || '#6b7280';
-
-                                // For current segment, calculate progress within the segment
-                                const progressWithinSeg = isCurrentSeg 
-                                  ? Math.max(0, Math.min(100, ((now - segStart) / (segEnd - segStart)) * 100))
-                                  : 100;
-
-                                return (
-                                  <motion.div
-                                    key={`seg-${idx}`}
-                                    className="absolute top-0 bottom-0 overflow-hidden transition-all duration-300 hover:brightness-110"
-                                    style={{
-                                      left: `${Math.max(0, segLeftPct)}%`,
-                                      width: `${Math.max(0.5, segWidthPct)}%`,
-                                      // OPRAVA priority barev:
-                                      // Aktuální segment musí mít plnou barvu svého statusu — pokud uživatel
-                                      // zvolí "Ukončení výkonu", celá oblast od posledního přepnutí do
-                                      // předpokládaného konce výkonu musí být zřetelně v jeho barvě.
-                                      // Minulé segmenty jsou lehce ztlumené, aby aktuální status vizuálně
-                                      // dominoval — opačně, než tomu bylo dříve.
-                                      background: isCurrentSeg
-                                        ? `linear-gradient(90deg, ${phaseColor} 0%, ${phaseColor}cc 100%)`
-                                        : `linear-gradient(90deg, ${phaseColor}aa 0%, ${phaseColor}77 100%)`,
-                                      boxShadow: isCurrentSeg
-                                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.20), 0 0 12px ${phaseColor}55`
-                                        : `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.18)`,
-                                    }}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.04 * idx }}
-                                  >
-                                    {/* Pro aktuální segment: jemný highlight overlay přes již uplynulou
-                                       část segmentu. Slouží jen jako vizuální dotek pro indikaci postupu —
-                                       základní barva je už nastavena na celém segmentu výše. */}
-                                    {isCurrentSeg && progressWithinSeg > 0 && (
-                                      <motion.div
-                                        className="absolute top-0 bottom-0 left-0 transition-all duration-300 pointer-events-none"
-                                        style={{
-                                          width: `${progressWithinSeg}%`,
-                                          background: `linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 100%)`,
-                                        }}
-                                      />
-                                    )}
-                                    {/* Subtle separator between segments */}
-                                    {idx < history.length - 1 && (
-                                      <div className="absolute top-0 right-0 bottom-0 w-px bg-black/50 z-10" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.5), rgba(0,0,0,0))` }} />
-                                    )}
-                                    {/* Per-segment phase label odstraněn — aktuální status se zobrazuje
-                                       jen jednou, centrovaně velkými písmeny v hlavním boxu (řešeno
-                                       v primary content overlay výše). */}
-                                  </motion.div>
-                                );
-                              });
-                            }
-
-                            // Fallback: no history → show estimated future segments
-                            // Split total duration proportionally by default step durations
-                            const stepDurations = activeStatuses.map((_, i) => STEP_DURATIONS[i] || 15);
-                            const completedDuration = stepDurations
-                              .slice(0, stepIndex)
-                              .reduce((a, b) => a + b, 0);
-                            const remainingDuration = stepDurations
-                              .slice(stepIndex)
-                              .reduce((a, b) => a + b, 0);
-                            const scaleFactor = totalDuration / Math.max(1, (completedDuration + remainingDuration) * 60 * 1000);
-
-                            let cursor = 0;
-                            return activeStatuses.map((step, i) => {
-                              const rawDur = (STEP_DURATIONS[step.order_index] || 15) * 60 * 1000 * scaleFactor;
-                              const segWidthPct = (rawDur / totalDuration) * 100;
-                              const segLeftPct = cursor;
-                              cursor += segWidthPct;
-                              const isPast = step.order_index < stepIndex;
-                              const isCurrent = step.order_index === stepIndex;
-                              const phaseColor = stepColorMap[step.order_index] || '#6b7280';
-
                               return (
-                                <motion.div
-                                  key={`est-${i}`}
-                                  className="absolute top-0 bottom-0"
-                                  style={{
-                                    left: `${Math.max(0, segLeftPct)}%`,
-                                    width: `${Math.max(0.5, segWidthPct)}%`,
-                                    background: isCurrent
-                                      ? phaseColor
-                                      : isPast
-                                        ? `${phaseColor}bb`
-                                        : `${phaseColor}33`,
-                                  }}
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  transition={{ delay: 0.03 * i }}
-                                >
-                                  {i < activeStatuses.length - 1 && (
-                                    <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/35 z-10" />
-                                  )}
-                                  {segWidthPct > 7 && (
-                                    <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
-                                      <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
-                                        {step.title || step.name}
-                                      </span>
-                                    </div>
-                                  )}
-                                </motion.div>
+                                <div className="h-full w-full flex relative">
+                                  {history.map((entry, idx) => {
+                                    const segStart = new Date(entry.startedAt).getTime();
+                                    const nextEntry = history[idx + 1];
+                                    const segEnd = nextEntry
+                                      ? new Date(nextEntry.startedAt).getTime()
+                                      : estimatedEndTime; // Current segment extends to estimated end
+                                    const segDuration = Math.max(0, segEnd - segStart);
+                                    const segWidthPct = (segDuration / totalDuration) * 100;
+                                    const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
+                                    
+                                    if (segWidthPct <= 0) return null;
+                                    
+                                    // Get color from stepColorMap using entry.stepIndex, or use entry.color as fallback
+                                    const phaseColor = stepColorMap[entry.stepIndex] || entry.color || '#6b7280';
+                                    const isCurrentSegment = !nextEntry;
+                                    
+                                    return (
+                                      <div
+                                        key={`active-seg-${idx}`}
+                                        style={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          bottom: 0,
+                                          left: `${Math.max(0, segLeftPct)}%`,
+                                          width: `${Math.max(0.5, segWidthPct)}%`,
+                                          background: `linear-gradient(180deg, ${phaseColor}50 0%, ${phaseColor}25 100%)`,
+                                          borderRight: !isCurrentSegment ? `1px solid rgba(0,0,0,0.3)` : 'none',
+                                          boxShadow: isCurrentSegment 
+                                            ? `inset 0 1px 0 rgba(255,255,255,0.15), inset -1px 0 0 ${phaseColor}80`
+                                            : 'inset 0 1px 0 rgba(255,255,255,0.1)',
+                                        }}
+                                        title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                      />
+                                    );
+                                  })}
+                                  {/* Animated edge glow on rightmost segment */}
+                                  <div 
+                                    className="absolute right-0 top-0 bottom-0 w-px z-10"
+                                    style={{ 
+                                      background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
+                                      boxShadow: `0 0 8px ${stepColor}50`,
+                                    }}
+                                  />
+                                </div>
                               );
-                            });
+                            }
+                            
+                            // Fallback: single color progress if no history
+                            const estimatedEndTimeFallback = room.estimatedEndTime
+                              ? new Date(room.estimatedEndTime).getTime()
+                              : operationStart + 120 * 60 * 1000;
+                            const effectiveEndTime = Math.max(estimatedEndTimeFallback, now);
+                            const totalDurationFallback = Math.max(1, effectiveEndTime - operationStart);
+                            const elapsed = now - operationStart;
+                            const progressPct = Math.min(100, Math.max(0, (elapsed / totalDurationFallback) * 100));
+
+                            return (
+                              <div 
+                                className="h-full relative"
+                                style={{
+                                  width: `${progressPct}%`,
+                                  background: `linear-gradient(180deg, ${stepColor}50 0%, ${stepColor}25 100%)`,
+                                }}
+                              >
+                                {/* Edge glow */}
+                                <div 
+                                  className="absolute right-0 top-0 bottom-0 w-px"
+                                  style={{ 
+                                    background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
+                                    boxShadow: `0 0 8px ${stepColor}50`,
+                                  }}
+                                />
+                              </div>
+                            );
                           })()}
                         </div>
 
-                        {/* Current position indicator */}
-                        {progressPct > 0 && progressPct < 100 && !room.isPaused && (
-                          <>
-                            <div 
-                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: 'rgba(255,255,255,0.9)'
-                              }}
-                            />
-                            <div 
-                              className="absolute -top-0.5 w-2 h-2 -translate-x-1/2 rounded-full"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: 'white'
-                              }}
-                            />
-                          </>
-                        )}
-
-
-
-                        {/* Content overlay - status (uppercase) ve středu, lékař + sestra pod ním.
-                            Když se zobrazí pravý time badge (boxWidthPct > 18 + remainingTime),
-                            rezervujeme symetrický horizontální padding `px-14` přes celý overlay,
-                            takže status text zůstane v optickém středu boxu a badge ho NIKDY
-                            nepřekryje. Bez badge ponecháme vzdušnější `px-4`. */}
+                        {/* Content overlay - Premium card content */}
                         {(() => {
                           const showRightBadge = !room.isPaused && boxWidthPct > 18 && remainingTime && stepIndex !== 0;
                           return (
-                        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-3 z-10 ${showRightBadge ? 'px-14' : 'px-4'}`}>
+                        <div className={`absolute inset-0 flex items-center pointer-events-none z-10 pl-5 pr-4 ${showRightBadge ? 'pr-20' : ''}`}>
                           {room.isPaused ? (
-                            /* Pause state - centrovaný display */
-                            <div className="min-w-0 flex-1 flex items-center justify-center gap-2">
+                            /* Pause state - Premium */
+                            <div className="min-w-0 flex-1 flex items-center gap-3">
                               {boxWidthPct > 5 && (
-                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
-                                  <Pause className="w-3 h-3 text-white" />
-                                </div>
+                                <motion.div 
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                                  style={{ 
+                                    background: `linear-gradient(135deg, ${C.cyan}30 0%, ${C.cyan}15 100%)`,
+                                    border: `1px solid ${C.cyan}40`,
+                                  }}
+                                  animate={{ scale: [1, 1.05, 1] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                >
+                                  <Pause className="w-4 h-4" style={{ color: C.cyan }} />
+                                </motion.div>
                               )}
                               {boxWidthPct > 12 && (
-                                <div className="flex flex-col items-center text-center min-w-0">
-                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.16em] leading-tight truncate">
+                                <div className="flex flex-col min-w-0">
+                                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: C.cyan }}>
                                     PAUZA
                                   </p>
-                                  {boxWidthPct > 20 && (
-                                    <p className="text-[9px] text-white/70 leading-tight truncate normal-case">
-                                      Operace pozastavena
-                                    </p>
-                                  )}
                                 </div>
                               )}
                             </div>
                           ) : (
-                            /* Normal state — STATUS centrovaný uppercase, pod ním lékař + sestra
-                               (každý normal case, oddělené tečkou). RemainingTime jako floating badge. */
-                            <>
-                              {boxWidthPct > 8 && (
-                                <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
-                                  <p 
-                                    className="text-[10px] font-semibold uppercase tracking-[0.15em] leading-tight truncate w-full"
-                                    style={{
-                                      color: room.isLocked ? 'rgba(27, 227, 101, 0.50)' : 'rgba(255, 255, 255, 0.85)'
-                                    }}
-                                  >
-                                    {stepName}
-                                  </p>
-                                  {boxWidthPct > 14 && (room.staff?.doctor?.name || room.staff?.nurse?.name) && (
-                                    <p className="text-[9px] font-normal text-white/75 leading-tight truncate w-full normal-case mt-0.5">
-                                      {[room.staff?.doctor?.name, room.staff?.nurse?.name]
-                                        .filter(Boolean)
-                                        .join(' \u00B7 ')}
+                            /* Normal state - Premium card layout */
+                            <div className="min-w-0 flex-1 flex items-center gap-4">
+                              
+                              {/* Card content */}
+                              {boxWidthPct > 10 && (
+                                <div className="min-w-0 flex-1 flex flex-col">
+                                  {/* Title only */}
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-xs font-semibold text-white/95 truncate">
+                                      {stepName}
                                     </p>
-                                  )}
+                                  </div>
                                 </div>
                               )}
-                              {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
-                                <div
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md"
+                              
+                              {/* Time info on right - Premium pill */}
+                              {showRightBadge && (
+                                <motion.div 
+                                  className="flex-shrink-0 px-3 py-1.5 rounded-lg"
                                   style={{
-                                    // Badge předpokládaného zbývaj��cího času — laděný do barvy
-                                    // aktuálního statusu sálu, aby vizuálně tvořil pár se zbytkem
-                                    // řádku a okamžitě signalizoval, ke které fázi se vztahuje.
-                                    background: `${stepColor}26`,
-                                    border: `1px solid ${stepColor}66`,
-                                    color: '#ffffff',
-                                    boxShadow: `0 0 8px ${stepColor}33`,
+                                    background: `linear-gradient(135deg, ${C.bgSurface} 0%, rgba(0,0,0,0.3) 100%)`,
+                                    border: `1px solid ${C.border}`,
                                   }}
                                 >
-                                  {remainingTime}
-                                </div>
+                                  <p className="text-[11px] text-white/80 font-mono font-medium">
+                                    {remainingTime}
+                                  </p>
+                                </motion.div>
                               )}
-                            </>
+                            </div>
                           )}
                         </div>
                           );
                         })()}
-                      </div>
+                      </motion.div>
                     )}
 
-                    {/* Free room indicator - clean style WITHOUT blur */}
+                    {/* Free room indicator - Premium glass card */}
                     {isFree && (
-                      <div 
-                        className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
+                      <motion.div 
+                        className="absolute inset-y-1.5 left-3 right-3 rounded-xl flex items-center overflow-hidden"
                         style={{ 
-                          background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 50%, rgba(34, 197, 94, 0.05) 100%)',
-                          border: `1px solid rgba(34, 197, 94, 0.15)`,
+                          background: `linear-gradient(135deg, ${C.bgSurface} 0%, ${C.bgCard} 100%)`,
+                          border: `1px solid ${C.green}20`,
+                          boxShadow: `0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)`,
                         }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                       >
-                        {/* Subtle ready indicator line on left */}
+                        {/* Green glowing left border */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-md"
-                          style={{ background: 'rgba(34, 197, 94, 0.4)' }}
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                          style={{ 
+                            background: `linear-gradient(to bottom, ${C.green}, ${C.green}80)`,
+                            boxShadow: `0 0 8px ${C.green}40`,
+                          }}
                         />
-                        <div className="flex items-center gap-2 px-3">
+                        <div className="flex items-center gap-4 pl-5 pr-4">
                           <div 
-                            className="w-5 h-5 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{ 
+                              background: `linear-gradient(135deg, ${C.green}25 0%, ${C.green}10 100%)`,
+                              border: `1px solid ${C.green}30`,
+                            }}
                           >
-                            <CheckCircle className="w-3 h-3" style={{ color: 'rgba(34, 197, 94, 0.7)' }} />
+                            <CheckCircle className="w-4 h-4" style={{ color: C.green }} />
                           </div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(34, 197, 94, 0.5)' }}>{stepName}</p>
+                          <div className="flex flex-col">
+                            <p className="text-xs font-semibold text-white/85">{stepName}</p>
+                            <p className="text-[9px] text-white/40">Ready for operation</p>
+                          </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
 
                     {/* Room-specific end of working hours indicator */}
@@ -1541,7 +1542,7 @@ style={{
                       );
                     })()}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
             </div>
@@ -1557,7 +1558,7 @@ style={{
 // Memoized export — TimelineModule je drahý (1500+ řádků s framer-motion animacemi
 // a iterací nad rooms × hours). Default shallow compare zajistí, že když App.tsx
 // re-renderuje z nesouvisejícího důvodu (otevření modalu, změna current view),
-// TimelineModule re-render přeskočí. Re-renderne se jen když se reálně změní `rooms`.
+// TimelineModule re-render přeskoč��. Re-renderne se jen když se reálně změní `rooms`.
 const TimelineModule = React.memo(TimelineModuleImpl);
 export default TimelineModule;
 
@@ -1574,12 +1575,12 @@ const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow
   <motion.div
     whileHover={{ scale: 1.03, y: -2 }}
     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-xl cursor-pointer ${glow ? 'shadow-lg' : ''}`}
+    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-xl cursor-pointer`}
     style={{
       background: glow
-        ? `linear-gradient(135deg, ${color}18 0%, ${color}08 100%)`
-        : `linear-gradient(135deg, ${C.surface2} 0%, ${C.surface} 100%)`,
-      border: glow ? `1px solid ${color}50` : `1px solid ${C.border}`,
+        ? `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`
+        : `linear-gradient(135deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
+      border: glow ? `1px solid ${color}40` : `1px solid ${C.border}`,
       boxShadow: glow 
         ? `0 0 30px ${color}20, 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)` 
         : '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',

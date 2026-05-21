@@ -3,8 +3,37 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  /* Premium Medical Dashboard Theme */
+  --font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
+  
+  /* Primary Colors */
+  --color-primary: #06B6D4;
+  --color-primary-muted: rgba(6, 182, 212, 0.15);
+  
+  /* Status Colors - Medical */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+  --color-purple: #8B5CF6;
+  
+  /* Surface Colors */
+  --color-background: #030712;
+  --color-surface: rgba(15, 23, 42, 0.6);
+  --color-surface-elevated: rgba(30, 41, 59, 0.8);
+  --color-border: rgba(148, 163, 184, 0.1);
+  --color-border-hover: rgba(148, 163, 184, 0.2);
+  
+  /* Text Colors */
+  --color-text-primary: rgba(255, 255, 255, 0.95);
+  --color-text-secondary: rgba(255, 255, 255, 0.70);
+  --color-text-muted: rgba(255, 255, 255, 0.45);
+  
+  /* Glow Effects */
+  --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.3);
+  --glow-red: 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
 html {
@@ -15,7 +44,94 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: #000;
+  background: linear-gradient(180deg, #030712 0%, #0F172A 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Timeline Premium Styles */
+.timeline-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.6) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timeline-card:hover {
+  border-color: rgba(6, 182, 212, 0.3);
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.timeline-glow {
+  position: relative;
+}
+
+.timeline-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), transparent 50%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.timeline-grid-line {
+  background: linear-gradient(to bottom, rgba(148, 163, 184, 0.08), transparent);
+}
+
+.timeline-now-line {
+  background: linear-gradient(to bottom, var(--color-danger), transparent);
+  box-shadow: 0 0 12px var(--color-danger), 0 0 24px rgba(239, 68, 68, 0.3);
+}
+
+/* Animated pulse for live indicators */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; }
+  50% { opacity: 0.6; box-shadow: 0 0 16px currentColor; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Smooth gradient backgrounds for operation cards */
+.operation-card-active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-left: 3px solid #10B981;
+}
+
+.operation-card-preparation {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border-left: 3px solid #F59E0B;
+}
+
+.operation-card-completed {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.15) 0%, rgba(100, 116, 139, 0.05) 100%);
+  border-left: 3px solid #64748B;
+}
+
+.operation-card-delayed {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-left: 3px solid #EF4444;
+}
+
+/* Animated locked room glow border - smooth continuous animation */
+@keyframes locked-glow-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.3), inset 0 0 8px rgba(6, 182, 212, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.5), inset 0 0 12px rgba(6, 182, 212, 0.2);
+  }
+}
+
+.locked-room-glow {
+  animation: locked-glow-pulse 2.5s ease-in-out infinite;
+  border-color: rgba(6, 182, 212, 0.4) !important;
 }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
