@@ -992,11 +992,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     <div 
                       className="flex-1 min-w-0 flex items-center gap-3"
                     >
-                      {/* Room name */}
+                      {/* Room name and details */}
                       <div className="flex flex-col min-w-0">
                         <p className="text-sm font-semibold tracking-tight text-white truncate">
                           {room.name}
                         </p>
+                        {room.department && (
+                          <p className="text-xs text-white/50 truncate mt-0.5">
+                            {room.department}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {room.isSeptic && (
