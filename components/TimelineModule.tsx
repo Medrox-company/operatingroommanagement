@@ -998,7 +998,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           {room.name}
                         </p>
                         {room.department && (
-                          <p className="text-xs text-white/50 truncate mt-0.5">
+                          <p className="text-[10px] text-white/40 truncate mt-0.5">
                             {room.department}
                           </p>
                         )}
