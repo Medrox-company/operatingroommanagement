@@ -289,10 +289,9 @@ const MobileTimelineView: React.FC<Props> = ({
                               boxShadow: `0 0 8px ${color}aa`,
                             }}
                           />
-                          {/* Status name hidden by design - minimalist cards per Medrox */}
-                          {/* <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50 leading-none truncate">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50 leading-none truncate">
                             {statusName}
-                          </p> */}
+                          </p>
                         </div>
                         <h3 className="text-lg font-semibold text-white leading-tight truncate">
                           {room.name}
@@ -306,8 +305,7 @@ const MobileTimelineView: React.FC<Props> = ({
                           </span>
                         ) : remaining ? (
                           <>
-                            {/* Remaining time hidden by design - minimalist cards */}
-                            {/* <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 leading-none">
+                            <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 leading-none">
                               Zbývá
                             </p>
                             <p
@@ -315,7 +313,7 @@ const MobileTimelineView: React.FC<Props> = ({
                               style={{ color }}
                             >
                               {remaining}
-                            </p> */}
+                            </p>
                           </>
                         ) : null}
                       </div>
@@ -339,11 +337,9 @@ const MobileTimelineView: React.FC<Props> = ({
                         </span>
                       )}
                       {room.staff?.doctor?.name && (
-                        /* Doctor name hidden by design - minimalist cards */
-                        null
-                        /* <span className="text-[11px] text-white/60 truncate">
+                        <span className="text-[11px] text-white/60 truncate">
                           {room.staff.doctor.name}
-                        </span> */
+                        </span>
                       )}
                     </div>
 
