@@ -722,6 +722,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               const isCleaning = stepIndex === totalSteps - 2; // Second to last step
               const isFree = stepIndex === 0;
               
+              // Check if free room has completed operations (cycles)
+              const hasCompletedOperations = isFree && room.completedOperations && room.completedOperations.length > 0;
+              
               // Only increment counter for active (non-free) rooms
               if (isActive && !room.isEmergency && !room.isLocked) {
                 activeRoomCounter++;
@@ -879,11 +882,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     height: rowHeight,
                     background: isActive 
                       ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
+                      : hasCompletedOperations
+                      ? `linear-gradient(135deg, ${C.green}08 0%, ${C.cyan}05 100%)`
                       : C.bgSurface,
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
+                      : hasCompletedOperations
+                      ? `1px solid ${C.green}40`
                       : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
+                    boxShadow: isActive 
+                      ? `inset 0 1px 0 rgba(255,255,255,0.03)` 
+                      : hasCompletedOperations
+                      ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 12px ${C.green}15`
+                      : 'none',
                   }}
                   onClick={() => setSelectedRoom(room)}
                   initial={{ opacity: 0, y: 10 }}
@@ -900,8 +911,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     style={{ 
                       background: isActive 
                         ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}80)`
+                        : hasCompletedOperations
+                        ? `linear-gradient(to bottom, ${C.green}, ${C.green}80)`
                         : `linear-gradient(to bottom, ${C.slate}40, transparent)`,
-                      boxShadow: isActive ? `0 0 8px ${stepColor}40` : 'none',
+                      boxShadow: isActive 
+                        ? `0 0 8px ${stepColor}40`
+                        : hasCompletedOperations
+                        ? `0 0 8px ${C.green}40`
+                        : 'none',
                     }}
                   />
                   
