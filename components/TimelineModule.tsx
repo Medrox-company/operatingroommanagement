@@ -482,46 +482,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         />
         <div className="px-8 md:pl-32 md:pr-10 py-4">
 
-          {/* Header Row - Stats Left, Time Center, ARO Right */}
+          {/* Header Row - Time Center, ARO Right */}
           <div className="flex items-center justify-between gap-4">
-            
-            {/* Left: Stats Boxes */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-            <StatBox 
-              icon={Activity} 
-              label="Aktivní" 
-              value={`${stats.operations} operací`} 
-              color="#22C55E" 
-            />
-            <StatBox 
-              icon={Loader2} 
-              label="Úklid" 
-              value={`${stats.cleaning} sálů`} 
-              color="#F97316" 
-            />
-            <StatBox 
-              icon={Stethoscope} 
-              label="Volné" 
-              value={`${stats.free} sálů`} 
-              color="#22D3EE" 
-            />
-            <StatBox 
-              icon={Shield} 
-              label="Dokončeno" 
-              value={`${stats.completed} dnes`} 
-              color="#22D3EE" 
-            />
-
-            {stats.emergencyCount > 0 && (
-              <StatBox 
-                icon={AlertTriangle} 
-                label="Emergency" 
-                value={`${stats.emergencyCount} sálů`} 
-                color="#EF4444" 
-                glow 
-              />
-            )}
-            </div>
 
             {/* Center: Current Time (no box, just prominent display) */}
             <div className="flex-1 flex flex-col items-center justify-center">
