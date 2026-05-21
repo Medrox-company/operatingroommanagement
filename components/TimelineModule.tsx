@@ -9,30 +9,32 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (Modern glass-morphism style) ==========
+// ========== DESIGN TOKENS (ACB-2 Fleet Management inspired - dark card style) ==========
 const C = {
-  // Primary colors
-  accent: '#00D9FF',    // Vivid cyan
-  cyan: '#00D9FF',
-  yellow: '#FFE66D',
-  green: '#00F5A0',
-  orange: '#FF9F43',
-  red: '#FF6B6B',
-  purple: '#A78BFA',
-  pink: '#F472B6',
-  blue: '#60A5FA',
+  // Primary colors - Category colors for operations
+  accent: '#06B6D4',    // Cyan - Technical
+  cyan: '#06B6D4',      // Technical operations
+  yellow: '#FBBF24',    // Safety operations
+  green: '#22C55E',     // Functional/Operational
+  orange: '#F97316',    // Obsolescence
+  red: '#EF4444',       // Critical/Delayed
+  purple: '#A855F7',    // Training
+  pink: '#EC4899',      // Physical
+  blue: '#3B82F6',      // Informational
   
-  // Surface & backgrounds
-  border: 'rgba(255,255,255,0.08)',
-  borderHover: 'rgba(255,255,255,0.15)',
-  surface: 'rgba(255,255,255,0.03)',
-  surface2: 'rgba(255,255,255,0.06)',
-  glass: 'rgba(255,255,255,0.04)',
-  glassHover: 'rgba(255,255,255,0.08)',
+  // Surface & backgrounds - Dark card style
+  border: 'rgba(255,255,255,0.06)',
+  borderHover: 'rgba(255,255,255,0.12)',
+  surface: 'rgba(30, 41, 59, 0.8)',      // Dark slate card bg
+  surface2: 'rgba(30, 41, 59, 0.95)',    // Darker card bg
+  glass: 'rgba(15, 23, 42, 0.6)',        // Glass effect
+  glassHover: 'rgba(30, 41, 59, 0.9)',   // Hover state
+  cardBg: 'rgba(30, 41, 59, 0.85)',      // Card background
+  gridLine: 'rgba(255,255,255,0.04)',    // Grid lines
   
   // Text
-  muted: 'rgba(255,255,255,0.45)',
-  text: 'rgba(255,255,255,0.85)',
+  muted: 'rgba(255,255,255,0.40)',
+  text: 'rgba(255,255,255,0.80)',
   textHi: 'rgba(255,255,255,0.95)',
 };
 
@@ -49,13 +51,13 @@ const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hou
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#FF9F43', border: '#FFB76B', stripe: '#FFD1A3', text: '#FFF', glow: 'rgba(255,159,67,0.25)' },
-  purple: { bg: '#A78BFA', border: '#C4B5FD', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(167,139,250,0.25)' },
-  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.25)' },
-  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.25)' },
-  green: { bg: '#00F5A0', border: '#5FFFC1', stripe: '#B8FFE0', text: '#000', glow: 'rgba(0,245,160,0.25)' },
-  red: { bg: '#FF6B6B', border: '#FF9999', stripe: '#FFC7C7', text: '#FFF', glow: 'rgba(255,107,107,0.25)' },
-  cyan: { bg: '#00D9FF', border: '#5AE8FF', stripe: '#B0F4FF', text: '#000', glow: 'rgba(0,217,255,0.25)' },
+  orange: { bg: '#F97316', border: '#FB923C', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(249, 115, 22, 0.15)' },
+  purple: { bg: '#A855F7', border: '#C084FC', stripe: '#E9D5FF', text: '#FFF', glow: 'rgba(168, 85, 247, 0.15)' },
+  pink: { bg: '#EC4899', border: '#F472B6', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(236, 72, 153, 0.15)' },
+  blue: { bg: '#3B82F6', border: '#60A5FA', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(59, 130, 246, 0.15)' },
+  green: { bg: '#22C55E', border: '#4ADE80', stripe: '#BBF7D0', text: '#FFF', glow: 'rgba(34, 197, 94, 0.15)' },
+  red: { bg: '#EF4444', border: '#F87171', stripe: '#FECACA', text: '#FFF', glow: 'rgba(239, 68, 68, 0.15)' },
+  cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(6, 182, 212, 0.15)' },
 };
 
   // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
@@ -636,16 +638,15 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">OPERAČNÍ SÁLY</span>
           </div>
           
-          {/* Time markers - no scroll, full width for 24h */}
+          {/* Time markers - ACB-2 style with visible grid */}
           <div className="flex-1 overflow-hidden" ref={timelineRef}>
-            <div className="flex items-center h-12 relative w-full">
+            <div className="flex items-center h-10 relative w-full border-b" style={{ borderBottomColor: C.gridLine }}>
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
-                // Convert timeline hour (0-24) to actual 24-hour format (7-31 represents 7:00 to 7:00 next day)
-                const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
-                const displayHour = actualHour % 24; // 7-23, 0-6 for next day hours
+                const actualHour = TIMELINE_START_HOUR + hour;
+                const displayHour = actualHour % 24;
                 const isNightHour = displayHour >= 19 || displayHour < 7;
                 const isNextDay = actualHour >= 24;
                 const isCurrentHour = displayHour === currentHour && !isLast;
@@ -656,30 +657,27 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     className="absolute top-0 h-full flex items-center justify-center" 
                     style={{ left: `${leftPct}%`, width: isLast ? 0 : `${widthPct}%` }}
                   >
+                    {/* Vertical grid line */}
                     <div 
-                      className={`absolute left-0 w-px h-full transition-all duration-300`}
-                      style={{ 
-                        background: isNightHour 
-                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
-                          : 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
-                      }} 
+                      className="absolute left-0 w-px h-full"
+                      style={{ background: C.gridLine }} 
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - yellow highlighted, compact, centered */
+                        /* Current hour - highlighted */
                         <span 
-                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                          className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded"
                           style={{ 
-                            background: '#f1ff00', 
+                            background: C.cyan,
                             color: '#000',
                           }}
                         >
                           {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
                         </span>
                       ) : (
-                        /* Other hours - simple number only, no box, centered */
-                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
-                          {hourLabelCompact(hour)}
+                        /* Other hours - clean simple style */
+                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/25' : 'text-white/50'}`}>
+                          {hourLabelCompact(hour)}:00
                         </span>
                       )
                     )}
@@ -1193,24 +1191,28 @@ style={{
                       );
                     })()}
 
-                    {/* Active operation bar — refined design:
-                       • menší zaoblení (rounded-md = 6px) pro precíznější/clinical look,
-                       • dvojitá vrstva shadow (top highlight + outer drop) pro hloubku,
-                       • jemný hairline border pro vizuální separaci od pozadí.
-                       Inset top/bottom snížen z 1.5 (6px) na 1 (4px) — bar je vyšší a lépe
-                       vyplňuje řádek, status text získává více vertikálního prostoru. */}
+                    {/* Active operation bar — ACB-2 Fleet Management style:
+                       • Dark card background with colored left border
+                       • Clean, professional appearance
+                       • Structured content: title, ID, person, status badge */}
                     {isActive && shouldShowBar && boxWidthPct > 0 && (
                       <div
-                        className="absolute top-1 bottom-1 overflow-hidden rounded-md"
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.25)',
-                          border: '1px solid rgba(255,255,255,0.06)',
+                          background: C.cardBg,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)',
+                          border: `1px solid ${C.border}`,
                         }}
                       >
-                        {/* Multi-segment colored bar */}
-                        <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                        {/* Colored left border indicator */}
+                        <div 
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                          style={{ background: stepColor }}
+                        />
+                        {/* Simple progress bar - ACB-2 style */}
+                        <div className="absolute left-1 right-0 top-0 bottom-0 flex overflow-hidden">
                           {(() => {
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt
@@ -1222,241 +1224,113 @@ style={{
                               ? new Date(room.estimatedEndTime).getTime()
                               : operationStart + 120 * 60 * 1000;
                             const now = Date.now();
-                            // Pokud operace přesáhla odhadovaný čas, použijeme aktuální čas jako koncový bod
                             const effectiveEndTime = Math.max(estimatedEndTime, now);
                             const totalDuration = Math.max(1, effectiveEndTime - operationStart);
+                            const elapsed = now - operationStart;
+                            const progressPct = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
 
-                            // KLÍČOVÉ: stejné mapování jako u dokončených operací výše —
-                            // `stepIndex` v room_status_history je POZICE v poli `activeDbStatuses`,
-                            // NE order_index z DB. Indexujeme tedy podle pozice (idx), aby barvy
-                            // odpovídaly přesně statusu, který uživatel vybral v RoomDetailu.
+                            // Get current status color
                             const stepColorMap: Record<number, string> = {};
                             activeStatuses.forEach((s, idx) => {
                               stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                             });
+                            
+                            const currentColor = history.length > 0 
+                              ? (stepColorMap[history[history.length - 1].stepIndex] || stepColor)
+                              : stepColor;
 
-                            // If we have real status history → render exact segments
-                            if (history.length > 0) {
-                              return history.map((entry, idx) => {
-                                const segStart = new Date(entry.startedAt).getTime();
-                                const nextEntry = history[idx + 1];
-                                const isCurrentSeg = idx === history.length - 1;
-                                
-                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
-                                const segEnd = nextEntry
-                                  ? new Date(nextEntry.startedAt).getTime()
-                                  : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
-                                
-                                const segDuration = Math.max(0, segEnd - segStart);
-                                const segWidthPct = (segDuration / totalDuration) * 100;
-                                const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
-                                if (segWidthPct <= 0) return null;
-                                
-                                // AKTUÁLNÍ barva z DB má VŽDY přednost (live z "Správa statusů").
-                                // stepColorMap je indexována podle pozice v `activeStatuses` —
-                                // sjednoceno s tím, jak App.tsx ukládá `stepIndex` do historie.
-                                // entry.color je jen fallback pro statusy, které byly smazány.
-                                const phaseColor =
-                                  stepColorMap[entry.stepIndex]
-                                  || entry.color
-                                  || '#6b7280';
-
-                                // For current segment, calculate progress within the segment
-                                const progressWithinSeg = isCurrentSeg 
-                                  ? Math.max(0, Math.min(100, ((now - segStart) / (segEnd - segStart)) * 100))
-                                  : 100;
-
-                                return (
-                                  <motion.div
-                                    key={`seg-${idx}`}
-                                    className="absolute top-0 bottom-0 overflow-hidden transition-all duration-300 hover:brightness-110"
-                                    style={{
-                                      left: `${Math.max(0, segLeftPct)}%`,
-                                      width: `${Math.max(0.5, segWidthPct)}%`,
-                                      // OPRAVA priority barev:
-                                      // Aktuální segment musí mít plnou barvu svého statusu — pokud uživatel
-                                      // zvolí "Ukončení výkonu", celá oblast od posledního přepnutí do
-                                      // předpokládaného konce výkonu musí být zřetelně v jeho barvě.
-                                      // Minulé segmenty jsou lehce ztlumené, aby aktuální status vizuálně
-                                      // dominoval — opačně, než tomu bylo dříve.
-                                      background: isCurrentSeg
-                                        ? `linear-gradient(90deg, ${phaseColor} 0%, ${phaseColor}cc 100%)`
-                                        : `linear-gradient(90deg, ${phaseColor}aa 0%, ${phaseColor}77 100%)`,
-                                      boxShadow: isCurrentSeg
-                                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.20), 0 0 12px ${phaseColor}55`
-                                        : `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.18)`,
-                                    }}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.04 * idx }}
-                                  >
-                                    {/* Pro aktuální segment: jemný highlight overlay přes již uplynulou
-                                       část segmentu. Slouží jen jako vizuální dotek pro indikaci postupu —
-                                       základní barva je už nastavena na celém segmentu výše. */}
-                                    {isCurrentSeg && progressWithinSeg > 0 && (
-                                      <motion.div
-                                        className="absolute top-0 bottom-0 left-0 transition-all duration-300 pointer-events-none"
-                                        style={{
-                                          width: `${progressWithinSeg}%`,
-                                          background: `linear-gradient(90deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 100%)`,
-                                        }}
-                                      />
-                                    )}
-                                    {/* Subtle separator between segments */}
-                                    {idx < history.length - 1 && (
-                                      <div className="absolute top-0 right-0 bottom-0 w-px bg-black/50 z-10" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.5), rgba(0,0,0,0))` }} />
-                                    )}
-                                    {/* Per-segment phase label odstraněn — aktuální status se zobrazuje
-                                       jen jednou, centrovaně velkými písmeny v hlavním boxu (řešeno
-                                       v primary content overlay výše). */}
-                                  </motion.div>
-                                );
-                              });
-                            }
-
-                            // Fallback: no history → show estimated future segments
-                            // Split total duration proportionally by default step durations
-                            const stepDurations = activeStatuses.map((_, i) => STEP_DURATIONS[i] || 15);
-                            const completedDuration = stepDurations
-                              .slice(0, stepIndex)
-                              .reduce((a, b) => a + b, 0);
-                            const remainingDuration = stepDurations
-                              .slice(stepIndex)
-                              .reduce((a, b) => a + b, 0);
-                            const scaleFactor = totalDuration / Math.max(1, (completedDuration + remainingDuration) * 60 * 1000);
-
-                            let cursor = 0;
-                            return activeStatuses.map((step, i) => {
-                              const rawDur = (STEP_DURATIONS[step.order_index] || 15) * 60 * 1000 * scaleFactor;
-                              const segWidthPct = (rawDur / totalDuration) * 100;
-                              const segLeftPct = cursor;
-                              cursor += segWidthPct;
-                              const isPast = step.order_index < stepIndex;
-                              const isCurrent = step.order_index === stepIndex;
-                              const phaseColor = stepColorMap[step.order_index] || '#6b7280';
-
-                              return (
-                                <motion.div
-                                  key={`est-${i}`}
-                                  className="absolute top-0 bottom-0"
-                                  style={{
-                                    left: `${Math.max(0, segLeftPct)}%`,
-                                    width: `${Math.max(0.5, segWidthPct)}%`,
-                                    background: isCurrent
-                                      ? phaseColor
-                                      : isPast
-                                        ? `${phaseColor}bb`
-                                        : `${phaseColor}33`,
-                                  }}
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  transition={{ delay: 0.03 * i }}
-                                >
-                                  {i < activeStatuses.length - 1 && (
-                                    <div className="absolute top-0 right-0 bottom-0 w-[1.5px] bg-black/35 z-10" />
-                                  )}
-                                  {segWidthPct > 7 && (
-                                    <div className="absolute inset-0 flex items-end justify-start px-1.5 pb-0.5 pointer-events-none">
-                                      <span className="text-[7px] font-semibold text-white/70 truncate uppercase tracking-wide leading-none">
-                                        {step.title || step.name}
-                                      </span>
-                                    </div>
-                                  )}
-                                </motion.div>
-                              );
-                            });
+                            return (
+                              <div 
+                                className="h-full transition-all duration-500"
+                                style={{
+                                  width: `${progressPct}%`,
+                                  background: `linear-gradient(90deg, ${currentColor}40 0%, ${currentColor}20 100%)`,
+                                }}
+                              />
+                            );
                           })()}
                         </div>
 
-                        {/* Current position indicator */}
-                        {progressPct > 0 && progressPct < 100 && !room.isPaused && (
-                          <>
-                            <div 
-                              className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: 'rgba(255,255,255,0.9)'
-                              }}
-                            />
-                            <div 
-                              className="absolute -top-0.5 w-2 h-2 -translate-x-1/2 rounded-full"
-                              style={{ 
-                                left: `${progressPct}%`,
-                                background: 'white'
-                              }}
-                            />
-                          </>
-                        )}
-
-
-
-                        {/* Content overlay - status (uppercase) ve středu, lékař + sestra pod ním.
-                            Když se zobrazí pravý time badge (boxWidthPct > 18 + remainingTime),
-                            rezervujeme symetrický horizontální padding `px-14` přes celý overlay,
-                            takže status text zůstane v optickém středu boxu a badge ho NIKDY
-                            nepřekryje. Bez badge ponecháme vzdušnější `px-4`. */}
+                        {/* Content overlay - ACB-2 style card content */}
                         {(() => {
                           const showRightBadge = !room.isPaused && boxWidthPct > 18 && remainingTime && stepIndex !== 0;
                           return (
-                        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-3 z-10 ${showRightBadge ? 'px-14' : 'px-4'}`}>
+                        <div className={`absolute inset-0 flex items-center pointer-events-none z-10 pl-4 pr-3 ${showRightBadge ? 'pr-16' : ''}`}>
                           {room.isPaused ? (
-                            /* Pause state - centrovaný display */
-                            <div className="min-w-0 flex-1 flex items-center justify-center gap-2">
+                            /* Pause state */
+                            <div className="min-w-0 flex-1 flex items-center gap-2">
                               {boxWidthPct > 5 && (
-                                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
-                                  <Pause className="w-3 h-3 text-white" />
+                                <div className="w-5 h-5 rounded-md bg-white/10 flex items-center justify-center flex-shrink-0">
+                                  <Pause className="w-3 h-3 text-white/70" />
                                 </div>
                               )}
                               {boxWidthPct > 12 && (
-                                <div className="flex flex-col items-center text-center min-w-0">
-                                  <p className="text-[10px] font-medium text-white/85 uppercase tracking-[0.16em] leading-tight truncate">
+                                <div className="flex flex-col min-w-0">
+                                  <p className="text-[10px] font-medium text-white/70 uppercase tracking-wide truncate">
                                     PAUZA
                                   </p>
-                                  {boxWidthPct > 20 && (
-                                    <p className="text-[9px] text-white/70 leading-tight truncate normal-case">
-                                      Operace pozastavena
-                                    </p>
-                                  )}
                                 </div>
                               )}
                             </div>
                           ) : (
-                            /* Normal state — STATUS centrovaný uppercase, pod ním lékař + sestra
-                               (každý normal case, oddělené tečkou). RemainingTime jako floating badge. */
-                            <>
-                              {boxWidthPct > 8 && (
-                                <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center">
-                                  <p 
-                                    className="text-[10px] font-semibold uppercase tracking-[0.15em] leading-tight truncate w-full"
-                                    style={{
-                                      color: room.isLocked ? 'rgba(27, 227, 101, 0.50)' : 'rgba(255, 255, 255, 0.85)'
-                                    }}
-                                  >
-                                    {stepName}
-                                  </p>
-                                  {boxWidthPct > 14 && (room.staff?.doctor?.name || room.staff?.nurse?.name) && (
-                                    <p className="text-[9px] font-normal text-white/75 leading-tight truncate w-full normal-case mt-0.5">
-                                      {[room.staff?.doctor?.name, room.staff?.nurse?.name]
-                                        .filter(Boolean)
-                                        .join(' \u00B7 ')}
+                            /* Normal state - ACB-2 card layout: Icon + Title, ID, Person, Status */
+                            <div className="min-w-0 flex-1 flex items-center gap-3">
+                              {/* Status icon */}
+                              {boxWidthPct > 6 && (
+                                <div 
+                                  className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                                  style={{ background: `${stepColor}30` }}
+                                >
+                                  <Activity className="w-3.5 h-3.5" style={{ color: stepColor }} />
+                                </div>
+                              )}
+                              
+                              {/* Card content */}
+                              {boxWidthPct > 10 && (
+                                <div className="min-w-0 flex-1 flex flex-col">
+                                  {/* Title + Room ID */}
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[11px] font-semibold text-white/90 truncate">
+                                      {stepName}
                                     </p>
+                                    {boxWidthPct > 20 && (
+                                      <span className="text-[9px] text-white/40 font-mono flex-shrink-0">
+                                        {room.id}
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Person + Status badge */}
+                                  {boxWidthPct > 16 && (
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      {room.staff?.doctor?.name && (
+                                        <p className="text-[9px] text-white/50 truncate">
+                                          {room.staff.doctor.name}
+                                        </p>
+                                      )}
+                                      <span 
+                                        className="text-[8px] font-medium px-1.5 py-0.5 rounded"
+                                        style={{ 
+                                          background: `${stepColor}25`,
+                                          color: stepColor,
+                                        }}
+                                      >
+                                        {room.isLocked ? 'Locked' : 'Active'}
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
                               )}
-                              {boxWidthPct > 18 && remainingTime && stepIndex !== 0 && (
-                                <div
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md"
-                                  style={{
-                                    background: `${stepColor}26`,
-                                    border: `1px solid ${stepColor}66`,
-                                    color: '#ffffff',
-                                    boxShadow: `0 0 8px ${stepColor}33`,
-                                  }}
-                                >
-                                  {remainingTime}
+                              
+                              {/* Time info on right */}
+                              {showRightBadge && (
+                                <div className="flex-shrink-0 text-right">
+                                  <p className="text-[10px] text-white/60 font-mono">
+                                    {remainingTime}
+                                  </p>
                                 </div>
                               )}
-                            </>
+                            </div>
                           )}
                         </div>
                           );
@@ -1464,28 +1338,32 @@ style={{
                       </div>
                     )}
 
-                    {/* Free room indicator - clean style WITHOUT blur */}
+                    {/* Free room indicator - ACB-2 style card */}
                     {isFree && (
                       <div 
-                        className="absolute inset-y-1 left-2 right-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:bg-white/[0.02]"
+                        className="absolute inset-y-1 left-2 right-2 rounded-lg flex items-center overflow-hidden transition-all duration-200"
                         style={{ 
-                          background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 50%, rgba(34, 197, 94, 0.05) 100%)',
-                          border: `1px solid rgba(34, 197, 94, 0.15)`,
+                          background: C.cardBg,
+                          border: `1px solid ${C.border}`,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                         }}
                       >
-                        {/* Subtle ready indicator line on left */}
+                        {/* Green left border indicator */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-md"
-                          style={{ background: 'rgba(34, 197, 94, 0.4)' }}
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                          style={{ background: C.green }}
                         />
-                        <div className="flex items-center gap-2 px-3">
+                        <div className="flex items-center gap-3 pl-4 pr-3">
                           <div 
-                            className="w-5 h-5 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+                            className="w-6 h-6 rounded-md flex items-center justify-center"
+                            style={{ background: `${C.green}20` }}
                           >
-                            <CheckCircle className="w-3 h-3" style={{ color: 'rgba(34, 197, 94, 0.7)' }} />
+                            <CheckCircle className="w-3.5 h-3.5" style={{ color: C.green }} />
                           </div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(34, 197, 94, 0.5)' }}>{stepName}</p>
+                          <div className="flex flex-col">
+                            <p className="text-[11px] font-semibold text-white/80">{stepName}</p>
+                            <p className="text-[9px] text-white/40">Ready for operation</p>
+                          </div>
                         </div>
                       </div>
                     )}
