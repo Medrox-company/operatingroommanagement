@@ -4,6 +4,7 @@ import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types
 import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
+import AroOvertimePopup from './AroOvertimePopup';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
@@ -225,6 +226,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
+  const [showAroPopup, setShowAroPopup] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
@@ -450,6 +452,15 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {selectedRoom && (
           <RoomDetailPopup room={selectedRoom} onClose={() => setSelectedRoom(null)} currentTime={currentTime} />
         )}
+        {showAroPopup && (
+          <AroOvertimePopup 
+            isOpen={showAroPopup}
+            onClose={() => setShowAroPopup(false)}
+            overtimeRooms={aroOvertimeRooms}
+            roomsMap={new Map(rooms.map(r => [r.id, r]))}
+            currentTime={currentTime}
+          />
+        )}
       </AnimatePresence>
 
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
@@ -511,8 +522,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             {/* Right: ARO Overtime indicator */}
             <div className="flex items-center gap-3 flex-shrink-0">
             {aroOvertimeRooms.length > 0 ? (
-              <motion.div
-                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
+              <motion.button
+                onClick={() => setShowAroPopup(true)}
+                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105 cursor-pointer"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
@@ -542,7 +554,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </motion.button>
             ) : (
               <div 
                 className="flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 flex items-center gap-3"
