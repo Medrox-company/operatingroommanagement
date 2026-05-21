@@ -1126,7 +1126,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card className="p-5">
               <SectionLabel>Vytížení v průběhu dne (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={140}>
+              <ResponsiveContainer width="100%" height={140} minWidth={0} minHeight={0}>
                 <AreaChart data={dayCurve} margin={{top:4,right:0,bottom:0,left:-24}}>
                   <defs>
                     <linearGradient id={`rg${room.id}`} x1="0" y1="0" x2="0" y2="1">
@@ -1168,7 +1168,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card className="p-5">
               <SectionLabel>Hodinové vytížení vs. prodlevy (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={150}>
+              <ResponsiveContainer width="100%" height={150} minWidth={0} minHeight={0}>
                 <BarChart data={hourlyUtil} margin={{top:4,right:0,bottom:0,left:-24}} barSize={12}>
                   <XAxis dataKey="t" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                   <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -1188,7 +1188,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
             </Card>
             <Card className="p-5">
               <SectionLabel>Týdenní workflow fáze — min/den</SectionLabel>
-              <ResponsiveContainer width="100%" height={150}>
+              <ResponsiveContainer width="100%" height={150} minWidth={0} minHeight={0}>
                 <BarChart data={weeklyStacked} margin={{top:4,right:0,bottom:0,left:-24}} barSize={16}>
                   <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
                   <YAxis stroke={C.ghost} fontSize={10}  tickLine={false} axisLine={false}/>
@@ -1213,7 +1213,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <Card className="p-5">
               <SectionLabel>Délka fází ��� minuty</SectionLabel>
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                 <BarChart data={phaseBar} layout="vertical" margin={{top:0,right:16,bottom:0,left:0}} barSize={8}>
                   <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                   <YAxis type="category" dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} width={52}/>
@@ -1226,7 +1226,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
             </Card>
             <Card className="p-5">
               <SectionLabel>Výkonnostní profil</SectionLabel>
-              <ResponsiveContainer width="100%" height={170}>
+              <ResponsiveContainer width="100%" height={170} minWidth={0} minHeight={0}>
                 <RadarChart data={radarData} margin={{top:10,right:20,bottom:10,left:20}}>
                   <PolarGrid stroke={C.ghost}/>
                   <PolarAngleAxis dataKey="subject" tick={{fill:C.muted,fontSize:9,fontWeight:700}}/>
@@ -1236,7 +1236,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
             </Card>
             <Card className="p-5">
               <SectionLabel>Struktura cyklu (%)</SectionLabel>
-              <ResponsiveContainer width="100%" height={140}>
+              <ResponsiveContainer width="100%" height={140} minWidth={0} minHeight={0}>
                 <PieChart>
                   <Pie data={pieData} dataKey="pct" nameKey="title" cx="50%" cy="50%"
                     innerRadius={34} outerRadius={56} paddingAngle={2} strokeWidth={0}>
@@ -1259,7 +1259,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           {/* Cumulative 30-day */}
           <Card className="p-5">
             <SectionLabel>Kumulativní počet výkonů — 30 dní</SectionLabel>
-            <ResponsiveContainer width="100%" height={120}>
+            <ResponsiveContainer width="100%" height={120} minWidth={0} minHeight={0}>
               <ComposedChart data={cumulData} margin={{top:4,right:4,bottom:0,left:-16}}>
                 <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
                 <XAxis dataKey="d" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}
@@ -1901,7 +1901,7 @@ tabs={[
               <MobileCard>
                 <MobileSectionLabel className="mb-3">Trend vytížení</MobileSectionLabel>
                 <div style={{ width: '100%', height: 160 }}>
-                  <ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <AreaChart data={utilData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
                       <defs>
                         <linearGradient id="mobile-util-grad" x1="0" y1="0" x2="0" y2="1">
@@ -2383,7 +2383,7 @@ tabs={[
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <Card className="lg:col-span-2 p-5">
                 <SectionLabel>Procentuální vytížení — {period}</SectionLabel>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={0}>
                   <ComposedChart data={utilData} margin={{top:4,right:4,bottom:0,left:-24}}>
                     <defs>
                       <linearGradient id="ugrad" x1="0" y1="0" x2="0" y2="1">
@@ -2403,7 +2403,7 @@ tabs={[
               </Card>
               <Card className="p-5">
                 <SectionLabel>Stav sálů — podíl</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <PieChart>
                     <Pie data={statusPie} dataKey="value" nameKey="name"
                       cx="50%" cy="50%" innerRadius={42} outerRadius={66} paddingAngle={3} strokeWidth={0}>
@@ -2451,7 +2451,7 @@ tabs={[
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <Card className="p-5">
                 <SectionLabel>Výkony / sál (24 h)</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <BarChart data={roomBarData} margin={{top:0,right:0,bottom:0,left:-24}} barSize={9}>
                     <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
                     <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -2488,7 +2488,7 @@ tabs={[
               </Card>
               <Card className="p-5">
                 <SectionLabel>Trend výkonů — 7 dní</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <ComposedChart data={opsTrend} margin={{top:4,right:4,bottom:0,left:-24}}>
                     <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
                     <XAxis dataKey="t" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -2506,7 +2506,7 @@ tabs={[
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <Card className="p-5">
                 <SectionLabel>Výkony vs. využití — srovnání sálů</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <ScatterChart margin={{top:4,right:10,bottom:0,left:-20}}>
                     <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3"/>
                     <XAxis dataKey="ops" name="Výkony/24h" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -2520,7 +2520,7 @@ tabs={[
               </Card>
               <Card className="p-5">
                 <SectionLabel>Využití dle dne v týdnu (%)</SectionLabel>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <BarChart data={intervalCompare} margin={{top:0,right:0,bottom:0,left:-24}} barSize={16}>
                     <XAxis dataKey="t" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
                     <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
@@ -2819,7 +2819,7 @@ tabs={[
         </AnimatePresence>
 
       </div>
-      {/* ── Room detail panel (shared mobile + desktop) ���─ */}
+      {/* ── Room detail panel (shared mobile + desktop) �����─ */}
       <AnimatePresence>
         {selectedRoom&&(
           <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>

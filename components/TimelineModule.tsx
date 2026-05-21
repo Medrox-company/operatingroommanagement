@@ -59,7 +59,7 @@ const ROOM_LABEL_WIDTH = 320;
 const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
 const ROW_GAP_PX = 6;      // gap-1.5 mezi řádky (Tailwind: 0.375rem = 6px) — musí korespondovat s `gap-1.5` v JSX
-const ROW_PADDING_PX = 8;  // p-2 padding kolem všech řádků (Tailwind: 0.5rem = 8px)
+const ROW_PADDING_PX = 8;  // py-2 vertikální padding kolem všech řádků (Tailwind: 0.5rem = 8px)
 const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
@@ -679,7 +679,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <motion.div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
-                  style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
+                  style={{ 
+                    left: `calc(${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100}))`
+                  }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
@@ -713,7 +715,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             </AnimatePresence>
 
             {/* Room Rows */}
-            <div className="flex flex-col gap-1.5 p-2">
+            <div className="flex flex-col gap-1.5 py-2">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;

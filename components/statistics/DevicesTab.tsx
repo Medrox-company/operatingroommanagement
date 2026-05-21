@@ -245,7 +245,7 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
         {/* By device type pie */}
         <Card icon={Smartphone} title="Typ zařízení">
           <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={stats.byType}
@@ -286,7 +286,7 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
         {/* By platform */}
         <Card icon={Globe} title="Platforma">
           <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={stats.byPlatform.slice(0, 5)}>
                 <XAxis dataKey="platform" stroke={C.muted} fontSize={10} />
                 <YAxis stroke={C.muted} fontSize={10} />
@@ -311,7 +311,7 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
         {/* By browser */}
         <Card icon={Globe} title="Prohlížeč">
           <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={stats.byBrowser.slice(0, 5)}>
                 <XAxis dataKey="browser" stroke={C.muted} fontSize={10} />
                 <YAxis stroke={C.muted} fontSize={10} />

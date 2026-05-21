@@ -259,7 +259,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
         {/* Pie chart - by type */}
         <Card icon={Activity} title="Podle typu">
           <div className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={stats.byType}
@@ -301,7 +301,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
         {/* Bar chart - by room */}
         <Card icon={Calendar} title="Podle operačního sálu">
           <div className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={stats.byRoom} layout="vertical">
                 <XAxis type="number" stroke={C.muted} fontSize={10} />
                 <YAxis type="category" dataKey="room" stroke={C.muted} fontSize={10} width={80} />
@@ -322,7 +322,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
         {/* Area chart - trend */}
         <Card icon={TrendingUp} title="Trend (posledních 14 dní)">
           <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <AreaChart data={stats.dailyCounts}>
                 <defs>
                   <linearGradient id="notifGrad" x1="0" y1="0" x2="0" y2="1">
@@ -350,7 +350,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
         {/* By hour */}
         <Card icon={Clock} title="Distribuce podle hodiny">
           <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={stats.byHour}>
                 <XAxis dataKey="hour" stroke={C.muted} fontSize={9} interval={2} />
                 <YAxis stroke={C.muted} fontSize={10} />
