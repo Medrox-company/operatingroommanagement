@@ -1020,7 +1020,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           aktuální status se nyní zobrazuje uppercase ve středu timeline baru,
                           takže duplicita pod názvem sálu byla redundantní. */}
                     </div>
-                  </motion.div>
+                  </div>
 
                   {/* Timeline section - RIGHT side, scrollable with rounded-r corners */}
                   <div 
