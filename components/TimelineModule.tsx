@@ -718,7 +718,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         </div>
       </div>
 
-      </div>{/* end desktop wrapper */}
+      {/* end desktop wrapper */}
+      </div>
     </div>
   );
 }
