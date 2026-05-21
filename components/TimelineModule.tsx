@@ -663,25 +663,29 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       className={`absolute left-0 w-px h-full transition-all duration-300`}
                       style={{ 
                         background: isNightHour 
-                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
-                          : 'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
+                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))'
+                          : 'linear-gradient(to bottom, rgba(107,114,128,0.15), rgba(107,114,128,0.25), rgba(107,114,128,0.15))',
                       }} 
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - yellow highlighted, compact, centered */
-                        <span 
-                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                        /* Current hour - cyan highlighted, professional look */
+                        <motion.span 
+                          className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg"
                           style={{ 
-                            background: '#f1ff00', 
-                            color: '#000',
+                            background: `${C.cyan}30`,
+                            color: C.cyan,
+                            border: `1px solid ${C.cyan}60`,
+                            boxShadow: `0 0 12px ${C.cyan}20`,
                           }}
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
                         >
                           {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
-                        </span>
+                        </motion.span>
                       ) : (
-                        /* Other hours - simple number only, no box, centered */
-                        <span className={`text-[9px] font-mono font-medium tabular-nums ${isNightHour ? 'text-white/20' : 'text-white/45'}`}>
+                        /* Other hours - subtle professional style */
+                        <span className={`text-[9px] font-mono font-medium tabular-nums transition-colors ${isNightHour ? 'text-white/25' : 'text-white/55'}`}>
                           {hourLabelCompact(hour)}
                         </span>
                       )
@@ -696,19 +700,26 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         {/* Room Rows - Responsive height, no scroll */}
         <div className="flex-1 min-h-0 overflow-hidden" ref={rowsContainerRef}>
           <div className="relative w-full h-full" ref={scrollContainerRef}>
-            {/* Now indicator - Simple line without glow */}
+            {/* Now indicator - Animated line with glow */}
             <AnimatePresence>
               {nowPercent >= 0 && nowPercent <= 100 && (
-                <div 
+                <motion.div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{ left: `calc(${ROOM_LABEL_WIDTH}px + (100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100})` }}
+                  animate={{ opacity: [0.8, 1, 0.8] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  {/* Main line - clean and simple */}
+                  {/* Main line - healthcare red */}
                   <div 
-                    className="absolute -left-px top-0 bottom-0 w-[2px]" 
-                    style={{ background: '#73ff00' }}
+                    className="absolute -left-[1.5px] top-0 bottom-0 w-1" 
+                    style={{ background: C.red }}
                   />
-                </div>
+                  {/* Glow effect */}
+                  <div 
+                    className="absolute -left-1 top-0 bottom-0 w-3" 
+                    style={{ background: `linear-gradient(90deg, transparent, ${C.red}30, transparent)` }}
+                  />
+                </motion.div>
               )}
             </AnimatePresence>
 
