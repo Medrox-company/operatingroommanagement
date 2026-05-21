@@ -1260,14 +1260,12 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         transition={{ duration: 0.3 }}
                       >
                         {/* Animated colored left border with glow */}
-                        <motion.div 
+                        <div 
                           className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
                           style={{ 
                             background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`,
                             boxShadow: `0 0 12px ${stepColor}60, 0 0 24px ${stepColor}30`,
                           }}
-                          animate={{ opacity: [0.8, 1, 0.8] }}
-                          transition={{ duration: 2, repeat: Infinity }}
                         />
                         
                         {/* Premium progress bar with gradient */}
@@ -1282,7 +1280,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                             const now = Date.now();
                             const totalDuration = Math.max(1, now - operationStart);
 
-                            const stepColorMap: Record<number, string> = {};
+                                            const stepColorMap: Record<number, string> = {};
                             activeStatuses.forEach((s, idx) => {
                               stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                             });
@@ -1303,14 +1301,17 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                     
                                     if (segWidthPct <= 0) return null;
                                     
-                                    const phaseColor = stepColorMap[entry.stepIndex] || entry.color || stepColor;
+                                    // Get color from stepColorMap using entry.stepIndex, or use entry.color as fallback
+                                    const phaseColor = stepColorMap[entry.stepIndex] || entry.color || '#6b7280';
                                     const isCurrentSegment = !nextEntry;
                                     
                                     return (
-                                      <motion.div
+                                      <div
                                         key={`active-seg-${idx}`}
-                                        className="absolute top-0 bottom-0 transition-all duration-300"
                                         style={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          bottom: 0,
                                           left: `${Math.max(0, segLeftPct)}%`,
                                           width: `${Math.max(0.5, segWidthPct)}%`,
                                           background: `linear-gradient(180deg, ${phaseColor}50 0%, ${phaseColor}25 100%)`,
@@ -1320,9 +1321,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                             : 'inset 0 1px 0 rgba(255,255,255,0.1)',
                                         }}
                                         title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: 0.02 * idx }}
                                       />
                                     );
                                   })}
