@@ -1403,21 +1403,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           ) : (
                             /* Normal state - Premium card layout */
                             <div className="min-w-0 flex-1 flex items-center gap-4">
-                              {/* Animated status icon */}
-                              {boxWidthPct > 6 && (
-                                <motion.div 
-                                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                  style={{ 
-                                    background: `linear-gradient(135deg, ${stepColor}30 0%, ${stepColor}15 100%)`,
-                                    border: `1px solid ${stepColor}40`,
-                                    boxShadow: `0 0 12px ${stepColor}20`,
-                                  }}
-                                  animate={{ scale: [1, 1.03, 1] }}
-                                  transition={{ duration: 3, repeat: Infinity }}
-                                >
-                                  <Activity className="w-4 h-4" style={{ color: stepColor }} />
-                                </motion.div>
-                              )}
                               
                               {/* Card content */}
                               {boxWidthPct > 10 && (
