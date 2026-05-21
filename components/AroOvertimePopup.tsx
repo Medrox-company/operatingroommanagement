@@ -327,18 +327,18 @@ const AroOvertimePopup: React.FC<AroOvertimePopupProps> = ({
             style={{ background: 'rgba(2,6,18,0.75)', backdropFilter: 'blur(6px)' }}
           />
 
-          {/* Panel */}
+          {/* Panel — outer wrapper handles centering, inner motion.div handles animation */}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+          >
           <motion.div
             key="panel"
             initial={{ opacity: 0, scale: 0.94, y: -16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: -16 }}
             transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-            className="fixed z-50"
+            className="pointer-events-auto"
             style={{
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               width: 'min(96vw, 640px)',
               maxHeight: '88vh',
               display: 'flex',
@@ -437,6 +437,7 @@ const AroOvertimePopup: React.FC<AroOvertimePopupProps> = ({
               )}
             </div>
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>
