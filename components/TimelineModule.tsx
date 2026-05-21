@@ -9,31 +9,35 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (Modern glass-morphism style) ==========
+// ========== DESIGN TOKENS (Professional Healthcare - Medrox inspired) ==========
 const C = {
-  // Primary colors
-  accent: '#00D9FF',    // Vivid cyan
-  cyan: '#00D9FF',
-  yellow: '#FFE66D',
-  green: '#00F5A0',
-  orange: '#FF9F43',
-  red: '#FF6B6B',
-  purple: '#A78BFA',
-  pink: '#F472B6',
-  blue: '#60A5FA',
+  // Primary colors - Healthcare professional palette
+  accent: '#06B6D4',      // Medical cyan
+  cyan: '#06B6D4',        // Cyan accent
+  yellow: '#F59E0B',      // Medical amber/warning
+  green: '#10B981',       // Success/Active
+  orange: '#F97316',      // Alert/Preparation  
+  red: '#EF4444',         // Critical/Delay
+  purple: '#8B5CF6',      // Planning
+  pink: '#EC4899',        // Special procedures
+  blue: '#3B82F6',        // Information
   
-  // Surface & backgrounds
-  border: 'rgba(255,255,255,0.08)',
-  borderHover: 'rgba(255,255,255,0.15)',
-  surface: 'rgba(255,255,255,0.03)',
-  surface2: 'rgba(255,255,255,0.06)',
-  glass: 'rgba(255,255,255,0.04)',
-  glassHover: 'rgba(255,255,255,0.08)',
+  // Surface & backgrounds - Subtle, professional
+  border: 'rgba(107, 114, 128, 0.2)',      // Gray borders
+  borderHover: 'rgba(6, 182, 212, 0.3)',   // Cyan hover
+  surface: 'rgba(107, 114, 128, 0.08)',    // Light gray surface
+  surface2: 'rgba(107, 114, 128, 0.12)',   // Darker gray surface
+  glass: 'rgba(107, 114, 128, 0.05)',      // Glass effect
+  glassHover: 'rgba(6, 182, 212, 0.1)',    // Cyan glass hover
   
-  // Text
-  muted: 'rgba(255,255,255,0.45)',
-  text: 'rgba(255,255,255,0.85)',
-  textHi: 'rgba(255,255,255,0.95)',
+  // Text - Clear hierarchy
+  muted: 'rgba(255, 255, 255, 0.50)',
+  text: 'rgba(255, 255, 255, 0.87)',
+  textHi: 'rgba(255, 255, 255, 1.00)',
+  
+  // Backgrounds
+  darkBg: '#0F172A',      // Deep navy background
+  cardBg: 'rgba(15, 23, 42, 0.6)',  // Card backgrounds
 };
 
 // ========== CONSTANTS ==========
@@ -49,25 +53,25 @@ const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hou
 const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
 
 const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#FF9F43', border: '#FFB76B', stripe: '#FFD1A3', text: '#FFF', glow: 'rgba(255,159,67,0.25)' },
-  purple: { bg: '#A78BFA', border: '#C4B5FD', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(167,139,250,0.25)' },
-  pink: { bg: '#F472B6', border: '#F9A8D4', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(244,114,182,0.25)' },
-  blue: { bg: '#60A5FA', border: '#93C5FD', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(96,165,250,0.25)' },
-  green: { bg: '#00F5A0', border: '#5FFFC1', stripe: '#B8FFE0', text: '#000', glow: 'rgba(0,245,160,0.25)' },
-  red: { bg: '#FF6B6B', border: '#FF9999', stripe: '#FFC7C7', text: '#FFF', glow: 'rgba(255,107,107,0.25)' },
-  cyan: { bg: '#00D9FF', border: '#5AE8FF', stripe: '#B0F4FF', text: '#000', glow: 'rgba(0,217,255,0.25)' },
+  orange: { bg: '#F97316', border: '#FB923C', stripe: '#FED7AA', text: '#FFF', glow: 'rgba(249, 115, 22, 0.2)' },
+  purple: { bg: '#8B5CF6', border: '#A78BFA', stripe: '#DDD6FE', text: '#FFF', glow: 'rgba(139, 92, 246, 0.2)' },
+  pink: { bg: '#EC4899', border: '#F472B6', stripe: '#FBCFE8', text: '#FFF', glow: 'rgba(236, 72, 153, 0.2)' },
+  blue: { bg: '#3B82F6', border: '#60A5FA', stripe: '#BFDBFE', text: '#FFF', glow: 'rgba(59, 130, 246, 0.2)' },
+  green: { bg: '#10B981', border: '#6EE7B7', stripe: '#A7F3D0', text: '#FFF', glow: 'rgba(16, 185, 129, 0.2)' },
+  red: { bg: '#EF4444', border: '#F87171', stripe: '#FCA5A5', text: '#FFF', glow: 'rgba(239, 68, 68, 0.2)' },
+  cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#A5F3FC', text: '#FFF', glow: 'rgba(6, 182, 212, 0.2)' },
 };
 
-  // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
+  // Step colors podle step_index z databáze - healthcare status colors
   const STEP_INDEX_COLORS: Record<number, string> = {
-  0: '#6b7280',
-  1: '#8b5cf6',
-  2: '#ec4899',
-  3: '#ef4444',
-  4: '#f59e0b',
-  5: '#a855f7',
-  6: '#10b981',
-  7: '#f97316',
+  0: '#6B7280',   // Gray - Empty/Preparation
+  1: '#8B5CF6',   // Purple - Planning
+  2: '#EC4899',   // Pink - Setup
+  3: '#EF4444',   // Red - In Progress (can be delayed)
+  4: '#F97316',   // Orange - Preparation/Cleanup
+  5: '#F59E0B',   // Amber - Cleaning
+  6: '#10B981',   // Green - Free/Available
+  7: '#06B6D4',   // Cyan - Next procedure
 };
 
 // ========== HELPER FUNCTIONS ==========
@@ -456,43 +460,42 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       <div 
         className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,10,20,0.92) 100%)',
-          borderBottom: `1px solid ${C.border}`,
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          borderBottom: `2px solid ${C.border}`,
         }}
       >
-        {/* Ambient glow */}
+        {/* Subtle ambient glow */}
         <div 
-          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
-          style={{ background: C.accent }}
+          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-5 pointer-events-none"
+          style={{ background: C.cyan }}
         />
-        <div className="px-8 md:pl-32 md:pr-10 py-6">
+        <div className="px-8 md:pl-32 md:pr-10 py-6 relative z-10">
 
-
-          {/* Stats Boxes Row */}
+          {/* Stats Boxes Row - Enhanced with better styling */}
           <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
             <StatBox 
               icon={Activity} 
               label="Aktivní" 
               value={`${stats.operations} operací`} 
-              color="#22C55E" 
+              color={C.green} 
             />
             <StatBox 
               icon={Loader2} 
               label="Úklid" 
               value={`${stats.cleaning} sálů`} 
-              color="#F97316" 
+              color={C.orange} 
             />
             <StatBox 
               icon={Stethoscope} 
               label="Volné" 
               value={`${stats.free} sálů`} 
-              color="#22D3EE" 
+              color={C.cyan} 
             />
             <StatBox 
               icon={Shield} 
               label="Dokončeno" 
               value={`${stats.completed} dnes`} 
-              color="#22D3EE" 
+              color={C.yellow} 
             />
 
             {stats.emergencyCount > 0 && (
@@ -1242,7 +1245,7 @@ style={{
                                 const nextEntry = history[idx + 1];
                                 const isCurrentSeg = idx === history.length - 1;
                                 
-                                // Pro aktuální segment: prodloužit na aktuální čas pokud přesahuje odhadovaný konec
+                                // Pro aktuální segment: prodloužit na aktuální čas pokud p��esahuje odhadovaný konec
                                 const segEnd = nextEntry
                                   ? new Date(nextEntry.startedAt).getTime()
                                   : effectiveEndTime; // Prodloužit na aktuální čas pokud operace stále běží
