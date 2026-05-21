@@ -1055,22 +1055,17 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       background: 'transparent'
                     }}
                   >
+                    {/* Locked room diagonal stripes overlay */}
+                    {room.isLocked && (
+                      <div className="locked-room-stripes absolute inset-0 z-10 rounded-lg" />
+                    )}
+                    
                     {/* Locked room overlay with icon */}
                     {room.isLocked && (
-                      <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                        <div 
-                          className="flex items-center gap-3 px-6 py-3 rounded-xl backdrop-blur-sm"
-                          style={{
-                            background: 'rgba(6, 182, 212, 0.15)',
-                            border: `2px solid ${C.cyan}50`,
-                            boxShadow: `0 0 20px ${C.cyan}30`,
-                          }}
-                        >
-                          <Lock className="w-5 h-5" style={{ color: C.cyan }} />
-                          <span className="text-sm font-bold uppercase tracking-[0.2em]" style={{ color: C.cyan }}>
-                            UZAMČENO
-                          </span>
-                        </div>
+                      <div className="absolute inset-0 flex items-center justify-end pr-8 z-20 pointer-events-none">
+                        <span className="text-sm font-bold uppercase tracking-widest text-white opacity-75">
+                          UZAMČENO
+                        </span>
                       </div>
                     )}
                     {/* Hour grid lines - Premium gradient */}
@@ -1520,7 +1515,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       
                       // Značka konce pracovní doby sálu (working-hours hranice).
                       // Barva NEZÁVISÍ na aktuálním statusu — má vlastní oranžovou identitu,
-                      // aby byla na časové ose okamžitě rozpoznatelná napříč sály a statusy.
+                      // aby byla na časové ose okamžitě rozpoznatelná např��č sály a statusy.
                       return (
                         <div
                           className="absolute top-0 bottom-0 w-0.5 z-20"
