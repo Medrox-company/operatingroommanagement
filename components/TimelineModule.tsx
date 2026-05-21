@@ -480,11 +480,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
           style={{ background: C.accent }}
         />
-        <div className="px-8 md:pl-32 md:pr-10 py-6">
+        <div className="px-8 md:pl-32 md:pr-10 py-4">
 
-
-          {/* Stats Boxes Row */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
+          {/* Header Row - Stats Left, Time Center, ARO Right */}
+          <div className="flex items-center justify-between gap-4">
+            
+            {/* Left: Stats Boxes */}
+            <div className="flex items-center gap-3 flex-shrink-0">
             <StatBox 
               icon={Activity} 
               label="Aktivní" 
@@ -519,104 +521,85 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 glow 
               />
             )}
+            </div>
 
-            {/* ARO Overtime indicator - LoginPage glassmorph with red accent */}
-            {aroOvertimeRooms.length > 0 && (
+            {/* Center: Current Time (no box, just prominent display) */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
+                {formatDate(currentTime)}
+              </p>
+              <motion.p 
+                className="text-3xl font-bold tabular-nums tracking-tight"
+                style={{ 
+                  color: C.textHi,
+                  textShadow: `0 0 40px ${C.cyan}40`,
+                }}
+                animate={{ opacity: [0.9, 1, 0.9] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {currentTime.toLocaleTimeString("cs-CZ", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </motion.p>
+            </div>
+
+            {/* Right: ARO Overtime indicator */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+            {aroOvertimeRooms.length > 0 ? (
               <motion.div
-                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
+                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
-                  background: `${C.red}15`,
-                  border: `2px solid ${C.red}40`,
-                  boxShadow: `0 0 24px ${C.red}25, inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${C.red}15`,
+                  background: `linear-gradient(135deg, ${C.red}20 0%, ${C.red}10 100%)`,
+                  border: `2px solid ${C.red}50`,
+                  boxShadow: `0 0 30px ${C.red}30, inset 0 1px 0 rgba(255,255,255,0.05)`,
                 }}
               >
-                {/* Animated gradient border effect */}
-                <div 
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${C.red}20, transparent)`,
-                    animation: 'shimmer 2s infinite',
-                  }}
-                />
-                {/* Top highlight line with accent */}
-                <div 
-                  className="absolute top-0 left-4 right-4 h-px opacity-60"
-                  style={{ background: `linear-gradient(90deg, transparent, ${C.red}80, transparent)` }}
-                />
-                <div
-                  className="absolute inset-0 opacity-40"
-                  style={{
-                    background: `radial-gradient(ellipse at 50% 0%, ${C.red}30 0%, transparent 70%)`,
-                  }}
-                />
                 <div className="relative flex items-center gap-3 h-full">
                   <motion.div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    animate={{ scale: [1, 1.1, 1] }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    animate={{ scale: [1, 1.15, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                     style={{
-                      background: `${C.red}25`,
-                      border: `1.5px solid ${C.red}50`,
+                      background: `${C.red}30`,
+                      border: `2px solid ${C.red}60`,
+                      boxShadow: `0 0 12px ${C.red}40`,
                     }}
                   >
-                    <AlertTriangle className="w-4 h-4" style={{ color: C.red }} />
+                    <AlertTriangle className="w-5 h-5" style={{ color: C.red }} />
                   </motion.div>
                   <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.3em] font-semibold" style={{ color: `${C.red}a0` }}>ARO PŘESAH</p>
-                    <p className="text-sm font-bold leading-tight" style={{ color: C.red }}>{aroOvertimeRooms.length} sálů</p>
+                    <p className="text-[9px] uppercase tracking-[0.25em] font-bold" style={{ color: C.red }}>ARO PŘESAH</p>
+                    <p className="text-xl font-black leading-tight tabular-nums" style={{ color: C.red }}>
+                      {aroOvertimeRooms.length}
+                      <span className="text-xs font-medium ml-1 opacity-70">sálů</span>
+                    </p>
                   </div>
                 </div>
               </motion.div>
-            )}
-
-            {/* Spacer */}
-            <div className="flex-1 min-w-4" />
-
-            {/* Date Box */}
-            <StatBox 
-              icon={CalendarDays} 
-              label="Datum" 
-              value={formatDate(currentTime)} 
-              color="#6366F1" 
-            />
-
-            {/* Time Box - LoginPage glassmorph style */}
-            <div
-              className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
-              style={{
-                background: C.glass,
-                border: `1px solid ${C.border}`,
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-              }}
-            >
-              {/* Top highlight line */}
+            ) : (
               <div 
-                className="absolute top-0 left-4 right-4 h-px opacity-30"
-                style={{ background: `linear-gradient(90deg, transparent, ${C.accent}60, transparent)` }}
-              />
-              <div className="relative flex items-center gap-3 h-full">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: `${C.accent}15`,
-                    border: `1px solid ${C.accent}25`,
-                  }}
+                className="flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 flex items-center gap-3"
+                style={{
+                  background: `linear-gradient(135deg, ${C.green}15 0%, ${C.green}05 100%)`,
+                  border: `1px solid ${C.green}30`,
+                }}
+              >
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: `${C.green}20`, border: `1px solid ${C.green}30` }}
                 >
-                  <Clock className="w-4 h-4" style={{ color: C.accent }} />
+                  <CheckCircle className="w-4 h-4" style={{ color: C.green }} />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">Čas</p>
-                  <p className="text-sm font-bold leading-tight tabular-nums" style={{ color: C.accent }}>
-                    {currentTime.toLocaleTimeString("cs-CZ", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    })}
-                  </p>
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.25em] font-medium text-white/40">ARO STATUS</p>
+                  <p className="text-sm font-semibold" style={{ color: C.green }}>V pořádku</p>
                 </div>
               </div>
+            )}
             </div>
           </div>
         </div>
@@ -1099,13 +1082,31 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
                   {/* Timeline section - Premium glass with grid */}
                   <div 
-                    className="relative flex-1 overflow-hidden"
+                    className={`relative flex-1 overflow-hidden ${room.isLocked ? 'locked-room-animated' : ''}`}
                     style={{
                       background: room.isLocked 
-                        ? `linear-gradient(90deg, ${C.cyan}15 0%, transparent 100%)` 
+                        ? undefined  /* CSS class handles stripes */
                         : 'transparent'
                     }}
                   >
+                    {/* Locked room overlay with icon */}
+                    {room.isLocked && (
+                      <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                        <div 
+                          className="flex items-center gap-3 px-6 py-3 rounded-xl backdrop-blur-sm"
+                          style={{
+                            background: 'rgba(6, 182, 212, 0.15)',
+                            border: `2px solid ${C.cyan}50`,
+                            boxShadow: `0 0 20px ${C.cyan}30`,
+                          }}
+                        >
+                          <Lock className="w-5 h-5" style={{ color: C.cyan }} />
+                          <span className="text-sm font-bold uppercase tracking-[0.2em]" style={{ color: C.cyan }}>
+                            UZAMČENO
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     {/* Hour grid lines - Premium gradient */}
                     {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                       const displayHour = hour % 24;
@@ -1332,30 +1333,80 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                               : room.phaseStartedAt
                                 ? new Date(room.phaseStartedAt).getTime()
                                 : Date.now() - 30 * 60 * 1000;
-                            const estimatedEndTime = room.estimatedEndTime
-                              ? new Date(room.estimatedEndTime).getTime()
-                              : operationStart + 120 * 60 * 1000;
                             const now = Date.now();
-                            const effectiveEndTime = Math.max(estimatedEndTime, now);
-                            const totalDuration = Math.max(1, effectiveEndTime - operationStart);
-                            const elapsed = now - operationStart;
-                            const progressPct = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+                            const totalDuration = Math.max(1, now - operationStart);
 
                             const stepColorMap: Record<number, string> = {};
                             activeStatuses.forEach((s, idx) => {
                               stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
                             });
+
+                            // If we have status history, render colored segments
+                            if (history.length > 0) {
+                              return (
+                                <div className="h-full w-full flex relative">
+                                  {history.map((entry, idx) => {
+                                    const segStart = new Date(entry.startedAt).getTime();
+                                    const nextEntry = history[idx + 1];
+                                    const segEnd = nextEntry
+                                      ? new Date(nextEntry.startedAt).getTime()
+                                      : now; // Current segment extends to now
+                                    const segDuration = Math.max(0, segEnd - segStart);
+                                    const segWidthPct = (segDuration / totalDuration) * 100;
+                                    const segLeftPct = ((segStart - operationStart) / totalDuration) * 100;
+                                    
+                                    if (segWidthPct <= 0) return null;
+                                    
+                                    const phaseColor = stepColorMap[entry.stepIndex] || entry.color || stepColor;
+                                    const isCurrentSegment = !nextEntry;
+                                    
+                                    return (
+                                      <motion.div
+                                        key={`active-seg-${idx}`}
+                                        className="absolute top-0 bottom-0 transition-all duration-300"
+                                        style={{
+                                          left: `${Math.max(0, segLeftPct)}%`,
+                                          width: `${Math.max(0.5, segWidthPct)}%`,
+                                          background: `linear-gradient(180deg, ${phaseColor}50 0%, ${phaseColor}25 100%)`,
+                                          borderRight: !isCurrentSegment ? `1px solid rgba(0,0,0,0.3)` : 'none',
+                                          boxShadow: isCurrentSegment 
+                                            ? `inset 0 1px 0 rgba(255,255,255,0.15), inset -1px 0 0 ${phaseColor}80`
+                                            : 'inset 0 1px 0 rgba(255,255,255,0.1)',
+                                        }}
+                                        title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.02 * idx }}
+                                      />
+                                    );
+                                  })}
+                                  {/* Animated edge glow on rightmost segment */}
+                                  <div 
+                                    className="absolute right-0 top-0 bottom-0 w-px z-10"
+                                    style={{ 
+                                      background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
+                                      boxShadow: `0 0 8px ${stepColor}50`,
+                                    }}
+                                  />
+                                </div>
+                              );
+                            }
                             
-                            const currentColor = history.length > 0 
-                              ? (stepColorMap[history[history.length - 1].stepIndex] || stepColor)
-                              : stepColor;
+                            // Fallback: single color progress if no history
+                            const estimatedEndTime = room.estimatedEndTime
+                              ? new Date(room.estimatedEndTime).getTime()
+                              : operationStart + 120 * 60 * 1000;
+                            const effectiveEndTime = Math.max(estimatedEndTime, now);
+                            const totalDurationFallback = Math.max(1, effectiveEndTime - operationStart);
+                            const elapsed = now - operationStart;
+                            const progressPct = Math.min(100, Math.max(0, (elapsed / totalDurationFallback) * 100));
 
                             return (
                               <motion.div 
                                 className="h-full relative"
                                 style={{
                                   width: `${progressPct}%`,
-                                  background: `linear-gradient(90deg, ${currentColor}25 0%, ${currentColor}08 100%)`,
+                                  background: `linear-gradient(180deg, ${stepColor}50 0%, ${stepColor}25 100%)`,
                                 }}
                                 initial={{ width: 0 }}
                                 animate={{ width: `${progressPct}%` }}
@@ -1365,8 +1416,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                 <div 
                                   className="absolute right-0 top-0 bottom-0 w-px"
                                   style={{ 
-                                    background: `linear-gradient(to bottom, ${currentColor}60, ${currentColor}20)`,
-                                    boxShadow: `0 0 8px ${currentColor}40`,
+                                    background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
+                                    boxShadow: `0 0 8px ${stepColor}50`,
                                   }}
                                 />
                               </motion.div>
