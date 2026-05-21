@@ -1131,19 +1131,21 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-lg"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
                               background: isContinuingOp 
-                                ? `linear-gradient(135deg, ${C.green}25 0%, ${C.green}15 100%)`
+                                ? `linear-gradient(135deg, ${C.green}45 0%, ${C.green}30 100%)`
                                 : isRoomReady
-                                  ? `linear-gradient(135deg, ${C.blue}35 0%, ${C.slate}20 100%)`
-                                  : `linear-gradient(135deg, ${C.slate}18 0%, ${C.slate}10 100%)`,
-                              border: `1px solid ${isContinuingOp ? `${C.green}40` : isRoomReady ? `${C.blue}35` : `${C.slate}25`}`,
+                                  ? `linear-gradient(135deg, ${C.blue}55 0%, ${C.cyan}35 100%)`
+                                  : `linear-gradient(135deg, ${C.slate}25 0%, ${C.slate}15 100%)`,
+                              border: `2px solid ${isContinuingOp ? `${C.green}60` : isRoomReady ? `${C.blue}70` : `${C.slate}35`}`,
                               boxShadow: isRoomReady 
-                                ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 8px ${C.blue}20`
-                                : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                                ? `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 16px ${C.blue}40, 0 0 32px ${C.blue}20`
+                                : isContinuingOp
+                                  ? `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 12px ${C.green}30`
+                                  : 'inset 0 1px 0 rgba(255,255,255,0.05)',
                             }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
