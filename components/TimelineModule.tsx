@@ -1055,6 +1055,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       background: 'transparent'
                     }}
                   >
+                    {/* Locked room diagonal stripes overlay */}
+                    {room.isLocked && (
+                      <div className="locked-room-stripes absolute inset-0 z-10 rounded-lg" />
+                    )}
+                    
                     {/* Locked room overlay with icon */}
                     {room.isLocked && (
                       <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">

@@ -88,6 +88,18 @@ body {
   box-shadow: 0 0 12px var(--color-danger), 0 0 24px rgba(239, 68, 68, 0.3);
 }
 
+/* Locked room diagonal stripes pattern - Yellow */
+.locked-room-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(245, 158, 11, 0.25) 10px,
+    rgba(245, 158, 11, 0.25) 20px
+  );
+  pointer-events: none;
+}
+
 /* Animated pulse for live indicators */
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; }
