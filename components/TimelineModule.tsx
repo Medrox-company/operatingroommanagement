@@ -1138,8 +1138,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                               background: isContinuingOp 
                                 ? `linear-gradient(135deg, ${C.green}45 0%, ${C.green}30 100%)`
                                 : isRoomReady
-                                  ? `linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.50) 100%)`
-                                  : `linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.12) 100%)`,
+                                  ? `linear-gradient(135deg, ${C.blue}55 0%, ${C.cyan}35 100%)`
+                                  : `linear-gradient(135deg, ${C.slate}25 0%, ${C.slate}15 100%)`,
                               border: `2px solid ${isContinuingOp ? `${C.green}60` : isRoomReady ? `${C.blue}70` : `${C.slate}35`}`,
                               boxShadow: isRoomReady 
                                 ? `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 16px ${C.blue}40, 0 0 32px ${C.blue}20`
@@ -1534,7 +1534,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       
                       // Značka konce pracovní doby sálu (working-hours hranice).
                       // Barva NEZÁVISÍ na aktuálním statusu — má vlastní oranžovou identitu,
-                      // aby byla na časové ose okam��itě rozpoznatelná např��č sály a statusy.
+                      // aby byla na časové ose okamžitě rozpoznatelná např��č sály a statusy.
                       return (
                         <div
                           className="absolute top-0 bottom-0 w-0.5 z-20"
