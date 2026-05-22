@@ -1020,10 +1020,27 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       )}
 
                       {/* Room name and details */}
-                      <div className="flex flex-col min-w-0">
-                        <p className="text-sm font-semibold tracking-tight text-white truncate">
-                          {room.name}
-                        </p>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-sm font-semibold tracking-tight text-white truncate">
+                            {room.name}
+                          </p>
+                          {/* Staff names - shown when room is not locked */}
+                          {!room.isLocked && room.currentProcedure?.staff && (
+                            <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
+                              {room.currentProcedure.staff.anesthesiologist && (
+                                <span className="text-[11px] font-medium text-white/70 truncate whitespace-nowrap">
+                                  {room.currentProcedure.staff.anesthesiologist}
+                                </span>
+                              )}
+                              {room.currentProcedure.staff.nurse && (
+                                <span className="text-[11px] font-medium text-white/70 truncate whitespace-nowrap">
+                                  {room.currentProcedure.staff.nurse}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         {room.department && (
                           <p className="text-[10px] text-white/40 truncate mt-0.5">
                             {room.department}
@@ -1126,19 +1143,26 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         if (position.width <= 0) return null;
                         
                         const isContinuingOp = position.isContinuing;
+                        const isRoomReady = (room.statusHistory && room.statusHistory.length > 0);
                         
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-lg"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
                               background: isContinuingOp 
-                                ? `linear-gradient(135deg, ${C.green}20 0%, ${C.green}10 100%)`
-                                : `linear-gradient(135deg, ${C.slate}15 0%, ${C.slate}08 100%)`,
-                              border: `1px solid ${isContinuingOp ? `${C.green}30` : `${C.slate}20`}`,
-                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                                ? `linear-gradient(135deg, ${C.green}45 0%, ${C.green}30 100%)`
+                                : isRoomReady
+                                  ? `linear-gradient(135deg, ${C.blue}55 0%, ${C.cyan}35 100%)`
+                                  : `linear-gradient(135deg, ${C.slate}25 0%, ${C.slate}15 100%)`,
+                              border: `2px solid ${isContinuingOp ? `${C.green}60` : isRoomReady ? `${C.blue}70` : `${C.slate}35`}`,
+                              boxShadow: isRoomReady 
+                                ? `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 16px ${C.blue}40, 0 0 32px ${C.blue}20`
+                                : isContinuingOp
+                                  ? `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 12px ${C.green}30`
+                                  : 'inset 0 1px 0 rgba(255,255,255,0.05)',
                             }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -1527,7 +1551,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       
                       // Značka konce pracovní doby sálu (working-hours hranice).
                       // Barva NEZÁVISÍ na aktuálním statusu — má vlastní oranžovou identitu,
-                      // aby byla na časové ose okamžitě rozpoznatelná např��č sály a statusy.
+                      // aby byla na časové ose okam��itě rozpoznatelná např��č sály a statusy.
                       return (
                         <div
                           className="absolute top-0 bottom-0 w-0.5 z-20"
