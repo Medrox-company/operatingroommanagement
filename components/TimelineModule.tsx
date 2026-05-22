@@ -1026,16 +1026,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                             {room.name}
                           </p>
                           {/* Staff names - shown when room is not locked */}
-                          {!room.isLocked && room.currentProcedure?.staff && (
+                          {!room.isLocked && room.staff && (
                             <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
-                              {room.currentProcedure.staff.anesthesiologist && (
+                              {room.staff.anesthesiologist?.name && (
                                 <span className="text-[11px] font-medium text-white/70 truncate whitespace-nowrap">
-                                  {room.currentProcedure.staff.anesthesiologist}
+                                  {room.staff.anesthesiologist.name}
                                 </span>
                               )}
-                              {room.currentProcedure.staff.nurse && (
+                              {room.staff.nurse?.name && (
                                 <span className="text-[11px] font-medium text-white/70 truncate whitespace-nowrap">
-                                  {room.currentProcedure.staff.nurse}
+                                  {room.staff.nurse.name}
                                 </span>
                               )}
                             </div>
