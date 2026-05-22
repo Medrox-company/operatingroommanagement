@@ -139,13 +139,13 @@ export const STEP_DURATIONS = [
 
 export const STEP_COLORS: Record<number, { bg: string; fill: string; border: string; text: string; glow: string; solid: string }> = {
   0: { bg: 'rgba(107,114,128,0.15)', fill: 'rgba(107,114,128,0.35)', border: 'rgba(107,114,128,0.25)', text: '#6B7280', glow: 'rgba(107,114,128,0.2)', solid: '#6B7280' },  // Sál připraven
-  1: { bg: 'rgba(139,92,246,0.15)',  fill: 'rgba(139, 92, 246, 0.60)',  border: 'rgba(139, 92, 246, 0.60)',  text: '#8B5CF6', glow: 'rgba(139, 92, 246, 0.60)',  solid: '#8B5CF6' },  // Příjezd na sál - Purple
+  1: { bg: 'rgba(139,92,246,0.15)',  fill: 'rgba(139,92,246,0.35)',  border: 'rgba(139,92,246,0.25)',  text: '#8B5CF6', glow: 'rgba(139,92,246,0.2)',  solid: '#8B5CF6' },  // Příjezd na sál
   2: { bg: 'rgba(236,72,153,0.15)',  fill: 'rgba(236,72,153,0.35)',  border: 'rgba(236,72,153,0.25)',  text: '#EC4899', glow: 'rgba(236,72,153,0.2)',  solid: '#EC4899' },  // Začátek anestezie
-  3: { bg: 'rgba(239,68,68,0.15)',   fill: 'rgba(136, 0, 34, 0.60)',   border: 'rgba(136, 0, 34, 0.60)',   text: '#EF4444', glow: 'rgba(136, 0, 34, 0.60)',   solid: '#EF4444' },  // Chirurgický výkon - Dark red
+  3: { bg: 'rgba(239,68,68,0.15)',   fill: 'rgba(239,68,68,0.35)',   border: 'rgba(239,68,68,0.25)',   text: '#EF4444', glow: 'rgba(239,68,68,0.2)',   solid: '#EF4444' },  // Chirurgický výkon
   4: { bg: 'rgba(245,158,11,0.15)',  fill: 'rgba(245,158,11,0.35)',  border: 'rgba(245,158,11,0.25)',  text: '#F59E0B', glow: 'rgba(245,158,11,0.2)',  solid: '#F59E0B' },  // Ukončení výkonu
   5: { bg: 'rgba(168,85,247,0.15)',  fill: 'rgba(168,85,247,0.35)',  border: 'rgba(168,85,247,0.25)',  text: '#A855F7', glow: 'rgba(168,85,247,0.2)',  solid: '#A855F7' },  // Ukončení anestezie
-  6: { bg: 'rgba(16,185,129,0.15)',  fill: 'rgba(16, 185, 129, 0.60)',  border: 'rgba(16, 185, 129, 0.60)',  text: '#10B981', glow: 'rgba(16, 185, 129, 0.60)',  solid: '#10B981' },  // Odjezd ze sálu - Teal
-  7: { bg: 'rgba(249,115,22,0.15)',  fill: 'rgba(249, 115, 22, 0.60)',  border: 'rgba(249, 115, 22, 0.60)',  text: '#F97316', glow: 'rgba(249, 115, 22, 0.60)',  solid: '#F97316' },  // Úklid sálu - Orange
+  6: { bg: 'rgba(16,185,129,0.15)',  fill: 'rgba(16,185,129,0.35)',  border: 'rgba(16,185,129,0.25)',  text: '#10B981', glow: 'rgba(16,185,129,0.2)',  solid: '#10B981' },  // Odjezd ze sálu
+  7: { bg: 'rgba(249,115,22,0.15)',  fill: 'rgba(249,115,22,0.35)',  border: 'rgba(249,115,22,0.25)',  text: '#F97316', glow: 'rgba(249,115,22,0.2)',  solid: '#F97316' },  // Úklid sálu
 };
 
 export const SIDEBAR_ITEMS = [
