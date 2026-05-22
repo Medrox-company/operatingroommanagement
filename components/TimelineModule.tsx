@@ -28,7 +28,7 @@ const C = {
   
   // Surface & Glass Effects
   bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgba(15, 23, 42, 0.85)',      // Glass surface
+  bgSurface: 'rgb(0 9 29 / 85%)',           // Glass surface
   bgElevated: 'rgba(30, 41, 59, 0.9)',      // Elevated cards
   bgCard: 'rgba(15, 23, 42, 0.95)',         // Card background
   
