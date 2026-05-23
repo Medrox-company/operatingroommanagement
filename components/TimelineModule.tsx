@@ -53,7 +53,9 @@ const C = {
 };
 
 // ========== CONSTANTS ==========
-const TIMELINE_HOURS = 24;
+const TIMELINE_START_HOUR = 7;
+const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
+const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 const ROOM_LABEL_WIDTH = 320;
 const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
 const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
@@ -86,14 +88,12 @@ const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; 
 };
 
 // ========== HELPER FUNCTIONS ==========
-// NOTE: These helper functions below are for legacy/external use
-// For dynamic timeline inside the component, see getOperationPosition() inside TimelineModuleImpl
-
-const getTimePercentForTimeline = (date: Date, windowStart: Date): number => {
-  // Legacy helper - used only outside component
-  const diffMs = date.getTime() - windowStart.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-  return (diffHours / 24) * 100; // Assumes 24-hour window
+const getTimePercent = (date: Date): number => {
+  const hours = date.getHours() + date.getMinutes() / 60;
+  let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
+  if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
+  // Return percent clamped to valid timeline range
+  return Math.max(0, Math.min(100, percent));
 };
 
 const parseTimeToDate = (timeString: string): Date => {
@@ -103,38 +103,100 @@ const parseTimeToDate = (timeString: string): Date => {
   return date;
 };
 
-const hourLabel = (hour: number, startHour: number = 7): string => {
-  const actualHour = startHour + hour;
-  const displayHour = actualHour % 24;
+const hourLabel = (hour: number): string => {
+  // Convert timeline hour (0-24) to actual 24-hour format (7:00 to 7:00 next day)
+  const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
+  const displayHour = actualHour % 24; // Display as 7-23, 0-6
   return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
 };
 
 // Compact label for smaller screens - just the hour number
-const hourLabelCompact = (hour: number, startHour: number = 7): string => {
-  const actualHour = startHour + hour;
+const hourLabelCompact = (hour: number): string => {
+  const actualHour = TIMELINE_START_HOUR + hour;
   const displayHour = actualHour % 24;
   return `${displayHour}`;
 };
 
 const isNextDayHour = (hour: number): boolean => hour >= 24;
 
-// Check if operation should be displayed in current 24-hour window
-const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date, startHour: number = 7): boolean => {
+// Check if operation should be displayed in current 24-hour window (7:00 today to 7:00 tomorrow)
+// Rules:
+// - SHOW operations that started OR ended within the current 24h window (7:00 - 7:00)
+// - SHOW continuing operations that started before 7:00 but end after 7:00 (still running)
+// - DO NOT show operations that fully ended before the window start (yesterday's old ops)
+const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date): boolean => {
+  // Get current window start: 7:00 of the current day
   const windowStart = new Date(currentTime);
-  windowStart.setHours(startHour, 0, 0, 0);
-  if (currentTime.getHours() < startHour) {
+  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
     windowStart.setDate(windowStart.getDate() - 1);
   }
+  // Window ends at 7:00 next day
   const windowEnd = new Date(windowStart);
   windowEnd.setDate(windowEnd.getDate() + 1);
-  
-  return !(endDate < windowStart || startDate > windowEnd);
+
+  // Show if operation overlaps with the 24h window at all
+  // (operation ends after window start AND starts before window end)
+  return endDate > windowStart && startDate < windowEnd;
 };
 
-// Check if operation is longer than 24 hours (exceeds both start and end dates' days)
+// Check if operation exceeds 24 hours
 const exceedsT24Hours = (startDate: Date, endDate: Date): boolean => {
-  const diffHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
-  return diffHours >= 24;
+  const durationMs = endDate.getTime() - startDate.getTime();
+  const durationHours = durationMs / (1000 * 60 * 60);
+  return durationHours > 24;
+};
+
+// Get time percent for timeline display
+// Timeline runs from 7:00 (0%) to 7:00 next day (100%)
+// Operations that cross 7:00 will extend beyond 100%
+const getTimePercentForTimeline = (date: Date, referenceStart: Date): number => {
+  const diffMs = date.getTime() - referenceStart.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  return (diffHours / TIMELINE_HOURS) * 100;
+};
+
+// Get operation position on timeline (single continuous bar, even if crossing 7:00)
+const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {
+  left: number, 
+  width: number, 
+  exceedsBoundary: boolean,
+  isContinuing: boolean  // True if operation started before 7:00 (from previous day)
+} => {
+  // Calculate window start (7:00 of the current day)
+  const windowStart = new Date(currentTime);
+  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+  
+  // If current time is before 7:00, window started yesterday
+  if (currentTime.getHours() < TIMELINE_START_HOUR) {
+    windowStart.setDate(windowStart.getDate() - 1);
+  }
+  
+  // Calculate position relative to window start
+  let leftPct = getTimePercentForTimeline(startDate, windowStart);
+  let endPct = getTimePercentForTimeline(endDate, windowStart);
+  
+  // Check if operation started before window (continuing from previous day)
+  const isContinuing = leftPct < 0;
+  
+  // Clamp left to 0 if operation started before window
+  if (leftPct < 0) leftPct = 0;
+  
+  // Check if operation exceeds timeline boundary (past 7:00 next day = 100%)
+  const exceedsBoundary = endPct > 100;
+  
+  // Clamp end to 100 for display (but track if it exceeds)
+  if (endPct > 100) endPct = 100;
+  
+  const width = Math.max(0, endPct - leftPct);
+  
+  return {
+    left: leftPct,
+    width: width,
+    exceedsBoundary: exceedsBoundary,
+    isContinuing: isContinuing
+  };
 };
 
 interface TimelineModuleProps {
@@ -165,7 +227,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const [showAroPopup, setShowAroPopup] = useState(false);
-  const [timelineRange, setTimelineRange] = useState<'7-19' | '19-7' | 'auto'>('7-19');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
@@ -216,87 +277,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   //   }
   // }, []);
 
-  // Compute nowPercent AFTER effectiveRange is determined
-  let baseNowPercent = 0;
-
-  // ═══ Compute effective timeline range ═══
-  // Check if any room's estimatedEndTime exceeds 19:00
-  const hasOvertimeAfter19 = useMemo(() => {
-    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
-    const todayKey = dayKeys[currentTime.getDay()];
-    return rooms.some(room => {
-      const workingHours = room.weeklySchedule?.[todayKey];
-      if (!workingHours) return false;
-      return room.estimatedEndTime && 
-             new Date(room.estimatedEndTime).getHours() >= 19;
-    });
-  }, [rooms, currentTime]);
-
-  // Effective timeline range based on user selection or auto-detection
-  const effectiveRange = useMemo(() => {
-    if (timelineRange === '7-19') {
-      return { start: 7, end: 19 };
-    } else if (timelineRange === '19-7') {
-      return { start: 19, end: 31 }; // 19:00 to next day 7:00
-    } else {
-      // 'auto' mode: switch to 19-7 if there's overtime after 19:00
-      return hasOvertimeAfter19 ? { start: 19, end: 31 } : { start: 7, end: 19 };
-    }
-  }, [timelineRange, hasOvertimeAfter19]);
-
-  // Derived timeline hours from effective range
-  const TIMELINE_START_HOUR = effectiveRange.start;
-  const TIMELINE_END_HOUR = effectiveRange.end;
-  const COMPUTED_TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR;
-
-  // Now compute nowPercent with effective timeline
-  const h = currentTime.getHours() + currentTime.getMinutes() / 60;
-  let nowPercent = ((h - TIMELINE_START_HOUR) / COMPUTED_TIMELINE_HOURS) * 100;
-  if (nowPercent < 0) nowPercent += (24 / COMPUTED_TIMELINE_HOURS) * 100;
-  nowPercent = Math.max(0, Math.min(100, nowPercent));
-
+  const nowPercent = getTimePercent(currentTime);
   const currentHour = currentTime.getHours();
   const currentMin = currentTime.getMinutes();
-
-  // ═══ Helper function to get time percent relative to timeline window ═══
-  const getTimePercentForTimeline = (date: Date, windowStart: Date): number => {
-    const diffMs = date.getTime() - windowStart.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-    return (diffHours / COMPUTED_TIMELINE_HOURS) * 100;
-  };
-
-  // ═══ Get operation position on timeline ═══
-  const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {
-    left: number, 
-    width: number, 
-    exceedsBoundary: boolean,
-    isContinuing: boolean
-  } => {
-    const windowStart = new Date(currentTime);
-    windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-    
-    if (currentTime.getHours() < TIMELINE_START_HOUR) {
-      windowStart.setDate(windowStart.getDate() - 1);
-    }
-    
-    let leftPct = getTimePercentForTimeline(startDate, windowStart);
-    let endPct = getTimePercentForTimeline(endDate, windowStart);
-    
-    const isContinuing = leftPct < 0;
-    if (leftPct < 0) leftPct = 0;
-    
-    const exceedsBoundary = endPct > 100;
-    if (endPct > 100) endPct = 100;
-    
-    const width = Math.max(0, endPct - leftPct);
-    
-    return {
-      left: leftPct,
-      width: width,
-      exceedsBoundary: exceedsBoundary,
-      isContinuing: isContinuing
-    };
-  };
 
   /* --- Stats --- */
   const stats = useMemo(() => {
@@ -593,43 +576,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               </div>
             )}
             </div>
-
-            {/* Timeline Range Selector */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="flex gap-2 bg-white/5 rounded-lg p-1 backdrop-blur-sm border border-white/10">
-                <button
-                  onClick={() => setTimelineRange('7-19')}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all ${
-                    timelineRange === '7-19' 
-                      ? 'bg-blue-500/80 text-white shadow-lg'
-                      : 'text-white/60 hover:text-white/80'
-                  }`}
-                >
-                  07:00-19:00
-                </button>
-                <button
-                  onClick={() => setTimelineRange('19-7')}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all ${
-                    timelineRange === '19-7'
-                      ? 'bg-blue-500/80 text-white shadow-lg'
-                      : 'text-white/60 hover:text-white/80'
-                  }`}
-                >
-                  19:00-07:00
-                </button>
-                <button
-                  onClick={() => setTimelineRange('auto')}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all ${
-                    timelineRange === 'auto'
-                      ? 'bg-blue-500/80 text-white shadow-lg'
-                      : 'text-white/60 hover:text-white/80'
-                  }`}
-                  title={hasOvertimeAfter19 ? 'Automaticky přesunut na 19:00-07:00' : 'Primárně 07:00-19:00'}
-                >
-                  Auto {hasOvertimeAfter19 && '●'}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -676,7 +622,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             <div className="flex items-center h-12 relative w-full">
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
-                const widthPct = 100 / COMPUTED_TIMELINE_HOURS;
+                const widthPct = 100 / TIMELINE_HOURS;
                 const leftPct = i * widthPct;
                 const actualHour = TIMELINE_START_HOUR + hour;
                 const displayHour = actualHour % 24;
@@ -1146,7 +1092,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           key={i} 
                           className="absolute top-0 bottom-0 w-px" 
                           style={{ 
-                            left: `${(i / COMPUTED_TIMELINE_HOURS) * 100}%`,
+                            left: `${(i / TIMELINE_HOURS) * 100}%`,
                             background: isMajor 
                               ? `linear-gradient(to bottom, ${C.cyan}15, transparent)`
                               : isNight 
@@ -1585,7 +1531,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       if (minutesFromTimelineStart < 0) {
                         minutesFromTimelineStart += 24 * 60;
                       }
-                      const endPercent = (minutesFromTimelineStart / (COMPUTED_TIMELINE_HOURS * 60)) * 100;
+                      const endPercent = (minutesFromTimelineStart / (TIMELINE_HOURS * 60)) * 100;
                       const isNextDayEnd = endHour >= 0 && endHour < TIMELINE_START_HOUR;
                       
                       // Značka konce pracovní doby sálu (working-hours hranice).
