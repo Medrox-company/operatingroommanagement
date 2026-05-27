@@ -6,6 +6,7 @@ import {
   LogIn, Sparkles, ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
+import { ShaderBackground, PulsingCircle } from './ShaderBackground';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
@@ -94,25 +95,28 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-full text-white relative overflow-hidden flex flex-col font-sans bg-[#050d18]">
-      {/* Static radial background */}
-      <div
-        aria-hidden
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse 120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
-        }}
-      />
+    <ShaderBackground>
+    <div className="min-h-screen w-full text-white relative overflow-hidden flex flex-col font-sans">
+      {/* SVG Filters for shader effects */}
+      <svg className="absolute inset-0 w-0 h-0">
+        <defs>
+          <filter id="glass-effect" x="-50%" y="-50%" width="200%" height="200%">
+            <feTurbulence baseFrequency="0.005" numOctaves="1" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.3" />
+            <feColorMatrix
+              type="matrix"
+              values="1 0 0 0 0.02
+                      0 1 0 0 0.02
+                      0 0 1 0 0.05
+                      0 0 0 0.9 0"
+              result="tint"
+            />
+          </filter>
+        </defs>
+      </svg>
 
-      {/* Ambient glow top */}
-      <div
-        aria-hidden
-        className="fixed -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full pointer-events-none opacity-20"
-        style={{
-          background: `radial-gradient(circle, ${C.accent} 0%, transparent 60%)`,
-          filter: 'blur(80px)',
-        }}
-      />
+      {/* Pulsing decorative circle */}
+      <PulsingCircle />
 
       {/* Top highlight line */}
       <div
@@ -455,6 +459,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </p>
       </footer>
     </div>
+    </ShaderBackground>
   );
 };
 
