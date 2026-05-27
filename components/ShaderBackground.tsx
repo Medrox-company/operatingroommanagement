@@ -1,6 +1,6 @@
 'use client'
 
-import { PulsingBorder, MeshGradient } from '@paper-design/shaders-react'
+import { MeshGradient } from '@paper-design/shaders-react'
 import { motion } from 'framer-motion'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
@@ -82,17 +82,6 @@ export function PulsingCircle() {
   return (
     <div className="absolute bottom-8 right-8 z-30">
       <div className="relative w-20 h-20 flex items-center justify-center">
-        {/* Pulsing Border Circle */}
-        <PulsingBorder
-          colors={['#BEECFF', '#E77EDC', '#FF4C3E', '#00FF88', '#FFD700', '#FF6B35', '#8A2BE2']}
-          speed={1.5}
-          intensity={5}
-          style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-          }}
-        />
       </div>
     </div>
   )
