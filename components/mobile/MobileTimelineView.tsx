@@ -19,20 +19,28 @@ import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle, Clock } f
    Barvy stavů se čerpají ŽIVĚ z `statusByOrderIndex` (DB → modul Statusy).
    ========================================================================== */
 
-// Design tokens
+// Design tokens - Enhanced for 2026 Glassmorphism & Neumorphism
 const C = {
   accent: '#00D9FF',
+  accentGlow: '#00D9FF',
   green: '#00F5A0',
   yellow: '#FFE66D',
   orange: '#FF9F43',
   red: '#FF6B6B',
   purple: '#A78BFA',
-  surface: 'rgba(255,255,255,0.03)',
-  surface2: 'rgba(255,255,255,0.06)',
-  border: 'rgba(255,255,255,0.08)',
-  borderHover: 'rgba(255,255,255,0.15)',
+  pink: '#EC4899',
+  blue: '#60A5FA',
+  surface: 'rgba(255,255,255,0.04)',
+  surface2: 'rgba(255,255,255,0.08)',
+  surfaceHover: 'rgba(255,255,255,0.12)',
+  border: 'rgba(255,255,255,0.12)',
+  borderHover: 'rgba(255,255,255,0.2)',
+  borderActive: 'rgba(0,217,255,0.4)',
   muted: 'rgba(255,255,255,0.45)',
   text: 'rgba(255,255,255,0.85)',
+  textHi: 'rgba(255,255,255,0.95)',
+  glassDepth: 'inset 0 1px 2px rgba(255, 255, 255, 0.1), inset 0 -1px 2px rgba(0, 0, 0, 0.3)',
+  glowAccent: '0 0 20px rgba(0, 217, 255, 0.3)',
 };
 
 const TIMELINE_START_HOUR = 7;
@@ -205,7 +213,7 @@ const MobileTimelineView: React.FC<Props> = ({
           }
         />
 
-        {/* KPI chipy - enhanced design */}
+        {/* KPI chipy - enhanced 2026 glassmorphism design */}
         <div className="flex gap-2.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-1">
           {kpis.map((k, idx) => {
             const Icon = k.icon;
@@ -214,30 +222,43 @@ const MobileTimelineView: React.FC<Props> = ({
                 key={k.label}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="flex items-center gap-2.5 shrink-0 rounded-2xl px-4 py-3"
+                transition={{ delay: idx * 0.08, type: 'spring', stiffness: 100 }}
+                className="flex items-center gap-2.5 shrink-0 rounded-2xl px-4 py-3 transition-all duration-300 cursor-pointer group"
                 style={{
-                  background: `linear-gradient(135deg, ${k.color}12 0%, ${C.surface} 100%)`,
-                  border: `1px solid ${k.color}30`,
-                  backdropFilter: 'blur(16px)',
-                  boxShadow: `0 4px 20px rgba(0,0,0,0.2), 0 0 20px ${k.color}10`,
+                  background: `linear-gradient(135deg, ${k.color}15 0%, ${C.surface2} 100%)`,
+                  border: `1px solid ${k.color}35`,
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: `${C.glassDepth}, 0 8px 24px ${k.color}12`,
+                }}
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: `${C.glassDepth}, 0 12px 32px ${k.color}20`,
                 }}
               >
-                <div
+                <motion.div
                   className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                   style={{ 
-                    background: `${k.color}20`, 
-                    border: `1px solid ${k.color}40`,
-                    boxShadow: `0 0 12px ${k.color}20`,
+                    background: `linear-gradient(135deg, ${k.color}25 0%, ${k.color}10 100%)`, 
+                    border: `1px solid ${k.color}45`,
+                    boxShadow: `0 0 16px ${k.color}25, inset 0 1px 2px rgba(255,255,255,0.1)`,
                   }}
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
                 >
                   <Icon className="w-4 h-4" style={{ color: k.color }} strokeWidth={2.25} />
-                </div>
+                </motion.div>
                 <div className="min-w-0 leading-tight">
                   <p className="text-[9px] uppercase tracking-[0.2em] font-semibold" style={{ color: C.muted }}>
                     {k.label}
                   </p>
-                  <p className="text-lg font-bold tabular-nums" style={{ color: k.color }}>{k.value}</p>
+                  <motion.p 
+                    className="text-lg font-bold tabular-nums" 
+                    style={{ color: k.color }}
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
+                  >
+                    {k.value}
+                  </motion.p>
                 </div>
               </motion.div>
             );
@@ -282,12 +303,21 @@ const MobileTimelineView: React.FC<Props> = ({
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <span
+                          <motion.span
                             className="w-2.5 h-2.5 rounded-full shrink-0"
                             style={{
                               backgroundColor: color,
-                              boxShadow: `0 0 8px ${color}aa`,
+                              boxShadow: `0 0 12px ${color}cc, inset -1px -1px 2px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)`,
                             }}
+                            animate={{ 
+                              scale: [1, 1.3, 1],
+                              boxShadow: [
+                                `0 0 12px ${color}cc, inset -1px -1px 2px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)`,
+                                `0 0 20px ${color}ff, inset -1px -1px 2px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)`,
+                                `0 0 12px ${color}cc, inset -1px -1px 2px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)`,
+                              ],
+                            }}
+                            transition={{ duration: 2, repeat: Infinity }}
                           />
                           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50 leading-none truncate">
                             {statusName}
@@ -319,20 +349,46 @@ const MobileTimelineView: React.FC<Props> = ({
                       </div>
                     </div>
 
-                    {/* Pills row */}
+                    {/* Pills row - Enhanced with glassmorphism */}
                     <div className="flex flex-wrap items-center gap-1.5 mb-3">
                       {room.isEmergency && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">
+                        <motion.span 
+                          className="text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full"
+                          style={{
+                            background: `linear-gradient(135deg, #FF6B6B30 0%, #FF6B6B10 100%)`,
+                            border: '1px solid #FF6B6B50',
+                            color: '#FF8080',
+                            boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.1), 0 0 8px #FF6B6B20',
+                          }}
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
                           Emergency
-                        </span>
+                        </motion.span>
                       )}
                       {room.isLocked && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300">
+                        <span 
+                          className="text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full"
+                          style={{
+                            background: `linear-gradient(135deg, #FBBF2430 0%, #FBBF2410 100%)`,
+                            border: '1px solid #FBBF2450',
+                            color: '#FFD580',
+                            boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.1), 0 0 8px #FBBF2420',
+                          }}
+                        >
                           Uzamčen
                         </span>
                       )}
                       {room.isPaused && !room.isEmergency && !room.isLocked && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
+                        <span 
+                          className="text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full"
+                          style={{
+                            background: `linear-gradient(135deg, #22D3EE30 0%, #22D3EE10 100%)`,
+                            border: '1px solid #22D3EE50',
+                            color: '#67E8F9',
+                            boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.1), 0 0 8px #22D3EE20',
+                          }}
+                        >
                           Pauza
                         </span>
                       )}
@@ -343,19 +399,24 @@ const MobileTimelineView: React.FC<Props> = ({
                       )}
                     </div>
 
-                    {/* Progress - enhanced */}
+                    {/* Progress - Enhanced with 2026 glassmorphism */}
                     <div
-                      className="h-2 rounded-full overflow-hidden"
-                      style={{ background: C.surface2 }}
+                      className="h-2 rounded-full overflow-hidden backdrop-blur-sm"
+                      style={{ 
+                        background: `linear-gradient(90deg, ${C.surface2} 0%, ${C.surface} 100%)`,
+                        border: `1px solid ${color}20`,
+                        boxShadow: `inset 0 1px 2px rgba(255,255,255,0.05), 0 0 8px ${color}10`,
+                      }}
                     >
                       <motion.div
                         initial={false}
                         animate={{ width: `${progress}%` }}
-                        transition={{ type: 'spring', stiffness: 180, damping: 28 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 30 }}
                         className="h-full rounded-full"
                         style={{
-                          background: `linear-gradient(90deg, ${color} 0%, ${color}bb 100%)`,
-                          boxShadow: `0 0 16px ${color}50`,
+                          background: `linear-gradient(90deg, ${color} 0%, ${color}dd 50%, ${color}aa 100%)`,
+                          boxShadow: `0 0 20px ${color}70, inset 0 1px 2px rgba(255,255,255,0.3)`,
+                          filter: 'drop-shadow(0 0 8px ' + color + '30)',
                         }}
                       />
                     </div>

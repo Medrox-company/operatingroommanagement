@@ -10,7 +10,7 @@ import {
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (Premium Medical Dashboard - Futuristic Control Center) ==========
+// ========== DESIGN TOKENS (Premium Medical Dashboard - Futuristic Control Center 2026) ==========
 const C = {
   // Primary accent - Medical Cyan
   accent: '#06B6D4',
@@ -26,24 +26,29 @@ const C = {
   blue: '#3B82F6',        // Info - Blue
   slate: '#64748B',       // Completed - Slate
   
-  // Surface & Glass Effects
+  // Surface & Glass Effects - Enhanced for 2026 Glassmorphism
   bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgb(0 9 29 / 85%)',           // Glass surface
-  bgElevated: 'rgba(30, 41, 59, 0.9)',      // Elevated cards
-  bgCard: 'rgba(15, 23, 42, 0.95)',         // Card background
+  bgSurface: 'rgb(0 9 29 / 75%)',           // Glass surface (reduced opacity for more transparency)
+  bgElevated: 'rgba(30, 41, 59, 0.7)',      // Elevated cards (enhanced depth)
+  bgCard: 'rgba(15, 23, 42, 0.8)',          // Card background (refined)
+  bgGlassLight: 'rgba(148, 163, 184, 0.05)', // Light glass for depth layers
   
-  // Borders & Lines
-  border: 'rgba(148, 163, 184, 0.08)',      // Subtle border
-  borderHover: 'rgba(6, 182, 212, 0.3)',    // Cyan hover
-  borderActive: 'rgba(6, 182, 212, 0.5)',   // Active state
-  gridLine: 'rgba(148, 163, 184, 0.06)',    // Timeline grid
+  // Borders & Lines - Enhanced with gradient tints
+  border: 'rgba(148, 163, 184, 0.12)',      // Subtle border (enhanced)
+  borderHover: 'rgba(6, 182, 212, 0.4)',    // Cyan hover (enhanced)
+  borderActive: 'rgba(6, 182, 212, 0.6)',   // Active state (enhanced)
+  gridLine: 'rgba(148, 163, 184, 0.08)',    // Timeline grid (enhanced)
   
-  // Glass & Glow
+  // Glass & Glow - Enhanced for 2026 Neumorphism & Glassmorphism
   glass: 'rgba(255, 255, 255, 0.02)',
-  glassHover: 'rgba(6, 182, 212, 0.08)',
-  glowCyan: '0 0 20px rgba(6, 182, 212, 0.4)',
-  glowGreen: '0 0 16px rgba(16, 185, 129, 0.4)',
-  glowRed: '0 0 16px rgba(239, 68, 68, 0.5)',
+  glassHover: 'rgba(6, 182, 212, 0.1)',
+  glassDepth: 'inset 0 1px 2px rgba(255, 255, 255, 0.1), inset 0 -1px 2px rgba(0, 0, 0, 0.3)',
+  glowCyan: '0 0 20px rgba(6, 182, 212, 0.5)',
+  glowGreen: '0 0 16px rgba(16, 185, 129, 0.5)',
+  glowRed: '0 0 16px rgba(239, 68, 68, 0.6)',
+  glowPurple: '0 0 16px rgba(139, 92, 246, 0.4)',
+  shadowMedium: '0 8px 32px rgba(0, 0, 0, 0.3)',
+  shadowSmall: '0 4px 12px rgba(0, 0, 0, 0.2)',
   
   // Text
   textHi: 'rgba(255, 255, 255, 0.95)',
@@ -884,44 +889,54 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 );
               }
 
-              /* Active / Free / Locked row - Premium glass card design */
+              /* Active / Free / Locked row - Premium glass card design with 2026 Neumorphism */
               return (
                 <motion.div
                   key={room.id}
-                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden transition-all duration-300`}
                   style={{
                     height: rowHeight,
                     background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
-                      : C.bgSurface,
+                      ? `linear-gradient(135deg, ${stepColor}12 0%, ${C.bgGlassLight} 100%)`
+                      : `linear-gradient(135deg, ${C.bgSurface}, ${C.bgGlassLight})`,
                     border: room.isLocked 
-                      ? `1.5px solid rgba(6, 182, 212, 0.4)`
-                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
+                      ? `1.5px solid ${C.borderActive}`
+                      : `1px solid ${isActive ? `${stepColor}30` : C.border}`,
+                    boxShadow: isActive 
+                      ? `${C.glassDepth}, 0 0 24px ${stepColor}10`
+                      : C.glassDepth,
+                    backdropFilter: 'blur(8px)',
                   }}
                   onClick={() => setSelectedRoom(room)}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: roomIndex * 0.03 }}
+                  transition={{ delay: roomIndex * 0.03, type: 'spring', stiffness: 100 }}
                   whileHover={{ 
-                    borderColor: isActive ? `${stepColor}40` : C.borderHover,
-                    boxShadow: isActive ? `0 0 20px ${stepColor}15` : '0 4px 20px rgba(0,0,0,0.2)',
+                    borderColor: isActive ? `${stepColor}50` : C.borderHover,
+                    boxShadow: isActive 
+                      ? `${C.glassDepth}, 0 12px 32px ${stepColor}20`
+                      : `${C.glassDepth}, 0 12px 32px rgba(0,0,0,0.3)`,
+                    scale: 1.02,
                   }}
                 >
-                  {/* Colored left accent bar */}
-                  <div 
-                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                  {/* Colored left accent bar with gradient and glow */}
+                  <motion.div 
+                    className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl"
                     style={{ 
                       background: isActive 
-                        ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}80)`
-                        : `linear-gradient(to bottom, ${C.slate}40, transparent)`,
-                      boxShadow: isActive ? `0 0 8px ${stepColor}40` : 'none',
+                        ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}60)`
+                        : `linear-gradient(to bottom, ${C.slate}30, transparent)`,
+                      boxShadow: isActive ? `0 0 12px ${stepColor}60` : 'none',
                     }}
+                    animate={isActive ? { 
+                      opacity: [0.8, 1, 0.8],
+                    } : {}}
+                    transition={{ duration: 2, repeat: Infinity }}
                   />
                   
-                  {/* Room Label - Premium glass panel */}
+                  {/* Room Label - Enhanced glass panel with depth */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200" 
+                    className="flex-shrink-0 flex items-center gap-3 pl-5 pr-3 min-h-0 overflow-hidden transition-all duration-200" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
