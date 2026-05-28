@@ -242,12 +242,12 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                       ? 'bg-amber-500 text-white border-amber-600' 
                       : '')}
             `}
-              // Normální stav: jemný odstín barvy aktuálního statusu místo plochého šedého,
-              // aby badge ladil s prstencem i horním akcentem karty.
+              // Normální stav: jemný odstín barvy aktuálního statusu v pozadí,
+              // text bílý pro maximální čitelnost.
               style={(!room.isEmergency && !room.isLocked) ? {
                 backgroundColor: `${themeColor}1a`,
                 borderColor: `${themeColor}40`,
-                color: themeColor,
+                color: '#FFFFFF',
               } : undefined}
             >
               {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
