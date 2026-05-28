@@ -1074,11 +1074,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       <div className="locked-room-stripes absolute inset-0 z-10 rounded-lg" />
                     )}
                     
-                    {/* Locked room overlay with icon */}
+                    {/* Locked room overlay — jeden velký, centrovaný nápis přes celý řádek.
+                        Žádné další statusové texty se u uzamčeného sálu nezobrazují. */}
                     {room.isLocked && (
-                      <div className="absolute inset-0 flex items-center justify-end pr-8 z-20 pointer-events-none">
-                        <span className="text-sm font-bold uppercase tracking-widest text-white opacity-75">
-                          UZAMČENO
+                      <div className="absolute inset-0 flex items-center justify-center gap-3 z-20 pointer-events-none">
+                        <Lock className="w-5 h-5 flex-shrink-0" style={{ color: C.cyan, opacity: 0.7 }} />
+                        <span 
+                          className="text-base font-bold uppercase tracking-[0.3em] whitespace-nowrap"
+                          style={{ color: 'rgba(255,255,255,0.8)', textShadow: `0 0 18px ${C.cyan}55` }}
+                        >
+                          SÁL UZAVŘEN
                         </span>
                       </div>
                     )}
@@ -1103,8 +1108,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       );
                     })}
 
-                    {/* Completed operations - Premium glass cards */}
-                    {(() => {
+                    {/* Completed operations - Premium glass cards.
+                        U uzamčeného sálu nic dalšího nevykreslujeme — viz overlay výše. */}
+                    {!room.isLocked && (() => {
                       const opsToRender = room.completedOperations || [];
                       
                       if (opsToRender.length === 0) return null;
@@ -1261,7 +1267,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         started BEFORE that 7:00 (i.e. it ran overnight and is still active).
                         The bar goes from 0% (7:00 today) to the estimated end time position.
                     */}
-                    {isActive && room.operationStartedAt && room.estimatedEndTime && (() => {
+                    {isActive && !room.isLocked && room.operationStartedAt && room.estimatedEndTime && (() => {
                       const opStart = new Date(room.operationStartedAt);
                       const opEnd   = new Date(room.estimatedEndTime);
 
@@ -1307,7 +1313,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                        • Glassmorphism with subtle gradients
                        • Animated glow effects based on status
                        • Professional card-like appearance */}
-                    {isActive && shouldShowBar && boxWidthPct > 0 && (
+                    {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
                         style={{ 
@@ -1505,7 +1511,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     {/* Free room indicator — kompaktní pill zarovnaný na PRAVOU stranu řádku.
                         Záměrně NEzabírá celou šířku, aby nepřekrýval barvy již proběhlých
                         statusů (dokončené operace) na levé části časové osy. */}
-                    {isFree && (
+                    {isFree && !room.isLocked && (
                       <motion.div 
                         className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 px-3.5 rounded-xl overflow-hidden"
                         style={{ 
