@@ -95,7 +95,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   return (
     <div
       onClick={onClick}
-      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full"
+      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99]"
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
@@ -105,13 +105,18 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       )}
 
       {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 
+      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]
         ${room.isEmergency 
             ? 'bg-red-950/20 border-red-500/40' 
             : (room.isLocked 
                 ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
-                : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06]')}
+                : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06] group-hover:border-white/10')}
       `}>
+        {/* Horní akcentní linka v barvě aktuálního stavu — jemný vizuální podpis sálu */}
+        <div
+          className="absolute inset-x-10 top-0 h-[2px] rounded-full transition-opacity duration-500 opacity-60 group-hover:opacity-100"
+          style={{ background: `linear-gradient(to right, transparent, ${themeColor}, transparent)` }}
+        />
         {room.isEmergency && (
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
         )}
@@ -229,13 +234,22 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Bottom Info */}
         <div className="w-full space-y-2 sm:space-y-3 shrink-0">
           <div className="w-full text-center">
-            <p className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
+            <p
+              className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
               ${room.isEmergency 
                   ? 'bg-red-600 text-white border-red-500' 
                   : (room.isLocked 
                       ? 'bg-amber-500 text-white border-amber-600' 
-                      : 'bg-white/5 border-white/5 text-white/50')}
-            `}>
+                      : '')}
+            `}
+              // Normální stav: jemný odstín barvy aktuálního statusu místo plochého šedého,
+              // aby badge ladil s prstencem i horním akcentem karty.
+              style={(!room.isEmergency && !room.isLocked) ? {
+                backgroundColor: `${themeColor}1a`,
+                borderColor: `${themeColor}40`,
+                color: themeColor,
+              } : undefined}
+            >
               {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
             </p>
           </div>

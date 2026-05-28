@@ -10,6 +10,7 @@ import StaffOverviewModule from './components/StaffOverviewModule';
 import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
 import AnimatedCounter from './components/AnimatedCounter';
+import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
@@ -524,29 +525,41 @@ const AppContent: React.FC = () => {
                         OPERAČNÍ <span className="text-white/20">SÁLY</span>
                       </h1>
                     </div>
-                    <div className="flex gap-1.5 md:gap-4 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                      {(() => {
-                        // Check if room is in "ready" status (step index 0 or 7)
-                        const isRoomReady = (room: OperatingRoom) => {
-                          return room.currentStepIndex === 0 || room.currentStepIndex === 7;
-                        };
-                        
-                        const readyRooms = rooms.filter(isRoomReady);
-                        const activeRooms = rooms.filter(r => !isRoomReady(r));
-                        
-                        return [
-                          { label: 'AKTIVNÍ',    value: activeRooms.length, icon: Activity,   color: 'text-red-500'    },
-                          { label: 'PŘIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#FBBF24]'  },
-                        ];
-                      })().map((stat) => (
-                        <div key={stat.label} className="flex flex-col items-center justify-center px-3 sm:px-6 md:px-10 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[130px] md:min-w-[150px] z-10">
-                          <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2 opacity-40">
-                            <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
-                            <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em]">{stat.label}</p>
-                          </div>
-                          <AnimatedCounter to={stat.value} />
-                        </div>
-                      ))}
+                    <div className="flex items-center gap-2 md:gap-5">
+                      <LiveClock />
+                      <div className="flex items-stretch gap-1 md:gap-2 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                        {/* Jemný horní světelný akcent panelu */}
+                        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                        {(() => {
+                          // Check if room is in "ready" status (step index 0 or 7)
+                          const isRoomReady = (room: OperatingRoom) => {
+                            return room.currentStepIndex === 0 || room.currentStepIndex === 7;
+                          };
+                          
+                          const readyRooms = rooms.filter(isRoomReady);
+                          const activeRooms = rooms.filter(r => !isRoomReady(r));
+                          
+                          return [
+                            { label: 'AKTIVNÍ',    value: activeRooms.length, icon: Activity,   color: 'text-red-500',     valueColor: '#FF453A' },
+                            { label: 'PŘIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#34D399]',   valueColor: '#34D399' },
+                          ];
+                        })().map((stat, idx) => (
+                          <React.Fragment key={stat.label}>
+                            {idx > 0 && (
+                              <div className="w-px self-stretch my-2 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                            )}
+                            <div className="flex flex-col items-center justify-center px-3 sm:px-6 md:px-9 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[120px] md:min-w-[140px] z-10">
+                              <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2">
+                                <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
+                                <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/45">{stat.label}</p>
+                              </div>
+                              <div style={{ color: stat.valueColor }}>
+                                <AnimatedCounter to={stat.value} />
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        ))}
+                      </div>
                     </div>
                   </header>
                   <div className="pb-20 px-0 sm:px-2">

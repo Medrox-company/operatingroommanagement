@@ -8,7 +8,7 @@ interface AnimatedCounterProps {
 
 const AnimatedCounter: React.FC<AnimatedCounterProps> = memo(({ to, className = '' }) => {
   return (
-    <p className={`text-3xl font-bold text-white leading-none tracking-tight ${className}`}>
+    <p className={`text-3xl font-bold text-current leading-none tracking-tight ${className}`}>
       {to}
     </p>
   );
