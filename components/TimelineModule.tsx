@@ -1196,13 +1196,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                       return (
                                         <motion.div
                                           key={`seg-${idx}`}
-                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-105"
+                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-110"
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
+                                            background: `linear-gradient(180deg, ${phaseColor}cc 0%, ${phaseColor}88 100%)`,
                                             borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.22)`,
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.22), 0 0 12px ${phaseColor}40`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
@@ -1408,6 +1408,37 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                             );
                           })()}
                         </div>
+
+                        {/* "Prepared" Badge - Shows when room has status history (is in operation or completed) */}
+                        {(() => {
+                          const hasStatusHistory = room.statusHistory && room.statusHistory.length > 0;
+                          const isPrepared = hasStatusHistory || (room.currentStepIndex && room.currentStepIndex > 0);
+                          
+                          if (isPrepared && !isActive && !isFree) {
+                            return (
+                              <motion.div
+                                className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                                style={{
+                                  background: `linear-gradient(135deg, ${C.green}25 0%, ${C.green}12 100%)`,
+                                  border: `1px solid ${C.green}40`,
+                                  boxShadow: `0 0 12px ${C.green}20, inset 0 1px 2px rgba(255,255,255,0.1)`,
+                                }}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                                whileHover={{ 
+                                  boxShadow: `0 0 16px ${C.green}40, inset 0 1px 2px rgba(255,255,255,0.1)`
+                                }}
+                              >
+                                <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: C.green }} />
+                                <span className="text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: C.green }}>
+                                  Připraven
+                                </span>
+                              </motion.div>
+                            );
+                          }
+                          return null;
+                        })()}
 
                         {/* Content overlay - Premium card content */}
                         {(() => {
