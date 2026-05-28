@@ -697,30 +697,43 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  {/* Glow effect */}
+                  {/* Glow effect — sladěno do tyrkysové (medical accent),
+                      konzistentní s časovou osou nahoře. Červená je vyhrazena
+                      pro stavy nouze, ne pro běžnou značku „teď". */}
                   <div 
-                    className="absolute -left-3 top-0 bottom-0 w-6"
+                    className="absolute -left-4 top-0 bottom-0 w-8"
                     style={{ 
-                      background: `linear-gradient(90deg, transparent, ${C.red}15, transparent)`,
+                      background: `linear-gradient(90deg, transparent, ${C.cyan}1f, transparent)`,
                     }}
                   />
                   {/* Main line */}
                   <motion.div 
                     className="absolute -left-[1px] top-0 bottom-0 w-[2px] rounded-full"
                     style={{ 
-                      background: `linear-gradient(to bottom, ${C.red}, ${C.red}80)`,
-                      boxShadow: `0 0 8px ${C.red}, 0 0 16px ${C.red}50`,
+                      background: `linear-gradient(to bottom, ${C.cyan}, ${C.cyan}70)`,
+                      boxShadow: `0 0 8px ${C.cyan}, 0 0 18px ${C.cyan}55`,
                     }}
-                    animate={{ opacity: [0.8, 1, 0.8] }}
+                    animate={{ opacity: [0.85, 1, 0.85] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   />
-                  {/* Top dot */}
+                  {/* Floating time pill on the line */}
+                  <div 
+                    className="absolute -left-[1px] -top-[9px] -translate-x-1/2 px-1.5 py-[2px] rounded-md whitespace-nowrap"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
+                      boxShadow: `0 0 10px ${C.cyan}80`,
+                    }}
+                  >
+                    <span className="text-[8px] font-bold font-mono tabular-nums leading-none" style={{ color: '#001018' }}>
+                      {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
+                    </span>
+                  </div>
+                  {/* Pulsing halo behind pill */}
                   <motion.div 
                     className="absolute -left-1 -top-1 w-2 h-2 rounded-full"
-                    style={{ 
-                      background: C.red,
-                      boxShadow: `0 0 8px ${C.red}`,
-                    }}
+                    style={{ background: C.cyan, boxShadow: `0 0 10px ${C.cyan}` }}
+                    animate={{ scale: [1, 1.6, 1], opacity: [0.7, 0, 0.7] }}
+                    transition={{ duration: 1.8, repeat: Infinity }}
                   />
                 </motion.div>
               )}
@@ -1513,32 +1526,38 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         statusů (dokončené operace) na levé části časové osy. */}
                     {isFree && !room.isLocked && (
                       <motion.div 
-                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 px-3.5 rounded-xl overflow-hidden"
+                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-xl overflow-hidden"
                         style={{ 
-                          background: `linear-gradient(135deg, ${C.green}1c 0%, ${C.green}0a 100%)`,
-                          border: `1px solid ${C.green}33`,
-                          boxShadow: `0 0 16px ${C.green}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                          background: `linear-gradient(135deg, ${C.green}1a 0%, ${C.green}08 100%)`,
+                          border: `1px solid ${C.green}30`,
+                          boxShadow: `0 0 16px ${C.green}12, inset 0 1px 0 rgba(255,255,255,0.05)`,
                           backdropFilter: 'blur(6px)',
                         }}
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <div 
-                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${C.green}2e 0%, ${C.green}12 100%)`,
-                            border: `1px solid ${C.green}40`,
-                          }}
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" style={{ color: C.green }} />
+                        {/* Ikona s jemnou pulzující svatozáří */}
+                        <div className="relative flex-shrink-0">
+                          <motion.div
+                            className="absolute inset-0 rounded-lg"
+                            style={{ background: C.green }}
+                            animate={{ opacity: [0, 0.18, 0], scale: [0.9, 1.25, 0.9] }}
+                            transition={{ duration: 2.4, repeat: Infinity }}
+                          />
+                          <div 
+                            className="relative w-6 h-6 rounded-lg flex items-center justify-center"
+                            style={{ 
+                              background: `linear-gradient(135deg, ${C.green}2e 0%, ${C.green}12 100%)`,
+                              border: `1px solid ${C.green}45`,
+                            }}
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" style={{ color: C.green }} />
+                          </div>
                         </div>
-                        <div className="flex flex-col min-w-0">
-                          <p className="text-[11px] font-semibold text-white/90 leading-tight truncate">{stepName}</p>
-                          <p className="text-[8px] uppercase tracking-[0.22em] text-white/40 leading-tight">Připraveno</p>
-                        </div>
+                        <p className="text-[11px] font-semibold text-white/90 leading-tight truncate">{stepName}</p>
                         <motion.div 
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0 ml-0.5"
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                           style={{ background: C.green, boxShadow: `0 0 6px ${C.green}` }}
                           animate={{ opacity: [0.4, 1, 0.4] }}
                           transition={{ duration: 2, repeat: Infinity }}
@@ -1571,19 +1590,24 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       // aby byla na časové ose okam��itě rozpoznatelná např��č sály a statusy.
                       return (
                         <div
-                          className="absolute top-0 bottom-0 w-0.5 z-20"
-                          style={{
-                            left: `${endPercent}%`,
-                            background: 'linear-gradient(180deg, transparent 0%, #F97316 20%, #F97316 80%, transparent 100%)',
-                          }}
+                          className="absolute top-0 bottom-0 z-20 group/eohours"
+                          style={{ left: `${endPercent}%` }}
                         >
-                          {/* End time label */}
+                          {/* Jemná přerušovaná čára — značka konce provozní doby sálu.
+                              Decentní amber, aby nepřebíjela statusy ani časovou osu. */}
                           <div
-                            className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex items-center gap-1"
+                            className="absolute inset-y-0 left-0 w-px"
                             style={{
-                              background: 'rgba(249, 115, 22, 0.2)',
-                              border: '1px solid rgba(249, 115, 22, 0.4)',
-                              color: '#F97316',
+                              backgroundImage: 'repeating-linear-gradient(to bottom, rgba(249,115,22,0.55) 0px, rgba(249,115,22,0.55) 4px, transparent 4px, transparent 9px)',
+                            }}
+                          />
+                          {/* Kompaktní amber chip s časem */}
+                          <div
+                            className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-colors"
+                            style={{
+                              background: 'rgba(249, 115, 22, 0.12)',
+                              border: '1px solid rgba(249, 115, 22, 0.28)',
+                              color: 'rgba(251, 191, 132, 0.95)',
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
