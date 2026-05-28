@@ -1137,17 +1137,18 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
+                              // Decentní, převážně průhledné pozadí — barvy již proběhlých
+                              // statusů (segmenty uvnitř) zůstanou čitelné a nejsou
+                              // překryté plnou netransparentní barvou.
                               background: isContinuingOp 
-                                ? `linear-gradient(135deg, ${C.green}45 0%, ${C.green}30 100%)`
-                                : isRoomReady
-                                  ? `linear-gradient(135deg, ${C.blue}55 0%, ${C.cyan}35 100%)`
-                                  : `linear-gradient(135deg, ${C.slate}25 0%, ${C.slate}15 100%)`,
-                              border: `2px solid ${isContinuingOp ? `${C.green}60` : isRoomReady ? `${C.blue}70` : `${C.slate}35`}`,
+                                ? `linear-gradient(135deg, ${C.green}1f 0%, ${C.green}10 100%)`
+                                : `linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)`,
+                              border: `1px solid ${isContinuingOp ? `${C.green}55` : isRoomReady ? `${C.cyan}45` : `${C.slate}2e`}`,
                               boxShadow: isRoomReady 
-                                ? `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 16px ${C.blue}40, 0 0 32px ${C.blue}20`
+                                ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 14px ${C.cyan}1f`
                                 : isContinuingOp
-                                  ? `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 12px ${C.green}30`
-                                  : 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                                  ? `inset 0 1px 0 rgba(255,255,255,0.10), 0 0 12px ${C.green}22`
+                                  : 'inset 0 1px 0 rgba(255,255,255,0.04)',
                             }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -1200,9 +1201,12 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            background: `linear-gradient(180deg, ${phaseColor}88 0%, ${phaseColor}5a 100%)`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.35)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.22)`,
+                                            // Jemnější (průhlednější) barva pro již proběhlé fáze —
+                                            // zůstávají rozpoznatelné, ale nepůsobí tak agresivně jako
+                                            // aktivní výkon.
+                                            background: `linear-gradient(180deg, ${phaseColor}66 0%, ${phaseColor}3a 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.28)` : 'none',
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12)`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
@@ -1215,13 +1219,35 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                 </div>
                               )}
                               
-                              {/* Label for operation - RESTORED per Medrox design */}
-                              <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
-                                {position.width > 6 && (
-                                  <span className={`text-[10px] font-semibold truncate uppercase tracking-wide ${
-                                    isContinuingOp ? 'text-white' : 'text-white/50'
-                                  }`}>
-                                    {isContinuingOp ? 'POKRAČUJÍCÍ VÝKON' : 'Dokončeno'}
+                              {/* Label for operation — zarovnáno na PRAVOU stranu řádku.
+                                  Po dokončení / při připraveném sále se zobrazí elegantní
+                                  pill "Sál připraven". */}
+                              <div className="absolute inset-0 flex items-center justify-end pr-2 pl-3 pointer-events-none">
+                                {isContinuingOp && position.width > 6 && (
+                                  <span className="text-[10px] font-semibold truncate uppercase tracking-wide text-white">
+                                    POKRAČUJÍCÍ VÝKON
+                                  </span>
+                                )}
+                                {!isContinuingOp && isRoomReady && position.width > 4 && (
+                                  <span 
+                                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-md flex-shrink-0"
+                                    style={{ 
+                                      background: `linear-gradient(135deg, ${C.cyan}24 0%, ${C.cyan}12 100%)`,
+                                      border: `1px solid ${C.cyan}40`,
+                                      boxShadow: `0 0 10px ${C.cyan}1a`,
+                                    }}
+                                  >
+                                    <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: C.cyan }} />
+                                    {position.width > 12 && (
+                                      <span className="text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: C.cyan }}>
+                                        Sál připraven
+                                      </span>
+                                    )}
+                                  </span>
+                                )}
+                                {!isContinuingOp && !isRoomReady && position.width > 6 && (
+                                  <span className="text-[10px] font-semibold truncate uppercase tracking-wide text-white/45">
+                                    Dokončeno
                                   </span>
                                 )}
                               </div>
@@ -1476,41 +1502,41 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       </motion.div>
                     )}
 
-                    {/* Free room indicator - Premium glass card */}
+                    {/* Free room indicator — kompaktní pill zarovnaný na PRAVOU stranu řádku.
+                        Záměrně NEzabírá celou šířku, aby nepřekrýval barvy již proběhlých
+                        statusů (dokončené operace) na levé části časové osy. */}
                     {isFree && (
                       <motion.div 
-                        className="absolute inset-y-1.5 left-3 right-3 rounded-xl flex items-center overflow-hidden"
+                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 px-3.5 rounded-xl overflow-hidden"
                         style={{ 
-                          background: `linear-gradient(135deg, ${C.bgSurface} 0%, ${C.bgCard} 100%)`,
-                          border: `1px solid ${C.green}20`,
-                          boxShadow: `0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)`,
+                          background: `linear-gradient(135deg, ${C.green}1c 0%, ${C.green}0a 100%)`,
+                          border: `1px solid ${C.green}33`,
+                          boxShadow: `0 0 16px ${C.green}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                          backdropFilter: 'blur(6px)',
                         }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        {/* Green glowing left border */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ 
-                            background: `linear-gradient(to bottom, ${C.green}, ${C.green}80)`,
-                            boxShadow: `0 0 8px ${C.green}40`,
+                            background: `linear-gradient(135deg, ${C.green}2e 0%, ${C.green}12 100%)`,
+                            border: `1px solid ${C.green}40`,
                           }}
-                        />
-                        <div className="flex items-center gap-4 pl-5 pr-4">
-                          <div 
-                            className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{ 
-                              background: `linear-gradient(135deg, ${C.green}25 0%, ${C.green}10 100%)`,
-                              border: `1px solid ${C.green}30`,
-                            }}
-                          >
-                            <CheckCircle className="w-4 h-4" style={{ color: C.green }} />
-                          </div>
-                          <div className="flex flex-col">
-                            <p className="text-xs font-semibold text-white/85">{stepName}</p>
-                            <p className="text-[9px] text-white/40">Ready for operation</p>
-                          </div>
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" style={{ color: C.green }} />
                         </div>
+                        <div className="flex flex-col min-w-0">
+                          <p className="text-[11px] font-semibold text-white/90 leading-tight truncate">{stepName}</p>
+                          <p className="text-[8px] uppercase tracking-[0.22em] text-white/40 leading-tight">Připraveno</p>
+                        </div>
+                        <motion.div 
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0 ml-0.5"
+                          style={{ background: C.green, boxShadow: `0 0 6px ${C.green}` }}
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
                       </motion.div>
                     )}
 
