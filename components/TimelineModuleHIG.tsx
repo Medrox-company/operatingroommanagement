@@ -407,11 +407,13 @@ const TimelineModuleHIG: React.FC<TimelineModuleProps> = ({
 
   return (
     <motion.div
-      className="w-full rounded-2xl overflow-hidden"
+      className="w-full rounded-2xl overflow-hidden flex flex-col"
       style={{
         backgroundColor: config.colors?.background,
         color: config.colors?.text,
         fontFamily: config.fontFamily,
+        minHeight: '400px',
+        height: 'auto',
       }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -445,10 +447,10 @@ const TimelineModuleHIG: React.FC<TimelineModuleProps> = ({
 
       {/* Content */}
       <div
-        className="overflow-auto"
+        className="overflow-auto flex-1"
         ref={scrollContainerRef}
         style={{
-          maxHeight: '600px',
+          minHeight: '300px',
         }}
       >
         {error && (
