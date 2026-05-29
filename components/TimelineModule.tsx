@@ -1183,26 +1183,10 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         </span>
                       </div>
                     )}
-                    {/* Hour grid lines - Premium gradient */}
-                    {TIME_MARKERS.slice(0, -1).map((hour, i) => {
-                      const displayHour = hour % 24;
-                      const isNight = displayHour >= 19 || displayHour < 7;
-                      const isMajor = displayHour % 3 === 0;
-                      return (
-                        <div 
-                          key={i} 
-                          className="absolute top-0 bottom-0 w-px" 
-                          style={{ 
-                            left: `${(i / TIMELINE_HOURS) * 100}%`,
-                            background: isMajor 
-                              ? `linear-gradient(to bottom, ${C.cyan}15, transparent)`
-                              : isNight 
-                                ? 'rgba(255,255,255,0.02)' 
-                                : 'rgba(255,255,255,0.04)'
-                          }} 
-                        />
-                      );
-                    })}
+                    {/* Hodinová mřížka se kreslí globálně přes všechny řádky
+                        (viz „Hour grid overlay" výše), proto ji zde záměrně
+                        NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
+                        noční výpočet. */}
 
                     {/* Completed operations - Premium glass cards.
                         U uzamčeného sálu nic dalšího nevykreslujeme — viz overlay výše. */}
@@ -1687,9 +1671,15 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                               backgroundImage: 'repeating-linear-gradient(to bottom, rgba(249,115,22,0.55) 0px, rgba(249,115,22,0.55) 4px, transparent 4px, transparent 9px)',
                             }}
                           />
-                          {/* Kompaktní amber chip s časem */}
+                          {/* Kompaktní amber chip s časem.
+                              Aby nevznikal sloupec identických chipů přes všechny
+                              řádky, zobrazujeme čas trvale jen na PRVNÍM řádku;
+                              na ostatních se odhalí při najetí myší na čáru
+                              (čára „konec provozní doby" zůstává na každém řádku). */}
                           <div
-                            className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-colors"
+                            className={`absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-opacity duration-150 ${
+                              roomIndex === 0 ? 'opacity-100' : 'opacity-0 group-hover/eohours:opacity-100'
+                            }`}
                             style={{
                               background: 'rgba(249, 115, 22, 0.12)',
                               border: '1px solid rgba(249, 115, 22, 0.28)',
