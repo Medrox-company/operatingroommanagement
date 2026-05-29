@@ -332,16 +332,48 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         />
         <div className="px-8 md:pl-32 md:pr-10 py-4">
 
-          {/* Header Row - Time Center, ARO Right */}
+          {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
           <div className="flex items-center justify-between gap-4">
 
+            {/* Left: Live operations stats — control-center cluster */}
+            <div className="flex-1 flex items-center justify-start min-w-0">
+              <div className="hidden lg:flex items-center gap-2">
+                {[
+                  { icon: Activity, label: 'Operace', value: stats.operations, color: C.cyan },
+                  { icon: Sparkles, label: 'Úklid', value: stats.cleaning, color: C.yellow },
+                  { icon: CheckCircle, label: 'Volné', value: stats.free, color: C.green },
+                ].map(({ icon: Icon, label, value, color }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-2.5 h-14 rounded-2xl px-4 backdrop-blur-md"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+                      border: `1px solid ${C.border}`,
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: `${color}1a`, border: `1px solid ${color}33` }}
+                    >
+                      <Icon className="w-4 h-4" style={{ color }} />
+                    </div>
+                    <div className="leading-none">
+                      <p className="text-[9px] uppercase tracking-[0.2em] font-medium text-white/40 mb-1">{label}</p>
+                      <p className="text-lg font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Center: Current Time (no box, just prominent display) */}
-            <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center flex-shrink-0">
               <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
                 {formatDate(currentTime)}
               </p>
               <motion.p 
-                className="text-3xl font-bold tabular-nums tracking-tight"
+                className="text-3xl font-bold tabular-nums tracking-tight flex items-baseline gap-1"
                 style={{ 
                   color: C.textHi,
                   textShadow: `0 0 40px ${C.cyan}40`,
@@ -349,16 +381,17 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 animate={{ opacity: [0.9, 1, 0.9] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                {currentTime.toLocaleTimeString("cs-CZ", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
+                <span>
+                  {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span className="text-base font-semibold tabular-nums text-white/40">
+                  {currentTime.toLocaleTimeString("cs-CZ", { second: "2-digit" })}
+                </span>
               </motion.p>
             </div>
 
             {/* Right: ARO Overtime indicator */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex-1 flex items-center justify-end gap-3">
             {aroOvertimeRooms.length > 0 ? (
               <motion.button
                 onClick={() => setShowAroPopup(true)}
