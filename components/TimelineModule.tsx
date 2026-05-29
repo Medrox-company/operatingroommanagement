@@ -26,24 +26,26 @@ const C = {
   blue: '#3B82F6',        // Info - Blue
   slate: '#64748B',       // Completed - Slate
   
-  // Surface & Glass Effects
-  bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgb(0 9 29 / 85%)',           // Glass surface
-  bgElevated: 'rgba(30, 41, 59, 0.9)',      // Elevated cards
-  bgCard: 'rgba(15, 23, 42, 0.95)',         // Card background
+  // Surface & Glass Effects — kalibrováno na klidný "control-room" vzhled
+  // (inspirace Vercel Observability): tlumené břidlicové plochy, jemné okraje,
+  // minimum neonu. Plochy jsou téměř neprůhledné a konzistentní.
+  bgDeep: '#070B14',                        // Deep slate base
+  bgSurface: 'rgba(13, 19, 31, 0.92)',      // Panel surface
+  bgElevated: 'rgba(20, 28, 43, 0.92)',     // Elevated cards
+  bgCard: 'rgba(15, 22, 36, 0.95)',         // Card background
   
-  // Borders & Lines
-  border: 'rgba(148, 163, 184, 0.08)',      // Subtle border
-  borderHover: 'rgba(6, 182, 212, 0.3)',    // Cyan hover
-  borderActive: 'rgba(6, 182, 212, 0.5)',   // Active state
-  gridLine: 'rgba(148, 163, 184, 0.06)',    // Timeline grid
+  // Borders & Lines — o něco čitelnější pro čisté ohraničení "karet"
+  border: 'rgba(148, 163, 184, 0.12)',      // Subtle border
+  borderHover: 'rgba(6, 182, 212, 0.28)',   // Cyan hover
+  borderActive: 'rgba(6, 182, 212, 0.45)',  // Active state
+  gridLine: 'rgba(148, 163, 184, 0.07)',    // Timeline grid
   
-  // Glass & Glow
+  // Glass & Glow — výrazně ztlumeno (klid > neon)
   glass: 'rgba(255, 255, 255, 0.02)',
-  glassHover: 'rgba(6, 182, 212, 0.08)',
-  glowCyan: '0 0 20px rgba(6, 182, 212, 0.4)',
-  glowGreen: '0 0 16px rgba(16, 185, 129, 0.4)',
-  glowRed: '0 0 16px rgba(239, 68, 68, 0.5)',
+  glassHover: 'rgba(6, 182, 212, 0.06)',
+  glowCyan: '0 0 10px rgba(6, 182, 212, 0.22)',
+  glowGreen: '0 0 8px rgba(16, 185, 129, 0.2)',
+  glowRed: '0 0 10px rgba(239, 68, 68, 0.28)',
   
   // Text
   textHi: 'rgba(255, 255, 255, 0.95)',
@@ -495,94 +497,100 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           borderBottom: `1px solid ${C.border}`,
         }}
       >
-        {/* Ambient glow */}
+        {/* Ambient glow — velmi jemný, jen náznak hloubky */}
         <div 
-          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
+          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-[0.04] pointer-events-none"
           style={{ background: C.accent }}
         />
         <div className="px-8 md:pl-32 md:pr-10 py-4">
 
-          {/* Header Row - Time Center, ARO Right */}
-          <div className="flex items-center justify-between gap-4">
+          {/* Header Row — čistý "dashboard" layout: titul vlevo, hodiny + stav vpravo.
+              Klidný, prémiový vzhled (inspirace Vercel Observability) bez neonové
+              záře a nekonečného pulzování. */}
+          <div className="flex items-center justify-between gap-6">
 
-            {/* Center: Current Time (no box, just prominent display) */}
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
-                {formatDate(currentTime)}
-              </p>
-              <motion.p 
-                className="text-3xl font-bold tabular-nums tracking-tight"
-                style={{ 
-                  color: C.textHi,
-                  textShadow: `0 0 40px ${C.cyan}40`,
-                }}
-                animate={{ opacity: [0.9, 1, 0.9] }}
-                transition={{ duration: 2, repeat: Infinity }}
+            {/* Left: Title block */}
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: `${C.accent}14`, border: `1px solid ${C.accent}26` }}
               >
-                {currentTime.toLocaleTimeString("cs-CZ", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </motion.p>
+                <Activity className="w-4.5 h-4.5" style={{ color: C.accent }} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold tracking-tight leading-none" style={{ color: C.textHi }}>
+                  Časová osa sálů
+                </h1>
+                <p className="text-[11px] mt-1 leading-none capitalize" style={{ color: C.muted }}>
+                  {formatDate(currentTime)}
+                </p>
+              </div>
             </div>
 
-            {/* Right: ARO Overtime indicator */}
+            {/* Right: refined clock + status chip */}
             <div className="flex items-center gap-3 flex-shrink-0">
-            {aroOvertimeRooms.length > 0 ? (
-              <motion.button
-                onClick={() => setShowAroPopup(true)}
-                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105 cursor-pointer"
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{
-                  background: `linear-gradient(135deg, ${C.red}20 0%, ${C.red}10 100%)`,
-                  border: `2px solid ${C.red}50`,
-                  boxShadow: `0 0 30px ${C.red}30, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                }}
+
+              {/* Live clock — solidní chip, monospace, decentní živá tečka */}
+              <div
+                className="hidden sm:flex items-center gap-2.5 h-11 rounded-xl px-4"
+                style={{ background: C.bgElevated, border: `1px solid ${C.border}` }}
               >
-                <div className="relative flex items-center gap-3 h-full">
-                  <motion.div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    style={{
-                      background: `${C.red}30`,
-                      border: `2px solid ${C.red}60`,
-                      boxShadow: `0 0 12px ${C.red}40`,
-                    }}
+                <motion.span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: C.accent, boxShadow: `0 0 6px ${C.accent}` }}
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                <span className="text-xl font-semibold tabular-nums tracking-tight font-mono" style={{ color: C.textHi }}>
+                  {currentTime.toLocaleTimeString("cs-CZ", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
+                </span>
+              </div>
+
+              {/* ARO status */}
+              {aroOvertimeRooms.length > 0 ? (
+                <button
+                  onClick={() => setShowAroPopup(true)}
+                  className="group flex items-center gap-3 h-11 rounded-xl px-4 transition-colors cursor-pointer"
+                  style={{
+                    background: `${C.red}12`,
+                    border: `1px solid ${C.red}3a`,
+                  }}
+                >
+                  <span
+                    className="relative flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0"
+                    style={{ background: `${C.red}1f`, border: `1px solid ${C.red}40` }}
                   >
-                    <AlertTriangle className="w-5 h-5" style={{ color: C.red }} />
-                  </motion.div>
-                  <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.25em] font-bold" style={{ color: C.red }}>ARO PŘESAH</p>
-                    <p className="text-xl font-black leading-tight tabular-nums" style={{ color: C.red }}>
-                      {aroOvertimeRooms.length}
-                      <span className="text-xs font-medium ml-1 opacity-70">sálů</span>
+                    <AlertTriangle className="w-3.5 h-3.5" style={{ color: C.red }} />
+                    <motion.span
+                      className="absolute inset-0 rounded-lg"
+                      style={{ border: `1px solid ${C.red}` }}
+                      animate={{ opacity: [0.6, 0, 0.6] }}
+                      transition={{ duration: 1.8, repeat: Infinity }}
+                    />
+                  </span>
+                  <div className="text-left">
+                    <p className="text-[9px] uppercase tracking-[0.2em] font-semibold leading-none" style={{ color: `${C.red}cc` }}>ARO přesah</p>
+                    <p className="text-sm font-semibold leading-none mt-1 tabular-nums" style={{ color: C.red }}>
+                      {aroOvertimeRooms.length} <span className="font-normal opacity-70">sálů</span>
                     </p>
                   </div>
-                </div>
-              </motion.button>
-            ) : (
-              <div 
-                className="flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 flex items-center gap-3"
-                style={{
-                  background: `linear-gradient(135deg, ${C.green}15 0%, ${C.green}05 100%)`,
-                  border: `1px solid ${C.green}30`,
-                }}
-              >
-                <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: `${C.green}20`, border: `1px solid ${C.green}30` }}
+                </button>
+              ) : (
+                <div
+                  className="flex items-center gap-2.5 h-11 rounded-xl px-4"
+                  style={{ background: `${C.green}10`, border: `1px solid ${C.green}2e` }}
                 >
-                  <CheckCircle className="w-4 h-4" style={{ color: C.green }} />
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: C.green }} />
+                  <div className="text-left">
+                    <p className="text-[9px] uppercase tracking-[0.2em] font-medium leading-none" style={{ color: C.muted }}>ARO status</p>
+                    <p className="text-sm font-semibold leading-none mt-1" style={{ color: C.green }}>V pořádku</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.25em] font-medium text-white/40">ARO STATUS</p>
-                  <p className="text-sm font-semibold" style={{ color: C.green }}>V pořádku</p>
-                </div>
-              </div>
-            )}
+              )}
             </div>
           </div>
         </div>
@@ -591,9 +599,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       {/* ======== Main Timeline - Premium Glass Container ======== */}
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
-        {/* Ambient Glow Effects */}
-        <div className="absolute top-0 left-1/4 w-96 h-64 rounded-full blur-3xl opacity-[0.03] pointer-events-none" style={{ background: C.cyan }} />
-        <div className="absolute bottom-0 right-1/4 w-80 h-48 rounded-full blur-3xl opacity-[0.02] pointer-events-none" style={{ background: C.purple }} />
+        {/* Ambient Glow Effect — jediný decentní tyrkysový náznak (bez fialové) */}
+        <div className="absolute top-0 left-1/3 w-96 h-64 rounded-full blur-3xl opacity-[0.02] pointer-events-none" style={{ background: C.cyan }} />
         
         {/* Time Axis Header - Premium Glass */}
         <div 
@@ -656,19 +663,17 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - Glowing pill */
-                        <motion.span 
-                          className="text-[10px] font-mono font-bold px-3 py-1 rounded-full relative"
+                        /* Current hour — čistý akcentní chip (bez neonu) */
+                        <span 
+                          className="text-[10px] font-mono font-semibold px-2.5 py-1 rounded-md relative tabular-nums"
                           style={{ 
-                            background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
-                            color: '#000',
-                            boxShadow: C.glowCyan,
+                            background: `${C.accent}1a`,
+                            color: C.accent,
+                            border: `1px solid ${C.accent}40`,
                           }}
-                          animate={{ scale: [1, 1.02, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
                         >
                           {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
-                        </motion.span>
+                        </span>
                       ) : (
                         /* Other hours */
                         <span className={`text-[9px] font-mono font-medium tabular-nums transition-colors ${
@@ -714,22 +719,20 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       background: `linear-gradient(90deg, transparent, ${C.cyan}1f, transparent)`,
                     }}
                   />
-                  {/* Main line */}
-                  <motion.div 
-                    className="absolute -left-[1px] top-0 bottom-0 w-[2px] rounded-full"
-                    style={{ 
-                      background: `linear-gradient(to bottom, ${C.cyan}, ${C.cyan}70)`,
-                      boxShadow: `0 0 8px ${C.cyan}, 0 0 18px ${C.cyan}55`,
-                    }}
-                    animate={{ opacity: [0.85, 1, 0.85] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  />
-                  {/* Floating time pill on the line */}
+                  {/* Main line — tenká, decentní (bez výrazného glow) */}
                   <div 
-                    className="absolute -left-[1px] -top-[9px] -translate-x-1/2 px-1.5 py-[2px] rounded-md whitespace-nowrap"
+                    className="absolute -left-[1px] top-0 bottom-0 w-[1.5px]"
                     style={{ 
-                      background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
-                      boxShadow: `0 0 10px ${C.cyan}80`,
+                      background: `linear-gradient(to bottom, ${C.cyan}, ${C.cyan}55)`,
+                      boxShadow: `0 0 6px ${C.cyan}55`,
+                    }}
+                  />
+                  {/* Floating time pill on the line — čistý solidní chip */}
+                  <div 
+                    className="absolute -left-[1px] -top-[10px] -translate-x-1/2 px-1.5 py-[3px] rounded-md whitespace-nowrap"
+                    style={{ 
+                      background: C.accent,
+                      boxShadow: `0 1px 4px rgba(0,0,0,0.45)`,
                     }}
                   >
                     <span className="text-[8px] font-bold font-mono tabular-nums leading-none" style={{ color: '#001018' }}>
@@ -921,9 +924,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                   className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
+                    // Klidné zebrování neaktivních řádků pro čistý "datový" vzhled;
+                    // aktivní řádek je jemně podbarven barvou své fáze.
                     background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
-                      : C.bgSurface,
+                      ? `linear-gradient(135deg, ${stepColor}0e 0%, ${stepColor}03 100%)`
+                      : roomIndex % 2 === 0
+                        ? 'rgba(255,255,255,0.018)'
+                        : 'transparent',
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
                       : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
@@ -1351,24 +1358,23 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                        • Professional card-like appearance */}
                     {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
+                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-lg"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
                           background: `linear-gradient(135deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
-                          boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 20px ${stepColor}15, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                          border: `1px solid ${stepColor}30`,
+                          boxShadow: `0 2px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)`,
+                          border: `1px solid ${stepColor}33`,
                         }}
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.3 }}
                       >
-                        {/* Animated colored left border with glow */}
+                        {/* Colored left accent (decentní, bez výrazného glow) */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
                           style={{ 
                             background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`,
-                            boxShadow: `0 0 12px ${stepColor}60, 0 0 24px ${stepColor}30`,
                           }}
                         />
                         
