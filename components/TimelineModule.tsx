@@ -266,6 +266,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return () => resizeObserver.disconnect();
   }, [rooms.length]);
 
+  // Adaptivní hustota popisků odvozená z výšky řádku.
+  // Při mnoha sálech se rowHeight zmenší a dvě řádky textu (název + oddělení) se
+  // dříve svisle překrývaly. Tyto prahy umožní popisek progresivně zjednodušit:
+  //  - isCompactRow:      skryjeme podtitul oddělení (zůstane jen název)
+  //  - isUltraCompactRow: zmenšíme název a potlačíme sekundární prvky
+  const isCompactRow = rowHeight < 48;
+  const isUltraCompactRow = rowHeight < 34;
+
   // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
   // useEffect(() => {
   //   if (scrollContainerRef.current) {
@@ -863,9 +871,18 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       >
                         <AlertTriangle className="w-3.5 h-3.5" style={{ color: bannerColor }} />
                       </div>
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
+                      <div className="min-w-0 flex-1 overflow-hidden flex flex-col justify-center">
+                        <p
+                          className={`font-semibold tracking-tight truncate leading-tight ${
+                            isUltraCompactRow ? 'text-xs' : 'text-sm'
+                          }`}
+                          style={{ color: `${bannerColor}cc` }}
+                        >
+                          {room.name}
+                        </p>
+                        {!isCompactRow && (
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate leading-tight" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
+                        )}
                       </div>
                     </div>
                     {/* Emergency timeline box - tinted glassmorph */}
@@ -1032,15 +1049,21 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         />
                       )}
 
-                      {/* Room name and details */}
-                      <div className="flex flex-col min-w-0 flex-1">
+                      {/* Room name and details — adaptivní hustota: při nízkém řádku
+                          skryjeme podtitul oddělení a zmenšíme název, aby se text
+                          nikdy svisle nepřekrýval s vedlejšími řádky. */}
+                      <div className="flex flex-col min-w-0 flex-1 justify-center">
                         <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-sm font-semibold tracking-tight text-white truncate">
+                          <p
+                            className={`font-semibold tracking-tight text-white truncate leading-tight ${
+                              isUltraCompactRow ? 'text-xs' : 'text-sm'
+                            }`}
+                          >
                             {room.name}
                           </p>
                         </div>
-                        {room.department && (
-                          <p className="text-[10px] text-white/40 truncate mt-0.5">
+                        {room.department && !isCompactRow && (
+                          <p className="text-[10px] text-white/40 truncate mt-0.5 leading-tight">
                             {room.department}
                           </p>
                         )}
@@ -1601,13 +1624,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                               backgroundImage: 'repeating-linear-gradient(to bottom, rgba(249,115,22,0.55) 0px, rgba(249,115,22,0.55) 4px, transparent 4px, transparent 9px)',
                             }}
                           />
-                          {/* Kompaktní amber chip s časem */}
+                          {/* Kompaktní amber chip s časem — SOLIDNÍ tmavé pozadí, aby
+                              chip zůstal čitelný a vizuálně se neslil s popisky barů
+                              (např. "DOKONČENO"), které mohou ležet na stejné x-pozici. */}
                           <div
                             className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-colors"
                             style={{
-                              background: 'rgba(249, 115, 22, 0.12)',
-                              border: '1px solid rgba(249, 115, 22, 0.28)',
+                              background: 'rgba(11, 17, 32, 0.92)',
+                              border: '1px solid rgba(249, 115, 22, 0.45)',
                               color: 'rgba(251, 191, 132, 0.95)',
+                              boxShadow: '0 1px 4px rgba(0,0,0,0.45)',
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
