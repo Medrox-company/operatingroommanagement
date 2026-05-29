@@ -145,6 +145,19 @@ const AppContent: React.FC = () => {
       isMounted = false;
     };
   }, []);
+
+  // Ruční obnovení dat (Timeline modul) — Realtime řeší většinu, tohle je „force refresh".
+  const refreshRooms = useCallback(async () => {
+    try {
+      const dbRooms = await fetchOperatingRooms();
+      if (dbRooms && dbRooms.length > 0) {
+        setRooms(dbRooms);
+        setIsDbConnected(true);
+      }
+    } catch (error) {
+      console.error('[App] Manual refresh failed:', error);
+    }
+  }, []);
   
   // Cleanup old entries from recentLocalUpdates to prevent memory growth.
   useEffect(() => {
@@ -582,7 +595,7 @@ const AppContent: React.FC = () => {
             {/* Timeline */}
             {currentView === 'timeline' && (
               <div className="w-full h-full overflow-hidden">
-                <TimelineModule rooms={rooms} />
+                <TimelineModule rooms={rooms} onRefresh={refreshRooms} />
               </div>
             )}
 
