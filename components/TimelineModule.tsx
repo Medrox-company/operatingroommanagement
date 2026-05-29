@@ -739,8 +739,39 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               )}
             </AnimatePresence>
 
+            {/* Hour grid overlay — jemná svislá hodinová mřížka přes řádky, sladěná s časovou osou */}
+            <div className="absolute inset-y-0 z-20 pointer-events-none" style={{ left: ROOM_LABEL_WIDTH, right: 0 }}>
+              {TIME_MARKERS.slice(0, -1).map((hour, i) => {
+                const leftPct = (i * 100) / TIMELINE_HOURS;
+                const widthPct = 100 / TIMELINE_HOURS;
+                const actualHour = TIMELINE_START_HOUR + hour;
+                const displayHour = actualHour % 24;
+                const isNightHour = displayHour >= 19 || displayHour < 7;
+                const isMajorHour = displayHour % 3 === 0;
+                return (
+                  <div
+                    key={`grid-${hour}-${i}`}
+                    className="absolute top-0 bottom-0"
+                    style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                  >
+                    {isNightHour && (
+                      <div className="absolute inset-0" style={{ background: 'rgba(2, 6, 23, 0.18)' }} />
+                    )}
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-px"
+                      style={{
+                        background: isMajorHour
+                          ? `linear-gradient(to bottom, ${C.cyan}18, ${C.cyan}08)`
+                          : 'rgba(148, 163, 184, 0.06)',
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
             {/* Room Rows */}
-            <div className="flex flex-col gap-1.5 py-2">
+            <div className="relative z-10 flex flex-col gap-1.5 py-2">
             {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
@@ -1033,14 +1064,12 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       )}
 
                       {/* Room name and details */}
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-sm font-semibold tracking-tight text-white truncate">
-                            {room.name}
-                          </p>
-                        </div>
-                        {room.department && (
-                          <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      <div className="flex flex-col justify-center min-w-0 flex-1">
+                        <p className="text-sm font-semibold tracking-tight text-white truncate leading-tight">
+                          {room.name}
+                        </p>
+                        {room.department && rowHeight >= 42 && (
+                          <p className="text-[10px] text-white/40 truncate leading-tight mt-0.5">
                             {room.department}
                           </p>
                         )}
