@@ -717,17 +717,19 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     transition={{ duration: 1.5, repeat: Infinity }}
                   />
                   {/* Floating time pill on the line */}
-                  <div 
-                    className="absolute -left-[1px] -top-[9px] -translate-x-1/2 px-1.5 py-[2px] rounded-md whitespace-nowrap"
+                  <motion.div 
+                    className="absolute -left-[1px] -top-[10px] -translate-x-1/2 px-2.5 py-1 rounded-lg whitespace-nowrap font-mono transition-all hover:scale-110"
                     style={{ 
-                      background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
-                      boxShadow: `0 0 10px ${C.cyan}80`,
+                      background: `linear-gradient(135deg, ${C.cyan}ee 0%, ${C.blue}dd 100%)`,
+                      boxShadow: `0 0 16px ${C.cyan}a0, 0 0 32px ${C.cyan}40, inset 0 1px 0 rgba(255,255,255,0.3)`,
+                      border: `1px solid ${C.cyan}`,
                     }}
+                    whileHover={{ scale: 1.15 }}
                   >
-                    <span className="text-[8px] font-bold font-mono tabular-nums leading-none" style={{ color: '#001018' }}>
-                      {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
+                    <span className="text-[8px] font-bold tabular-nums leading-none" style={{ color: '#000a12' }}>
+                      {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}:{new Date().getSeconds().toString().padStart(2, '0')}
                     </span>
-                  </div>
+                  </motion.div>
                   {/* Pulsing halo behind pill */}
                   <motion.div 
                     className="absolute -left-1 -top-1 w-2 h-2 rounded-full"
@@ -1152,7 +1154,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group cursor-pointer transition-all duration-300 hover:top-0.5 hover:bottom-0.5"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
@@ -1172,6 +1174,13 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: opIdx * 0.05 }}
+                            whileHover={{ 
+                              boxShadow: isRoomReady 
+                                ? `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 24px ${C.cyan}60, 0 0 40px ${C.cyan}30`
+                                : isContinuingOp
+                                  ? `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 22px ${C.green}50, 0 0 35px ${C.green}25`
+                                  : 'inset 0 1px 0 rgba(255,255,255,0.12), 0 0 16px rgba(255,255,255,0.15)'
+                            }}
                           >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (
@@ -1524,41 +1533,42 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         statusů (dokončené operace) na levé části časové osy. */}
                     {isFree && !room.isLocked && (
                       <motion.div 
-                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-xl overflow-hidden"
+                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-xl overflow-hidden backdrop-blur-xl transition-all duration-300 hover:pr-3.5 hover:shadow-lg"
                         style={{ 
-                          background: `linear-gradient(135deg, ${C.green}1a 0%, ${C.green}08 100%)`,
-                          border: `1px solid ${C.green}30`,
-                          boxShadow: `0 0 16px ${C.green}12, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                          backdropFilter: 'blur(6px)',
+                          background: `linear-gradient(135deg, ${C.green}22 0%, ${C.green}10 100%)`,
+                          border: `1.5px solid ${C.green}40`,
+                          boxShadow: `0 0 20px ${C.green}1e, inset 0 1px 0 rgba(255,255,255,0.08)`,
+                          backdropFilter: 'blur(12px)',
                         }}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3 }}
+                        initial={{ opacity: 0, x: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        transition={{ duration: 0.4, type: "spring", stiffness: 200 }}
                       >
                         {/* Ikona s jemnou pulzující svatozáří */}
                         <div className="relative flex-shrink-0">
                           <motion.div
                             className="absolute inset-0 rounded-lg"
                             style={{ background: C.green }}
-                            animate={{ opacity: [0, 0.18, 0], scale: [0.9, 1.25, 0.9] }}
-                            transition={{ duration: 2.4, repeat: Infinity }}
+                            animate={{ opacity: [0, 0.2, 0], scale: [0.8, 1.4, 0.8] }}
+                            transition={{ duration: 2.8, repeat: Infinity }}
                           />
                           <div 
-                            className="relative w-6 h-6 rounded-lg flex items-center justify-center"
+                            className="relative w-6 h-6 rounded-lg flex items-center justify-center transition-all"
                             style={{ 
-                              background: `linear-gradient(135deg, ${C.green}2e 0%, ${C.green}12 100%)`,
-                              border: `1px solid ${C.green}45`,
+                              background: `linear-gradient(135deg, ${C.green}35 0%, ${C.green}15 100%)`,
+                              border: `1.5px solid ${C.green}50`,
+                              boxShadow: `0 0 8px ${C.green}30, inset 0 1px 0 rgba(255,255,255,0.15)`,
                             }}
                           >
-                            <CheckCircle className="w-3.5 h-3.5" style={{ color: C.green }} />
+                            <CheckCircle className="w-3.5 h-3.5" style={{ color: '#FFFFFF' }} />
                           </div>
                         </div>
-                        <p className="text-[11px] font-semibold text-white/90 leading-tight truncate">{stepName}</p>
+                        <p className="text-[11px] font-semibold text-white/95 leading-tight truncate">{stepName}</p>
                         <motion.div 
                           className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{ background: C.green, boxShadow: `0 0 6px ${C.green}` }}
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 2, repeat: Infinity }}
+                          style={{ background: C.green, boxShadow: `0 0 8px ${C.green}` }}
+                          animate={{ opacity: [0.5, 1, 0.5], scale: [0.9, 1.1, 0.9] }}
+                          transition={{ duration: 2.2, repeat: Infinity }}
                         />
                       </motion.div>
                     )}
