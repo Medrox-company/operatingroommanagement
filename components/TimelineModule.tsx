@@ -5,8 +5,6 @@ import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
-import TopControlPanel, { FilterState } from './TopControlPanel';
-import RightSidebar from './RightSidebar';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
@@ -225,19 +223,10 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
   const [showLegend, setShowLegend] = useState(false);
-
+  // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const [showAroPopup, setShowAroPopup] = useState(false);
-  
-  // New state for filtering & control panel
-  const [viewMode, setViewMode] = useState<'compact' | 'standard' | 'expanded'>('standard');
-  const [showRightSidebar, setShowRightSidebar] = useState(true);
-  const [filters, setFilters] = useState<FilterState>({
-    search: '',
-    status: 'all',
-    department: null,
-  });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
@@ -474,15 +463,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         )}
       </AnimatePresence>
 
-      {/* ======== TOP CONTROL PANEL ======== */}
-      <TopControlPanel
-        onFilterChange={setFilters}
-        onViewModeChange={setViewMode}
-        onShowLegend={() => setShowLegend(!showLegend)}
-        viewMode={viewMode}
-        departments={Array.from(new Set(rooms.map(r => r.department || 'Ostatní')))}
-      />
-
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
       <MobileTimelineView
         rooms={sortedRooms}
@@ -497,7 +477,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       />
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
-      <div className="hidden md:flex md:flex-row md:flex-1 md:min-h-0 md:overflow-hidden">
+      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
 
       {/* ======== Header with Title and Stats ======== */}
       <div 
@@ -1651,13 +1631,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           </div>
         </div>
       </div>
-
-      {/* Right Sidebar - Statistics, Alerts, Legend */}
-      <RightSidebar 
-        rooms={rooms}
-        currentTime={currentTime}
-        isExpanded={showRightSidebar}
-      />
 
       </div>{/* end desktop wrapper */}
     </div>
