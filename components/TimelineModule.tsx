@@ -82,6 +82,30 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  /* --- Sály v původním pořadí; nouzové/uzamčené zůstávají na své pozici --- */
+  const sortedRooms = useMemo(() => {
+    return [...rooms];
+  }, [rooms]);
+
+  // --- Filtrované sály: vyhledávání (název / oddělení) + filtr stavu ---
+  // Stav odvozujeme z currentStepIndex: 0 = volný (Sál připraven), >0 = probíhá.
+  // Sály ve stavu nouze se zobrazují vždy (kritické).
+  const displayRooms = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return sortedRooms.filter((room) => {
+      if (room.isEmergency) return true;
+      const matchesSearch =
+        !q ||
+        room.name?.toLowerCase().includes(q) ||
+        room.department?.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+      const isRoomActive = room.currentStepIndex > 0 || room.isLocked || room.isPaused;
+      if (statusFilter === 'active') return isRoomActive;
+      if (statusFilter === 'free') return !isRoomActive;
+      return true;
+    });
+  }, [sortedRooms, searchQuery, statusFilter]);
   
   // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
   // Výpočet: dostupná výška = výška kontejneru - padding - gap mezi řádky
