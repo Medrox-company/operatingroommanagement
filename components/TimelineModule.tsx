@@ -1626,9 +1626,16 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                           />
                           {/* Kompaktní amber chip s časem — SOLIDNÍ tmavé pozadí, aby
                               chip zůstal čitelný a vizuálně se neslil s popisky barů
-                              (např. "DOKONČENO"), které mohou ležet na stejné x-pozici. */}
+                              (např. "DOKONČENO"), které mohou ležet na stejné x-pozici.
+                              Popisek se zobrazí pouze na PRVNÍM řádku (jinak by vznikal
+                              rušivý svislý sloupec identických "15:30" přes všechny sály);
+                              na ostatních řádcích se odhalí až při najetí myší. */}
                           <div
-                            className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-colors"
+                            className={`absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-opacity duration-150 ${
+                              roomIndex === 0
+                                ? 'opacity-100'
+                                : 'opacity-0 group-hover/eohours:opacity-100'
+                            }`}
                             style={{
                               background: 'rgba(11, 17, 32, 0.92)',
                               border: '1px solid rgba(249, 115, 22, 0.45)',
