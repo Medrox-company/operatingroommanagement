@@ -149,6 +149,18 @@ body {
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Subtle horizontal scrollbar for the zoomable timeline */
+.timeline-scroll::-webkit-scrollbar { height: 8px; }
+.timeline-scroll::-webkit-scrollbar-track { background: transparent; }
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.25);
+  border-radius: 9999px;
+}
+.timeline-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.4);
+}
+.timeline-scroll { scrollbar-width: thin; scrollbar-color: rgba(6, 182, 212, 0.3) transparent; }
+
 /* Safe area for mobile bottom navigation (MobileNav ~ 80px + safe-area-inset-bottom) */
 .pb-mobile-nav {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));

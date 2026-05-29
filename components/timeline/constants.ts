@@ -14,22 +14,24 @@ export const C = {
   blue: '#3B82F6',        // Info - Blue
   slate: '#64748B',       // Completed - Slate
 
-  // Surface & Glass Effects
+  // Surface & Glass Effects — sjednocená modro-černá hloubka (slate 950 → 900)
   bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgb(0 9 29 / 85%)',           // Glass surface
-  bgElevated: 'rgba(30, 41, 59, 0.9)',      // Elevated cards
-  bgCard: 'rgba(15, 23, 42, 0.95)',         // Card background
+  bgSurface: 'rgba(9, 14, 28, 0.85)',       // Glass surface (sladěno do slate)
+  bgElevated: 'rgba(23, 33, 54, 0.92)',     // Elevated cards
+  bgCard: 'rgba(13, 20, 38, 0.96)',         // Card background
+  bgPanel: 'rgba(11, 17, 32, 0.95)',        // Sticky panely / toolbar (neprůhledné)
 
-  // Borders & Lines
-  border: 'rgba(148, 163, 184, 0.08)',      // Subtle border
-  borderHover: 'rgba(6, 182, 212, 0.3)',    // Cyan hover
-  borderActive: 'rgba(6, 182, 212, 0.5)',   // Active state
+  // Borders & Lines — o něco definovanější pro lepší čitelnost hran
+  border: 'rgba(148, 163, 184, 0.10)',      // Subtle border
+  borderStrong: 'rgba(148, 163, 184, 0.18)',// Definovanější hrana (toolbar, panely)
+  borderHover: 'rgba(6, 182, 212, 0.35)',   // Cyan hover
+  borderActive: 'rgba(6, 182, 212, 0.55)',  // Active state
   gridLine: 'rgba(148, 163, 184, 0.06)',    // Timeline grid
 
   // Glass & Glow
-  glass: 'rgba(255, 255, 255, 0.02)',
+  glass: 'rgba(255, 255, 255, 0.025)',
   glassHover: 'rgba(6, 182, 212, 0.08)',
-  glowCyan: '0 0 20px rgba(6, 182, 212, 0.4)',
+  glowCyan: '0 0 20px rgba(6, 182, 212, 0.45)',
   glowGreen: '0 0 16px rgba(16, 185, 129, 0.4)',
   glowRed: '0 0 16px rgba(239, 68, 68, 0.5)',
 
