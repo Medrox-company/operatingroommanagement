@@ -1156,17 +1156,18 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
-                              // Velmi subtilní pozadí — operace jsou vidět jen slabě,
-                              // aby timeline zůstal čistý a minimalistický.
+                              // Barevné, viditelné operační boxy — jasné a čitelné
                               background: isContinuingOp 
-                                ? `linear-gradient(135deg, ${C.green}12 0%, ${C.green}08 100%)`
-                                : `linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.010) 100%)`,
-                              border: `1px solid ${isContinuingOp ? `${C.green}28` : `${C.slate}1f`}`,
+                                ? `linear-gradient(135deg, ${C.green}45 0%, ${C.green}30 100%)`
+                                : isRoomReady
+                                  ? `linear-gradient(135deg, ${C.cyan}50 0%, ${C.blue}30 100%)`
+                                  : `linear-gradient(135deg, ${C.slate}35 0%, ${C.slate}20 100%)`,
+                              border: `1.5px solid ${isContinuingOp ? `${C.green}70` : isRoomReady ? `${C.cyan}60` : `${C.slate}45`}`,
                               boxShadow: isRoomReady 
-                                ? `inset 0 1px 0 rgba(255,255,255,0.04), 0 0 8px ${C.cyan}08`
+                                ? `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 16px ${C.cyan}40`
                                 : isContinuingOp
-                                  ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 6px ${C.green}10`
-                                  : 'none',
+                                  ? `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 14px ${C.green}35`
+                                  : 'inset 0 1px 0 rgba(255,255,255,0.08)',
                             }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -1219,11 +1220,10 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            // Ledacos subtilnější — fáze jsou vidět jen jako
-                                            // lehké, skoro neviditelné segmenty.
-                                            background: `linear-gradient(180deg, ${phaseColor}3a 0%, ${phaseColor}1a 100%)`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.12)` : 'none',
-                                            boxShadow: 'none',
+                                            // Barvy fází jsou vidět jasně — každá fáze má svou barvu
+                                            background: `linear-gradient(180deg, ${phaseColor}85 0%, ${phaseColor}65 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.4)` : 'none',
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.3)`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
