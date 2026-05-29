@@ -26,20 +26,22 @@ const C = {
   blue: '#3B82F6',        // Info - Blue
   slate: '#64748B',       // Completed - Slate
   
-  // Surface & Glass Effects
+  // Surface & Glass Effects — výrazně průhlednější plochy pro pravý
+  // glassmorphism (čte se přes ně pozadí + backdrop-blur je zaostří)
   bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgb(0 9 29 / 85%)',           // Glass surface
-  bgElevated: 'rgba(30, 41, 59, 0.9)',      // Elevated cards
-  bgCard: 'rgba(15, 23, 42, 0.95)',         // Card background
+  bgSurface: 'rgba(15, 27, 48, 0.45)',      // Frosted glass surface
+  bgElevated: 'rgba(30, 41, 59, 0.55)',     // Elevated frosted cards
+  bgCard: 'rgba(15, 23, 42, 0.6)',          // Card background
   
-  // Borders & Lines
-  border: 'rgba(148, 163, 184, 0.08)',      // Subtle border
-  borderHover: 'rgba(6, 182, 212, 0.3)',    // Cyan hover
+  // Borders & Lines — jemný "mléčný" bílý okraj typický pro sklo
+  border: 'rgba(255, 255, 255, 0.12)',      // Frosted glass edge
+  borderHover: 'rgba(6, 182, 212, 0.35)',   // Cyan hover
   borderActive: 'rgba(6, 182, 212, 0.5)',   // Active state
   gridLine: 'rgba(148, 163, 184, 0.06)',    // Timeline grid
   
-  // Glass & Glow
-  glass: 'rgba(255, 255, 255, 0.02)',
+  // Glass & Glow — světlejší vrstva skla + horní odlesk
+  glass: 'rgba(255, 255, 255, 0.05)',
+  glassHighlight: 'inset 0 1px 0 rgba(255, 255, 255, 0.12)', // horní světelná hrana
   glassHover: 'rgba(6, 182, 212, 0.08)',
   glowCyan: '0 0 20px rgba(6, 182, 212, 0.4)',
   glowGreen: '0 0 16px rgba(16, 185, 129, 0.4)',
@@ -541,8 +543,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       <div 
         className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,10,20,0.92) 100%)',
+          background: 'linear-gradient(180deg, rgba(0,10,20,0.7) 0%, rgba(0,10,20,0.45) 100%)',
           borderBottom: `1px solid ${C.border}`,
+          boxShadow: C.glassHighlight,
         }}
       >
         {/* Ambient glow */}
@@ -629,11 +632,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         
         {/* Time Axis Header - Premium Glass */}
         <div 
-          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-xl relative overflow-hidden" 
+          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-2xl relative overflow-hidden" 
           style={{ 
-            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%)', 
+            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0.35) 100%)', 
             borderBottom: `1px solid ${C.border}`,
-            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+            boxShadow: C.glassHighlight,
           }}
         >
           {/* Subtle top gradient line */}
@@ -941,24 +944,26 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               return (
                 <motion.div
                   key={room.id}
-                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden backdrop-blur-xl ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
                     background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
+                      ? `linear-gradient(135deg, ${stepColor}14 0%, ${stepColor}04 100%)`
                       : C.bgSurface,
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
-                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
+                      : `1px solid ${isActive ? `${stepColor}30` : C.border}`,
+                    boxShadow: C.glassHighlight,
                   }}
                   onClick={() => setSelectedRoom(room)}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: roomIndex * 0.03 }}
                   whileHover={{ 
-                    borderColor: isActive ? `${stepColor}40` : C.borderHover,
-                    boxShadow: isActive ? `0 0 20px ${stepColor}15` : '0 4px 20px rgba(0,0,0,0.2)',
+                    borderColor: isActive ? `${stepColor}50` : C.borderHover,
+                    boxShadow: isActive 
+                      ? `${C.glassHighlight}, 0 0 24px ${stepColor}20, 0 8px 32px rgba(0,0,0,0.25)` 
+                      : `${C.glassHighlight}, 0 8px 32px rgba(0,0,0,0.25)`,
                   }}
                 >
                   {/* Colored left accent bar */}
