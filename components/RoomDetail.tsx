@@ -13,7 +13,6 @@ import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, Backgr
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
-import RoomMetricsPanel from './RoomMetricsPanel';
 
 interface RoomDetailProps {
   room: OperatingRoom;
@@ -59,7 +58,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
-  const [showMetricsPanel, setShowMetricsPanel] = useState(false);
 
   // Simple local state for estimated end time - initialized from props
   const [localEndTime, setLocalEndTime] = useState<Date | null>(() => 
@@ -1547,7 +1545,7 @@ const prevStep = activeDbStatuses.length > 0
         )}
       </main>
 
-      {/* Bottom Center - Phase Duration & Navigation + Metrics Panel */}
+      {/* Bottom Center - Phase Duration & Navigation */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
         {/* Navigation Indicators - only show active statuses */}
         <div className="flex gap-3">
@@ -1563,31 +1561,6 @@ const prevStep = activeDbStatuses.length > 0
           />
         ))}
         </div>
-
-        {/* Metrics Toggle Button */}
-        <motion.button
-          onClick={() => setShowMetricsPanel(!showMetricsPanel)}
-          className="text-[10px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 transition-all text-white/70 hover:text-white"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          {showMetricsPanel ? 'Skrýt' : 'Metriky'} sálu
-        </motion.button>
-
-        {/* Metrics Panel - Collapsible */}
-        <AnimatePresence>
-          {showMetricsPanel && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, maxHeight: 0 }}
-              animate={{ opacity: 1, y: 0, maxHeight: 300 }}
-              exit={{ opacity: 0, y: 10, maxHeight: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden rounded-lg border border-white/20 bg-white/5 backdrop-blur-sm"
-            >
-              <RoomMetricsPanel room={room} currentTime={currentTime} allRooms={allRooms} />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
       </div>{/* end content-safe wrapper */}
       </div>{/* end desktop wrapper */}

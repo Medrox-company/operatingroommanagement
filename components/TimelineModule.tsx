@@ -5,9 +5,6 @@ import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
-import RoomMetricsPanel from './RoomMetricsPanel';
-import TopControlPanel, { FilterState } from './TopControlPanel';
-import RightSidebar from './RightSidebar';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
@@ -226,19 +223,10 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
   const [showLegend, setShowLegend] = useState(false);
+  // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const [showAroPopup, setShowAroPopup] = useState(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterDepartment, setFilterDepartment] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'compact' | 'expanded'>('expanded');
-  const [showRightSidebar, setShowRightSidebar] = useState(true);
-  const [filters, setFilters] = useState<FilterState>({
-    status: 'all',
-    department: null,
-    search: '',
-  });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
@@ -311,29 +299,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   const sortedRooms = useMemo(() => {
     return [...rooms];
   }, [rooms]);
-
-  /* --- Filtered & Searched Rooms --- */
-  const filteredRooms = useMemo(() => {
-    return sortedRooms.filter(room => {
-      // Search by name or department
-      const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = !searchQuery || 
-        room.name.toLowerCase().includes(searchLower) ||
-        room.department.toLowerCase().includes(searchLower);
-      
-      // Filter by department
-      const matchesDept = filterDepartment === 'all' || room.department === filterDepartment;
-      
-      // Filter by status
-      let matchesStatus = true;
-      if (filterStatus === 'active') matchesStatus = room.currentStepIndex >= 1 && room.currentStepIndex <= 5;
-      else if (filterStatus === 'free') matchesStatus = room.currentStepIndex === 0 || room.currentStepIndex >= 6;
-      else if (filterStatus === 'emergency') matchesStatus = room.isEmergency;
-      else if (filterStatus === 'locked') matchesStatus = room.isLocked;
-      
-      return matchesSearch && matchesDept && matchesStatus;
-    });
-  }, [sortedRooms, searchQuery, filterDepartment, filterStatus]);
 
   /* --- ARO Overtime Tracking - rooms that exceed working hours.
      
@@ -481,20 +446,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
   return (
     <div className="w-full h-full text-white overflow-hidden flex flex-col relative">
-      
-      {/* Top Control Panel */}
-      <TopControlPanel
-        onSearchChange={setSearchQuery}
-        onFilterChange={setFilters}
-        onViewModeChange={setViewMode}
-        onLegendToggle={() => setShowLegend(!showLegend)}
-        viewMode={viewMode}
-        departments={Array.from(new Set(rooms.map(r => r.department || 'Bez oddělení')))}
-        onDepartmentFilter={(dept) => setFilterDepartment(dept || 'all')}
-      />
-
-      {/* Main Layout: Timeline + RightSidebar */}
-      <div className="flex-1 flex overflow-hidden">
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -510,85 +461,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             currentTime={currentTime}
           />
         )}
-        {showLegend && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowLegend(false)}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-slate-900/95 backdrop-blur-xl rounded-2xl p-8 border border-cyan-500/20 shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Legenda Workflow Stavů</h2>
-                <button
-                  onClick={() => setShowLegend(false)}
-                  className="text-white/50 hover:text-white transition"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Legend Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeStatuses.map((status, idx) => {
-                  const color = STEP_COLORS[status.order_index];
-                  const Icon = status.icon || Activity;
-                  return (
-                    <motion.div
-                      key={status.id}
-                      className="flex items-start gap-4 p-4 rounded-lg border border-white/10 hover:border-cyan-500/30 transition"
-                      style={{ background: `${color.bg}40` }}
-                      whileHover={{ scale: 1.02 }}
-                    >
-                      <div
-                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{
-                          background: `${color.solid}20`,
-                          border: `2px solid ${color.solid}50`,
-                        }}
-                      >
-                        <Icon className="w-6 h-6" style={{ color: color.solid }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white text-sm">{status.name}</h3>
-                        <p className="text-xs text-white/60 mt-1">{status.description || 'Bez popisu'}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ background: color.solid }}
-                          />
-                          <span className="text-[10px] text-white/50 uppercase font-semibold">Fáze {idx}</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* Legend Notes */}
-              <div className="mt-6 p-4 rounded-lg border border-cyan-500/20 bg-cyan-500/5">
-                <h3 className="text-sm font-semibold text-cyan-400 mb-2">Poznámka</h3>
-                <ul className="text-xs text-white/70 space-y-1">
-                  <li>• Barvy se mění postupně podle aktuální fáze operace</li>
-                  <li>• Zelená = připraveno, červená = kritická prodleva, šedá = dokončeno</li>
-                  <li>• Ikonky pomáhají vizuálně rozlišit jednotlivé stavy</li>
-                </ul>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
       </AnimatePresence>
 
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
       <MobileTimelineView
-        rooms={filteredRooms}
+        rooms={sortedRooms}
         statusByOrderIndex={statusByOrderIndex}
         activeStatuses={activeStatuses}
         currentTime={currentTime}
@@ -600,10 +477,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
       />
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
-      <div className="hidden md:flex md:flex-row md:flex-1 md:min-h-0 md:overflow-hidden">
-      
-      {/* Timeline Main Content - flex-1 takes remaining space */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
 
       {/* ======== Header with Title and Stats ======== */}
       <div 
@@ -703,75 +577,11 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             )}
             </div>
           </div>
-
-          {/* Search & Filter Row */}
-          <div className="flex items-center gap-3 mt-5 flex-wrap px-8 md:pl-32 md:pr-10">
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[200px]">
-              <input
-                type="text"
-                placeholder="Hledat sál nebo oddělení..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 focus:bg-white/8 transition-all"
-              />
-            </div>
-
-            {/* Department Filter */}
-            <select
-              value={filterDepartment}
-              onChange={(e) => setFilterDepartment(e.target.value)}
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 focus:bg-white/8 transition-all cursor-pointer"
-            >
-              <option value="all">Všechna oddělení</option>
-              <option value="TRA">Traumatologie</option>
-              <option value="CHIR">Chirurgie</option>
-              <option value="URO">Urologie</option>
-              <option value="ORL">ORL</option>
-              <option value="ROBOT">Robotika</option>
-            </select>
-
-            {/* Status Filter */}
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 focus:bg-white/8 transition-all cursor-pointer"
-            >
-              <option value="all">Všechny stavy</option>
-              <option value="active">Aktivní operace</option>
-              <option value="free">Volné sály</option>
-              <option value="emergency">Stav nouze</option>
-              <option value="locked">Uzamčené</option>
-            </select>
-
-            {/* Clear Filters Button */}
-            {(searchQuery || filterDepartment !== 'all' || filterStatus !== 'all') && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setFilterDepartment('all');
-                  setFilterStatus('all');
-                }}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white hover:bg-white/10 transition-all"
-              >
-                Obnovit
-              </button>
-            )}
-
-            {/* Legend Button */}
-            <button
-              onClick={() => setShowLegend(!showLegend)}
-              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white hover:bg-white/10 transition-all"
-            >
-              Legenda
-            </button>
-
-            {/* Results Count */}
-            <div className="text-xs text-white/50">
-              {filteredRooms.length}/{sortedRooms.length} sálů
-            </div>
-          </div>
         </div>
+      </div>
+
+      {/* ======== Main Timeline - Premium Glass Container ======== */}
+      <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
         {/* Ambient Glow Effects */}
         <div className="absolute top-0 left-1/4 w-96 h-64 rounded-full blur-3xl opacity-[0.03] pointer-events-none" style={{ background: C.cyan }} />
@@ -933,7 +743,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
             {/* Room Rows */}
             <div className="flex flex-col gap-1.5 py-2">
-            {filteredRooms.map((room, roomIndex) => {
+            {sortedRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
@@ -1821,17 +1631,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           </div>
         </div>
       </div>
-      {/* end timeline main content */}
-      
-      {/* Right Sidebar - Statistiky a Alarmy */}
-      <RightSidebar 
-        rooms={rooms}
-        currentTime={currentTime}
-        isExpanded={showRightSidebar}
-      />
 
       </div>{/* end desktop wrapper */}
-      </div>{/* end main layout flex */}
     </div>
   );
 }
