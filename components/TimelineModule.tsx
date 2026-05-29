@@ -203,6 +203,53 @@ interface TimelineModuleProps {
   rooms: OperatingRoom[];
 }
 
+/* ==========================================================================
+   LiveClock — izolované hodiny se sekundami (desktop hlavička).
+
+   PROČ: Hodiny zobrazují HH:MM:SS, takže musí tikat každou sekundu. Kdyby
+   sekundový tik žil v hlavní komponentě, překresloval by celou timeline
+   (16 sálů × operace × framer-motion) 60× za minutu. Tato malá komponenta
+   má vlastní 1s interval, takže se každou sekundu překreslí JEN ona.
+   Vzhled (datum + velký čas + jemný pulz) zůstává identický.
+   ========================================================================== */
+const LiveClock = React.memo(function LiveClock() {
+  const [now, setNow] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const dateLabel = now.toLocaleDateString("cs-CZ", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center">
+      <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
+        {dateLabel}
+      </p>
+      <motion.p
+        className="text-3xl font-bold tabular-nums tracking-tight"
+        style={{
+          color: C.textHi,
+          textShadow: `0 0 40px ${C.cyan}40`,
+        }}
+        animate={{ opacity: [0.9, 1, 0.9] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        {now.toLocaleTimeString("cs-CZ", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })}
+      </motion.p>
+    </div>
+  );
+});
+
 function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -233,9 +280,29 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
 
 
-  // Update current time every second
+  // Aktualizace času pro layout (now-line, ARO, zbývající čas, pozice operací).
+  // VÝKON: tyto prvky jsou minutové (getTimePercent i ostatní výpočty ignorují
+  // sekundy), takže stačí překreslit jen při ZMĚNĚ MINUTY místo každou sekundu.
+  // Tím se těžký strom (16 sálů × operace) překreslí ~1× za minutu místo 60×.
+  // Sekundové hodiny řeší izolovaná <LiveClock />, odpočet v popupu vlastní tik.
   useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    const tick = () => {
+      setCurrentTime((prev) => {
+        const next = new Date();
+        // Re-render jen když se změnila minuta (nebo hodina/den).
+        if (
+          next.getMinutes() === prev.getMinutes() &&
+          next.getHours() === prev.getHours() &&
+          next.getDate() === prev.getDate()
+        ) {
+          return prev; // stejná minuta → žádný re-render
+        }
+        return next;
+      });
+    };
+    // Kontrolujeme každou sekundu, ale setState (a tím re-render) proběhne
+    // jen na hranici minuty → přesné a zároveň levné.
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, []);
   
@@ -432,15 +499,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return `+${hours}h ${minutes < 10 ? '0' : ''}${minutes}m`;
   };
 
-  // Format date
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("cs-CZ", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
-  };
-
   // Count active rooms for numbering
   let activeRoomCounter = 0;
 
@@ -497,27 +555,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           {/* Header Row - Time Center, ARO Right */}
           <div className="flex items-center justify-between gap-4">
 
-            {/* Center: Current Time (no box, just prominent display) */}
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
-                {formatDate(currentTime)}
-              </p>
-              <motion.p 
-                className="text-3xl font-bold tabular-nums tracking-tight"
-                style={{ 
-                  color: C.textHi,
-                  textShadow: `0 0 40px ${C.cyan}40`,
-                }}
-                animate={{ opacity: [0.9, 1, 0.9] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                {currentTime.toLocaleTimeString("cs-CZ", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </motion.p>
-            </div>
+            {/* Center: Current Time — izolované hodiny (vlastní 1s tik), aby
+                sekundy nepřekreslovaly celou timeline. */}
+            <LiveClock />
 
             {/* Right: ARO Overtime indicator */}
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -1701,6 +1741,15 @@ interface RoomDetailPopupProps {
 }
 
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
+  // Vlastní sekundový tik POUZE pro tento popup (zobrazuje uplynulý čas v MM:SS).
+  // Rodič už aktualizuje čas jen po minutě (výkon), takže si zde držíme vlastní
+  // 1s clock, aby odpočet zůstal plynulý. Interval žije jen po dobu otevření popupu.
+  const [liveNow, setLiveNow] = useState<Date>(() => currentTime);
+  useEffect(() => {
+    const id = setInterval(() => setLiveNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -1736,7 +1785,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const getElapsedTime = (): string => {
     if (!room.phaseStartedAt) return '--:--';
     const phaseStartTime = new Date(room.phaseStartedAt);
-    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
+    const elapsedMs = liveNow.getTime() - phaseStartTime.getTime();
     if (elapsedMs < 0) return '--:--';
     
     const totalSeconds = Math.floor(elapsedMs / 1000);
