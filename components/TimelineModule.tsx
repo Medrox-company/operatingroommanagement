@@ -204,6 +204,35 @@ interface TimelineModuleProps {
 }
 
 /* ==========================================================================
+   useIsDesktop — detekce šířky okna přes matchMedia (breakpoint md = 768px).
+
+   PROČ: Tento modul obsahuje DVA kompletní designy — mobilní (MobileTimelineView)
+   a desktopový. Dříve se vykreslovaly OBA současně a přepínaly jen přes CSS
+   (`md:hidden` / `hidden md:flex`). Při načtení (než doběhne CSS / když je
+   náhled na okamžik úzký) tak nakrátko probleskl mobilní design s jeho
+   celoobrazovkovými `fixed inset-0` pozadími. Tímto hookem vykreslíme JEN jednu
+   verzi podle skutečné šířky okna a bliknutí zmizí.
+
+   Inicializátor čte `window` synchronně (před prvním vykreslením), takže první
+   paint je rovnou správný. Na serveru defaultuje na desktop. */
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return window.matchMedia('(min-width: 768px)').matches;
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setIsDesktop(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  return isDesktop;
+}
+
+/* ==========================================================================
    LiveClock — izolované hodiny se sekundami (desktop hlavička).
 
    PROČ: Hodiny zobrazují HH:MM:SS, takže musí tikat každou sekundu. Kdyby
@@ -274,6 +303,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const [showAroPopup, setShowAroPopup] = useState(false);
+  // Vykreslíme jen JEDEN design (mobil vs. desktop) podle skutečné šířky okna,
+  // aby při načtení neproblikla druhá verze.
+  const isDesktop = useIsDesktop();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
@@ -521,20 +553,23 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         )}
       </AnimatePresence>
 
-      {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
-      <MobileTimelineView
-        rooms={sortedRooms}
-        statusByOrderIndex={statusByOrderIndex}
-        activeStatuses={activeStatuses}
-        currentTime={currentTime}
-        stats={stats}
-        mobileView={mobileView}
-        onViewChange={setMobileView}
-        onSelectRoom={setSelectedRoom}
-        getRemainingTime={getRemainingTime}
-      />
+      {/* ======== MOBILE VIEW — vykreslí se jen pod breakpointem md ======== */}
+      {!isDesktop && (
+        <MobileTimelineView
+          rooms={sortedRooms}
+          statusByOrderIndex={statusByOrderIndex}
+          activeStatuses={activeStatuses}
+          currentTime={currentTime}
+          stats={stats}
+          mobileView={mobileView}
+          onViewChange={setMobileView}
+          onSelectRoom={setSelectedRoom}
+          getRemainingTime={getRemainingTime}
+        />
+      )}
 
-      {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
+      {/* ======== DESKTOP VIEW — vykreslí se jen od breakpointu md ======== */}
+      {isDesktop && (
       <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
 
       {/* ======== Header with Title and Stats ======== */}
@@ -1664,7 +1699,8 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         </div>
       </div>
 
-      </div>{/* end desktop wrapper */}
+      </div>
+      )}{/* end desktop wrapper */}
     </div>
   );
 }
