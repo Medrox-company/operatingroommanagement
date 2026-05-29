@@ -5,7 +5,6 @@ import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
-import HoverInfoPanel from './HoverInfoPanel';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
@@ -223,7 +222,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
-  const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
   const [showLegend, setShowLegend] = useState(false);
   // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
@@ -465,14 +463,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         )}
       </AnimatePresence>
 
-      {/* Hover Info Panel - Popup při najetí na řádek */}
-      {hoveredRoomId && (
-        <HoverInfoPanel 
-          room={rooms.find(r => r.id === hoveredRoomId) || null}
-          isVisible={!!hoveredRoomId}
-        />
-      )}
-
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
       <MobileTimelineView
         rooms={sortedRooms}
@@ -693,13 +683,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             className="relative w-full h-full"
             ref={scrollContainerRef}
             style={{
-              background: 'linear-gradient(180deg, rgba(20, 40, 60, 0.7) 0%, rgba(15, 35, 55, 0.9) 100%)',
-              backgroundImage: `
-                linear-gradient(90deg, rgba(6, 182, 212, 0.08) 1px, transparent 1px),
-                linear-gradient(180deg, rgba(6, 182, 212, 0.08) 1px, transparent 1px)
-              `,
-              backgroundSize: `calc(100% / 24) 80px`,
-              backgroundPosition: `${ROOM_LABEL_WIDTH}px 0`,
+              background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)',
             }}
           >
             {/* Now indicator - Premium animated line with glow */}
@@ -931,8 +915,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
                   }}
                   onClick={() => setSelectedRoom(room)}
-                  onMouseEnter={() => setHoveredRoomId(room.id)}
-                  onMouseLeave={() => setHoveredRoomId(null)}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: roomIndex * 0.03 }}
