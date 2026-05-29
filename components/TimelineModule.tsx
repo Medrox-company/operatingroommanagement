@@ -690,7 +690,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       isCurrentHour ? (
                         /* Current hour - Glowing pill */
                         <motion.span 
-                          className="text-[10px] font-mono font-bold px-3 py-1 rounded-full relative"
+                          className="text-xs font-mono font-bold px-3 py-1 rounded-full relative"
                           style={{ 
                             background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
                             color: '#000',
@@ -703,7 +703,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         </motion.span>
                       ) : (
                         /* Other hours */
-                        <span className={`text-[9px] font-mono font-medium tabular-nums transition-colors ${
+                        <span className={`text-[11px] font-mono font-medium tabular-nums transition-colors ${
                           isNightHour ? 'text-white/20' : isMajorHour ? 'text-white/60' : 'text-white/35'
                         }`}>
                           {hourLabelCompact(hour)}
