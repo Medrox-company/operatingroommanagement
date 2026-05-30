@@ -1031,29 +1031,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           transition={{ duration: 0.25 }}
           className="hidden lg:flex flex-1 min-h-0 flex-col gap-3 relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10 pb-4"
         >
-          {/* ── Hlavička ── */}
-          <div
-            className="flex-shrink-0 flex items-center justify-between gap-4 rounded-2xl backdrop-blur-xl px-4 py-2.5"
-            style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: `${C.cyan}1f` }}>
-                <BarChart3 className="w-4 h-4" style={{ color: C.cyan }} />
-              </div>
-              <div className="flex flex-col leading-tight">
-                <span className="text-xs font-bold tracking-wide" style={{ color: C.textHi }}>Statistiky vytížení sálů</span>
-                <span className="text-[10px] text-white/40">Reálný výpočet z dnešních operací · pauza se nezapočítává</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Celkové statistiky bez legendy */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: `${utilColor(roomUtilization.totals.utilizationPct)}1a`, border: `1px solid ${utilColor(roomUtilization.totals.utilizationPct)}40` }}>
-                <span className="text-[9px] uppercase tracking-wider font-semibold text-white/50">Celkem</span>
-                <span className="text-sm font-bold tabular-nums" style={{ color: utilColor(roomUtilization.totals.utilizationPct) }}>{roomUtilization.totals.workingMinutes > 0 ? `${roomUtilization.totals.utilizationPct}%` : '—'}</span>
-              </div>
-            </div>
-          </div>
-
           {/* ── Řádky sálů: % vytížení + per-room Timeline operačního cyklu (vše na jedné obrazovce) ── */}
           <div
             className="flex-1 min-h-0 flex flex-col rounded-2xl backdrop-blur-xl overflow-hidden"
