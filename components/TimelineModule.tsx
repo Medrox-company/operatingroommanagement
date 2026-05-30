@@ -761,10 +761,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
       {/* ======== Header with Title and Stats ======== */}
       <div 
-        className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
+        className="sticky top-0 z-40 backdrop-blur-md flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,10,20,0.92) 100%)',
-          borderBottom: `1px solid ${C.border}`,
+          background: 'linear-gradient(180deg, rgba(0,10,20,0.99) 0%, rgba(0,10,20,0.95) 100%)',
+          borderBottom: `1px solid ${C.borderStrong}`,
         }}
       >
         {/* Ambient glow */}
@@ -801,7 +801,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       <Icon className="w-4 h-4" style={{ color }} />
                     </div>
                     <div className="leading-none">
-                      <p className="text-[9px] uppercase tracking-[0.2em] font-medium text-white/40 mb-1">{label}</p>
+                      <p className="text-[9px] uppercase tracking-[0.2em] font-medium text-white/60 mb-1">{label}</p>
                       <p className="text-lg font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{value}</p>
                     </div>
                   </div>
@@ -811,7 +811,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
             {/* Center: Current Time (no box, just prominent display) */}
             <div className="flex flex-col items-center justify-center flex-shrink-0">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
+              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/50 mb-1">
                 {formatDate(currentTime)}
               </p>
               <motion.p 
@@ -826,7 +826,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 <span>
                   {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
                 </span>
-                <span className="text-base font-semibold tabular-nums text-white/40">
+                <span className="text-base font-semibold tabular-nums text-white/60">
                   {currentTime.toLocaleTimeString("cs-CZ", { second: "2-digit" })}
                 </span>
               </motion.p>
@@ -852,11 +852,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: C.green }} />
                   <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.green }} />
                 </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 tabular-nums">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/70 tabular-nums">
                   {lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 {onRefresh && (
-                  <RefreshCw className={`w-3.5 h-3.5 text-white/50 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 text-white/70 ${isRefreshing ? 'animate-spin' : ''}`} />
                 )}
               </button>
 
@@ -1040,7 +1040,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           className="hidden lg:flex flex-1 min-h-0 flex-col gap-2 relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10 pb-4"
         >
           {/* ── Header řádku: Názvy sloupců ── */}
-          <div className="flex-shrink-0 flex items-center gap-2 p-2 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingLeft: '11px' }}>
+          <div className="flex-shrink-0 flex items-center gap-2 p-2 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/60" style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.15)', paddingLeft: '11px' }}>
             <div style={{ width: 200, flexShrink: 0 }}>Sál</div>
             <div style={{ width: 80, flexShrink: 0 }}>Využití</div>
             <div style={{ width: 100, flexShrink: 0 }}>Operační čas</div>
@@ -1066,8 +1066,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   key={r.id}
                   type="button"
                   onClick={() => setStatsRoomId(r.id)}
-                  className="w-full flex-1 min-h-0 flex items-center gap-1.5 rounded-lg px-3 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm"
-                  style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
+                  className="w-full flex-1 min-h-0 flex items-center gap-1.5 rounded-lg px-3 transition-colors hover:bg-white/[0.06] text-left cursor-pointer text-sm"
+                  style={{ background: 'rgba(255,255,255,0.03)', borderLeft: `3px solid ${col}` }}
                 >
                   {/* Jméno sálu */}
                   <div style={{ width: 200, flexShrink: 0 }}>
@@ -1078,48 +1078,48 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           {r.name}
                           {r.isEmergency && <span className="ml-1 text-[7px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
                         </span>
-                        {r.department && <span className="text-[8px] text-white/35 truncate">{r.department}</span>}
+                        {r.department && <span className="text-[8px] text-white/50 truncate">{r.department}</span>}
                       </div>
                     </div>
                   </div>
 
                   {/* Využití % — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
                       <span className="font-semibold tabular-nums text-[11px]" style={{ color: col }}>{r.utilizationPct}%</span>
                     </div>
                   </div>
 
                   {/* Operační čas — v jemném boxu */}
                   <div style={{ width: 100, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
                       <span className="font-semibold tabular-nums text-[11px]" style={{ color: r.occupiedMinutes > 0 ? C.red : 'rgba(255,255,255,0.4)' }}>{r.occupiedMinutes > 0 ? `${r.occupiedMinutes}m` : '—'}</span>
                     </div>
                   </div>
 
                   {/* ARO — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{aroPhase ? `${aroPhase.minutes}m` : '—'}</span>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                      <span className="font-semibold tabular-nums text-[11px] text-white/80">{aroPhase ? `${aroPhase.minutes}m` : '—'}</span>
                     </div>
                   </div>
 
                   {/* Úklid — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{cleaningPhase ? `${cleaningPhase.minutes}m` : '—'}</span>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                      <span className="font-semibold tabular-nums text-[11px] text-white/80">{cleaningPhase ? `${cleaningPhase.minutes}m` : '—'}</span>
                     </div>
                   </div>
 
                   {/* Pauza — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
                       <span className="font-semibold tabular-nums text-[11px]" style={{ color: pausePhase ? C.yellow : 'rgba(255,255,255,0.4)' }}>{pausePhase ? `${pausePhase.minutes}m` : '—'}</span>
                     </div>
                   </div>
 
                   {/* Timeline */}
-                  <div className="flex-1 min-w-0 flex items-center h-6 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="flex-1 min-w-0 flex items-center h-6 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                     {r.phases.length > 0 ? (
                       r.phases.map((p, pi) => {
                         const w = r.phaseTotalMs > 0 ? (p.ms / r.phaseTotalMs) * 100 : 0;
