@@ -1063,7 +1063,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           </div>
 
           {/* ── Řádky sálů ── */}
-          <div className="flex-1 min-h-0 flex flex-col gap-0.5 overflow-y-auto">
+          <div className="flex-1 min-h-0 flex flex-col gap-0 overflow-hidden">
             {roomUtilization.rows.map((r) => {
               const closed = r.workingMinutes === 0;
               const col = utilColor(r.utilizationPct);
@@ -1078,7 +1078,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   key={r.id}
                   type="button"
                   onClick={() => setStatsRoomId(r.id)}
-                  className="w-full flex items-center gap-2 rounded-lg px-3 py-1.5 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm flex-shrink-0"
+                  className="w-full flex items-center gap-1.5 rounded-lg px-3 py-1 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm flex-shrink-0"
                   style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
                 >
                   {/* Jméno sálu */}
@@ -1095,33 +1095,43 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     </div>
                   </div>
 
-                  {/* Využití % */}
+                  {/* Využití % — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <span className="font-semibold tabular-nums text-sm" style={{ color: col }}>{r.utilizationPct}%</span>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: col }}>{r.utilizationPct}%</span>
+                    </div>
                   </div>
 
-                  {/* Operační čas */}
+                  {/* Operační čas — v jemném boxu */}
                   <div style={{ width: 100, flexShrink: 0 }}>
-                    <span className="font-semibold tabular-nums text-sm" style={{ color: C.red }}>{r.occupiedMinutes > 0 ? `${r.occupiedMinutes} min` : '—'}</span>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: r.occupiedMinutes > 0 ? C.red : 'rgba(255,255,255,0.4)' }}>{r.occupiedMinutes > 0 ? `${r.occupiedMinutes}m` : '—'}</span>
+                    </div>
                   </div>
 
-                  {/* ARO */}
+                  {/* ARO — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <span className="font-semibold tabular-nums text-sm text-white">{aroPhase ? `${aroPhase.minutes} min` : '—'}</span>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{aroPhase ? `${aroPhase.minutes}m` : '—'}</span>
+                    </div>
                   </div>
 
-                  {/* Úklid */}
+                  {/* Úklid — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <span className="font-semibold tabular-nums text-sm text-white">{cleaningPhase ? `${cleaningPhase.minutes} min` : '—'}</span>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{cleaningPhase ? `${cleaningPhase.minutes}m` : '—'}</span>
+                    </div>
                   </div>
 
-                  {/* Pauza */}
+                  {/* Pauza — v jemném boxu */}
                   <div style={{ width: 80, flexShrink: 0 }}>
-                    <span className="font-semibold tabular-nums text-sm" style={{ color: C.yellow }}>{pausePhase ? `${pausePhase.minutes} min` : '—'}</span>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: pausePhase ? C.yellow : 'rgba(255,255,255,0.4)' }}>{pausePhase ? `${pausePhase.minutes}m` : '—'}</span>
+                    </div>
                   </div>
 
                   {/* Timeline */}
-                  <div className="flex-1 min-w-0 flex items-center h-8 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="flex-1 min-w-0 flex items-center h-6 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
                     {r.phases.length > 0 ? (
                       r.phases.map((p, pi) => {
                         const w = r.phaseTotalMs > 0 ? (p.ms / r.phaseTotalMs) * 100 : 0;
@@ -1131,7 +1141,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
                             style={{ width: `${w}%`, minWidth: w > 0 ? 3 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < r.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
                           >
-                            {w > 12 && <span className="text-[9px] font-bold text-white/95 tabular-nums px-0.5 truncate">{p.minutes}m</span>}
+                            {w > 12 && <span className="text-[8px] font-bold text-white/95 tabular-nums px-0.5 truncate">{p.minutes}m</span>}
                           </div>
                         );
                       })
