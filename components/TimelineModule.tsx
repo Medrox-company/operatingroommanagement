@@ -1034,14 +1034,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             className="flex-1 min-h-0 flex flex-col rounded-2xl backdrop-blur-xl overflow-hidden"
             style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
           >
-            {/* Hlavička sloupců */}
-            <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
-              <span className="text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35" style={{ width: 196, flexShrink: 0 }}>Sál</span>
-              <span className="text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35 text-center" style={{ width: 72, flexShrink: 0 }}>Vytížení</span>
-              <span className="text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35 text-center" style={{ width: 76, flexShrink: 0 }}>Obsazené</span>
-              <span className="flex-1 text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35">Timeline operačního cyklu (dnes)</span>
-            </div>
-
             {/* Tělo */}
             <div className="flex-1 min-h-0 flex flex-col gap-1.5 p-3 overflow-hidden">
               {roomUtilization.rows.map((r) => {
