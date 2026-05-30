@@ -156,6 +156,28 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     }
     return filtered; // 'default' = původní pořadí (sort_order z DB)
   }, [sortedRooms, searchQuery, statusFilter, sortMode]);
+
+  // Pro statistiky zobrazujeme VŠECHNY sály bez filtrování
+  const allRoomsForStats = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = sortedRooms.filter((room) => {
+      const matchesSearch =
+        !q ||
+        room.name?.toLowerCase().includes(q) ||
+        room.department?.toLowerCase().includes(q);
+      return matchesSearch;
+    });
+    
+    if (sortMode === 'name') {
+      return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+    }
+    if (sortMode === 'status') {
+      const rank = (r: OperatingRoom) =>
+        r.isEmergency ? 0 : (r.currentStepIndex > 0 || r.isLocked || r.isPaused) ? 1 : 2;
+      return [...filtered].sort((a, b) => rank(a) - rank(b) || (a.name || '').localeCompare(b.name || '', 'cs'));
+    }
+    return filtered;
+  }, [sortedRooms, searchQuery, sortMode]);
   
   // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
   // Výpočet: dostupná výška = výška kontejneru - padding - gap mezi řádky
@@ -242,7 +264,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       stepNameMap[idx] = s.name || `Fáze ${idx + 1}`;
     });
 
-    const rows = displayRooms.map((room) => {
+    // V "Souhrn dne" zobrazujeme VŠECHNY sály, ne jen filtrované
+    const roomsToProcess = showSummary ? allRoomsForStats : displayRooms;
+    const rows = roomsToProcess.map((room) => {
       // Pracovní kapacita dne (minuty) = (konec − začátek) − denní pauza
       const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
       const today = schedule[todayKey];
@@ -354,7 +378,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       : 0;
 
     return { rows, totals: { ...totals, utilizationPct: totalUtilizationPct } };
-  }, [displayRooms, currentTime, activeStatuses]);
+    }, [allRoomsForStats, displayRooms, currentTime, activeStatuses, showSummary]);
 
   // Barva podle míry vytížení sálu
   const utilColor = (pct: number): string => {
@@ -1063,26 +1087,22 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     </div>
 
                     {/* Střed: Boxy s metrikami */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {/* Box: obsazené / pracovní minuty */}
-                      <div className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ width: 70, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
-                        <span className="text-xl font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(r.occupiedMinutes)}</span>
-                        <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">/ {r.workingMinutes > 0 ? fmtMin(r.workingMinutes) : '—'}</span>
-                      </div>
-
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {/* Box: Počet operací pro daný sál a den */}
-                      <div className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ width: 60, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+                      <div className="flex flex-col items-center justify-center rounded-lg py-2 px-1.5" style={{ width: 65, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
                         <span className="text-xl font-bold tabular-nums leading-none" style={{ color: C.cyan }}>{r.operations}</span>
                         <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">operace</span>
                       </div>
 
-                      {/* Boxy s minutami jednotlivých fází — v jednom řádku */}
-                      {r.phases.map((p, pi) => (
-                        <div key={pi} className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ minWidth: 60, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
-                          <span className="text-xl font-bold tabular-nums leading-none" style={{ color: p.color }}>{p.minutes}</span>
-                          <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5 truncate" title={p.name}>{p.name}</span>
-                        </div>
-                      ))}
+                      {/* Boxy s minutami jednotlivých fází — v jednom řádku, jen ty s > 0 minutami */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {r.phases.filter(p => p.ms > 0).map((p, pi) => (
+                          <div key={pi} className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ minWidth: 60, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+                            <span className="text-xl font-bold tabular-nums leading-none" style={{ color: p.color }}>{p.minutes}</span>
+                            <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5 truncate" title={p.name}>{p.name}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Hlavní box: % vytížení operačního sálu — s barevným textem */}
