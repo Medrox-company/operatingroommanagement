@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
+import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
@@ -213,47 +213,97 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
   }, [rooms]);
 
-  /* --- Souhrn dne: agregace z reálných dat (completedOperations, stav, odhady) --- */
-  const daySummary = useMemo(() => {
-    const total = rooms.length;
-    const free = rooms.filter(r => !r.isEmergency && !r.isLocked && r.currentStepIndex >= 6).length;
-    const active = rooms.filter(r => r.currentStepIndex > 0 && r.currentStepIndex < 6 && !r.isLocked).length;
-    const paused = rooms.filter(r => r.isPaused).length;
-    const emergency = rooms.filter(r => r.isEmergency).length;
-    const locked = rooms.filter(r => r.isLocked).length;
+  /* --- Vytížení po sálech: pro každý sál spočítá počet operací, pracovní
+     kapacitu (z rozvrhu dne, minus pauza), obsazené minuty (z dokončených +
+     probíhající operace; pauza se NEpočítá) a vytíženost v %. --- */
+  const roomUtilization = useMemo(() => {
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const todayKey = dayKeys[currentTime.getDay()];
+    const now = currentTime.getTime();
 
-    // Dokončené operace dnes + průměrná délka z completedOperations
-    let completedCount = 0;
-    let durationSumMs = 0;
-    let durationSamples = 0;
-    rooms.forEach((r) => {
-      (r.completedOperations || []).forEach((op) => {
-        completedCount++;
-        const start = new Date(op.startedAt).getTime();
-        const end = new Date(op.endedAt).getTime();
-        if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
-          durationSumMs += end - start;
-          durationSamples++;
+    const rows = displayRooms.map((room) => {
+      // Pracovní kapacita dne (minuty) = (konec − začátek) − denní pauza
+      const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+      const today = schedule[todayKey];
+      let workingMinutes = 0;
+      if (today?.enabled) {
+        const startM = today.startHour * 60 + today.startMinute;
+        const endM = today.endHour * 60 + today.endMinute;
+        const breakM = today.breakMinutes ?? DEFAULT_DAILY_BREAK_MINUTES;
+        workingMinutes = Math.max(0, endM - startM - breakM);
+      }
+
+      // Obsazené minuty z dokončených operací (endedAt − startedAt)
+      let occupiedMs = 0;
+      let operations = 0;
+      (room.completedOperations || []).forEach((op) => {
+        const s = new Date(op.startedAt).getTime();
+        const e = new Date(op.endedAt).getTime();
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
+          occupiedMs += e - s;
+          operations++;
         }
       });
-    });
-    const avgDurationMin = durationSamples > 0 ? Math.round(durationSumMs / durationSamples / 60000) : 0;
 
-    // Nejbližší odhadovaný konec mezi probíhajícími sály
-    const now = currentTime.getTime();
-    let nextEnd: Date | null = null;
-    rooms.forEach((r) => {
-      if (r.currentStepIndex > 0 && r.currentStepIndex < 6 && r.estimatedEndTime) {
-        const t = new Date(r.estimatedEndTime);
-        const ms = t.getTime();
-        if (Number.isFinite(ms) && ms > now && (!nextEnd || ms < nextEnd.getTime())) nextEnd = t;
+      // Probíhající operace — přičti čas od začátku do teď, pokud NENÍ pauza
+      const isRunning = room.currentStepIndex > 0 && room.currentStepIndex < 6 && !room.isLocked;
+      if (isRunning) {
+        operations++;
+        if (!room.isPaused && room.operationStartedAt) {
+          const s = new Date(room.operationStartedAt).getTime();
+          if (Number.isFinite(s) && now > s) occupiedMs += now - s;
+        }
       }
+
+      const occupiedMinutes = Math.round(occupiedMs / 60000);
+      const utilizationPct = workingMinutes > 0 ? Math.round((occupiedMinutes / workingMinutes) * 100) : 0;
+
+      return {
+        id: room.id,
+        name: room.name,
+        department: room.department,
+        isEmergency: !!room.isEmergency,
+        isPaused: !!room.isPaused,
+        isRunning,
+        operations,
+        workingMinutes,
+        occupiedMinutes,
+        utilizationPct,
+      };
     });
 
-    const occupancyPct = total > 0 ? Math.round((active / total) * 100) : 0;
+    // Souhrnný řádek
+    const totals = rows.reduce(
+      (acc, r) => {
+        acc.operations += r.operations;
+        acc.workingMinutes += r.workingMinutes;
+        acc.occupiedMinutes += r.occupiedMinutes;
+        return acc;
+      },
+      { operations: 0, workingMinutes: 0, occupiedMinutes: 0 }
+    );
+    const totalUtilizationPct = totals.workingMinutes > 0
+      ? Math.round((totals.occupiedMinutes / totals.workingMinutes) * 100)
+      : 0;
 
-    return { total, free, active, paused, emergency, locked, completedCount, avgDurationMin, nextEnd, occupancyPct };
-  }, [rooms, currentTime]);
+    return { rows, totals: { ...totals, utilizationPct: totalUtilizationPct } };
+  }, [displayRooms, currentTime]);
+
+  // Barva podle míry vytížení sálu
+  const utilColor = (pct: number): string => {
+    if (pct >= 100) return C.red;       // přetížení
+    if (pct >= 75) return C.green;      // optimální
+    if (pct >= 50) return C.yellow;     // střední
+    return C.cyan;                      // nízká
+  };
+
+  // Formát minut → "6h 31m" (nebo "31m")
+  const fmtMin = (min: number): string => {
+    if (min <= 0) return '0m';
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
   /* --- ARO Overtime Tracking - rooms that exceed working hours.
      
@@ -779,29 +829,132 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             className="hidden lg:block flex-shrink-0 relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10"
           >
             <div
-              className="flex items-stretch gap-2 mb-3 rounded-2xl px-3 py-2.5 backdrop-blur-xl"
+              className="mb-3 rounded-2xl backdrop-blur-xl overflow-hidden"
               style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
-              {([
-                { label: 'Sálů celkem', value: daySummary.total, color: C.textHi },
-                { label: 'Aktivní', value: daySummary.active, color: C.cyan },
-                { label: 'Volné', value: daySummary.free, color: C.green },
-                { label: 'V pauze', value: daySummary.paused, color: C.yellow },
-                { label: 'Nouzové', value: daySummary.emergency, color: C.red },
-                { label: 'Dokončeno dnes', value: daySummary.completedCount, color: C.textHi },
-                { label: 'Ø délka', value: daySummary.avgDurationMin > 0 ? `${daySummary.avgDurationMin} min` : '—', color: C.textHi },
-                { label: 'Nejbližší konec', value: daySummary.nextEnd ? (daySummary.nextEnd as Date).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '—', color: C.cyan },
-                { label: 'Vytíženost', value: `${daySummary.occupancyPct} %`, color: daySummary.occupancyPct >= 75 ? C.red : daySummary.occupancyPct >= 40 ? C.yellow : C.green },
-              ] as { label: string; value: React.ReactNode; color: string }[]).map((m, i) => (
-                <div
-                  key={i}
-                  className="flex-1 flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-xl min-w-0"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}
-                >
-                  <span className="text-[9px] uppercase tracking-[0.15em] font-medium text-white/40 text-center leading-tight whitespace-nowrap">{m.label}</span>
-                  <span className="text-lg font-bold tabular-nums leading-none" style={{ color: m.color }}>{m.value}</span>
+              {/* Hlavička panelu: titulek + legenda + souhrn */}
+              <div className="flex items-center justify-between gap-4 px-4 py-2.5" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: `${C.cyan}1f` }}>
+                    <BarChart3 className="w-4 h-4" style={{ color: C.cyan }} />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-xs font-bold tracking-wide" style={{ color: C.textHi }}>Vytížení sálů</span>
+                    <span className="text-[10px] text-white/40">Reálný výpočet z dnešních operací · pauza se nezapočítává</span>
+                  </div>
                 </div>
-              ))}
+                <div className="flex items-center gap-3">
+                  {/* Legenda barev */}
+                  <div className="hidden xl:flex items-center gap-2.5">
+                    {[
+                      { c: C.cyan, t: '< 50 %' },
+                      { c: C.yellow, t: '50–75 %' },
+                      { c: C.green, t: '75–100 %' },
+                      { c: C.red, t: '≥ 100 %' },
+                    ].map((l, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ background: l.c }} />
+                        <span className="text-[9px] font-medium text-white/45 tabular-nums">{l.t}</span>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: `${utilColor(roomUtilization.totals.utilizationPct)}1a`, border: `1px solid ${utilColor(roomUtilization.totals.utilizationPct)}40` }}>
+                    <span className="text-[9px] uppercase tracking-wider font-semibold text-white/50">Celkem</span>
+                    <span className="text-sm font-bold tabular-nums" style={{ color: utilColor(roomUtilization.totals.utilizationPct) }}>{roomUtilization.totals.workingMinutes > 0 ? `${roomUtilization.totals.utilizationPct}%` : '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hlavička sloupců */}
+              <div className="flex items-center gap-3 px-4 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <span className="text-[9px] uppercase tracking-[0.18em] font-semibold text-white/35" style={{ width: 200, flexShrink: 0 }}>Sál</span>
+                <span className="text-[9px] uppercase tracking-[0.18em] font-semibold text-white/35 text-center" style={{ width: 64, flexShrink: 0 }}>Operace</span>
+                <span className="text-[9px] uppercase tracking-[0.18em] font-semibold text-white/35 text-center" style={{ width: 84, flexShrink: 0 }}>Pracovní</span>
+                <span className="text-[9px] uppercase tracking-[0.18em] font-semibold text-white/35 text-center" style={{ width: 84, flexShrink: 0 }}>Obsazené</span>
+                <span className="flex-1 text-[9px] uppercase tracking-[0.18em] font-semibold text-white/35">Vytíženost</span>
+              </div>
+
+              {/* Tělo tabulky — scrollovatelné */}
+              <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
+                {roomUtilization.rows.map((r) => {
+                  const closed = r.workingMinutes === 0; // sál dnes nepracuje (zavřeno dle rozvrhu)
+                  const col = closed ? 'rgba(255,255,255,0.25)' : utilColor(r.utilizationPct);
+                  const barPct = closed ? 0 : Math.min(100, r.utilizationPct);
+                  return (
+                    <div
+                      key={r.id}
+                      className="flex items-center gap-3 px-4 py-2 transition-colors hover:bg-white/[0.025] relative"
+                      style={{ borderBottom: `1px solid ${C.border}` }}
+                    >
+                      {/* Levý barevný accent dle vytížení */}
+                      <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: col }} />
+
+                      {/* Název sálu + oddělení */}
+                      <div className="flex items-center gap-2 min-w-0" style={{ width: 200, flexShrink: 0 }}>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col, boxShadow: `0 0 6px ${col}80` }} />
+                        <div className="flex flex-col min-w-0 leading-tight">
+                          <span className="text-xs font-semibold truncate" style={{ color: C.textHi }}>
+                            {r.name}
+                            {r.isEmergency && <span className="ml-1.5 text-[8px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
+                            {r.isPaused && <span className="ml-1.5 text-[8px] font-bold uppercase" style={{ color: C.yellow }}>PAUZA</span>}
+                          </span>
+                          {r.department && <span className="text-[9px] text-white/35 truncate">{r.department}</span>}
+                        </div>
+                      </div>
+
+                      {/* Počet operací */}
+                      <div className="flex items-center justify-center" style={{ width: 64, flexShrink: 0 }}>
+                        <span className="flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md text-xs font-bold tabular-nums"
+                          style={{ background: r.operations > 0 ? `${C.cyan}14` : 'rgba(255,255,255,0.03)', color: r.operations > 0 ? C.cyan : 'rgba(255,255,255,0.3)' }}>
+                          {r.operations}
+                        </span>
+                      </div>
+
+                      {/* Pracovní minuty */}
+                      <span className="text-xs font-medium tabular-nums text-center text-white/65" style={{ width: 84, flexShrink: 0 }}>
+                        {r.workingMinutes > 0 ? fmtMin(r.workingMinutes) : '—'}
+                      </span>
+
+                      {/* Obsazené minuty */}
+                      <span className="text-xs font-semibold tabular-nums text-center" style={{ width: 84, flexShrink: 0, color: C.textHi }}>
+                        {fmtMin(r.occupiedMinutes)}
+                      </span>
+
+                      {/* Vytíženost: bar + % */}
+                      <div className="flex-1 flex items-center gap-2.5 min-w-0">
+                        <div className="flex-1 h-2 rounded-full overflow-hidden min-w-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                          <motion.div
+                            className="h-full rounded-full"
+                            style={{ background: `linear-gradient(90deg, ${col}, ${col}cc)`, boxShadow: `0 0 8px ${col}66` }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${barPct}%` }}
+                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                          />
+                        </div>
+                        <span className="text-sm font-bold tabular-nums text-right" style={{ width: 48, flexShrink: 0, color: col }}>
+                          {closed ? '—' : `${r.utilizationPct}%`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Souhrnný řádek */}
+              <div className="flex items-center gap-3 px-4 py-2" style={{ borderTop: `1px solid ${C.borderStrong}`, background: 'rgba(255,255,255,0.02)' }}>
+                <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-white/55" style={{ width: 200, flexShrink: 0 }}>Celkem ({roomUtilization.rows.length})</span>
+                <span className="text-xs font-bold tabular-nums text-center" style={{ width: 64, flexShrink: 0, color: C.cyan }}>{roomUtilization.totals.operations}</span>
+                <span className="text-xs font-bold tabular-nums text-center text-white/70" style={{ width: 84, flexShrink: 0 }}>{fmtMin(roomUtilization.totals.workingMinutes)}</span>
+                <span className="text-xs font-bold tabular-nums text-center" style={{ width: 84, flexShrink: 0, color: C.textHi }}>{fmtMin(roomUtilization.totals.occupiedMinutes)}</span>
+                <div className="flex-1 flex items-center gap-2.5 min-w-0">
+                  <div className="flex-1 h-2 rounded-full overflow-hidden min-w-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, roomUtilization.totals.utilizationPct)}%`, background: `linear-gradient(90deg, ${utilColor(roomUtilization.totals.utilizationPct)}, ${utilColor(roomUtilization.totals.utilizationPct)}cc)` }} />
+                  </div>
+                  <span className="text-sm font-bold tabular-nums text-right" style={{ width: 48, flexShrink: 0, color: utilColor(roomUtilization.totals.utilizationPct) }}>
+                    {roomUtilization.totals.workingMinutes > 0 ? `${roomUtilization.totals.utilizationPct}%` : '—'}
+                  </span>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
