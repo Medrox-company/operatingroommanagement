@@ -1051,8 +1051,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             {/* Tělo */}
             <div className="flex-1 min-h-0 flex flex-col gap-1.5 p-3 overflow-hidden">
               {roomUtilization.rows.map((r) => {
-                const closed = r.workingMinutes === 0; // sál dnes nepracuje (zavřeno dle rozvrhu)
-                const col = closed ? 'rgba(255,255,255,0.25)' : utilColor(r.utilizationPct);
+              const closed = r.workingMinutes === 0; // sál dnes nepracuje (zavřeno dle rozvrhu)
+              const col = utilColor(r.utilizationPct); // VŽDY použij utilColor, ne šedou
                 return (
                   <button
                     key={r.id}
@@ -1078,28 +1078,28 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     {/* Střed: Boxy s metrikami */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {/* Box: obsazené / pracovní minuty */}
-                      <div className="flex flex-col items-center justify-center rounded-lg py-1" style={{ width: 70, background: 'rgba(255,255,255,0.03)' }}>
-                        <span className="text-[10px] font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(r.occupiedMinutes)}</span>
+                      <div className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ width: 70, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+                        <span className="text-xl font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(r.occupiedMinutes)}</span>
                         <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">/ {r.workingMinutes > 0 ? fmtMin(r.workingMinutes) : '—'}</span>
                       </div>
 
                       {/* Box: Počet operací pro daný sál a den */}
-                      <div className="flex flex-col items-center justify-center rounded-lg py-1" style={{ width: 60, background: 'rgba(255,255,255,0.03)' }}>
-                        <span className="text-[10px] font-bold tabular-nums leading-none" style={{ color: C.cyan }}>{r.operations}</span>
+                      <div className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ width: 60, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+                        <span className="text-xl font-bold tabular-nums leading-none" style={{ color: C.cyan }}>{r.operations}</span>
                         <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">operace</span>
                       </div>
 
                       {/* Box: Minuty nevyužitého / pauzy */}
-                      <div className="flex flex-col items-center justify-center rounded-lg py-1" style={{ width: 65, background: 'rgba(255,255,255,0.03)' }}>
-                        <span className="text-[10px] font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(Math.max(0, r.workingMinutes - r.occupiedMinutes))}</span>
+                      <div className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ width: 70, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+                        <span className="text-xl font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(Math.max(0, r.workingMinutes - r.occupiedMinutes))}</span>
                         <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">nevyužito</span>
                       </div>
                     </div>
 
-                    {/* Hlavní box: % vytížení operačního sálu */}
+                    {/* Hlavní box: % vytížení operačního sálu — s barevným textem */}
                     <div
-                      className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-2 px-2"
-                      style={{ minWidth: 85, background: `${col}1f`, border: `1.5px solid ${col}66` }}
+                      className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-2 px-3"
+                      style={{ minWidth: 90, background: `${col}1f`, border: `1.5px solid ${col}66` }}
                     >
                       <span className="text-2xl font-bold tabular-nums leading-none" style={{ color: col }}>{`${r.utilizationPct}%`}</span>
                       <span className="text-[8px] tabular-nums text-white/40 leading-none mt-1">využití</span>
