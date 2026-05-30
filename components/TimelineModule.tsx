@@ -1551,7 +1551,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               /* Active / Free / Locked row - Premium glass card design */
               return (
-                <motion.div
+                <div
                   key={room.id}
                   className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
@@ -1565,13 +1565,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
                   }}
                   onClick={() => setSelectedRoom(room)}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: roomIndex * 0.03 }}
-                  whileHover={{ 
-                    borderColor: isActive ? `${stepColor}40` : C.borderHover,
-                    boxShadow: isActive ? `0 0 20px ${stepColor}15` : '0 4px 20px rgba(0,0,0,0.2)',
-                  }}
                 >
                   {/* Colored left accent bar */}
                   <div 
@@ -2259,7 +2252,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       );
                     })()}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
             </div>
