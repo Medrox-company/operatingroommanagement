@@ -16,7 +16,7 @@ export const C = {
 
   // Surface & Glass Effects — sjednocená modro-černá hloubka (slate 950 → 900)
   bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgba(9, 14, 28, 0.85)',       // Glass surface (sladěno do slate)
+  bgSurface: 'rgb(0, 6, 17)',                // Glass surface
   bgElevated: 'rgba(23, 33, 54, 0.92)',     // Elevated cards
   bgCard: 'rgba(13, 20, 38, 0.96)',         // Card background
   bgPanel: 'rgba(11, 17, 32, 0.95)',        // Sticky panely / toolbar (neprůhledné)
