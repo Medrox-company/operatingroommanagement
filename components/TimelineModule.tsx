@@ -379,25 +379,13 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         if (r.isEmergency) acc.emergencyRoomsCount++;
         return acc;
       },
-      { operations: 0, workingMinutes: 0, occupiedMinutes: 0, completedOperations: 0, totalOperatingMs: 0, allRoomsCount: 0, activeRoomsCount: 0, freeRoomsCount: 0, pausedRoomsCount: 0, emergencyRoomsCount: 0, nextEndTime: '—' }
+      { operations: 0, workingMinutes: 0, occupiedMinutes: 0, completedOperations: 0, totalOperatingMs: 0, allRoomsCount: 0, activeRoomsCount: 0, freeRoomsCount: 0, pausedRoomsCount: 0, emergencyRoomsCount: 0 }
     );
     const totalUtilizationPct = totals.workingMinutes > 0
       ? Math.round((totals.occupiedMinutes / totals.workingMinutes) * 100)
       : 0;
 
-    // Najít nejbližší konec operace
-    let nextEndTime = '—';
-    const nextRoom = rows
-      .filter(r => r.estimatedEndTime && new Date(r.estimatedEndTime) > currentTime)
-      .sort((a, b) => new Date(a.estimatedEndTime!).getTime() - new Date(b.estimatedEndTime!).getTime())[0];
-    if (nextRoom) {
-      const endDate = new Date(nextRoom.estimatedEndTime!);
-      const hours = String(endDate.getHours()).padStart(2, '0');
-      const mins = String(endDate.getMinutes()).padStart(2, '0');
-      nextEndTime = `${hours}:${mins}`;
-    }
-
-    return { rows, totals: { ...totals, nextEndTime, utilizationPct: totalUtilizationPct } };
+    return { rows, totals: { ...totals, utilizationPct: totalUtilizationPct } };
     }, [allRoomsForStats, displayRooms, currentTime, activeStatuses, showSummary]);
 
   // Barva podle míry vytížení sálu
