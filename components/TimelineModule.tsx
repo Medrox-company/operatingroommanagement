@@ -80,6 +80,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const [sortMode, setSortMode] = useState<SortMode>('default');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [statsRoomId, setStatsRoomId] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -213,13 +214,33 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
   }, [rooms]);
 
-  /* --- Vytížení po sálech: pro každý sál spočítá počet operací, pracovní
-     kapacitu (z rozvrhu dne, minus pauza), obsazené minuty (z dokončených +
-     probíhající operace; pauza se NEpočítá) a vytíženost v %. --- */
+  /* --- Vytížení po sálech (POUZE dnešní den, reálná data z DB):
+     pro každý sál spočítá počet operací, pracovní kapacitu (z rozvrhu dne,
+     minus pauza), obsazené minuty (z dnešních dokončených + probíhající
+     operace; pauza se NEpočítá), vytíženost v % a rozpad času po fázích
+     operačního cyklu (per-room timeline). --- */
   const roomUtilization = useMemo(() => {
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const todayKey = dayKeys[currentTime.getDay()];
     const now = currentTime.getTime();
+
+    // Hranice dnešního dne — vše počítáme JEN z dnešního dne
+    const dayStart = new Date(currentTime); dayStart.setHours(0, 0, 0, 0);
+    const startMs = dayStart.getTime();
+    const endMs = startMs + 24 * 60 * 60 * 1000;
+    const isToday = (iso?: string | null): boolean => {
+      if (!iso) return false;
+      const t = new Date(iso).getTime();
+      return Number.isFinite(t) && t >= startMs && t < endMs;
+    };
+
+    // Mapa barev/názvů fází podle POZICE v poli activeStatuses (stejně jako hlavní timeline)
+    const stepColorMap: Record<number, string> = {};
+    const stepNameMap: Record<number, string> = {};
+    activeStatuses.forEach((s, idx) => {
+      stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
+      stepNameMap[idx] = s.name || `Fáze ${idx + 1}`;
+    });
 
     const rows = displayRooms.map((room) => {
       // Pracovní kapacita dne (minuty) = (konec − začátek) − denní pauza
@@ -233,30 +254,59 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         workingMinutes = Math.max(0, endM - startM - breakM);
       }
 
-      // Obsazené minuty z dokončených operací (endedAt − startedAt)
       let occupiedMs = 0;
       let operations = 0;
+      const phaseMs: Record<number, number> = {}; // stepIndex (pozice) → ms
+
+      // Akumulace času po fázích z historie statusů jedné operace
+      const accumulatePhases = (history: Array<{ stepIndex: number; startedAt: string }> | undefined, opEndMs: number) => {
+        if (!history || history.length === 0) return;
+        history.forEach((entry, idx) => {
+          const segStart = new Date(entry.startedAt).getTime();
+          const next = history[idx + 1];
+          const segEnd = next ? new Date(next.startedAt).getTime() : opEndMs;
+          const dur = Math.max(0, segEnd - segStart);
+          if (dur > 0) phaseMs[entry.stepIndex] = (phaseMs[entry.stepIndex] || 0) + dur;
+        });
+      };
+
+      // Dnešní dokončené operace (filtr na dnešní den dle startedAt)
       (room.completedOperations || []).forEach((op) => {
+        if (!isToday(op.startedAt)) return;
         const s = new Date(op.startedAt).getTime();
         const e = new Date(op.endedAt).getTime();
         if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
           occupiedMs += e - s;
           operations++;
+          accumulatePhases(op.statusHistory, e);
         }
       });
 
-      // Probíhající operace — přičti čas od začátku do teď, pokud NENÍ pauza
+      // Probíhající operace — pouze pokud začala dnes; pauza se NEpočítá
       const isRunning = room.currentStepIndex > 0 && room.currentStepIndex < 6 && !room.isLocked;
-      if (isRunning) {
+      if (isRunning && isToday(room.operationStartedAt)) {
         operations++;
-        if (!room.isPaused && room.operationStartedAt) {
-          const s = new Date(room.operationStartedAt).getTime();
-          if (Number.isFinite(s) && now > s) occupiedMs += now - s;
-        }
+        const s = new Date(room.operationStartedAt as string).getTime();
+        if (!room.isPaused && now > s) occupiedMs += now - s;
+        accumulatePhases(room.statusHistory, now);
       }
 
       const occupiedMinutes = Math.round(occupiedMs / 60000);
       const utilizationPct = workingMinutes > 0 ? Math.round((occupiedMinutes / workingMinutes) * 100) : 0;
+      const avgOpMin = operations > 0 ? Math.round(occupiedMs / 60000 / operations) : 0;
+
+      // Sestavení fází cyklu pro per-room timeline (seřazeno dle pozice)
+      const phases = Object.entries(phaseMs)
+        .map(([idx, ms]) => ({
+          stepIndex: Number(idx),
+          name: stepNameMap[Number(idx)] || `Fáze ${Number(idx) + 1}`,
+          color: stepColorMap[Number(idx)] || '#6b7280',
+          minutes: Math.round(ms / 60000),
+          ms,
+        }))
+        .filter((p) => p.ms > 0)
+        .sort((a, b) => a.stepIndex - b.stepIndex);
+      const phaseTotalMs = phases.reduce((acc, p) => acc + p.ms, 0);
 
       return {
         id: room.id,
@@ -269,6 +319,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         workingMinutes,
         occupiedMinutes,
         utilizationPct,
+        avgOpMin,
+        phases,
+        phaseTotalMs,
       };
     });
 
@@ -287,7 +340,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       : 0;
 
     return { rows, totals: { ...totals, utilizationPct: totalUtilizationPct } };
-  }, [displayRooms, currentTime]);
+  }, [displayRooms, currentTime, activeStatuses]);
 
   // Barva podle míry vytížení sálu
   const utilColor = (pct: number): string => {
@@ -304,24 +357,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     const m = min % 60;
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
-
-  /* --- Timeline operačního cyklu: živá distribuce sálů po fázích cyklu.
-     Barvy přebíráme z dynamických workflow statusů (stejně jako modul statistik). --- */
-  const cyclePhases = useMemo(() => {
-    const steps = activeStatuses.map((s, i) => ({
-      name: s.title || s.name || `Fáze ${i + 1}`,
-      color: s.accent_color || s.color || '#6B7280',
-      count: 0,
-    }));
-    if (steps.length === 0) return { steps, totalCount: 0 };
-    displayRooms.forEach((r) => {
-      if (r.isLocked) return;
-      const idx = Math.max(0, Math.min(r.currentStepIndex, steps.length - 1));
-      if (steps[idx]) steps[idx].count++;
-    });
-    const totalCount = steps.reduce((acc, p) => acc + p.count, 0);
-    return { steps, totalCount };
-  }, [activeStatuses, displayRooms]);
 
   /* --- ARO Overtime Tracking - rooms that exceed working hours.
      
@@ -484,6 +519,119 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             currentTime={currentTime}
           />
         )}
+
+        {/* Detail statistik sálu pro daný den */}
+        {statsRoomId && (() => {
+          const sr = roomUtilization.rows.find((x) => x.id === statsRoomId);
+          if (!sr) return null;
+          const closed = sr.workingMinutes === 0;
+          const col = closed ? 'rgba(255,255,255,0.4)' : utilColor(sr.utilizationPct);
+          const kpis: { label: string; value: string; color: string }[] = [
+            { label: 'Vytíženost', value: closed ? '—' : `${sr.utilizationPct}%`, color: col },
+            { label: 'Operace dnes', value: `${sr.operations}`, color: C.cyan },
+            { label: 'Obsazené', value: fmtMin(sr.occupiedMinutes), color: C.textHi },
+            { label: 'Pracovní', value: sr.workingMinutes > 0 ? fmtMin(sr.workingMinutes) : '—', color: 'rgba(255,255,255,0.7)' },
+            { label: 'Ø délka operace', value: sr.avgOpMin > 0 ? fmtMin(sr.avgOpMin) : '—', color: C.textHi },
+          ];
+          return (
+            <motion.div
+              className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setStatsRoomId(null)}
+              style={{ background: 'rgba(5,8,16,0.72)', backdropFilter: 'blur(6px)' }}
+            >
+              <motion.div
+                className="w-full max-w-2xl rounded-2xl overflow-hidden"
+                initial={{ scale: 0.96, y: 12 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.96, y: 12 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ background: 'linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(10,15,26,0.98) 100%)', border: `1px solid ${C.borderStrong}`, boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}
+              >
+                {/* Hlavička */}
+                <div className="flex items-center justify-between gap-4 px-5 py-4" style={{ borderBottom: `1px solid ${C.border}`, borderLeft: `4px solid ${col}` }}>
+                  <div className="flex flex-col leading-tight min-w-0">
+                    <span className="text-base font-bold truncate" style={{ color: C.textHi }}>
+                      {sr.name}
+                      {sr.isEmergency && <span className="ml-2 text-[9px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
+                      {sr.isPaused && <span className="ml-2 text-[9px] font-bold uppercase" style={{ color: C.yellow }}>PAUZA</span>}
+                    </span>
+                    <span className="text-[11px] text-white/40">
+                      {sr.department || 'Operační sál'} · statistiky pro {currentTime.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setStatsRoomId(null)}
+                    aria-label="Zavřít"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4 text-white/60" />
+                  </button>
+                </div>
+
+                {/* KPI mřížka */}
+                <div className="grid grid-cols-5 gap-2 px-5 pt-4">
+                  {kpis.map((k, i) => (
+                    <div key={i} className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
+                      <span className="text-lg font-bold tabular-nums leading-none" style={{ color: k.color }}>{k.value}</span>
+                      <span className="text-[9px] uppercase tracking-wider text-white/40 text-center leading-tight">{k.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Timeline operačního cyklu (dnes) */}
+                <div className="px-5 pt-4">
+                  <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/45">Timeline operačního cyklu (dnes)</span>
+                  <div className="flex items-center h-10 rounded-xl overflow-hidden mt-2" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    {sr.phases.length > 0 ? (
+                      sr.phases.map((p, pi) => {
+                        const w = sr.phaseTotalMs > 0 ? (p.ms / sr.phaseTotalMs) * 100 : 0;
+                        return (
+                          <div
+                            key={pi}
+                            className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
+                            style={{ width: `${w}%`, minWidth: w > 0 ? 4 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < sr.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
+                          >
+                            {w > 10 && <span className="text-[10px] font-bold text-white/95 tabular-nums px-1 truncate">{p.minutes}m</span>}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] text-white/30 px-3">Žádné operace v tento den</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Rozpad času po fázích */}
+                <div className="px-5 py-4 mt-2 max-h-64 overflow-y-auto">
+                  <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/45">Čas po fázích</span>
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    {sr.phases.length > 0 ? (
+                      sr.phases.map((p, pi) => {
+                        const pct = sr.phaseTotalMs > 0 ? Math.round((p.ms / sr.phaseTotalMs) * 100) : 0;
+                        return (
+                          <div key={pi} className="flex items-center gap-2.5">
+                            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: p.color }} />
+                            <span className="text-xs text-white/70 truncate" style={{ width: 150, flexShrink: 0 }}>{p.name}</span>
+                            <div className="flex-1 h-2 rounded-full overflow-hidden min-w-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: p.color }} />
+                            </div>
+                            <span className="text-xs font-semibold tabular-nums text-right flex-shrink-0" style={{ width: 56, color: C.textHi }}>{p.minutes} min</span>
+                            <span className="text-[10px] tabular-nums text-white/40 text-right flex-shrink-0" style={{ width: 36 }}>{pct}%</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] text-white/30">Pro tento den nejsou k dispozici žádná data fází.</span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Hover tooltip pro probíhající operace — fixed pozice u kurzoru, mimo overflow clip */}
@@ -881,114 +1029,91 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             </div>
           </div>
 
-          {/* ── Timeline operačního cyklu (barevně dle fází, stejně jako modul statistik) ── */}
+          {/* ── Řádky sálů: % vytížení + per-room Timeline operačního cyklu (vše na jedné obrazovce) ── */}
           <div
-            className="flex-shrink-0 rounded-2xl backdrop-blur-xl px-4 py-3"
+            className="flex-1 min-h-0 flex flex-col rounded-2xl backdrop-blur-xl overflow-hidden"
             style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-white/45">Timeline operačního cyklu</span>
-              <span className="text-[9px] text-white/35 tabular-nums">{cyclePhases.totalCount} sálů v cyklu</span>
+            {/* Hlavička sloupců */}
+            <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <span className="text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35" style={{ width: 196, flexShrink: 0 }}>Sál</span>
+              <span className="text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35 text-center" style={{ width: 72, flexShrink: 0 }}>Vytížení</span>
+              <span className="text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35 text-center" style={{ width: 76, flexShrink: 0 }}>Obsazené</span>
+              <span className="flex-1 text-[9px] uppercase tracking-[0.16em] font-semibold text-white/35">Timeline operačního cyklu (dnes)</span>
             </div>
-            <div className="flex h-9 rounded-xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-              {cyclePhases.steps.map((p, i) => {
-                const widthPct = cyclePhases.totalCount > 0 ? (p.count / cyclePhases.totalCount) * 100 : 100 / Math.max(1, cyclePhases.steps.length);
+
+            {/* Tělo */}
+            <div className="flex-1 min-h-0 flex flex-col gap-1.5 p-3 overflow-hidden">
+              {roomUtilization.rows.map((r) => {
+                const closed = r.workingMinutes === 0; // sál dnes nepracuje (zavřeno dle rozvrhu)
+                const col = closed ? 'rgba(255,255,255,0.25)' : utilColor(r.utilizationPct);
                 return (
-                  <div
-                    key={i}
-                    className="relative h-full group flex items-center justify-center transition-all"
-                    style={{ width: `${widthPct}%`, background: p.count > 0 ? p.color : `${p.color}22`, minWidth: p.count > 0 ? 28 : 4 }}
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setStatsRoomId(r.id)}
+                    className="w-full flex-1 min-h-0 flex items-center gap-2 rounded-xl px-2.5 overflow-hidden transition-colors hover:bg-white/[0.04] text-left cursor-pointer"
+                    style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
+                    title={`Zobrazit podrobné statistiky — ${r.name}`}
                   >
-                    {p.count > 0 && <span className="text-[10px] font-bold text-white/95 tabular-nums">{p.count}</span>}
-                    <div
-                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 px-2 py-1 rounded-lg whitespace-nowrap text-[10px]"
-                      style={{ background: 'rgba(10,15,26,0.95)', border: `1px solid ${p.color}55`, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
-                    >
-                      <span className="font-semibold text-white">{p.name}</span>
-                      <span className="ml-1.5 tabular-nums" style={{ color: p.color }}>{p.count} sálů</span>
+                    {/* Název sálu + oddělení */}
+                    <div className="flex items-center gap-2 min-w-0" style={{ width: 196, flexShrink: 0 }}>
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col, boxShadow: `0 0 6px ${col}80` }} />
+                      <div className="flex flex-col min-w-0 leading-tight">
+                        <span className="text-xs font-semibold truncate" style={{ color: C.textHi }}>
+                          {r.name}
+                          {r.isEmergency && <span className="ml-1.5 text-[8px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
+                          {r.isPaused && <span className="ml-1.5 text-[8px] font-bold uppercase" style={{ color: C.yellow }}>PAUZA</span>}
+                        </span>
+                        {r.department && <span className="text-[9px] text-white/35 truncate">{r.department}</span>}
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Box: % vytížení (první sloupec metriky) */}
+                    <div
+                      className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-1"
+                      style={{ width: 72, background: closed ? 'rgba(255,255,255,0.03)' : `${col}1f`, border: `1px solid ${closed ? 'rgba(255,255,255,0.06)' : `${col}55`}` }}
+                    >
+                      <span className="text-base font-bold tabular-nums leading-none" style={{ color: col }}>{closed ? '—' : `${r.utilizationPct}%`}</span>
+                      <span className="text-[8px] tabular-nums text-white/40 leading-none mt-0.5">{r.operations} op.</span>
+                    </div>
+
+                    {/* Box: obsazené / pracovní minuty */}
+                    <div className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-1" style={{ width: 76, background: 'rgba(255,255,255,0.03)' }}>
+                      <span className="text-xs font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(r.occupiedMinutes)}</span>
+                      <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">/ {r.workingMinutes > 0 ? fmtMin(r.workingMinutes) : '—'}</span>
+                    </div>
+
+                    {/* Per-room Timeline operačního cyklu — barevné fáze dle reálných dat dne */}
+                    <div className="flex-1 min-w-0 flex items-center h-8 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      {r.phases.length > 0 ? (
+                        r.phases.map((p, pi) => {
+                          const w = r.phaseTotalMs > 0 ? (p.ms / r.phaseTotalMs) * 100 : 0;
+                          return (
+                            <div
+                              key={pi}
+                              className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
+                              style={{ width: `${w}%`, minWidth: w > 0 ? 3 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < r.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
+                            >
+                              {w > 9 && <span className="text-[9px] font-bold text-white/95 tabular-nums px-1 truncate">{p.minutes}m</span>}
+                              <div
+                                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 px-2 py-1 rounded-lg whitespace-nowrap text-[10px]"
+                                style={{ background: 'rgba(10,15,26,0.96)', border: `1px solid ${p.color}55`, boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
+                              >
+                                <span className="font-semibold text-white">{p.name}</span>
+                                <span className="ml-1.5 tabular-nums" style={{ color: p.color }}>{p.minutes} min</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <span className="text-[10px] text-white/30 px-2">Bez operací dnes</span>
+                      )}
+                    </div>
+                  </button>
                 );
               })}
             </div>
-            {/* Legenda fází cyklu */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-              {cyclePhases.steps.map((p, i) => (
-                <span key={i} className="flex items-center gap-1 min-w-0">
-                  <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: p.color }} />
-                  <span className="text-[9px] text-white/45 truncate">{p.name}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Řádky sálů s barevnými boxy (vše na jedné obrazovce, bez rolování) ── */}
-          <div
-            className="flex-1 min-h-0 flex flex-col gap-1.5 rounded-2xl backdrop-blur-xl p-3 overflow-hidden"
-            style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
-          >
-            {roomUtilization.rows.map((r) => {
-              const closed = r.workingMinutes === 0; // sál dnes nepracuje (zavřeno dle rozvrhu)
-              const col = closed ? 'rgba(255,255,255,0.25)' : utilColor(r.utilizationPct);
-              const barPct = closed ? 0 : Math.min(100, r.utilizationPct);
-              return (
-                <div
-                  key={r.id}
-                  className="flex-1 min-h-0 flex items-center gap-2 rounded-xl px-2.5 overflow-hidden transition-colors hover:bg-white/[0.03]"
-                  style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
-                >
-                  {/* Název sálu + oddělení */}
-                  <div className="flex items-center gap-2 min-w-0" style={{ width: 200, flexShrink: 0 }}>
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col, boxShadow: `0 0 6px ${col}80` }} />
-                    <div className="flex flex-col min-w-0 leading-tight">
-                      <span className="text-xs font-semibold truncate" style={{ color: C.textHi }}>
-                        {r.name}
-                        {r.isEmergency && <span className="ml-1.5 text-[8px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
-                        {r.isPaused && <span className="ml-1.5 text-[8px] font-bold uppercase" style={{ color: C.yellow }}>PAUZA</span>}
-                      </span>
-                      {r.department && <span className="text-[9px] text-white/35 truncate">{r.department}</span>}
-                    </div>
-                  </div>
-
-                  {/* Box: počet operací */}
-                  <div className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-1" style={{ width: 80, background: 'rgba(255,255,255,0.03)' }}>
-                    <span className="text-[8px] uppercase tracking-wider text-white/35 leading-none mb-0.5">Operace</span>
-                    <span className="text-sm font-bold tabular-nums leading-none" style={{ color: r.operations > 0 ? C.cyan : 'rgba(255,255,255,0.3)' }}>{r.operations}</span>
-                  </div>
-
-                  {/* Box: pracovní minuty */}
-                  <div className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-1" style={{ width: 88, background: 'rgba(255,255,255,0.03)' }}>
-                    <span className="text-[8px] uppercase tracking-wider text-white/35 leading-none mb-0.5">Pracovní</span>
-                    <span className="text-sm font-bold tabular-nums leading-none text-white/70">{r.workingMinutes > 0 ? fmtMin(r.workingMinutes) : '—'}</span>
-                  </div>
-
-                  {/* Box: obsazené minuty */}
-                  <div className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-1" style={{ width: 88, background: 'rgba(255,255,255,0.03)' }}>
-                    <span className="text-[8px] uppercase tracking-wider text-white/35 leading-none mb-0.5">Obsazené</span>
-                    <span className="text-sm font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(r.occupiedMinutes)}</span>
-                  </div>
-
-                  {/* Vytíženost: bar + barevný box s % */}
-                  <div className="flex-1 flex items-center gap-2.5 min-w-0">
-                    <div className="flex-1 h-2.5 rounded-full overflow-hidden min-w-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{ background: `linear-gradient(90deg, ${col}, ${col}cc)`, boxShadow: `0 0 8px ${col}66` }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${barPct}%` }}
-                        transition={{ duration: 0.5, ease: 'easeOut' }}
-                      />
-                    </div>
-                    <span
-                      className="flex items-center justify-center h-8 rounded-lg text-sm font-bold tabular-nums flex-shrink-0"
-                      style={{ width: 66, background: closed ? 'rgba(255,255,255,0.04)' : `${col}1f`, border: `1px solid ${closed ? 'rgba(255,255,255,0.08)' : `${col}55`}`, color: col }}
-                    >
-                      {closed ? '—' : `${r.utilizationPct}%`}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </motion.div>
       )}
