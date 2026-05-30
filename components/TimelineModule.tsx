@@ -369,15 +369,35 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         acc.operations += r.operations;
         acc.workingMinutes += r.workingMinutes;
         acc.occupiedMinutes += r.occupiedMinutes;
+        acc.completedOperations += r.operations;
+        acc.totalOperatingMs += r.occupiedMinutes * 60000; // ms
+        // Počítání pokojů podle statusu
+        acc.allRoomsCount++;
+        if (r.operations > 0) acc.activeRoomsCount++;
+        else if (r.workingMinutes > 0) acc.freeRoomsCount++;
+        if (r.isPaused) acc.pausedRoomsCount++;
+        if (r.isEmergency) acc.emergencyRoomsCount++;
         return acc;
       },
-      { operations: 0, workingMinutes: 0, occupiedMinutes: 0 }
+      { operations: 0, workingMinutes: 0, occupiedMinutes: 0, completedOperations: 0, totalOperatingMs: 0, allRoomsCount: 0, activeRoomsCount: 0, freeRoomsCount: 0, pausedRoomsCount: 0, emergencyRoomsCount: 0, nextEndTime: '—' }
     );
     const totalUtilizationPct = totals.workingMinutes > 0
       ? Math.round((totals.occupiedMinutes / totals.workingMinutes) * 100)
       : 0;
 
-    return { rows, totals: { ...totals, utilizationPct: totalUtilizationPct } };
+    // Najít nejbližší konec operace
+    let nextEndTime = '—';
+    const nextRoom = rows
+      .filter(r => r.estimatedEndTime && new Date(r.estimatedEndTime) > currentTime)
+      .sort((a, b) => new Date(a.estimatedEndTime!).getTime() - new Date(b.estimatedEndTime!).getTime())[0];
+    if (nextRoom) {
+      const endDate = new Date(nextRoom.estimatedEndTime!);
+      const hours = String(endDate.getHours()).padStart(2, '0');
+      const mins = String(endDate.getMinutes()).padStart(2, '0');
+      nextEndTime = `${hours}:${mins}`;
+    }
+
+    return { rows, totals: { ...totals, nextEndTime, utilizationPct: totalUtilizationPct } };
     }, [allRoomsForStats, displayRooms, currentTime, activeStatuses, showSummary]);
 
   // Barva podle míry vytížení sálu
@@ -1029,98 +1049,159 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="hidden lg:flex flex-1 min-h-0 flex-col gap-3 relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10 pb-4"
+          className="hidden lg:flex flex-1 min-h-0 flex-col gap-2 relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10 pb-4"
         >
-          {/* ── Řádky sálů: % vytížení + per-room Timeline operačního cyklu (vše na jedné obrazovce) ── */}
-          <div
-            className="flex-1 min-h-0 flex flex-col rounded-2xl backdrop-blur-xl overflow-hidden"
-            style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
-          >
-            {/* Tělo */}
-            <div className="flex-1 min-h-0 flex flex-col gap-1 p-2 overflow-hidden">
-              {roomUtilization.rows.map((r) => {
-              const closed = r.workingMinutes === 0; // sál dnes nepracuje (zavřeno dle rozvrhu)
-              const col = utilColor(r.utilizationPct); // VŽDY použij utilColor, ne šedou
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => setStatsRoomId(r.id)}
-                    className="w-full flex-1 min-h-0 flex items-center gap-2 rounded-lg px-2 overflow-visible transition-colors hover:bg-white/[0.04] text-left cursor-pointer"
-                    style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}`, minHeight: '42px' }}
-                    title={`Zobrazit podrobné statistiky — ${r.name}`}
-                  >
-                    {/* Levá část: Název sálu + oddělení + boxy */}
-                    <div className="flex items-center gap-1.5 min-w-0" style={{ width: 160, flexShrink: 0 }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: col, boxShadow: `0 0 6px ${col}80` }} />
+          {/* ── Top Header: Celkové statistiky ── */}
+          <div className="flex-shrink-0 flex items-center justify-between gap-4 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">SÁLU CELKEM</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.textHi }}>{roomUtilization.totals.allRoomsCount || 0}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">AKTIVNÍ</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.cyan }}>{roomUtilization.totals.activeRoomsCount || 0}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">VOLNÉ</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.green }}>{roomUtilization.totals.freeRoomsCount || 0}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">V PAUZE</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.yellow }}>{roomUtilization.totals.pausedRoomsCount || 0}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">NOUZE</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.red }}>{roomUtilization.totals.emergencyRoomsCount || 0}</span>
+              </div>
+              <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.1)' }} />
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">DOKONČENO DNES</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.textHi }}>{roomUtilization.totals.completedOperations || 0}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">DOBA</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.textHi }}>{fmtMin(roomUtilization.totals.occupiedMinutes)}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">NEJBLIŽŠÍ KONEC</span>
+                <span className="text-2xl font-bold tabular-nums" style={{ color: C.cyan }}>{roomUtilization.totals.nextEndTime || '—'}</span>
+              </div>
+            </div>
+            <div className="flex flex-col items-center px-4 py-2 rounded-lg" style={{ background: `${utilColor(roomUtilization.totals.utilizationPct)}1f`, border: `1.5px solid ${utilColor(roomUtilization.totals.utilizationPct)}66` }}>
+              <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">VYTÍŽENOS</span>
+              <span className="text-3xl font-bold tabular-nums" style={{ color: utilColor(roomUtilization.totals.utilizationPct) }}>{roomUtilization.totals.workingMinutes > 0 ? `${roomUtilization.totals.utilizationPct}%` : '0%'}</span>
+            </div>
+          </div>
+
+          {/* ── Vyhledávání a filtry ── */}
+          <div className="flex-shrink-0 flex items-center gap-2 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex items-center gap-2 flex-1 min-w-0 h-9 rounded-lg px-3" style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}>
+              <Search className="w-4 h-4 flex-shrink-0 text-white/35" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Hledat sál…"
+                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-white placeholder:text-white/30"
+              />
+            </div>
+            <button className="px-3 py-1.5 rounded-lg text-sm font-semibold" style={{ background: statusFilter === '' ? `${C.cyan}30` : 'rgba(255,255,255,0.05)', color: statusFilter === '' ? C.cyan : 'rgba(255,255,255,0.7)', border: `1px solid ${statusFilter === '' ? `${C.cyan}60` : 'rgba(255,255,255,0.1)'}` }} onClick={() => setStatusFilter('')}>Vše</button>
+            <button className="px-3 py-1.5 rounded-lg text-sm font-semibold" style={{ background: statusFilter === 'active' ? `${C.cyan}30` : 'rgba(255,255,255,0.05)', color: statusFilter === 'active' ? C.cyan : 'rgba(255,255,255,0.7)', border: `1px solid ${statusFilter === 'active' ? `${C.cyan}60` : 'rgba(255,255,255,0.1)'}` }} onClick={() => setStatusFilter('active')}>Akt</button>
+            <button className="px-3 py-1.5 rounded-lg text-sm font-semibold" style={{ background: statusFilter === 'free' ? `${C.cyan}30` : 'rgba(255,255,255,0.05)', color: statusFilter === 'free' ? C.cyan : 'rgba(255,255,255,0.7)', border: `1px solid ${statusFilter === 'free' ? `${C.cyan}60` : 'rgba(255,255,255,0.1)'}` }} onClick={() => setStatusFilter('free')}>Vol</button>
+          </div>
+
+          {/* ── Header řádku: Názvy sloupců ── */}
+          <div className="flex-shrink-0 flex items-center gap-2 p-2 px-3 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ width: 200, flexShrink: 0 }}>Sál</div>
+            <div style={{ width: 80, flexShrink: 0 }}>Využití</div>
+            <div style={{ width: 100, flexShrink: 0 }}>Operační čas</div>
+            <div style={{ width: 80, flexShrink: 0 }}>ARO</div>
+            <div style={{ width: 80, flexShrink: 0 }}>Úklid</div>
+            <div style={{ width: 80, flexShrink: 0 }}>Pauza</div>
+            <div className="flex-1">Timeline</div>
+          </div>
+
+          {/* ── Řádky sálů ── */}
+          <div className="flex-1 min-h-0 flex flex-col gap-1 overflow-hidden">
+            {roomUtilization.rows.map((r) => {
+              const closed = r.workingMinutes === 0;
+              const col = utilColor(r.utilizationPct);
+              // Vypočítat časy jednotlivých fází
+              const aroPhase = r.phases.find(p => p.name.includes('ARO') || p.name.includes('Příjezd'));
+              const cleaningPhase = r.phases.find(p => p.name.includes('Úklid'));
+              const pausePhase = r.phases.find(p => p.name.includes('Pauza') || p.name.includes('pauza'));
+              const operatingPhase = r.phases.find(p => p.name.includes('Chirurgický') || p.name.includes('operace'));
+
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setStatsRoomId(r.id)}
+                  className="w-full flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm"
+                  style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
+                >
+                  {/* Jméno sálu */}
+                  <div style={{ width: 200, flexShrink: 0 }}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col }} />
                       <div className="flex flex-col min-w-0 leading-tight">
-                        <span className="text-[11px] font-semibold truncate" style={{ color: C.textHi }}>
+                        <span className="text-xs font-semibold truncate" style={{ color: C.textHi }}>
                           {r.name}
-                          {r.isEmergency && <span className="ml-1.5 text-[7px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
-                          {r.isPaused && <span className="ml-1.5 text-[7px] font-bold uppercase" style={{ color: C.yellow }}>PAUZA</span>}
+                          {r.isEmergency && <span className="ml-1 text-[7px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
                         </span>
                         {r.department && <span className="text-[8px] text-white/35 truncate">{r.department}</span>}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Střed: Boxy s metrikami */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {/* Box: Počet operací pro daný sál a den */}
-                      <div className="flex flex-col items-center justify-center rounded-lg py-1 px-1" style={{ width: 55, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
-                        <span className="text-lg font-bold tabular-nums leading-none" style={{ color: C.cyan }}>{r.operations}</span>
-                        <span className="text-[7px] tabular-nums text-white/35 leading-none mt-0.5">op.</span>
-                      </div>
+                  {/* Využití % */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <span className="font-semibold tabular-nums text-sm" style={{ color: col }}>{r.utilizationPct}%</span>
+                  </div>
 
-                      {/* Boxy s minutami jednotlivých fází — v jednom řádku, jen ty s > 0 minutami */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {r.phases.filter(p => p.ms > 0).map((p, pi) => (
-                          <div key={pi} className="flex flex-col items-center justify-center rounded-lg py-1 px-0.5" style={{ minWidth: 50, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
-                            <span className="text-lg font-bold tabular-nums leading-none" style={{ color: p.color }}>{p.minutes}</span>
-                            <span className="text-[7px] tabular-nums text-white/35 leading-none mt-0.5 truncate" title={p.name}>{p.name}</span>
+                  {/* Operační čas */}
+                  <div style={{ width: 100, flexShrink: 0 }}>
+                    <span className="font-semibold tabular-nums text-sm" style={{ color: C.red }}>{r.occupiedMinutes > 0 ? `${r.occupiedMinutes} min` : '—'}</span>
+                  </div>
+
+                  {/* ARO */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <span className="font-semibold tabular-nums text-sm text-white">{aroPhase ? `${aroPhase.minutes} min` : '—'}</span>
+                  </div>
+
+                  {/* Úklid */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <span className="font-semibold tabular-nums text-sm text-white">{cleaningPhase ? `${cleaningPhase.minutes} min` : '—'}</span>
+                  </div>
+
+                  {/* Pauza */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <span className="font-semibold tabular-nums text-sm" style={{ color: C.yellow }}>{pausePhase ? `${pausePhase.minutes} min` : '—'}</span>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="flex-1 min-w-0 flex items-center h-8 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    {r.phases.length > 0 ? (
+                      r.phases.map((p, pi) => {
+                        const w = r.phaseTotalMs > 0 ? (p.ms / r.phaseTotalMs) * 100 : 0;
+                        return (
+                          <div
+                            key={pi}
+                            className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
+                            style={{ width: `${w}%`, minWidth: w > 0 ? 3 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < r.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
+                          >
+                            {w > 12 && <span className="text-[9px] font-bold text-white/95 tabular-nums px-0.5 truncate">{p.minutes}m</span>}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Hlavní box: % vytížení operačního sálu — s barevným textem */}
-                    <div
-                      className="flex flex-col items-center justify-center rounded-lg flex-shrink-0 py-1 px-2"
-                      style={{ minWidth: 75, background: `${col}1f`, border: `1.5px solid ${col}66` }}
-                    >
-                      <span className="text-xl font-bold tabular-nums leading-none" style={{ color: col }}>{`${r.utilizationPct}%`}</span>
-                      <span className="text-[7px] tabular-nums text-white/40 leading-none mt-0.5">využití</span>
-                    </div>
-
-                    {/* Pravá část (~40% šířky): Per-room Timeline operačního cyklu — posunuto doprava */}
-                    <div className="flex-1 min-w-0 flex items-center h-8 rounded-lg overflow-hidden ml-1" style={{ background: 'rgba(255,255,255,0.05)', maxWidth: '35%' }}>
-                      {r.phases.length > 0 ? (
-                        r.phases.map((p, pi) => {
-                          const w = r.phaseTotalMs > 0 ? (p.ms / r.phaseTotalMs) * 100 : 0;
-                          return (
-                            <div
-                              key={pi}
-                              className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
-                              style={{ width: `${w}%`, minWidth: w > 0 ? 3 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < r.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
-                            >
-                              {w > 12 && <span className="text-[9px] font-bold text-white/95 tabular-nums px-0.5 truncate">{p.minutes}m</span>}
-                              <div
-                                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 px-2 py-1 rounded-lg whitespace-nowrap text-[10px]"
-                                style={{ background: 'rgba(10,15,26,0.96)', border: `1px solid ${p.color}55`, boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
-                              >
-                                <span className="font-semibold text-white">{p.name}</span>
-                                <span className="ml-1.5 tabular-nums" style={{ color: p.color }}>{p.minutes} min</span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <span className="text-[10px] text-white/30 px-2">Bez operací</span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[10px] text-white/30 px-2">Bez operací</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </motion.div>
       )}
