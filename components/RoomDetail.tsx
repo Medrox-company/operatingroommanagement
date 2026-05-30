@@ -391,9 +391,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   
     setLocalEndTime(prev => {
       let newTime;
+      const now = new Date();
+      
       if (prev === null) {
-        newTime = roundUpTo15Min(new Date());
+        // Žádný čas nebyl nastaven — začni od aktuálního času zaokrouhleného na 15 min
+        newTime = roundUpTo15Min(now);
+      } else if (prev.getTime() < now.getTime()) {
+        // Starý odhadovaný čas je v minulosti — reset na aktuální čas + 15 min
+        newTime = roundUpTo15Min(new Date(now.getTime() + 15 * 60 * 1000));
       } else {
+        // Odhadovaný čas je v budoucnosti — přidej 15 min
         newTime = new Date(prev.getTime() + 15 * 60 * 1000);
       }
       

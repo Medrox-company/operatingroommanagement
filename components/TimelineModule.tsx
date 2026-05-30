@@ -9,7 +9,7 @@ import {
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
   Search, ZoomIn, ZoomOut, Maximize2,
-  RefreshCw, ArrowUpDown, Printer, Crosshair, BarChart3, ChevronDown
+  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown
 } from 'lucide-react';
 
 // ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
@@ -400,7 +400,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   let activeRoomCounter = 0;
 
   return (
-    <div data-print-area="timeline" className="w-full h-full text-white overflow-hidden flex flex-col relative print-landscape">
+    <div className="w-full h-full text-white overflow-hidden flex flex-col relative">
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -573,9 +573,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             {/* Right: zoom + ARO Overtime indicator */}
             <div className="flex-1 flex items-center justify-end gap-3">
 
-            {/* Akční cluster: živá data / souhrn / řazení / tisk */}
+            {/* Akční cluster: živá data / souhrn / řazení */}
             <div
-              className="print-hide hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
+              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
               style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
               {/* Indikátor živých dat + ruční obnovení */}
@@ -660,21 +660,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   )}
                 </AnimatePresence>
               </div>
-
-              {/* Tisk / export přehledu */}
-              <button
-                onClick={() => window.print()}
-                aria-label="Vytisknout přehled"
-                title="Vytisknout / export přehledu"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-              >
-                <Printer className="w-4 h-4 text-white/60" />
-              </button>
             </div>
 
             {/* Zoom controls — horizontální zoom časové osy */}
             <div
-              className="print-hide hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
+              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
               style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
               <button
