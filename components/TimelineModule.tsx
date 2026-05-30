@@ -549,7 +549,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   let activeRoomCounter = 0;
 
   return (
-    <div className="w-full h-full text-white overflow-hidden flex flex-col relative">
+    <div
+      className="w-full h-full text-white overflow-hidden flex flex-col relative antialiased"
+      style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' }}
+    >
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -697,12 +700,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           const remaining = getRemainingTime(r);
           return (
             <motion.div
-              className="fixed z-[100] pointer-events-none rounded-xl px-4 py-3 backdrop-blur-xl"
+              className="fixed z-[100] pointer-events-none rounded-xl px-4 py-3"
               style={{
                 left: Math.min(hoveredOp.x + 16, (typeof window !== 'undefined' ? window.innerWidth : 1920) - 280),
                 top: hoveredOp.y + 16,
                 width: 260,
-                background: C.bgCard,
+                background: '#0d1426',
                 border: `1px solid ${stepClr}55`,
                 boxShadow: `0 12px 40px rgba(0,0,0,0.55), 0 0 24px ${stepClr}22`,
               }}
@@ -761,17 +764,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
       {/* ======== Header with Title and Stats ======== */}
       <div 
-        className="sticky top-0 z-40 backdrop-blur-2xl flex-shrink-0"
+        className="sticky top-0 z-40 flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,10,20,0.92) 100%)',
-          borderBottom: `1px solid ${C.border}`,
+          background: 'linear-gradient(180deg, #000a14 0%, #00060f 100%)',
+          borderBottom: `1px solid ${C.borderStrong}`,
         }}
       >
-        {/* Ambient glow */}
-        <div 
-          className="absolute top-0 left-1/4 w-96 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
-          style={{ background: C.accent }}
-        />
         <div className="px-8 md:pl-32 md:pr-10 py-4">
 
           {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
@@ -787,11 +785,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 ].map(({ icon: Icon, label, value, color }) => (
                   <div
                     key={label}
-                    className="flex items-center gap-2.5 h-14 rounded-2xl px-4 backdrop-blur-md"
+                    className="flex items-center gap-2.5 h-14 rounded-2xl px-4"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
-                      border: `1px solid ${C.border}`,
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
+                      border: `1px solid ${C.borderStrong}`,
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
                     }}
                   >
                     <div
@@ -837,7 +835,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
             {/* Akční cluster: živá data / souhrn / řazení */}
             <div
-              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
+              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1"
               style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
               {/* Indikátor živých dat + ruční obnovení */}
@@ -897,8 +895,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.12 }}
                         role="menu"
-                        className="absolute right-0 top-11 z-50 w-44 rounded-xl overflow-hidden backdrop-blur-xl py-1"
-                        style={{ background: 'rgba(15,20,28,0.96)', border: `1px solid ${C.borderStrong}`, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}
+                        className="absolute right-0 top-11 z-50 w-44 rounded-xl overflow-hidden py-1"
+                        style={{ background: '#0f141c', border: `1px solid ${C.borderStrong}`, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}
                       >
                         {([
                           { key: 'default', label: 'Výchozí pořadí' },
@@ -926,7 +924,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
             {/* Zoom controls — horizontální zoom časové osy */}
             <div
-              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
+              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1"
               style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
               <button
@@ -974,7 +972,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             {aroOvertimeRooms.length > 0 ? (
               <motion.button
                 onClick={() => setShowAroPopup(true)}
-                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-105 cursor-pointer"
+                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden transition-transform duration-300 hover:scale-105 cursor-pointer"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
@@ -1148,17 +1146,13 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       {!showSummary && (
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
-        {/* Ambient Glow Effects */}
-        <div className="absolute top-0 left-1/4 w-96 h-64 rounded-full blur-3xl opacity-[0.03] pointer-events-none" style={{ background: C.cyan }} />
-        <div className="absolute bottom-0 right-1/4 w-80 h-48 rounded-full blur-3xl opacity-[0.02] pointer-events-none" style={{ background: C.purple }} />
-        
         {/* Time Axis Header - Premium Glass */}
         <div 
-          className="flex flex-shrink-0 rounded-t-2xl backdrop-blur-xl relative overflow-hidden" 
+          className="flex flex-shrink-0 rounded-t-2xl relative overflow-hidden" 
           style={{ 
-            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%)', 
-            borderBottom: `1px solid ${C.border}`,
-            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+            background: 'linear-gradient(180deg, #0f172a 0%, #0b1120 100%)', 
+            borderBottom: `1px solid ${C.borderStrong}`,
+            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
           }}
         >
           {/* Subtle top gradient line */}
@@ -1530,9 +1524,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
                     <div className={`absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
                       <div 
-                        className="absolute inset-0 rounded-md backdrop-blur-md"
+                        className="absolute inset-0 rounded-md"
                           style={{ 
-                            background: `linear-gradient(135deg, ${bannerColor}20 0%, ${bannerColor}08 100%)`,
+                            background: `linear-gradient(135deg, ${bannerColor}26 0%, ${bannerColor}12 100%)`,
                             border: `1px solid ${bannerColor}55`,
                             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
                           }}
@@ -2172,10 +2166,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       <motion.div 
                         className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-xl overflow-hidden"
                         style={{ 
-                          background: `linear-gradient(135deg, ${C.green}1a 0%, ${C.green}08 100%)`,
-                          border: `1px solid ${C.green}30`,
+                          background: `linear-gradient(135deg, ${C.green}26 0%, ${C.green}12 100%)`,
+                          border: `1px solid ${C.green}3a`,
                           boxShadow: `0 0 16px ${C.green}12, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                          backdropFilter: 'blur(6px)',
                         }}
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
