@@ -1051,51 +1051,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           transition={{ duration: 0.25 }}
           className="hidden lg:flex flex-1 min-h-0 flex-col gap-2 relative z-10 overflow-y-auto px-8 md:pl-32 md:pr-10 pb-4"
         >
-          {/* ── Top Header: Celkové statistiky ── */}
-          <div className="flex-shrink-0 flex items-center justify-between gap-4 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">SÁLU CELKEM</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.textHi }}>{roomUtilization.totals.allRoomsCount || 0}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">AKTIVNÍ</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.cyan }}>{roomUtilization.totals.activeRoomsCount || 0}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">VOLNÉ</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.green }}>{roomUtilization.totals.freeRoomsCount || 0}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">V PAUZE</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.yellow }}>{roomUtilization.totals.pausedRoomsCount || 0}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">NOUZE</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.red }}>{roomUtilization.totals.emergencyRoomsCount || 0}</span>
-              </div>
-              <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.1)' }} />
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">DOKONČENO DNES</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.textHi }}>{roomUtilization.totals.completedOperations || 0}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">DOBA</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.textHi }}>{fmtMin(roomUtilization.totals.occupiedMinutes)}</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">NEJBLIŽŠÍ KONEC</span>
-                <span className="text-2xl font-bold tabular-nums" style={{ color: C.cyan }}>{roomUtilization.totals.nextEndTime || '—'}</span>
-              </div>
-            </div>
-            <div className="flex flex-col items-center px-4 py-2 rounded-lg" style={{ background: `${utilColor(roomUtilization.totals.utilizationPct)}1f`, border: `1.5px solid ${utilColor(roomUtilization.totals.utilizationPct)}66` }}>
-              <span className="text-[9px] uppercase tracking-wide text-white/50 font-semibold">VYTÍŽENOS</span>
-              <span className="text-3xl font-bold tabular-nums" style={{ color: utilColor(roomUtilization.totals.utilizationPct) }}>{roomUtilization.totals.workingMinutes > 0 ? `${roomUtilization.totals.utilizationPct}%` : '0%'}</span>
-            </div>
-          </div>
-
           {/* ── Header řádku: Názvy sloupců ── */}
-          <div className="flex-shrink-0 flex items-center gap-2 p-2 px-3 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="flex-shrink-0 flex items-center gap-2 p-2 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingLeft: '11px' }}>
             <div style={{ width: 200, flexShrink: 0 }}>Sál</div>
             <div style={{ width: 80, flexShrink: 0 }}>Využití</div>
             <div style={{ width: 100, flexShrink: 0 }}>Operační čas</div>
@@ -1865,7 +1822,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                   {(() => {
                                     // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
                                     // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
-                                    // neaktivních statusů) — viz RoomDetail.changeStep → App.updateRoomStep.
+                                    // neaktivních statusů) — viz RoomDetail.changeStep ��� App.updateRoomStep.
                                     // DB `sort_order` má mezery (např. neaktivní "Začátek anestezie" má
                                     // sort_order=2, takže "Chirurgický výkon" je sort_order=3 ale POZICE 2).
                                     // Proto MUSÍME indexovat podle pozice v poli, NE podle order_index,
