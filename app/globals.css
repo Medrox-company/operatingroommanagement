@@ -149,6 +149,18 @@ body {
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Subtle horizontal scrollbar for the zoomable timeline */
+.timeline-scroll::-webkit-scrollbar { height: 8px; }
+.timeline-scroll::-webkit-scrollbar-track { background: transparent; }
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.25);
+  border-radius: 9999px;
+}
+.timeline-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.4);
+}
+.timeline-scroll { scrollbar-width: thin; scrollbar-color: rgba(6, 182, 212, 0.3) transparent; }
+
 /* Safe area for mobile bottom navigation (MobileNav ~ 80px + safe-area-inset-bottom) */
 .pb-mobile-nav {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
@@ -227,8 +239,37 @@ body {
     visibility: hidden;
   }
   [data-print-area="statistics"],
-  [data-print-area="statistics"] * {
+  [data-print-area="statistics"] *,
+  [data-print-area="timeline"],
+  [data-print-area="timeline"] * {
     visibility: visible;
+  }
+
+  /* Timeline tiskneme na šířku (landscape) a rozbalíme skryté/scrollované oblasti */
+  [data-print-area="timeline"] {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    opacity: 1 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  [data-print-area="timeline"] * {
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+  /* Při tisku timeline přepneme stránku na šířku (landscape) */
+  @page timeline-landscape {
+    size: A4 landscape;
+    margin: 8mm 6mm;
+  }
+  .print-landscape {
+    page: timeline-landscape;
   }
 
   /* Print target - DŮLEŽITÉ: static position pro multi-page */

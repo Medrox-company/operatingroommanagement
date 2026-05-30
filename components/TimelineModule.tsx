@@ -1,209 +1,53 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE } from '../types';
+import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle
+  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
+  Search, ZoomIn, ZoomOut, Maximize2,
+  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown
 } from 'lucide-react';
 
-// ========== DESIGN TOKENS (Premium Medical Dashboard - Futuristic Control Center) ==========
-const C = {
-  // Primary accent - Medical Cyan
-  accent: '#06B6D4',
-  cyan: '#06B6D4',
-  
-  // Status colors - Vivid & Professional
-  green: '#10B981',       // Active/Success - Emerald
-  yellow: '#F59E0B',      // Preparation/Warning - Amber  
-  orange: '#F97316',      // Alert - Orange
-  red: '#EF4444',         // Delayed/Critical - Red
-  purple: '#8B5CF6',      // Planning - Violet
-  pink: '#EC4899',        // Special - Pink
-  blue: '#3B82F6',        // Info - Blue
-  slate: '#64748B',       // Completed - Slate
-  
-  // Surface & Glass Effects
-  bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgb(0 9 29 / 85%)',           // Glass surface
-  bgElevated: 'rgba(30, 41, 59, 0.9)',      // Elevated cards
-  bgCard: 'rgba(15, 23, 42, 0.95)',         // Card background
-  
-  // Borders & Lines
-  border: 'rgba(148, 163, 184, 0.08)',      // Subtle border
-  borderHover: 'rgba(6, 182, 212, 0.3)',    // Cyan hover
-  borderActive: 'rgba(6, 182, 212, 0.5)',   // Active state
-  gridLine: 'rgba(148, 163, 184, 0.06)',    // Timeline grid
-  
-  // Glass & Glow
-  glass: 'rgba(255, 255, 255, 0.02)',
-  glassHover: 'rgba(6, 182, 212, 0.08)',
-  glowCyan: '0 0 20px rgba(6, 182, 212, 0.4)',
-  glowGreen: '0 0 16px rgba(16, 185, 129, 0.4)',
-  glowRed: '0 0 16px rgba(239, 68, 68, 0.5)',
-  
-  // Text
-  textHi: 'rgba(255, 255, 255, 0.95)',
-  text: 'rgba(255, 255, 255, 0.80)',
-  muted: 'rgba(255, 255, 255, 0.45)',
-  faint: 'rgba(255, 255, 255, 0.25)',
-};
-
-// ========== CONSTANTS ==========
-const TIMELINE_START_HOUR = 7;
-const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
-const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
-const ROOM_LABEL_WIDTH = 320;
-const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
-const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
-const ROW_GAP_PX = 6;      // gap-1.5 mezi řádky (Tailwind: 0.375rem = 6px) — musí korespondovat s `gap-1.5` v JSX
-const ROW_PADDING_PX = 8;  // py-2 vertikální padding kolem všech řádků (Tailwind: 0.5rem = 8px)
-const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
-
-const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
-
-const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: string; text: string; glow: string }> = {
-  orange: { bg: '#F97316', border: '#FB923C', stripe: '#FDBA74', text: '#FFF', glow: '0 0 20px rgba(249, 115, 22, 0.4)' },
-  purple: { bg: '#8B5CF6', border: '#A78BFA', stripe: '#C4B5FD', text: '#FFF', glow: '0 0 20px rgba(139, 92, 246, 0.4)' },
-  pink: { bg: '#EC4899', border: '#F472B6', stripe: '#F9A8D4', text: '#FFF', glow: '0 0 20px rgba(236, 72, 153, 0.4)' },
-  blue: { bg: '#3B82F6', border: '#60A5FA', stripe: '#93C5FD', text: '#FFF', glow: '0 0 20px rgba(59, 130, 246, 0.4)' },
-  green: { bg: '#10B981', border: '#34D399', stripe: '#6EE7B7', text: '#FFF', glow: '0 0 20px rgba(16, 185, 129, 0.4)' },
-  red: { bg: '#EF4444', border: '#F87171', stripe: '#FCA5A5', text: '#FFF', glow: '0 0 20px rgba(239, 68, 68, 0.4)' },
-  cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#67E8F9', text: '#FFF', glow: '0 0 20px rgba(6, 182, 212, 0.4)' },
-};
-
-  // Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
-  const STEP_INDEX_COLORS: Record<number, string> = {
-  0: '#6b7280',
-  1: '#8b5cf6',
-  2: '#ec4899',
-  3: '#ef4444',
-  4: '#f59e0b',
-  5: '#a855f7',
-  6: '#10b981',
-  7: '#f97316',
-};
-
-// ========== HELPER FUNCTIONS ==========
-const getTimePercent = (date: Date): number => {
-  const hours = date.getHours() + date.getMinutes() / 60;
-  let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
-  if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
-  // Return percent clamped to valid timeline range
-  return Math.max(0, Math.min(100, percent));
-};
-
-const parseTimeToDate = (timeString: string): Date => {
-  const [hours, minutes] = timeString.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-};
-
-const hourLabel = (hour: number): string => {
-  // Convert timeline hour (0-24) to actual 24-hour format (7:00 to 7:00 next day)
-  const actualHour = TIMELINE_START_HOUR + hour; // 7 + (0-24) = 7-31
-  const displayHour = actualHour % 24; // Display as 7-23, 0-6
-  return `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
-};
-
-// Compact label for smaller screens - just the hour number
-const hourLabelCompact = (hour: number): string => {
-  const actualHour = TIMELINE_START_HOUR + hour;
-  const displayHour = actualHour % 24;
-  return `${displayHour}`;
-};
-
-const isNextDayHour = (hour: number): boolean => hour >= 24;
-
-// Check if operation should be displayed in current 24-hour window (7:00 today to 7:00 tomorrow)
-// Rules:
-// - SHOW operations that started OR ended within the current 24h window (7:00 - 7:00)
-// - SHOW continuing operations that started before 7:00 but end after 7:00 (still running)
-// - DO NOT show operations that fully ended before the window start (yesterday's old ops)
-const isOperationInWindow = (startDate: Date, endDate: Date, currentTime: Date): boolean => {
-  // Get current window start: 7:00 of the current day
-  const windowStart = new Date(currentTime);
-  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-  // If current time is before 7:00, window started yesterday
-  if (currentTime.getHours() < TIMELINE_START_HOUR) {
-    windowStart.setDate(windowStart.getDate() - 1);
-  }
-  // Window ends at 7:00 next day
-  const windowEnd = new Date(windowStart);
-  windowEnd.setDate(windowEnd.getDate() + 1);
-
-  // Show if operation overlaps with the 24h window at all
-  // (operation ends after window start AND starts before window end)
-  return endDate > windowStart && startDate < windowEnd;
-};
-
-// Check if operation exceeds 24 hours
-const exceedsT24Hours = (startDate: Date, endDate: Date): boolean => {
-  const durationMs = endDate.getTime() - startDate.getTime();
-  const durationHours = durationMs / (1000 * 60 * 60);
-  return durationHours > 24;
-};
-
-// Get time percent for timeline display
-// Timeline runs from 7:00 (0%) to 7:00 next day (100%)
-// Operations that cross 7:00 will extend beyond 100%
-const getTimePercentForTimeline = (date: Date, referenceStart: Date): number => {
-  const diffMs = date.getTime() - referenceStart.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-  return (diffHours / TIMELINE_HOURS) * 100;
-};
-
-// Get operation position on timeline (single continuous bar, even if crossing 7:00)
-const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {
-  left: number, 
-  width: number, 
-  exceedsBoundary: boolean,
-  isContinuing: boolean  // True if operation started before 7:00 (from previous day)
-} => {
-  // Calculate window start (7:00 of the current day)
-  const windowStart = new Date(currentTime);
-  windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-  
-  // If current time is before 7:00, window started yesterday
-  if (currentTime.getHours() < TIMELINE_START_HOUR) {
-    windowStart.setDate(windowStart.getDate() - 1);
-  }
-  
-  // Calculate position relative to window start
-  let leftPct = getTimePercentForTimeline(startDate, windowStart);
-  let endPct = getTimePercentForTimeline(endDate, windowStart);
-  
-  // Check if operation started before window (continuing from previous day)
-  const isContinuing = leftPct < 0;
-  
-  // Clamp left to 0 if operation started before window
-  if (leftPct < 0) leftPct = 0;
-  
-  // Check if operation exceeds timeline boundary (past 7:00 next day = 100%)
-  const exceedsBoundary = endPct > 100;
-  
-  // Clamp end to 100 for display (but track if it exceeds)
-  if (endPct > 100) endPct = 100;
-  
-  const width = Math.max(0, endPct - leftPct);
-  
-  return {
-    left: leftPct,
-    width: width,
-    exceedsBoundary: exceedsBoundary,
-    isContinuing: isContinuing
-  };
-};
+// ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
+import {
+  C,
+  TIMELINE_START_HOUR,
+  TIMELINE_HOURS,
+  ROOM_LABEL_WIDTH,
+  MIN_ROW_HEIGHT,
+  MAX_ROW_HEIGHT,
+  ROW_GAP_PX,
+  ROW_PADDING_PX,
+  TIME_MARKERS,
+  ROOM_COLOR_ORDER,
+  ROOM_COLORS,
+  STEP_INDEX_COLORS,
+} from './timeline/constants';
+import {
+  getTimePercent,
+  parseTimeToDate,
+  hourLabelCompact,
+  isOperationInWindow,
+  exceedsT24Hours,
+  getTimePercentForTimeline,
+  getOperationPosition,
+} from './timeline/utils';
+import StatBox from './timeline/StatBox';
+import RoomDetailPopup from './timeline/RoomDetailPopup';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
+  /** Volitelný callback pro ruční obnovení dat (refetch). Pokud chybí, tlačítko se neukáže. */
+  onRefresh?: () => Promise<void> | void;
 }
 
-function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
+type SortMode = 'default' | 'name' | 'status';
+
+function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -227,9 +71,47 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const [showAroPopup, setShowAroPopup] = useState(false);
+  // --- Nové funkce: vyhledávání, filtr stavu, zoom časové osy, hover tooltip ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'free'>('all');
+  const [zoom, setZoom] = useState(1); // 1 = výchozí (celá osa se vejde), >1 = horizontální zoom
+  const [hoveredOp, setHoveredOp] = useState<{ room: OperatingRoom; x: number; y: number } | null>(null);
+  // --- Další funkce: řazení, souhrn dne, živá data ---
+  const [sortMode, setSortMode] = useState<SortMode>('default');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [statsRoomId, setStatsRoomId] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Po každé změně dat (realtime/refetch) aktualizuj „poslední aktualizace"
+  useEffect(() => { setLastUpdated(new Date()); }, [rooms]);
+
+  // Ruční obnovení dat
+  const handleRefresh = useCallback(async () => {
+    if (!onRefresh || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+      setLastUpdated(new Date());
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [onRefresh, isRefreshing]);
+
+  // Skok na aktuální čas — odscrolluje osu i řádky tak, aby byl „teď" indikátor uprostřed.
+  const scrollToNow = useCallback(() => {
+    const container = rowsContainerRef.current;
+    if (!container) return;
+    const nowPct = getTimePercent(new Date()) / 100; // 0..1 v rámci osy
+    const fullWidth = container.scrollWidth - ROOM_LABEL_WIDTH;
+    const target = Math.max(0, nowPct * fullWidth - (container.clientWidth - ROOM_LABEL_WIDTH) / 2);
+    container.scrollTo({ left: target, behavior: 'smooth' });
+    if (timelineRef.current) timelineRef.current.scrollTo({ left: target, behavior: 'smooth' });
+  }, []);
 
 
 
@@ -238,18 +120,77 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  /* --- Sály v původním pořadí; nouzové/uzamčené zůstávají na své pozici --- */
+  const sortedRooms = useMemo(() => {
+    return [...rooms];
+  }, [rooms]);
+
+  // --- Filtrované sály: vyhledávání (název / oddělení) + filtr stavu ---
+  // Stav odvozujeme z currentStepIndex: 0 = volný (Sál připraven), >0 = probíhá.
+  // Sály ve stavu nouze se zobrazují vždy (kritické).
+  const displayRooms = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = sortedRooms.filter((room) => {
+      if (room.isEmergency) return true;
+      const matchesSearch =
+        !q ||
+        room.name?.toLowerCase().includes(q) ||
+        room.department?.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+      const isRoomActive = room.currentStepIndex > 0 || room.isLocked || room.isPaused;
+      if (statusFilter === 'active') return isRoomActive;
+      if (statusFilter === 'free') return !isRoomActive;
+      return true;
+    });
+
+    // Řazení dle zvoleného režimu (nemutuje původní pole)
+    if (sortMode === 'name') {
+      return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+    }
+    if (sortMode === 'status') {
+      // Aktivní/uzamčené/pauza první, pak volné; sekundárně dle názvu
+      const rank = (r: OperatingRoom) =>
+        r.isEmergency ? 0 : (r.currentStepIndex > 0 || r.isLocked || r.isPaused) ? 1 : 2;
+      return [...filtered].sort((a, b) => rank(a) - rank(b) || (a.name || '').localeCompare(b.name || '', 'cs'));
+    }
+    return filtered; // 'default' = původní pořadí (sort_order z DB)
+  }, [sortedRooms, searchQuery, statusFilter, sortMode]);
+
+  // Pro statistiky zobrazujeme VŠECHNY sály bez filtrování
+  const allRoomsForStats = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = sortedRooms.filter((room) => {
+      const matchesSearch =
+        !q ||
+        room.name?.toLowerCase().includes(q) ||
+        room.department?.toLowerCase().includes(q);
+      return matchesSearch;
+    });
+    
+    if (sortMode === 'name') {
+      return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+    }
+    if (sortMode === 'status') {
+      const rank = (r: OperatingRoom) =>
+        r.isEmergency ? 0 : (r.currentStepIndex > 0 || r.isLocked || r.isPaused) ? 1 : 2;
+      return [...filtered].sort((a, b) => rank(a) - rank(b) || (a.name || '').localeCompare(b.name || '', 'cs'));
+    }
+    return filtered;
+  }, [sortedRooms, searchQuery, sortMode]);
   
   // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
   // Výpočet: dostupná výška = výška kontejneru - padding - gap mezi řádky
   useEffect(() => {
     const calculateRowHeight = () => {
-      if (rowsContainerRef.current && rooms.length > 0) {
+      const count = displayRooms.length;
+      if (rowsContainerRef.current && count > 0) {
         const containerHeight = rowsContainerRef.current.clientHeight;
-        const totalGapPx = (rooms.length - 1) * ROW_GAP_PX;
+        const totalGapPx = (count - 1) * ROW_GAP_PX;
         const totalPaddingPx = ROW_PADDING_PX * 2; // top + bottom
         const availableHeight = Math.max(0, containerHeight - totalGapPx - totalPaddingPx);
         // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
-        const calculatedHeight = Math.floor(availableHeight / rooms.length);
+        const calculatedHeight = Math.floor(availableHeight / count);
         const clampedHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, calculatedHeight));
         setRowHeight(clampedHeight);
       }
@@ -264,7 +205,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     }
     
     return () => resizeObserver.disconnect();
-  }, [rooms.length]);
+  }, [displayRooms.length]);
 
   // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
   // useEffect(() => {
@@ -295,10 +236,185 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
     return { operations, cleaning, free, completed, doctorsWorking, doctorsFree, nursesWorking, nursesFree, emergencyCount };
   }, [rooms]);
 
-  /* --- Rooms in original order - emergency/locked stay on their position --- */
-  const sortedRooms = useMemo(() => {
-    return [...rooms];
-  }, [rooms]);
+  /* --- Vytížení po sálech (POUZE dnešní den, reálná data z DB):
+     pro každý sál spočítá počet operací, pracovní kapacitu (z rozvrhu dne,
+     minus pauza), obsazené minuty (z dnešních dokončených + probíhající
+     operace; pauza se NEpočítá), vytíženost v % a rozpad času po fázích
+     operačního cyklu (per-room timeline). --- */
+  const roomUtilization = useMemo(() => {
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const todayKey = dayKeys[currentTime.getDay()];
+    const now = currentTime.getTime();
+
+    // Hranice dnešního dne — vše počítáme JEN z dnešního dne
+    const dayStart = new Date(currentTime); dayStart.setHours(0, 0, 0, 0);
+    const startMs = dayStart.getTime();
+    const endMs = startMs + 24 * 60 * 60 * 1000;
+    const isToday = (iso?: string | null): boolean => {
+      if (!iso) return false;
+      const t = new Date(iso).getTime();
+      return Number.isFinite(t) && t >= startMs && t < endMs;
+    };
+
+    // Mapa barev/názvů fází podle POZICE v poli activeStatuses (stejně jako hlavní timeline)
+    const stepColorMap: Record<number, string> = {};
+    const stepNameMap: Record<number, string> = {};
+    activeStatuses.forEach((s, idx) => {
+      stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
+      stepNameMap[idx] = s.name || `Fáze ${idx + 1}`;
+    });
+
+    // V "Souhrn dne" zobrazujeme VŠECHNY sály, ne jen filtrované
+    const roomsToProcess = showSummary ? allRoomsForStats : displayRooms;
+    const rows = roomsToProcess.map((room) => {
+      // Pracovní kapacita dne (minuty) = (konec − začátek) − denní pauza
+      const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+      const today = schedule[todayKey];
+      let workingMinutes = 0;
+      if (today?.enabled) {
+        const startM = today.startHour * 60 + today.startMinute;
+        const endM = today.endHour * 60 + today.endMinute;
+        const breakM = today.breakMinutes ?? DEFAULT_DAILY_BREAK_MINUTES;
+        workingMinutes = Math.max(0, endM - startM - breakM);
+      }
+
+      let occupiedMs = 0;
+      let operations = 0;
+      const phaseMs: Record<number, number> = {}; // stepIndex (pozice) → ms
+
+      // Akumulace času po fázích z historie statusů jedné operace
+      const accumulatePhases = (history: Array<{ stepIndex: number; startedAt: string }> | undefined, opEndMs: number) => {
+        if (!history || history.length === 0) return;
+        history.forEach((entry, idx) => {
+          const segStart = new Date(entry.startedAt).getTime();
+          const next = history[idx + 1];
+          const segEnd = next ? new Date(next.startedAt).getTime() : opEndMs;
+          const dur = Math.max(0, segEnd - segStart);
+          if (dur > 0) phaseMs[entry.stepIndex] = (phaseMs[entry.stepIndex] || 0) + dur;
+        });
+      };
+
+      // Dnešní dokončené operace (filtr na dnešní den dle startedAt)
+      (room.completedOperations || []).forEach((op) => {
+        if (!isToday(op.startedAt)) return;
+        const s = new Date(op.startedAt).getTime();
+        const e = new Date(op.endedAt).getTime();
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
+          occupiedMs += e - s;
+          operations++;
+          accumulatePhases(op.statusHistory, e);
+        }
+      });
+
+      // Probíhající operace — pouze pokud začala dnes; pauza se NEpočítá
+      const isRunning = room.currentStepIndex > 0 && room.currentStepIndex < 6 && !room.isLocked;
+      if (isRunning && isToday(room.operationStartedAt)) {
+        operations++;
+        const s = new Date(room.operationStartedAt as string).getTime();
+        if (!room.isPaused && now > s) occupiedMs += now - s;
+        accumulatePhases(room.statusHistory, now);
+      }
+
+      const occupiedMinutes = Math.round(occupiedMs / 60000);
+      
+      // Vytížení se počítá jako procento z pracovní kapacity (z rozvrhu).
+      // Pokud je sál dnes zavřený (workingMinutes == 0), ale má operace,
+      // pak se počítá z reálného času operací (od první do poslední operace).
+      let utilizationPct = 0;
+      if (workingMinutes > 0) {
+        // Standardní výpočet: procento z pracovní doby
+        utilizationPct = Math.round((occupiedMinutes / workingMinutes) * 100);
+      } else if (occupiedMinutes > 0) {
+        // Sál je zavřený podle rozvrhu, ale má operace dnes
+        // Počítáme % vytížení z reálného span času (od první do poslední operace)
+        // Zde použijeme arbitrary 8h = 480m jako baseline (typická pracovní doba)
+        utilizationPct = Math.round((occupiedMinutes / 480) * 100);
+      }
+
+      const avgOpMin = operations > 0 ? Math.round(occupiedMs / 60000 / operations) : 0;
+
+      // Sestavení fází cyklu pro per-room timeline (seřazeno dle pozice)
+      const phases = Object.entries(phaseMs)
+        .map(([idx, ms]) => ({
+          stepIndex: Number(idx),
+          name: stepNameMap[Number(idx)] || `Fáze ${Number(idx) + 1}`,
+          color: stepColorMap[Number(idx)] || '#6b7280',
+          minutes: Math.round(ms / 60000),
+          ms,
+        }))
+        .filter((p) => p.ms > 0)
+        .sort((a, b) => a.stepIndex - b.stepIndex);
+      const phaseTotalMs = phases.reduce((acc, p) => acc + p.ms, 0);
+
+      return {
+        id: room.id,
+        name: room.name,
+        department: room.department,
+        isEmergency: !!room.isEmergency,
+        isPaused: !!room.isPaused,
+        isRunning,
+        operations,
+        workingMinutes,
+        occupiedMinutes,
+        utilizationPct,
+        avgOpMin,
+        phases,
+        phaseTotalMs,
+      };
+    });
+
+    // Souhrnný řádek
+    const totals = rows.reduce(
+      (acc, r) => {
+        acc.operations += r.operations;
+        acc.workingMinutes += r.workingMinutes;
+        acc.occupiedMinutes += r.occupiedMinutes;
+        acc.completedOperations += r.operations;
+        acc.totalOperatingMs += r.occupiedMinutes * 60000; // ms
+        // Počítání pokojů podle statusu
+        acc.allRoomsCount++;
+        if (r.operations > 0) acc.activeRoomsCount++;
+        else if (r.workingMinutes > 0) acc.freeRoomsCount++;
+        if (r.isPaused) acc.pausedRoomsCount++;
+        if (r.isEmergency) acc.emergencyRoomsCount++;
+        return acc;
+      },
+      { operations: 0, workingMinutes: 0, occupiedMinutes: 0, completedOperations: 0, totalOperatingMs: 0, allRoomsCount: 0, activeRoomsCount: 0, freeRoomsCount: 0, pausedRoomsCount: 0, emergencyRoomsCount: 0, nextEndTime: '—' }
+    );
+    const totalUtilizationPct = totals.workingMinutes > 0
+      ? Math.round((totals.occupiedMinutes / totals.workingMinutes) * 100)
+      : 0;
+
+    // Najít nejbližší konec operace
+    let nextEndTime = '—';
+    const nextRoom = rows
+      .filter(r => r.estimatedEndTime && new Date(r.estimatedEndTime) > currentTime)
+      .sort((a, b) => new Date(a.estimatedEndTime!).getTime() - new Date(b.estimatedEndTime!).getTime())[0];
+    if (nextRoom) {
+      const endDate = new Date(nextRoom.estimatedEndTime!);
+      const hours = String(endDate.getHours()).padStart(2, '0');
+      const mins = String(endDate.getMinutes()).padStart(2, '0');
+      nextEndTime = `${hours}:${mins}`;
+    }
+
+    return { rows, totals: { ...totals, nextEndTime, utilizationPct: totalUtilizationPct } };
+    }, [allRoomsForStats, displayRooms, currentTime, activeStatuses, showSummary]);
+
+  // Barva podle míry vytížení sálu
+  const utilColor = (pct: number): string => {
+    if (pct >= 70) return C.green;        // zelená — nad 70%
+    if (pct >= 50) return C.purple;       // fialová — 50-70%
+    if (pct > 0) return C.orange;         // oranžová — do 50%
+    return C.red;                         // červená — 0%
+  };
+
+  // Formát minut → "6h 31m" (nebo "31m")
+  const fmtMin = (min: number): string => {
+    if (min <= 0) return '0m';
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
   /* --- ARO Overtime Tracking - rooms that exceed working hours.
      
@@ -461,6 +577,182 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
             currentTime={currentTime}
           />
         )}
+
+        {/* Detail statistik sálu pro daný den */}
+        {statsRoomId && (() => {
+          const sr = roomUtilization.rows.find((x) => x.id === statsRoomId);
+          if (!sr) return null;
+          const closed = sr.workingMinutes === 0;
+          const col = closed ? 'rgba(255,255,255,0.4)' : utilColor(sr.utilizationPct);
+          const kpis: { label: string; value: string; color: string }[] = [
+            { label: 'Vytíženost', value: closed ? '—' : `${sr.utilizationPct}%`, color: col },
+            { label: 'Operace dnes', value: `${sr.operations}`, color: C.cyan },
+            { label: 'Obsazené', value: fmtMin(sr.occupiedMinutes), color: C.textHi },
+            { label: 'Pracovní', value: sr.workingMinutes > 0 ? fmtMin(sr.workingMinutes) : '—', color: 'rgba(255,255,255,0.7)' },
+            { label: 'Ø délka operace', value: sr.avgOpMin > 0 ? fmtMin(sr.avgOpMin) : '—', color: C.textHi },
+          ];
+          return (
+            <motion.div
+              className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setStatsRoomId(null)}
+              style={{ background: 'rgba(5,8,16,0.72)', backdropFilter: 'blur(6px)' }}
+            >
+              <motion.div
+                className="w-full max-w-2xl rounded-2xl overflow-hidden"
+                initial={{ scale: 0.96, y: 12 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.96, y: 12 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ background: 'linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(10,15,26,0.98) 100%)', border: `1px solid ${C.borderStrong}`, boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}
+              >
+                {/* Hlavička */}
+                <div className="flex items-center justify-between gap-4 px-5 py-4" style={{ borderBottom: `1px solid ${C.border}`, borderLeft: `4px solid ${col}` }}>
+                  <div className="flex flex-col leading-tight min-w-0">
+                    <span className="text-base font-bold truncate" style={{ color: C.textHi }}>
+                      {sr.name}
+                      {sr.isEmergency && <span className="ml-2 text-[9px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
+                      {sr.isPaused && <span className="ml-2 text-[9px] font-bold uppercase" style={{ color: C.yellow }}>PAUZA</span>}
+                    </span>
+                    <span className="text-[11px] text-white/40">
+                      {sr.department || 'Operační sál'} · statistiky pro {currentTime.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setStatsRoomId(null)}
+                    aria-label="Zavřít"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4 text-white/60" />
+                  </button>
+                </div>
+
+                {/* KPI mřížka */}
+                <div className="grid grid-cols-5 gap-2 px-5 pt-4">
+                  {kpis.map((k, i) => (
+                    <div key={i} className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
+                      <span className="text-lg font-bold tabular-nums leading-none" style={{ color: k.color }}>{k.value}</span>
+                      <span className="text-[9px] uppercase tracking-wider text-white/40 text-center leading-tight">{k.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Timeline operačního cyklu (dnes) */}
+                <div className="px-5 pt-4">
+                  <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/45">Timeline operačního cyklu (dnes)</span>
+                  <div className="flex items-center h-10 rounded-xl overflow-hidden mt-2" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    {sr.phases.length > 0 ? (
+                      sr.phases.map((p, pi) => {
+                        const w = sr.phaseTotalMs > 0 ? (p.ms / sr.phaseTotalMs) * 100 : 0;
+                        return (
+                          <div
+                            key={pi}
+                            className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
+                            style={{ width: `${w}%`, minWidth: w > 0 ? 4 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < sr.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
+                          >
+                            {w > 10 && <span className="text-[10px] font-bold text-white/95 tabular-nums px-1 truncate">{p.minutes}m</span>}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] text-white/30 px-3">Žádné operace v tento den</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Rozpad času po fázích */}
+                <div className="px-5 py-4 mt-2 max-h-64 overflow-y-auto">
+                  <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/45">Čas po fázích</span>
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    {sr.phases.length > 0 ? (
+                      sr.phases.map((p, pi) => {
+                        const pct = sr.phaseTotalMs > 0 ? Math.round((p.ms / sr.phaseTotalMs) * 100) : 0;
+                        return (
+                          <div key={pi} className="flex items-center gap-2.5">
+                            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: p.color }} />
+                            <span className="text-xs text-white/70 truncate" style={{ width: 150, flexShrink: 0 }}>{p.name}</span>
+                            <div className="flex-1 h-2 rounded-full overflow-hidden min-w-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: p.color }} />
+                            </div>
+                            <span className="text-xs font-semibold tabular-nums text-right flex-shrink-0" style={{ width: 56, color: C.textHi }}>{p.minutes} min</span>
+                            <span className="text-[10px] tabular-nums text-white/40 text-right flex-shrink-0" style={{ width: 36 }}>{pct}%</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] text-white/30">Pro tento den nejsou k dispozici žádná data fází.</span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Hover tooltip pro probíhající operace — fixed pozice u kurzoru, mimo overflow clip */}
+      <AnimatePresence>
+        {hoveredOp && (() => {
+          const r = hoveredOp.room;
+          const stepIdx = Math.max(0, Math.min(r.currentStepIndex, activeStatuses.length - 1));
+          const step = activeStatuses[stepIdx] || statusByOrderIndex[r.currentStepIndex] || null;
+          const stepClr = r.isPaused ? '#22D3EE' : (step?.accent_color || step?.color || C.cyan);
+          const stepTitle = r.isPaused ? 'Pauza' : (step?.title || step?.name || 'Probíhá');
+          const startStr = r.operationStartedAt
+            ? new Date(r.operationStartedAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+            : (r.currentProcedure?.startTime || '—');
+          const endStr = r.estimatedEndTime
+            ? new Date(r.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+            : '—';
+          const remaining = getRemainingTime(r);
+          return (
+            <motion.div
+              className="fixed z-[100] pointer-events-none rounded-xl px-4 py-3 backdrop-blur-xl"
+              style={{
+                left: Math.min(hoveredOp.x + 16, (typeof window !== 'undefined' ? window.innerWidth : 1920) - 280),
+                top: hoveredOp.y + 16,
+                width: 260,
+                background: C.bgCard,
+                border: `1px solid ${stepClr}55`,
+                boxShadow: `0 12px 40px rgba(0,0,0,0.55), 0 0 24px ${stepClr}22`,
+              }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.12 }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: stepClr, boxShadow: `0 0 8px ${stepClr}` }} />
+                <p className="text-sm font-semibold text-white truncate">{r.name}</p>
+              </div>
+              {r.currentProcedure?.name && (
+                <p className="text-xs text-white/70 mb-2 leading-snug line-clamp-2">{r.currentProcedure.name}</p>
+              )}
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md"
+                  style={{ background: `${stepClr}1f`, color: stepClr, border: `1px solid ${stepClr}40` }}
+                >
+                  {stepTitle}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  { label: 'Začátek', value: startStr },
+                  { label: 'Odhad konce', value: endStr },
+                  { label: 'Zbývá', value: remaining || '—' },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <p className="text-[8px] uppercase tracking-[0.15em] text-white/35 mb-0.5">{item.label}</p>
+                    <p className="text-xs font-bold tabular-nums text-white">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
@@ -494,16 +786,48 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         />
         <div className="px-8 md:pl-32 md:pr-10 py-4">
 
-          {/* Header Row - Time Center, ARO Right */}
+          {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
           <div className="flex items-center justify-between gap-4">
 
+            {/* Left: Live operations stats — control-center cluster */}
+            <div className="flex-1 flex items-center justify-start min-w-0">
+              <div className="hidden lg:flex items-center gap-2">
+                {[
+                  { icon: Activity, label: 'Operace', value: stats.operations, color: C.cyan },
+                  { icon: Sparkles, label: 'Úklid', value: stats.cleaning, color: C.yellow },
+                  { icon: CheckCircle, label: 'Volné', value: stats.free, color: C.green },
+                ].map(({ icon: Icon, label, value, color }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-2.5 h-14 rounded-2xl px-4 backdrop-blur-md"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+                      border: `1px solid ${C.border}`,
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: `${color}1a`, border: `1px solid ${color}33` }}
+                    >
+                      <Icon className="w-4 h-4" style={{ color }} />
+                    </div>
+                    <div className="leading-none">
+                      <p className="text-[9px] uppercase tracking-[0.2em] font-medium text-white/40 mb-1">{label}</p>
+                      <p className="text-lg font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Center: Current Time (no box, just prominent display) */}
-            <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center flex-shrink-0">
               <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
                 {formatDate(currentTime)}
               </p>
               <motion.p 
-                className="text-3xl font-bold tabular-nums tracking-tight"
+                className="text-3xl font-bold tabular-nums tracking-tight flex items-baseline gap-1"
                 style={{ 
                   color: C.textHi,
                   textShadow: `0 0 40px ${C.cyan}40`,
@@ -511,16 +835,154 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 animate={{ opacity: [0.9, 1, 0.9] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                {currentTime.toLocaleTimeString("cs-CZ", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
+                <span>
+                  {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span className="text-base font-semibold tabular-nums text-white/40">
+                  {currentTime.toLocaleTimeString("cs-CZ", { second: "2-digit" })}
+                </span>
               </motion.p>
             </div>
 
-            {/* Right: ARO Overtime indicator */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Right: zoom + ARO Overtime indicator */}
+            <div className="flex-1 flex items-center justify-end gap-3">
+
+            {/* Akční cluster: živá data / souhrn / řazení */}
+            <div
+              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
+              style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
+            >
+              {/* Indikátor živých dat + ruční obnovení */}
+              <button
+                onClick={handleRefresh}
+                disabled={!onRefresh || isRefreshing}
+                aria-label="Obnovit data"
+                title={`Živě · aktualizováno ${lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+                className="flex items-center gap-2 h-9 px-2.5 rounded-xl transition-colors hover:bg-white/5 disabled:cursor-default"
+              >
+                <span className="relative flex h-2 w-2 flex-shrink-0">
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: C.green }} />
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.green }} />
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 tabular-nums">
+                  {lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+                {onRefresh && (
+                  <RefreshCw className={`w-3.5 h-3.5 text-white/50 ${isRefreshing ? 'animate-spin' : ''}`} />
+                )}
+              </button>
+
+              <div className="w-px h-6 bg-white/10 mx-0.5" />
+
+              {/* Souhrn dne */}
+              <button
+                onClick={() => setShowSummary((v) => !v)}
+                aria-label="Souhrn dne"
+                aria-pressed={showSummary}
+                title="Souhrn dne"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+                style={showSummary ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
+              >
+                <BarChart3 className={`w-4 h-4 ${showSummary ? '' : 'text-white/60'}`} />
+              </button>
+
+              {/* Řazení sálů */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu((v) => !v)}
+                  aria-label="Řadit sály"
+                  aria-haspopup="menu"
+                  aria-expanded={showSortMenu}
+                  title="Řadit sály"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+                  style={sortMode !== 'default' ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
+                >
+                  <ArrowUpDown className={`w-4 h-4 ${sortMode !== 'default' ? '' : 'text-white/60'}`} />
+                </button>
+                <AnimatePresence>
+                  {showSortMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.12 }}
+                        role="menu"
+                        className="absolute right-0 top-11 z-50 w-44 rounded-xl overflow-hidden backdrop-blur-xl py-1"
+                        style={{ background: 'rgba(15,20,28,0.96)', border: `1px solid ${C.borderStrong}`, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}
+                      >
+                        {([
+                          { key: 'default', label: 'Výchozí pořadí' },
+                          { key: 'name', label: 'Podle názvu (A–Z)' },
+                          { key: 'status', label: 'Podle stavu' },
+                        ] as { key: SortMode; label: string }[]).map((opt) => (
+                          <button
+                            key={opt.key}
+                            role="menuitemradio"
+                            aria-checked={sortMode === opt.key}
+                            onClick={() => { setSortMode(opt.key); setShowSortMenu(false); }}
+                            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-white/5"
+                            style={{ color: sortMode === opt.key ? C.cyan : 'rgba(255,255,255,0.7)' }}
+                          >
+                            {opt.label}
+                            {sortMode === opt.key && <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Zoom controls — horizontální zoom časové osy */}
+            <div
+              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1 backdrop-blur-md"
+              style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
+            >
+              <button
+                onClick={() => setZoom((z) => Math.max(1, Math.round((z - 0.5) * 2) / 2))}
+                disabled={zoom <= 1}
+                aria-label="Oddálit časovou osu"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5"
+              >
+                <ZoomOut className="w-4 h-4 text-white/60" />
+              </button>
+              <button
+                onClick={() => setZoom(1)}
+                aria-label="Zobrazit celý den"
+                className="px-2 h-9 rounded-xl flex items-center justify-center gap-1.5 transition-colors hover:bg-white/5"
+                title="Celý den (reset zoomu)"
+              >
+                <Maximize2 className="w-3.5 h-3.5 text-white/50" />
+                <span className="text-xs font-semibold tabular-nums text-white/70">{zoom.toFixed(1)}×</span>
+              </button>
+              <button
+                onClick={() => setZoom((z) => Math.min(4, Math.round((z + 0.5) * 2) / 2))}
+                disabled={zoom >= 4}
+                aria-label="Přiblížit časovou osu"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5"
+              >
+                <ZoomIn className="w-4 h-4 text-white/60" />
+              </button>
+              {/* Skok na aktuální čas — užitečné jen při přiblížení (jinak je vidět celý den) */}
+              {zoom > 1 && (
+                <>
+                  <div className="w-px h-6 bg-white/10 mx-0.5" />
+                  <button
+                    onClick={scrollToNow}
+                    aria-label="Skok na aktuální čas"
+                    title="Skočit na aktuální čas"
+                    className="flex items-center gap-1.5 h-9 px-2.5 rounded-xl transition-colors hover:bg-white/5"
+                    style={{ color: C.cyan }}
+                  >
+                    <Crosshair className="w-3.5 h-3.5" />
+                    <span className="text-xs font-semibold">Teď</span>
+                  </button>
+                </>
+              )}
+            </div>
             {aroOvertimeRooms.length > 0 ? (
               <motion.button
                 onClick={() => setShowAroPopup(true)}
@@ -580,7 +1042,122 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         </div>
       </div>
 
+      {/* ======== Statistiky vytížení — nahrazují časovou osu (na celé obrazovce, bez rolování) ======== */}
+      {showSummary && (
+        <motion.div
+          key="stats-fullscreen"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="hidden lg:flex flex-1 min-h-0 flex-col gap-2 relative z-10 overflow-y-auto px-8 md:pl-32 md:pr-10 pb-4"
+        >
+          {/* ── Header řádku: Názvy sloupců ── */}
+          <div className="flex-shrink-0 flex items-center gap-2 p-2 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingLeft: '11px' }}>
+            <div style={{ width: 200, flexShrink: 0 }}>Sál</div>
+            <div style={{ width: 80, flexShrink: 0 }}>Využití</div>
+            <div style={{ width: 100, flexShrink: 0 }}>Operační čas</div>
+            <div style={{ width: 80, flexShrink: 0 }}>ARO</div>
+            <div style={{ width: 80, flexShrink: 0 }}>Úklid</div>
+            <div style={{ width: 80, flexShrink: 0 }}>Pauza</div>
+            <div className="flex-1">Timeline</div>
+          </div>
+
+          {/* ── Řádky sálů ── */}
+          <div className="flex-1 min-h-0 flex flex-col gap-0 overflow-hidden">
+            {roomUtilization.rows.map((r) => {
+              const closed = r.workingMinutes === 0;
+              const col = utilColor(r.utilizationPct);
+              // Vypočítat časy jednotlivých fází
+              const aroPhase = r.phases.find(p => p.name.includes('ARO') || p.name.includes('Příjezd'));
+              const cleaningPhase = r.phases.find(p => p.name.includes('Úklid'));
+              const pausePhase = r.phases.find(p => p.name.includes('Pauza') || p.name.includes('pauza'));
+              const operatingPhase = r.phases.find(p => p.name.includes('Chirurgický') || p.name.includes('operace'));
+
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setStatsRoomId(r.id)}
+                  className="w-full flex items-center gap-1.5 rounded-lg px-3 py-1 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
+                >
+                  {/* Jméno sálu */}
+                  <div style={{ width: 200, flexShrink: 0 }}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col }} />
+                      <div className="flex flex-col min-w-0 leading-tight">
+                        <span className="text-xs font-semibold truncate" style={{ color: C.textHi }}>
+                          {r.name}
+                          {r.isEmergency && <span className="ml-1 text-[7px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
+                        </span>
+                        {r.department && <span className="text-[8px] text-white/35 truncate">{r.department}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Využití % — v jemném boxu */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: col }}>{r.utilizationPct}%</span>
+                    </div>
+                  </div>
+
+                  {/* Operační čas — v jemném boxu */}
+                  <div style={{ width: 100, flexShrink: 0 }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: r.occupiedMinutes > 0 ? C.red : 'rgba(255,255,255,0.4)' }}>{r.occupiedMinutes > 0 ? `${r.occupiedMinutes}m` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* ARO — v jemném boxu */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{aroPhase ? `${aroPhase.minutes}m` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Úklid — v jemném boxu */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{cleaningPhase ? `${cleaningPhase.minutes}m` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Pauza — v jemném boxu */}
+                  <div style={{ width: 80, flexShrink: 0 }}>
+                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: pausePhase ? C.yellow : 'rgba(255,255,255,0.4)' }}>{pausePhase ? `${pausePhase.minutes}m` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="flex-1 min-w-0 flex items-center h-6 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    {r.phases.length > 0 ? (
+                      r.phases.map((p, pi) => {
+                        const w = r.phaseTotalMs > 0 ? (p.ms / r.phaseTotalMs) * 100 : 0;
+                        return (
+                          <div
+                            key={pi}
+                            className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
+                            style={{ width: `${w}%`, minWidth: w > 0 ? 3 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < r.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
+                          >
+                            {w > 12 && <span className="text-[8px] font-bold text-white/95 tabular-nums px-0.5 truncate">{p.minutes}m</span>}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[10px] text-white/30 px-2">Bez operací</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {/* ======== Main Timeline - Premium Glass Container ======== */}
+      {!showSummary && (
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
         {/* Ambient Glow Effects */}
@@ -599,27 +1176,67 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           {/* Subtle top gradient line */}
           <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}30, transparent)` }} />
           
-          {/* Room label header */}
+          {/* Room label header — vyhledávání + filtr stavu */}
           <div 
-            className="flex-shrink-0 flex items-center px-5 gap-3" 
+            className="flex-shrink-0 flex items-center px-4 gap-2" 
             style={{ 
               width: ROOM_LABEL_WIDTH, 
               minWidth: ROOM_LABEL_WIDTH, 
               borderRight: `1px solid ${C.border}`,
             }}
           >
+            {/* Search input */}
             <div 
-              className="w-6 h-6 rounded-lg flex items-center justify-center"
-              style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}25` }}
+              className="flex items-center gap-2 flex-1 min-w-0 h-8 rounded-lg px-2.5 transition-colors focus-within:border-cyan-400/40"
+              style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
-              <Activity className="w-3.5 h-3.5" style={{ color: C.accent }} />
+              <Search className="w-3.5 h-3.5 flex-shrink-0 text-white/35" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Hledat sál…"
+                className="flex-1 min-w-0 bg-transparent outline-none text-xs text-white placeholder:text-white/30"
+                aria-label="Hledat operační sál"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} aria-label="Vymazat hledání" className="flex-shrink-0">
+                  <X className="w-3 h-3 text-white/40 hover:text-white/70 transition-colors" />
+                </button>
+              )}
             </div>
-            <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">OPERAČNÍ SÁLY</span>
+            {/* Status filter — segmentovaný přepínač */}
+            <div 
+              className="flex items-center h-8 rounded-lg p-0.5 flex-shrink-0"
+              style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
+            >
+              {([
+                { key: 'all', label: 'Vše' },
+                { key: 'active', label: 'Akt.' },
+                { key: 'free', label: 'Vol.' },
+              ] as const).map(({ key, label }) => {
+                const active = statusFilter === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setStatusFilter(key)}
+                    className="text-[10px] font-semibold px-2 h-7 rounded-md transition-all"
+                    style={active ? {
+                      background: `${C.cyan}20`,
+                      color: C.cyan,
+                      boxShadow: `inset 0 0 0 1px ${C.cyan}40`,
+                    } : { color: 'rgba(255,255,255,0.45)' }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           
           {/* Time markers - Premium style with elegant grid */}
           <div className="flex-1 overflow-hidden" ref={timelineRef}>
-            <div className="flex items-center h-12 relative w-full">
+            <div className="flex items-center h-12 relative" style={{ width: `${zoom * 100}%` }}>
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
@@ -678,11 +1295,20 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
         </div>
 
         {/* Room Rows Container - Premium Glass */}
-        <div className="flex-1 min-h-0 overflow-hidden rounded-b-2xl" ref={rowsContainerRef}>
+        <div 
+          className="flex-1 min-h-0 overflow-y-hidden overflow-x-auto rounded-b-2xl timeline-scroll" 
+          ref={rowsContainerRef}
+          onScroll={(e) => {
+            // Synchronizace horizontálního scrollu řádk�� s časovou osou nahoře
+            if (timelineRef.current) timelineRef.current.scrollLeft = e.currentTarget.scrollLeft;
+          }}
+        >
           <div 
-            className="relative w-full h-full"
+            className="relative h-full"
             ref={scrollContainerRef}
             style={{
+              width: `${zoom * 100}%`,
+              minWidth: `${zoom * 100}%`,
               background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)',
             }}
           >
@@ -739,9 +1365,53 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
               )}
             </AnimatePresence>
 
+            {/* Hour grid overlay — jemná svislá hodinová mřížka přes řádky, sladěná s časovou osou */}
+            <div className="absolute inset-y-0 z-20 pointer-events-none" style={{ left: ROOM_LABEL_WIDTH, right: 0 }}>
+              {TIME_MARKERS.slice(0, -1).map((hour, i) => {
+                const leftPct = (i * 100) / TIMELINE_HOURS;
+                const widthPct = 100 / TIMELINE_HOURS;
+                const actualHour = TIMELINE_START_HOUR + hour;
+                const displayHour = actualHour % 24;
+                const isNightHour = displayHour >= 19 || displayHour < 7;
+                const isMajorHour = displayHour % 3 === 0;
+                return (
+                  <div
+                    key={`grid-${hour}-${i}`}
+                    className="absolute top-0 bottom-0"
+                    style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                  >
+                    {isNightHour && (
+                      <div className="absolute inset-0" style={{ background: 'rgba(2, 6, 23, 0.18)' }} />
+                    )}
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-px"
+                      style={{
+                        background: isMajorHour
+                          ? `linear-gradient(to bottom, ${C.cyan}18, ${C.cyan}08)`
+                          : 'rgba(148, 163, 184, 0.06)',
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
             {/* Room Rows */}
-            <div className="flex flex-col gap-1.5 py-2">
-            {sortedRooms.map((room, roomIndex) => {
+            <div className="relative z-10 flex flex-col gap-1.5 py-2">
+            {displayRooms.length === 0 && (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                <Search className="w-6 h-6 text-white/25" />
+                <p className="text-sm text-white/50">Žádné sály neodpovídají filtru</p>
+                <button
+                  onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
+                  className="text-xs font-medium px-3 py-1 rounded-md transition-colors"
+                  style={{ color: C.cyan, background: `${C.cyan}14`, border: `1px solid ${C.cyan}30` }}
+                >
+                  Zrušit filtr
+                </button>
+              </div>
+            )}
+            {displayRooms.map((room, roomIndex) => {
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
@@ -932,13 +1602,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                     }}
                   />
                   
-                  {/* Room Label - Premium glass panel */}
+                  {/* Room Label - Premium glass panel (sticky při zoomu, aby zůstal vlevo) */}
                   <div 
-                    className="flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200" 
+                    className="flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200 sticky left-0 z-20" 
                     style={{ 
                       width: ROOM_LABEL_WIDTH, 
                       minWidth: ROOM_LABEL_WIDTH, 
                       borderRight: `1px solid ${C.border}`,
+                      background: zoom > 1 ? C.bgPanel : 'transparent',
                     }}
                   >
                     {/* ARO Overtime Badge - Premium style */}
@@ -1033,14 +1704,12 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                       )}
 
                       {/* Room name and details */}
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-sm font-semibold tracking-tight text-white truncate">
-                            {room.name}
-                          </p>
-                        </div>
-                        {room.department && (
-                          <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      <div className="flex flex-col justify-center min-w-0 flex-1">
+                        <p className="text-sm font-semibold tracking-tight text-white truncate leading-tight">
+                          {room.name}
+                        </p>
+                        {room.department && rowHeight >= 42 && (
+                          <p className="text-[10px] text-white/40 truncate leading-tight mt-0.5">
                             {room.department}
                           </p>
                         )}
@@ -1100,26 +1769,10 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         </span>
                       </div>
                     )}
-                    {/* Hour grid lines - Premium gradient */}
-                    {TIME_MARKERS.slice(0, -1).map((hour, i) => {
-                      const displayHour = hour % 24;
-                      const isNight = displayHour >= 19 || displayHour < 7;
-                      const isMajor = displayHour % 3 === 0;
-                      return (
-                        <div 
-                          key={i} 
-                          className="absolute top-0 bottom-0 w-px" 
-                          style={{ 
-                            left: `${(i / TIMELINE_HOURS) * 100}%`,
-                            background: isMajor 
-                              ? `linear-gradient(to bottom, ${C.cyan}15, transparent)`
-                              : isNight 
-                                ? 'rgba(255,255,255,0.02)' 
-                                : 'rgba(255,255,255,0.04)'
-                          }} 
-                        />
-                      );
-                    })}
+                    {/* Hodinová mřížka se kreslí globálně přes všechny řádky
+                        (viz „Hour grid overlay" výše), proto ji zde záměrně
+                        NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
+                        noční výpočet. */}
 
                     {/* Completed operations - Premium glass cards.
                         U uzamčeného sálu nic dalšího nevykreslujeme — viz overlay výše. */}
@@ -1179,7 +1832,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                   {(() => {
                                     // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
                                     // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
-                                    // neaktivních statusů) — viz RoomDetail.changeStep → App.updateRoomStep.
+                                    // neaktivních statusů) — viz RoomDetail.changeStep ��� App.updateRoomStep.
                                     // DB `sort_order` má mezery (např. neaktivní "Začátek anestezie" má
                                     // sort_order=2, takže "Chirurgický výkon" je sort_order=3 ale POZICE 2).
                                     // Proto MUSÍME indexovat podle pozice v poli, NE podle order_index,
@@ -1251,14 +1904,14 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                                   <span 
                                     className="flex items-center gap-1.5 px-2 py-0.5 rounded-md flex-shrink-0"
                                     style={{ 
-                                      background: `linear-gradient(135deg, ${C.cyan}24 0%, ${C.cyan}12 100%)`,
-                                      border: `1px solid ${C.cyan}40`,
-                                      boxShadow: `0 0 10px ${C.cyan}1a`,
+                                      background: `linear-gradient(135deg, ${C.green}26 0%, ${C.green}12 100%)`,
+                                      border: `1px solid ${C.green}45`,
+                                      boxShadow: `0 0 10px ${C.green}22`,
                                     }}
                                   >
-                                    <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: C.cyan }} />
+                                    <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: C.green }} />
                                     {position.width > 12 && (
-                                      <span className="text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: C.cyan }}>
+                                      <span className="text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: C.green }}>
                                         Sál připraven
                                       </span>
                                     )}
@@ -1339,6 +1992,9 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.3 }}
+                        onMouseEnter={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY })}
+                        onMouseMove={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY })}
+                        onMouseLeave={() => setHoveredOp(null)}
                       >
                         {/* Animated colored left border with glow */}
                         <div 
@@ -1523,7 +2179,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 
                     {/* Free room indicator — kompaktní pill zarovnaný na PRAVOU stranu řádku.
                         Záměrně NEzabírá celou šířku, aby nepřekrýval barvy již proběhlých
-                        statusů (dokončené operace) na levé části časové osy. */}
+                        statusů (dokončené operace) na levé ��ásti časové osy. */}
                     {isFree && !room.isLocked && (
                       <motion.div 
                         className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-xl overflow-hidden"
@@ -1601,9 +2257,15 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                               backgroundImage: 'repeating-linear-gradient(to bottom, rgba(249,115,22,0.55) 0px, rgba(249,115,22,0.55) 4px, transparent 4px, transparent 9px)',
                             }}
                           />
-                          {/* Kompaktní amber chip s časem */}
+                          {/* Kompaktní amber chip s časem.
+                              Aby nevznikal sloupec identických chipů přes všechny
+                              řádky, zobrazujeme čas trvale jen na PRVNÍM řádku;
+                              na ostatních se odhalí při najetí myší na čáru
+                              (čára „konec provozní doby" zůstává na každém řádku). */}
                           <div
-                            className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-colors"
+                            className={`absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-opacity duration-150 ${
+                              roomIndex === 0 ? 'opacity-100' : 'opacity-0 group-hover/eohours:opacity-100'
+                            }`}
                             style={{
                               background: 'rgba(249, 115, 22, 0.12)',
                               border: '1px solid rgba(249, 115, 22, 0.28)',
@@ -1623,6 +2285,7 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
           </div>
         </div>
       </div>
+      )}
 
       </div>{/* end desktop wrapper */}
     </div>
@@ -1635,397 +2298,3 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
 // TimelineModule re-render přeskoč��. Re-renderne se jen když se reálně změní `rooms`.
 const TimelineModule = React.memo(TimelineModuleImpl);
 export default TimelineModule;
-
-// Helper Component - Stat Box (Modern glass-morphism)
-interface StatBoxProps {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  color: string;
-  glow?: boolean;
-}
-
-const StatBox: React.FC<StatBoxProps> = ({ icon: Icon, label, value, color, glow }) => (
-  <motion.div
-    whileHover={{ scale: 1.03, y: -2 }}
-    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-    className={`relative flex-shrink-0 h-14 rounded-2xl px-4 py-2.5 overflow-hidden backdrop-blur-xl cursor-pointer`}
-    style={{
-      background: glow
-        ? `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`
-        : `linear-gradient(135deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
-      border: glow ? `1px solid ${color}40` : `1px solid ${C.border}`,
-      boxShadow: glow 
-        ? `0 0 30px ${color}20, 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)` 
-        : '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
-    }}
-  >
-    {/* Ambient glow for emergency/special states */}
-    {glow && (
-      <div
-        className="absolute inset-0 opacity-50"
-        style={{
-          background: `radial-gradient(ellipse at 50% -20%, ${color}30 0%, transparent 60%)`,
-        }}
-      />
-    )}
-    {/* Top accent line */}
-    <div 
-      className="absolute top-0 left-0 right-0 h-[2px]"
-      style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)`, opacity: glow ? 0.8 : 0.4 }}
-    />
-    <div className="relative flex items-center gap-3 h-full">
-      <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-        style={{
-          background: `${color}20`,
-          border: `1px solid ${color}40`,
-          boxShadow: `0 0 12px ${color}20`,
-        }}
-      >
-        <span style={{ color }}><Icon className="w-4 h-4" /></span>
-      </div>
-      <div className="min-w-0">
-        <p className="text-[9px] text-white/50 uppercase tracking-[0.25em] font-semibold">{label}</p>
-        <p className="text-sm font-bold leading-tight" style={{ color: glow ? color : C.textHi }}>{value}</p>
-      </div>
-    </div>
-  </motion.div>
-);
-
-// Helper Component - Room Detail Popup (Design matching screenshot)
-interface RoomDetailPopupProps {
-  room: OperatingRoom;
-  onClose: () => void;
-  currentTime: Date;
-}
-
-const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
-  // Get workflow statuses from database context - already filtered and sorted
-  const { workflowStatuses } = useWorkflowStatusesContext();
-  
-  // workflowStatuses is already filtered (active, non-special) and sorted by context
-  const activeStatuses = workflowStatuses;
-  
-  // Lookup mapa pro správné mapování podle order_index
-  const statusByOrderIndex = useMemo(() => {
-    const map: Record<number, typeof activeStatuses[number]> = {};
-    activeStatuses.forEach((s) => {
-      map[s.order_index] = s;
-    });
-    return map;
-  }, [activeStatuses]);
-  
-  const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-  const stepIndex = room.currentStepIndex;
-  const nextStepIndex = stepIndex + 1;
-  
-  // Použít lookup mapu pro správné mapování barvy a statusu.
-  // FIX: stepIndex/nextStepIndex jsou pozice v POLI activeStatuses (0-based), ne DB
-  // `order_index`. Primárně použijeme přímou indexaci, fallback na order_index lookup
-  // pro starší rooms s legacy daty.
-  const safeIdx = Math.max(0, Math.min(stepIndex, activeStatuses.length - 1));
-  const safeNextIdx = Math.max(0, Math.min(nextStepIndex, activeStatuses.length - 1));
-  const currentStatus = activeStatuses[safeIdx] || statusByOrderIndex[stepIndex] || null;
-  const nextStatus = activeStatuses[safeNextIdx] || statusByOrderIndex[nextStepIndex] || null;
-  
-  const stepColor = currentStatus?.accent_color || currentStatus?.color || '#6B7280';
-  const progressPercent = totalSteps > 1 ? Math.round((stepIndex / (totalSteps - 1)) * 100) : 0;
-
-  // Calculate elapsed time from phaseStartedAt
-  const getElapsedTime = (): string => {
-    if (!room.phaseStartedAt) return '--:--';
-    const phaseStartTime = new Date(room.phaseStartedAt);
-    const elapsedMs = currentTime.getTime() - phaseStartTime.getTime();
-    if (elapsedMs < 0) return '--:--';
-    
-    const totalSeconds = Math.floor(elapsedMs / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    if (hours === 0) {
-      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    } else {
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 30 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 30 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        onClick={(e) => e.stopPropagation()}
-        className="rounded-3xl overflow-hidden max-w-2xl w-full relative"
-        style={{
-          background: 'linear-gradient(180deg, rgba(10,20,35,0.98) 0%, rgba(5,12,25,0.98) 100%)',
-          border: `1px solid ${C.borderHover}`,
-          boxShadow: `0 30px 80px -15px rgba(0, 0, 0, 0.7), 0 0 60px ${stepColor}15, inset 0 1px 0 rgba(255,255,255,0.08)`,
-        }}
-      >
-        {/* Ambient glow at top */}
-        <div 
-          className="absolute -top-20 left-1/2 -translate-x-1/2 w-[400px] h-[200px] rounded-full pointer-events-none opacity-20"
-          style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 70%)`, filter: 'blur(60px)' }}
-        />
-        {/* Top highlight line */}
-        <div 
-          className="absolute top-0 left-8 right-8 h-px"
-          style={{ background: `linear-gradient(90deg, transparent, ${C.accent}30, transparent)` }}
-        />
-        {/* Header */}
-        <div className="px-6 py-5 flex items-center justify-between">
-          {/* Left side - Progress circle and room info */}
-          <div className="flex items-center gap-4">
-            {/* Progress circle */}
-            <div className="relative w-14 h-14 flex items-center justify-center">
-              <svg className="w-14 h-14 -rotate-90">
-                <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
-                <circle 
-                  cx="28" cy="28" r="24" fill="none" stroke={stepColor} strokeWidth="4"
-                  strokeDasharray={`${progressPercent * 1.5} 150`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="absolute text-sm font-bold text-white">{progressPercent}%</span>
-            </div>
-            
-            {/* Room name and status */}
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-white">{room.name}</h2>
-                <span 
-                  className="px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ backgroundColor: `${stepColor}30`, color: stepColor }}
-                >
-                  {currentStatus?.name || 'Status'}
-                </span>
-              </div>
-              <p className="text-white/50 text-sm mt-0.5">
-                {room.department} · KROK {stepIndex + 1} Z {totalSteps}
-              </p>
-            </div>
-          </div>
-          
-          {/* Right side - Step dots, time display and close */}
-          <div className="flex items-center gap-6">
-            {/* Step progress dots */}
-            <div>
-                  <p className="text-[10px] text-white/40 uppercase tracking-[0.3em] font-semibold text-right mb-1">DOBA OPERACE</p>
-              <div className="flex items-center gap-1">
-                {activeStatuses.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col items-center gap-0.5"
-                  >
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
-                    />
-                    <div
-                      className="w-0.5 h-2"
-                      style={{ backgroundColor: idx <= stepIndex ? stepColor : 'rgba(255,255,255,0.2)' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
-              style={{
-                background: C.glass,
-                border: `1px solid ${C.border}`,
-              }}
-            >
-              <X className="w-5 h-5 text-white/50 hover:text-white/80 transition-colors" />
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="px-6 pb-6 space-y-5">
-          {/* Operation progress section */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-4 h-4 text-white/40" />
-                  <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">POSTUP OPERACE</p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Current step */}
-              <div 
-                className="flex-1 rounded-2xl p-4 border"
-                style={{ 
-                  backgroundColor: `${stepColor}15`,
-                  borderColor: `${stepColor}40`
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stepColor }} />
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.3em]" style={{ color: stepColor }}>
-                            PRÁVĚ PROBÍHÁ
-                          </span>
-                  </div>
-                  <span 
-                    className="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                    style={{ backgroundColor: `${stepColor}30`, color: stepColor }}
-                  >
-                    Krok {stepIndex + 1}/{totalSteps}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${stepColor}20` }}
-                  >
-                    <span style={{ color: stepColor }}><Stethoscope className="w-5 h-5" /></span>
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold">{currentStatus?.name || 'Status'}</p>
-                    <p className="text-white/40 text-xs flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3" /> {getElapsedTime()} --:--
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Arrow */}
-              <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${stepColor}30` }}
-              >
-                <span style={{ color: stepColor }}><ChevronRight className="w-5 h-5" /></span>
-              </div>
-
-              {/* Next step - LoginPage glass with gradient accent */}
-              <div 
-                className="flex-1 rounded-2xl p-4 backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
-                style={{ 
-                  background: `linear-gradient(135deg, ${stepColor}12 0%, ${stepColor}05 100%)`,
-                  border: `1px solid ${stepColor}25`,
-                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${stepColor}15`,
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ background: stepColor }} />
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.3em]" style={{ color: `${stepColor}99` }}>
-                            NÁSLEDUJÍCÍ
-                          </span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white/40" style={{ background: `${stepColor}15`, border: `1px solid ${stepColor}25` }}>
-                    Krok {nextStepIndex + 1}/{totalSteps}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `${stepColor}20`, border: `1px solid ${stepColor}30` }}>
-                    <Sparkles className="w-5 h-5" style={{ color: stepColor }} />
-                  </div>
-                  <div>
-                    <p className="text-white/80 font-semibold">{nextStatus?.name || 'Další krok'}</p>
-                          <p className="text-white/30 text-xs mt-0.5">Čeká na zahájení</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom row - Team and Times */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Team section */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="w-4 h-4 text-white/40" />
-                        <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">TÝM</p>
-              </div>
-              <div className="flex gap-3">
-                {/* Doctor - LoginPage glass with hover effect */}
-                <div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md transition-all duration-200 hover:scale-105"
-                  style={{ background: C.glass, border: `1px solid ${C.border}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200" style={{ background: 'rgba(168,85,247,0.2)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                      <Stethoscope className="w-4 h-4 text-violet-400" />
-                    </div>
-                    <div>
-                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">ANESTEZIOLOG</p>
-                      <p className="text-sm font-semibold text-white">{room.staff?.doctor?.name || 'MUDr. --'}</p>
-                    </div>
-                  </div>
-                </div>
-                {/* Nurse - LoginPage glass with hover effect */}
-                <div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md transition-all duration-200 hover:scale-105"
-                  style={{ background: C.glass, border: `1px solid ${C.border}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200" style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.3)' }}>
-                      <Users className="w-4 h-4 text-emerald-400" />
-                    </div>
-                    <div>
-                          <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold">SESTRA</p>
-                      <p className="text-sm font-semibold text-white">{room.staff?.nurse?.name || 'Bc. --'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Times section */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-4 h-4 text-white/40" />
-                        <p className="text-[11px] text-white/40 uppercase tracking-[0.3em] font-semibold">ČASY</p>
-              </div>
-              <div className="flex gap-3">
-                {/* Start time - LoginPage glass with glow on hover */}
-                <div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center transition-all duration-200 hover:scale-105"
-                  style={{ 
-                    background: C.glass, 
-                    border: `1px solid ${C.border}`,
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-                  }}
-                >
-                  <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-semibold mb-1">ZAČÁTEK</p>
-                  <p className="text-xl font-mono font-bold text-white/60">--:--</p>
-                </div>
-                {/* Estimated end - gradient with accent and glow */}
-                <motion.div 
-                  className="flex-1 rounded-xl p-3 backdrop-blur-md text-center transition-all duration-200 hover:scale-105"
-                  whileHover={{ boxShadow: `0 0 16px ${stepColor}40` }}
-                  style={{ 
-                    background: `linear-gradient(135deg, ${stepColor}15 0%, ${stepColor}05 100%)`,
-                    border: `1.5px solid ${stepColor}30`,
-                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 12px ${stepColor}20`,
-                  }}
-                >
-                  <p className="text-[9px] uppercase tracking-[0.3em] font-semibold mb-1" style={{ color: `${stepColor}99` }}>ODHAD</p>
-                  <p className="text-xl font-mono font-bold" style={{ color: stepColor }}>
-                    {room.estimatedEndTime 
-                      ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
-                      : '--:--'
-                    }
-                  </p>
-                </motion.div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
