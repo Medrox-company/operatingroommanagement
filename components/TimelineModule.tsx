@@ -1094,23 +1094,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             </div>
           </div>
 
-          {/* ── Vyhledávání a filtry ── */}
-          <div className="flex-shrink-0 flex items-center gap-2 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex items-center gap-2 flex-1 min-w-0 h-9 rounded-lg px-3" style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}>
-              <Search className="w-4 h-4 flex-shrink-0 text-white/35" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Hledat sál…"
-                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-white placeholder:text-white/30"
-              />
-            </div>
-            <button className="px-3 py-1.5 rounded-lg text-sm font-semibold" style={{ background: statusFilter === '' ? `${C.cyan}30` : 'rgba(255,255,255,0.05)', color: statusFilter === '' ? C.cyan : 'rgba(255,255,255,0.7)', border: `1px solid ${statusFilter === '' ? `${C.cyan}60` : 'rgba(255,255,255,0.1)'}` }} onClick={() => setStatusFilter('')}>Vše</button>
-            <button className="px-3 py-1.5 rounded-lg text-sm font-semibold" style={{ background: statusFilter === 'active' ? `${C.cyan}30` : 'rgba(255,255,255,0.05)', color: statusFilter === 'active' ? C.cyan : 'rgba(255,255,255,0.7)', border: `1px solid ${statusFilter === 'active' ? `${C.cyan}60` : 'rgba(255,255,255,0.1)'}` }} onClick={() => setStatusFilter('active')}>Akt</button>
-            <button className="px-3 py-1.5 rounded-lg text-sm font-semibold" style={{ background: statusFilter === 'free' ? `${C.cyan}30` : 'rgba(255,255,255,0.05)', color: statusFilter === 'free' ? C.cyan : 'rgba(255,255,255,0.7)', border: `1px solid ${statusFilter === 'free' ? `${C.cyan}60` : 'rgba(255,255,255,0.1)'}` }} onClick={() => setStatusFilter('free')}>Vol</button>
-          </div>
-
           {/* ── Header řádku: Názvy sloupců ── */}
           <div className="flex-shrink-0 flex items-center gap-2 p-2 px-3 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ width: 200, flexShrink: 0 }}>Sál</div>
