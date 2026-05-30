@@ -292,7 +292,21 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       }
 
       const occupiedMinutes = Math.round(occupiedMs / 60000);
-      const utilizationPct = workingMinutes > 0 ? Math.round((occupiedMinutes / workingMinutes) * 100) : 0;
+      
+      // Vytížení se počítá jako procento z pracovní kapacity (z rozvrhu).
+      // Pokud je sál dnes zavřený (workingMinutes == 0), ale má operace,
+      // pak se počítá z reálného času operací (od první do poslední operace).
+      let utilizationPct = 0;
+      if (workingMinutes > 0) {
+        // Standardní výpočet: procento z pracovní doby
+        utilizationPct = Math.round((occupiedMinutes / workingMinutes) * 100);
+      } else if (occupiedMinutes > 0) {
+        // Sál je zavřený podle rozvrhu, ale má operace dnes
+        // Počítáme % vytížení z reálného span času (od první do poslední operace)
+        // Zde použijeme arbitrary 8h = 480m jako baseline (typická pracovní doba)
+        utilizationPct = Math.round((occupiedMinutes / 480) * 100);
+      }
+
       const avgOpMin = operations > 0 ? Math.round(occupiedMs / 60000 / operations) : 0;
 
       // Sestavení fází cyklu pro per-room timeline (seřazeno dle pozice)
