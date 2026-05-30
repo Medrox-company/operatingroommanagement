@@ -1022,20 +1022,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* Legenda barev */}
-              <div className="hidden xl:flex items-center gap-2.5">
-                {[
-                  { c: C.cyan, t: '< 50 %' },
-                  { c: C.yellow, t: '50–75 %' },
-                  { c: C.green, t: '75–100 %' },
-                  { c: C.red, t: '≥ 100 %' },
-                ].map((l, i) => (
-                  <span key={i} className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full" style={{ background: l.c }} />
-                    <span className="text-[9px] font-medium text-white/45 tabular-nums">{l.t}</span>
-                  </span>
-                ))}
-              </div>
+              {/* Celkové statistiky bez legendy */}
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: `${utilColor(roomUtilization.totals.utilizationPct)}1a`, border: `1px solid ${utilColor(roomUtilization.totals.utilizationPct)}40` }}>
                 <span className="text-[9px] uppercase tracking-wider font-semibold text-white/50">Celkem</span>
                 <span className="text-sm font-bold tabular-nums" style={{ color: utilColor(roomUtilization.totals.utilizationPct) }}>{roomUtilization.totals.workingMinutes > 0 ? `${roomUtilization.totals.utilizationPct}%` : '—'}</span>
@@ -1089,11 +1076,13 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">operace</span>
                       </div>
 
-                      {/* Box: Minuty nevyužitého / pauzy */}
-                      <div className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ width: 70, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
-                        <span className="text-xl font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{fmtMin(Math.max(0, r.workingMinutes - r.occupiedMinutes))}</span>
-                        <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5">nevyužito</span>
-                      </div>
+                      {/* Boxy s minutami jednotlivých fází — v jednom řádku */}
+                      {r.phases.map((p, pi) => (
+                        <div key={pi} className="flex flex-col items-center justify-center rounded-lg py-2 px-1" style={{ minWidth: 60, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+                          <span className="text-xl font-bold tabular-nums leading-none" style={{ color: p.color }}>{p.minutes}</span>
+                          <span className="text-[8px] tabular-nums text-white/35 leading-none mt-0.5 truncate" title={p.name}>{p.name}</span>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Hlavní box: % vytížení operačního sálu — s barevným textem */}
@@ -1282,7 +1271,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           className="flex-1 min-h-0 overflow-y-hidden overflow-x-auto rounded-b-2xl timeline-scroll" 
           ref={rowsContainerRef}
           onScroll={(e) => {
-            // Synchronizace horizontálního scrollu řádků s časovou osou nahoře
+            // Synchronizace horizontálního scrollu řádk�� s časovou osou nahoře
             if (timelineRef.current) timelineRef.current.scrollLeft = e.currentTarget.scrollLeft;
           }}
         >
