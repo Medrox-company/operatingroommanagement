@@ -1037,7 +1037,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="hidden lg:flex flex-1 min-h-0 flex-col gap-2 relative z-10 overflow-y-auto px-8 md:pl-32 md:pr-10 pb-4"
+          className="hidden lg:flex flex-1 min-h-0 flex-col gap-2 relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10 pb-4"
         >
           {/* ── Header řádku: Názvy sloupců ── */}
           <div className="flex-shrink-0 flex items-center gap-2 p-2 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingLeft: '11px' }}>
@@ -1051,7 +1051,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           </div>
 
           {/* ── Řádky sálů ── */}
-          <div className="flex-1 min-h-0 flex flex-col gap-0 overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col gap-1 overflow-hidden">
             {roomUtilization.rows.map((r) => {
               const closed = r.workingMinutes === 0;
               const col = utilColor(r.utilizationPct);
@@ -1066,7 +1066,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   key={r.id}
                   type="button"
                   onClick={() => setStatsRoomId(r.id)}
-                  className="w-full flex items-center gap-1.5 rounded-lg px-3 py-1 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm flex-shrink-0"
+                  className="w-full flex-1 min-h-0 flex items-center gap-1.5 rounded-lg px-3 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm"
                   style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
                 >
                   {/* Jméno sálu */}
