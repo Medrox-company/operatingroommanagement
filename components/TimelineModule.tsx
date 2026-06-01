@@ -854,7 +854,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   {lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 {onRefresh && (
-                  <RefreshCw className={`w-3.5 h-3.5 text-white/50 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className="w-2 h-2 text-white/25" />
                 )}
               </button>
 
@@ -1522,7 +1522,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     </div>
                     {/* Emergency timeline box - tinted glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                    <div className={`absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
+                    <div className={`absolute inset-y-0.5 left-2 right-2 rounded-sm overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
                       <div 
                         className="absolute inset-0 rounded-md"
                           style={{ 
@@ -1668,12 +1668,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       {/* Live indicator dot for active operations */}
                       {isActive && (
                         <motion.div 
-                          className="flex-shrink-0 w-2 h-2 rounded-full"
+                          className="flex-shrink-0 w-3.5 h-3.5 rounded-full"
                           style={{ 
                             background: stepColor,
-                            boxShadow: `0 0 8px ${stepColor}`,
+                            boxShadow: `0 0 12px ${stepColor}, 0 0 24px ${stepColor}66`,
                           }}
-                          animate={{ scale: [1, 1.3, 1] }}
+                          animate={{ scale: [1, 1.4, 1] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
                         />
                       )}
@@ -1735,10 +1735,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         Žádné další statusové texty se u uzamčeného sálu nezobrazují. */}
                     {room.isLocked && (
                       <div className="absolute inset-0 flex items-center justify-center gap-3 z-20 pointer-events-none">
-                        <Lock className="w-5 h-5 flex-shrink-0" style={{ color: C.cyan, opacity: 0.7 }} />
+                        <Lock className="w-6 h-6 flex-shrink-0" style={{ color: C.cyan, opacity: 0.9, filter: 'drop-shadow(0 0 8px rgba(6,182,212,0.6))' }} />
                         <span 
-                          className="text-base font-bold uppercase tracking-[0.3em] whitespace-nowrap"
-                          style={{ color: 'rgba(255,255,255,0.8)', textShadow: `0 0 18px ${C.cyan}55` }}
+                          className="text-lg font-bold uppercase tracking-[0.3em] whitespace-nowrap"
+                          style={{ color: 'rgba(255,255,255,0.95)', textShadow: `0 0 24px ${C.cyan}66` }}
                         >
                           SÁL UZAVŘEN
                         </span>
@@ -1780,7 +1780,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group"
+                            className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-sm group"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
@@ -1803,7 +1803,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (
-                                <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                                <div className="absolute inset-0 flex overflow-hidden rounded-sm">
                                   {(() => {
                                     // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
                                     // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
@@ -1851,9 +1851,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                             // Jemnější (průhlednější) barva pro již proběhlé fáze —
                                             // zůstávají rozpoznatelné, ale nepůsobí tak agresivně jako
                                             // aktivní výkon.
-                                            background: `linear-gradient(180deg, ${phaseColor}66 0%, ${phaseColor}3a 100%)`,
+                                            background: `linear-gradient(180deg, ${phaseColor}99 0%, ${phaseColor}66 100%)`,
                                             borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.28)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12)`,
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 6px ${phaseColor}40`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
@@ -1876,21 +1876,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                   </span>
                                 )}
                                 {!isContinuingOp && isRoomReady && position.width > 4 && (
-                                  <span 
-                                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-md flex-shrink-0"
-                                    style={{ 
-                                      background: `linear-gradient(135deg, ${C.green}26 0%, ${C.green}12 100%)`,
-                                      border: `1px solid ${C.green}45`,
-                                      boxShadow: `0 0 10px ${C.green}22`,
-                                    }}
-                                  >
-                                    <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: C.green }} />
-                                    {position.width > 12 && (
-                                      <span className="text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: C.green }}>
-                                        Sál připraven
-                                      </span>
-                                    )}
-                                  </span>
+                                  /* Hidden: Room ready pill */
+                                  <></>
                                 )}
                                 {!isContinuingOp && !isRoomReady && position.width > 6 && (
                                   <span className="text-[10px] font-semibold truncate uppercase tracking-wide text-white/45">
@@ -1930,7 +1917,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                       return (
                         <div
-                          className="absolute top-1 bottom-1 rounded-md flex items-center justify-between px-3"
+                          className="absolute top-0.5 bottom-0.5 rounded-sm flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
@@ -1956,7 +1943,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                        • Professional card-like appearance */}
                     {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="absolute top-1.5 bottom-1.5 overflow-hidden rounded-xl"
+                        className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-sm"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
