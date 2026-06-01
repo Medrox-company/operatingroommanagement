@@ -1876,21 +1876,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                   </span>
                                 )}
                                 {!isContinuingOp && isRoomReady && position.width > 4 && (
-                                  <span 
-                                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-md flex-shrink-0"
-                                    style={{ 
-                                      background: `linear-gradient(135deg, ${C.green}26 0%, ${C.green}12 100%)`,
-                                      border: `1px solid ${C.green}45`,
-                                      boxShadow: `0 0 10px ${C.green}22`,
-                                    }}
-                                  >
-                                    <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: C.green }} />
-                                    {position.width > 12 && (
-                                      <span className="text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: C.green }}>
-                                        Sál připraven
-                                      </span>
-                                    )}
-                                  </span>
+                                  /* Hidden: Room ready pill */
+                                  <></>
                                 )}
                                 {!isContinuingOp && !isRoomReady && position.width > 6 && (
                                   <span className="text-[10px] font-semibold truncate uppercase tracking-wide text-white/45">
