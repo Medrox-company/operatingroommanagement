@@ -1668,12 +1668,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       {/* Live indicator dot for active operations */}
                       {isActive && (
                         <motion.div 
-                          className="flex-shrink-0 w-2 h-2 rounded-full"
+                          className="flex-shrink-0 w-3.5 h-3.5 rounded-full"
                           style={{ 
                             background: stepColor,
-                            boxShadow: `0 0 8px ${stepColor}`,
+                            boxShadow: `0 0 12px ${stepColor}, 0 0 24px ${stepColor}66`,
                           }}
-                          animate={{ scale: [1, 1.3, 1] }}
+                          animate={{ scale: [1, 1.4, 1] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
                         />
                       )}
@@ -1735,10 +1735,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         Žádné další statusové texty se u uzamčeného sálu nezobrazují. */}
                     {room.isLocked && (
                       <div className="absolute inset-0 flex items-center justify-center gap-3 z-20 pointer-events-none">
-                        <Lock className="w-5 h-5 flex-shrink-0" style={{ color: C.cyan, opacity: 0.7 }} />
+                        <Lock className="w-6 h-6 flex-shrink-0" style={{ color: C.cyan, opacity: 0.9, filter: 'drop-shadow(0 0 8px rgba(6,182,212,0.6))' }} />
                         <span 
-                          className="text-base font-bold uppercase tracking-[0.3em] whitespace-nowrap"
-                          style={{ color: 'rgba(255,255,255,0.8)', textShadow: `0 0 18px ${C.cyan}55` }}
+                          className="text-lg font-bold uppercase tracking-[0.3em] whitespace-nowrap"
+                          style={{ color: 'rgba(255,255,255,0.95)', textShadow: `0 0 24px ${C.cyan}66` }}
                         >
                           SÁL UZAVŘEN
                         </span>
@@ -1851,9 +1851,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                             // Jemnější (průhlednější) barva pro již proběhlé fáze —
                                             // zůstávají rozpoznatelné, ale nepůsobí tak agresivně jako
                                             // aktivní výkon.
-                                            background: `linear-gradient(180deg, ${phaseColor}66 0%, ${phaseColor}3a 100%)`,
+                                            background: `linear-gradient(180deg, ${phaseColor}99 0%, ${phaseColor}66 100%)`,
                                             borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.28)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12)`,
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 6px ${phaseColor}40`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
