@@ -854,7 +854,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   {lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 {onRefresh && (
-                  <RefreshCw className={`w-3.5 h-3.5 text-white/50 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-2.5 h-2.5 text-white/35 ${isRefreshing ? 'animate-spin' : ''}`} />
                 )}
               </button>
 
@@ -1780,7 +1780,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group"
+                            className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-sm group"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
@@ -1803,7 +1803,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (
-                                <div className="absolute inset-0 flex overflow-hidden rounded-md">
+                                <div className="absolute inset-0 flex overflow-hidden rounded-sm">
                                   {(() => {
                                     // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
                                     // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
