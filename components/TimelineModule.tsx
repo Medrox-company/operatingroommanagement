@@ -854,7 +854,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   {lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 {onRefresh && (
-                  <RefreshCw className={`w-2.5 h-2.5 text-white/35 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className="w-2 h-2 text-white/25" />
                 )}
               </button>
 
@@ -1522,7 +1522,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     </div>
                     {/* Emergency timeline box - tinted glassmorph */}
                     <div className="relative flex-1 overflow-hidden rounded-r-lg">
-                    <div className={`absolute inset-y-1 left-2 right-2 rounded-md overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
+                    <div className={`absolute inset-y-0.5 left-2 right-2 rounded-sm overflow-hidden ${shouldPulse ? 'animate-pulse' : ''}`}>
                       <div 
                         className="absolute inset-0 rounded-md"
                           style={{ 
