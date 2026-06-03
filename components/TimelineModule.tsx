@@ -1917,7 +1917,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                       return (
                         <div
-                          className="absolute top-0.5 bottom-0.5 rounded-sm flex items-center justify-between px-3"
+                          className="absolute top-0.5 bottom-0.5 rounded-l-sm flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
@@ -1943,7 +1943,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                        • Professional card-like appearance */}
                     {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-sm"
+                        className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-l-sm"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
