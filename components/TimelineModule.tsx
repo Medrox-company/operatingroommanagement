@@ -1747,8 +1747,61 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     {/* Hodinová mřížka se kreslí globálně přes všechny řádky
                         (viz „Hour grid overlay" výše), proto ji zde záměrně
                         NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
-                        noční výpočet. */}
+                        noční výpo��et. */}
 
+                    {/* Waiting bar — Shows patient waiting in operating tract before operation starts */}
+                    {!room.isLocked && room.patientArrivedAt && (() => {
+                      const arrivedTime = new Date(room.patientArrivedAt).getTime();
+                      
+                      // Určit konec čekání - buď start operace, nebo aktuální čas pokud operace běží
+                      let endTime = currentTime.getTime();
+                      if (room.operationStartedAt) {
+                        endTime = new Date(room.operationStartedAt).getTime();
+                      } else if (room.currentProcedure?.startTime) {
+                        const startParts = room.currentProcedure.startTime.split(':');
+                        if (startParts.length === 2) {
+                          const plannedStart = new Date();
+                          plannedStart.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
+                          endTime = plannedStart.getTime();
+                        }
+                      }
+                      
+                      // Pokud pacient přijel později než operace začala, nezobrazovat
+                      if (arrivedTime > endTime) return null;
+                      
+                      // Zjistit pozici baru
+                      const position = getOperationPosition(
+                        new Date(arrivedTime),
+                        new Date(endTime),
+                        currentTime
+                      );
+                      
+                      if (position.width <= 0) return null;
+                      
+                      return (
+                        <div
+                          key="patient-waiting"
+                          className="absolute bottom-1 overflow-hidden"
+                          style={{
+                            left: `${position.left}%`,
+                            width: `${Math.max(0.5, position.width)}%`,
+                            height: '3px',
+                            zIndex: 3,
+                          }}
+                        >
+                          {/* Tyrkysový waiting bar - pacient je v traktu a čeká */}
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              background: 'rgba(6, 182, 212, 0.9)',
+                              boxShadow: '0 0 6px rgba(6, 182, 212, 0.7)',
+                            }}
+                            title="Pacient v operačním traktu - čeká na operaci"
+                          />
+                        </div>
+                      );
+                    })()}
+                    
                     {/* Completed operations - Premium glass cards.
                         U uzamčeného sálu nic dalšího nevykreslujeme — viz overlay výše. */}
                     {!room.isLocked && (() => {
@@ -1917,7 +1970,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                       return (
                         <div
-                          className="absolute top-0.5 bottom-0.5 rounded-sm flex items-center justify-between px-3"
+                          className="absolute top-0.5 bottom-0.5 overflow-hidden flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
@@ -1941,9 +1994,103 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                        • Glassmorphism with subtle gradients
                        • Animated glow effects based on status
                        • Professional card-like appearance */}
+                    
+                    {/* Pre-operation timeline bar — Shows patient call → arrival in tract → start of operation */}
+                    {room.patientCalledAt && !room.isLocked && (() => {
+                      // Pokud je pacient volán, zobrazit pre-operation timeline
+                      const calledTime = new Date(room.patientCalledAt).getTime();
+                      const arrivedTime = room.patientArrivedAt ? new Date(room.patientArrivedAt).getTime() : null;
+                      
+                      // Použít operationStartedAt pokud existuje (operace již začala), jinak plánovaný čas
+                      let operationStartTime = null;
+                      if (room.operationStartedAt) {
+                        operationStartTime = new Date(room.operationStartedAt).getTime();
+                      } else if (room.currentProcedure?.startTime) {
+                        // Plánovaný čas - převést HH:MM na timestamp dnes
+                        const startParts = room.currentProcedure.startTime.split(':');
+                        if (startParts.length === 2) {
+                          const plannedStart = new Date();
+                          plannedStart.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
+                          operationStartTime = plannedStart.getTime();
+                        }
+                      }
+                      
+                      if (!operationStartTime) return null;
+                      if (calledTime > operationStartTime) return null; // Volání je v budoucnosti za operací
+                      
+                      const totalDuration = operationStartTime - calledTime;
+                      const arrivedPct = arrivedTime && arrivedTime >= calledTime && arrivedTime <= operationStartTime
+                        ? ((arrivedTime - calledTime) / totalDuration) * 100 
+                        : null;
+                      
+                      const position = getOperationPosition(
+                        new Date(calledTime),
+                        new Date(operationStartTime),
+                        currentTime
+                      );
+                      
+                      if (position.width <= 0) return null;
+                      
+                      return (
+                        <div
+                          key="pre-operation-timeline"
+                          className="absolute bottom-1 overflow-hidden"
+                          style={{
+                            left: `${position.left}%`,
+                            width: `${Math.max(0.5, position.width)}%`,
+                            height: '3px',
+                            zIndex: 2,
+                          }}
+                        >
+                          {/* Background track */}
+                          <div className="absolute inset-0" style={{ background: 'rgba(100,100,120,0.2)' }} />
+                          
+                          {/* Called to Arrived segment (zelená) */}
+                          {arrivedPct !== null && (
+                            <div
+                              className="absolute top-0 bottom-0"
+                              style={{
+                                left: '0%',
+                                width: `${arrivedPct}%`,
+                                background: 'rgba(34, 197, 94, 0.6)',
+                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.5)',
+                              }}
+                              title="Pacient volán → v operačním traktu"
+                            />
+                          )}
+                          
+                          {/* Arrived to Operation Start segment (tyrkysová) */}
+                          {arrivedPct !== null && (
+                            <div
+                              className="absolute top-0 bottom-0"
+                              style={{
+                                left: `${arrivedPct}%`,
+                                width: `${100 - arrivedPct}%`,
+                                background: 'rgba(6, 182, 212, 0.6)',
+                                boxShadow: '0 0 4px rgba(6, 182, 212, 0.5)',
+                              }}
+                              title="Pacient v operačním traktu → začátek operace"
+                            />
+                          )}
+                          
+                          {/* Fallback: bez arrivedTime, jen volání -> operace */}
+                          {!arrivedPct && (
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                background: 'rgba(34, 197, 94, 0.5)',
+                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.4)',
+                              }}
+                              title="Pacient volán → začátek operace"
+                            />
+                          )}
+                        </div>
+                      );
+                    })()}
+                    
                     {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-sm"
+                        className="absolute top-0.5 bottom-0.5 overflow-hidden"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
@@ -1960,7 +2107,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       >
                         {/* Animated colored left border with glow */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                          className="absolute left-0 top-0 bottom-0 w-1"
                           style={{ 
                             background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`,
                             boxShadow: `0 0 12px ${stepColor}60, 0 0 24px ${stepColor}30`,
@@ -1968,7 +2115,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         />
                         
                         {/* Premium progress bar with gradient */}
-                        <div className="absolute left-1 right-0 top-0 bottom-0 overflow-hidden rounded-r-xl">
+                        <div className="absolute left-1 right-0 top-0 bottom-0 overflow-hidden">
                           {(() => {
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt
@@ -2038,6 +2185,43 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                       boxShadow: `0 0 8px ${stepColor}50`,
                                     }}
                                   />
+                                  
+                                  {/* Patient called and arrived timeline markers */}
+                                  {room.patientCalledAt && (() => {
+                                    const calledTime = new Date(room.patientCalledAt).getTime();
+                                    const calledPct = ((calledTime - operationStart) / totalDuration) * 100;
+                                    if (calledPct < 0 || calledPct > 100) return null;
+                                    return (
+                                      <div
+                                        key="patient-called"
+                                        className="absolute bottom-0 h-1 w-px"
+                                        style={{
+                                          left: `${Math.max(0, calledPct)}%`,
+                                          background: 'rgba(34, 197, 94, 0.7)',
+                                          boxShadow: '0 0 4px rgba(34, 197, 94, 0.8)',
+                                        }}
+                                        title="Pacient volán"
+                                      />
+                                    );
+                                  })()}
+                                  
+                                  {room.patientArrivedAt && (() => {
+                                    const arrivedTime = new Date(room.patientArrivedAt).getTime();
+                                    const arrivedPct = ((arrivedTime - operationStart) / totalDuration) * 100;
+                                    if (arrivedPct < 0 || arrivedPct > 100) return null;
+                                    return (
+                                      <div
+                                        key="patient-arrived"
+                                        className="absolute bottom-0 h-1 w-px"
+                                        style={{
+                                          left: `${Math.max(0, arrivedPct)}%`,
+                                          background: 'rgba(6, 182, 212, 0.7)',
+                                          boxShadow: '0 0 4px rgba(6, 182, 212, 0.8)',
+                                        }}
+                                        title="Pacient v operačním traktu"
+                                      />
+                                    );
+                                  })()}
                                 </div>
                               );
                             }
@@ -2053,20 +2237,64 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                             return (
                               <div 
-                                className="h-full relative"
+                                className="h-full relative w-full"
                                 style={{
-                                  width: `${progressPct}%`,
                                   background: `linear-gradient(180deg, ${stepColor}50 0%, ${stepColor}25 100%)`,
                                 }}
                               >
-                                {/* Edge glow */}
                                 <div 
-                                  className="absolute right-0 top-0 bottom-0 w-px"
-                                  style={{ 
-                                    background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
-                                    boxShadow: `0 0 8px ${stepColor}50`,
+                                  className="h-full relative"
+                                  style={{
+                                    width: `${progressPct}%`,
+                                    background: 'inherit',
                                   }}
-                                />
+                                >
+                                  {/* Edge glow */}
+                                  <div 
+                                    className="absolute right-0 top-0 bottom-0 w-px"
+                                    style={{ 
+                                      background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
+                                      boxShadow: `0 0 8px ${stepColor}50`,
+                                    }}
+                                  />
+                                </div>
+                                
+                                {/* Patient called and arrived timeline markers - fallback */}
+                                {room.patientCalledAt && (() => {
+                                  const calledTime = new Date(room.patientCalledAt).getTime();
+                                  const calledPct = ((calledTime - operationStart) / totalDurationFallback) * 100;
+                                  if (calledPct < 0 || calledPct > 100) return null;
+                                  return (
+                                    <div
+                                      key="patient-called-fb"
+                                      className="absolute bottom-0 h-1 w-px"
+                                      style={{
+                                        left: `${Math.max(0, calledPct)}%`,
+                                        background: 'rgba(34, 197, 94, 0.7)',
+                                        boxShadow: '0 0 4px rgba(34, 197, 94, 0.8)',
+                                      }}
+                                      title="Pacient volán"
+                                    />
+                                  );
+                                })()}
+                                
+                                {room.patientArrivedAt && (() => {
+                                  const arrivedTime = new Date(room.patientArrivedAt).getTime();
+                                  const arrivedPct = ((arrivedTime - operationStart) / totalDurationFallback) * 100;
+                                  if (arrivedPct < 0 || arrivedPct > 100) return null;
+                                  return (
+                                    <div
+                                      key="patient-arrived-fb"
+                                      className="absolute bottom-0 h-1 w-px"
+                                      style={{
+                                        left: `${Math.max(0, arrivedPct)}%`,
+                                        background: 'rgba(6, 182, 212, 0.7)',
+                                        boxShadow: '0 0 4px rgba(6, 182, 212, 0.8)',
+                                      }}
+                                      title="Pacient v operačním traktu"
+                                    />
+                                  );
+                                })()}
                               </div>
                             );
                           })()}
