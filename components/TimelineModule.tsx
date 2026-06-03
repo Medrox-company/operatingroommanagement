@@ -1917,7 +1917,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                       return (
                         <div
-                          className="absolute top-0.5 bottom-0.5 rounded-l-sm flex items-center justify-between px-3"
+                          className="absolute top-0.5 bottom-0.5 rounded-l-sm overflow-hidden flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
