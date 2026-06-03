@@ -1793,9 +1793,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           <div
                             className="absolute inset-0"
                             style={{
-                              background: 'rgba(6, 182, 212, 0.7)',
-                              boxShadow: '0 0 6px rgba(6, 182, 212, 0.6)',
-                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                              background: 'rgba(6, 182, 212, 0.9)',
+                              boxShadow: '0 0 6px rgba(6, 182, 212, 0.7)',
                             }}
                             title="Pacient v operačním traktu - čeká na operaci"
                           />
