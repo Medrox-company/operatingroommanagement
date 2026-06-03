@@ -1941,6 +1941,87 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                        • Glassmorphism with subtle gradients
                        • Animated glow effects based on status
                        • Professional card-like appearance */}
+                    
+                    {/* Pre-operation timeline bar — Shows patient call → arrival in tract → start of operation */}
+                    {room.patientCalledAt && !isActive && !room.isLocked && (() => {
+                      // Pokud je pacient volán, zobrazit pre-operation timeline
+                      const calledTime = new Date(room.patientCalledAt).getTime();
+                      const arrivedTime = room.patientArrivedAt ? new Date(room.patientArrivedAt).getTime() : null;
+                      const operationStart = room.operationStartTime ? new Date(room.operationStartTime).getTime() : null;
+                      
+                      if (!operationStart || operationStart <= now) return null; // Operace již začala nebo není naplánována
+                      if (calledTime > operationStart) return null; // Volání je v budoucnosti za operací
+                      
+                      const totalDuration = operationStart - calledTime;
+                      const calledPct = 0; // Začátek
+                      const arrivedPct = arrivedTime ? ((arrivedTime - calledTime) / totalDuration) * 100 : null;
+                      const operationStartPct = 100; // Konec
+                      
+                      const position = getOperationPosition(
+                        new Date(calledTime),
+                        new Date(operationStart),
+                        currentTime
+                      );
+                      
+                      if (position.width <= 0) return null;
+                      
+                      return (
+                        <div
+                          key="pre-operation-timeline"
+                          className="absolute bottom-1 overflow-hidden"
+                          style={{
+                            left: `${position.left}%`,
+                            width: `${Math.max(0.5, position.width)}%`,
+                            height: '3px',
+                            zIndex: 2,
+                          }}
+                        >
+                          {/* Background track */}
+                          <div className="absolute inset-0" style={{ background: 'rgba(100,100,120,0.2)' }} />
+                          
+                          {/* Called to Arrived segment (zelená) */}
+                          {arrivedPct !== null && (
+                            <div
+                              className="absolute top-0 bottom-0"
+                              style={{
+                                left: '0%',
+                                width: `${arrivedPct}%`,
+                                background: 'rgba(34, 197, 94, 0.5)',
+                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.4)',
+                              }}
+                              title="Pacient volán → v operačním traktu"
+                            />
+                          )}
+                          
+                          {/* Arrived to Operation Start segment (tyrkysová) */}
+                          {arrivedPct !== null && (
+                            <div
+                              className="absolute top-0 bottom-0"
+                              style={{
+                                left: `${arrivedPct}%`,
+                                width: `${100 - arrivedPct}%`,
+                                background: 'rgba(6, 182, 212, 0.5)',
+                                boxShadow: '0 0 4px rgba(6, 182, 212, 0.4)',
+                              }}
+                              title="Pacient v operačním traktu → příjezd na sál"
+                            />
+                          )}
+                          
+                          {/* Fallback: bez arrivedTime, jen volání -> operace */}
+                          {!arrivedPct && (
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                background: 'rgba(34, 197, 94, 0.4)',
+                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.3)',
+                              }}
+                              title="Pacient volán → příjezd na sál"
+                            />
+                          )}
+                        </div>
+                      );
+                    })()}
+                    
                     {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         className="absolute top-0.5 bottom-0.5 overflow-hidden"
