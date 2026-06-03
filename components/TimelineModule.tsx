@@ -1943,23 +1943,36 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                        • Professional card-like appearance */}
                     
                     {/* Pre-operation timeline bar — Shows patient call → arrival in tract → start of operation */}
-                    {room.patientCalledAt && !isActive && !room.isLocked && (() => {
+                    {room.patientCalledAt && !room.isLocked && (() => {
                       // Pokud je pacient volán, zobrazit pre-operation timeline
                       const calledTime = new Date(room.patientCalledAt).getTime();
                       const arrivedTime = room.patientArrivedAt ? new Date(room.patientArrivedAt).getTime() : null;
-                      const operationStart = room.operationStartTime ? new Date(room.operationStartTime).getTime() : null;
                       
-                      if (!operationStart || operationStart <= now) return null; // Operace již začala nebo není naplánována
-                      if (calledTime > operationStart) return null; // Volání je v budoucnosti za operací
+                      // Použít operationStartedAt pokud existuje (operace již začala), jinak plánovaný čas
+                      let operationStartTime = null;
+                      if (room.operationStartedAt) {
+                        operationStartTime = new Date(room.operationStartedAt).getTime();
+                      } else if (room.currentProcedure?.startTime) {
+                        // Plánovaný čas - převést HH:MM na timestamp dnes
+                        const startParts = room.currentProcedure.startTime.split(':');
+                        if (startParts.length === 2) {
+                          const plannedStart = new Date();
+                          plannedStart.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
+                          operationStartTime = plannedStart.getTime();
+                        }
+                      }
                       
-                      const totalDuration = operationStart - calledTime;
-                      const calledPct = 0; // Začátek
-                      const arrivedPct = arrivedTime ? ((arrivedTime - calledTime) / totalDuration) * 100 : null;
-                      const operationStartPct = 100; // Konec
+                      if (!operationStartTime) return null;
+                      if (calledTime > operationStartTime) return null; // Volání je v budoucnosti za operací
+                      
+                      const totalDuration = operationStartTime - calledTime;
+                      const arrivedPct = arrivedTime && arrivedTime >= calledTime && arrivedTime <= operationStartTime
+                        ? ((arrivedTime - calledTime) / totalDuration) * 100 
+                        : null;
                       
                       const position = getOperationPosition(
                         new Date(calledTime),
-                        new Date(operationStart),
+                        new Date(operationStartTime),
                         currentTime
                       );
                       
@@ -1986,8 +1999,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                               style={{
                                 left: '0%',
                                 width: `${arrivedPct}%`,
-                                background: 'rgba(34, 197, 94, 0.5)',
-                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.4)',
+                                background: 'rgba(34, 197, 94, 0.6)',
+                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.5)',
                               }}
                               title="Pacient volán → v operačním traktu"
                             />
@@ -2000,10 +2013,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                               style={{
                                 left: `${arrivedPct}%`,
                                 width: `${100 - arrivedPct}%`,
-                                background: 'rgba(6, 182, 212, 0.5)',
-                                boxShadow: '0 0 4px rgba(6, 182, 212, 0.4)',
+                                background: 'rgba(6, 182, 212, 0.6)',
+                                boxShadow: '0 0 4px rgba(6, 182, 212, 0.5)',
                               }}
-                              title="Pacient v operačním traktu → příjezd na sál"
+                              title="Pacient v operačním traktu → začátek operace"
                             />
                           )}
                           
@@ -2012,10 +2025,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             <div
                               className="absolute inset-0"
                               style={{
-                                background: 'rgba(34, 197, 94, 0.4)',
-                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.3)',
+                                background: 'rgba(34, 197, 94, 0.5)',
+                                boxShadow: '0 0 4px rgba(34, 197, 94, 0.4)',
                               }}
-                              title="Pacient volán → příjezd na sál"
+                              title="Pacient volán → začátek operace"
                             />
                           )}
                         </div>
