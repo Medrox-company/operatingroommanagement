@@ -1749,6 +1749,60 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
                         noční výpo��et. */}
 
+                    {/* Waiting bar — Shows patient waiting in operating tract before operation starts */}
+                    {!room.isLocked && room.patientArrivedAt && (() => {
+                      const arrivedTime = new Date(room.patientArrivedAt).getTime();
+                      
+                      // Určit konec čekání - buď start operace, nebo aktuální čas pokud operace běží
+                      let endTime = currentTime.getTime();
+                      if (room.operationStartedAt) {
+                        endTime = new Date(room.operationStartedAt).getTime();
+                      } else if (room.currentProcedure?.startTime) {
+                        const startParts = room.currentProcedure.startTime.split(':');
+                        if (startParts.length === 2) {
+                          const plannedStart = new Date();
+                          plannedStart.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
+                          endTime = plannedStart.getTime();
+                        }
+                      }
+                      
+                      // Pokud pacient přijel později než operace začala, nezobrazovat
+                      if (arrivedTime > endTime) return null;
+                      
+                      // Zjistit pozici baru
+                      const position = getOperationPosition(
+                        new Date(arrivedTime),
+                        new Date(endTime),
+                        currentTime
+                      );
+                      
+                      if (position.width <= 0) return null;
+                      
+                      return (
+                        <div
+                          key="patient-waiting"
+                          className="absolute bottom-1 overflow-hidden"
+                          style={{
+                            left: `${position.left}%`,
+                            width: `${Math.max(0.5, position.width)}%`,
+                            height: '3px',
+                            zIndex: 3,
+                          }}
+                        >
+                          {/* Tyrkysový waiting bar - pacient je v traktu a čeká */}
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              background: 'rgba(6, 182, 212, 0.7)',
+                              boxShadow: '0 0 6px rgba(6, 182, 212, 0.6)',
+                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                            }}
+                            title="Pacient v operačním traktu - čeká na operaci"
+                          />
+                        </div>
+                      );
+                    })()}
+                    
                     {/* Completed operations - Premium glass cards.
                         U uzamčeného sálu nic dalšího nevykreslujeme — viz overlay výše. */}
                     {!room.isLocked && (() => {
