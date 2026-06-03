@@ -1640,7 +1640,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         }}
                         title="Pacient v operačním traktu"
                       >
-                        <span className="text-[7px] font-bold tracking-wider" style={{ color: C.green }}>NA SÁLE</span>
+                        <span className="text-[7px] font-bold tracking-wider" style={{ color: C.green }}>V OP TRAKTU</span>
                         <BedDouble className="w-3 h-3" style={{ color: C.green }} />
                       </div>
                     )}
