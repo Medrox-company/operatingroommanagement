@@ -2038,6 +2038,43 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                       boxShadow: `0 0 8px ${stepColor}50`,
                                     }}
                                   />
+                                  
+                                  {/* Patient called and arrived timeline markers */}
+                                  {room.patientCalledAt && (() => {
+                                    const calledTime = new Date(room.patientCalledAt).getTime();
+                                    const calledPct = ((calledTime - operationStart) / totalDuration) * 100;
+                                    if (calledPct < 0 || calledPct > 100) return null;
+                                    return (
+                                      <div
+                                        key="patient-called"
+                                        className="absolute bottom-0 h-1 w-px"
+                                        style={{
+                                          left: `${Math.max(0, calledPct)}%`,
+                                          background: 'rgba(34, 197, 94, 0.7)',
+                                          boxShadow: '0 0 4px rgba(34, 197, 94, 0.8)',
+                                        }}
+                                        title="Pacient volán"
+                                      />
+                                    );
+                                  })()}
+                                  
+                                  {room.patientArrivedAt && (() => {
+                                    const arrivedTime = new Date(room.patientArrivedAt).getTime();
+                                    const arrivedPct = ((arrivedTime - operationStart) / totalDuration) * 100;
+                                    if (arrivedPct < 0 || arrivedPct > 100) return null;
+                                    return (
+                                      <div
+                                        key="patient-arrived"
+                                        className="absolute bottom-0 h-1 w-px"
+                                        style={{
+                                          left: `${Math.max(0, arrivedPct)}%`,
+                                          background: 'rgba(6, 182, 212, 0.7)',
+                                          boxShadow: '0 0 4px rgba(6, 182, 212, 0.8)',
+                                        }}
+                                        title="Pacient v operačním traktu"
+                                      />
+                                    );
+                                  })()}
                                 </div>
                               );
                             }
@@ -2053,20 +2090,64 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                             return (
                               <div 
-                                className="h-full relative"
+                                className="h-full relative w-full"
                                 style={{
-                                  width: `${progressPct}%`,
                                   background: `linear-gradient(180deg, ${stepColor}50 0%, ${stepColor}25 100%)`,
                                 }}
                               >
-                                {/* Edge glow */}
                                 <div 
-                                  className="absolute right-0 top-0 bottom-0 w-px"
-                                  style={{ 
-                                    background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
-                                    boxShadow: `0 0 8px ${stepColor}50`,
+                                  className="h-full relative"
+                                  style={{
+                                    width: `${progressPct}%`,
+                                    background: 'inherit',
                                   }}
-                                />
+                                >
+                                  {/* Edge glow */}
+                                  <div 
+                                    className="absolute right-0 top-0 bottom-0 w-px"
+                                    style={{ 
+                                      background: `linear-gradient(to bottom, ${stepColor}80, ${stepColor}30)`,
+                                      boxShadow: `0 0 8px ${stepColor}50`,
+                                    }}
+                                  />
+                                </div>
+                                
+                                {/* Patient called and arrived timeline markers - fallback */}
+                                {room.patientCalledAt && (() => {
+                                  const calledTime = new Date(room.patientCalledAt).getTime();
+                                  const calledPct = ((calledTime - operationStart) / totalDurationFallback) * 100;
+                                  if (calledPct < 0 || calledPct > 100) return null;
+                                  return (
+                                    <div
+                                      key="patient-called-fb"
+                                      className="absolute bottom-0 h-1 w-px"
+                                      style={{
+                                        left: `${Math.max(0, calledPct)}%`,
+                                        background: 'rgba(34, 197, 94, 0.7)',
+                                        boxShadow: '0 0 4px rgba(34, 197, 94, 0.8)',
+                                      }}
+                                      title="Pacient volán"
+                                    />
+                                  );
+                                })()}
+                                
+                                {room.patientArrivedAt && (() => {
+                                  const arrivedTime = new Date(room.patientArrivedAt).getTime();
+                                  const arrivedPct = ((arrivedTime - operationStart) / totalDurationFallback) * 100;
+                                  if (arrivedPct < 0 || arrivedPct > 100) return null;
+                                  return (
+                                    <div
+                                      key="patient-arrived-fb"
+                                      className="absolute bottom-0 h-1 w-px"
+                                      style={{
+                                        left: `${Math.max(0, arrivedPct)}%`,
+                                        background: 'rgba(6, 182, 212, 0.7)',
+                                        boxShadow: '0 0 4px rgba(6, 182, 212, 0.8)',
+                                      }}
+                                      title="Pacient v operačním traktu"
+                                    />
+                                  );
+                                })()}
                               </div>
                             );
                           })()}
