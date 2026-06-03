@@ -1960,7 +1960,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       >
                         {/* Animated colored left border with glow */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                          className="absolute left-0 top-0 bottom-0 w-1"
                           style={{ 
                             background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`,
                             boxShadow: `0 0 12px ${stepColor}60, 0 0 24px ${stepColor}30`,
@@ -1968,7 +1968,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         />
                         
                         {/* Premium progress bar with gradient */}
-                        <div className="absolute left-1 right-0 top-0 bottom-0 overflow-hidden rounded-r-xl">
+                        <div className="absolute left-1 right-0 top-0 bottom-0 overflow-hidden">
                           {(() => {
                             const history = room.statusHistory || [];
                             const operationStart = room.operationStartedAt
