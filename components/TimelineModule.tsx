@@ -1747,7 +1747,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     {/* Hodinová mřížka se kreslí globálně přes všechny řádky
                         (viz „Hour grid overlay" výše), proto ji zde záměrně
                         NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
-                        noční výpočet. */}
+                        noční výpo��et. */}
 
                     {/* Completed operations - Premium glass cards.
                         U uzamčeného sálu nic dalšího nevykreslujeme — viz overlay výše. */}
@@ -1917,7 +1917,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                       return (
                         <div
-                          className="absolute top-0.5 bottom-0.5 rounded-l-sm overflow-hidden flex items-center justify-between px-3"
+                          className="absolute top-0.5 bottom-0.5 overflow-hidden flex items-center justify-between px-3"
                           style={{
                             left: '0%',
                             width: `${displayWidthPct}%`,
@@ -1943,7 +1943,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                        • Professional card-like appearance */}
                     {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-l-sm"
+                        className="absolute top-0.5 bottom-0.5 overflow-hidden"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
