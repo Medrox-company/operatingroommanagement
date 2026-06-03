@@ -1769,22 +1769,26 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       // Pokud pacient přijel později než operace začala, nezobrazovat
                       if (arrivedTime > endTime) return null;
                       
-                      // Zjistit pozici baru
-                      const position = getOperationPosition(
-                        new Date(arrivedTime),
-                        new Date(endTime),
-                        currentTime
-                      );
+                      // Počítat pozici a šířku přímo na základě pixelů na timelinevou
+                      // Vypočítejte dayStart z currentTime
+                      const dayStartTemp = new Date(currentTime);
+                      dayStartTemp.setHours(0, 0, 0, 0);
+                      const timelineStart = dayStartTemp.getTime();
+                      const timelineEnd = timelineStart + 24 * 60 * 60 * 1000; // 24 hodin
+                      const timelineWidth = 100; // 100%
                       
-                      if (position.width <= 0) return null;
+                      // Vypočítat procenta pro start a end
+                      const startPct = Math.max(0, Math.min(100, ((arrivedTime - timelineStart) / (timelineEnd - timelineStart)) * 100));
+                      const endPct = Math.max(0, Math.min(100, ((endTime - timelineStart) / (timelineEnd - timelineStart)) * 100));
+                      const widthPct = Math.max(0.1, endPct - startPct); // Minimálně 0.1% šířka, aby byla viditelná
                       
                       return (
                         <div
                           key="patient-waiting"
                           className="absolute bottom-1 overflow-hidden"
                           style={{
-                            left: `${position.left}%`,
-                            width: `${Math.max(0.5, position.width)}%`,
+                            left: `${startPct}%`,
+                            width: `${widthPct}%`,
                             height: '3px',
                             zIndex: 3,
                           }}
