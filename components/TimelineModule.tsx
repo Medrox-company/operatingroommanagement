@@ -1556,13 +1556,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
-                    background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
-                      : C.bgSurface,
+                    background: `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`,
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
-                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
+                      : `1px solid ${stepColor}20`,
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)`,
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
@@ -1570,10 +1568,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   <div 
                     className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
                     style={{ 
-                      background: isActive 
-                        ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}80)`
-                        : `linear-gradient(to bottom, ${C.slate}40, transparent)`,
-                      boxShadow: isActive ? `0 0 8px ${stepColor}40` : 'none',
+                      background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}80)`,
+                      boxShadow: `0 0 8px ${stepColor}40`,
                     }}
                   />
                   
@@ -1747,7 +1743,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     {/* Hodinová mřížka se kreslí globálně přes všechny řádky
                         (viz „Hour grid overlay" výše), proto ji zde záměrně
                         NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
-                        noční výpo��et. */}
+                        noční výpo����et. */}
 
                     {/* Waiting bar — Shows patient waiting in operating tract before operation starts */}
                     {!room.isLocked && room.patientArrivedAt && (() => {
