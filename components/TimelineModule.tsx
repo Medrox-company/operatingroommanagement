@@ -1551,29 +1551,33 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               /* Active / Free / Locked row - Premium glass card design */
               return (
-                <div
+                <motion.div
                   key={room.id}
-                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
                     background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
-                      : C.bgSurface,
+                      ? `linear-gradient(135deg, ${stepColor}14 0%, ${stepColor}06 100%)`
+                      : `linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)`,
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
-                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
+                      : `1px solid ${isActive ? `${stepColor}35` : C.border}`,
+                    boxShadow: isActive 
+                      ? `inset 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 20px ${stepColor}12, 0 0 40px ${stepColor}06` 
+                      : 'inset 0 1px 0 rgba(255,255,255,0.02)',
                   }}
                   onClick={() => setSelectedRoom(room)}
                 >
-                  {/* Colored left accent bar */}
+                  {/* Colored left accent bar - Premium enhanced */}
                   <div 
-                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                    className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl transition-all duration-300"
                     style={{ 
                       background: isActive 
-                        ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}80)`
-                        : `linear-gradient(to bottom, ${C.slate}40, transparent)`,
-                      boxShadow: isActive ? `0 0 8px ${stepColor}40` : 'none',
+                        ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`
+                        : `linear-gradient(to bottom, ${C.slate}50, ${C.slate}20)`,
+                      boxShadow: isActive 
+                        ? `0 0 12px ${stepColor}80, 0 0 24px ${stepColor}40, inset 2px 0 8px ${stepColor}60` 
+                        : `0 0 6px ${C.slate}40, inset 1px 0 4px ${C.slate}60`,
                     }}
                   />
                   
@@ -2090,13 +2094,14 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     
                     {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="absolute top-0.5 bottom-0.5 overflow-hidden"
+                        className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-lg"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          background: `linear-gradient(135deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
-                          boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 20px ${stepColor}15, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                          border: `1px solid ${stepColor}30`,
+                          background: `linear-gradient(135deg, ${stepColor}18 0%, ${stepColor}08 100%)`,
+                          boxShadow: `0 0 28px ${stepColor}35, inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3)`,
+                          border: `1.5px solid ${stepColor}50`,
+                          backdropFilter: 'blur(3px)',
                         }}
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -2105,12 +2110,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         onMouseMove={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY })}
                         onMouseLeave={() => setHoveredOp(null)}
                       >
-                        {/* Animated colored left border with glow */}
+                        {/* Enhanced left border with premium glow */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1"
+                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg"
                           style={{ 
-                            background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`,
-                            boxShadow: `0 0 12px ${stepColor}60, 0 0 24px ${stepColor}30`,
+                            background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}ee)`,
+                            boxShadow: `0 0 16px ${stepColor}80, 0 0 32px ${stepColor}50, inset 2px 0 8px ${stepColor}60`,
                           }}
                         />
                         
@@ -2467,7 +2472,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       );
                     })()}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
             </div>
