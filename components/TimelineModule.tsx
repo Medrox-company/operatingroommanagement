@@ -1369,8 +1369,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       className="absolute left-0 top-0 bottom-0 w-px"
                       style={{
                         background: isMajorHour
-                          ? `linear-gradient(to bottom, ${C.cyan}18, ${C.cyan}08)`
-                          : 'rgba(148, 163, 184, 0.06)',
+                          ? `linear-gradient(to bottom, ${C.cyan}40, ${C.cyan}15)`
+                          : 'rgba(148, 163, 184, 0.15)',
                       }}
                     />
                   </div>
@@ -1784,8 +1784,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           className="absolute bottom-1 overflow-hidden"
                           style={{
                             left: `${position.left}%`,
-                            width: `${Math.max(0.5, position.width)}%`,
-                            height: '3px',
+                            width: `${position.width}%`,
+                            height: '4px',
                             zIndex: 3,
                           }}
                         >
@@ -1793,8 +1793,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           <div
                             className="absolute inset-0"
                             style={{
-                              background: 'rgba(6, 182, 212, 0.9)',
-                              boxShadow: '0 0 6px rgba(6, 182, 212, 0.7)',
+                              background: 'rgba(6, 182, 212, 1)',
+                              boxShadow: '0 0 8px rgba(6, 182, 212, 1)',
                             }}
                             title="Pacient v operačním traktu - čeká na operaci"
                           />
