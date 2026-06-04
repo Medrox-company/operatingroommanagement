@@ -1551,20 +1551,24 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               /* Active / Free / Locked row - Premium glass card design */
               return (
-                <div
+                <motion.div
                   key={room.id}
                   className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
                     background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}08 0%, transparent 100%)`
-                      : C.bgSurface,
+                      ? `linear-gradient(135deg, ${stepColor}12 0%, ${stepColor}04 100%)`
+                      : `linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%)`,
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
-                      : `1px solid ${isActive ? `${stepColor}20` : C.border}`,
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.03)` : 'none',
+                      : `1px solid ${isActive ? `${stepColor}30` : C.border}`,
+                    boxShadow: isActive 
+                      ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 16px ${stepColor}08` 
+                      : 'inset 0 1px 0 rgba(255,255,255,0.02)',
                   }}
                   onClick={() => setSelectedRoom(room)}
+                  whileHover={{ scale: 1.008, translateY: -1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 >
                   {/* Colored left accent bar */}
                   <div 
@@ -2467,7 +2471,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       );
                     })()}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
             </div>
