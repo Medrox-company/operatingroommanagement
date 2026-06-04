@@ -80,7 +80,7 @@ body {
 }
 
 .timeline-grid-line {
-  background: linear-gradient(to bottom, rgba(148, 163, 184, 0.08), transparent);
+  background: linear-gradient(to bottom, rgba(148, 163, 184, 0.25), rgba(148, 163, 184, 0.08));
 }
 
 .timeline-now-line {

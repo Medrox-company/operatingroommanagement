@@ -1369,8 +1369,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       className="absolute left-0 top-0 bottom-0 w-px"
                       style={{
                         background: isMajorHour
-                          ? `linear-gradient(to bottom, ${C.cyan}40, ${C.cyan}15)`
-                          : 'rgba(148, 163, 184, 0.15)',
+                          ? `linear-gradient(to bottom, ${C.cyan}60, ${C.cyan}25)`
+                          : 'rgba(148, 163, 184, 0.25)',
                       }}
                     />
                   </div>
