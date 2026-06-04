@@ -2094,9 +2094,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
-                          background: `linear-gradient(135deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
-                          boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 20px ${stepColor}15, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                          border: `1px solid ${stepColor}30`,
+                          background: `linear-gradient(135deg, ${stepColor}08 0%, ${stepColor}04 100%)`,
+                          boxShadow: `0 0 12px ${stepColor}15, inset 0 1px 0 rgba(255,255,255,0.03)`,
+                          border: `1px solid ${stepColor}35`,
                         }}
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
