@@ -766,7 +766,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       <div 
         className="sticky top-0 z-40 flex-shrink-0"
         style={{ 
-          background: 'linear-gradient(180deg, #000a14 0%, #00060f 100%)',
+          background: 'transparent',
           borderBottom: `1px solid ${C.borderStrong}`,
         }}
       >
