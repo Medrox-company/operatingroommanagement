@@ -734,9 +734,6 @@ function TimelineModuleImpl({ rooms }: TimelineModuleProps) {
                 </button>
               )}
             </div>
-                </button>
-              )}
-            </div>
 
             {/* Department Filter Dropdown */}
             <div className="relative flex items-center">
