@@ -1362,9 +1362,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     className="absolute top-0 bottom-0"
                     style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
                   >
-                    {isNightHour && (
-                      <div className="absolute inset-0" style={{ background: 'rgba(2, 6, 23, 0.18)' }} />
-                    )}
                     <div
                       className="absolute left-0 top-0 bottom-0 w-px"
                       style={{
@@ -1556,9 +1553,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
-                    background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}14 0%, ${stepColor}06 100%)`
-                      : `linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%)`,
+                    background: `linear-gradient(135deg, ${stepColor}14 0%, ${stepColor}06 100%)`,
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
                       : `1px solid ${isActive ? `${stepColor}35` : C.border}`,
