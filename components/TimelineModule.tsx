@@ -1558,7 +1558,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     height: rowHeight,
                     background: isActive 
                       ? `linear-gradient(135deg, ${stepColor}14 0%, ${stepColor}06 100%)`
-                      : `linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)`,
+                      : `linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%)`,
                     border: room.isLocked 
                       ? `1.5px solid rgba(6, 182, 212, 0.4)`
                       : `1px solid ${isActive ? `${stepColor}35` : C.border}`,
