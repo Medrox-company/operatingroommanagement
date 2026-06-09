@@ -92,32 +92,3 @@ export const STEP_INDEX_COLORS: Record<number, string> = {
   8: '#3B82F6',  // Blue - Monitoring
   9: '#06B6D4',  // Cyan - Final checks
 };
-
-// ========== NEON COLORS FOR MAXIMUM VISUAL IMPACT ==========
-export const NEON_COLORS = {
-  // Vibrant neon colors with intense glow effects
-  neonBlue: '#0080FF',          // Bright neon blue
-  neonCyan: '#00FFFF',          // Bright neon cyan
-  neonPurple: '#D946EF',        // Bright neon purple
-  neonPink: '#FF006E',          // Bright neon pink
-  neonRed: '#FF0033',           // Bright neon red
-  neonGreen: '#00FF00',         // Bright neon green
-  neonYellow: '#FFFF00',        // Bright neon yellow
-  neonOrange: '#FF6600',        // Bright neon orange
-  
-  // Neon glow effects (box-shadow)
-  glowNeonBlue: '0 0 40px rgba(0, 128, 255, 0.8), 0 0 80px rgba(0, 128, 255, 0.4)',
-  glowNeonCyan: '0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(0, 255, 255, 0.4)',
-  glowNeonPurple: '0 0 40px rgba(217, 70, 239, 0.8), 0 0 80px rgba(217, 70, 239, 0.4)',
-  glowNeonPink: '0 0 40px rgba(255, 0, 110, 0.8), 0 0 80px rgba(255, 0, 110, 0.4)',
-  glowNeonRed: '0 0 40px rgba(255, 0, 51, 0.8), 0 0 80px rgba(255, 0, 51, 0.4)',
-  glowNeonGreen: '0 0 40px rgba(0, 255, 0, 0.8), 0 0 80px rgba(0, 255, 0, 0.4)',
-  glowNeonYellow: '0 0 40px rgba(255, 255, 0, 0.7), 0 0 80px rgba(255, 255, 0, 0.35)',
-  glowNeonOrange: '0 0 40px rgba(255, 102, 0, 0.8), 0 0 80px rgba(255, 102, 0, 0.4)',
-  
-  // Glow animation colors
-  glowNeonBlueAnimation: 'rgba(0, 128, 255, 0.6)',
-  glowNeonCyanAnimation: 'rgba(0, 255, 255, 0.6)',
-  glowNeonPurpleAnimation: 'rgba(217, 70, 239, 0.6)',
-  glowNeonPinkAnimation: 'rgba(255, 0, 110, 0.6)',
-};

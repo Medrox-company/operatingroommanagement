@@ -551,60 +551,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   return (
     <div
       className="w-full h-full text-white overflow-hidden flex flex-col relative antialiased"
-      style={{ 
-        WebkitFontSmoothing: 'antialiased', 
-        MozOsxFontSmoothing: 'grayscale', 
-        textRendering: 'optimizeLegibility',
-        // MAXIMUM ENHANCEMENT: Stunning neon-inspired radial gradient background
-        background: 'radial-gradient(ellipse 1400px 900px at 50% 30%, rgba(0, 128, 255, 0.12) 0%, rgba(217, 70, 239, 0.08) 25%, rgba(0, 15, 35, 0.95) 60%, #000000 100%)',
-      }}
+      style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' }}
     >
-      {/* Animated neon glow overlays for maximum visual impact */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Top-left neon blue glow */}
-        <div 
-          className="absolute -top-1/4 -left-1/4 w-96 h-96 rounded-full opacity-20"
-          style={{ 
-            background: 'radial-gradient(circle, #0080FF 0%, transparent 70%)',
-            filter: 'blur(120px)',
-            animation: 'pulse 8s ease-in-out infinite',
-          }}
-        />
-        {/* Center neon purple glow */}
-        <div 
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-15"
-          style={{ 
-            background: 'radial-gradient(circle, #D946EF 0%, transparent 70%)',
-            filter: 'blur(140px)',
-            animation: 'pulse 10s ease-in-out infinite 1s',
-          }}
-        />
-        {/* Bottom-right neon cyan glow */}
-        <div 
-          className="absolute -bottom-1/4 -right-1/4 w-96 h-96 rounded-full opacity-15"
-          style={{ 
-            background: 'radial-gradient(circle, #00FFFF 0%, transparent 70%)',
-            filter: 'blur(120px)',
-            animation: 'pulse 9s ease-in-out infinite 2s',
-          }}
-        />
-      </div>
-
-      {/* Animated neon grid background for tech aesthetic */}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.15; }
-          50% { opacity: 0.25; }
-        }
-        @keyframes glow-pulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(0, 128, 255, 0.6); }
-          50% { box-shadow: 0 0 40px rgba(0, 128, 255, 0.9); }
-        }
-        @keyframes glow-pulse-purple {
-          0%, 100% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.6); }
-          50% { box-shadow: 0 0 40px rgba(217, 70, 239, 0.9); }
-        }
-      `}</style>
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -1884,26 +1832,24 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-xl group transition-all duration-300 hover:scale-105 cursor-pointer"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group transition-all duration-200 hover:shadow-lg"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
-                              // MAXIMUM ENHANCEMENT: Neon-inspired design with vibrant colors and intense glow
+                              // Premium luxury design - inspired by logistics dashboard
                               background: isContinuingOp 
-                                ? `linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%)`
-                                : `linear-gradient(135deg, rgba(0, 128, 255, 0.08) 0%, rgba(217, 70, 239, 0.06) 100%)`,
-                              border: `2px solid ${isContinuingOp ? 'rgba(255, 215, 0, 0.7)' : isRoomReady ? 'rgba(0, 128, 255, 0.6)' : 'rgba(0, 255, 255, 0.5)'}`,
+                                ? `linear-gradient(135deg, ${C.yellow}22 0%, ${C.yellow}10 100%)`  // Gold for completed
+                                : `linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(59, 130, 246, 0.06) 100%)`, // Golden + blue gradient
+                              border: `1.5px solid ${isContinuingOp ? `${C.yellow}60` : isRoomReady ? `${C.blue}50` : `${C.slate}35`}`,
                               boxShadow: isRoomReady 
-                                ? `inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 30px rgba(0, 128, 255, 0.6), 0 0 60px rgba(0, 128, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4)`
+                                ? `inset 0 1px 0 rgba(255, 215, 0, 0.12), 0 0 18px ${C.yellow}25, 0 4px 12px rgba(0,0,0,0.3)`
                                 : isContinuingOp
-                                  ? `inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 28px rgba(255, 215, 0, 0.7), 0 0 56px rgba(255, 215, 0, 0.35), 0 2px 10px rgba(0, 0, 0, 0.3)`
-                                  : '0 0 24px rgba(0, 255, 255, 0.5), 0 0 48px rgba(0, 255, 255, 0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
-                              backdropFilter: 'blur(12px)',
+                                  ? `inset 0 1px 0 rgba(255,255,255,0.10), 0 0 16px ${C.yellow}35, 0 2px 8px rgba(0,0,0,0.2)`
+                                  : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 0 12px rgba(255, 215, 0, 0.15)',
                             }}
-                            initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            transition={{ delay: opIdx * 0.08, duration: 0.5, type: 'spring', stiffness: 300 }}
-                            whileHover={{ scale: 1.08, y: -2 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: opIdx * 0.05 }}
                           >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (
@@ -1948,21 +1894,19 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                       return (
                                         <motion.div
                                           key={`seg-${idx}`}
-                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-125 hover:scale-110"
+                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-110 hover:shadow-md"
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            // MAXIMUM ENHANCEMENT: Vibrant neon gradient with intense glow effect
-                                            background: `linear-gradient(180deg, ${phaseColor}ff 0%, ${phaseColor}dd 50%, ${phaseColor}99 100%)`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? `2px solid rgba(0,0,0,0.5)` : 'none',
-                                            boxShadow: `inset 0 2px 0 rgba(255,255,255,0.25), inset -2px 0 0 rgba(0,0,0,0.3), 0 0 20px ${phaseColor}88, 0 0 40px ${phaseColor}44, 0 4px 12px rgba(0,0,0,0.4)`,
-                                            filter: 'drop-shadow(0 0 8px ' + phaseColor + '44)',
+                                            // Premium luxury design - enhanced vibrancy and glow
+                                            background: `linear-gradient(180deg, ${phaseColor}cc 0%, ${phaseColor}88 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1.5px solid rgba(0,0,0,0.35)` : 'none',
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.18), inset -1px 0 0 rgba(0,0,0,0.2), 0 0 10px ${phaseColor}55, 0 2px 6px rgba(0,0,0,0.25)`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                          initial={{ opacity: 0, scaleY: 0 }}
-                                          animate={{ opacity: 1, scaleY: 1 }}
-                                          transition={{ delay: 0.04 * idx, duration: 0.4, type: 'spring', stiffness: 400 }}
-                                          whileHover={{ filter: 'drop-shadow(0 0 16px ' + phaseColor + ')' }}
+                                          initial={{ opacity: 0 }}
+                                          animate={{ opacity: 1 }}
+                                          transition={{ delay: 0.03 * idx }}
                                         />
                                       );
                                     }).filter(Boolean);
