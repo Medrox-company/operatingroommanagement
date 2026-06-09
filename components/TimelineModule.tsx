@@ -1832,22 +1832,20 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-sm group"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group transition-all duration-200 hover:shadow-lg"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
-                              // Decentní, převážně průhledné pozadí — barvy již proběhlých
-                              // statusů (segmenty uvnitř) zůstanou čitelné a nejsou
-                              // překryté plnou netransparentní barvou.
+                              // Premium luxury design - inspired by logistics dashboard
                               background: isContinuingOp 
-                                ? `linear-gradient(135deg, ${C.green}1f 0%, ${C.green}10 100%)`
-                                : `linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)`,
-                              border: `1px solid ${isContinuingOp ? `${C.green}55` : isRoomReady ? `${C.cyan}45` : `${C.slate}2e`}`,
+                                ? `linear-gradient(135deg, ${C.yellow}22 0%, ${C.yellow}10 100%)`  // Gold for completed
+                                : `linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(59, 130, 246, 0.06) 100%)`, // Golden + blue gradient
+                              border: `1.5px solid ${isContinuingOp ? `${C.yellow}60` : isRoomReady ? `${C.blue}50` : `${C.slate}35`}`,
                               boxShadow: isRoomReady 
-                                ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 14px ${C.cyan}1f`
+                                ? `inset 0 1px 0 rgba(255, 215, 0, 0.12), 0 0 18px ${C.yellow}25, 0 4px 12px rgba(0,0,0,0.3)`
                                 : isContinuingOp
-                                  ? `inset 0 1px 0 rgba(255,255,255,0.10), 0 0 12px ${C.green}22`
-                                  : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                                  ? `inset 0 1px 0 rgba(255,255,255,0.10), 0 0 16px ${C.yellow}35, 0 2px 8px rgba(0,0,0,0.2)`
+                                  : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 0 12px rgba(255, 215, 0, 0.15)',
                             }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -1896,16 +1894,14 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                       return (
                                         <motion.div
                                           key={`seg-${idx}`}
-                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-105"
+                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-110 hover:shadow-md"
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            // Jemnější (průhlednější) barva pro již proběhlé fáze —
-                                            // zůstávají rozpoznatelné, ale nepůsobí tak agresivně jako
-                                            // aktivní výkon.
-                                            background: `linear-gradient(180deg, ${phaseColor}99 0%, ${phaseColor}66 100%)`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.28)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 6px ${phaseColor}40`,
+                                            // Premium luxury design - enhanced vibrancy and glow
+                                            background: `linear-gradient(180deg, ${phaseColor}cc 0%, ${phaseColor}88 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1.5px solid rgba(0,0,0,0.35)` : 'none',
+                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.18), inset -1px 0 0 rgba(0,0,0,0.2), 0 0 10px ${phaseColor}55, 0 2px 6px rgba(0,0,0,0.25)`,
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
