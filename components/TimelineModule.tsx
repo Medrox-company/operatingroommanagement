@@ -1905,7 +1905,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             transition={{ delay: opIdx * 0.08, duration: 0.5, type: 'spring', stiffness: 300 }}
                             whileHover={{ scale: 1.08, y: -2 }}
                           >
-                          >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (
                                 <div className="absolute inset-0 flex overflow-hidden rounded-sm">
