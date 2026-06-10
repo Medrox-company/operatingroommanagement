@@ -83,10 +83,13 @@ export function verifySession(token: string | null | undefined): SessionPayload 
  */
 export function getSessionCookieOptions(ttlMs: number = SESSION_TTL_MS) {
   const allowInsecure = process.env.ALLOW_INSECURE_COOKIE === '1';
+  // SameSite=Lax je bezpečný default (omezuje CSRF). SameSite=None je potřeba
+  // jen při běhu v iframe (např. v0 preview) — zapni COOKIE_SAMESITE_NONE=1.
+  const sameSiteNone = process.env.COOKIE_SAMESITE_NONE === '1';
   return {
     name: SESSION_COOKIE_NAME,
     httpOnly: true as const,
-    sameSite: 'none' as const,
+    sameSite: (sameSiteNone ? 'none' : 'lax') as 'none' | 'lax',
     secure: !allowInsecure,
     path: '/',
     maxAge: Math.floor(ttlMs / 1000),

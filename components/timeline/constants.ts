@@ -1,39 +1,42 @@
-// ========== DESIGN TOKENS (Premium Medical Dashboard - Futuristic Control Center) ==========
+// ========== DESIGN TOKENS (Deep Navy Control Center — žlutý akcent, perwinkle) ==========
+// Paleta inspirovaná moderními logistickými dashboardy: hluboká indigo-navy
+// plocha, teplý žlutý primární akcent, perwinkle modrá pro informace a měkké
+// pastelové statusové barvy, které na tmavém podkladu krásně září.
 export const C = {
-  // Primary accent - Medical Cyan
-  accent: '#06B6D4',
-  cyan: '#06B6D4',
+  // Primary accent — Medical Teal-Cyan (dle referenčního screenshotu)
+  accent: '#36D9EC',
+  cyan: '#36D9EC', // alias ponechán kvůli rozsáhlému použití v kódu
 
-  // Status colors - Vivid & Professional
-  green: '#10B981',       // Active/Success - Emerald
-  yellow: '#F59E0B',      // Preparation/Warning - Amber
-  orange: '#F97316',      // Alert - Orange
-  red: '#EF4444',         // Delayed/Critical - Red
-  purple: '#8B5CF6',      // Planning - Violet
-  pink: '#EC4899',        // Special - Pink
-  blue: '#3B82F6',        // Info - Blue
-  slate: '#64748B',       // Completed - Slate
+  // Status colors — chladné pastely ladící s teal podkladem
+  green: '#34D399',       // Success — mint
+  yellow: '#FBBF24',      // Warning — amber
+  orange: '#FB923C',      // Alert — měkká oranžová
+  red: '#F43F5E',         // Critical — rose
+  purple: '#A78BFA',      // Planning — světlý violet
+  pink: '#F472B6',        // Special — pastel pink
+  blue: '#38BDF8',        // Info — sky blue
+  slate: '#7E93A8',       // Completed — chladný slate
 
-  // Surface & Glass Effects — sjednocená modro-černá hloubka (slate 950 → 900)
-  bgDeep: '#030712',                        // Deep space black
-  bgSurface: 'rgb(0, 6, 17)',                // Glass surface
-  bgElevated: 'rgba(23, 33, 54, 0.92)',     // Elevated cards
-  bgCard: 'rgba(13, 20, 38, 0.96)',         // Card background
-  bgPanel: 'rgba(11, 17, 32, 0.95)',        // Sticky panely / toolbar (neprůhledné)
+  // Surface & Glass Effects — hluboký teal-černý podklad (referenční screenshot)
+  bgDeep: '#06141D',                        // Deep teal black
+  bgSurface: 'rgb(7, 19, 27)',              // Glass surface
+  bgElevated: 'rgba(16, 38, 50, 0.92)',     // Elevated cards
+  bgCard: 'rgba(10, 26, 36, 0.96)',         // Card background
+  bgPanel: 'rgba(8, 22, 31, 0.95)',         // Sticky panely / toolbar (neprůhledné)
 
-  // Borders & Lines — o něco definovanější pro lepší čitelnost hran
-  border: 'rgba(148, 163, 184, 0.10)',      // Subtle border
-  borderStrong: 'rgba(148, 163, 184, 0.18)',// Definovanější hrana (toolbar, panely)
-  borderHover: 'rgba(6, 182, 212, 0.35)',   // Cyan hover
-  borderActive: 'rgba(6, 182, 212, 0.55)',  // Active state
-  gridLine: 'rgba(148, 163, 184, 0.06)',    // Timeline grid
+  // Borders & Lines
+  border: 'rgba(125, 165, 185, 0.12)',      // Subtle border (chladná)
+  borderStrong: 'rgba(125, 165, 185, 0.20)',// Definovanější hrana (toolbar, panely)
+  borderHover: 'rgba(54, 217, 236, 0.35)',  // Cyan hover
+  borderActive: 'rgba(54, 217, 236, 0.55)', // Active state
+  gridLine: 'rgba(125, 165, 185, 0.07)',    // Timeline grid
 
   // Glass & Glow
   glass: 'rgba(255, 255, 255, 0.025)',
-  glassHover: 'rgba(6, 182, 212, 0.08)',
-  glowCyan: '0 0 20px rgba(6, 182, 212, 0.45)',
-  glowGreen: '0 0 16px rgba(16, 185, 129, 0.4)',
-  glowRed: '0 0 16px rgba(239, 68, 68, 0.5)',
+  glassHover: 'rgba(54, 217, 236, 0.08)',
+  glowCyan: '0 0 20px rgba(54, 217, 236, 0.40)',
+  glowGreen: '0 0 16px rgba(52, 211, 153, 0.4)',
+  glowRed: '0 0 16px rgba(244, 63, 94, 0.5)',
 
   // Text
   textHi: 'rgba(255, 255, 255, 0.95)',
@@ -65,14 +68,16 @@ export const ROOM_COLORS: Record<string, { bg: string; border: string; stripe: s
   cyan: { bg: '#06B6D4', border: '#22D3EE', stripe: '#67E8F9', text: '#FFF', glow: '0 0 20px rgba(6, 182, 212, 0.4)' },
 };
 
-// Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování
+// Step colors podle step_index z databáze - dynamicky přepsáno z kontextu v renderování.
+// Fallback paleta sladěná s navy/žlutým stylem — měkké pastely, které na tmavém
+// podkladu příjemně září a jsou od sebe na první pohled rozlišitelné.
 export const STEP_INDEX_COLORS: Record<number, string> = {
-  0: '#6b7280',
-  1: '#8b5cf6',
-  2: '#ec4899',
-  3: '#ef4444',
-  4: '#f59e0b',
-  5: '#a855f7',
-  6: '#10b981',
-  7: '#f97316',
+  0: '#8A94A6', // připraven — neutrální slate
+  1: '#7C8CF8', // perwinkle
+  2: '#F472B6', // pastel pink
+  3: '#F43F5E', // rose — kritická fáze
+  4: '#FFC83D', // signální žlutá
+  5: '#A78BFA', // světlý violet
+  6: '#34D399', // mint — dokončeno
+  7: '#FB923C', // měkká oranžová
 };

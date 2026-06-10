@@ -1,5 +1,6 @@
 import { fetchOperatingRooms } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/auth/server';
 
 // CRITICAL: Disable all caching - this endpoint must always return fresh data
 // for real-time sync of room states (lock, emergency) across devices
@@ -8,6 +9,9 @@ export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
 export async function GET() {
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const rooms = await fetchOperatingRooms();
     return NextResponse.json(rooms, {

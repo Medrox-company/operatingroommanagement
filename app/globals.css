@@ -537,3 +537,89 @@ body {
 .print-section {
   /* placeholder — page-break aktivován v print media query výše */
 }
+
+/* ════════════════ TIMELINE MODULE — premium vizuální vrstva ════════════════ */
+
+/* Aurora ambient pozadí — tři pomalu plující barevné orby */
+@keyframes tl-aurora-drift-1 {
+  0%, 100% { transform: translate(-12%, -8%) scale(1); }
+  50%      { transform: translate(10%, 6%) scale(1.18); }
+}
+@keyframes tl-aurora-drift-2 {
+  0%, 100% { transform: translate(8%, 10%) scale(1.1); }
+  50%      { transform: translate(-10%, -6%) scale(0.95); }
+}
+@keyframes tl-aurora-drift-3 {
+  0%, 100% { transform: translate(0%, 0%) scale(1); opacity: 0.5; }
+  50%      { transform: translate(-6%, 8%) scale(1.25); opacity: 0.9; }
+}
+.tl-aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  will-change: transform;
+  pointer-events: none;
+}
+.tl-aurora-1 {
+  width: 55vw; height: 55vw; top: -25%; left: -10%;
+  background: radial-gradient(circle, rgba(54, 217, 236, 0.10) 0%, transparent 65%);
+  animation: tl-aurora-drift-1 26s ease-in-out infinite;
+}
+.tl-aurora-2 {
+  width: 45vw; height: 45vw; bottom: -20%; right: -8%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.10) 0%, transparent 65%);
+  animation: tl-aurora-drift-2 32s ease-in-out infinite;
+}
+.tl-aurora-3 {
+  width: 35vw; height: 35vw; top: 30%; left: 35%;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.06) 0%, transparent 65%);
+  animation: tl-aurora-drift-3 38s ease-in-out infinite;
+}
+
+/* Shimmer — světelný přeliv přes aktivní segment operace */
+@keyframes tl-shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.tl-shimmer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tl-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 45%;
+  background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.14) 50%, transparent 100%);
+  animation: tl-shimmer-sweep 3.2s ease-in-out infinite;
+}
+
+/* Plynulé vstupní stagger animace řádků řeší framer-motion; zde jen
+   zjemnění interakcí, ať vše reaguje hladce */
+.tl-row-hover {
+  transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.tl-row-hover:hover {
+  transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-aurora-1, .tl-aurora-2, .tl-aurora-3 { animation: none; }
+  .tl-shimmer::after { animation: none; display: none; }
+}
+
+/* Jemný diagonální lesk řádku při najetí myší (timeline) */
+.tl-row-sheen {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.04) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+.group:hover > .tl-row-sheen {
+  opacity: 1;
+}

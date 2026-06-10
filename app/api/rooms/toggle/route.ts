@@ -1,15 +1,24 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireSession } from '@/lib/auth/server';
+import { assertSameOrigin } from '@/lib/auth/csrf';
+
+export const runtime = 'nodejs';
 
 // Server-side Supabase client with service role for reliable DB writes
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-const supabase = supabaseUrl && supabaseServiceKey 
+const supabase = supabaseUrl && supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey)
   : null;
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
   try {
     const body = await request.json();
     const { roomId, field, value } = body;
@@ -20,6 +29,9 @@ export async function POST(request: Request) {
 
     if (!['is_emergency', 'is_locked'].includes(field)) {
       return NextResponse.json({ error: 'Invalid field' }, { status: 400 });
+    }
+    if (typeof value !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid value' }, { status: 400 });
     }
 
     if (!supabase) {

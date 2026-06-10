@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { STEP_DURATIONS, STEP_COLORS } from '../constants';
@@ -7,9 +7,9 @@ import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
-  Settings, User, Sparkles, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
-  Search, ZoomIn, ZoomOut, Maximize2,
-  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown
+  Settings, User, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
+  Search, ZoomIn, ZoomOut, Maximize2, Minimize2,
+  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown, Timer
 } from 'lucide-react';
 
 // ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
@@ -44,6 +44,112 @@ interface TimelineModuleProps {
   /** Volitelný callback pro ruční obnovení dat (refetch). Pokud chybí, tlačítko se neukáže. */
   onRefresh?: () => Promise<void> | void;
 }
+
+/* ════════ Minimapa dne — komprimovaný přehled obsazenosti s navigací ════════
+   Zobrazuje se při zoomu > 1: každý sál je tenká „lane", operace jsou barevné
+   segmenty, rámeček ukazuje aktuální výřez. Kliknutím se přesune pohled. */
+interface MinimapLane {
+  id: string;
+  segs: Array<{ l: number; w: number; color: string; active?: boolean }>;
+  emergency: boolean;
+}
+interface TimelineMinimapProps {
+  lanes: MinimapLane[];
+  nowPct: number;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  axisRef: React.RefObject<HTMLDivElement | null>;
+  zoom: number;
+}
+const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, containerRef, axisRef, zoom }) => {
+  const [viewport, setViewport] = useState({ left: 0, width: 1 });
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let raf = 0;
+    const update = () => {
+      const fullWidth = Math.max(1, el.scrollWidth - ROOM_LABEL_WIDTH);
+      const visible = Math.max(0, el.clientWidth - ROOM_LABEL_WIDTH);
+      setViewport({ left: el.scrollLeft / fullWidth, width: Math.min(1, visible / fullWidth) });
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+    update();
+    // Po animaci šířky (zoom transition 250 ms) přepočítej výřez
+    const t = window.setTimeout(update, 320);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, [containerRef, zoom]);
+
+  const navigate = (clientX: number) => {
+    const track = trackRef.current;
+    const el = containerRef.current;
+    if (!track || !el) return;
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const fullWidth = el.scrollWidth - ROOM_LABEL_WIDTH;
+    const visible = el.clientWidth - ROOM_LABEL_WIDTH;
+    const target = Math.max(0, ratio * fullWidth - visible / 2);
+    el.scrollTo({ left: target, behavior: 'smooth' });
+    if (axisRef.current) axisRef.current.scrollTo({ left: target, behavior: 'smooth' });
+  };
+
+  const laneH = lanes.length > 0 ? 100 / lanes.length : 100;
+
+  return (
+    <div
+      ref={trackRef}
+      className="relative flex-1 h-9 rounded-lg overflow-hidden cursor-pointer select-none"
+      style={{ background: 'rgba(2, 6, 23, 0.55)', border: `1px solid ${C.border}` }}
+      onClick={(e) => navigate(e.clientX)}
+      onMouseMove={(e) => { if (e.buttons === 1) navigate(e.clientX); }}
+      role="scrollbar"
+      aria-label="Minimapa dne — navigace po časové ose"
+      aria-valuenow={Math.round(viewport.left * 100)}
+    >
+      {/* Lanes s operacemi */}
+      {lanes.map((lane, i) => (
+        <div
+          key={lane.id}
+          className="absolute left-0 right-0"
+          style={{ top: `${i * laneH}%`, height: `${laneH}%`, padding: '1px 0' }}
+        >
+          {lane.emergency && (
+            <div className="absolute inset-0" style={{ background: `${C.red}28` }} />
+          )}
+          {lane.segs.map((s, j) => (
+            <div
+              key={j}
+              className={`absolute top-[15%] bottom-[15%] rounded-sm ${s.active ? 'animate-pulse' : ''}`}
+              style={{ left: `${s.l}%`, width: `${Math.max(0.4, s.w)}%`, background: s.color, opacity: s.active ? 0.95 : 0.55 }}
+            />
+          ))}
+        </div>
+      ))}
+      {/* Značka teď */}
+      <div
+        className="absolute top-0 bottom-0 w-px z-10 pointer-events-none"
+        style={{ left: `${nowPct}%`, background: C.cyan, boxShadow: `0 0 6px ${C.cyan}` }}
+      />
+      {/* Aktuální výřez */}
+      <motion.div
+        className="absolute top-0 bottom-0 z-20 rounded-md pointer-events-none"
+        animate={{ left: `${viewport.left * 100}%`, width: `${viewport.width * 100}%` }}
+        transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+        style={{ background: `${C.cyan}10`, border: `1.5px solid ${C.cyan}70`, boxShadow: `inset 0 0 12px ${C.cyan}15` }}
+      />
+    </div>
+  );
+};
 
 type SortMode = 'default' | 'name' | 'status';
 
@@ -86,6 +192,24 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const moduleRootRef = useRef<HTMLDivElement>(null);
+  // TV / fullscreen režim — pro nástěnnou obrazovku na operačním traktu
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+    } else {
+      void moduleRootRef.current?.requestFullscreen?.();
+    }
+  }, []);
 
   // Po každé změně dat (realtime/refetch) aktualizuj „poslední aktualizace"
   useEffect(() => { setLastUpdated(new Date()); }, [rooms]);
@@ -112,6 +236,30 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     container.scrollTo({ left: target, behavior: 'smooth' });
     if (timelineRef.current) timelineRef.current.scrollTo({ left: target, behavior: 'smooth' });
   }, []);
+
+  // Klávesové zkratky: T = skok na teď, + / − = zoom, / = hledání.
+  // Ignorují se, když uživatel píše do inputu.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 't' || e.key === 'T') {
+        scrollToNow();
+      } else if (e.key === '+' || e.key === '=') {
+        setZoom((z) => Math.min(4, Math.round((z + 0.5) * 2) / 2));
+      } else if (e.key === '-') {
+        setZoom((z) => Math.max(1, Math.round((z - 0.5) * 2) / 2));
+      } else if (e.key === '/') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [scrollToNow, toggleFullscreen]);
 
 
 
@@ -180,8 +328,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   }, [sortedRooms, searchQuery, sortMode]);
   
   // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
-  // Výpočet: dostupná výška = výška kontejneru - padding - gap mezi řádky
-  useEffect(() => {
+  // useLayoutEffect: výška se nastaví PŘED prvním vykreslením → žádné poskočení/blikání.
+  useLayoutEffect(() => {
     const calculateRowHeight = () => {
       const count = displayRooms.length;
       if (rowsContainerRef.current && count > 0) {
@@ -396,6 +544,107 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     return C.red;                         // červená — 0%
   };
 
+  /* --- KPI dle standardů řízení operačních sálů:
+     · Utilizace dne (% obsazení provozní doby) — z roomUtilization
+     · Ø přestavba (turnover time) — průměrná mezera mezi po sobě jdoucími
+       dnešními operacemi téhož sálu (mezery > 3 h se nepočítají — to už
+       není přestavba, ale prostoj/pauza programu)
+     · 1. start včas (first-case on-time start) — kolik % sálů zahájilo
+       první dnešní operaci do 15 minut od začátku provozní doby --- */
+  const orKpis = useMemo(() => {
+    const dayStart = new Date(currentTime);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayStartMs = dayStart.getTime();
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const todayKey = dayKeys[currentTime.getDay()];
+    const FCOTS_GRACE_MS = 15 * 60 * 1000;
+
+    let gapSumMin = 0;
+    let gapCount = 0;
+    let firstOnTime = 0;
+    let firstEligible = 0;
+
+    rooms.forEach((room) => {
+      const ops: Array<{ s: number; e: number }> = (room.completedOperations || [])
+        .map((op) => ({ s: new Date(op.startedAt).getTime(), e: new Date(op.endedAt).getTime() }))
+        .filter((o) => Number.isFinite(o.s) && Number.isFinite(o.e) && o.e > o.s && o.s >= dayStartMs)
+        .sort((a, b) => a.s - b.s);
+
+      // Probíhající operace se počítá jako další start (pro turnover i FCOTS)
+      if (room.operationStartedAt && room.currentStepIndex > 0 && !room.isLocked) {
+        const t = new Date(room.operationStartedAt).getTime();
+        if (Number.isFinite(t) && t >= dayStartMs) ops.push({ s: t, e: Number.POSITIVE_INFINITY });
+      }
+
+      for (let i = 1; i < ops.length; i++) {
+        const gapMin = (ops[i].s - ops[i - 1].e) / 60000;
+        if (Number.isFinite(gapMin) && gapMin >= 0 && gapMin <= 180) {
+          gapSumMin += gapMin;
+          gapCount++;
+        }
+      }
+
+      const todaySchedule = (room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE)[todayKey];
+      if (todaySchedule?.enabled && ops.length > 0) {
+        firstEligible++;
+        const planned = new Date(currentTime);
+        planned.setHours(todaySchedule.startHour, todaySchedule.startMinute, 0, 0);
+        if (ops[0].s <= planned.getTime() + FCOTS_GRACE_MS) firstOnTime++;
+      }
+    });
+
+    return {
+      utilizationPct: roomUtilization.totals.utilizationPct,
+      avgTurnoverMin: gapCount > 0 ? Math.round(gapSumMin / gapCount) : null,
+      fcotsPct: firstEligible > 0 ? Math.round((firstOnTime / firstEligible) * 100) : null,
+      fcotsDetail: firstEligible > 0 ? `${firstOnTime}/${firstEligible}` : null,
+    };
+  }, [rooms, currentTime, roomUtilization]);
+
+  /* --- Data pro minimapu dne (komprimované lanes všech zobrazených sálů) --- */
+  const minimapLanes = useMemo<MinimapLane[]>(() => {
+    const windowStart = new Date(currentTime);
+    windowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+    if (currentTime.getHours() < TIMELINE_START_HOUR) windowStart.setDate(windowStart.getDate() - 1);
+    const startMs = windowStart.getTime();
+    const spanMs = TIMELINE_HOURS * 3600_000;
+    const pct = (t: number) => Math.max(0, Math.min(100, ((t - startMs) / spanMs) * 100));
+
+    return displayRooms.map((room) => {
+      const segs: MinimapLane['segs'] = [];
+      (room.completedOperations || []).forEach((op) => {
+        const s = new Date(op.startedAt).getTime();
+        const e = new Date(op.endedAt).getTime();
+        if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
+        const l = pct(s);
+        const w = pct(e) - l;
+        if (w > 0) segs.push({ l, w, color: 'rgba(148, 163, 184, 0.85)' });
+      });
+      if (room.operationStartedAt && room.currentStepIndex > 0 && !room.isLocked) {
+        const s = new Date(room.operationStartedAt).getTime();
+        if (Number.isFinite(s)) {
+          const l = pct(s);
+          const w = pct(currentTime.getTime()) - l;
+          if (w >= 0) {
+            const safeIdx = Math.max(0, Math.min(room.currentStepIndex, activeStatuses.length - 1));
+            const color = activeStatuses[safeIdx]?.accent_color || activeStatuses[safeIdx]?.color || C.cyan;
+            segs.push({ l, w: Math.max(w, 0.4), color, active: true });
+          }
+        }
+      }
+      return { id: room.id, segs, emergency: !!room.isEmergency };
+    });
+  }, [displayRooms, currentTime, activeStatuses]);
+
+  /* --- Auto-sledování „teď": při zoomu drží aktuální čas v záběru --- */
+  const [autoFollowNow, setAutoFollowNow] = useState(false);
+  useEffect(() => {
+    if (!autoFollowNow || zoom <= 1) return;
+    scrollToNow();
+    const id = setInterval(scrollToNow, 30_000);
+    return () => clearInterval(id);
+  }, [autoFollowNow, zoom, scrollToNow]);
+
   // Formát minut → "6h 31m" (nebo "31m")
   const fmtMin = (min: number): string => {
     if (min <= 0) return '0m';
@@ -550,8 +799,15 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
   return (
     <div
+      ref={moduleRootRef}
       className="w-full h-full text-white overflow-hidden flex flex-col relative antialiased"
-      style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' }}
+      style={{
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+        textRendering: 'optimizeLegibility',
+        // Ve fullscreen (TV) režimu potřebuje root neprůhledné pozadí
+        ...(isFullscreen ? { background: C.bgDeep } : {}),
+      }}
     >
 
       {/* Room Detail Popup */}
@@ -777,33 +1033,48 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
             {/* Left: Live operations stats — control-center cluster */}
             <div className="flex-1 flex items-center justify-start min-w-0">
-              <div className="hidden lg:flex items-center gap-2">
-                {[
-                  { icon: Activity, label: 'Operace', value: stats.operations, color: C.cyan },
-                  { icon: Sparkles, label: 'Úklid', value: stats.cleaning, color: C.yellow },
-                  { icon: CheckCircle, label: 'Volné', value: stats.free, color: C.green },
-                ].map(({ icon: Icon, label, value, color }) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-2.5 h-14 rounded-2xl px-4"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
-                      border: `1px solid ${C.borderStrong}`,
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-                    }}
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: `${color}1a`, border: `1px solid ${color}33` }}
-                    >
-                      <Icon className="w-4 h-4" style={{ color }} />
-                    </div>
-                    <div className="leading-none">
-                      <p className="text-[9px] uppercase tracking-[0.2em] font-medium text-white/40 mb-1">{label}</p>
-                      <p className="text-lg font-bold tabular-nums leading-none" style={{ color: C.textHi }}>{value}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="hidden lg:flex items-center gap-3">
+                {/* ── KPI dle standardů OR managementu (utilizace · turnover · on-time start) ── */}
+                <div className="flex items-center h-14 rounded-2xl px-3 gap-3"
+                  style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
+                >
+                  {[
+                    {
+                      icon: BarChart3,
+                      label: 'Využití',
+                      value: `${orKpis.utilizationPct}%`,
+                      color: utilColor(orKpis.utilizationPct),
+                      hint: 'Obsazení provozní doby sálů dnešními operacemi',
+                    },
+                    {
+                      icon: Timer,
+                      label: 'Ø přestavba',
+                      value: orKpis.avgTurnoverMin !== null ? `${orKpis.avgTurnoverMin} min` : '—',
+                      color: C.blue,
+                      hint: 'Průměrný čas mezi koncem operace a začátkem další na stejném sále (turnover)',
+                    },
+                    {
+                      icon: Clock,
+                      label: '1. start včas',
+                      value: orKpis.fcotsPct !== null ? `${orKpis.fcotsPct}%` : '—',
+                      color: orKpis.fcotsPct === null ? C.slate : orKpis.fcotsPct >= 80 ? C.green : orKpis.fcotsPct >= 50 ? C.yellow : C.red,
+                      hint: orKpis.fcotsDetail
+                        ? `První operace zahájená do 15 min od začátku provozní doby (${orKpis.fcotsDetail} sálů)`
+                        : 'První operace zahájená do 15 min od začátku provozní doby',
+                    },
+                  ].map(({ icon: Icon, label, value, color, hint }, i) => (
+                    <React.Fragment key={label}>
+                      {i > 0 && <div className="w-px h-7 bg-white/10" />}
+                      <div className="flex items-center gap-2" title={hint}>
+                        <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color }} />
+                        <div className="leading-none">
+                          <p className="text-[8px] uppercase tracking-[0.18em] font-medium text-white/35 mb-1">{label}</p>
+                          <p className="text-sm font-bold tabular-nums leading-none" style={{ color }}>{value}</p>
+                        </div>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -812,14 +1083,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
                 {formatDate(currentTime)}
               </p>
-              <motion.p 
+              <motion.p
                 className="text-3xl font-bold tabular-nums tracking-tight flex items-baseline gap-1"
-                style={{ 
-                  color: C.textHi,
-                  textShadow: `0 0 40px ${C.cyan}40`,
-                }}
-                animate={{ opacity: [0.9, 1, 0.9] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                style={{ color: C.textHi }}
+                initial={false}
               >
                 <span>
                   {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
@@ -860,12 +1127,28 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               <div className="w-px h-6 bg-white/10 mx-0.5" />
 
+              {/* TV / fullscreen režim — nástěnná obrazovka */}
+              <button
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? 'Ukončit režim celé obrazovky' : 'Režim celé obrazovky (TV)'}
+                aria-pressed={isFullscreen}
+                title={isFullscreen ? 'Ukončit TV režim (F)' : 'TV režim — celá obrazovka (F)'}
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+                style={isFullscreen ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
+              >
+                {isFullscreen
+                  ? <Minimize2 className="w-4 h-4" />
+                  : <Maximize2 className="w-4 h-4 text-white/60" />}
+              </button>
+
+              <div className="w-px h-6 bg-white/10 mx-0.5" />
+
               {/* Souhrn dne */}
               <button
                 onClick={() => setShowSummary((v) => !v)}
-                aria-label="Souhrn dne"
+                aria-label="Statistický režim — stejná osa se statistikami dne"
                 aria-pressed={showSummary}
-                title="Souhrn dne"
+                title="Statistický režim — stejná osa, dnešní operace a vytížení sálů"
                 className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
                 style={showSummary ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
               >
@@ -931,6 +1214,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 onClick={() => setZoom((z) => Math.max(1, Math.round((z - 0.5) * 2) / 2))}
                 disabled={zoom <= 1}
                 aria-label="Oddálit časovou osu"
+                title="Oddálit (−)"
                 className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5"
               >
                 <ZoomOut className="w-4 h-4 text-white/60" />
@@ -948,6 +1232,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 onClick={() => setZoom((z) => Math.min(4, Math.round((z + 0.5) * 2) / 2))}
                 disabled={zoom >= 4}
                 aria-label="Přiblížit časovou osu"
+                title="Přiblížit (+)"
                 className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5"
               >
                 <ZoomIn className="w-4 h-4 text-white/60" />
@@ -959,16 +1244,28 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   <button
                     onClick={scrollToNow}
                     aria-label="Skok na aktuální čas"
-                    title="Skočit na aktuální čas"
+                    title="Skočit na aktuální čas (T)"
                     className="flex items-center gap-1.5 h-9 px-2.5 rounded-xl transition-colors hover:bg-white/5"
                     style={{ color: C.cyan }}
                   >
                     <Crosshair className="w-3.5 h-3.5" />
                     <span className="text-xs font-semibold">Teď</span>
                   </button>
+                  {/* Auto-sledování aktuálního času */}
+                  <button
+                    onClick={() => setAutoFollowNow((v) => !v)}
+                    aria-pressed={autoFollowNow}
+                    aria-label="Automaticky sledovat aktuální čas"
+                    title="Automaticky držet aktuální čas v záběru (obnovuje se každých 30 s)"
+                    className="h-9 px-2 rounded-xl text-[10px] font-bold tracking-widest transition-colors hover:bg-white/5"
+                    style={autoFollowNow ? { background: `${C.cyan}1f`, color: C.cyan } : { color: 'rgba(255,255,255,0.45)' }}
+                  >
+                    AUTO
+                  </button>
                 </>
               )}
             </div>
+
             {aroOvertimeRooms.length > 0 ? (
               <motion.button
                 onClick={() => setShowAroPopup(true)}
@@ -1028,130 +1325,16 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         </div>
       </div>
 
-      {/* ======== Statistiky vytížení — nahrazují časovou osu (na celé obrazovce, bez rolování) ======== */}
-      {showSummary && (
-        <motion.div
-          key="stats-fullscreen"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="hidden lg:flex flex-1 min-h-0 flex-col gap-2 relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10 pb-4"
-        >
-          {/* ── Header řádku: Názvy sloupců ── */}
-          <div className="flex-shrink-0 flex items-center gap-2 p-2 rounded-lg text-[10px] uppercase tracking-wide font-semibold text-white/40" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingLeft: '11px' }}>
-            <div style={{ width: 200, flexShrink: 0 }}>Sál</div>
-            <div style={{ width: 80, flexShrink: 0 }}>Využití</div>
-            <div style={{ width: 100, flexShrink: 0 }}>Operační čas</div>
-            <div style={{ width: 80, flexShrink: 0 }}>ARO</div>
-            <div style={{ width: 80, flexShrink: 0 }}>Úklid</div>
-            <div style={{ width: 80, flexShrink: 0 }}>Pauza</div>
-            <div className="flex-1">Timeline</div>
-          </div>
-
-          {/* ── Řádky sálů ── */}
-          <div className="flex-1 min-h-0 flex flex-col gap-1 overflow-hidden">
-            {roomUtilization.rows.map((r) => {
-              const closed = r.workingMinutes === 0;
-              const col = utilColor(r.utilizationPct);
-              // Vypočítat časy jednotlivých fází
-              const aroPhase = r.phases.find(p => p.name.includes('ARO') || p.name.includes('Příjezd'));
-              const cleaningPhase = r.phases.find(p => p.name.includes('Úklid'));
-              const pausePhase = r.phases.find(p => p.name.includes('Pauza') || p.name.includes('pauza'));
-              const operatingPhase = r.phases.find(p => p.name.includes('Chirurgický') || p.name.includes('operace'));
-
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => setStatsRoomId(r.id)}
-                  className="w-full flex-1 min-h-0 flex items-center gap-1.5 rounded-lg px-3 transition-colors hover:bg-white/[0.04] text-left cursor-pointer text-sm"
-                  style={{ background: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${col}` }}
-                >
-                  {/* Jméno sálu */}
-                  <div style={{ width: 200, flexShrink: 0 }}>
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col }} />
-                      <div className="flex flex-col min-w-0 leading-tight">
-                        <span className="text-xs font-semibold truncate" style={{ color: C.textHi }}>
-                          {r.name}
-                          {r.isEmergency && <span className="ml-1 text-[7px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
-                        </span>
-                        {r.department && <span className="text-[8px] text-white/35 truncate">{r.department}</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Využití % — v jemném boxu */}
-                  <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: col }}>{r.utilizationPct}%</span>
-                    </div>
-                  </div>
-
-                  {/* Operační čas — v jemném boxu */}
-                  <div style={{ width: 100, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: r.occupiedMinutes > 0 ? C.red : 'rgba(255,255,255,0.4)' }}>{r.occupiedMinutes > 0 ? `${r.occupiedMinutes}m` : '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* ARO — v jemném boxu */}
-                  <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{aroPhase ? `${aroPhase.minutes}m` : '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Úklid — v jemném boxu */}
-                  <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="font-semibold tabular-nums text-[11px] text-white/70">{cleaningPhase ? `${cleaningPhase.minutes}m` : '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Pauza — v jemném boxu */}
-                  <div style={{ width: 80, flexShrink: 0 }}>
-                    <div className="flex items-center justify-center rounded py-1 px-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="font-semibold tabular-nums text-[11px]" style={{ color: pausePhase ? C.yellow : 'rgba(255,255,255,0.4)' }}>{pausePhase ? `${pausePhase.minutes}m` : '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Timeline */}
-                  <div className="flex-1 min-w-0 flex items-center h-6 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                    {r.phases.length > 0 ? (
-                      r.phases.map((p, pi) => {
-                        const w = r.phaseTotalMs > 0 ? (p.ms / r.phaseTotalMs) * 100 : 0;
-                        return (
-                          <div
-                            key={pi}
-                            className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
-                            style={{ width: `${w}%`, minWidth: w > 0 ? 3 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < r.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
-                          >
-                            {w > 12 && <span className="text-[8px] font-bold text-white/95 tabular-nums px-0.5 truncate">{p.minutes}m</span>}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <span className="text-[10px] text-white/30 px-2">Bez operací</span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
-      )}
 
       {/* ======== Main Timeline - Premium Glass Container ======== */}
-      {!showSummary && (
       <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden px-8 md:pl-32 md:pr-10">
         
         {/* Time Axis Header - Premium Glass */}
         <div 
           className="flex flex-shrink-0 rounded-t-2xl relative overflow-hidden" 
           style={{ 
-            background: 'linear-gradient(180deg, #0f172a 0%, #0b1120 100%)', 
-            borderBottom: `1px solid ${C.borderStrong}`,
+            background: 'linear-gradient(180deg, rgba(13, 30, 41, 0.92) 0%, rgba(8, 22, 31, 0.92) 100%)',
+            border: `1px solid ${C.borderStrong}`,
             boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
           }}
         >
@@ -1174,10 +1357,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             >
               <Search className="w-3.5 h-3.5 flex-shrink-0 text-white/35" />
               <input
+                ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Hledat sál…"
+                onKeyDown={(e) => { if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur(); } }}
+                placeholder="Hledat sál…  ( / )"
                 className="flex-1 min-w-0 bg-transparent outline-none text-xs text-white placeholder:text-white/30"
                 aria-label="Hledat operační sál"
               />
@@ -1218,7 +1403,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           
           {/* Time markers - Premium style with elegant grid */}
           <div className="flex-1 overflow-hidden" ref={timelineRef}>
-            <div className="flex items-center h-12 relative" style={{ width: `${zoom * 100}%` }}>
+            <div className="flex items-center h-12 relative" style={{ width: `${zoom * 100}%`, transition: 'width 0.25s ease' }}>
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
                 const widthPct = 100 / TIMELINE_HOURS;
@@ -1240,30 +1425,28 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     <div 
                       className="absolute left-0 w-px h-full"
                       style={{ 
-                        background: isMajorHour 
-                          ? `linear-gradient(to bottom, ${C.cyan}20, ${C.cyan}08, transparent)` 
-                          : `linear-gradient(to bottom, ${C.border}, transparent)` 
+                        background: isMajorHour
+                          ? 'linear-gradient(to bottom, rgba(255,255,255,0.10), transparent)'
+                          : 'linear-gradient(to bottom, rgba(255,255,255,0.04), transparent)' 
                       }} 
                     />
                     {!isLast && (
                       isCurrentHour ? (
-                        /* Current hour - Glowing pill */
-                        <motion.span 
-                          className="text-[10px] font-mono font-bold px-3 py-1 rounded-full relative"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
-                            color: '#000',
+                        /* Current hour - Glowing pill (statická, tyrkysová dle reference) */
+                        <span
+                          className="text-[10px] font-mono font-bold px-3 py-1 rounded-md relative"
+                          style={{
+                            background: `linear-gradient(135deg, ${C.accent} 0%, #0E9CB8 100%)`,
+                            color: '#03242C',
                             boxShadow: C.glowCyan,
                           }}
-                          animate={{ scale: [1, 1.02, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
                         >
                           {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
-                        </motion.span>
+                        </span>
                       ) : (
                         /* Other hours */
-                        <span className={`text-[9px] font-mono font-medium tabular-nums transition-colors ${
-                          isNightHour ? 'text-white/20' : isMajorHour ? 'text-white/60' : 'text-white/35'
+                        <span className={`text-[11px] font-mono font-medium tabular-nums transition-colors ${
+                          isMajorHour ? 'text-white/70' : 'text-white/45'
                         }`}>
                           {hourLabelCompact(hour)}
                         </span>
@@ -1276,9 +1459,51 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           </div>
         </div>
 
+        {/* ── Minimapa dne — zobrazí se při zoomu, slouží k rychlé navigaci ── */}
+        <AnimatePresence>
+          {zoom > 1 && (
+            <motion.div
+              key="minimap"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="flex-shrink-0 overflow-hidden"
+              style={{
+                borderBottom: `1px solid ${C.border}`,
+                borderLeft: `1px solid ${C.borderStrong}`,
+                borderRight: `1px solid ${C.borderStrong}`,
+                background: 'rgba(5, 16, 23, 0.5)',
+              }}
+            >
+              <div className="flex items-center gap-3 px-4 py-1.5">
+                <span
+                  className="flex-shrink-0 text-[8px] uppercase tracking-[0.25em] font-semibold text-white/30"
+                  style={{ width: ROOM_LABEL_WIDTH - 32 }}
+                >
+                  Přehled dne · klikni pro přesun
+                </span>
+                <TimelineMinimap
+                  lanes={minimapLanes}
+                  nowPct={nowPercent}
+                  containerRef={rowsContainerRef}
+                  axisRef={timelineRef}
+                  zoom={zoom}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Room Rows Container - Premium Glass */}
-        <div 
-          className="flex-1 min-h-0 overflow-y-hidden overflow-x-auto rounded-b-2xl timeline-scroll" 
+        <div
+          className="flex-1 min-h-0 overflow-y-hidden overflow-x-auto rounded-b-2xl timeline-scroll"
+          style={{
+            borderLeft: `1px solid ${C.borderStrong}`,
+            borderRight: `1px solid ${C.borderStrong}`,
+            borderBottom: `1px solid ${C.borderStrong}`,
+            boxShadow: 'inset 0 12px 18px -14px rgba(0, 0, 0, 0.6)',
+          }}
           ref={rowsContainerRef}
           onScroll={(e) => {
             // Synchronizace horizontálního scrollu řádk�� s časovou osou nahoře
@@ -1291,7 +1516,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             style={{
               width: `${zoom * 100}%`,
               minWidth: `${zoom * 100}%`,
-              background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)',
+              background: 'rgba(7, 17, 25, 0.6)',
+              transition: 'width 0.25s ease, min-width 0.25s ease',
             }}
           >
             {/* Now indicator - Premium animated line with glow */}
@@ -1299,50 +1525,47 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               {nowPercent >= 0 && nowPercent <= 100 && (
                 <motion.div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
-                  style={{ 
+                  style={{
                     left: `calc(${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100}))`
                   }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={false}
                 >
                   {/* Glow effect — sladěno do tyrkysové (medical accent),
                       konzistentní s časovou osou nahoře. Červená je vyhrazena
                       pro stavy nouze, ne pro běžnou značku „teď". */}
-                  <div 
-                    className="absolute -left-4 top-0 bottom-0 w-8"
-                    style={{ 
-                      background: `linear-gradient(90deg, transparent, ${C.cyan}1f, transparent)`,
-                    }}
-                  />
                   {/* Main line */}
-                  <motion.div 
+                  {/* Statická „teď" linka — oranžová #FF9800, bez animací */}
+                  <div
                     className="absolute -left-[1px] top-0 bottom-0 w-[2px] rounded-full"
-                    style={{ 
-                      background: `linear-gradient(to bottom, ${C.cyan}, ${C.cyan}70)`,
-                      boxShadow: `0 0 8px ${C.cyan}, 0 0 18px ${C.cyan}55`,
+                    style={{
+                      background: '#FF9800',
+                      boxShadow: '0 0 6px #FF980080',
                     }}
-                    animate={{ opacity: [0.85, 1, 0.85] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
                   />
-                  {/* Floating time pill on the line */}
-                  <div 
-                    className="absolute -left-[1px] -top-[9px] -translate-x-1/2 px-1.5 py-[2px] rounded-md whitespace-nowrap"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${C.cyan} 0%, ${C.blue} 100%)`,
-                      boxShadow: `0 0 10px ${C.cyan}80`,
+                  {/* Floating time pill on the line — sladěná s oranžovou linkou */}
+                  <div
+                    className="absolute -left-[1px] -top-[11px] -translate-x-1/2 px-2 py-[3px] rounded-md whitespace-nowrap"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.45)',
                     }}
                   >
-                    <span className="text-[8px] font-bold font-mono tabular-nums leading-none" style={{ color: '#001018' }}>
+                    <span className="text-[10px] font-bold font-mono tabular-nums leading-none" style={{ color: '#2B1600' }}>
                       {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
                     </span>
                   </div>
-                  {/* Pulsing halo behind pill */}
-                  <motion.div 
-                    className="absolute -left-1 -top-1 w-2 h-2 rounded-full"
-                    style={{ background: C.cyan, boxShadow: `0 0 10px ${C.cyan}` }}
-                    animate={{ scale: [1, 1.6, 1], opacity: [0.7, 0, 0.7] }}
-                    transition={{ duration: 1.8, repeat: Infinity }}
-                  />
+                  {/* Štítek „Nyní" pod pilulkou */}
+                  <div
+                    className="absolute -left-[1px] top-[8px] -translate-x-1/2 px-1.5 py-[2px] rounded whitespace-nowrap"
+                    style={{
+                      background: 'rgba(6, 20, 28, 0.85)',
+                      border: '1px solid #FF980050',
+                    }}
+                  >
+                    <span className="text-[7px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: '#FF9800' }}>
+                      Nyní
+                    </span>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1362,17 +1585,40 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     className="absolute top-0 bottom-0"
                     style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
                   >
-                    {isNightHour && (
-                      <div className="absolute inset-0" style={{ background: 'rgba(2, 6, 23, 0.18)' }} />
+                    {displayHour === currentHour && (
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ background: `linear-gradient(180deg, ${C.accent}0a 0%, ${C.accent}03 100%)` }}
+                      />
                     )}
                     <div
                       className="absolute left-0 top-0 bottom-0 w-px"
                       style={{
                         background: isMajorHour
-                          ? `linear-gradient(to bottom, ${C.cyan}18, ${C.cyan}08)`
-                          : 'rgba(148, 163, 184, 0.06)',
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(255, 255, 255, 0.035)',
                       }}
                     />
+                    {/* Sub-hodinové dílky — objeví se až při zoomu, kdy mají smysl:
+                        zoom ≥ 2 → půlhodiny, zoom ≥ 3 → čtvrthodiny */}
+                    {zoom >= 2 && (
+                      <div
+                        className="absolute top-0 bottom-0 w-px"
+                        style={{ left: '50%', background: 'rgba(148, 163, 184, 0.045)' }}
+                      />
+                    )}
+                    {zoom >= 3 && (
+                      <>
+                        <div
+                          className="absolute top-0 bottom-0 w-px"
+                          style={{ left: '25%', background: 'rgba(148, 163, 184, 0.03)' }}
+                        />
+                        <div
+                          className="absolute top-0 bottom-0 w-px"
+                          style={{ left: '75%', background: 'rgba(148, 163, 184, 0.03)' }}
+                        />
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -1551,33 +1797,29 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               /* Active / Free / Locked row - Premium glass card design */
               return (
-                <motion.div
+                <div
                   key={room.id}
-                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 ${room.isLocked ? 'locked-room-glow' : ''}`}
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden transition-colors duration-300 ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
-                    background: isActive 
-                      ? `linear-gradient(135deg, ${stepColor}14 0%, ${stepColor}06 100%)`
-                      : `linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%)`,
-                    border: room.isLocked 
-                      ? `1.5px solid rgba(6, 182, 212, 0.4)`
-                      : `1px solid ${isActive ? `${stepColor}35` : C.border}`,
-                    boxShadow: isActive 
-                      ? `inset 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 20px ${stepColor}12, 0 0 40px ${stepColor}06` 
-                      : 'inset 0 1px 0 rgba(255,255,255,0.02)',
+                    background: isActive
+                      ? `linear-gradient(135deg, ${stepColor}0e 0%, rgba(255,255,255,0.012) 100%)`
+                      : 'rgba(255,255,255,0.015)',
+                    border: room.isLocked
+                      ? `1px solid ${C.borderActive}`
+                      : `1px solid ${isActive ? `${stepColor}26` : C.border}`,
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                   }}
-                  onClick={() => setSelectedRoom(room)}
+                  onClick={() => (showSummary ? setStatsRoomId(room.id) : setSelectedRoom(room))}
                 >
                   {/* Colored left accent bar - Premium enhanced */}
                   <div 
-                    className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl transition-all duration-300"
+                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl transition-all duration-300"
                     style={{ 
                       background: isActive 
                         ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`
                         : `linear-gradient(to bottom, ${C.slate}50, ${C.slate}20)`,
-                      boxShadow: isActive 
-                        ? `0 0 12px ${stepColor}80, 0 0 24px ${stepColor}40, inset 2px 0 8px ${stepColor}60` 
-                        : `0 0 6px ${C.slate}40, inset 1px 0 4px ${C.slate}60`,
+                      boxShadow: 'none',
                     }}
                   />
                   
@@ -1585,10 +1827,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   <div 
                     className="flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200 sticky left-0 z-20" 
                     style={{ 
-                      width: ROOM_LABEL_WIDTH, 
-                      minWidth: ROOM_LABEL_WIDTH, 
-                      borderRight: `1px solid ${C.border}`,
-                      background: zoom > 1 ? C.bgPanel : 'transparent',
+                      width: ROOM_LABEL_WIDTH,
+                      minWidth: ROOM_LABEL_WIDTH,
+                      borderRight: `1px solid ${C.borderStrong}`,
+                      // Karta sálu jako v referenčním designu — vždy tmavý panel
+                      background: 'linear-gradient(135deg, rgba(13, 32, 43, 0.92) 0%, rgba(9, 23, 32, 0.92) 100%)',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                     }}
                   >
                     {/* ARO Overtime Badge - Premium style */}
@@ -1605,8 +1849,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                               border: `1px solid ${C.yellow}50`,
                               boxShadow: `0 0 12px ${C.yellow}20`,
                             }}
-                            animate={{ scale: [1, 1.02, 1] }}
-                            transition={{ duration: 2, repeat: Infinity }}
                           >
                             <span className="text-[7px] font-bold tracking-wider" style={{ color: C.yellow }}>ARO</span>
                             <span className="text-xs font-bold text-white/90">{aroPosition}</span>
@@ -1677,8 +1919,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             background: stepColor,
                             boxShadow: `0 0 12px ${stepColor}, 0 0 24px ${stepColor}66`,
                           }}
-                          animate={{ scale: [1, 1.4, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
+                          animate={{ opacity: [0.55, 1, 0.55] }}
+                          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                         />
                       )}
 
@@ -1688,7 +1930,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           {room.name}
                         </p>
                         {room.department && rowHeight >= 42 && (
-                          <p className="text-[10px] text-white/40 truncate leading-tight mt-0.5">
+                          <p className="text-[9px] text-white/35 truncate leading-tight mt-0.5 uppercase tracking-[0.14em]">
                             {room.department}
                           </p>
                         )}
@@ -1738,14 +1980,24 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     {/* Locked room overlay — jeden velký, centrovaný nápis přes celý řádek.
                         Žádné další statusové texty se u uzamčeného sálu nezobrazují. */}
                     {room.isLocked && (
-                      <div className="absolute inset-0 flex items-center justify-center gap-3 z-20 pointer-events-none">
-                        <Lock className="w-6 h-6 flex-shrink-0" style={{ color: C.cyan, opacity: 0.9, filter: 'drop-shadow(0 0 8px rgba(6,182,212,0.6))' }} />
-                        <span 
-                          className="text-lg font-bold uppercase tracking-[0.3em] whitespace-nowrap"
-                          style={{ color: 'rgba(255,255,255,0.95)', textShadow: `0 0 24px ${C.cyan}66` }}
+                      <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                        {/* Outlined pill dle referenčního designu */}
+                        <div
+                          className="flex items-center gap-2.5 px-5 py-1.5 rounded-lg"
+                          style={{
+                            background: 'rgba(6, 20, 28, 0.78)',
+                            border: '1.5px solid rgba(255, 255, 255, 0.28)',
+                            boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
+                          }}
                         >
-                          SÁL UZAVŘEN
-                        </span>
+                          <Lock className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.85)' }} />
+                          <span
+                            className="text-sm font-bold uppercase tracking-[0.25em] whitespace-nowrap"
+                            style={{ color: 'rgba(255,255,255,0.92)' }}
+                          >
+                            SÁL UZAVŘEN
+                          </span>
+                        </div>
                       </div>
                     )}
                     {/* Hodinová mřížka se kreslí globálně přes všechny řádky
@@ -1753,8 +2005,105 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
                         noční výpo��et. */}
 
+                    {/* ── Souhrnný (statistický) režim: STEJNÁ časová osa, jen místo živé
+                        operace zobrazuje všechny dnešní operace po fázích + statistiky řádku ── */}
+                    {showSummary && !room.isLocked && (() => {
+                      const summaryWindowStart = new Date(currentTime);
+                      summaryWindowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+                      if (currentTime.getHours() < TIMELINE_START_HOUR) {
+                        summaryWindowStart.setDate(summaryWindowStart.getDate() - 1);
+                      }
+                      const stepColorMap: Record<number, string> = {};
+                      activeStatuses.forEach((s, idx) => {
+                        stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
+                      });
+                      type Seg = { l: number; w: number; color: string; name: string };
+                      const segs: Seg[] = [];
+                      const addHistory = (
+                        history: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }> | undefined,
+                        fallbackStart: number,
+                        opEnd: number,
+                      ) => {
+                        const hist = history && history.length > 0
+                          ? history
+                          : [{ stepIndex: 1, startedAt: new Date(fallbackStart).toISOString() }];
+                        hist.forEach((entry, idx) => {
+                          const s = new Date(entry.startedAt).getTime();
+                          const e = idx + 1 < hist.length ? new Date(hist[idx + 1].startedAt).getTime() : opEnd;
+                          if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
+                          const l = getTimePercentForTimeline(new Date(s), summaryWindowStart);
+                          const r = getTimePercentForTimeline(new Date(e), summaryWindowStart);
+                          const w = Math.min(100, r) - Math.max(0, l);
+                          if (w <= 0) return;
+                          segs.push({
+                            l: Math.max(0, l),
+                            w,
+                            color: stepColorMap[entry.stepIndex] || entry.color || C.slate,
+                            name: entry.stepName || activeStatuses[entry.stepIndex]?.name || 'Fáze',
+                          });
+                        });
+                      };
+                      (room.completedOperations || []).forEach((op) => {
+                        const s = new Date(op.startedAt).getTime();
+                        const e = new Date(op.endedAt).getTime();
+                        if (Number.isFinite(s) && Number.isFinite(e) && e > s) addHistory(op.statusHistory, s, e);
+                      });
+                      if (room.operationStartedAt && room.currentStepIndex > 0) {
+                        addHistory(room.statusHistory, new Date(room.operationStartedAt).getTime(), currentTime.getTime());
+                      }
+                      const u = roomUtilization.rows.find((x) => x.id === room.id);
+                      const uc = u ? utilColor(u.utilizationPct) : C.slate;
+                      return (
+                        <>
+                          {segs.map((sg, i) => (
+                            <div
+                              key={`sum-${i}`}
+                              className="absolute top-[20%] bottom-[20%] rounded-[4px]"
+                              title={sg.name}
+                              style={{
+                                left: `${sg.l}%`,
+                                width: `${Math.max(0.35, sg.w)}%`,
+                                background: `linear-gradient(180deg, ${sg.color}cc 0%, ${sg.color}77 100%)`,
+                                boxShadow: `0 0 10px ${sg.color}30, inset 0 1px 0 rgba(255,255,255,0.18)`,
+                              }}
+                            />
+                          ))}
+                          {segs.length === 0 && (
+                            <div className="absolute inset-0 flex items-center pl-4 pointer-events-none">
+                              <span className="text-[10px] text-white/25">Dnes zatím žádné operace</span>
+                            </div>
+                          )}
+                          {u && (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none z-10">
+                              <span
+                                className="px-2 py-0.5 rounded-md text-[10px] font-bold tabular-nums"
+                                style={{ background: `${uc}1f`, color: uc, border: `1px solid ${uc}40` }}
+                                title="Vytížení provozní doby"
+                              >
+                                {u.utilizationPct}%
+                              </span>
+                              <span
+                                className="px-2 py-0.5 rounded-md text-[10px] font-semibold tabular-nums text-white/70"
+                                style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}` }}
+                                title="Počet dnešních operací"
+                              >
+                                {u.operations} op
+                              </span>
+                              <span
+                                className="px-2 py-0.5 rounded-md text-[10px] font-semibold tabular-nums text-white/70"
+                                style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}` }}
+                                title="Obsazený operační čas"
+                              >
+                                {Math.floor(u.occupiedMinutes / 60)}h {String(u.occupiedMinutes % 60).padStart(2, '0')}m
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
                     {/* Waiting bar — Shows patient waiting in operating tract before operation starts */}
-                    {!room.isLocked && room.patientArrivedAt && (() => {
+                    {!showSummary && !room.isLocked && room.patientArrivedAt && (() => {
                       const arrivedTime = new Date(room.patientArrivedAt).getTime();
                       
                       // Určit konec čekání - buď start operace, nebo aktuální čas pokud operace běží
@@ -1837,7 +2186,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-sm group"
+                            className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-lg group"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
@@ -1860,7 +2209,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (
-                                <div className="absolute inset-0 flex overflow-hidden rounded-sm">
+                                <div className="absolute inset-0 flex overflow-hidden rounded-lg">
                                   {(() => {
                                     // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
                                     // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
@@ -1905,12 +2254,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
-                                            // Jemnější (průhlednější) barva pro již proběhlé fáze —
-                                            // zůstávají rozpoznatelné, ale nepůsobí tak agresivně jako
-                                            // aktivní výkon.
-                                            background: `linear-gradient(180deg, ${phaseColor}99 0%, ${phaseColor}66 100%)`,
-                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.28)` : 'none',
-                                            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 0 6px ${phaseColor}40`,
+                                            // Již proběhlé statusy jen jako průsvitná stopa —
+                                            // rozpoznatelné barvou, ale vizuálně ustupují živému dění.
+                                            background: `linear-gradient(180deg, ${phaseColor}59 0%, ${phaseColor}36 100%)`,
+                                            borderRight: idx < operation.statusHistory.length - 1 ? `1px solid rgba(0,0,0,0.22)` : 'none',
+                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                           initial={{ opacity: 0 }}
@@ -2092,30 +2440,34 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       );
                     })()}
                     
-                    {isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
+                    {!showSummary && isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         className="absolute top-0.5 bottom-0.5 overflow-hidden rounded-lg"
                         style={{ 
                           left: `${Math.max(0, boxLeftPct)}%`, 
                           width: `${boxWidthPct}%`,
                           background: `linear-gradient(135deg, ${stepColor}18 0%, ${stepColor}08 100%)`,
-                          boxShadow: `0 0 28px ${stepColor}35, inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3)`,
-                          border: `1.5px solid ${stepColor}50`,
+                          boxShadow: `0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)`,
+                          border: `1px solid ${stepColor}45`,
                           backdropFilter: 'blur(3px)',
                         }}
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3 }}
+                        initial={false}
                         onMouseEnter={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY })}
                         onMouseMove={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY })}
                         onMouseLeave={() => setHoveredOp(null)}
                       >
+                        {/* Svítící bod na živém konci lišty — ukazuje, kde operace „roste" */}
+                        <div
+                          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1.5 h-1.5 rounded-full z-20 pointer-events-none"
+                          style={{ background: stepColor, border: '1.5px solid rgba(255,255,255,0.85)' }}
+                        />
+
                         {/* Enhanced left border with premium glow */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg"
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
                           style={{ 
                             background: `linear-gradient(to bottom, ${stepColor}, ${stepColor}ee)`,
-                            boxShadow: `0 0 16px ${stepColor}80, 0 0 32px ${stepColor}50, inset 2px 0 8px ${stepColor}60`,
+                            boxShadow: 'none',
                           }}
                         />
                         
@@ -2172,16 +2524,37 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                           bottom: 0,
                                           left: `${Math.max(0, segLeftPct)}%`,
                                           width: `${Math.max(0.5, segWidthPct)}%`,
-                                          background: `linear-gradient(180deg, ${phaseColor}50 0%, ${phaseColor}25 100%)`,
+                                          // Proběhlé fáze jen jako jemný průsvitný otisk,
+                                          // sytou barvu nese pouze právě probíhající fáze.
+                                          background: isCurrentSegment
+                                            ? `linear-gradient(180deg, ${phaseColor}66 0%, ${phaseColor}33 100%)`
+                                            : `linear-gradient(180deg, ${phaseColor}40 0%, ${phaseColor}26 100%)`,
                                           borderRight: !isCurrentSegment ? `1px solid rgba(0,0,0,0.3)` : 'none',
-                                          boxShadow: isCurrentSegment 
+                                          boxShadow: isCurrentSegment
                                             ? `inset 0 1px 0 rgba(255,255,255,0.15), inset -1px 0 0 ${phaseColor}80`
                                             : 'inset 0 1px 0 rgba(255,255,255,0.1)',
                                         }}
                                         title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                                      />
+                                      >
+                                      </div>
                                     );
                                   })}
+                                  {/* Šikmé šrafování přes část statusu ZA aktuálním časem —
+                                      jasně odlišuje plán/projekci od už proběhlé reality */}
+                                  {now < estimatedEndTime && (() => {
+                                    const nowPctInBar = ((now - operationStart) / totalDuration) * 100;
+                                    if (nowPctInBar >= 100) return null;
+                                    return (
+                                      <div
+                                        className="absolute top-0 bottom-0 right-0 z-10 pointer-events-none"
+                                        style={{
+                                          left: `${Math.max(0, nowPctInBar)}%`,
+                                          background: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 5px, rgba(0,0,0,0.22) 5px, rgba(0,0,0,0.22) 10px)',
+                                        }}
+                                      />
+                                    );
+                                  })()}
+
                                   {/* Animated edge glow on rightmost segment */}
                                   <div 
                                     className="absolute right-0 top-0 bottom-0 w-px z-10"
@@ -2264,6 +2637,17 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                   />
                                 </div>
                                 
+                                {/* Šikmé šrafování za aktuálním časem (fallback bez historie) */}
+                                {progressPct < 100 && (
+                                  <div
+                                    className="absolute top-0 bottom-0 right-0 pointer-events-none"
+                                    style={{
+                                      left: `${Math.max(0, progressPct)}%`,
+                                      background: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 5px, rgba(0,0,0,0.22) 5px, rgba(0,0,0,0.22) 10px)',
+                                    }}
+                                  />
+                                )}
+
                                 {/* Patient called and arrived timeline markers - fallback */}
                                 {room.patientCalledAt && (() => {
                                   const calledTime = new Date(room.patientCalledAt).getTime();
@@ -2304,6 +2688,31 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             );
                           })()}
                         </div>
+
+                        {/* Skluz (overrun) — úsek lišty za odhadovaným koncem operace.
+                            Standard světových OR systémů: okamžitě viditelné překročení
+                            plánovaného času (červené šrafování + přerušovaná hranice). */}
+                        {(() => {
+                          if (!room.estimatedEndTime || room.isPaused) return null;
+                          const estMs = new Date(room.estimatedEndTime).getTime();
+                          if (!Number.isFinite(estMs)) return null;
+                          const overrunMs = currentTime.getTime() - estMs;
+                          if (overrunMs < 60 * 1000) return null; // skluz < 1 min neřešíme
+                          const startMs = startDate.getTime();
+                          const span = Math.max(1, endDate.getTime() - startMs);
+                          const leftPct = Math.max(0, Math.min(100, ((estMs - startMs) / span) * 100));
+                          return (
+                            <div
+                              className="absolute top-0 bottom-0 right-0 z-[6] pointer-events-none rounded-r-lg overflow-hidden"
+                              style={{
+                                left: `${leftPct}%`,
+                                background: `repeating-linear-gradient(135deg, ${C.red}30 0px, ${C.red}30 6px, ${C.red}12 6px, ${C.red}12 12px)`,
+                                borderLeft: `1.5px dashed ${C.red}b0`,
+                                boxShadow: `inset 0 0 12px ${C.red}25`,
+                              }}
+                            />
+                          );
+                        })()}
 
                         {/* Content overlay - Premium card content */}
                         {(() => {
@@ -2350,20 +2759,31 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                 </div>
                               )}
                               
-                              {/* Time info on right - Premium pill */}
-                              {showRightBadge && (
-                                <motion.div 
+                              {/* Time info on right - Premium pill (červená při skluzu) */}
+                              {showRightBadge && (() => {
+                                const isOverrun = remainingTime.startsWith('-');
+                                return (
+                                <motion.div
                                   className="flex-shrink-0 px-3 py-1.5 rounded-lg"
                                   style={{
-                                    background: `linear-gradient(135deg, ${C.bgSurface} 0%, rgba(0,0,0,0.3) 100%)`,
-                                    border: `1px solid ${C.border}`,
+                                    background: isOverrun
+                                      ? `linear-gradient(135deg, ${C.red}2a 0%, ${C.red}12 100%)`
+                                      : `linear-gradient(135deg, ${C.bgSurface} 0%, rgba(0,0,0,0.3) 100%)`,
+                                    border: isOverrun ? `1px solid ${C.red}60` : `1px solid ${C.border}`,
+                                    boxShadow: isOverrun ? `0 0 10px ${C.red}30` : undefined,
                                   }}
+                                  animate={isOverrun ? { opacity: [0.85, 1, 0.85] } : undefined}
+                                  transition={isOverrun ? { duration: 1.6, repeat: Infinity } : undefined}
                                 >
-                                  <p className="text-[11px] text-white/80 font-mono font-medium">
-                                    {remainingTime}
+                                  <p
+                                    className="text-[11px] font-mono font-medium"
+                                    style={{ color: isOverrun ? '#FCA5A5' : 'rgba(255,255,255,0.8)' }}
+                                  >
+                                    {isOverrun ? `skluz ${remainingTime.slice(1)}` : remainingTime}
                                   </p>
                                 </motion.div>
-                              )}
+                                );
+                              })()}
                             </div>
                           )}
                         </div>
@@ -2375,26 +2795,18 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     {/* Free room indicator — kompaktní pill zarovnaný na PRAVOU stranu řádku.
                         Záměrně NEzabírá celou šířku, aby nepřekrýval barvy již proběhlých
                         statusů (dokončené operace) na levé ��ásti časové osy. */}
-                    {isFree && !room.isLocked && (
+                    {!showSummary && isFree && !room.isLocked && (
                       <motion.div 
-                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-xl overflow-hidden"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${C.green}26 0%, ${C.green}12 100%)`,
-                          border: `1px solid ${C.green}3a`,
-                          boxShadow: `0 0 16px ${C.green}12, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-lg overflow-hidden"
+                        style={{
+                          // Outlined pilulka „Sál připraven" dle referenčního designu
+                          background: `${C.green}0d`,
+                          border: `1px solid ${C.green}55`,
+                          boxShadow: `0 0 12px ${C.green}10`,
                         }}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3 }}
+                        initial={false}
                       >
-                        {/* Ikona s jemnou pulzující svatozáří */}
                         <div className="relative flex-shrink-0">
-                          <motion.div
-                            className="absolute inset-0 rounded-lg"
-                            style={{ background: C.green }}
-                            animate={{ opacity: [0, 0.18, 0], scale: [0.9, 1.25, 0.9] }}
-                            transition={{ duration: 2.4, repeat: Infinity }}
-                          />
                           <div 
                             className="relative w-6 h-6 rounded-lg flex items-center justify-center"
                             style={{ 
@@ -2439,6 +2851,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       // Barva NEZÁVISÍ na aktuálním statusu — má vlastní oranžovou identitu,
                       // aby byla na časové ose okam��itě rozpoznatelná např��č sály a statusy.
                       return (
+                        <>
                         <div
                           className="absolute top-0 bottom-0 z-20 group/eohours"
                           style={{ left: `${endPercent}%` }}
@@ -2448,7 +2861,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           <div
                             className="absolute inset-y-0 left-0 w-px"
                             style={{
-                              backgroundImage: 'repeating-linear-gradient(to bottom, rgba(249,115,22,0.55) 0px, rgba(249,115,22,0.55) 4px, transparent 4px, transparent 9px)',
+                              backgroundImage: 'repeating-linear-gradient(to bottom, rgba(54,217,236,0.55) 0px, rgba(54,217,236,0.55) 4px, transparent 4px, transparent 9px)',
                             }}
                           />
                           {/* Kompaktní amber chip s časem.
@@ -2456,30 +2869,29 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                               řádky, zobrazujeme čas trvale jen na PRVNÍM řádku;
                               na ostatních se odhalí při najetí myší na čáru
                               (čára „konec provozní doby" zůstává na každém řádku). */}
+                          {/* Čas konce směny viditelný na KAŽDÉM řádku (dle referenčního designu) */}
                           <div
-                            className={`absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none transition-opacity duration-150 ${
-                              roomIndex === 0 ? 'opacity-100' : 'opacity-0 group-hover/eohours:opacity-100'
-                            }`}
+                            className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none opacity-90"
                             style={{
-                              background: 'rgba(249, 115, 22, 0.12)',
-                              border: '1px solid rgba(249, 115, 22, 0.28)',
-                              color: 'rgba(251, 191, 132, 0.95)',
+                              background: 'rgba(54, 217, 236, 0.10)',
+                              border: '1px solid rgba(54, 217, 236, 0.30)',
+                              color: 'rgba(178, 235, 244, 0.95)',
                             }}
                           >
                             {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
                           </div>
                         </div>
+                        </>
                       );
                     })()}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
             </div>
           </div>
         </div>
       </div>
-      )}
 
       </div>{/* end desktop wrapper */}
     </div>

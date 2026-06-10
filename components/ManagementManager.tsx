@@ -7,7 +7,7 @@ import {
   Shield, Users, Loader2, Bell, AlertTriangle, BarChart3, FileText,
   Clock, AlertCircle, CheckCircle2, Zap
 } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 interface ManagementContact {
   id: string;
@@ -287,15 +287,14 @@ export default function ManagementManager() {
     }
   }, []);
 
+  // Čtení i zápis jde přes autentizované API routes (/api/management-contacts),
+  // ne přímo přes Supabase anon klíč — díky tomu lze zamknout RLS (viz scripts/12-harden-rls.sql).
   const fetchContacts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('management_contacts')
-        .select('*')
-        .order('sort_order', { ascending: true });
-
-      if (error) throw error;
-      setContacts(data || []);
+      const response = await fetch('/api/management-contacts');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      setContacts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('[v0] Error fetching contacts:', error);
     } finally {
@@ -306,11 +305,16 @@ export default function ManagementManager() {
   const handleSave = async (updated: ManagementContact) => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('management_contacts')
-        .upsert({ ...updated, updated_at: new Date().toISOString() });
-
-      if (error) throw error;
+      const isNew = updated.id.startsWith('new-');
+      const response = await fetch('/api/management-contacts', {
+        method: isNew ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(isNew ? { ...updated, id: undefined } : updated),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${response.status}`);
+      }
       await fetchContacts();
       setSelectedContact(null);
       setShowNewForm(false);
@@ -323,12 +327,10 @@ export default function ManagementManager() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('management_contacts')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      const response = await fetch(`/api/management-contacts?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       await fetchContacts();
       setSelectedContact(null);
     } catch (error) {

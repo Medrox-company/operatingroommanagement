@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 // Generate or get device ID from localStorage
 function getOrCreateDeviceId(): string {
@@ -87,14 +88,15 @@ async function registerDevice() {
  */
 export const DeviceRegistration: React.FC = () => {
   const registeredRef = useRef(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Register device on mount (only once per session)
-    if (!registeredRef.current) {
+    // Registruj zařízení až po přihlášení (API endpoint vyžaduje session)
+    if (isAuthenticated && !registeredRef.current) {
       registeredRef.current = true;
       registerDevice();
     }
-  }, []);
+  }, [isAuthenticated]);
 
   return null;
 };

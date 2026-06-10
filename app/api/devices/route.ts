@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireSession, requireAdmin } from '@/lib/auth/server';
+import { assertSameOrigin } from '@/lib/auth/csrf';
+import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
+
+export const runtime = 'nodejs';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -11,8 +16,11 @@ function getSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// GET - List all devices
+// GET - List all devices (jen přihlášení — seznam obsahuje IP adresy zařízení)
 export async function GET() {
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+
   const supabase = getSupabase();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -39,8 +47,25 @@ export async function GET() {
   }
 }
 
-// POST - Register or update a device
+// POST - Register or update a device (jen přihlášení + rate limit)
 export async function POST(request: NextRequest) {
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
+  const rl = rateLimit(`devices:${getClientIdentifier(request.headers)}`, {
+    limit: 30,
+    windowMs: 60 * 1000,
+  });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Příliš mnoho požadavků' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
+    );
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -49,6 +74,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { device_id, device_name, device_type, platform, browser, is_pwa_installed } = body;
+
+    if (typeof device_id !== 'string' || device_id.length > 128) {
+      return NextResponse.json({ error: 'Invalid device_id' }, { status: 400 });
+    }
 
     // Get IP address from request headers
     const forwardedFor = request.headers.get('x-forwarded-for');
@@ -121,8 +150,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH - Update device (activate/deactivate, rename)
+// PATCH - Update device (activate/deactivate, rename) — pouze admin
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
   const supabase = getSupabase();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -162,8 +197,14 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE - Remove a device
+// DELETE - Remove a device — pouze admin
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
   const supabase = getSupabase();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });

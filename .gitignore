@@ -55,3 +55,6 @@ operatingroom-mobile/.idea/
 # OS
 operatingroom-mobile/.DS_Store
 operatingroom-mobile/Thumbs.db
+
+# Build cache
+tsconfig.tsbuildinfo

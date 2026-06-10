@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth/server';
+import { assertSameOrigin } from '@/lib/auth/csrf';
+
+export const runtime = 'nodejs';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const supabase = supabaseUrl && supabaseKey 
+const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey)
   : null;
 
@@ -27,20 +31,33 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }
 
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, ...rawUpdates } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Status ID is required' }, { status: 400 });
     }
 
-    // Add updated_at timestamp
+    // Povol jen známé sloupce (ochrana proti mass-assignment)
+    const ALLOWED_FIELDS = [
+      'name', 'description', 'accent_color', 'icon', 'sort_order',
+      'default_duration_minutes', 'is_active', 'is_special', 'include_in_statistics',
+    ] as const;
+    const updates: Record<string, unknown> = {};
+    for (const field of ALLOWED_FIELDS) {
+      if (field in rawUpdates) updates[field] = rawUpdates[field];
+    }
     updates.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -58,7 +75,12 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }
@@ -101,7 +123,12 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }

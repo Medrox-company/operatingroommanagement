@@ -113,10 +113,12 @@ const AppContent: React.FC = () => {
     currentViewRef.current = currentView;
   }, [currentView]);
 
-  // Load rooms on mount (one-time fetch). Supabase Realtime handles all subsequent updates.
+  // Load rooms after login (one-time fetch). Supabase Realtime handles all subsequent updates.
+  // /api/rooms nově vyžaduje session, proto načítáme až po přihlášení.
   useEffect(() => {
+    if (!isAuthenticated) return;
     let isMounted = true;
-    
+
     const loadRooms = async () => {
       try {
         const controller = new AbortController();
@@ -140,11 +142,11 @@ const AppContent: React.FC = () => {
     
     // Initial load only - Supabase Realtime handles updates
     loadRooms();
-    
+
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   // Ruční obnovení dat (Timeline modul) — Realtime řeší většinu, tohle je „force refresh".
   const refreshRooms = useCallback(async () => {
