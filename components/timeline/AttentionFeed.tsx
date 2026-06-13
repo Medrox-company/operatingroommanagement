@@ -75,7 +75,7 @@ const AttentionFeed: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime, o
         const estEnd = new Date(r.estimatedEndTime).getTime();
         if (now > estEnd) {
           const slip = Math.round((now - estEnd) / 60000);
-          if (slip >= 5) out.push({ roomId: r.id, roomName: r.name, severity: 'warning', icon: Clock, title: 'Operace ve skluzu', detail: `Překračuje odhad o ${fmtMin(slip)}`, sortKey: 600 + slip });
+          if (slip >= 5) out.push({ roomId: r.id, roomName: r.name, severity: 'warning', icon: Clock, title: 'Operační výkon přesahující odhadované ukončení', detail: `Překračuje odhad o ${fmtMin(slip)}`, sortKey: 600 + slip });
         }
       }
       // 3) Pacient volaný a nedorazil

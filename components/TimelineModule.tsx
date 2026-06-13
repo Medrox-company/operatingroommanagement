@@ -8,14 +8,15 @@ import AroOvertimePopup from './AroOvertimePopup';
 import CapacityForecast from './timeline/CapacityForecast';
 import DayStatistics from './timeline/DayStatistics';
 import DelaySimulator from './timeline/DelaySimulator';
-import ORRadar from './timeline/ORRadar';
 import PhaseFingerprint from './timeline/PhaseFingerprint';
 import AttentionFeed from './timeline/AttentionFeed';
+import PatientFlow from './timeline/PatientFlow';
+import PhaseOptimizer from './timeline/PhaseOptimizer';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
   Search, ZoomIn, ZoomOut, Maximize2, Minimize2,
-  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown, Timer, History, TrendingUp, SlidersHorizontal, Radar, Fingerprint, BellRing
+  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown, Timer, History, TrendingUp, SlidersHorizontal, Fingerprint, BellRing, Workflow, Zap
 } from 'lucide-react';
 
 // ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
@@ -186,9 +187,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const [showForecast, setShowForecast] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
-  const [showRadar, setShowRadar] = useState(false);
   const [showFingerprint, setShowFingerprint] = useState(false);
   const [showAttention, setShowAttention] = useState(false);
+  const [showPatientFlow, setShowPatientFlow] = useState(false);
+  const [showPhaseOptimizer, setShowPhaseOptimizer] = useState(false);
   // --- Nové funkce: vyhledávání, filtr stavu, zoom časové osy, hover tooltip ---
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'free'>('all');
@@ -886,6 +888,16 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       }}
     >
 
+      {/* Ambient aurora pozadí — pomalu plující barevné orby dodávají hloubku
+          (jen desktop, za veškerým obsahem). Respektuje prefers-reduced-motion. */}
+      {!isFullscreen && (
+        <div className="hidden md:block absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className="tl-aurora tl-aurora-1" />
+          <div className="tl-aurora tl-aurora-2" />
+          <div className="tl-aurora tl-aurora-3" />
+        </div>
+      )}
+
       {/* Room Detail Popup */}
       <AnimatePresence>
         {selectedRoom && (
@@ -1043,15 +1055,21 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         currentTime={currentTime}
         onSelectRoom={(id) => { setShowAttention(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
       />
+      <PatientFlow
+        isOpen={showPatientFlow}
+        onClose={() => setShowPatientFlow(false)}
+        rooms={rooms}
+        onSelectRoom={(id) => { setShowPatientFlow(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
+      />
+      <PhaseOptimizer
+        isOpen={showPhaseOptimizer}
+        onClose={() => setShowPhaseOptimizer(false)}
+        rows={roomUtilization.rows}
+        onSelectRoom={(id) => { setShowPhaseOptimizer(false); setStatsRoomId(id); }}
+      />
       <DelaySimulator
         isOpen={showSimulator}
         onClose={() => setShowSimulator(false)}
-        rooms={rooms}
-        currentTime={currentTime}
-      />
-      <ORRadar
-        isOpen={showRadar}
-        onClose={() => setShowRadar(false)}
         rooms={rooms}
         currentTime={currentTime}
       />
@@ -1151,72 +1169,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             {/* Left: Live operations stats — control-center cluster */}
             <div className="flex-1 flex items-center justify-start min-w-0">
               <div className="hidden lg:flex items-center gap-3">
-                {/* ── KPI dle standardů OR managementu (utilizace · turnover · on-time start) ── */}
-                <div className="flex items-center h-14 rounded-2xl px-3 gap-3"
-                  style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
-                >
-                  {[
-                    {
-                      icon: BarChart3,
-                      label: 'Využití',
-                      value: `${orKpis.utilizationPct}%`,
-                      color: utilColor(orKpis.utilizationPct),
-                      hint: 'Obsazení provozní doby sálů dnešními operacemi',
-                    },
-                    {
-                      icon: Timer,
-                      label: 'Ø přestavba',
-                      value: orKpis.avgTurnoverMin !== null ? `${orKpis.avgTurnoverMin} min` : '—',
-                      color: C.blue,
-                      hint: 'Průměrný čas mezi koncem operace a začátkem další na stejném sále (turnover)',
-                    },
-                    {
-                      icon: Clock,
-                      label: '1. start včas',
-                      value: orKpis.fcotsPct !== null ? `${orKpis.fcotsPct}%` : '—',
-                      color: orKpis.fcotsPct === null ? C.slate : orKpis.fcotsPct >= 80 ? C.green : orKpis.fcotsPct >= 50 ? C.yellow : C.red,
-                      hint: orKpis.fcotsDetail
-                        ? `První operace zahájená do 15 min od začátku provozní doby (${orKpis.fcotsDetail} sálů)`
-                        : 'První operace zahájená do 15 min od začátku provozní doby',
-                    },
-                  ].map(({ icon: Icon, label, value, color, hint }, i) => (
-                    <React.Fragment key={label}>
-                      {i > 0 && <div className="w-px h-7 bg-white/10" />}
-                      <div className="flex items-center gap-2" title={hint}>
-                        <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color }} />
-                        <div className="leading-none">
-                          <p className="text-[8px] uppercase tracking-[0.18em] font-medium text-white/35 mb-1">{label}</p>
-                          <p className="text-sm font-bold tabular-nums leading-none" style={{ color }}>{value}</p>
-                        </div>
-                      </div>
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Center: Current Time (no box, just prominent display) */}
-            <div className="flex flex-col items-center justify-center flex-shrink-0">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
-                {formatDate(currentTime)}
-              </p>
-              <motion.p
-                className="text-3xl font-bold tabular-nums tracking-tight flex items-baseline gap-1"
-                style={{ color: C.textHi }}
-                initial={false}
-              >
-                <span>
-                  {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                <span className="text-base font-semibold tabular-nums text-white/40">
-                  {currentTime.toLocaleTimeString("cs-CZ", { second: "2-digit" })}
-                </span>
-              </motion.p>
-            </div>
-
-            {/* Right: zoom + ARO Overtime indicator */}
-            <div className="flex-1 flex items-center justify-end gap-3">
-
             {/* Akční cluster: živá data / souhrn / řazení */}
             <div
               className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1"
@@ -1244,14 +1196,14 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               <div className="w-px h-6 bg-white/10 mx-0.5" />
 
-              {/* Kruhový graf uvolnění — radiální přehled traktu */}
+              {/* Tok pacienta — pipeline napříč traktem */}
               <button
-                onClick={() => setShowRadar(true)}
-                aria-label="Kruhový graf uvolnění"
-                title="Kruhový graf uvolnění — blíž ke středu = dříve se uvolní, najeď pro detail sálu"
+                onClick={() => setShowPatientFlow(true)}
+                aria-label="Tok pacienta"
+                title="Tok pacienta — kde se nacházejí pacienti napříč traktem (volán → operace → volný)"
                 className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
               >
-                <Radar className="w-4 h-4 text-white/60" />
+                <Workflow className="w-4 h-4 text-white/60" />
               </button>
 
               {/* Triáž pozornosti — co vyžaduje pozornost teď */}
@@ -1313,6 +1265,16 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               </button>
 
               <div className="w-px h-6 bg-white/10 mx-0.5" />
+
+              {/* Optimalizace fází — doporučení, kde zrychlit */}
+              <button
+                onClick={() => setShowPhaseOptimizer(true)}
+                aria-label="Optimalizace fází"
+                title="Optimalizace fází — rozpad dnešních fází po sálech a doporučení, kde zrychlit"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+              >
+                <Zap className="w-4 h-4 text-white/60" />
+              </button>
 
               {/* Fázový otisk sálů — radarové porovnání profilů */}
               <button
@@ -1383,6 +1345,30 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 </AnimatePresence>
               </div>
             </div>
+              </div>
+            </div>
+
+            {/* Center: Current Time (no box, just prominent display) */}
+            <div className="flex flex-col items-center justify-center flex-shrink-0">
+              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
+                {formatDate(currentTime)}
+              </p>
+              <motion.p
+                className="text-3xl font-bold tabular-nums tracking-tight flex items-baseline gap-1"
+                style={{ color: C.textHi }}
+                initial={false}
+              >
+                <span>
+                  {currentTime.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span className="text-base font-semibold tabular-nums text-white/40">
+                  {currentTime.toLocaleTimeString("cs-CZ", { second: "2-digit" })}
+                </span>
+              </motion.p>
+            </div>
+
+            {/* Right: zoom + ARO Overtime indicator */}
+            <div className="flex-1 flex items-center justify-end gap-3">
 
             {/* Zoom controls — horizontální zoom časové osy */}
             <div
@@ -1713,12 +1699,20 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       konzistentní s časovou osou nahoře. Červená je vyhrazena
                       pro stavy nouze, ne pro běžnou značku „teď". */}
                   {/* Main line */}
+                  {/* Měkký svislý halo přeliv kolem „teď" linky — dodává hloubku */}
+                  <div
+                    className="absolute -left-[6px] top-0 bottom-0 w-[12px] pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,152,0,0.16) 50%, transparent 100%)',
+                      filter: 'blur(2px)',
+                    }}
+                  />
                   {/* Statická „teď" linka — oranžová #FF9800, bez animací */}
                   <div
                     className="absolute -left-[1px] top-0 bottom-0 w-[2px] rounded-full"
                     style={{
-                      background: '#FF9800',
-                      boxShadow: '0 0 6px #FF980080',
+                      background: 'linear-gradient(180deg, #FFB74D 0%, #FF9800 45%, #F57C00 100%)',
+                      boxShadow: '0 0 8px #FF9800aa, 0 0 2px #FF9800',
                     }}
                   />
                   {/* Floating time pill on the line — sladěná s oranžovou linkou */}
@@ -1752,10 +1746,17 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     className="absolute top-0 bottom-0"
                     style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
                   >
+                    {/* Noční hodiny — jemné modravé ztmavení dodává dni přirozený rytmus */}
+                    {isNightHour && (
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.28) 0%, rgba(12, 22, 38, 0.12) 100%)' }}
+                      />
+                    )}
                     {displayHour === currentHour && (
                       <div
                         className="absolute inset-0 pointer-events-none"
-                        style={{ background: `linear-gradient(180deg, ${C.accent}0a 0%, ${C.accent}03 100%)` }}
+                        style={{ background: `linear-gradient(180deg, ${C.accent}12 0%, ${C.accent}04 100%)` }}
                       />
                     )}
                     <div
@@ -2028,8 +2029,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   }}
                   onClick={() => (showSummary ? setStatsRoomId(room.id) : setSelectedRoom(room))}
                 >
+                  {/* Diagonální lesk řádku při najetí myší — jemné oživení interakce */}
+                  <div className="tl-row-sheen" />
+
                   {/* Colored left accent bar - Premium enhanced */}
-                  <div 
+                  <div
                     className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl transition-all duration-300"
                     style={{ 
                       background: isActive 
@@ -2944,6 +2948,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             );
                           })()}
                         </div>
+
+                        {/* Živý světelný přeliv přes aktivní lištu — jemně „dýchá",
+                            zdůrazňuje, že operace právě probíhá. */}
+                        {!room.isPaused && <div className="tl-shimmer" style={{ opacity: 0.5, zIndex: 2 }} />}
 
                         {/* Skluz (overrun) — úsek lišty za odhadovaným koncem operace.
                             Standard světových OR systémů: okamžitě viditelné překročení

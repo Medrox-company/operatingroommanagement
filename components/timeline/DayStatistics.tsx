@@ -89,8 +89,15 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
   const totalOps = totals.operations;
   const avgOp = totalOps > 0 ? Math.round(totals.occupiedMinutes / totalOps) : 0;
 
+  // Průměrné využití sálů, které byly daný den v provozu (mají rozvrh nebo
+  // proběhlou operaci). Bereme PRŮMĚR z jejich vytíženosti, ne celkový poměr
+  // — ten mohl u krátkých provozních dob vyjít i nesmyslně přes 100 %.
+  const avgUtil = ranked.length > 0
+    ? Math.round(ranked.reduce((s, r) => s + Math.min(100, r.utilizationPct), 0) / ranked.length)
+    : 0;
+
   const kpiCards = [
-    { icon: Gauge, label: 'Využití sálů', value: kpis.utilizationPct, suffix: '%', color: utilColor(kpis.utilizationPct) },
+    { icon: Gauge, label: 'Využití sálů', value: avgUtil, suffix: '%', color: utilColor(avgUtil) },
     { icon: Activity, label: 'Operace dnes', value: totalOps, suffix: '', color: C.accent },
     { icon: Timer, label: 'Ø přestavba', value: kpis.avgTurnoverMin ?? 0, suffix: ' min', color: C.blue, dash: kpis.avgTurnoverMin === null },
     { icon: Clock, label: '1. start včas', value: kpis.fcotsPct ?? 0, suffix: '%', color: kpis.fcotsPct === null ? C.slate : kpis.fcotsPct >= 80 ? C.green : kpis.fcotsPct >= 50 ? C.yellow : C.red, dash: kpis.fcotsPct === null },

@@ -683,3 +683,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hygiene-frame { animation: none; background: linear-gradient(135deg, #F97316, #FDBA74); }
 }
+
+/* Tok pacienta — proudící přerušovaná spojnice mezi fázemi */
+@keyframes pf-flow {
+  to { stroke-dashoffset: -16; }
+}
+.pf-flow-line {
+  stroke-dasharray: 2 6;
+  animation: pf-flow 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-flow-line { animation: none; }
+}
