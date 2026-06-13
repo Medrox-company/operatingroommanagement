@@ -288,12 +288,21 @@ export async function updateOperatingRoom(
       .eq('id', id);
     
     if (error) {
-      console.error('Error updating operating room:', error);
+      // Supabase chybové objekty se do konzole serializují jako „{}"; vypíšeme
+      // proto explicitně jednotlivá pole, ať je vidět skutečná příčina
+      // (např. chybějící sloupec → kód 42703).
+      console.error('Error updating operating room:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        columns: Object.keys(updates),
+      });
       return false;
     }
     return true;
   } catch (err) {
-    console.error('Error updating operating room:', err);
+    console.error('Error updating operating room:', err instanceof Error ? err.message : err);
     return false;
   }
 }
@@ -1268,6 +1277,35 @@ export async function fetchNotificationsLog(
   } catch (error) {
     console.error('[DB] Failed to fetch notifications_log:', error);
     return null;
+  }
+}
+
+/**
+ * Zapíše událost do notifications_log (kdo/co/kdy). Používá se např. při
+ * vyhlášení zvýšeného hygienického režimu (infekční pacient), aby zůstal
+ * trvalý záznam na kterém sále a v jakém čase k tomu došlo.
+ */
+export async function logNotificationEvent(params: {
+  roomId: string;
+  roomName: string;
+  notificationType: string;
+  customReason?: string | null;
+}): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  try {
+    const { error } = await supabase.from('notifications_log').insert({
+      room_id: params.roomId,
+      room_name: params.roomName,
+      notification_type: params.notificationType,
+      custom_reason: params.customReason ?? null,
+      recipient_count: 0,
+      // created_at doplní databáze (DEFAULT NOW())
+    });
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('[DB] Failed to log notification event:', error instanceof Error ? error.message : error);
+    return false;
   }
 }
 

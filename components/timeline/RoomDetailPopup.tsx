@@ -35,6 +35,7 @@ const polar = (angleDeg: number, radius: number) => {
 const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
   const { workflowStatuses } = useWorkflowStatusesContext();
   const activeStatuses = workflowStatuses;
+  const [hoverDot, setHoverDot] = useState<number | null>(null);
 
   // Zavření klávesou Escape
   useEffect(() => {
@@ -51,6 +52,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     : (currentStatus?.accent_color || currentStatus?.color || '#6B7280');
   const progress = totalSteps > 1 ? stepIndex / (totalSteps - 1) : 0;
   const progressPercent = Math.round(progress * 100);
+  const isActive = stepIndex > 0 && !room.isPaused;
 
   // Skutečné minuty strávené v jednotlivých fázích (z historie aktuální operace)
   const phaseMinutes = useMemo(() => {
@@ -91,7 +93,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     const text = h > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${m} min`;
     return diffMs >= 0
       ? { label: 'ZBÝVÁ', text, color: C.green }
-      : { label: 'SKLUZ', text, color: C.red };
+      : { label: 'PŘESAH', text, color: C.red };
   })();
 
   // Oblouk: 180° (vlevo) → 0° (vpravo)
@@ -148,9 +150,15 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-white">{room.name}</h2>
               <span
-                className="px-3 py-1 rounded-full text-[11px] font-bold"
+                className="px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5"
                 style={{ background: `${stepColor}26`, color: stepColor, border: `1px solid ${stepColor}45` }}
               >
+                {isActive && (
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full opacity-70 animate-ping" style={{ background: stepColor }} />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: stepColor }} />
+                  </span>
+                )}
                 {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
               </span>
             </div>
@@ -213,6 +221,21 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               style={{ filter: `drop-shadow(0 0 8px ${stepColor}80)` }}
             />
 
+            {/* Svítící hrot na čele oblouku — „čelo" postupu */}
+            {(() => {
+              const tip = polar(180 - progress * 180, R);
+              return (
+                <motion.circle
+                  cx={tip.x} cy={tip.y} r="6"
+                  fill="#fff"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.15, duration: 0.3 }}
+                  style={{ filter: `drop-shadow(0 0 6px ${stepColor}) drop-shadow(0 0 12px ${stepColor})` }}
+                />
+              );
+            })()}
+
             {/* Satelitní body dílčích statusů podél oblouku */}
             {activeStatuses.map((s, i) => {
               const a = totalSteps > 1 ? 180 - (i / (totalSteps - 1)) * 180 : 90;
@@ -226,42 +249,48 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 ? `${mins} min`
                 : done ? '✓' : isCurrent ? '·' : (s.default_duration ? `~${s.default_duration}m` : '—');
               const dim = !done && !isCurrent;
+              const isHover = hoverDot === i;
               // zarovnání textu podle strany oblouku
               const anchor = a > 115 ? 'end' : a < 65 ? 'start' : 'middle';
               return (
                 <motion.g
                   key={s.id || i}
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: dim ? 0.4 : 1 }}
+                  animate={{ opacity: dim && !isHover ? 0.4 : 1 }}
                   transition={{ delay: 0.35 + i * 0.09, duration: 0.4 }}
+                  onMouseEnter={() => setHoverDot(i)}
+                  onMouseLeave={() => setHoverDot(null)}
+                  style={{ cursor: 'pointer' }}
                 >
                   {/* spojnice k oblouku */}
                   <line
                     x1={polar(a, R + 7).x} y1={polar(a, R + 7).y}
                     x2={polar(a, R_DOT - 7).x} y2={polar(a, R_DOT - 7).y}
-                    stroke={`${col}55`} strokeWidth="1" strokeDasharray="2 3"
+                    stroke={isHover ? `${col}aa` : `${col}55`} strokeWidth="1" strokeDasharray="2 3"
                   />
-                  {isCurrent && (
+                  {(isCurrent || isHover) && (
                     <circle cx={dot.x} cy={dot.y} r="10" fill="none" stroke={`${col}50`} strokeWidth="2">
                       <animate attributeName="r" values="7;12;7" dur="2s" repeatCount="indefinite" />
                       <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite" />
                     </circle>
                   )}
                   <circle
-                    cx={dot.x} cy={dot.y} r={isCurrent ? 5.5 : 4}
-                    fill={done || isCurrent ? col : 'rgba(255,255,255,0.18)'}
-                    style={done || isCurrent ? { filter: `drop-shadow(0 0 5px ${col})` } : undefined}
+                    cx={dot.x} cy={dot.y} r={isHover ? 7 : isCurrent ? 5.5 : 4}
+                    fill={done || isCurrent || isHover ? col : 'rgba(255,255,255,0.18)'}
+                    stroke={isHover ? 'rgba(255,255,255,0.85)' : 'none'}
+                    strokeWidth={isHover ? 1.5 : 0}
+                    style={done || isCurrent || isHover ? { filter: `drop-shadow(0 0 5px ${col})`, transition: 'r 0.15s ease' } : { transition: 'r 0.15s ease' }}
                   />
                   <text
                     x={lbl.x} y={lbl.y - 4} textAnchor={anchor}
-                    fontSize="10" fontWeight="700"
-                    fill={isCurrent ? col : 'rgba(255,255,255,0.75)'}
+                    fontSize={isHover ? 11 : 10} fontWeight="700"
+                    fill={isCurrent || isHover ? col : 'rgba(255,255,255,0.75)'}
                   >
                     {value}
                   </text>
                   <text
                     x={lbl.x} y={lbl.y + 8} textAnchor={anchor}
-                    fontSize="8" fill="rgba(255,255,255,0.45)"
+                    fontSize="8" fill={isHover ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)'}
                   >
                     {(s.name || `Fáze ${i + 1}`).length > 17 ? `${(s.name || '').slice(0, 16)}…` : (s.name || `Fáze ${i + 1}`)}
                   </text>
@@ -277,9 +306,17 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 style={{ filter: `drop-shadow(0 0 6px ${stepColor}aa)` }}
               />
             </g>
-            {/* Středový náboj */}
+            {/* Středový náboj — u běžící operace „dýchá" */}
+            {isActive && (
+              <circle cx={CX} cy={CY} r="13" fill="none" stroke={`${stepColor}40`} strokeWidth="1.5">
+                <animate attributeName="r" values="13;20;13" dur="2.6s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.6;0;0.6" dur="2.6s" repeatCount="indefinite" />
+              </circle>
+            )}
             <circle cx={CX} cy={CY} r="13" fill={C.bgDeep} stroke={`${stepColor}70`} strokeWidth="2" />
-            <circle cx={CX} cy={CY} r="5" fill={stepColor} style={{ filter: `drop-shadow(0 0 6px ${stepColor})` }} />
+            <circle cx={CX} cy={CY} r="5" fill={stepColor} style={{ filter: `drop-shadow(0 0 6px ${stepColor})` }}>
+              {isActive && <animate attributeName="opacity" values="1;0.55;1" dur="2.6s" repeatCount="indefinite" />}
+            </circle>
           </svg>
 
           {/* Středový údaj — POD nábojem ručičky, aby se s ní nikdy nepřekrýval */}
@@ -305,9 +342,14 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         </div>
 
         {/* ── Spodní řádek: tým + časy ── */}
-        <div className="relative z-10 px-6 pb-6 pt-2 grid grid-cols-2 gap-3">
+        <motion.div
+          className="relative z-10 px-6 pb-6 pt-2 grid grid-cols-2 gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.4 }}
+        >
           <div className="flex gap-3">
-            <div className="flex-1 rounded-xl p-3" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+            <div className="flex-1 rounded-xl p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${C.purple}20`, border: `1px solid ${C.purple}35` }}>
                   <Stethoscope className="w-4 h-4" style={{ color: C.purple }} />
@@ -318,7 +360,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 </div>
               </div>
             </div>
-            <div className="flex-1 rounded-xl p-3" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+            <div className="flex-1 rounded-xl p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${C.green}20`, border: `1px solid ${C.green}35` }}>
                   <Users className="w-4 h-4" style={{ color: C.green }} />
@@ -331,13 +373,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="flex-1 rounded-xl p-3 text-center" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+            <div className="flex-1 rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
               <p className="text-[8px] text-white/40 uppercase tracking-[0.25em] font-semibold mb-1">Začátek</p>
               <p className="text-base font-mono font-bold text-white/85">
                 {operationStart ? operationStart.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
               </p>
             </div>
-            <div className="flex-1 rounded-xl p-3 text-center" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+            <div className="flex-1 rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
               <p className="text-[8px] text-white/40 uppercase tracking-[0.25em] font-semibold mb-1">Odhad konce</p>
               <p className="text-base font-mono font-bold" style={{ color: C.accent }}>
                 {room.estimatedEndTime
@@ -347,7 +389,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </div>
             {remainingInfo && (
               <div
-                className="flex-1 rounded-xl p-3 text-center"
+                className="flex-1 rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-0.5"
                 style={{
                   background: `linear-gradient(135deg, ${remainingInfo.color}15 0%, ${remainingInfo.color}05 100%)`,
                   border: `1px solid ${remainingInfo.color}35`,
@@ -360,7 +402,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </motion.div>
   );

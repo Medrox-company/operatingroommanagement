@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
@@ -458,9 +458,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* ========== MOBILE LAYOUT (md:hidden) — Ultra-minimalist fintech style ========== */}
+      {/* ========== MOBILE LAYOUT (md:hidden) — původní boxový/kartový design ========== */}
       <div
-        className="md:hidden w-full h-full flex flex-col relative overflow-hidden"
+        className="flex md:hidden w-full h-full flex-col relative overflow-hidden"
         style={{
           background:
             'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
@@ -469,8 +469,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         {/* Ambient glow — subtle */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
-            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25 transition-colors duration-500"
+            style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 65%)` }}
           />
         </div>
 
@@ -519,15 +519,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             transition={{ duration: 0.3 }}
             className="rounded-3xl p-6 relative overflow-hidden mb-6"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(79,237,199,0.05) 100%)',
-              border: '1px solid rgba(79,237,199,0.15)',
+              background: `linear-gradient(135deg, ${activeColor}14 0%, rgba(255,255,255,0.03) 55%, ${activeColor}0a 100%)`,
+              border: `1px solid ${activeColor}33`,
               backdropFilter: 'blur(16px)',
-              boxShadow: '0 8px 32px rgba(79,237,199,0.08)',
+              boxShadow: `0 12px 40px -10px ${activeColor}26, inset 0 1px 0 rgba(255,255,255,0.06)`,
             }}
           >
+            {/* Horní akcentní linka v barvě fáze */}
+            <div className="absolute inset-x-8 top-0 h-px pointer-events-none" style={{ background: `linear-gradient(90deg, transparent, ${activeColor}, transparent)`, opacity: 0.7 }} />
             {/* Ambient accent behind text */}
             <div
-              className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-20"
+              className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-25"
               style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 65%)` }}
             />
 
@@ -601,13 +603,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
           {/* End Time Card — improved design */}
           <div
-            className="rounded-3xl p-6 mb-6"
+            className="rounded-3xl p-6 mb-6 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: `linear-gradient(135deg, ${activeColor}10 0%, rgba(255,255,255,0.02) 60%, ${activeColor}08 100%)`,
+              border: `1px solid ${activeColor}2e`,
               backdropFilter: 'blur(16px)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
             }}
           >
+            <div className="absolute inset-x-8 top-0 h-px pointer-events-none" style={{ background: `linear-gradient(90deg, transparent, ${activeColor}, transparent)`, opacity: 0.6 }} />
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40 leading-none">
@@ -643,8 +647,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   whileTap={{ scale: 0.95 }}
                   className="w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 outline-none select-none transition-all shadow-lg"
                   style={{
-                    background: `linear-gradient(135deg, #00d4ff 0%, #00d4ffdd 100%)`,
-                    boxShadow: `0 8px 24px -6px rgba(0,212,255,0.3)`,
+                    background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`,
+                    boxShadow: `0 8px 24px -6px ${activeColor}4d`,
                   }}
                 >
                   <Plus className="w-5 h-5 text-black/90" strokeWidth={2.5} />
@@ -716,11 +720,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
                   background: room.isEnhancedHygiene
-                    ? 'rgba(251,146,60,0.15)'
+                    ? 'linear-gradient(135deg, rgba(251,146,60,0.22) 0%, rgba(251,146,60,0.08) 100%)'
                     : 'rgba(255,255,255,0.04)',
                   border: room.isEnhancedHygiene
-                    ? '1px solid rgba(251,146,60,0.5)'
+                    ? '1px solid rgba(251,146,60,0.55)'
                     : '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: room.isEnhancedHygiene ? '0 8px 24px -8px rgba(251,146,60,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
                 }}
               >
                 <ShieldAlert
@@ -766,12 +771,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
                   background: patientCalledTime
-                    ? 'rgba(79,237,199,0.15)'
+                    ? 'linear-gradient(135deg, rgba(0,212,255,0.20) 0%, rgba(0,212,255,0.07) 100%)'
                     : 'rgba(255,255,255,0.04)',
                   border: patientCalledTime
-                    ? '1px solid rgba(79,237,199,0.5)'
+                    ? '1px solid rgba(0,212,255,0.55)'
                     : '1px solid rgba(255,255,255,0.1)',
-                  opacity: patientCalledTime ? 1 : 1,
+                  boxShadow: patientCalledTime ? '0 8px 24px -8px rgba(0,212,255,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
                 }}
               >
                 <Phone
@@ -819,11 +824,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
                   background: patientArrivedTime
-                    ? 'rgba(168,85,247,0.15)'
+                    ? 'linear-gradient(135deg, rgba(168,85,247,0.22) 0%, rgba(168,85,247,0.08) 100%)'
                     : 'rgba(255,255,255,0.04)',
                   border: patientArrivedTime
-                    ? '1px solid rgba(168,85,247,0.5)'
+                    ? '1px solid rgba(168,85,247,0.55)'
                     : '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: patientArrivedTime ? '0 8px 24px -8px rgba(168,85,247,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
                   opacity: !patientCalledTime ? 0.5 : 1,
                 }}
               >
@@ -855,21 +861,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
                 className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
                 style={{
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: room?.staff?.doctor?.name ? 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(255,255,255,0.02) 100%)' : 'rgba(255,255,255,0.025)',
+                  border: room?.staff?.doctor?.name ? '1px solid rgba(167,139,250,0.28)' : '1px solid rgba(255,255,255,0.06)',
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(79,237,199,0.1)' }}
+                  style={{ background: 'rgba(167,139,250,0.14)', border: '1px solid rgba(167,139,250,0.3)' }}
                 >
-                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#00d4ff' }} strokeWidth={1.75} />
+                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#A78BFA' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
                     Lékař
                   </p>
-                  <p className="text-sm font-medium text-white truncate mt-1.5 leading-none">
+                  <p className="text-sm font-semibold text-white truncate mt-1.5 leading-none">
                     {room?.staff?.doctor?.name || 'Nepřiřazen'}
                   </p>
                 </div>
@@ -882,21 +888,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
                 className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
                 style={{
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: room?.staff?.nurse?.name ? 'linear-gradient(135deg, rgba(52,211,153,0.10) 0%, rgba(255,255,255,0.02) 100%)' : 'rgba(255,255,255,0.025)',
+                  border: room?.staff?.nurse?.name ? '1px solid rgba(52,211,153,0.28)' : '1px solid rgba(255,255,255,0.06)',
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(79,237,199,0.1)' }}
+                  style={{ background: 'rgba(52,211,153,0.14)', border: '1px solid rgba(52,211,153,0.3)' }}
                 >
-                  <Heart className="w-[18px] h-[18px]" style={{ color: '#00d4ff' }} strokeWidth={1.75} />
+                  <Heart className="w-[18px] h-[18px]" style={{ color: '#34D399' }} strokeWidth={1.75} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
                     Sestra
                   </p>
-                  <p className="text-sm font-medium text-white truncate mt-1.5 leading-none">
+                  <p className="text-sm font-semibold text-white truncate mt-1.5 leading-none">
                     {room?.staff?.nurse?.name || 'Nepřiřazena'}
                   </p>
                 </div>
@@ -915,6 +921,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       ) : room.isLocked ? (
         <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-amber-500/20" />
       ) : null}
+
 
       {/* Background Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -982,16 +989,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         </div>
       </header>
 
-      {/* ENHANCED HYGIENE MODE - subtle red vignette only */}
-      {room.isEnhancedHygiene && (
-        <div
-          className="fixed inset-0 pointer-events-none z-[100]"
-          style={{
-            background: 'radial-gradient(ellipse at center, transparent 55%, rgba(239,68,68,0.08) 80%, rgba(239,68,68,0.18) 100%)',
-            boxShadow: 'inset 0 0 120px rgba(239,68,68,0.15)'
-          }}
-        />
-      )}
 
       {/* Right Column Action Buttons - Absolute Positioning */}
       {/* Close Button and Notification Button - Top Right */}
@@ -1000,7 +997,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         <button 
           onClick={onClose}
           aria-label="Zavřít detail sálu"
-          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
+          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-70 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
         >
           <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/70" />
         </button>
@@ -1009,7 +1006,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         <motion.button 
           onClick={() => setNotificationOverlayOpen(true)}
           aria-label="Otevřít notifikace"
-          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/50 backdrop-blur-md opacity-40 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
+          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-70 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -1020,6 +1017,42 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
       {/* Staff Names - Top Right next to close button (Desktop only) */}
       <div className="hidden lg:flex absolute top-8 right-40 flex-row gap-3 h-24 z-50">
+        {/* Notifikace „Infekční pacient" — zobrazí se POUZE při zvýšeném
+            hygienickém režimu, ve stejném řádku a zarovnání jako personál. */}
+        <AnimatePresence>
+          {room.isEnhancedHygiene && (
+            <motion.div
+              key="hyg-staff-card"
+              initial={{ opacity: 0, x: 16, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 16, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+              className="rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 h-full"
+              style={{
+                background: 'linear-gradient(135deg, rgba(120,50,10,0.55) 0%, rgba(60,25,5,0.45) 100%)',
+                border: '1px solid rgba(249,115,22,0.5)',
+                boxShadow: '0 0 24px -6px rgba(249,115,22,0.4)',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <motion.div
+                  animate={{ rotate: [0, -8, 8, 0], scale: [1, 1.12, 1] }}
+                  transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <Biohazard className="w-5 h-5" style={{ color: '#FB923C', filter: 'drop-shadow(0 0 6px rgba(249,115,22,0.7))' }} strokeWidth={2.2} />
+                </motion.div>
+                <span className="text-sm font-bold" style={{ color: '#FDBA74' }}>Infekční pacient</span>
+                <span className="relative flex h-2 w-2 ml-0.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-70 animate-ping" style={{ background: '#F97316' }} />
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#F97316' }} />
+                </span>
+              </div>
+              <p className="text-[9px] uppercase tracking-wider text-left" style={{ color: 'rgba(253,186,116,0.7)' }}>
+                Zvýšený hygienický režim
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Doctor Button */}
         <button
           onClick={() => { setStaffPickerRole('doctor'); setStaffPickerOpen(true); }}
@@ -1077,8 +1110,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               patientCalledTime && !patientArrivedTime
                 ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
                 : patientArrivedTime
-                ? 'bg-white/5 border-white/50 opacity-60'
-                : 'bg-white/5 border-white/50 opacity-40 hover:opacity-100'
+                ? 'bg-white/5 border-white/10 opacity-60'
+                : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1143,7 +1176,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               patientArrivedTime
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
                 : !patientCalledTime
-                ? 'bg-white/5 border-white/50 opacity-40'
+                ? 'bg-white/5 border-white/10 opacity-40'
                 : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
             }`}
             whileHover={{ scale: 1.05 }}
@@ -1174,7 +1207,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
               room.isEnhancedHygiene
                 ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
-                : 'bg-white/5 border-white/50 opacity-40 hover:opacity-100'
+                : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1204,7 +1237,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-                  : 'bg-white/5 border-white/50 opacity-40 hover:opacity-100'
+                  : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

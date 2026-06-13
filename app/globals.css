@@ -161,9 +161,9 @@ body {
 }
 .timeline-scroll { scrollbar-width: thin; scrollbar-color: rgba(6, 182, 212, 0.3) transparent; }
 
-/* Safe area for mobile bottom navigation (MobileNav ~ 80px + safe-area-inset-bottom) */
+/* Safe area for mobile bottom navigation — plovoucí lišta (~70 px + odsazení) */
 .pb-mobile-nav {
-  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Layout safe area that respects Sidebar (desktop, 96px) and MobileNav (bottom) */
@@ -622,4 +622,64 @@ body {
 }
 .group:hover > .tl-row-sheen {
   opacity: 1;
+}
+
+
+
+/* Simulátor zpoždění — posuvník */
+.delay-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+.delay-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px #22D3EE, 0 0 16px #22D3EEaa;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.delay-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.delay-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border: none; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 8px #22D3EE, 0 0 16px #22D3EEaa; cursor: pointer;
+}
+
+/* Aktivní animovaný rámeček — zvýšený hygienický režim (infekční pacient).
+   Conic-gradient se otáčí kolem dokola; přes mask vznikne jen tenký „běžící" rám. */
+@property --hyg-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes hyg-frame-spin {
+  to { --hyg-angle: 360deg; }
+}
+.hygiene-frame {
+  padding: 4px;
+  border-radius: 0;
+  background: conic-gradient(
+    from var(--hyg-angle),
+    transparent 0deg,
+    #F97316 40deg,
+    #FDBA74 70deg,
+    #F97316 100deg,
+    transparent 140deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: hyg-frame-spin 4s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.6));
+}
+@media (prefers-reduced-motion: reduce) {
+  .hygiene-frame { animation: none; background: linear-gradient(135deg, #F97316, #FDBA74); }
 }

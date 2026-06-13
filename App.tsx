@@ -15,8 +15,8 @@ import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
-import { Activity, LayoutGrid, Shield } from 'lucide-react';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings } from './lib/db';
+import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
@@ -362,17 +362,28 @@ const AppContent: React.FC = () => {
 
   const handleEnhancedHygieneToggle = useCallback(async (roomId: string, enabled: boolean) => {
     recentLocalUpdates.current.set(roomId, Date.now());
+    const targetRoom = rooms.find(r => r.id === roomId);
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, isEnhancedHygiene: enabled }
         : room
     ));
     if (isDbConnected) {
-      await updateOperatingRoom(roomId, { 
-        is_enhanced_hygiene: enabled 
+      await updateOperatingRoom(roomId, {
+        is_enhanced_hygiene: enabled
       });
+      // Při VYHLÁŠENÍ zvýšeného hygienického režimu (infekční pacient) zapiš
+      // trvalý záznam do notifications_log — na kterém sále a v jakém čase.
+      if (enabled) {
+        void logNotificationEvent({
+          roomId,
+          roomName: targetRoom?.name || roomId,
+          notificationType: 'infectious_patient',
+          customReason: 'Zvýšený hygienický režim — infekční pacient',
+        });
+      }
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, rooms]);
 
   const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: Record<string, any>) => {
     recentLocalUpdates.current.set(roomId, Date.now());
@@ -536,8 +547,12 @@ const AppContent: React.FC = () => {
                         <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
                         <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ</p>
                       </div>
-                      <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate">
-                        OPERAČNÍ <span className="text-white/20">SÁLY</span>
+                      <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center lg:justify-start">
+                        <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
+                          <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#34D399' }} />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#34D399', boxShadow: '0 0 10px #34D39988' }} />
+                        </span>
+                        <span>OPERAČNÍ <span className="text-white/20">SÁLY</span></span>
                       </h1>
                     </div>
                     <div className="flex items-center gap-2 md:gap-5">
@@ -550,20 +565,25 @@ const AppContent: React.FC = () => {
                           const isRoomReady = (room: OperatingRoom) => {
                             return room.currentStepIndex === 0 || room.currentStepIndex === 7;
                           };
-                          
-                          const readyRooms = rooms.filter(isRoomReady);
-                          const activeRooms = rooms.filter(r => !isRoomReady(r));
-                          
+
+                          const emergencyRooms = rooms.filter(r => r.isEmergency);
+                          const lockedRooms = rooms.filter(r => r.isLocked && !r.isEmergency);
+                          const readyRooms = rooms.filter(r => isRoomReady(r) && !r.isEmergency && !r.isLocked);
+                          const activeRooms = rooms.filter(r => !isRoomReady(r) && !r.isEmergency && !r.isLocked);
+
+                          // NOUZE a UZAMČENO se ukazují jen když jsou relevantní — panel zůstává čistý
                           return [
-                            { label: 'AKTIVNÍ',    value: activeRooms.length, icon: Activity,   color: 'text-red-500',     valueColor: '#FF453A' },
-                            { label: 'PŘIPRAVENO', value: readyRooms.length,  icon: LayoutGrid, color: 'text-[#34D399]',   valueColor: '#34D399' },
-                          ];
+                            { label: 'AKTIVNÍ',    value: activeRooms.length,    icon: Activity,      color: 'text-[#22D3EE]',  valueColor: '#22D3EE', show: true,  pulse: false },
+                            { label: 'PŘIPRAVENO', value: readyRooms.length,     icon: LayoutGrid,    color: 'text-[#34D399]',  valueColor: '#34D399', show: true,  pulse: false },
+                            { label: 'NOUZE',      value: emergencyRooms.length, icon: AlertTriangle, color: 'text-[#FF453A]',  valueColor: '#FF453A', show: emergencyRooms.length > 0, pulse: true },
+                            { label: 'UZAMČENO',   value: lockedRooms.length,    icon: Lock,          color: 'text-[#FBBF24]',  valueColor: '#FBBF24', show: lockedRooms.length > 0,    pulse: false },
+                          ].filter(s => s.show);
                         })().map((stat, idx) => (
                           <React.Fragment key={stat.label}>
                             {idx > 0 && (
                               <div className="w-px self-stretch my-2 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
                             )}
-                            <div className="flex flex-col items-center justify-center px-3 sm:px-6 md:px-9 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[120px] md:min-w-[140px] z-10">
+                            <div className={`flex flex-col items-center justify-center px-3 sm:px-6 md:px-9 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[120px] md:min-w-[140px] z-10 ${stat.pulse ? 'animate-pulse' : ''}`}>
                               <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2">
                                 <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
                                 <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/45">{stat.label}</p>

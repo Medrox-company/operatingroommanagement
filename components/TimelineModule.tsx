@@ -5,11 +5,17 @@ import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
+import CapacityForecast from './timeline/CapacityForecast';
+import DayStatistics from './timeline/DayStatistics';
+import DelaySimulator from './timeline/DelaySimulator';
+import ORRadar from './timeline/ORRadar';
+import PhaseFingerprint from './timeline/PhaseFingerprint';
+import AttentionFeed from './timeline/AttentionFeed';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
   Search, ZoomIn, ZoomOut, Maximize2, Minimize2,
-  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown, Timer
+  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown, Timer, History, TrendingUp, SlidersHorizontal, Radar, Fingerprint, BellRing
 } from 'lucide-react';
 
 // ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
@@ -177,6 +183,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   const [showAroPopup, setShowAroPopup] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [showRadar, setShowRadar] = useState(false);
+  const [showFingerprint, setShowFingerprint] = useState(false);
+  const [showAttention, setShowAttention] = useState(false);
   // --- Nové funkce: vyhledávání, filtr stavu, zoom časové osy, hover tooltip ---
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'free'>('all');
@@ -255,11 +267,15 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         searchInputRef.current?.focus();
       } else if (e.key === 'f' || e.key === 'F') {
         toggleFullscreen();
+      } else if (e.key === 'Escape') {
+        exitScrubRef.current?.();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [scrollToNow, toggleFullscreen]);
+  // exitScrub je definován níže — ref obchází pořadí deklarací
+  const exitScrubRef = useRef<(() => void) | null>(null);
 
 
 
@@ -412,8 +428,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       stepNameMap[idx] = s.name || `Fáze ${idx + 1}`;
     });
 
-    // V "Souhrn dne" zobrazujeme VŠECHNY sály, ne jen filtrované
-    const roomsToProcess = showSummary ? allRoomsForStats : displayRooms;
+    // Statistiky vždy počítáme ze VŠECH sálů (nezávisle na filtru časové osy)
+    const roomsToProcess = allRoomsForStats;
     const rows = roomsToProcess.map((room) => {
       // Pracovní kapacita dne (minuty) = (konec − začátek) − denní pauza
       const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
@@ -636,6 +652,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     });
   }, [displayRooms, currentTime, activeStatuses]);
 
+
   /* --- Auto-sledování „teď": při zoomu drží aktuální čas v záběru --- */
   const [autoFollowNow, setAutoFollowNow] = useState(false);
   useEffect(() => {
@@ -644,6 +661,65 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     const id = setInterval(scrollToNow, 30_000);
     return () => clearInterval(id);
   }, [autoFollowNow, zoom, scrollToNow]);
+
+  /* ════════ ČASOVÁ LUPA & REPLAY DNE (time-travel) ════════
+     Scrub režim: tažením myši po ose se zobrazí stav VŠECH sálů v daném
+     okamžiku (rekonstrukce z historie statusů). Replay: kinematické
+     přehrání celého dne od 7:00 do teď. */
+  const [scrubActive, setScrubActive] = useState(false);
+  const [scrubTime, setScrubTime] = useState<number | null>(null);
+
+  const dayWindowStartMs = useMemo(() => {
+    const ws = new Date(currentTime);
+    ws.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+    if (currentTime.getHours() < TIMELINE_START_HOUR) ws.setDate(ws.getDate() - 1);
+    return ws.getTime();
+  }, [currentTime]);
+
+  // Stav sálu v libovolném čase t — z dokončených operací i živé historie
+  const statusAtTime = useCallback((room: OperatingRoom, t: number): { color: string; name: string } | null => {
+    const colorOf = (idx: number, fb?: string) =>
+      activeStatuses[idx]?.accent_color || activeStatuses[idx]?.color || fb || '#6b7280';
+    const nameOf = (idx: number, fb?: string) => activeStatuses[idx]?.name || fb || 'Fáze';
+    const findPhase = (hist: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }> | undefined) => {
+      if (!hist || hist.length === 0) return null;
+      let cur: { stepIndex: number; startedAt: string; color?: string; stepName?: string } | null = null;
+      for (const h of hist) {
+        const hs = new Date(h.startedAt).getTime();
+        if (Number.isFinite(hs) && hs <= t) cur = h; else break;
+      }
+      return cur;
+    };
+    for (const op of room.completedOperations || []) {
+      const os = new Date(op.startedAt).getTime();
+      const oe = new Date(op.endedAt).getTime();
+      if (!Number.isFinite(os) || !Number.isFinite(oe)) continue;
+      if (t >= os && t <= oe) {
+        const cur = findPhase(op.statusHistory);
+        if (cur) return { color: colorOf(cur.stepIndex, cur.color), name: cur.stepName || nameOf(cur.stepIndex) };
+        return { color: '#6b7280', name: 'Operace' };
+      }
+    }
+    if (room.operationStartedAt && room.currentStepIndex > 0 && !room.isLocked) {
+      const os = new Date(room.operationStartedAt).getTime();
+      if (Number.isFinite(os) && t >= os && t <= currentTime.getTime()) {
+        const cur = findPhase(room.statusHistory);
+        if (cur) return { color: colorOf(cur.stepIndex, cur.color), name: cur.stepName || nameOf(cur.stepIndex) };
+      }
+    }
+    return null;
+  }, [activeStatuses, currentTime]);
+
+  const exitScrub = useCallback(() => {
+    setScrubActive(false);
+    setScrubTime(null);
+  }, []);
+
+  useEffect(() => { exitScrubRef.current = exitScrub; }, [exitScrub]);
+
+  const scrubPct = scrubTime !== null
+    ? Math.max(0, Math.min(100, ((scrubTime - dayWindowStartMs) / (TIMELINE_HOURS * 3600_000)) * 100))
+    : null;
 
   // Formát minut → "6h 31m" (nebo "31m")
   const fmtMin = (min: number): string => {
@@ -816,7 +892,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           <RoomDetailPopup room={selectedRoom} onClose={() => setSelectedRoom(null)} currentTime={currentTime} />
         )}
         {showAroPopup && (
-          <AroOvertimePopup 
+          <AroOvertimePopup
             isOpen={showAroPopup}
             onClose={() => setShowAroPopup(false)}
             overtimeRooms={aroOvertimeRooms}
@@ -824,6 +900,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             currentTime={currentTime}
           />
         )}
+
 
         {/* Detail statistik sálu pro daný den */}
         {statsRoomId && (() => {
@@ -938,6 +1015,46 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           );
         })()}
       </AnimatePresence>
+
+      {/* Prognóza kapacity & Statistiky dne — samostatné popupy s vlastní AnimatePresence */}
+      <CapacityForecast
+        isOpen={showForecast}
+        onClose={() => setShowForecast(false)}
+        rooms={rooms}
+        currentTime={currentTime}
+      />
+      <DayStatistics
+        isOpen={showStats}
+        onClose={() => setShowStats(false)}
+        rows={roomUtilization.rows}
+        totals={roomUtilization.totals}
+        kpis={orKpis}
+        onSelectRoom={(id) => setStatsRoomId(id)}
+      />
+      <PhaseFingerprint
+        isOpen={showFingerprint}
+        onClose={() => setShowFingerprint(false)}
+        rows={roomUtilization.rows}
+      />
+      <AttentionFeed
+        isOpen={showAttention}
+        onClose={() => setShowAttention(false)}
+        rooms={rooms}
+        currentTime={currentTime}
+        onSelectRoom={(id) => { setShowAttention(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
+      />
+      <DelaySimulator
+        isOpen={showSimulator}
+        onClose={() => setShowSimulator(false)}
+        rooms={rooms}
+        currentTime={currentTime}
+      />
+      <ORRadar
+        isOpen={showRadar}
+        onClose={() => setShowRadar(false)}
+        rooms={rooms}
+        currentTime={currentTime}
+      />
 
       {/* Hover tooltip pro probíhající operace — fixed pozice u kurzoru, mimo overflow clip */}
       <AnimatePresence>
@@ -1127,6 +1244,60 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               <div className="w-px h-6 bg-white/10 mx-0.5" />
 
+              {/* Kruhový graf uvolnění — radiální přehled traktu */}
+              <button
+                onClick={() => setShowRadar(true)}
+                aria-label="Kruhový graf uvolnění"
+                title="Kruhový graf uvolnění — blíž ke středu = dříve se uvolní, najeď pro detail sálu"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+              >
+                <Radar className="w-4 h-4 text-white/60" />
+              </button>
+
+              {/* Triáž pozornosti — co vyžaduje pozornost teď */}
+              <button
+                onClick={() => setShowAttention(true)}
+                aria-label="Triáž pozornosti"
+                title="Triáž pozornosti — vše, co teď vyžaduje pozornost na sálech"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+              >
+                <BellRing className="w-4 h-4 text-white/60" />
+              </button>
+
+              {/* Simulátor zpoždění — „co kdyby" scénáře */}
+              <button
+                onClick={() => setShowSimulator(true)}
+                aria-label="Simulátor zpoždění"
+                title="Simulátor zpoždění — co se stane s přesahem a koncem provozu, když operace naberou skluz"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+              >
+                <SlidersHorizontal className="w-4 h-4 text-white/60" />
+              </button>
+
+              {/* Prognóza kapacity — predikce vytížení a uvolnění sálů */}
+              <button
+                onClick={() => setShowForecast(true)}
+                aria-label="Prognóza kapacity"
+                title="Prognóza kapacity — vlna vytížení, predikce uvolnění sálů a úzká hrdla"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+              >
+                <TrendingUp className="w-4 h-4 text-white/60" />
+              </button>
+
+              {/* Časová lupa — inspekce stavu sálů v libovolném čase dne */}
+              <button
+                onClick={() => (scrubActive ? exitScrub() : setScrubActive(true))}
+                aria-pressed={scrubActive}
+                aria-label="Časová lupa — stav sálů v čase"
+                title="Časová lupa: táhni po ose a uvidíš stav všech sálů v daném čase (Esc zavře)"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+                style={scrubActive ? { background: `${C.purple}1f`, color: C.purple } : undefined}
+              >
+                <History className={`w-4 h-4 ${scrubActive ? '' : 'text-white/60'}`} />
+              </button>
+
+              <div className="w-px h-6 bg-white/10 mx-0.5" />
+
               {/* TV / fullscreen režim — nástěnná obrazovka */}
               <button
                 onClick={toggleFullscreen}
@@ -1143,16 +1314,24 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
               <div className="w-px h-6 bg-white/10 mx-0.5" />
 
-              {/* Souhrn dne */}
+              {/* Fázový otisk sálů — radarové porovnání profilů */}
               <button
-                onClick={() => setShowSummary((v) => !v)}
-                aria-label="Statistický režim — stejná osa se statistikami dne"
-                aria-pressed={showSummary}
-                title="Statistický režim — stejná osa, dnešní operace a vytížení sálů"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-                style={showSummary ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
+                onClick={() => setShowFingerprint(true)}
+                aria-label="Fázový otisk sálů"
+                title="Fázový otisk sálů — radarové porovnání časového profilu fází proti mediánu"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
               >
-                <BarChart3 className={`w-4 h-4 ${showSummary ? '' : 'text-white/60'}`} />
+                <Fingerprint className="w-4 h-4 text-white/60" />
+              </button>
+
+              {/* Statistiky dne — animovaný grafický přehled */}
+              <button
+                onClick={() => setShowStats(true)}
+                aria-label="Statistiky dne"
+                title="Statistiky dne — vytížení sálů, výkon a rozpad času po fázích"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+              >
+                <BarChart3 className="w-4 h-4 text-white/60" />
               </button>
 
               {/* Řazení sálů */}
@@ -1554,18 +1733,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       {currentHour}:{currentMin < 10 ? '0' : ''}{currentMin}
                     </span>
                   </div>
-                  {/* Štítek „Nyní" pod pilulkou */}
-                  <div
-                    className="absolute -left-[1px] top-[8px] -translate-x-1/2 px-1.5 py-[2px] rounded whitespace-nowrap"
-                    style={{
-                      background: 'rgba(6, 20, 28, 0.85)',
-                      border: '1px solid #FF980050',
-                    }}
-                  >
-                    <span className="text-[7px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: '#FF9800' }}>
-                      Nyní
-                    </span>
-                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1623,6 +1790,55 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 );
               })}
             </div>
+
+            {/* ════════ ČASOVÁ LUPA — interaktivní vrstva + světelná linie ════════ */}
+            {scrubActive && (
+              <div
+                className="absolute inset-0 z-40"
+                style={{ cursor: 'col-resize' }}
+                onPointerMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left - ROOM_LABEL_WIDTH;
+                  const w = Math.max(1, rect.width - ROOM_LABEL_WIDTH);
+                  const pct = Math.max(0, Math.min(1, x / w));
+                  const t = dayWindowStartMs + pct * TIMELINE_HOURS * 3600_000;
+                  setScrubTime(Math.min(t, currentTime.getTime()));
+                }}
+                onDoubleClick={exitScrub}
+                title="Dvojklik nebo Esc ukončí časovou lupu"
+              >
+                {/* Ztmavení scény — spotlight efekt */}
+                <div className="absolute inset-0" style={{ background: 'rgba(3, 10, 15, 0.35)' }} />
+
+                {scrubPct !== null && scrubTime !== null && (
+                  <div
+                    className="absolute top-0 bottom-0 pointer-events-none"
+                    style={{ left: `calc(${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${scrubPct / 100}))` }}
+                  >
+                    {/* Hlavní linie lupy */}
+                    <div
+                      className="absolute top-0 bottom-0 -left-[1px] w-[2px] rounded-full"
+                      style={{
+                        background: `linear-gradient(to bottom, ${C.purple}, ${C.purple}60)`,
+                        boxShadow: `0 0 10px ${C.purple}, 0 0 26px ${C.purple}66`,
+                      }}
+                    />
+                    {/* Časová pilulka lupy */}
+                    <div
+                      className="absolute -top-[13px] -left-[1px] -translate-x-1/2 px-2.5 py-[4px] rounded-md whitespace-nowrap"
+                      style={{
+                        background: `linear-gradient(135deg, ${C.purple} 0%, #7C5CE0 100%)`,
+                        boxShadow: `0 2px 10px rgba(0,0,0,0.5), 0 0 14px ${C.purple}55`,
+                      }}
+                    >
+                      <span className="text-[11px] font-bold font-mono tabular-nums leading-none" style={{ color: '#150B2E' }}>
+                        {new Date(scrubTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Room Rows */}
             <div className="relative z-10 flex flex-col gap-1.5 py-2">
@@ -2004,6 +2220,46 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         (viz „Hour grid overlay" výše), proto ji zde záměrně
                         NEopakujeme — eliminuje duplicitní DOM a nekonzistentní
                         noční výpo��et. */}
+
+                    {/* ── Časová lupa: stav sálu v navoleném čase — svítící bod + název fáze ── */}
+                    {scrubActive && scrubTime !== null && !room.isLocked && (() => {
+                      const ph = statusAtTime(room, scrubTime);
+                      const pctInRow = Math.max(0, Math.min(100, ((scrubTime - dayWindowStartMs) / (TIMELINE_HOURS * 3600_000)) * 100));
+                      return (
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none flex items-center gap-1.5"
+                          style={{ left: `${pctInRow}%` }}
+                        >
+                          <div
+                            className="w-3 h-3 rounded-full -translate-x-1/2 flex-shrink-0"
+                            style={ph ? {
+                              background: ph.color,
+                              border: '2px solid rgba(255,255,255,0.9)',
+                              boxShadow: `0 0 10px ${ph.color}, 0 0 20px ${ph.color}66`,
+                            } : {
+                              background: 'rgba(255,255,255,0.12)',
+                              border: '1.5px solid rgba(255,255,255,0.3)',
+                            }}
+                          />
+                          {rowHeight >= 34 && (
+                            <span
+                              className="px-1.5 py-[2px] rounded text-[9px] font-semibold whitespace-nowrap leading-none"
+                              style={ph ? {
+                                background: 'rgba(4, 12, 18, 0.9)',
+                                color: ph.color,
+                                border: `1px solid ${ph.color}55`,
+                              } : {
+                                background: 'rgba(4, 12, 18, 0.75)',
+                                color: 'rgba(255,255,255,0.4)',
+                                border: '1px solid rgba(255,255,255,0.12)',
+                              }}
+                            >
+                              {ph ? ph.name : 'Volný'}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* ── Souhrnný (statistický) režim: STEJNÁ časová osa, jen místo živé
                         operace zobrazuje všechny dnešní operace po fázích + statistiky řádku ── */}
@@ -2779,7 +3035,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                     className="text-[11px] font-mono font-medium"
                                     style={{ color: isOverrun ? '#FCA5A5' : 'rgba(255,255,255,0.8)' }}
                                   >
-                                    {isOverrun ? `skluz ${remainingTime.slice(1)}` : remainingTime}
+                                    {isOverrun ? `přesah ${remainingTime.slice(1)}` : remainingTime}
                                   </p>
                                 </motion.div>
                                 );
@@ -2892,6 +3148,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           </div>
         </div>
       </div>
+
 
       </div>{/* end desktop wrapper */}
     </div>
