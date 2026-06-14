@@ -12,6 +12,7 @@ import PhaseFingerprint from './timeline/PhaseFingerprint';
 import AttentionFeed from './timeline/AttentionFeed';
 import PatientFlow from './timeline/PatientFlow';
 import PhaseOptimizer from './timeline/PhaseOptimizer';
+import TimelineHistory from './timeline/TimelineHistory';
 import { 
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
@@ -191,11 +192,22 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const [showAttention, setShowAttention] = useState(false);
   const [showPatientFlow, setShowPatientFlow] = useState(false);
   const [showPhaseOptimizer, setShowPhaseOptimizer] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   // --- Nové funkce: vyhledávání, filtr stavu, zoom časové osy, hover tooltip ---
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'free'>('all');
   const [zoom, setZoom] = useState(1); // 1 = výchozí (celá osa se vejde), >1 = horizontální zoom
-  const [hoveredOp, setHoveredOp] = useState<{ room: OperatingRoom; x: number; y: number } | null>(null);
+  const [hoveredOp, setHoveredOp] = useState<{
+    room: OperatingRoom;
+    x: number;
+    y: number;
+    /** Pokud je vyplněno, jde o najetí na již DOKONČENOU operaci (jinak živý výkon). */
+    completed?: {
+      startedAt: string;
+      endedAt: string;
+      statusHistory?: Array<{ stepIndex: number; startedAt: string; stepName?: string; color?: string }>;
+    };
+  } | null>(null);
   // --- Další funkce: řazení, souhrn dne, živá data ---
   const [sortMode, setSortMode] = useState<SortMode>('default');
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -1067,6 +1079,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         rows={roomUtilization.rows}
         onSelectRoom={(id) => { setShowPhaseOptimizer(false); setStatsRoomId(id); }}
       />
+      <TimelineHistory
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        rooms={rooms}
+        onSelectRoom={(id) => { setShowHistory(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
+      />
       <DelaySimulator
         isOpen={showSimulator}
         onClose={() => setShowSimulator(false)}
@@ -1076,7 +1094,64 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
       {/* Hover tooltip pro probíhající operace — fixed pozice u kurzoru, mimo overflow clip */}
       <AnimatePresence>
-        {hoveredOp && (() => {
+        {hoveredOp && hoveredOp.completed && (() => {
+          const r = hoveredOp.room;
+          const c = hoveredOp.completed;
+          const startMs = new Date(c.startedAt).getTime();
+          const endMs = new Date(c.endedAt).getTime();
+          const durMin = Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs
+            ? Math.round((endMs - startMs) / 60000) : 0;
+          const durStr = durMin >= 60 ? `${Math.floor(durMin / 60)}h ${String(durMin % 60).padStart(2, '0')}m` : `${durMin}m`;
+          const fmt = (ms: number) => Number.isFinite(ms) ? new Date(ms).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '—';
+          const phases = c.statusHistory?.length || 0;
+          const clr = C.slate;
+          return (
+            <motion.div
+              className="fixed z-[100] pointer-events-none rounded-xl px-4 py-3"
+              style={{
+                left: Math.min(hoveredOp.x + 16, (typeof window !== 'undefined' ? window.innerWidth : 1920) - 280),
+                top: hoveredOp.y + 16,
+                width: 260,
+                background: '#0d1426',
+                border: `1px solid ${clr}55`,
+                boxShadow: `0 12px 40px rgba(0,0,0,0.55), 0 0 24px ${clr}22`,
+              }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.12 }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: clr, boxShadow: `0 0 8px ${clr}` }} />
+                <p className="text-sm font-semibold text-white truncate">{r.name}</p>
+              </div>
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md"
+                  style={{ background: `${clr}1f`, color: clr, border: `1px solid ${clr}40` }}
+                >
+                  Dokončená operace
+                </span>
+                {phases > 0 && (
+                  <span className="text-[10px] text-white/45">{phases} {phases === 1 ? 'fáze' : phases < 5 ? 'fáze' : 'fází'}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  { label: 'Začátek', value: fmt(startMs) },
+                  { label: 'Konec', value: fmt(endMs) },
+                  { label: 'Trvání', value: durStr },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <p className="text-[8px] uppercase tracking-[0.15em] text-white/35 mb-0.5">{item.label}</p>
+                    <p className="text-xs font-bold tabular-nums text-white">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })()}
+        {hoveredOp && !hoveredOp.completed && (() => {
           const r = hoveredOp.room;
           const stepIdx = Math.max(0, Math.min(r.currentStepIndex, activeStatuses.length - 1));
           const step = activeStatuses[stepIdx] || statusByOrderIndex[r.currentStepIndex] || null;
@@ -1195,6 +1270,16 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               </button>
 
               <div className="w-px h-6 bg-white/10 mx-0.5" />
+
+              {/* Historie — listování po dnech a zpětné zobrazení časové osy */}
+              <button
+                onClick={() => setShowHistory(true)}
+                aria-label="Historie"
+                title="Historie — listování po dnech a zpětné zobrazení časové osy"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+              >
+                <CalendarDays className="w-4 h-4 text-white/60" />
+              </button>
 
               {/* Tok pacienta — pipeline napříč traktem */}
               <button
@@ -1738,7 +1823,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 const widthPct = 100 / TIMELINE_HOURS;
                 const actualHour = TIMELINE_START_HOUR + hour;
                 const displayHour = actualHour % 24;
-                const isNightHour = displayHour >= 19 || displayHour < 7;
                 const isMajorHour = displayHour % 3 === 0;
                 return (
                   <div
@@ -1746,19 +1830,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     className="absolute top-0 bottom-0"
                     style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
                   >
-                    {/* Noční hodiny — jemné modravé ztmavení dodává dni přirozený rytmus */}
-                    {isNightHour && (
-                      <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.28) 0%, rgba(12, 22, 38, 0.12) 100%)' }}
-                      />
-                    )}
-                    {displayHour === currentHour && (
-                      <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ background: `linear-gradient(180deg, ${C.accent}12 0%, ${C.accent}04 100%)` }}
-                      />
-                    )}
+                    {/* Pozadí mřížky je jednotné — bez nočního ztmavení i bez
+                        zvýraznění aktuální hodiny (na přání jednotný vzhled). */}
                     <div
                       className="absolute left-0 top-0 bottom-0 w-px"
                       style={{
@@ -2466,6 +2539,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: opIdx * 0.05 }}
+                            onMouseEnter={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY, completed: { startedAt: operation.startedAt, endedAt: operation.endedAt, statusHistory: operation.statusHistory } })}
+                            onMouseMove={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY, completed: { startedAt: operation.startedAt, endedAt: operation.endedAt, statusHistory: operation.statusHistory } })}
+                            onMouseLeave={() => setHoveredOp(null)}
                           >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (

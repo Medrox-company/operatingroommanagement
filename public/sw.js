@@ -1,4 +1,4 @@
-const CACHE_NAME = 'or-control-v1';
+const CACHE_NAME = 'or-control-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -67,11 +67,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets - cache first with network fallback
+  // Kód aplikace (JS/CSS/JSON/manifest) - NETWORK FIRST.
+  // Důležité: cache-first by trvale servíroval starý build a změny by se
+  // nikdy neprojevily. Síť má proto přednost, cache je jen offline záloha.
   if (
-    url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico|json|woff|woff2)$/i) ||
+    url.pathname.match(/\.(js|css|json)$/i) ||
     url.pathname === '/manifest.json'
   ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type !== 'error') {
+            const cloned = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((r) => r || new Response('Offline', { status: 503 }))),
+    );
+    return;
+  }
+
+  // Obrázky a fonty - cache first s network fallbackem (mění se zřídka)
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|ico|webp|gif|woff|woff2)$/i)) {
     event.respondWith(
       caches.match(request).then((response) => {
         if (response) {

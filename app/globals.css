@@ -695,3 +695,47 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .pf-flow-line { animation: none; }
 }
+
+/* ════════ EKG monitor — realistická medicínská ambientní animace (login) ════════
+   Milimetrový papír (graph paper) + statická slabá stopa PQRST + jasný
+   „blip", který stopu opisuje jako na skutečném monitoru. */
+.ecg-layer {
+  /* Bez mřížky — jen vykrytí okrajů do ztracena */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+}
+
+/* Slabá stálá stopa */
+.ecg-trace-faint {
+  fill: none;
+  stroke: rgba(54, 217, 236, 0.22);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Jasný úsek, který „kreslí" křivku zleva doprava (sweep monitoru).
+   Vzor pomlčky (120 + 880 = 1000 = pathLength) tvoří přesně JEDEN viditelný
+   úsek na celou délku → posun o 1000 je dokonale bezešvý (žádné trhnutí). */
+@keyframes ecg-draw { from { stroke-dashoffset: 120; } to { stroke-dashoffset: -880; } }
+.ecg-trace {
+  fill: none;
+  stroke: #4DE3F5;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 120 880;
+  filter: drop-shadow(0 0 7px rgba(54, 217, 236, 0.9));
+  animation: ecg-draw 6s linear infinite;
+}
+
+/* Svítící hlavička (blip) */
+.ecg-dot {
+  fill: #EAFEFF;
+  filter: drop-shadow(0 0 8px rgba(120, 240, 255, 1)) drop-shadow(0 0 16px rgba(54, 217, 236, 0.8));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecg-trace { animation: none; stroke-dasharray: none; }
+  .ecg-dot { display: none; }
+}
