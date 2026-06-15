@@ -363,14 +363,17 @@ const AppContent: React.FC = () => {
   const handleEnhancedHygieneToggle = useCallback(async (roomId: string, enabled: boolean) => {
     recentLocalUpdates.current.set(roomId, Date.now());
     const targetRoom = rooms.find(r => r.id === roomId);
+    // Při zapnutí ulož čas aktivace; při vypnutí čas PONECHÁME, aby bod na ose zůstal.
+    const hygieneAt = enabled ? new Date().toISOString() : undefined;
     setRooms(prev => prev.map(room =>
       room.id === roomId
-        ? { ...room, isEnhancedHygiene: enabled }
+        ? { ...room, isEnhancedHygiene: enabled, ...(enabled ? { enhancedHygieneAt: hygieneAt } : {}) }
         : room
     ));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, {
-        is_enhanced_hygiene: enabled
+        is_enhanced_hygiene: enabled,
+        ...(enabled ? { enhanced_hygiene_at: hygieneAt } : {}),
       });
       // Při VYHLÁŠENÍ zvýšeného hygienického režimu (infekční pacient) zapiš
       // trvalý záznam do notifications_log — na kterém sále a v jakém čase.

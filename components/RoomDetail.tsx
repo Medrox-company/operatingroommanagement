@@ -668,7 +668,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 onClick={async () => {
                   const newPaused = !isPaused;
                   setIsPaused(newPaused);
-                  await updateOperatingRoom(room.id, { is_paused: newPaused });
+                  await updateOperatingRoom(room.id, {
+                    is_paused: newPaused,
+                    paused_at: newPaused ? new Date().toISOString() : null,
+                  });
                   await recordStatusEvent({
                     operating_room_id: room.id,
                     event_type: newPaused ? 'pause' : 'resume',

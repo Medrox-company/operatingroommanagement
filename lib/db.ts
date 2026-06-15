@@ -50,7 +50,9 @@ interface DBOperatingRoom {
   is_emergency: boolean;
   is_locked: boolean;
   is_enhanced_hygiene: boolean;
+  enhanced_hygiene_at: string | null;
   is_paused: boolean;
+  paused_at: string | null;
   patient_called_at: string | null;
   patient_arrived_at: string | null;
   phase_started_at: string | null;
@@ -137,7 +139,9 @@ function transformRoom(
     isSeptic: row.is_septic,
     isEmergency: row.is_emergency,
     isEnhancedHygiene: row.is_enhanced_hygiene,
+    enhancedHygieneAt: row.enhanced_hygiene_at,
     isPaused: row.is_paused,
+    pausedAt: row.paused_at,
     patientCalledAt: row.patient_called_at,
     patientArrivedAt: row.patient_arrived_at,
     phaseStartedAt: row.phase_started_at,
@@ -260,7 +264,9 @@ export async function updateOperatingRoom(
     status: string;
     is_emergency: boolean;
     is_enhanced_hygiene: boolean;
+    enhanced_hygiene_at: string | null;
     is_paused: boolean;
+    paused_at: string | null;
     is_locked: boolean;
     patient_called_at: string | null;
     patient_arrived_at: string | null;
@@ -286,11 +292,28 @@ export async function updateOperatingRoom(
       .from('operating_rooms')
       .update(updates)
       .eq('id', id);
-    
+
     if (error) {
+      // Chybějící volitelný sloupec (kód 42703, např. paused_at / enhanced_hygiene_at,
+      // dokud nebyla spuštěna migrace) → odeber tyto sloupce a zkus to znovu,
+      // aby základní změna (např. is_paused, is_enhanced_hygiene) prošla.
+      if (error.code === '42703') {
+        const OPTIONAL_COLUMNS = ['paused_at', 'enhanced_hygiene_at'];
+        const stripped: Record<string, any> = { ...(updates as Record<string, any>) };
+        let removed = false;
+        for (const col of OPTIONAL_COLUMNS) {
+          if (col in stripped) { delete stripped[col]; removed = true; }
+        }
+        if (removed && Object.keys(stripped).length > 0) {
+          const retry = await supabase.from('operating_rooms').update(stripped).eq('id', id);
+          if (!retry.error) {
+            console.warn('[DB] Volitelný sloupec chybí — proběhla migrace bez něj. Spusť scripts/add-*.sql.');
+            return true;
+          }
+        }
+      }
       // Supabase chybové objekty se do konzole serializují jako „{}"; vypíšeme
-      // proto explicitně jednotlivá pole, ať je vidět skutečná příčina
-      // (např. chybějící sloupec → kód 42703).
+      // proto explicitně jednotlivá pole, ať je vidět skutečná příčina.
       console.error('Error updating operating room:', {
         message: error.message,
         details: error.details,

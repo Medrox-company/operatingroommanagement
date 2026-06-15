@@ -17,12 +17,12 @@ export const C = {
   blue: '#38BDF8',        // Info — sky blue
   slate: '#7E93A8',       // Completed — chladný slate
 
-  // Surface & Glass Effects — hluboký teal-černý podklad (referenční screenshot)
-  bgDeep: '#06141D',                        // Deep teal black
-  bgSurface: 'rgb(7, 19, 27)',              // Glass surface
-  bgElevated: 'rgba(16, 38, 50, 0.92)',     // Elevated cards
-  bgCard: 'rgba(10, 26, 36, 0.96)',         // Card background
-  bgPanel: 'rgba(8, 22, 31, 0.95)',         // Sticky panely / toolbar (neprůhledné)
+  // Surface & Glass Effects — navy „flow editor" podklad (dle referenčního obrázku)
+  bgDeep: '#0d1428',                        // Deep navy black
+  bgSurface: 'rgba(7, 10, 20, 0.99)',       // Navy surface — téměř černá (popup)
+  bgElevated: 'rgba(17, 23, 46, 0.98)',     // Elevated cards — hluboká navy (popup)
+  bgCard: 'rgba(13, 18, 38, 0.97)',         // Card background
+  bgPanel: 'rgba(20, 29, 57, 0.95)',        // Sticky panely / toolbar (neprůhledné)
 
   // Borders & Lines
   border: 'rgba(125, 165, 185, 0.12)',      // Subtle border (chladná)

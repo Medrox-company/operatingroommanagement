@@ -98,7 +98,9 @@ export interface OperatingRoom {
   isEmergency?: boolean;
   isLocked?: boolean;
   isEnhancedHygiene?: boolean; // Zvýšený hygienický režim
+  enhancedHygieneAt?: string | null; // ISO timestamp aktivace hygienického režimu (marker na ose)
   isPaused?: boolean; // Pauza operace
+  pausedAt?: string | null; // ISO timestamp začátku pauzy (pro zobrazení úseku na ose)
   patientCalledAt?: string | null; // ISO timestamp kdy byl pacient zavolán
   patientArrivedAt?: string | null; // ISO timestamp kdy pacient přijel
   phaseStartedAt?: string | null; // ISO timestamp začátku aktuální fáze
