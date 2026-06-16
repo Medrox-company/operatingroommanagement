@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_WORKING_HOURS } from '../types';
+import { MOCK_ROOMS } from '../constants';
 import { updateOperatingRoom, createOperatingRoom, deleteOperatingRoom } from '../lib/db';
 import {
   Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar,
