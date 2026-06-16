@@ -13,7 +13,6 @@ import AnimatedCounter from './components/AnimatedCounter';
 import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
@@ -38,7 +37,7 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules, user } = useAuth();
-  const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
+  const [rooms, setRooms] = useState<OperatingRoom[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
@@ -121,6 +120,7 @@ const AppContent: React.FC = () => {
 
     const loadRooms = async () => {
       try {
+        console.log('[v0] Loading rooms from /api/rooms...');
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
         const response = await fetch(`/api/rooms`, {
@@ -128,15 +128,27 @@ const AppContent: React.FC = () => {
         });
         clearTimeout(timeout);
         if (!isMounted) return;
-        if (!response.ok) throw new Error('Failed to fetch rooms');
+        
+        if (!response.ok) {
+          console.error('[v0] API returned non-200 status:', response.status);
+          throw new Error(`Failed to fetch rooms: ${response.status}`);
+        }
+        
         const dbRooms = await response.json();
-        if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) return;
+        console.log('[v0] Received from API:', { count: dbRooms?.length, sample: dbRooms?.[0] });
+        
+        if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) {
+          console.warn('[v0] API returned empty or invalid data, staying with empty state');
+          return;
+        }
         
         setRooms(dbRooms);
         setIsDbConnected(true);
+        console.log('[v0] Successfully loaded', dbRooms.length, 'rooms from database');
       } catch (error) {
         if (!isMounted) return;
-        console.error("[App] Failed to load rooms:", error);
+        console.error("[v0] Failed to load rooms:", error);
+        setIsDbConnected(false);
       }
     };
     
