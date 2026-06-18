@@ -1,14 +1,25 @@
+'use client';
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
 import RoomDetail from './components/RoomDetail';
-import TimelineModule from './components/TimelineModule';
-import StatisticsModule from './components/StatisticsModule';
-import StaffManager from './components/StaffManager';
-import StaffOverviewModule from './components/StaffOverviewModule';
-import SettingsPage from './components/SettingsPage';
 import PlaceholderView from './components/PlaceholderView';
+
+// ── Lazy-load těžkých modulů (nejsou výchozí pohled) → menší úvodní bundle,
+//    rychlejší a stabilnější start. Načtou se až při přepnutí na daný modul. ──
+const ModuleLoader = () => (
+  <div className="w-full h-full flex items-center justify-center py-32">
+    <div className="w-7 h-7 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" />
+  </div>
+);
+const TimelineModule = dynamic(() => import('./components/TimelineModule'), { ssr: false, loading: ModuleLoader });
+const StatisticsModule = dynamic(() => import('./components/StatisticsModule'), { ssr: false, loading: ModuleLoader });
+const StaffManager = dynamic(() => import('./components/StaffManager'), { ssr: false, loading: ModuleLoader });
+const StaffOverviewModule = dynamic(() => import('./components/StaffOverviewModule'), { ssr: false, loading: ModuleLoader });
+const SettingsPage = dynamic(() => import('./components/SettingsPage'), { ssr: false, loading: ModuleLoader });
 import AnimatedCounter from './components/AnimatedCounter';
 import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
@@ -126,7 +137,11 @@ const AppContent: React.FC = () => {
       try {
         // Přímý dotaz na Supabase (jako u ručního refreshe) — vynechá serverový
         // mezikrok /api/rooms i ověření session, takže dashboard naběhne rychleji.
-        const dbRooms = await fetchOperatingRooms();
+        // Timeout 9 s: kdyby dotaz „visel", appka nezůstane navždy v načítání.
+        const dbRooms = await Promise.race([
+          fetchOperatingRooms(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 9000)),
+        ]);
         if (!isMounted) return;
         if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) {
           // DB prázdná/nedostupná → záloha mock dat (offline/demo)
