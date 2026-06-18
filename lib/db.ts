@@ -255,6 +255,49 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
   }
 }
 
+// „Light" varianta — vynechá těžké JSONB sloupce (completed_operations,
+// status_history) pro RYCHLÉ první vykreslení dashboardu. Plná data (počty
+// operací, historie pro časovou osu) se doplní následným fetchOperatingRooms().
+// Transform tyto sloupce při chybějících hodnotách bezpečně doplní prázdným polem.
+const LIGHT_ROOM_COLUMNS = [
+  'id', 'name', 'department', 'status', 'queue_count', 'operations_24h',
+  'is_septic', 'is_emergency', 'is_locked', 'is_enhanced_hygiene', 'enhanced_hygiene_at',
+  'is_paused', 'paused_at', 'patient_called_at', 'patient_arrived_at',
+  'phase_started_at', 'operation_started_at', 'current_step_index', 'estimated_end_time',
+  'doctor_id', 'nurse_id', 'anesthesiologist_id', 'current_patient_id', 'current_procedure_id',
+  'weekly_schedule', 'sort_order', 'hourly_operating_cost',
+].join(', ');
+
+export async function fetchOperatingRoomsLight(): Promise<OperatingRoom[] | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const [roomsRes, staffRes] = await Promise.all([
+      supabase
+        .from('operating_rooms')
+        .select(LIGHT_ROOM_COLUMNS)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('name', { ascending: true }),
+      supabase.from('staff').select('*'),
+    ]);
+
+    if (roomsRes.error) throw roomsRes.error;
+    if (!roomsRes.data || roomsRes.data.length === 0) return null;
+
+    const staffMap = new Map<string, DBStaff>();
+    (staffRes.data || []).forEach((s: DBStaff) => staffMap.set(s.id, s));
+    const patientMap = new Map<string, DBPatient>();
+    const procedureMap = new Map<string, DBProcedure>();
+
+    return (roomsRes.data as unknown as DBOperatingRoom[]).map((row) =>
+      transformRoom(row, staffMap, patientMap, procedureMap)
+    );
+  } catch (error) {
+    // Při chybě (např. přejmenovaný sloupec) → null; volající použije plný fetch.
+    console.warn('[DB] Light fetch selhal, použiju plný fetch:', error);
+    return null;
+  }
+}
+
 // Update operating room
 export async function updateOperatingRoom(
   id: string, 

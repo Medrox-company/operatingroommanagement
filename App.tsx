@@ -27,7 +27,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
+import { fetchOperatingRooms, fetchOperatingRoomsLight, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
@@ -133,30 +133,40 @@ const AppContent: React.FC = () => {
     if (!isAuthenticated) return;
     let isMounted = true;
 
+    const withTimeout = <T,>(p: Promise<T>, ms = 9000) =>
+      Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
+
     const loadRooms = async () => {
       try {
-        // Přímý dotaz na Supabase (jako u ručního refreshe) — vynechá serverový
-        // mezikrok /api/rooms i ověření session, takže dashboard naběhne rychleji.
-        // Timeout 9 s: kdyby dotaz „visel", appka nezůstane navždy v načítání.
-        const dbRooms = await Promise.race([
-          fetchOperatingRooms(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 9000)),
-        ]);
+        // 1) LIGHT fetch — rychlé první vykreslení (bez těžkých JSONB sloupců).
+        const light = await withTimeout(fetchOperatingRoomsLight());
+        if (!isMounted) return;
+        if (light && Array.isArray(light) && light.length > 0) {
+          setRooms(light);
+          setIsDbConnected(true);
+          setRoomsLoaded(true);
+          // 2) PLNÝ fetch na pozadí — doplní completed_operations + status_history
+          //    (počty operací, data pro časovou osu).
+          fetchOperatingRooms()
+            .then((full) => { if (isMounted && full && full.length > 0) setRooms(full); })
+            .catch(() => { /* light data zůstanou, doplní realtime/refresh */ });
+          return;
+        }
+
+        // Light selhal/prázdný → plný fetch (původní chování) s timeoutem.
+        const dbRooms = await withTimeout(fetchOperatingRooms());
         if (!isMounted) return;
         if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) {
-          // DB prázdná/nedostupná → záloha mock dat (offline/demo)
           setRooms(MOCK_ROOMS);
           setRoomsLoaded(true);
           return;
         }
-
         setRooms(dbRooms);
         setIsDbConnected(true);
         setRoomsLoaded(true);
       } catch (error) {
         if (!isMounted) return;
         console.error("[App] Failed to load rooms:", error);
-        // Síťová chyba → záloha mock dat, ať appka není prázdná
         setRooms(MOCK_ROOMS);
         setRoomsLoaded(true);
       }
