@@ -27,7 +27,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
-import { fetchOperatingRooms, fetchOperatingRoomsLight, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
@@ -138,22 +138,8 @@ const AppContent: React.FC = () => {
 
     const loadRooms = async () => {
       try {
-        // 1) LIGHT fetch — rychlé první vykreslení (bez těžkých JSONB sloupců).
-        const light = await withTimeout(fetchOperatingRoomsLight());
-        if (!isMounted) return;
-        if (light && Array.isArray(light) && light.length > 0) {
-          setRooms(light);
-          setIsDbConnected(true);
-          setRoomsLoaded(true);
-          // 2) PLNÝ fetch na pozadí — doplní completed_operations + status_history
-          //    (počty operací, data pro časovou osu).
-          fetchOperatingRooms()
-            .then((full) => { if (isMounted && full && full.length > 0) setRooms(full); })
-            .catch(() => { /* light data zůstanou, doplní realtime/refresh */ });
-          return;
-        }
-
-        // Light selhal/prázdný → plný fetch (původní chování) s timeoutem.
+        // Plný fetch (s timeoutem). Načítá KOMPLETNÍ data včetně status_history a
+        // completed_operations, ze kterých se počítají barvy segmentů na časové ose.
         const dbRooms = await withTimeout(fetchOperatingRooms());
         if (!isMounted) return;
         if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) {
