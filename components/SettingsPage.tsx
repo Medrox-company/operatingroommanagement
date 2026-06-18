@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft, Smartphone, ClipboardList } from 'lucide-react';
 import OperatingRoomsManager from './OperatingRoomsManager';
 import NotificationsManager from './NotificationsManager';
-import ShiftScheduleManager from './ShiftScheduleManager';
+import ScheduleManager from './ScheduleManager';
 import StatisticsModule from './StatisticsModule';
 import StaffManager from './StaffManager';
 import StaffOverviewModule from './StaffOverviewModule';
@@ -14,7 +14,6 @@ import DevicesManager from './DevicesManager';
 import CalendarManager from './CalendarManager';
 import SystemSettingsModule from './SystemSettingsModule';
 import { ErrorBoundary } from './ErrorBoundary';
-import FitGrid from './FitGrid';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -47,13 +46,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       accentColor: '#A855F7',
     },
     {
-      id: 'shifts',
-      title: 'Rozpis služeb',
-      description: 'Správa pracovních směn a personálu',
-      icon: Briefcase,
-      accentColor: '#F97316',
-    },
-    {
       id: 'staff',
       title: 'Personál',
       description: 'Správa zaměstnanců a jejich přiřazení',
@@ -68,25 +60,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       accentColor: '#FBBF24',
     },
     {
-      id: 'departments',
-      title: 'Oddělení',
-      description: 'Správa oddělení a jejich konfigurací',
-      icon: Stethoscope,
-      accentColor: '#F97316',
-    },
-    {
       id: 'statuses',
       title: 'Statusy',
       description: 'Konfigurace workflow statusů operací',
       icon: Activity,
       accentColor: '#A78BFA',
-    },
-    {
-      id: 'contacts',
-      title: 'Kontakty',
-      description: 'Správa kontaktů a komunikace',
-      icon: Phone,
-      accentColor: '#6366F1',
     },
     {
       id: 'calendar',
@@ -174,9 +152,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             onScheduleUpdate={onScheduleUpdate}
           />
         </ModuleWrapper>
-      ) : selectedModule === 'shifts' ? (
+      ) : selectedModule === 'schedule' ? (
         <ModuleWrapper>
-          <ShiftScheduleManager />
+          <ScheduleManager />
         </ModuleWrapper>
       ) : selectedModule === 'notifications' ? (
         <ModuleWrapper>
@@ -219,10 +197,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           <SystemSettingsModule />
         </ModuleWrapper>
       ) : (
-        <div className="w-full h-full overflow-y-auto md:overflow-hidden hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-7 pb-mobile-nav md:pb-7 flex flex-col">
-          <div className="max-w-[2400px] mx-auto w-full flex flex-col flex-1 min-h-0">
+        <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+          <div className="max-w-[2400px] mx-auto w-full">
             {/* Settings Header */}
-            <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-6 md:mb-6 flex-shrink-0">
+            <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
               <div className="text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
                   <SettingsIcon className="w-4 h-4 text-[#8B5CF6]" />
@@ -234,22 +212,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
               </div>
             </header>
 
-            {/* Settings Grid — vejde se na obrazovku bez rolování (desktop) */}
-            <div className="flex-1 min-h-0 pb-20 md:pb-0 px-2">
-              <FitGrid
-                count={settings.length}
-                idealAspect={1.05}
-                minCellH={230}
-                fallbackRowH={300}
-                mobileClassName="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              >
+            {/* Settings Grid — stejný design jako dashboard (responzivní mřížka s rolováním) */}
+            <div className="pb-20 px-0 sm:px-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
                 {settings.map((setting, index) => {
                   const Icon = setting.icon;
                   return (
                     <div
                       key={setting.id}
                       onClick={() => setSelectedModule(setting.id)}
-                      className="relative group cursor-pointer h-full w-full transition-transform duration-300 hover:-translate-y-1 hover:z-50"
+                      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full transition-transform duration-300 hover:-translate-y-1 hover:z-50"
                       style={{ zIndex: 1 }}
                     >
                       {/* Main Card Container */}
@@ -385,7 +357,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                     </div>
                   );
                 })}
-              </FitGrid>
+              </div>
             </div>
           </div>
         </div>
