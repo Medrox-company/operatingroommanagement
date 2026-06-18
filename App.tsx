@@ -545,6 +545,19 @@ const AppContent: React.FC = () => {
         {/* <TopBar /> */}
 
         <main className="flex-1 overflow-hidden relative pb-20 md:pb-0">
+          {/* Granulární error-boundary kolem obsahu modulů — pád jednoho modulu
+              neshodí celou aplikaci (sidebar/navigace zůstanou). Klíč podle
+              currentView zajistí reset po přepnutí na jiný modul. */}
+          <ErrorBoundary
+            key={currentView}
+            fallback={
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-center px-6">
+                <AlertTriangle className="w-8 h-8 text-amber-400" />
+                <p className="text-white/70 font-medium">Tento modul se nepodařilo zobrazit.</p>
+                <p className="text-sm text-white/40">Zkuste přepnout na jiný modul nebo obnovit stránku.</p>
+              </div>
+            }
+          >
 
             {/* Dashboard — room detail */}
             {currentView === 'dashboard' && selectedRoom && (
@@ -693,6 +706,7 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
+          </ErrorBoundary>
         </main>
       </div>
     </div>
