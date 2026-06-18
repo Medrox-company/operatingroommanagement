@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
-import FitGrid from './components/FitGrid';
 import RoomDetail from './components/RoomDetail';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
@@ -550,9 +549,9 @@ const AppContent: React.FC = () => {
 
             {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
-              <div className="w-full h-full overflow-y-auto md:overflow-hidden hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-7 pb-mobile-nav md:pb-7 flex flex-col">
-                <div className="max-w-[2400px] mx-auto w-full flex flex-col flex-1 min-h-0">
-                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-6 flex-shrink-0">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+                <div className="max-w-[2400px] mx-auto w-full">
+                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
                       <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
                         <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
@@ -608,29 +607,24 @@ const AppContent: React.FC = () => {
                       </div>
                     </div>
                   </header>
-                  <div className="flex-1 min-h-0 pb-20 md:pb-0 px-0 sm:px-2">
+                  <div className="pb-20 px-0 sm:px-2">
                     {!roomsLoaded ? (
                       <div className="flex flex-col items-center justify-center py-32 gap-3">
                         <div className="w-7 h-7 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" />
                         <p className="text-sm text-white/40">Načítám operační sály…</p>
                       </div>
                     ) : (
-                      <FitGrid
-                        count={rooms.length}
-                        idealAspect={1.05}
-                        mobileClassName="grid-cols-2 gap-x-2 gap-y-3"
-                      >
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
                         {rooms.map((room) => (
                           <RoomCard
                             key={room.id}
                             room={room}
-                            fill
                             onClick={() => setSelectedRoomId(room.id)}
                             onEmergency={() => toggleEmergency(room.id)}
                             onLock={() => toggleLock(room.id)}
                           />
                         ))}
-                      </FitGrid>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -154,7 +154,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         </div>
 
         {/* Central Content Wrapper */}
-        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
             <div className="relative flex items-center justify-center">
                 {/* Static glow behind the circle - replaced motion for performance */}
                 <div

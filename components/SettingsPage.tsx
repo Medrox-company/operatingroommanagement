@@ -160,7 +160,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
   );
 
   return (
-    <div className="relative w-full min-h-screen">
+    // Rozcestník (bez vybraného modulu) potřebuje definovanou výšku (h-full),
+    // aby FitGrid správně změřil plochu a neproblikával. Po výběru modulu
+    // necháme min-h-screen, ať se obsah může rolovat.
+    <div className={`relative w-full ${selectedModule ? 'min-h-screen' : 'h-full'}`}>
       {selectedModule === 'rooms' ? (
         <ModuleWrapper>
           <OperatingRoomsManager 
@@ -235,26 +238,19 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             <div className="flex-1 min-h-0 pb-20 md:pb-0 px-2">
               <FitGrid
                 count={settings.length}
-                idealAspect={1.15}
-                mobileClassName="grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8"
+                idealAspect={1.05}
+                minCellH={230}
+                fallbackRowH={300}
+                mobileClassName="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
               >
                 {settings.map((setting, index) => {
                   const Icon = setting.icon;
                   return (
-                    <motion.div
+                    <div
                       key={setting.id}
-                      layout
                       onClick={() => setSelectedModule(setting.id)}
-                      className="relative group cursor-pointer h-full min-h-[150px] w-full"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ 
-                        scale: 1.02, 
-                        zIndex: 50,
-                        transition: { duration: 0.3 }
-                      }}
+                      className="relative group cursor-pointer h-full w-full transition-transform duration-300 hover:-translate-y-1 hover:z-50"
                       style={{ zIndex: 1 }}
-                      transition={{ delay: index * 0.08 }}
                     >
                       {/* Main Card Container */}
                       <motion.div 
@@ -386,7 +382,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                           </div>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </FitGrid>
