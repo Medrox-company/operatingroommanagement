@@ -14,6 +14,7 @@ import DevicesManager from './DevicesManager';
 import CalendarManager from './CalendarManager';
 import SystemSettingsModule from './SystemSettingsModule';
 import { ErrorBoundary } from './ErrorBoundary';
+import FitGrid from './FitGrid';
 import { OperatingRoom } from '../types';
 
 interface SettingsPageProps {
@@ -215,10 +216,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           <SystemSettingsModule />
         </ModuleWrapper>
       ) : (
-        <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
-          <div className="max-w-[2400px] mx-auto w-full">
+        <div className="w-full h-full overflow-y-auto md:overflow-hidden hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-7 pb-mobile-nav md:pb-7 flex flex-col">
+          <div className="max-w-[2400px] mx-auto w-full flex flex-col flex-1 min-h-0">
             {/* Settings Header */}
-            <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16 flex-shrink-0">
+            <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-6 md:mb-6 flex-shrink-0">
               <div className="text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
                   <SettingsIcon className="w-4 h-4 text-[#8B5CF6]" />
@@ -230,13 +231,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
               </div>
             </header>
 
-            {/* Settings Grid */}
-            <div className="pb-20 px-2">
-              <motion.div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-8 gap-y-12"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ staggerChildren: 0.08, delayChildren: 0.15 }}
+            {/* Settings Grid — vejde se na obrazovku bez rolování (desktop) */}
+            <div className="flex-1 min-h-0 pb-20 md:pb-0 px-2">
+              <FitGrid
+                count={settings.length}
+                idealAspect={1.15}
+                mobileClassName="grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8"
               >
                 {settings.map((setting, index) => {
                   const Icon = setting.icon;
@@ -245,7 +245,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                       key={setting.id}
                       layout
                       onClick={() => setSelectedModule(setting.id)}
-                      className="relative group cursor-pointer h-[340px] w-full"
+                      className="relative group cursor-pointer h-full min-h-[150px] w-full"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       whileHover={{ 
@@ -389,7 +389,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                     </motion.div>
                   );
                 })}
-              </motion.div>
+              </FitGrid>
             </div>
           </div>
         </div>

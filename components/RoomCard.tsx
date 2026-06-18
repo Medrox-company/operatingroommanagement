@@ -9,9 +9,11 @@ interface RoomCardProps {
   onClick?: () => void;
   onEmergency?: (e: React.MouseEvent) => void;
   onLock?: (e: React.MouseEvent) => void;
+  /** Vyplní výšku buňky mřížky (desktop fit). Mobil = fixní výška. */
+  fill?: boolean;
 }
 
-const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock }) => {
+const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock, fill }) => {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -95,7 +97,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   return (
     <div
       onClick={onClick}
-      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99]"
+      className={`relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[260px] sm:h-[340px]'}`}
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (

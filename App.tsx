@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
+import FitGrid from './components/FitGrid';
 import RoomDetail from './components/RoomDetail';
 import TimelineModule from './components/TimelineModule';
 import StatisticsModule from './components/StatisticsModule';
@@ -38,7 +39,10 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules, user } = useAuth();
-  const [rooms, setRooms] = useState<OperatingRoom[]>(MOCK_ROOMS);
+  // Začínáme prázdní — mock data se NEzobrazují (zabrání probliknutí špatných
+  // názvů/statusů). Mock zůstává jen jako záloha při selhání načtení (offline/demo).
+  const [rooms, setRooms] = useState<OperatingRoom[]>([]);
+  const [roomsLoaded, setRoomsLoaded] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
@@ -121,22 +125,26 @@ const AppContent: React.FC = () => {
 
     const loadRooms = async () => {
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(`/api/rooms`, {
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
+        // Přímý dotaz na Supabase (jako u ručního refreshe) — vynechá serverový
+        // mezikrok /api/rooms i ověření session, takže dashboard naběhne rychleji.
+        const dbRooms = await fetchOperatingRooms();
         if (!isMounted) return;
-        if (!response.ok) throw new Error('Failed to fetch rooms');
-        const dbRooms = await response.json();
-        if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) return;
-        
+        if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) {
+          // DB prázdná/nedostupná → záloha mock dat (offline/demo)
+          setRooms(MOCK_ROOMS);
+          setRoomsLoaded(true);
+          return;
+        }
+
         setRooms(dbRooms);
         setIsDbConnected(true);
+        setRoomsLoaded(true);
       } catch (error) {
         if (!isMounted) return;
         console.error("[App] Failed to load rooms:", error);
+        // Síťová chyba → záloha mock dat, ať appka není prázdná
+        setRooms(MOCK_ROOMS);
+        setRoomsLoaded(true);
       }
     };
     
@@ -542,9 +550,9 @@ const AppContent: React.FC = () => {
 
             {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
-                <div className="max-w-[2400px] mx-auto w-full">
-                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-12 lg:mb-16 flex-shrink-0">
+              <div className="w-full h-full overflow-y-auto md:overflow-hidden hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-7 pb-mobile-nav md:pb-7 flex flex-col">
+                <div className="max-w-[2400px] mx-auto w-full flex flex-col flex-1 min-h-0">
+                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-6 flex-shrink-0">
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
                       <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
                         <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
@@ -600,18 +608,30 @@ const AppContent: React.FC = () => {
                       </div>
                     </div>
                   </header>
-                  <div className="pb-20 px-0 sm:px-2">
-                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-x-2 sm:gap-x-6 md:gap-x-8 gap-y-3 sm:gap-y-8 md:gap-y-12">
-                      {rooms.map((room) => (
-                        <RoomCard
-                          key={room.id}
-                          room={room}
-                          onClick={() => setSelectedRoomId(room.id)}
-                          onEmergency={() => toggleEmergency(room.id)}
-                          onLock={() => toggleLock(room.id)}
-                        />
-                      ))}
-                    </div>
+                  <div className="flex-1 min-h-0 pb-20 md:pb-0 px-0 sm:px-2">
+                    {!roomsLoaded ? (
+                      <div className="flex flex-col items-center justify-center py-32 gap-3">
+                        <div className="w-7 h-7 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" />
+                        <p className="text-sm text-white/40">Načítám operační sály…</p>
+                      </div>
+                    ) : (
+                      <FitGrid
+                        count={rooms.length}
+                        idealAspect={1.05}
+                        mobileClassName="grid-cols-2 gap-x-2 gap-y-3"
+                      >
+                        {rooms.map((room) => (
+                          <RoomCard
+                            key={room.id}
+                            room={room}
+                            fill
+                            onClick={() => setSelectedRoomId(room.id)}
+                            onEmergency={() => toggleEmergency(room.id)}
+                            onLock={() => toggleLock(room.id)}
+                          />
+                        ))}
+                      </FitGrid>
+                    )}
                   </div>
                 </div>
               </div>
