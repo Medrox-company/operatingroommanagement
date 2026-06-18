@@ -180,6 +180,26 @@ const AppContent: React.FC = () => {
     };
   }, [isAuthenticated]);
 
+  // Prefetch nejčastěji používaných modulů na pozadí (až je prohlížeč v klidu),
+  // aby přepnutí bylo okamžité bez spinneru. Lazy-loading šetří úvodní bundle,
+  // tohle eliminuje prodlevu při prvním přepnutí.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const run = () => {
+      void import('./components/TimelineModule');
+      void import('./components/StatisticsModule');
+    };
+    const id = w.requestIdleCallback ? w.requestIdleCallback(run, { timeout: 4000 }) : window.setTimeout(run, 2000);
+    return () => {
+      if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
+  }, [isAuthenticated]);
+
   // Ruční obnovení dat (Timeline modul) — Realtime řeší většinu, tohle je „force refresh".
   const refreshRooms = useCallback(async () => {
     try {
