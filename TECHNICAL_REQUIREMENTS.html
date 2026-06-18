@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technické Parametry Nasazení - Operating Room Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: white;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            color: #666;
+        }
+        
+        .meta-info {
+            background-color: #f0f7ff;
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        
+        .meta-info strong {
+            color: #0066cc;
+        }
+        
+        .toc {
+            background-color: #f9f9f9;
+            padding: 20px;
+            margin-bottom: 40px;
+            border-left: 4px solid #0066cc;
+            border-radius: 3px;
+        }
+        
+        .toc h2 {
+            color: #0066cc;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .toc ol {
+            margin-left: 20px;
+        }
+        
+        .toc li {
+            margin-bottom: 8px;
+        }
+        
+        .toc a {
+            text-decoration: none;
+            color: #0066cc;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+        
+        section h2 {
+            font-size: 1.8em;
+            color: #0066cc;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        section h3 {
+            font-size: 1.3em;
+            color: #333;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        section h4 {
+            font-size: 1.05em;
+            color: #555;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background-color: #0066cc;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #004a99;
+        }
+        
+        td {
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f0f7ff;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 15px;
+            border-radius: 3px;
+        }
+        
+        .highlight strong {
+            color: #856404;
+        }
+        
+        .info-box {
+            background-color: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin-bottom: 15px;
+            border-radius: 3px;
+        }
+        
+        .warning-box {
+            background-color: #f8d7da;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin-bottom: 15px;
+            border-radius: 3px;
+        }
+        
+        .success-box {
+            background-color: #d4edda;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 15px;
+            border-radius: 3px;
+        }
+        
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+        
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        .checklist {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .checklist ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .checklist li {
+            padding-left: 25px;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .config-box {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 20px;
+            }
+            
+            section {
+                page-break-inside: avoid;
+            }
+            
+            table {
+                page-break-inside: avoid;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            section h2 {
+                font-size: 1.3em;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            td, th {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TECHNICKÉ PARAMETRY PRO NASAZENÍ</h1>
+            <p>Operating Room Management System</p>
+            <p style="font-size: 0.95em; margin-top: 15px;">Komplexní průvodce hardware, software a síťovými požadavky pro produkční nasazení</p>
+        </header>
+        
+        <div class="meta-info">
+            <p><strong>Verze dokumentu:</strong> 1.0</p>
+            <p><strong>Poslední aktualizace:</strong> 17. června 2026</p>
+            <p><strong>Aplikace:</strong> Operating Room Management System</p>
+            <p><strong>Technologický stack:</strong> Next.js 16 + Supabase + React 18 + TypeScript</p>
+            <p><strong>Jazyky:</strong> JavaScript/TypeScript, PostgreSQL, Bash/Shell</p>
+        </div>
+        
+        <div class="toc">
+            <h2>Obsah dokumentu</h2>
+            <ol>
+                <li><a href="#section-1">Přehled aplikace</a></li>
+                <li><a href="#section-2">Softwarové požadavky pro produkční nasazení</a></li>
+                <li><a href="#section-3">Hardwarové požadavky</a></li>
+                <li><a href="#section-4">Požadavky na desktop klienty</a></li>
+                <li><a href="#section-5">Mobilní zařízení</a></li>
+                <li><a href="#section-6">Síťové požadavky</a></li>
+                <li><a href="#section-7">Supabase databáze - produkční konfigurace</a></li>
+                <li><a href="#section-8">Klientské aplikace - performance metriky</a></li>
+                <li><a href="#section-9">Bezpečnostní požadavky</a></li>
+                <li><a href="#section-10">Produkční nasazení - kroky</a></li>
+                <li><a href="#section-11">Monitoring a maintenance</a></li>
+                <li><a href="#section-12">Aktualizace a upgrade</a></li>
+            </ol>
+        </div>
+        
+        <!-- SECTION 1 -->
+        <section id="section-1">
+            <h2>1. Přehled aplikace</h2>
+            
+            <table>
+                <tr>
+                    <th>Parametr</th>
+                    <th>Hodnota</th>
+                </tr>
+                <tr>
+                    <td>Typ aplikace</td>
+                    <td>Full-stack webová a mobilní aplikace</td>
+                </tr>
+                <tr>
+                    <td>Účel</td>
+                    <td>Management operačních sálů v nemocnicích</td>
+                </tr>
+                <tr>
+                    <td>Architektura</td>
+                    <td>Next.js 16 (frontend + backend API) + Supabase (databáze + realtime)</td>
+                </tr>
+                <tr>
+                    <td>Kategorie</td>
+                    <td>Enterprise healthcare management system</td>
+                </tr>
+                <tr>
+                    <td>Cílový uživatel</td>
+                    <td>Zdravotníci, správci nemocnic, manažeři operačních sálů</td>
+                </tr>
+                <tr>
+                    <td>Dostupnost</td>
+                    <td>Web (desktop, tablet), mobilní aplikace (iOS, Android)</td>
+                </tr>
+            </table>
+            
+            <div class="info-box">
+                <strong>Poznámka:</strong> Aplikace je navržena pro 24/7 provoz s minimální latencí a maximální dostupností. Vyžaduje stabilní internetové připojení a moderní zařízení.
+            </div>
+        </section>
+        
+        <!-- SECTION 2 -->
+        <section id="section-2">
+            <h2>2. Softwarové požadavky pro produkční nasazení</h2>
+            
+            <h3>2.1 Server (Backend/Frontend - Web)</h3>
+            
+            <h4>Operační systém</h4>
+            <ul>
+                <li><strong>Linux (Ubuntu 20.04 LTS / 22.04 LTS / 24.04 LTS)</strong> - DOPORUČENO pro produkci</li>
+                <li>macOS (12.0+) - vhodný pro development a testování</li>
+                <li>Windows Server 2019+ - s WSL2 pro Linux kompatibilitu</li>
+            </ul>
+            
+            <h4>Runtime Environment</h4>
+            <ul>
+                <li><strong>Node.js 18.17.0+</strong> (ideálně 20.x LTS nebo 22.x)</li>
+                <li><strong>npm 9+</strong> nebo <strong>pnpm 8+</strong></li>
+                <li>Package manager MUSÍ být konzistentní v celém deployment pipeline</li>
+            </ul>
+            
+            <h4>Databázový server</h4>
+            <ul>
+                <li><strong>PostgreSQL 13+</strong> (Supabase cloud hosted - doporučeno)</li>
+                <li>Minimálně 100 MB úložného prostoru na začátek</li>
+                <li>Max. connections: 50-100 pro aplikaci (dle konfigurace)</li>
+                <li>Automated backups: Minimálně denně</li>
+                <li>Replication: Point-in-time recovery (PITR)</li>
+            </ul>
+            
+            <h4>Webový server</h4>
+            <ul>
+                <li><strong>Next.js vestavěný server</strong> (doporučeno s Vercel hosting)</li>
+                <li>NEBO: <strong>Nginx/Apache reverse proxy</strong> před Next.js instancí</li>
+                <li><strong>SSL/TLS certifikát</strong> (Let's Encrypt, auto-renew)</li>
+                <li>HTTP/2 a gzip komprese POVINNÉ</li>
+            </ul>
+            
+            <h4>Dodatečné služby</h4>
+            <ul>
+                <li><strong>PM2</strong> - Process manager pro Node.js (load balancing, auto-restart)</li>
+                <li><strong>Redis (optionální)</strong> - Pro caching a session storage (Upstash)</li>
+                <li><strong>Monitoring agent</strong> - New Relic, DataDog, nebo PM2 Plus</li>
+            </ul>
+        </section>
+        
+        <!-- SECTION 3 -->
+        <section id="section-3">
+            <h2>3. Hardwarové požadavky</h2>
+            
+            <h3>3.1 Minimální konfigurace (pro 10-20 operačních sálů)</h3>
+            
+            <div class="config-box">
+                <h4>Server (Linux/Ubuntu)</h4>
+                <ul>
+                    <li><strong>CPU:</strong> 2 jádra (x86_64), 2 GHz</li>
+                    <li><strong>RAM:</strong> 2 GB (doporučuje se 4 GB)</li>
+                    <li><strong>Disk:</strong> 20 GB SSD (10 GB pro OS, 10 GB pro aplikaci)</li>
+                    <li><strong>Síť:</strong> 10 Mbps (minimálně 100 Mbps doporučeno)</li>
+                    <li><strong>Vhodné pro:</strong> Malá klinika, testing, development</li>
+                </ul>
+            </div>
+            
+            <h3>3.2 Doporučená konfigurace (pro 20-50 sálů, 50-100 concurrent uživatelů)</h3>
+            
+            <div class="config-box">
+                <h4>Server (Linux/Ubuntu)</h4>
+                <ul>
+                    <li><strong>CPU:</strong> 4 jádra, 2.5+ GHz (Intel Xeon / AMD EPYC)</li>
+                    <li><strong>RAM:</strong> 8 GB (doporučuje se 16 GB pro cache a session storage)</li>
+                    <li><strong>Disk:</strong> 50-100 GB SSD (NVMe doporučeno)</li>
+                    <li><strong>Síť:</strong> 100 Mbps (ideálně 1 Gbps)</li>
+                    <li><strong>Vhodné pro:</strong> Střední nemocnice, standard produkční nasazení</li>
+                </ul>
+            </div>
+            
+            <h3>3.3 Enterprise konfigurace (pro 50+ sálů, 200+ concurrent uživatelů)</h3>
+            
+            <div class="config-box">
+                <h4>Primární server</h4>
+                <ul>
+                    <li><strong>CPU:</strong> 8+ jader, 2.5+ GHz</li>
+                    <li><strong>RAM:</strong> 32 GB</li>
+                    <li><strong>Disk:</strong> 200+ GB SSD NVMe (RAID 1 minimum)</li>
+                    <li><strong>Síť:</strong> 1 Gbps</li>
+                </ul>
+                
+                <h4>Backup/Replica server</h4>
+                <ul>
+                    <li>Stejná konfigurace jako primární</li>
+                    <li>PostgreSQL replication pro failover</li>
+                    <li>Load balancer (Nginx/HAProxy)</li>
+                    <li><strong>Vhodné pro:</strong> Velké nemocnice, kritické aplikace</li>
+                </ul>
+            </div>
+            
+            <div class="highlight">
+                <strong>Důležitá poznámka:</strong> Všechny hardwarové konfigurace by měly být s headroom minimálně 20% pro peak load a budoucí growth. SSD disk je POVINNÝ (HDD není doporučeno).
+            </div>
+        </section>
+        
+        <!-- SECTION 4 -->
+        <section id="section-4">
+            <h2>4. Požadavky na desktop klienty (PC, Notebooky)</h2>
+            
+            <h3>4.1 Minimální požadavky</h3>
+            
+            <table>
+                <tr>
+                    <th>Komponenta</th>
+                    <th>Minimální specifikace</th>
+                </tr>
+                <tr>
+                    <td>Operační systém</td>
+                    <td>Windows 10/11, macOS 12+, Linux (Ubuntu 20.04+)</td>
+                </tr>
+                <tr>
+                    <td>CPU</td>
+                    <td>Intel Core i5 / AMD Ryzen 5 (2017+)</td>
+                </tr>
+                <tr>
+                    <td>RAM</td>
+                    <td>4 GB (ideálně 8 GB)</td>
+                </tr>
+                <tr>
+                    <td>Disk</td>
+                    <td>500 MB volného místa (pro cache, cookies)</td>
+                </tr>
+                <tr>
+                    <td>Display</td>
+                    <td>1280x720 (720p) minimálně</td>
+                </tr>
+                <tr>
+                    <td>Síň</td>
+                    <td>5 Mbps stabilní internet</td>
+                </tr>
+            </table>
+            
+            <h3>4.2 Doporučená konfigurace</h3>
+            
+            <table>
+                <tr>
+                    <th>Komponenta</th>
+                    <th>Doporučená specifikace</th>
+                </tr>
+                <tr>
+                    <td>CPU</td>
+                    <td>Intel Core i7 / AMD Ryzen 7 (2019+)</td>
+                </tr>
+                <tr>
+                    <td>RAM</td>
+                    <td>16 GB</td>
+                </tr>
+                <tr>
+                    <td>Disk</td>
+                    <td>SSD 256 GB+</td>
+                </tr>
+                <tr>
+                    <td>Display</td>
+                    <td>1920x1080 (Full HD) 24" monitor</td>
+                </tr>
+                <tr>
+                    <td>Síť</td>
+                    <td>50+ Mbps, latence &lt; 50ms</td>
+                </tr>
+            </table>
+            
+            <h3>4.3 Rozlišení displeje (Desktop)</h3>
+            
+            <table>
+                <tr>
+                    <th>Rozlišení</th>
+                    <th>Velikost (typicky)</th>
+                    <th>Optimalizace</th>
+                    <th>Doporučeno</th>
+                </tr>
+                <tr>
+                    <td>1024x768</td>
+                    <td>17"</td>
+                    <td>Funguje, ale limitované</td>
+                    <td>NE</td>
+                </tr>
+                <tr>
+                    <td>1280x720</td>
+                    <td>15-17"</td>
+                    <td>OK, malá plocha</td>
+                    <td>Minimum</td>
+                </tr>
+                <tr>
+                    <td>1366x768</td>
+                    <td>15-17"</td>
+                    <td>Standard notebooky</td>
+                    <td>OK</td>
+                </tr>
+                <tr>
+                    <td>1600x900</td>
+                    <td>17-19"</td>
+                    <td>Lepší zobrazení</td>
+                    <td>Dobrá volba</td>
+                </tr>
+                <tr style="background-color: #d4edda;">
+                    <td><strong>1920x1080</strong></td>
+                    <td><strong>21-24"</strong></td>
+                    <td><strong>Full HD standard</strong></td>
+                    <td><strong>ANO - Standard</strong></td>
+                </tr>
+                <tr>
+                    <td>2560x1440</td>
+                    <td>27"</td>
+                    <td>2K, ideální pro admin</td>
+                    <td>Výborně</td>
+                </tr>
+                <tr>
+                    <td>3840x2160</td>
+                    <td>30"+</td>
+                    <td>4K, UI příliš malé</td>
+                    <td>Nevhodné</td>
+                </tr>
+            </table>
+            
+            <h4>Ideální konfigurace pro operační sály</h4>
+            <ul>
+                <li><strong>2x 1920x1080 monitory</strong> (dual display setup) - jeden pro dashboard, jeden pro detail operačního sálu</li>
+                <li>Minimálně 24" displej pro lepší přehlednost</li>
+                <li>Montáž na stěnu nebo stojan s nastavitelnou výškou</li>
+                <li>Antiglare povrch (lesklý povrch není vhodný v nemocničním prostředí)</li>
+            </ul>
+            
+            <h4>Webový prohlížeč</h4>
+            <ul>
+                <li><strong>Google Chrome 120+</strong> - nejlépe podporovaný</li>
+                <li><strong>Microsoft Edge 120+</strong> - alternativa pro Windows</li>
+                <li>Mozilla Firefox 121+</li>
+                <li>Apple Safari 17+ (macOS)</li>
+            </ul>
+            
+            <div class="info-box">
+                <strong>Poznámka:</strong> Vždy aktualizujte prohlížeč na nejnovější verzi. Starší verze mohou mít bezpečnostní zranitelnosti a problémy s kompatibilitou.
+            </div>
+        </section>
+        
+        <!-- SECTION 5 -->
+        <section id="section-5">
+            <h2>5. Mobilní zařízení (Tablet, Smartphone)</h2>
+            
+            <h3>5.1 iOS (iPhone, iPad)</h3>
+            
+            <h4>Systémové požadavky</h4>
+            <table>
+                <tr>
+                    <th>Parametr</th>
+                    <th>Minimální</th>
+                    <th>Doporučené</th>
+                </tr>
+                <tr>
+                    <td>iOS verze</td>
+                    <td>14.0+</td>
+                    <td>17.0+ (aktuální)</td>
+                </tr>
+                <tr>
+                    <td>RAM (iPhone)</td>
+                    <td>3 GB</td>
+                    <td>6 GB+</td>
+                </tr>
+                <tr>
+                    <td>RAM (iPad)</td>
+                    <td>4 GB</td>
+                    <td>8 GB+</td>
+                </tr>
+                <tr>
+                    <td>Storage</td>
+                    <td>500 MB volného místa</td>
+                    <td>1-2 GB volného místa</td>
+                </tr>
+            </table>
+            
+            <h4>Doporučená zařízení (iPhone)</h4>
+            <ul>
+                <li><strong>iPhone 11 (2019)</strong> a novější - minimum</li>
+                <li><strong>iPhone 14 Pro/Pro Max</strong> - standard produkce</li>
+                <li><strong>iPhone 15 Pro/Pro Max</strong> - nejnovější a nejlepší</li>
+            </ul>
+            
+            <h4>Doporučená zařízení (iPad)</h4>
+            <ul>
+                <li><strong>iPad Air 3 (2019)</strong> a novější</li>
+                <li><strong>iPad mini 5 (2019)</strong> a novější</li>
+                <li><strong>iPad Pro 12.9" (M2/M3)</strong> - ideální pro operační sál (BEST)</li>
+                <li><strong>iPad Air 5 (2022)</strong> - výborná volba s dobrým poměrem ceny a výkonu</li>
+            </ul>
+            
+            <h3>5.2 Android (Tablet, Smartphone)</h3>
+            
+            <h4>Systémové požadavky</h4>
+            <table>
+                <tr>
+                    <th>Parametr</th>
+                    <th>Minimální</th>
+                    <th>Doporučené</th>
+                </tr>
+                <tr>
+                    <td>Android verze</td>
+                    <td>10 (API 29)</td>
+                    <td>13+ (API 33+)</td>
+                </tr>
+                <tr>
+                    <td>RAM</td>
+                    <td>4 GB</td>
+                    <td>6-8 GB</td>
+                </tr>
+                <tr>
+                    <td>Storage</td>
+                    <td>500 MB volného místa</td>
+                    <td>1-2 GB volného místa</td>
+                </tr>
+                <tr>
+                    <td>CPU</td>
+                    <td>Snapdragon 695, Dimensity 700</td>
+                    <td>Snapdragon 8 Gen 2, Dimensity 9200</td>
+                </tr>
+            </table>
+            
+            <h4>Doporučená zařízení (Smartphone)</h4>
+            <ul>
+                <li><strong>Samsung Galaxy A13</strong> a novější - minimum</li>
+                <li><strong>Google Pixel 6a</strong> a novější</li>
+                <li><strong>Samsung Galaxy S23/S23 Ultra</strong> - standard produkce</li>
+                <li><strong>OnePlus 12</strong> - alternativa</li>
+            </ul>
+            
+            <h4>Doporučená zařízení (Tablet)</h4>
+            <ul>
+                <li><strong>Samsung Galaxy Tab S9 FE</strong> - rozpočet-friendly</li>
+                <li><strong>Samsung Galaxy Tab S9/S10</strong> - standard</li>
+                <li><strong>Samsung Galaxy Tab S9 Ultra</strong> - pro velké operační sály (12.9")</li>
+                <li><strong>Lenovo Tab Extreme/Pro</strong> - alternativa</li>
+            </ul>
+            
+            <h3>5.3 Rozlišení displeje (Mobilní)</h3>
+            
+            <h4>iPhone/iOS - Standardní rozlišení</h4>
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Rozlišení</th>
+                    <th>Velikost obrazovky</th>
+                    <th>Typ displeje</th>
+                    <th>Podpora</th>
+                </tr>
+                <tr>
+                    <td>iPhone 11</td>
+                    <td>326 ppi</td>
+                    <td>6.1"</td>
+                    <td>LCD</td>
+                    <td>Minimum</td>
+                </tr>
+                <tr>
+                    <td>iPhone 12/13</td>
+                    <td>460 ppi</td>
+                    <td>6.1"</td>
+                    <td>OLED</td>
+                    <td>Dobrá</td>
+                </tr>
+                <tr style="background-color: #d4edda;">
+                    <td><strong>iPhone 14/15</strong></td>
+                    <td><strong>460 ppi</strong></td>
+                    <td><strong>6.1"</strong></td>
+                    <td><strong>OLED</strong></td>
+                    <td><strong>Doporučeno</strong></td>
+                </tr>
+                <tr>
+                    <td>iPhone 14/15 Pro Max</td>
+                    <td>460 ppi</td>
+                    <td>6.7"</td>
+                    <td>OLED</td>
+                    <td>Ideální</td>
+                </tr>
+            </table>
+            
+            <h4>iPad/iOS - Tablet rozlišení</h4>
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Rozlišení</th>
+                    <th>Velikost obrazovky</th>
+                    <th>Doporučení</th>
+                </tr>
+                <tr>
+                    <td>iPad Air (10.9")</td>
+                    <td>264 ppi</td>
+                    <td>10.9"</td>
+                    <td>Dobrá volba</td>
+                </tr>
+                <tr style="background-color: #d4edda;">
+                    <td><strong>iPad Pro 12.9"</strong></td>
+                    <td><strong>264 ppi</strong></td>
+                    <td><strong>12.9"</strong></td>
+                    <td><strong>Nejlepší</strong></td>
+                </tr>
+                <tr>
+                    <td>iPad mini (8.3")</td>
+                    <td>326 ppi</td>
+                    <td>8.3"</td>
+                    <td>Mobilní provoz</td>
+                </tr>
+            </table>
+            
+            <h4>Android/Tablet - Rozlišení</h4>
+            <table>
+                <tr>
+                    <th>Kategorie</th>
+                    <th>Rozlišení</th>
+                    <th>Velikost obrazovky</th>
+                    <th>Doporučení</th>
+                </tr>
+                <tr>
+                    <td>Smartphone 5.5"</td>
+                    <td>1080x2340 (FHD+)</td>
+                    <td>5.5-6.1"</td>
+                    <td>Minimum</td>
+                </tr>
+                <tr>
+                    <td>Smartphone 6.7"</td>
+                    <td>1440x3120 (QHD+)</td>
+                    <td>6.7"</td>
+                    <td>Lepší</td>
+                </tr>
+                <tr style="background-color: #d4edda;">
+                    <td><strong>Tablet 10"</strong></td>
+                    <td><strong>2560x1600 (QHD)</strong></td>
+                    <td><strong>10"</strong></td>
+                    <td><strong>Ideální</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Tablet 11-12"</strong></td>
+                    <td><strong>2560x1600+</strong></td>
+                    <td><strong>11-13"</strong></td>
+                    <td><strong>Nejlepší</strong></td>
+                </tr>
+            </table>
+            
+            <div class="info-box">
+                <strong>Pro operační sály doporučujeme:</strong> iPad Pro 12.9" nebo Samsung Galaxy Tab S9/S10 12" - velká obrazovka pro lepší viditelnost, vyšší výkon pro smooth realtime aktualizace.
+            </div>
+        </section>
+        
+        <!-- SECTION 6 -->
+        <section id="section-6">
+            <h2>6. Síťové požadavky</h2>
+            
+            <h3>6.1 Šířka pásma (Bandwidth)</h3>
+            
+            <table>
+                <tr>
+                    <th>Scénář</th>
+                    <th>Minimální požadavek</th>
+                    <th>Doporučeno</th>
+                    <th>Poznámka</th>
+                </tr>
+                <tr>
+                    <td>1 uživatel</td>
+                    <td>2 Mbps</td>
+                    <td>10 Mbps</td>
+                    <td>Casual browsing</td>
+                </tr>
+                <tr>
+                    <td>5 uživatelů</td>
+                    <td>5 Mbps</td>
+                    <td>25 Mbps</td>
+                    <td>Malá klinika</td>
+                </tr>
+                <tr>
+                    <td>10 uživatelů</td>
+                    <td>10 Mbps</td>
+                    <td>50 Mbps</td>
+                    <td>Standard office</td>
+                </tr>
+                <tr>
+                    <td>50 uživatelů</td>
+                    <td>25 Mbps</td>
+                    <td>100 Mbps</td>
+                    <td>Hospital floor</td>
+                </tr>
+                <tr style="background-color: #f8d7da;">
+                    <td><strong>100+ uživatelů</strong></td>
+                    <td><strong>100+ Mbps</strong></td>
+                    <td><strong>1 Gbps</strong></td>
+                    <td><strong>Enterprise / velké nemocnice</strong></td>
+                </tr>
+            </table>
+            
+            <h3>6.2 Latence (Ping)</h3>
+            
+            <table>
+                <tr>
+                    <th>Latence</th>
+                    <th>Kvalita</th>
+                    <th>Dopad na uživatele</th>
+                </tr>
+                <tr>
+                    <td>&lt; 50 ms</td>
+                    <td>Výborně</td>
+                    <td>Prakticky žádné zpoždění, optimální pro realtime</td>
+                </tr>
+                <tr style="background-color: #d4edda;">
+                    <td>50-100 ms</td>
+                    <td>Dobré</td>
+                    <td>Normální provoz, žádné znatelné problémy</td>
+                </tr>
+                <tr>
+                    <td>100-150 ms</td>
+                    <td>Přijatelné</td>
+                    <td>Mírné zpoždění při realtime akcích</td>
+                </tr>
+                <tr>
+                    <td>150-200 ms</td>
+                    <td>Slabé</td>
+                    <td>Znatelné zpoždění, ale funguje</td>
+                </tr>
+                <tr style="background-color: #f8d7da;">
+                    <td>&gt; 200 ms</td>
+                    <td>Neakceptovatelné</td>
+                    <td>Realtime aktualizace se zdržují, špatný UX</td>
+                </tr>
+            </table>
+            
+            <h3>6.3 Stabilita síťového spojení</h3>
+            
+            <table>
+                <tr>
+                    <th>Parametr</th>
+                    <th>Požadavek</th>
+                    <th>Pozadí</th>
+                </tr>
+                <tr>
+                    <td>Uptime</td>
+                    <td>Minimálně 99% (max. 7 minut výpadku/měsíc)</td>
+                    <td>Pro healthcare kritické aplikace</td>
+                </tr>
+                <tr>
+                    <td>Packet Loss</td>
+                    <td>&lt; 0.5%</td>
+                    <td>Téměř žádná ztráta dat v transmisi</td>
+                </tr>
+                <tr>
+                    <td>Jitter</td>
+                    <td>&lt; 50 ms (pro realtime)</td>
+                    <td>Stabilní latence bez výkyvů</td>
+                </tr>
+                <tr>
+                    <td>DNS Resolution</td>
+                    <td>&lt; 100 ms</td>
+                    <td>Rychlý překlad domén</td>
+                </tr>
+            </table>
+            
+            <h3>6.4 Failover a redundance</h3>
+            
+            <div class="config-box">
+                <ul>
+                    <li><strong>Primární připojení:</strong> Stacionární internet (optika/ADSL)</li>
+                    <li><strong>Backup připojení:</strong> 4G/5G mobilní hotspot (redundance)</li>
+                    <li><strong>Automatické failover:</strong> < 30 sekund</li>
+                    <li><strong>Monitoring:</strong> Kontinuální monitoring dostupnosti</li>
+                </ul>
+            </div>
+        </section>
+        
+        <!-- SECTION 7 -->
+        <section id="section-7">
+            <h2>7. Supabase databáze - produkční konfigurace</h2>
+            
+            <h3>7.1 Plán Supabase (Cloud)</h3>
+            
+            <table>
+                <tr>
+                    <th>Plán</th>
+                    <th>Databáze</th>
+                    <th>Realtime</th>
+                    <th>Support</th>
+                    <th>Cena</th>
+                </tr>
+                <tr>
+                    <td><strong>Free Tier</strong></td>
+                    <td>500 MB</td>
+                    <td>200 connections</td>
+                    <td>Community</td>
+                    <td>Zdarma</td>
+                </tr>
+                <tr style="background-color: #d4edda;">
+                    <td><strong>Pro Tier (DOPORUČENO)</strong></td>
+                    <td><strong>8 GB</strong></td>
+                    <td><strong>100 GB message limit</strong></td>
+                    <td><strong>Priority</strong></td>
+                    <td><strong>~50 USD/měsíc</strong></td>
+                </tr>
+                <tr>
+                    <td>Business Tier</td>
+                    <td>100+ GB</td>
+                    <td>Unlimited</td>
+                    <td>Dedicated</td>
+                    <td>Custom</td>
+                </tr>
+            </table>
+            
+            <div class="info-box">
+                <strong>Doporučení:</strong> Pro produkční nasazení se 20-50 sály vyberte <strong>Pro Tier</strong> Supabase. Poskytuje dostatek prostoru, reliability a support.
+            </div>
+            
+            <h3>7.2 PostgreSQL konfigurace</h3>
+            
+            <h4>Minimální prostředí (dev/test)</h4>
+            <ul>
+                <li><strong>Max Connections:</strong> 25</li>
+                <li><strong>Work Memory:</strong> 4 MB</li>
+                <li><strong>Shared Memory:</strong> 256 MB</li>
+                <li><strong>Disk:</strong> 50 GB</li>
+                <li><strong>WAL (Write-Ahead Logs):</strong> 1 GB</li>
+            </ul>
+            
+            <h4>Produkční prostředí</h4>
+            <ul>
+                <li><strong>Max Connections:</strong> 100-200 (dle concurrent uživatelů)</li>
+                <li><strong>Work Memory:</strong> 16 MB</li>
+                <li><strong>Shared Memory:</strong> 2-4 GB</li>
+                <li><strong>Disk:</strong> 500 GB - 1 TB (s growth plánováním)</li>
+                <li><strong>WAL:</strong> 10 GB (pro crash recovery)</li>
+                <li><strong>Replication:</strong> Enabled (backup)</li>
+            </ul>
+            
+            <h3>7.3 Storage odhad</h3>
+            
+            <table>
+                <tr>
+                    <th>Datová sada</th>
+                    <th>Měsíční nárůst</th>
+                    <th>Roční nárůst</th>
+                </tr>
+                <tr>
+                    <td>operating_rooms (metadata)</td>
+                    <td>0.5 MB</td>
+                    <td>6 MB</td>
+                </tr>
+                <tr>
+                    <td>staff (uživatelé)</td>
+                    <td>1 MB</td>
+                    <td>12 MB</td>
+                </tr>
+                <tr>
+                    <td>room_status_history (logs)</td>
+                    <td>50-100 MB</td>
+                    <td>600-1200 MB</td>
+                </tr>
+                <tr>
+                    <td>auth_data (sessions, tokens)</td>
+                    <td>5 MB</td>
+                    <td>60 MB</td>
+                </tr>
+                <tr>
+                    <td>Audit logs</td>
+                    <td>20-50 MB</td>
+                    <td>240-600 MB</td>
+                </tr>
+                <tr style="background-color: #d4edda;">
+                    <td><strong>CELKEM za měsíc</strong></td>
+                    <td><strong>75-150 MB</strong></td>
+                    <td><strong>900-1800 MB</strong></td>
+                </tr>
+            </table>
+            
+            <div class="highlight">
+                <strong>Pozn.:</strong> Odhad je pro 50 sálů, 100 aktivních uživatelů s průměrnou aktivitou. Realné čísla se mohou lišit dle typu provozu.
+            </div>
+            
+            <h3>7.4 Backup strategie</h3>
+            
+            <ul>
+                <li><strong>Automatické backupy Supabase:</strong> Denně (7-dní retention)</li>
+                <li><strong>Manuální export:</strong> Týdně via pg_dump do AWS S3</li>
+                <li><strong>Point-in-Time Recovery:</strong> Až 30 dní zpět (v Pro plánu)</li>
+                <li><strong>Restore test:</strong> Měsíčně ověřit integrity backup</li>
+            </ul>
+        </section>
+        
+        <!-- SECTION 8 -->
+        <section id="section-8">
+            <h2>8. Klientské aplikace - performance metriky</h2>
+            
+            <h3>8.1 Web (Next.js) - Google PageSpeed metriky</h3>
+            
+            <table>
+                <tr>
+                    <th>Metrika</th>
+                    <th>Minimálně</th>
+                    <th>Doporučeno</th>
+                    <th>Excelentní</th>
+                    <th>Příklad</th>
+                </tr>
+                <tr>
+                    <td><strong>LCP</strong> (Largest Contentful Paint)</td>
+                    <td>&lt; 4.0s</td>
+                    <td>&lt; 2.5s</td>
+                    <td>&lt; 1.0s</td>
+                    <td>Čas zobrazení hlavního obsahu</td>
+                </tr>
+                <tr>
+                    <td><strong>FID</strong> (First Input Delay)</td>
+                    <td>&lt; 100ms</td>
+                    <td>&lt; 50ms</td>
+                    <td>&lt; 25ms</td>
+                    <td>Odezva na kliknutí tlačítka</td>
+                </tr>
+                <tr>
+                    <td><strong>CLS</strong> (Cumulative Layout Shift)</td>
+                    <td>&lt; 0.25</td>
+                    <td>&lt; 0.1</td>
+                    <td>&lt; 0.05</td>
+                    <td>Stability UI prvků</td>
+                </tr>
+                <tr>
+                    <td><strong>TTL</strong> (Time to Live / Load)</td>
+                    <td>&lt; 5s</td>
+                    <td>&lt; 2s</td>
+                    <td>&lt; 1s</td>
+                    <td>Úplné načtení stránky</td>
+                </tr>
+                <tr>
+                    <td><strong>TTFB</strong> (Time to First Byte)</td>
+                    <td>&lt; 600ms</td>
+                    <td>&lt; 200ms</td>
+                    <td>&lt; 100ms</td>
+                    <td>Odezva serveru</td>
+                </tr>
+            </table>
+            
+            <h3>8.2 Bundle size</h3>
+            
+            <table>
+                <tr>
+                    <th>Komponenta</th>
+                    <th>Limit</th>
+                    <th>Poznámka</th>
+                </tr>
+                <tr>
+                    <td>Initial JavaScript (gzipped)</td>
+                    <td>&lt; 200 KB</td>
+                    <td>Pro rychlé načtení</td>
+                </tr>
+                <tr>
+                    <td>CSS (gzipped)</td>
+                    <td>&lt; 50 KB</td>
+                    <td>Kritické CSS inline</td>
+                </tr>
+                <tr>
+                    <td>Total all chunks (gzipped)</td>
+                    <td>&lt; 500 KB</td>
+                    <td>Všechny JavaScript soubory dohromady</td>
+                </tr>
+                <tr>
+                    <td>Images (total)</td>
+                    <td>&lt; 2 MB</td>
+                    <td>WebP formát, lazy loading</td>
+                </tr>
+                <tr>
+                    <td><strong>Total page</strong></td>
+                    <td><strong>&lt; 3 MB</strong></td>
+                    <td><strong>Za normálních podmínek</strong></td>
+                </tr>
+            </table>
+            
+            <h3>8.3 Mobilní aplikace - Performance</h3>
+            
+            <h4>Build size</h4>
+            <table>
+                <tr>
+                    <th>Platforma</th>
+                    <th>Build formát</th>
+                    <th>Velikost</th>
+                    <th>Poznámka</th>
+                </tr>
+                <tr>
+                    <td>iOS</td>
+                    <td>IPA (signed + provisioned)</td>
+                    <td>80-120 MB</td>
+                    <td>Zahrnuje všechny assets</td>
+                </tr>
+                <tr>
+                    <td>Android</td>
+                    <td>APK</td>
+                    <td>60-90 MB</td>
+                    <td>Optimalizované verze</td>
+                </tr>
+                <tr>
+                    <td>Android</td>
+                    <td>AAB (Google Play Bundle)</td>
+                    <td>40-70 MB</td>
+                    <td>Doporučeno pro Play Store</td>
+                </tr>
+            </table>
+            
+            <h4>Runtime memory (při spuštění)</h4>
+            <table>
+                <tr>
+                    <th>Zařízení</th>
+                    <th>Paměť během provozu</th>
+                    <th>Peak memory</th>
+                </tr>
+                <tr>
+                    <td>iPhone</td>
+                    <td>150-250 MB</td>
+                    <td>300 MB</td>
+                </tr>
+                <tr>
+                    <td>iPad</td>
+                    <td>200-350 MB</td>
+                    <td>500 MB</td>
+                </tr>
+                <tr>
+                    <td>Android (Phone)</td>
+                    <td>200-350 MB</td>
+                    <td>400 MB</td>
+                </tr>
+                <tr>
+                    <td>Android (Tablet)</td>
+                    <td>300-500 MB</td>
+                    <td>700 MB</td>
+                </tr>
+            </table>
+        </section>
+        
+        <!-- SECTION 9 -->
+        <section id="section-9">
+            <h2>9. Bezpečnostní požadavky</h2>
+            
+            <h3>9.1 TLS/SSL šifrování</h3>
+            
+            <ul>
+                <li><strong>Minimálně:</strong> TLS 1.2 (ale TLS 1.2 je zastaralý)</li>
+                <li><strong>Doporučeno:</strong> TLS 1.3 (nejnovější, nejbezpečnější)</li>
+                <li><strong>Certifikát:</strong> Let's Encrypt (zdarma, auto-renewal)</li>
+                <li><strong>HSTS:</strong> Povinné (Strict-Transport-Security header)</li>
+                <li><strong>Certificate pinning:</strong> Pro mobilní aplikace (doporučeno)</li>
+            </ul>
+            
+            <h3>9.2 Hesla</h3>
+            
+            <table>
+                <tr>
+                    <th>Parametr</th>
+                    <th>Požadavek</th>
+                </tr>
+                <tr>
+                    <td>Minimální délka</td>
+                    <td>12 znaků</td>
+                </tr>
+                <tr>
+                    <td>Complexity</td>
+                    <td>Velká písmena + čísla + speciální znaky (!@#$%)</td>
+                </tr>
+                <tr>
+                    <td>Hashing algoritmus</td>
+                    <td>bcrypt (s salt) - POVINNÉ</td>
+                </tr>
+                <tr>
+                    <td>Password expiration</td>
+                    <td>90 dní (pro adminy), nepovinné pro ostatní</td>
+                </tr>
+                <tr>
+                    <td>Password history</td>
+                    <td>Neumožnit posledních 5 hesel</td>
+                </tr>
+            </table>
+            
+            <h3>9.3 Session management</h3>
+            
+            <table>
+                <tr>
+                    <th>Parametr</th>
+                    <th>Hodnota</th>
+                </tr>
+                <tr>
+                    <td>Session timeout</td>
+                    <td>30 minut neaktivity (admin), 2 hodiny (běžný uživatel)</td>
+                </tr>
+                <tr>
+                    <td>Session storage</td>
+                    <td>Server-side (Supabase), NIKDY na client</td>
+                </tr>
+                <tr>
+                    <td>HTTPS only</td>
+                    <td>Ano (povinné)</td>
+                </tr>
+                <tr>
+                    <td>Secure cookies</td>
+                    <td>Ano (flag Secure, HttpOnly, SameSite)</td>
+                </tr>
+                <tr>
+                    <td>Session ID length</td>
+                    <td>Minimálně 128 bits (16 bytes)</td>
+                </tr>
+            </table>
+            
+            <h3>9.4 Rate limiting a DDoS ochrana</h3>
+            
+            <ul>
+                <li><strong>Login attempts:</strong> 5 pokusů za 15 minut (pak lockout)</li>
+                <li><strong>API endpoints:</strong> 100 requests za minutu na uživatele</li>
+                <li><strong>WebSocket:</strong> 50 messages za sekundu</li>
+                <li><strong>DDoS mitigation:</strong> CloudFlare nebo Akamai</li>
+            </ul>
+            
+            <h3>9.5 Datová bezpečnost</h3>
+            
+            <ul>
+                <li><strong>Data at rest:</strong> Šifrování na úrovni databáze (Supabase poskytuje)</li>
+                <li><strong>Data in transit:</strong> TLS 1.3</li>
+                <li><strong>Backup encryption:</strong> AES-256</li>
+                <li><strong>Access control:</strong> Role-Based Access Control (RBAC)</li>
+                <li><strong>Audit logging:</strong> Všechny citlivé operace se logují</li>
+            </ul>
+            
+            <h3>9.6 Compliance a regulace</h3>
+            
+            <ul>
+                <li><strong>GDPR:</strong> Splnění (zvláště relevantní v EU)</li>
+                <li><strong>HIPAA:</strong> Splnění (zdravotnické údaje)</li>
+                <li><strong>ISO 27001:</strong> Doporučeno (informační bezpečnost)</li>
+                <li><strong>Regular security audit:</strong> Minimálně roční</li>
+                <li><strong>Penetration testing:</strong> Ročně nebo po maior updatu</li>
+            </ul>
+        </section>
+        
+        <!-- SECTION 10 -->
+        <section id="section-10">
+            <h2>10. Produkční nasazení - kroky</h2>
+            
+            <h3>10.1 Server setup</h3>
+            
+            <div class="config-box">
+                <ol>
+                    <li>Vytvořit Linux VM (Ubuntu 22.04 LTS) u cloud providera (AWS, Linode, DigitalOcean)</li>
+                    <li>SSH klíče, security groups, firewall konfigurace</li>
+                    <li>Nainstalovat Node.js 20 LTS:
+                        <pre>curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs</pre>
+                    </li>
+                    <li>Nainstalovat Nginx (reverse proxy):
+                        <pre>sudo apt-get install -y nginx</pre>
+                    </li>
+                    <li>Nainstalovat PM2 (process manager):
+                        <pre>sudo npm install -g pm2</pre>
+                    </li>
+                    <li>Setup SSL/TLS certifikát (Let's Encrypt):
+                        <pre>sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot certonly --nginx -d aplikace.cz</pre>
+                    </li>
+                    <li>Vytvořit .env.production se Supabase klíči</li>
+                    <li>Přidat monitoring (PM2 Plus, Sentry, New Relic)</li>
+                </ol>
+            </div>
+            
+            <h3>10.2 Aplikace build a deployment</h3>
+            
+            <pre>cd /opt/app
+git clone https://github.com/medrox/operatingroommanagement.git .
+npm ci --production
+npm run build
+pm2 start "npm start" --name "app" --instances max
+pm2 start "npm start" -- --port 3001 (pro scaled instanci)
+pm2 save
+pm2 startup
+pm2 logs</pre>
+            
+            <h3>10.3 Nginx konfigurace (reverse proxy)</h3>
+            
+            <pre>upstream next_app {
+    server localhost:3000;
+    server localhost:3001;
+}
+
+server {
+    listen 80;
+    server_name aplikace.cz;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name aplikace.cz;
+    
+    ssl_certificate /etc/letsencrypt/live/aplikace.cz/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aplikace.cz/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    
+    location / {
+        proxy_pass http://next_app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 30s;
+    }
+}</pre>
+            
+            <h3>10.4 Environment variables (.env.production)</h3>
+            
+            <pre>NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyxxx...
+SUPABASE_SERVICE_KEY=eyxxx...
+DATABASE_URL=postgresql://user:password@host/dbname
+NODE_ENV=production
+NEXT_PUBLIC_APP_URL=https://aplikace.cz</pre>
+        </section>
+        
+        <!-- SECTION 11 -->
+        <section id="section-11">
+            <h2>11. Monitoring a maintenance</h2>
+            
+            <h3>11.1 Monitoring nástroje</h3>
+            
+            <table>
+                <tr>
+                    <th>Kategorie</th>
+                    <th>Nástroj</th>
+                    <th>Co monitoruje</th>
+                </tr>
+                <tr>
+                    <td>Application</td>
+                    <td>PM2 Plus, New Relic, DataDog</td>
+                    <td>CPU, memory, request latency, errors</td>
+                </tr>
+                <tr>
+                    <td>Database</td>
+                    <td>Supabase dashboard</td>
+                    <td>Query performance, storage, connections</td>
+                </tr>
+                <tr>
+                    <td>Performance</td>
+                    <td>Google PageSpeed, Lighthouse</td>
+                    <td>Load time, Core Web Vitals</td>
+                </tr>
+                <tr>
+                    <td>Uptime</td>
+                    <td>Uptime Robot, Checkly</td>
+                    <td>Website availability 24/7</td>
+                </tr>
+                <tr>
+                    <td>Error tracking</td>
+                    <td>Sentry</td>
+                    <td>Uncaught exceptions, errors</td>
+                </tr>
+            </table>
+            
+            <h3>11.2 Logging strategie</h3>
+            
+            <ul>
+                <li><strong>Application Logs:</strong> /var/log/app/ (loguje PM2 nebo winston)</li>
+                <li><strong>Nginx Logs:</strong> /var/log/nginx/access.log, error.log</li>
+                <li><strong>Database Logs:</strong> Supabase dashboard, PostgreSQL logs</li>
+                <li><strong>System Logs:</strong> /var/log/syslog (uptime, kernel messages)</li>
+                <li><strong>Retention:</strong> Minimálně 30 dní</li>
+                <li><strong>Centralized logging:</strong> ELK Stack nebo Datadog (doporučeno)</li>
+            </ul>
+            
+            <h3>11.3 Zálohování</h3>
+            
+            <table>
+                <tr>
+                    <th>Zálohování</th>
+                    <th>Frekvence</th>
+                    <th>Uložiště</th>
+                    <th>Retention</th>
+                </tr>
+                <tr>
+                    <td>Database (Supabase)</td>
+                    <td>Automaticky denně</td>
+                    <td>Supabase infrastruktura</td>
+                    <td>7 dní</td>
+                </tr>
+                <tr>
+                    <td>Manual DB Export</td>
+                    <td>Týdně</td>
+                    <td>AWS S3 / Google Cloud</td>
+                    <td>90 dní</td>
+                </tr>
+                <tr>
+                    <td>Application Code</td>
+                    <td>Automaticky (git)</td>
+                    <td>GitHub</td>
+                    <td>Navždy</td>
+                </tr>
+                <tr>
+                    <td>Configuration</td>
+                    <td>Přemanually po změně</td>
+                    <td>Encrypted secure storage</td>
+                    <td>Minimálně 1 rok</td>
+                </tr>
+            </table>
+            
+            <h3>11.4 Restore testing</h3>
+            
+            <ul>
+                <li><strong>Měsíční test:</strong> Ověřit integrity backup pomocí restore na test databázi</li>
+                <li><strong>Dokumentace:</strong> Detailní kroky pro restore v nouzi</li>
+                <li><strong>RTO (Recovery Time Objective):</strong> Maximálně 2 hodiny</li>
+                <li><strong>RPO (Recovery Point Objective):</strong> Maximálně 1 den dat ztráty</li>
+            </ul>
+        </section>
+        
+        <!-- SECTION 12 -->
+        <section id="section-12">
+            <h2>12. Aktualizace a upgrade</h2>
+            
+            <h3>12.1 Release schedule</h3>
+            
+            <table>
+                <tr>
+                    <th>Typ</th>
+                    <th>Příklad</th>
+                    <th>Frekvence</th>
+                    <th>Typ změn</th>
+                </tr>
+                <tr>
+                    <td>Patch updates</td>
+                    <td>1.0.0 → 1.0.1</td>
+                    <td>Měsíčně</td>
+                    <td>Bug fixes, security patches</td>
+                </tr>
+                <tr>
+                    <td>Minor updates</td>
+                    <td>1.0.0 → 1.1.0</td>
+                    <td>Kvartálně</td>
+                    <td>Nové features, kompatibilní</td>
+                </tr>
+                <tr>
+                    <td>Major updates</td>
+                    <td>1.0.0 → 2.0.0</td>
+                    <td>Ročně</td>
+                    <td>Velké změny, migration potřeba</td>
+                </tr>
+            </table>
+            
+            <h3>12.2 Upgrade proces</h3>
+            
+            <pre># 1. Testování na staging
+git fetch origin
+git checkout develop
+npm install
+npm run build
+npm test
+
+# 2. Deployment na production
+pm2 stop app
+git pull origin main
+npm ci --production
+npm run build
+pm2 start "npm start" --name "app" --instances max
+
+# 3. Verifikace
+curl https://aplikace.cz/health
+pm2 logs</pre>
+            
+            <h3>12.3 Zero-downtime deployment (s blue-green)</h3>
+            
+            <pre># Spustit nová instance na portu 3001
+pm2 start "npm start" -- --port 3001
+
+# Počkat na úspěšný start
+sleep 10
+
+# Přepnout Nginx na nový port
+# (update nginx config, reload)
+sudo nginx -s reload
+
+# Stop starých instancí
+pm2 stop 0
+
+# Cleanup
+pm2 delete 0</pre>
+        </section>
+        
+        <!-- CHECKLIST -->
+        <section>
+            <h2>Produkční nasazení - Finální checklist</h2>
+            
+            <div class="checklist">
+                <ul>
+                    <li>Supabase project vytvořen a nakonfigurován</li>
+                    <li>Database schéma nahráno a migrováno</li>
+                    <li>SSL certifikát nainstalován a konfigurován</li>
+                    <li>Environment variables nastaveny (.env.production)</li>
+                    <li>Nginx/reverse proxy nakonfigurován a testován</li>
+                    <li>PM2 process manager nainstalován a nakonfigurován</li>
+                    <li>Monitoring a alerting nastaveny (PM2 Plus, New Relic)</li>
+                    <li>Backup strategie definována a testována</li>
+                    <li>Database replication a failover nastaveny</li>
+                    <li>Load testing provedeno (min. 200 concurrent users)</li>
+                    <li>Security audit completed (penetration testing)</li>
+                    <li>Documentation preparováno pro ops tým</li>
+                    <li>Disaster recovery plán vytořen a testován</li>
+                    <li>Incident response procedures definovány</li>
+                    <li>Training pro administrátory completed</li>
+                    <li>Go-live communication plánu připraveno</li>
+                    <li>24/7 support tým vyškolený a připravený</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section>
+            <h2>Dodatečné zdroje a reference</h2>
+            
+            <h3>Oficiální dokumentace</h3>
+            <ul>
+                <li><strong>Next.js:</strong> https://nextjs.org/docs</li>
+                <li><strong>Supabase:</strong> https://supabase.com/docs</li>
+                <li><strong>PostgreSQL:</strong> https://www.postgresql.org/docs</li>
+                <li><strong>Node.js:</strong> https://nodejs.org/docs</li>
+            </ul>
+            
+            <h3>Performance monitoring</h3>
+            <ul>
+                <li><strong>Google PageSpeed Insights:</strong> https://pagespeed.web.dev</li>
+                <li><strong>WebPageTest:</strong> https://www.webpagetest.org</li>
+                <li><strong>GTmetrix:</strong> https://gtmetrix.com</li>
+            </ul>
+            
+            <h3>Security resources</h3>
+            <ul>
+                <li><strong>OWASP Top 10:</strong> https://owasp.org/www-project-top-ten/</li>
+                <li><strong>Mozilla Web Security:</strong> https://infosec.mozilla.org/guidelines/web_security</li>
+                <li><strong>SSL Labs Best Practices:</strong> https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices</li>
+            </ul>
+        </section>
+        
+        <div class="footer">
+            <p><strong>Dokument:</strong> Technické Parametry Nasazení - Operating Room Management System</p>
+            <p><strong>Verze:</strong> 1.0 | <strong>Poslední aktualizace:</strong> 17. června 2026</p>
+            <p><strong>Odpovědnost:</strong> IT Department, DevOps Team, Healthcare IT Security</p>
+            <p style="margin-top: 20px; color: #999; font-size: 0.85em;">
+                Tento dokument je interní materiál. Obsah je důvěrný a určen pouze pro oprávněné osoby.
+                Jakékoli kopírování, šíření nebo použití bez souhlasu je zakázáno.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
